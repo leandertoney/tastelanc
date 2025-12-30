@@ -1,0 +1,14 @@
+{
+  "name": "tastelanc",
+  "private": true,
+  "scripts": {
+    "dev:web": "pnpm --filter @tastelanc/web dev",
+    "dev:mobile": "pnpm --filter @tastelanc/mobile start",
+    "build:web": "pnpm --filter @tastelanc/web build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

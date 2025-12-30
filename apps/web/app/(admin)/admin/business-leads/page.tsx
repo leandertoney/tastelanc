@@ -1,0 +1,425 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import {
+  Briefcase,
+  Plus,
+  Search,
+  Filter,
+  Mail,
+  Phone,
+  Globe,
+  MapPin,
+  MoreVertical,
+  Loader2,
+  Upload,
+  RefreshCw,
+  Users,
+  CheckCircle,
+  XCircle,
+  Clock,
+  MessageSquare,
+} from 'lucide-react';
+import { Card, Badge } from '@/components/ui';
+
+interface BusinessLead {
+  id: string;
+  business_name: string;
+  contact_name: string | null;
+  email: string;
+  phone: string | null;
+  website: string | null;
+  city: string | null;
+  category: string | null;
+  status: string;
+  source: string;
+  tags: string[];
+  notes: string | null;
+  last_contacted_at: string | null;
+  created_at: string;
+}
+
+interface Stats {
+  total: number;
+  new: number;
+  contacted: number;
+  interested: number;
+  notInterested: number;
+  converted: number;
+}
+
+const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof CheckCircle }> = {
+  new: { label: 'New', color: 'bg-blue-500/20 text-blue-400', icon: Clock },
+  contacted: { label: 'Contacted', color: 'bg-yellow-500/20 text-yellow-400', icon: Mail },
+  interested: { label: 'Interested', color: 'bg-green-500/20 text-green-400', icon: CheckCircle },
+  not_interested: { label: 'Not Interested', color: 'bg-red-500/20 text-red-400', icon: XCircle },
+  converted: { label: 'Converted', color: 'bg-lancaster-gold/20 text-lancaster-gold', icon: CheckCircle },
+};
+
+const CATEGORIES = ['restaurant', 'bar', 'cafe', 'brewery', 'bakery', 'food_truck', 'other'];
+
+export default function BusinessLeadsPage() {
+  const [leads, setLeads] = useState<BusinessLead[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [isConverting, setIsConverting] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const fetchLeads = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (search) params.set('search', search);
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+      if (categoryFilter !== 'all') params.set('category', categoryFilter);
+
+      const res = await fetch(`/api/admin/business-leads?${params}`);
+      const data = await res.json();
+      setLeads(data.leads || []);
+      setStats(data.stats || null);
+    } catch (error) {
+      console.error('Error fetching leads:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLeads();
+  }, [statusFilter, categoryFilter]);
+
+  // Debounced search
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      fetchLeads();
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [search]);
+
+  const handleConvertContacts = async () => {
+    if (!confirm('This will convert all contact submissions to business leads. Continue?')) {
+      return;
+    }
+
+    setIsConverting(true);
+    setMessage(null);
+
+    try {
+      const res = await fetch('/api/admin/business-leads/convert-contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to convert contacts');
+      }
+
+      setMessage({
+        type: 'success',
+        text: `Converted ${data.converted} contacts. ${data.skipped} skipped (already exist).`,
+      });
+      fetchLeads();
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Failed to convert contacts',
+      });
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
+  const handleStatusChange = async (leadId: string, newStatus: string) => {
+    try {
+      const res = await fetch(`/api/admin/business-leads/${leadId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update status');
+      }
+
+      // Update local state
+      setLeads((prev) =>
+        prev.map((lead) =>
+          lead.id === leadId ? { ...lead, status: newStatus } : lead
+        )
+      );
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
+
+  return (
+    <div>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+            <Briefcase className="w-8 h-8 text-tastelanc-accent" />
+            Business Leads
+          </h1>
+          <p className="text-gray-400 mt-1">Manage B2B outreach and restaurant partnerships</p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={handleConvertContacts}
+            disabled={isConverting}
+            className="flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-white rounded-lg transition-colors"
+          >
+            {isConverting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+            Convert Contacts
+          </button>
+          <Link
+            href="/admin/business-leads/import"
+            className="flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-white rounded-lg transition-colors"
+          >
+            <Upload className="w-4 h-4" />
+            Import CSV
+          </Link>
+          <Link
+            href="/admin/business-leads/new"
+            className="flex items-center gap-2 px-4 py-2 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Lead
+          </Link>
+        </div>
+      </div>
+
+      {/* Message */}
+      {message && (
+        <div
+          className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
+            message.type === 'success'
+              ? 'bg-green-500/10 border border-green-500/30 text-green-400'
+              : 'bg-red-500/10 border border-red-500/30 text-red-400'
+          }`}
+        >
+          {message.type === 'success' ? (
+            <CheckCircle className="w-5 h-5 flex-shrink-0" />
+          ) : (
+            <XCircle className="w-5 h-5 flex-shrink-0" />
+          )}
+          {message.text}
+        </div>
+      )}
+
+      {/* Stats */}
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+          <Card className="p-4">
+            <div className="text-2xl font-bold text-white">{stats.total}</div>
+            <div className="text-sm text-gray-400">Total Leads</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-2xl font-bold text-blue-400">{stats.new}</div>
+            <div className="text-sm text-gray-400">New</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-2xl font-bold text-yellow-400">{stats.contacted}</div>
+            <div className="text-sm text-gray-400">Contacted</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-2xl font-bold text-green-400">{stats.interested}</div>
+            <div className="text-sm text-gray-400">Interested</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-2xl font-bold text-red-400">{stats.notInterested}</div>
+            <div className="text-sm text-gray-400">Not Interested</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-2xl font-bold text-lancaster-gold">{stats.converted}</div>
+            <div className="text-sm text-gray-400">Converted</div>
+          </Card>
+        </div>
+      )}
+
+      {/* Filters */}
+      <Card className="p-4 mb-6">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search leads..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+            />
+          </div>
+          <div className="flex gap-3">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+            >
+              <option value="all">All Status</option>
+              <option value="new">New</option>
+              <option value="contacted">Contacted</option>
+              <option value="interested">Interested</option>
+              <option value="not_interested">Not Interested</option>
+              <option value="converted">Converted</option>
+            </select>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+            >
+              <option value="all">All Categories</option>
+              {CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat.charAt(0).toUpperCase() + cat.slice(1).replace('_', ' ')}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </Card>
+
+      {/* Leads List */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-tastelanc-accent" />
+        </div>
+      ) : leads.length === 0 ? (
+        <Card className="p-12 text-center">
+          <Users className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-white mb-2">No leads found</h3>
+          <p className="text-gray-400 mb-4">
+            {search || statusFilter !== 'all' || categoryFilter !== 'all'
+              ? 'Try adjusting your filters'
+              : 'Add your first business lead to get started'}
+          </p>
+          {!search && statusFilter === 'all' && categoryFilter === 'all' && (
+            <div className="flex justify-center gap-3">
+              <Link
+                href="/admin/business-leads/new"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white rounded-lg transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Add Lead
+              </Link>
+              <button
+                onClick={handleConvertContacts}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-white rounded-lg transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Import from Contacts
+              </button>
+            </div>
+          )}
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {leads.map((lead) => {
+            const statusConfig = STATUS_CONFIG[lead.status] || STATUS_CONFIG.new;
+            const StatusIcon = statusConfig.icon;
+
+            return (
+              <Card key={lead.id} className="p-4 hover:bg-tastelanc-surface-light/50 transition-colors">
+                <div className="flex flex-col md:flex-row md:items-center gap-4">
+                  {/* Lead Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-1">
+                      <h3 className="font-semibold text-white truncate">
+                        {lead.business_name}
+                      </h3>
+                      <Badge className={statusConfig.color}>
+                        <StatusIcon className="w-3 h-3 mr-1" />
+                        {statusConfig.label}
+                      </Badge>
+                      {lead.category && (
+                        <Badge className="bg-tastelanc-surface-light text-gray-300">
+                          {lead.category}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400">
+                      {lead.contact_name && (
+                        <span>{lead.contact_name}</span>
+                      )}
+                      <a
+                        href={`mailto:${lead.email}`}
+                        className="flex items-center gap-1 hover:text-white"
+                      >
+                        <Mail className="w-3 h-3" />
+                        {lead.email}
+                      </a>
+                      {lead.phone && (
+                        <a
+                          href={`tel:${lead.phone}`}
+                          className="flex items-center gap-1 hover:text-white"
+                        >
+                          <Phone className="w-3 h-3" />
+                          {lead.phone}
+                        </a>
+                      )}
+                      {lead.city && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {lead.city}
+                        </span>
+                      )}
+                      {lead.website && (
+                        <a
+                          href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 hover:text-white"
+                        >
+                          <Globe className="w-3 h-3" />
+                          Website
+                        </a>
+                      )}
+                    </div>
+                    {lead.notes && (
+                      <p className="mt-2 text-sm text-gray-500 line-clamp-1">
+                        <MessageSquare className="w-3 h-3 inline mr-1" />
+                        {lead.notes}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={lead.status}
+                      onChange={(e) => handleStatusChange(lead.id, e.target.value)}
+                      className="px-3 py-1.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                    >
+                      <option value="new">New</option>
+                      <option value="contacted">Contacted</option>
+                      <option value="interested">Interested</option>
+                      <option value="not_interested">Not Interested</option>
+                      <option value="converted">Converted</option>
+                    </select>
+                    <a
+                      href={`mailto:${lead.email}`}
+                      className="p-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface rounded-lg transition-colors"
+                      title="Send Email"
+                    >
+                      <Mail className="w-4 h-4 text-white" />
+                    </a>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

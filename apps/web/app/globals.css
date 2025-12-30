@@ -1,0 +1,307 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap');
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1A1A1A;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3A3A3A;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4A4A4A;
+}
+
+/* Base styles */
+body {
+  @apply bg-tastelanc-bg text-white antialiased;
+}
+
+/* Focus styles for accessibility */
+*:focus-visible {
+  @apply outline-none ring-2 ring-tastelanc-accent ring-offset-2 ring-offset-tastelanc-bg;
+}
+
+/* Link styles */
+a {
+  @apply transition-colors;
+}
+
+/* Smooth transitions */
+.transition-default {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+/* Logo pulse/glow animation */
+@keyframes logo-pulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  50% {
+    transform: scale(1.03);
+    filter: drop-shadow(0 0 25px rgba(164, 30, 34, 0.4));
+  }
+}
+
+.animate-logo {
+  animation: logo-pulse 3s ease-in-out infinite;
+}
+
+/* Rosie bounce animation */
+@keyframes rosie-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-rosie {
+  animation: rosie-bounce 2s ease-in-out infinite;
+}
+
+/* Swipe hint nudge animation */
+@keyframes swipe-hint {
+  0% {
+    transform: translateX(0);
+  }
+  30% {
+    transform: translateX(-25px);
+  }
+  50% {
+    transform: translateX(-25px);
+  }
+  80% {
+    transform: translateX(5px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.animate-swipe-hint {
+  animation: swipe-hint 0.8s ease-in-out;
+}
+
+/* Chat typing indicator animation */
+@keyframes typing-dot {
+  0%, 60%, 100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+.typing-dot {
+  animation: typing-dot 1.4s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Chat bubble pulse for attention */
+@keyframes chat-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(164, 30, 34, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(164, 30, 34, 0);
+  }
+}
+
+.animate-chat-pulse {
+  animation: chat-pulse 2s ease-in-out infinite;
+}
+
+.hero-text-glow {
+  text-shadow: 0 18px 50px rgba(255, 255, 255, 0.45);
+}
+
+.hero-highlight-shadow {
+  text-shadow:
+    0 10px 30px rgba(255, 255, 255, 0.85),
+    0 3px 18px rgba(0, 0, 0, 0.75);
+}
+
+.hero-subtext-shadow {
+  text-shadow:
+    0 6px 22px rgba(0, 0, 0, 0.65),
+    0 14px 30px rgba(0, 0, 0, 0.45);
+}
+
+/* ============================================
+   Wizard Form Animations
+   ============================================ */
+
+/* Fade in */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+/* Scale in (for modals/dropdowns) */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}
+
+/* Slide in from right */
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+/* Slide in from left */
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.3s ease-out;
+}
+
+/* Slide out to left */
+@keyframes slide-out-left {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+}
+
+.animate-slide-out-left {
+  animation: slide-out-left 0.3s ease-out forwards;
+}
+
+/* Slide out to right */
+@keyframes slide-out-right {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+
+.animate-slide-out-right {
+  animation: slide-out-right 0.3s ease-out forwards;
+}
+
+/* Celebration pop (for success checkmark) */
+@keyframes celebration-pop {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-celebration-pop {
+  animation: celebration-pop 0.5s ease-out;
+}
+
+/* Confetti fall */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-10px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.animate-confetti-fall {
+  animation: confetti-fall 3s ease-out forwards;
+}
+
+/* ============================================
+   Onboarding Tour Animations
+   ============================================ */
+
+/* Spotlight pulse effect for highlighted elements */
+@keyframes spotlight-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(212, 175, 55, 0.2);
+  }
+}
+
+.onboarding-spotlight {
+  position: relative;
+  z-index: 60;
+  border-radius: 8px;
+  animation: spotlight-pulse 2s ease-in-out infinite;
+}
+
+/* Overlay that darkens everything except spotlight */
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+}

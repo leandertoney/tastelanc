@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+
+# Environment files (contain secrets)
+.env
+.env.*
+!.env.example
+supabase/.env.*
+
+# Supabase
+supabase/.temp/
+supabase/.branches/
+
+# Build outputs
+dist/
+build/
+.expo/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Testing
+coverage/
+
+# Misc
+*.local
+
+# Sensitive files (App Store / Play Store)
+google-services.json
+google-service-account.json
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+AuthKey_*.p8
+
+# EAS Build
+.eas/
+.easignore
+
+# Metro bundler
+.metro-health-check*

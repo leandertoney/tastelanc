@@ -1,0 +1,57 @@
+import { fetchHappyHours, fetchHappyHourItems, fetchRestaurants } from '@/lib/seo/data';
+import { pickClaim } from '@/lib/seo/claims';
+import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
+import { buildMeta } from '@/lib/seo/meta';
+import { itemListJsonLd } from '@/lib/seo/structured';
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
+export const revalidate = 600;
+
+export async function generateMetadata() {
+  return buildMeta({
+    title: 'Rosie’s Happy Hours Tonight | TasteLanc',
+    description: 'Rosie’s picks for happy hours tonight in Lancaster.',
+    url: `${siteUrl}/rosie/happy-hours-tonight`,
+  });
+}
+
+export default async function RosieHappyHoursTonight() {
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+  const [hh, restaurants] = await Promise.all([fetchHappyHours(), fetchRestaurants(true)]);
+  const hhItems = await fetchHappyHourItems(hh.map((h) => h.id));
+  const filtered = hh
+    .filter((h) => (h.days_of_week || []).includes(today as any))
+    .map((h) => ({ h, r: restaurants.find((x) => x.id === h.restaurant_id) }))
+    .filter(({ r }) => r);
+  if (!filtered.length) return <main className="p-8 text-white">No happy hours tonight.</main>;
+
+  const urls = filtered.map(({ r }) => `${siteUrl}/restaurants/${r!.slug}`);
+  const jsonLd = itemListJsonLd(urls);
+  const claim = pickClaim('rosie-hh-tonight');
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <main className="max-w-5xl mx-auto px-4 py-10 text-white">
+        {leadershipLine(claim)}
+        <h1 className="text-3xl font-bold">Rosie’s Happy Hours Tonight</h1>
+        <p className="text-gray-400 mt-2">Tonight’s drink and food deals.</p>
+        {restaurantCTAButtons()}
+        <div className="space-y-4 mt-6">
+          {filtered.map(({ h, r }) => (
+            <a key={h.id} href={`/restaurants/${r!.slug}`} className="block p-4 bg-tastelanc-surface rounded-lg">
+              <h2 className="text-xl font-semibold text-white">{r!.name} — {h.name}</h2>
+              <p className="text-sm text-gray-400">{h.start_time} - {h.end_time}</p>
+              {h.description && <p className="text-gray-300 text-sm mt-1">{h.description}</p>}
+              <ul className="text-sm text-gray-300 mt-2 space-y-1">
+                {hhItems.filter((i) => i.happy_hour_id === h.id).map((i) => (
+                  <li key={i.id}>- {i.name} {i.description ? `• ${i.description}` : ''} {i.price ? `• $${i.price.toFixed(2)}` : ''}</li>
+                ))}
+              </ul>
+            </a>
+          ))}
+        </div>
+      </main>
+    </>
+  );
+}

@@ -1,0 +1,4169 @@
+{
+  "created_at": "2025-12-20T22:30:37.467Z",
+  "target_zip_codes": [
+    "17601",
+    "17602",
+    "17603"
+  ],
+  "premium_tier_id": "dd1789e3-e816-44ff-a93f-962d51a7888e",
+  "restaurants": [
+    {
+      "id": "a93bdc17-5d61-43c9-9ce7-28c5fa546953",
+      "name": "Yi Pin",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c040c724-0c5c-49fe-b54b-5a9d98a24041",
+      "name": "Garden Café",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f5576cd3-631c-4c9e-b4f9-1f21e11832b5",
+      "name": "Lancaster Brasserie",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "97279e55-cd5c-4a5d-a9fb-e455252fc227",
+      "name": "Sesame Asian Food Terminal",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2c8350db-0591-4649-ae0a-f62990dc6437",
+      "name": "GTM Restaurant Corporation",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ca622b07-ed8e-4b57-a6d2-2187130d6974",
+      "name": "Pho Pasteur 3",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f0793e76-1ac0-490f-ab47-47d3a8d54f04",
+      "name": "Turning Point Lancaster",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "3cba3677-83b9-4cf5-b2d5-f003bfa5bf26",
+      "name": "Indian Curry Lounge - Lancaster",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "290179c4-da1d-4847-9f8b-0a6528524208",
+      "name": "MOD Pizza",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "1fa171e0-d511-45d0-a89c-7fd5a0fbf3de",
+      "name": "Nano Burger",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a1a058af-afa7-4856-a401-1e19b7e56117",
+      "name": "Pasta Plus",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "19a620c0-6469-47f8-a0c2-289a9ce1ae26",
+      "name": "Rita's Italian Ice & Frozen Custard",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "fa299618-cd58-499f-91a8-d068b513baaa",
+      "name": "Rachel's Cafe & Creperie",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "fe9dfecb-a5d7-4f8e-be8a-06a390b33a69",
+      "name": "The Pantry Restaurant",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "65509253-ed9e-4489-98d6-097f7784bd78",
+      "name": "Flora's",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d35a626c-eb31-4539-a3f9-7d1484f39c89",
+      "name": "Pan Pacific Grill",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "965a442f-fdc4-4292-9d88-41b7d6affbf7",
+      "name": "Plough",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "80eae1f5-2229-4c57-9370-462973f7f810",
+      "name": "The momo house",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "59747014-b911-40e0-9960-f73dd70119c0",
+      "name": "Villa Nova East",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "cd998a00-9b63-4783-adcb-e65e64a39b69",
+      "name": "The Pancake Farm at Richmond",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d791eec5-2548-4755-b45f-38e6a8d6b3ec",
+      "name": "DELICIAS GOURMET",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ca1120e7-1042-4f89-bb77-db1cdde876f0",
+      "name": "Prince Street Cafe",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8ef434a0-2ad4-4b85-a5ec-72b5c6183aca",
+      "name": "Ric's Bread",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "4c114962-daa5-4907-9179-ce714cb12a6b",
+      "name": "Salt & Light Pastry Co.",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "00975978-9009-4e5b-a07c-1df19747bfaa",
+      "name": "Salt and Sugar LLC",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "26385dbe-ba33-4dc3-af5b-5f10780e8dd5",
+      "name": "La Dolce Vita Courthouse Bakery",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "91357f4b-ad28-4462-a37b-4af5160d7482",
+      "name": "The Bistro - Eat. Drink. Connect.®",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "621e2e64-691c-4ed2-8966-51ed833f956b",
+      "name": "Torres Family Bakery LLC",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c8d050da-410e-4814-b4c5-18f4e0ca5da9",
+      "name": "Olde Hickory Grille",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "21755949-4be7-4812-ab02-df364ff479a1",
+      "name": "On Orange",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "9271bdd4-a359-4e8c-a2b8-725a5839697f",
+      "name": "Elsewhere Bread",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "6dc94493-40aa-4832-93ac-90fa06d768f5",
+      "name": "The Fridge",
+      "zip_code": "17603",
+      "original_tier_id": "dd1789e3-e816-44ff-a93f-962d51a7888e",
+      "original_tier_name": "premium"
+    },
+    {
+      "id": "9d2e089c-f6c8-41a3-866f-571009ee62d6",
+      "name": "Roundbreads Lancaster",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2173b3b1-02d4-42ec-8bd6-a4af2c259197",
+      "name": "Lancaster Beignet Company",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b27875de-0d33-4bf3-9292-40bc43078dca",
+      "name": "Lancaster Pie & Coffee",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "1bc479ea-a33f-4530-aa39-755fbb984b45",
+      "name": "Silver Spring Family Restaurant",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f6234fb0-9cdc-4f55-be4b-120a3a514ee1",
+      "name": "Amanita",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "aba7828c-5426-4898-bd18-63b5f3cab433",
+      "name": "Amaranth Bakery",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "6d96a42a-6df3-4843-840d-9df84ef98963",
+      "name": "Savoy Truffle",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "dceb0baf-79e2-4d73-9485-26efdf51eded",
+      "name": "Cakeology LLC",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a0aada8a-9a5d-40f9-b1f7-fb8c6ac5e0d8",
+      "name": "Thom's Bread Bakery",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "960c8dc4-52bb-4d85-97a9-1e6ea8d88c03",
+      "name": "Kom-Essa",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8860582e-68c0-4496-96b5-29c0457c26ab",
+      "name": "Rendezvous Pizzeria & Steak Shop",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "4f896978-deb3-4f06-a76f-f1a99106511c",
+      "name": "Front Porch Baking Co. - downtown Lancaster",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "93e7f8c0-5d35-45ce-89d9-da861f7ede75",
+      "name": "Stroopies, Inc. (Made at the Lancaster Sweet Shoppe)",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "098ad283-9ac2-41aa-abb2-861b20976eb9",
+      "name": "Chestnut Hill Cafe",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "7a07d62d-bd8e-40d1-89f0-1ec4e5f09cb7",
+      "name": "Chevere Cafe",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "cc57c85b-e492-4636-a40f-5d566e1cda3d",
+      "name": "Norbu Lancaster",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b523f7f2-e44b-48a7-be9b-8a94afec172b",
+      "name": "Pizzeria 211",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b09c7891-c9fe-4c09-8e36-9f7c32ccaa40",
+      "name": "The Coffin Bar",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "81dc258d-b240-4476-9662-9a3b2c84d460",
+      "name": "The Urban Farmhouse",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "febbe45b-8c1c-41f8-ab41-a3ab37b1e131",
+      "name": "Wired Cup Cafe",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "7704d16f-d093-4115-9229-edf826086412",
+      "name": "Punta Cana Restaurant (Lancaster)",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "509ddc7b-7418-448c-85d5-12f04bc33235",
+      "name": "La Cocina de Miguel",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "701bee07-1f5e-4720-95da-581063a3f64e",
+      "name": "KelSas Sweet Box",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f76b7228-7dae-498f-bc51-fc5d74673924",
+      "name": "Soulcialize",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "9764e23e-4b42-4505-9d05-141d156c9b36",
+      "name": "The Imperial Restaurant",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a5bbc256-21bf-4c85-8632-7ea599458ad8",
+      "name": "C'est La Vie",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5af2b8eb-2904-4786-9a17-e21bf9832f48",
+      "name": "Callaloo",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "3428fecf-d148-4b1d-805c-11eea6939835",
+      "name": "Hammond Pretzel Bakery, Inc",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5bb5190a-2931-4e64-813e-4335fa3bdf9f",
+      "name": "Hello Mango Asian Bakery",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "6e2c30ef-943b-4d86-a825-32637c8c6d71",
+      "name": "Onion's Cafe",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "6fc30e0b-8d56-4b43-b062-3e36ba6279f3",
+      "name": "La Cajita LLC",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f3a88216-37ca-4976-9cd6-74f261475a48",
+      "name": "Edd's & Flo's Artisan Bakery Cafe",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "9ccc0d5d-a717-4cdd-9c76-dd28a000b67b",
+      "name": "La Cocina Restaurant",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b1daa2e2-5971-47c8-9216-7235f025d962",
+      "name": "Rohrerstown Diner",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "df879277-2cf8-4248-b4b7-0f2c1d1853fb",
+      "name": "LUCA",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "23cc8455-6caf-4c98-b462-ce9baebe7429",
+      "name": "Endo Cafe Lancaster",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b9c044eb-60de-4032-9c82-7ecccf6e58c6",
+      "name": "W Donuts",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e528a51a-cd2e-4bfd-ba1e-08a703344a20",
+      "name": "Thom's Bread",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e38fb493-741f-4868-822b-f4413da5085f",
+      "name": "Bridgeport Family Restaurant",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ae4f9033-801a-4ba6-93e9-a171a650964f",
+      "name": "Cafe Centro",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ec07c8fe-c172-4831-a9bb-c257cb74ef60",
+      "name": "My Vegan Baker",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "bdf09610-9158-4c91-bc05-ed15c533e6d9",
+      "name": "Chellas Arepa Kitchen",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "20ff2787-f084-4d3c-a657-f72deb231cce",
+      "name": "Last Call Coffee",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "49f6c5c7-01e1-41bd-b322-9548a95916dd",
+      "name": "Crazy Pupusas & More",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "6e39b0d8-f8de-4307-9359-0d8292e1f1cc",
+      "name": "Silantra Asian Street Kitchen",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "365c30ce-4f04-40fc-83ca-e320430115fb",
+      "name": "Double C",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "3969d0b3-3478-42c9-a8f2-7e83cf16b526",
+      "name": "Manor Buffet",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "20205d14-c777-43df-b943-2039704ced8b",
+      "name": "Sugar Petals Cakes",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "939a2310-9eb9-4d78-a74a-cfc5b9aa0b98",
+      "name": "Mr Sticky's Homemade Sticky Buns",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8926d9ac-f05c-45a9-9c52-d2e71ce115de",
+      "name": "Nahual Maya Restaurant",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "84410c51-d133-40dc-80a2-8c3723302a00",
+      "name": "Amish Family Recipes",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8cc65dfe-14d5-4a48-a065-cac50442155e",
+      "name": "Best China Wok",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d354e5be-4f3a-4fa0-b206-c44330ac1e9e",
+      "name": "Coffee Co - MillCreek",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e2cd4e2f-3cf6-4b03-a15b-f5c3c3ed468f",
+      "name": "Jibarito Restaurant-Nuyorican",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "00be94dd-666a-4d1a-9b33-d854a6231cf3",
+      "name": "Rice & Noodles Restaurant",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a5b57770-d1dd-4e75-9fdb-6c0bb111c257",
+      "name": "Yuzu sushi Asian restaurant",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a5b262ee-b613-4ece-ab93-b8cac955b8eb",
+      "name": "Sugar Bowl Lancaster",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "11027ae5-986c-40ed-b763-c43784f03aa8",
+      "name": "Tanzeel International Restaurant",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "bb3d3672-8d10-40c3-91f2-334ade287429",
+      "name": "Basset and Lab",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "0fe7739a-faa8-4ae8-b133-effb18d2742c",
+      "name": "Boba Thai Café/ Bubble Boba Cafe",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5ec7c3ee-cbd0-4817-8f72-72c62ba4280d",
+      "name": "P.F. Chang's",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "1e2d8feb-910c-47c7-bd56-59047e51d595",
+      "name": "Plaza Mexico Restaurant",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "253787ed-af1e-4874-9627-6cb3ea465461",
+      "name": "La Costena Restaurant Authentic Peruvian Cuisine",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c7e0432a-1028-49d2-9ccd-d3d5b918f4b6",
+      "name": "Lancaster Brewing Company Taproom & Grill",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "92a2e3c9-62a8-44a4-8a46-a2d0596fbd78",
+      "name": "Sukhothai",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "4abd3c76-5fe9-4177-bcaa-cfb168a19272",
+      "name": "Sushi One‎",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "cbfb1999-7f32-4ae2-9511-a60733545e64",
+      "name": "Passenger Flagship Cafe",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a00a76b5-79f1-4517-85db-984db9ea31cc",
+      "name": "Empanada Gourmet",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "9b25a56b-f053-446f-9430-45c92e667c41",
+      "name": "Cabalar",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "cfc966c3-0218-4deb-b51c-57ffeab964f2",
+      "name": "Ida's Cafe",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "33bc397f-3477-47d9-874a-1577105183fb",
+      "name": "Christina's Criollo",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b9391299-41e2-483f-a61e-bcec422f8b65",
+      "name": "Commissary Lancaster",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "1919db26-d6bd-4d5a-a17e-ed35e166028a",
+      "name": "J & J Mofongo Restaurant",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c3428fba-cd8f-4266-9a71-0e7b5aa6b81c",
+      "name": "Kefi at Yorgos",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "18287b2b-e388-4e0a-997a-c1da95b32452",
+      "name": "Zoetropolis Cinema Stillhouse",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "78961dc3-ef77-4c30-aea4-ca1b61b0a76f",
+      "name": "Cork & Cap Restaurant",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "bddf9898-a6d5-4401-8680-9116b1369865",
+      "name": "Dough Belly Donuts",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8f8d8773-dba0-4cc5-9f62-78e790c3088e",
+      "name": "Dov-a-licious Deli",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f03ad714-5406-4b69-b076-971fdfde0828",
+      "name": "Lombardo's Deli and Bistro",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e7d812f8-0334-4756-ab0a-96eb995d7b93",
+      "name": "El Cubano Restaurant",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "01ee2f55-0f4f-4cdd-a5a7-9618c71e1af0",
+      "name": "Gran Sabor Latino",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f3739c3f-5043-4b87-a881-20a1edfadf6b",
+      "name": "American Bar & Grill Lanc",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e267710a-2a4f-44d4-abc0-8af838f19015",
+      "name": "Pasquale’s Italian Restaurant and Pizzeria",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "83d337fd-24ec-4cda-b9e0-871e59aef67a",
+      "name": "Carmen's Sabor Latino",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "190358af-6cc8-49d9-bdee-b500ddc49be6",
+      "name": "Yorgos Restaurant & Lounge",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e13d953a-db33-4932-968b-746470887924",
+      "name": "Lancaster Cupcake",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "664d18a6-5583-43a3-85f1-ff8842b671a6",
+      "name": "Lancaster Sweet Shoppe",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b4ea7f1c-c9c1-4d04-9e62-e1acd07e168e",
+      "name": "Neptune Diner",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "6fcb476b-152a-4f0e-811c-6dc0b165770e",
+      "name": "Noodle King SML",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d181b1fe-985f-4e19-aaf9-72d2b7a5b1db",
+      "name": "The Lunch Ladle",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "4d52e434-0575-40ab-82c4-b0e813765941",
+      "name": "Two Cousins Pizza",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "bf029b94-b72b-4248-9732-9a30ace48333",
+      "name": "Sahara Bistro Shawarma",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a1c45d40-6c09-44c7-9ac9-cd4ce313799b",
+      "name": "El Pueblito",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c96dc9ab-e688-4f72-b508-7a1e2f93e88f",
+      "name": "Lancaster Marriott at Penn Square",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "0508c950-d25e-4b6b-8dc3-65640aec1dfe",
+      "name": "Empanada Gourmet",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "67c2595e-4741-4b20-b476-da35c52b4bff",
+      "name": "The Gaucho's Way Brazilian Steakhouse",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "db605bd8-2731-42a2-b81e-41395c398b8a",
+      "name": "Goodie Shoppe",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "47df479b-4d09-488f-8dda-43959963f04c",
+      "name": "Columbia Diner",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ebb837ea-0253-4ec9-b269-ef84fe0ca8ea",
+      "name": "Jon & Maria's",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "1c815370-d28a-4183-b584-9214965ba202",
+      "name": "Prince Of Subs",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2517f359-54db-418b-a9b9-026cbb4aa8d1",
+      "name": "Culturas Tapas",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "9dc6030a-3c15-4024-9bf5-56ed23de1d3a",
+      "name": "Dirty Ol' Tavern",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "9963114c-7a9c-46dd-9f67-c6e1e3e33b26",
+      "name": "Rolled Cold Creamery",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b0e8ed2d-5a61-45ec-8847-f1cbed215655",
+      "name": "Mandros",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "adb14054-51bc-47ed-a12f-46ecb7becec4",
+      "name": "Simply From Scratch",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a31fef07-990b-4758-8161-dfbc87eebbb3",
+      "name": "Okinii Sushi, Sushi-All-You-Can-Eat",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "3d827996-3016-4286-90c2-496207cb06a3",
+      "name": "Mean Cup",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "920e1e73-f24d-4bd4-92e0-793fe7571b82",
+      "name": "Blazin' J's",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ce5fc34b-501d-4359-a1b4-c17dd81cf933",
+      "name": "Commons Company",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "0b0a79a1-d116-41d9-8871-cb2517b51503",
+      "name": "Plaza Azteca Mexican Restaurant · Lancaster",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "adca2e4b-b30b-4aed-b694-ce778b5de52e",
+      "name": "The Wandering Donut - Lancaster",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "237c67aa-1e71-40f0-9369-22c402aa3246",
+      "name": "Himalayan Curry & Grill",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8d8e276e-3683-4adf-9fd5-9e79ca3150e2",
+      "name": "Penn Square",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "25166734-92e5-4881-977a-dc5aa5f4ec2a",
+      "name": "The Snack Stand",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "1b70b268-04eb-419c-a260-15567ecdb3eb",
+      "name": "551 West",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "39fb48cc-8e15-49ea-8d35-0938fe1303fd",
+      "name": "Diyo Fusion",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2026ce0b-7ab9-4714-b9a9-d040cb593217",
+      "name": "Dominican Bodega",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "30f85042-2b58-4cd3-9456-af7002cb2fa5",
+      "name": "Babylon Kebab Grill",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2b5b27b4-a1bf-43d3-87b0-f201d84c8042",
+      "name": "Harvest Seasonal Grill - Lancaster",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f09081f7-dd50-40a5-ad44-5adee3da5f7e",
+      "name": "Chellas on Queen",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "34301361-c20b-4f09-b354-3cadad15f56e",
+      "name": "Commonwealth Kitchen",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f19d0304-32b7-42ee-98a3-900f05a9dfd0",
+      "name": "Hess's Barbecue Catering",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "849a9b7e-f515-4d86-b766-4bfd7620bd9f",
+      "name": "El Tio Minimarket",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ea2a6c90-03ed-4976-8e6a-2e7ebd55c557",
+      "name": "Sa La Thai restaurant",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ba60894f-6f40-49a5-adb6-dbe0b8821eb7",
+      "name": "Speed's",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "17ef9e83-85a3-4c74-bf44-b2afc6e7164d",
+      "name": "Getty Food Mart",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "1eda6653-3d15-45f2-b736-0b0fafc46bba",
+      "name": "Bad Garden Kitchen",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "603f1fb7-6aec-4310-bbd9-795357e666c7",
+      "name": "Brisas Del Caribe",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2c850464-efa0-43dc-aeec-b43c3713d5e5",
+      "name": "Captain Gus's Steak Shop",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e4ded1af-5aa2-4997-986f-a359180bc127",
+      "name": "Lombardo's Restaurant",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ed31bb0c-16d5-4ff8-849f-5539e1651f86",
+      "name": "Philthy Good",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "6f7dddc4-bd9c-4466-b417-20aaa1bb0583",
+      "name": "The Lancaster Dispensing Company",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "548f3357-dfcd-4faa-a535-f5ebdabd04e9",
+      "name": "Quips Pub",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "05814cb7-b68b-40f6-8961-dd0367e29899",
+      "name": "Turkey Hill",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "de06d6fe-2b52-4b89-9575-1871abf4c3f9",
+      "name": "Foxduck",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a304fcdb-d029-49a3-98b9-e99c6eca4683",
+      "name": "Grand Central Bagel",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8230d5d0-536b-4665-8af4-07f130faeeaf",
+      "name": "Huckleberry's Restaurant & Tavern",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2301f60c-4d51-4943-90d0-92933b3fcf82",
+      "name": "Station House Tavern & Sports Bar",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "27debd4b-3741-48e5-8c28-22463ef9280c",
+      "name": "Millersville Mart",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "0278bed6-3d5b-4935-b05e-cf8ad1b4e088",
+      "name": "Passenger Roastery & Coffee Bar",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d554f55e-7537-4e59-aca9-72322511d96c",
+      "name": "Leola Restaurant",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "904e13a9-c96e-43ee-af51-a08d7d396b84",
+      "name": "Frisco's Chicken",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "fc6fa9e6-1204-4207-84c2-cb36482b6e9d",
+      "name": "Cafe & pho Hoang",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "21c299a6-8fc1-4ff0-bf96-02436c0892fc",
+      "name": "Ginza",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "50c22646-9ddb-4c98-aba8-9ad1a7734dbe",
+      "name": "Mekatos Eatery",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "840c3837-2823-40b9-968b-086c19f3a37f",
+      "name": "Alchemy Ramen",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ad539a4c-3879-46e3-8c6a-d44171429c99",
+      "name": "Cabbage Hill Schnitzel Haus",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d3f02977-8d09-4aa6-987d-9c64a4f1e796",
+      "name": "Cake Creators",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b34cb044-dd32-4016-bf7f-d1085307051a",
+      "name": "Cakery By Abby",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "87bb8ff9-297b-4d3e-986b-d52f5d9c5682",
+      "name": "Cicis Pizza",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "7bbc7fc7-7121-4aeb-8f95-ca96e68b8adb",
+      "name": "Genki sushi and grill",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e371ba55-7f35-4966-a427-1d55da44c575",
+      "name": "Sakura Restaurant",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "0f04cd18-8edf-4c97-8fa9-6b851d440a4a",
+      "name": "Sándwich bori Lancaster",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "4665e3ba-c4ee-4ccc-aef5-6e572920c61b",
+      "name": "The Grille",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b460e936-e215-4dc8-87de-4ca8a4abf4b9",
+      "name": "Citronnelle",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "531c23fe-c056-4ca3-9530-0a8a9f9e01a6",
+      "name": "Oka Asian Fusion",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "3e23faae-6026-4b6c-8cf8-2b0f697ddf77",
+      "name": "Clean Eatz",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "9fc0e439-e27e-4241-9467-bf44bf61df21",
+      "name": "Cocina Mexicana",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b376ed3f-cebe-441d-9258-8057147941b6",
+      "name": "Coffee Co - Lancaster",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b4c73e5e-0948-4147-9764-af0451104cb4",
+      "name": "PrimoHoagies",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "dcbc5f28-e599-4a48-8b7b-1b101e646ef9",
+      "name": "Psychedeli",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c515a21a-52d1-4fe6-a72e-867ce2faeb07",
+      "name": "Family Owned Markets",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "26c4026d-8b9f-4354-88c1-966828be9635",
+      "name": "Giant Bakery",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c2af823e-4156-4a54-9dfa-9d705340340f",
+      "name": "401 Prime",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "35a4de02-b5a7-4f78-b993-1015894a20b0",
+      "name": "Ginmiya (Chinese Japanese & Thai Restaurant)",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8a8989c9-28ba-4d33-bce0-40919add0403",
+      "name": "Granny's Discount Groceries",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ad5222c9-3b2e-4a3c-99eb-962d258bd696",
+      "name": "The Big 5 African Cuisine",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5b8fcb9c-78ed-4e58-949c-07b44c24b0ad",
+      "name": "Bruno's Hoagies",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f0c6a5e4-97e2-42eb-8e6f-ef97ae347ad0",
+      "name": "Mason's Eatery",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "1ee140cd-dd42-429e-bdb7-47103ee4989a",
+      "name": "Callaloo",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "7f7c3741-21c4-465e-87e7-0ad7d0c702f3",
+      "name": "Coffee Co - Landisville",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "69bbf47e-cdbf-4f09-8564-ea41e331d46b",
+      "name": "Pine View Dairy",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c30e901b-de8c-4056-91a3-622800789de9",
+      "name": "Lancaster Craft Spirits Distillery",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f468ed22-a665-44ac-8416-25c435655e73",
+      "name": "GIANT",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "4fcbf994-3eaa-44a6-aa66-4d3e231b3e03",
+      "name": "Green Circle Organics",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c4a6a6c4-aa39-43ac-9e1b-58f80e9f188a",
+      "name": "SoBol Lancaster",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "abab27e0-4030-4559-a7de-cb0e94a8b4b2",
+      "name": "House of Pizza",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f71e757e-8754-4ea2-bf8c-8f997a1a2ffd",
+      "name": "College Treats",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e51f4b6f-881f-4372-b8d1-70f352625777",
+      "name": "Columbia Kettle Works 2nd Gear Taproom",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ecd1831b-ebeb-452c-8611-fa2ab082005f",
+      "name": "Tikka Shack Indian Grub",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5c6832d1-1e71-43da-a6ff-08a3a3435cc7",
+      "name": "Slugger's Pizzeria",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b84e1485-3601-4ea1-9a88-bd3b11093207",
+      "name": "Two Cousin's Pizza Bridgeport",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "74f0526a-c576-4437-80d2-67f1cdda3764",
+      "name": "Conestoga Restaurant",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e8a70b3b-604b-4042-8c14-4c662ad01e55",
+      "name": "Scratch Bakes",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d81ce770-a8fd-47e7-b7e7-2a7fbbad7511",
+      "name": "88 Chinese Express",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "9050d5b1-b954-4c83-9924-a3505922ca97",
+      "name": "Texas Roadhouse",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "61e12716-298a-4bb2-ad10-1263cc8efaa4",
+      "name": "Akhi Sushi Lancaster",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "7025f054-a421-43cb-a2aa-ca5363943fa5",
+      "name": "Alfred & Sam's Italian Bakery",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8e87c571-63eb-4ef9-a86c-d7acf43e107c",
+      "name": "Pizza Boli's",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2f92d9d9-3e29-495b-bd6a-ae095c0deb87",
+      "name": "Dominion Pizza",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c7871e9e-c0f2-405a-9f69-bb3dbb9fadac",
+      "name": "Bistro 2two2",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f1d1bb31-a5cc-4abe-a8bd-986b8c1ed2ad",
+      "name": "Hong Kong Garden",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "9300cfd5-31f2-4e3f-ac6f-e357c5c94a16",
+      "name": "philly pretzel factory",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e5ee2387-d26e-484f-815a-c74d1bc754a3",
+      "name": "Annie Bailey's Irish Public House",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f2b54200-f89e-4e0f-913e-e16b8da52190",
+      "name": "Antonio's Pizza House",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "9bdcd885-4955-43ea-98e3-3b19ee675985",
+      "name": "Rainmaker's Association Lodge",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2c3595de-1a18-4110-9a1a-eb39e0d946b6",
+      "name": "Yang's",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "11f3633c-3f32-4446-a067-f9aceade603a",
+      "name": "Dominion Pizza",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f5a7fd18-b440-4f86-8d0e-ac757a6e0a29",
+      "name": "Arthur's Terrace",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d46cd9fc-4542-4f80-a378-cac2b5a893db",
+      "name": "The West Wing",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "0aa1b5d3-85ae-4c88-97ed-ec0ef03ccefe",
+      "name": "Red Pin Bar & Grill",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2aca9fa8-e238-4910-9d6b-b76000bd8a0d",
+      "name": "La Chercha Fritura",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f8e1577f-9542-478c-9298-43c67e97b66e",
+      "name": "Aura Little Cafe - Espresso & Boba Tea",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f9a9b355-4a6f-4657-91ce-5b06f30d14ad",
+      "name": "COPPER CUP",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c92c17de-3c95-4e1e-80ac-491f58a6809d",
+      "name": "Shake Shack Lancaster",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a30ff5da-3093-4e4d-9521-6e9ce2e721f7",
+      "name": "Good Taste Chinese Restaurant",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "57bec156-92b6-4f49-a049-314ab91801ec",
+      "name": "New Town Food & Spirits",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "eb239983-7758-4dbd-9ebd-17d42d6b69e9",
+      "name": "No.1 Chinese Restaurant",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b2286470-9214-4c75-8168-ab63fd958785",
+      "name": "El Triangulo Latino",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "3077e3fc-43b6-4e26-9b3c-0448c57d0648",
+      "name": "Los Paisas Restaurant",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "72f50607-6170-4446-9d1a-c9e31408a479",
+      "name": "Rosa Rosa Pizzeria",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "71e1d73c-41c4-4ff6-910e-ef889a017d75",
+      "name": "Single File",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f3cc0a9a-c921-4a21-ac7f-528b864e0d70",
+      "name": "Awash Ethiopian Cuisine",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c50f5abb-c101-4ca9-9941-991a786a7956",
+      "name": "Centerville Diner 1",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "896eb526-9a24-4521-b9e6-5076a1004f03",
+      "name": "Chameleon Club and Lizard Lounge",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2b3822cd-2e58-40ce-885f-118fb69f04e8",
+      "name": "Warehouse District Beer Garden",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b11bf701-fecc-4050-a553-e60d34760c73",
+      "name": "Stomping Grounds",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a09e0185-385b-41b7-97dd-879cb5d8cd38",
+      "name": "Barn At Stoner Commons (Overlook Community Campus)",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "242dd660-fe8c-4286-9dfb-b3c72dd5289d",
+      "name": "Daily Brew Coffee Trailer",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "7ac1c6e0-faec-4fa2-939b-8a60446edd82",
+      "name": "Beiler's Doughnuts",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "44c76fe1-9e08-468f-84e0-e77df35f736d",
+      "name": "Co-Op",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "800b830f-135b-4c3c-a597-cd6998d0ee6a",
+      "name": "Reology",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "02c4543f-bd00-44a4-88bb-8e41b8902c96",
+      "name": "MADE Bistro Bar",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "11a85305-b2ef-4755-9cd7-f62ca5e1161e",
+      "name": "Tequila Mexican Grill & Bar",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d24b4661-870e-4161-8fd5-3124c5bc5c74",
+      "name": "Your Place Restaurant & Sports Pub",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "1dba063d-61e6-4459-8fdc-47ddd2d1764b",
+      "name": "Dan's Pub",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2af0d77c-d695-4695-bc1b-0248746de201",
+      "name": "Lancaster Sports Bar",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "cec2de70-2fcc-4015-bdf4-966583633cac",
+      "name": "Layali El Sham",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "7b496bff-20a5-49a6-9cca-1a3d8deb5df0",
+      "name": "P.J. Whelihan's Pub + Restaurant - Lancaster",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e481f1db-b7c8-4b09-90cf-6a43c74b4da9",
+      "name": "Thistle Finch Distillery",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a19298c7-234f-451c-989b-45bfe2814306",
+      "name": "Altana Rooftop Lounge",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "63130019-b985-4325-a4cb-87fabe412787",
+      "name": "BierHall Brewing Company",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "63510956-4473-4aa0-b874-61ec04bb7298",
+      "name": "Nissley Vineyards Wine Shop & Tasting Room",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f5cecb2a-cec5-4fe5-b0f4-d8cad25b6067",
+      "name": "Bistro Barberet & Bakery",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5f51140b-b2ad-4798-9070-4b3f8afcbb8d",
+      "name": "Lancaster Distilleries",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c7151a44-a0b1-4d36-9fd7-488f02ac73e6",
+      "name": "Cartel Brewing & Blending",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "0486339f-8269-4d55-9979-f05da7983899",
+      "name": "Lancaster Kosher",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ded47b20-7a16-4780-8915-2b0ee98e0fa1",
+      "name": "Our Town Brewery",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a8911872-bb2e-4804-a1e5-e56037a4aae1",
+      "name": "Blue Pacific Sushi & Grill",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5c12883b-e895-4f3a-8665-7f38beda3661",
+      "name": "Cabbage Hill Tavern",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "7b5325b1-26f7-41eb-9f41-7cce2b41f118",
+      "name": "The Greenfield Restaurant & Bar",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a13947bc-7b39-47bf-a109-ae469c2b00ec",
+      "name": "Deposit Coffee Corner",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "cd9e9617-e75e-45be-85a6-b53c1d9283d4",
+      "name": "Lancaster Brewing Company - Warehouse",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e34b6097-2a0f-4b4c-b9d7-c227ee262ba7",
+      "name": "Loxley's Restaurant and Patio Bar - Lancaster",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "54d436b4-b087-4f43-bc6a-b8d067bf03db",
+      "name": "JB Dawson's Restaurant and Bar",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b7052e5c-7dc1-4ccb-9568-544a991b7f4f",
+      "name": "Lyndon Diner",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "fe830a12-df31-481b-964b-ba081a95dd25",
+      "name": "Park City Diner",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "18f01f5d-e52e-4b46-ab57-8259c37fe04a",
+      "name": "Rieker Bottle Works",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b3866040-250b-4d5e-ae1c-46f3917f44b0",
+      "name": "Route 66 Restaurant",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "72088fa1-4ee3-4c89-90c8-d2a2b45c49e9",
+      "name": "Q's Duke On Liberty",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "591b04fe-2c3a-4317-a5b1-2aeeded6f20c",
+      "name": "Queen Street Bistro",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8f0e6d87-c7ba-471d-bbb3-7066556db8dc",
+      "name": "Neighbors Cafe",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "348be909-f6f3-4769-a5db-06303d2bdb5d",
+      "name": "Shamrock Cafe",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "7843b9b3-0282-40d2-b84d-75a7f0e68df7",
+      "name": "Tellus 360",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e5aa417c-62f1-4c6c-b99c-e4bb6899b059",
+      "name": "Hollee's café",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "64475d2b-89bb-4282-812f-b303e8ee2260",
+      "name": "The Diplomatic Cafe",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "cfc1c4ea-1956-4758-8896-1846831d51ef",
+      "name": "Marion Court Room",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ffdd7dcf-17ca-4fd3-806a-4e01a690c08e",
+      "name": "Penley's Pub",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f531aefe-d7da-4b5d-b238-6cfcd156656f",
+      "name": "The Exchange",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "59d76f1b-2eea-4419-96a4-c9d6260b4cbd",
+      "name": "The Sandwich Factory Sports Lounge",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e3c2af23-e149-4127-9212-5171f2678572",
+      "name": "Wyndridge Farm Lancaster Tasting Room",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "29184d61-0583-45fb-bd48-78719c1c2232",
+      "name": "LanCATster Cat Cafe",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "af3cb3e1-d66f-460e-8835-14c7e33256ca",
+      "name": "Conway Social Club",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "df4a7b5e-eaf7-45fd-b3b1-4e5be6015c29",
+      "name": "Proof of Lancaster",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "339786a1-f1e6-483d-96e2-7cdbee3c95a2",
+      "name": "SpiceKings kitchen",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "0f909930-77ff-4880-832a-0827868487fb",
+      "name": "Taylor Chip Cookies",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a8ac483d-5d9c-4fa1-a246-73c3945bc648",
+      "name": "Decades Lancaster",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "cf6f6a95-6080-495b-bc9e-a52c974abc01",
+      "name": "Encore Lounge",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c9cbbb1c-3cfe-49ba-8794-c7bdb0958e74",
+      "name": "Main Street Café",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "657d3e58-efb2-4b70-aca4-c4de8fcd8a7f",
+      "name": "Mayhem's Bookstore & Board Game Café",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e98fe4d1-5086-4abd-8499-be049e7d39c3",
+      "name": "Oola Bowls - Fruitville Pike",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c0707ac7-1f20-4a6a-8292-ae10158a6095",
+      "name": "Cafe One Eight",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "66ee8783-76c1-48c9-a1c1-a53cd94e2a2a",
+      "name": "House of Clarendon",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2dcf7844-5080-4e6d-b4dc-b88aa6f719b4",
+      "name": "Sai Gòn Café",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8c11e830-7c88-466f-8c66-a04344d88a45",
+      "name": "Saint Joseph's",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "0235a40e-9122-4f2a-a463-b7bb4a887bb4",
+      "name": "Shot & Bottle",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "dfaaf2ed-fb26-46a7-9115-fd7c508c69ab",
+      "name": "Lancaster Downtown Deli",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "198f6377-142e-4342-892c-3f017d1f872a",
+      "name": "Square One Coffee Roasters",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "6d3cb788-d481-4f14-b19d-ba31f070e6e8",
+      "name": "Valentino's Cafe",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "06943a2e-662b-4350-8873-34e0bd7388f4",
+      "name": "Carmen & David's Creamery",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8ff4dc49-a85b-4168-9aa2-5fcd98a2362f",
+      "name": "Josephine's Downtown",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "05481d0a-7906-441a-a926-35c6927c0fb8",
+      "name": "Issei Noodle",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "843df561-d5b1-435d-8bdc-46b68ffe5e93",
+      "name": "John J Jeffries Restaurant",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ec6dfd33-7e53-4617-b0bc-0957c04506a2",
+      "name": "New Holland Coffee Co.",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2e04f146-597e-4505-8942-59276b782200",
+      "name": "Passerine",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b09b97c2-a1fd-4d6c-ab52-fa9ea1e4507a",
+      "name": "Rural City Taproom",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "1e0e093c-0334-4d42-bc81-e82357a07306",
+      "name": "Tobias Frogg Lancaster",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "eaa2462e-2dfd-49f1-9fc5-fcbb334d7f4c",
+      "name": "SmokeHaus BBQ",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "04ee899e-84d8-4f1a-8b5a-9a16a5fc26ba",
+      "name": "Lancaster Brewing Company",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "0c16342e-4574-4d77-9002-1ebd390c32f4",
+      "name": "Lucky Dog Cafe",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "3c05dad8-aec9-4cc8-a19f-a13e5577fb7a",
+      "name": "Bert & The Elephant",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "deaa206f-47ac-4202-8306-40c4c456bdd7",
+      "name": "MISSION BBQ",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "743de024-660e-4b92-97d1-6354bda3ddfa",
+      "name": "Elimar's Bar & Grill",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5e3593cf-54b6-44a3-9e43-a9958b74a9c0",
+      "name": "Hi-Fi Izakaya",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "50c850f7-3e4d-4624-b13c-03b70e626826",
+      "name": "Splits and Giggles Cafe",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "fbef8c09-26a1-43d7-ad8a-535548dc88ca",
+      "name": "Hotbox BBQ",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b74817f0-0dd1-4aef-be7f-f1653e544bdc",
+      "name": "Pappy's BBQ, LLC",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "35e3617e-60f8-4e65-ab46-03db4ef6c7b3",
+      "name": "Lampeter Corner",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c3ce97a4-346f-4ed3-8377-fed401851187",
+      "name": "South County Brewing Co",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "badbe176-cdf1-4ee6-ba82-504b43e7820d",
+      "name": "Joe on the Go Coffee Co at Lampeter Cafe",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5813d252-b64a-4739-9141-8a327cbf18a0",
+      "name": "Spring House Brewing Company",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "286dc3f6-9c72-4991-a1ff-c5753ac25cbe",
+      "name": "Big Dog Craft Brewing",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "26587ee4-46c5-418d-9ac0-a74b7f52bf77",
+      "name": "Burley Bar",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "21cf90b2-5309-4492-8ffc-b3027ea89ce3",
+      "name": "Stubby's Bar and Grille",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "84b83870-a230-4ca8-9f72-da85ad02e5f7",
+      "name": "Sugarplums and Teas",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "34bcee92-4a2c-455d-9342-9ac9d85e4609",
+      "name": "The Corner at Musser",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b3688299-eda9-4514-8f5e-86f1b83578c5",
+      "name": "Primanti Bros. Restaurant and Bar",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "0065bbb6-9cf3-47e8-8f3e-2790a8e2ed32",
+      "name": "House of Pasta",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d8b2574d-caab-45db-a4f3-37136c78d1ab",
+      "name": "Rumplebrewskin's Bar",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5c6bb2a9-edc4-4c85-9e8b-1234c39559cf",
+      "name": "Bar 1888",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "4f334e44-e003-4b60-b87e-b1a6ed390a2d",
+      "name": "Vine Bar",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f2d0edcb-c1fa-41f1-a41f-8bd19c81bf27",
+      "name": "Deligrassi LLCp",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2b7a5615-9a2f-4621-8371-a80098d14f80",
+      "name": "Eastern Palace",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "dc19052d-6111-429e-9dab-8f37f99ff9b4",
+      "name": "Poke Bowl Station",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "02dbaeb8-e7b1-4c6b-9fa1-af048c1474af",
+      "name": "Hildy's",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a774af2f-2b14-4676-a551-bdd4996a5bbf",
+      "name": "Hubley Private Social Club",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "542718c1-45b7-4a76-bd0a-5d25b38c0a23",
+      "name": "Stubby's Bar and Grille",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "7745d138-3d51-46e7-9ab2-e767b261eb03",
+      "name": "Levengoods of Lancaster",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f54bd4e7-0b64-4113-8fbf-b206b98e4b55",
+      "name": "Little Mykonos",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2350945c-5cf1-46fe-9804-c6d6146b7b03",
+      "name": "Congo Cafe",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "0b59dc2c-bed8-4dc2-8666-0d507922fa56",
+      "name": "House of Alchemy",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e7687cee-d8bc-43e8-bd98-bb6657b63b32",
+      "name": "LongHorn Steakhouse",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8c476054-b4be-44c3-8a65-642f2445f7fb",
+      "name": "Thorn Hill Winery",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "acc142e9-0283-45e9-9b5e-401477ca949a",
+      "name": "Deerfoot Downtown",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "1edbce99-f831-4400-bef8-6e354077f272",
+      "name": "Arooga's",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d41062da-4621-4ded-9cb6-f1db6626e262",
+      "name": "bar",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "931d352b-5a7c-4b31-9dd3-1745403fcc4e",
+      "name": "Hippo Bubble Tea",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "164c4eb9-6b6e-4b0b-ada8-b46d00f5760e",
+      "name": "Lancaster Cupcake",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8cf0b568-58c6-4b11-9edc-f793c2d0576d",
+      "name": "Lauren's Tea Bar",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8f758b80-9f8d-4ba5-a01c-fd18143c748c",
+      "name": "DJ's Taste of the 50's",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "fcd55453-5bae-4699-9890-feadb4628e31",
+      "name": "BJ's Bakery",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "3c8fd947-8f02-4832-b55b-0db4d548af56",
+      "name": "BJ's Wholesale Club",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "34e9780d-41f4-4705-8453-4ec0e6e94b4c",
+      "name": "Boar's Head Sandwiches",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "22a8671c-9446-4bfa-933d-4ce4f1c0d596",
+      "name": "Boardwalk Fries",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f6fb8111-fb31-4cab-8d04-2279ed130c5b",
+      "name": "Denim Coffee",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "273d15ed-2504-4e8d-84af-f6548cf2980a",
+      "name": "Good Life Ice Cream & Treats",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "80142954-dd2e-4bc9-bb60-bbee2c99feaa",
+      "name": "Real Time Cafe",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "3645fdfe-dc14-43bb-a2ea-20563c3811f0",
+      "name": "The Fat Crab Cafe",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "7e878a2d-d15e-43a0-8f0b-0e512b3de237",
+      "name": "Dragon Hibachi & Sushi Buffet",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "4df3b1cf-d669-4bd5-b783-a97075f346bb",
+      "name": "Duck Donuts",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "709a0cbf-6f1a-4dac-8a82-9f6ab1a72ba3",
+      "name": "Lancaster County Coffee Roasters Ross Street Roastery & Coffee Bar",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8a639238-fdb3-4093-92e4-02e619f3b51e",
+      "name": "Teavana",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f429cc2a-51a3-4c30-aa96-80d15af97b13",
+      "name": "Kung Fu Tea",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "3518a26c-d290-4279-8364-cec360fe3153",
+      "name": "Buboo Smoothie & Tea House",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e37adc74-81f2-4357-aa95-e5fd64d66ba6",
+      "name": "China House Restaurant",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "cb32e9c7-f4ed-4cf7-9989-fcb7dd0b7759",
+      "name": "Piccadilly Coffee & Tea House (CLOSED)",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8648b2d2-71a2-4273-ada5-ad072fa41950",
+      "name": "Ninja Ramen",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "6f0922cc-da2b-4b96-89f7-9c5431f1e5e0",
+      "name": "The Spice & Tea Exchange of Lancaster",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "4b37fd79-160d-4093-b57e-151956ac1df4",
+      "name": "Kyuramen x TBaar - Lancaster",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2faf5e63-5c76-47c6-83c1-e11f97bf364e",
+      "name": "Marmalade",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "6c9608d1-72ec-4ae4-98fc-81c7fe208dd7",
+      "name": "Crossroads Family Restaurant",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "9ff183c0-6edd-45a6-9a97-d73b7f229de7",
+      "name": "JT Java House",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a2a2254b-e797-49ba-af17-2a1c33400a50",
+      "name": "El Paisano Food Truck",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "9ebb597c-838a-4e7c-8949-2ff0ce7c96e3",
+      "name": "sapori cafe lancaster",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "7bffeda7-e998-40d4-9753-1fe367c3bdc4",
+      "name": "Brooklyn Pizza Grill & Pasta",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d6df42b9-105d-4a75-9395-3535432016a7",
+      "name": "Shah's Halal Food",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "193e054c-5eb9-4ab7-a25c-c24a72f7cc5c",
+      "name": "El Rincón Ponceño",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5a8565b5-9f16-439b-942f-530ca9a35858",
+      "name": "Ginger Asian Kitchen",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "943bcac9-70e7-4c14-9e37-65ebdb891731",
+      "name": "Jasmine Thai",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e806db2e-b446-4dc7-8aee-45630bfe4df8",
+      "name": "Barnes & Noble",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "92127c86-c397-45e9-8521-c3f739036364",
+      "name": "El Serrano",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "be7ee304-7941-4117-bd0b-798fa7a13b5f",
+      "name": "Kiki's Kafe",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ff3f7f29-8100-4a50-a11d-0a0dc1187799",
+      "name": "Salty Snake's Pop-up Cafe",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "69fc35a1-d103-4ba6-b8ad-5863a62306f8",
+      "name": "Sheetz",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "dc4f962a-73e7-4bf4-8ded-d7637096bd78",
+      "name": "Mississippi Gumbo",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ac4ab8f7-5ddf-4d73-a4da-ccab9da483d3",
+      "name": "Central Manor Bakery & Grille",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "02da8070-e6ae-425b-ac87-f750cb28510b",
+      "name": "Noel's Cafe",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d36c068a-a6a0-4319-b410-18c152822e7d",
+      "name": "Cravings Gourmet Deli",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ed53a74d-b6f4-4b04-a0f1-5d667475d928",
+      "name": "Evelyn's Corner",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "fc76088d-13ef-4ff2-9f61-c7411894a6bd",
+      "name": "S. Clyde Weaver, Inc.",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5f4c5a14-1e82-4975-adae-d19460867b59",
+      "name": "Shogun Japanese Steakhouse and Sushi",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "404fe1ed-4f16-4edb-9b1e-2e8deb60c1af",
+      "name": "Cafe di Vetro",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d1816db1-dbc9-45f5-a760-45e652b16cb5",
+      "name": "Cafe East Asian Cuisine and Sushi",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "9756fc00-b56c-4dd5-ac1c-61adcf8e6c92",
+      "name": "honeygrow",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "fd5ca0e7-0c4d-4b0d-9607-683d6cd8a847",
+      "name": "Nostalgica Coffee",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b7b78a7e-38c8-49a0-ae08-ee2f55216ea8",
+      "name": "Tacos del Soul",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5d3f4f17-0256-4583-8ec8-bd063bd06d2b",
+      "name": "The Kabab Station",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "4348096d-9442-45d9-a8d2-79b760a61885",
+      "name": "Stirfry88",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "4b6f0874-d539-469b-9c05-aa0d4e201ae0",
+      "name": "Taj Mahal",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "41ab2742-048c-49ec-a3e6-fd356202c85b",
+      "name": "Ruby Thai Kitchen",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2eeaa1f0-9215-473f-92a7-095256b9e5a0",
+      "name": "Bennee’s Bistro",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2416aad5-148b-4dd9-b140-a8fe3b74ab55",
+      "name": "Golden Gate Chinese Restaurant",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5d7a8d37-a54b-41f1-bca0-22c444d8718b",
+      "name": "LongHorn Steakhouse",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "62f94d2b-3db6-4902-9019-cfbd893badcc",
+      "name": "El Rodeo Mexican Restaurant",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a6c9e420-6b19-437c-a63f-1f9ceb9df1bb",
+      "name": "Souvlaki Boys Grill",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a696a98a-6daf-43a0-a249-627552034efc",
+      "name": "Cartoon Network Kitchen",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ce8d9fbb-1763-4c96-8045-db4aefe22310",
+      "name": "Hopeful Brews",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "af7184be-58cd-4d15-9a51-69d4c6f2b250",
+      "name": "Peking Palace Chinese Restaurant",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2937707b-dd03-4949-9460-f73c0f977bd5",
+      "name": "Val'NTino's Italian Restaurant",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "698a9720-b30d-4836-8107-db31c63b3b04",
+      "name": "Highland Restaurant & Bar",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e6a5e1c3-77b8-433a-8400-abf29a504434",
+      "name": "Rick's Place",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "1bca4841-a82d-4730-b836-e917be099f1f",
+      "name": "Salt & Pepper Italian Bistro Pizza",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ec145e4f-1379-4d94-bc08-baa51f242a51",
+      "name": "CoreLife Eatery",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "afa614f8-49eb-464d-8a0c-e2c053916547",
+      "name": "Freshly Greek",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "80bfb940-ddf2-4978-a4c0-56587f27a09a",
+      "name": "China's Best",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "386b9d67-9376-4db9-b501-edbb98e62ceb",
+      "name": "Ciro's Italian Bistro",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "927121e2-a688-443a-8798-babb315814ff",
+      "name": "City convenience lottery & smoke",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "81ea8614-f647-4ac7-9428-db024c57a5c0",
+      "name": "Happy Harvest Farm Stand",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "3500cfca-94e6-4eb8-8333-b565927748ad",
+      "name": "Vinny and ThozeGuyz Pizzeria",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c7b36c5e-abfd-4758-906a-0950aafb31a9",
+      "name": "Venice Pizza and Pasta",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "1d72582d-a93d-4fd1-9178-fc23bfe0e5af",
+      "name": "Nikki's Custard®",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "4c19140b-56d9-450e-8e1f-509f299ed82d",
+      "name": "Pasta Americana",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "91cdb5c5-e1ba-45a7-89d4-ef0d84055472",
+      "name": "Chesapeake Crab Connection",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "cf3d7180-d54b-4380-a8f2-89374673e746",
+      "name": "ELIMAR'S Cantina y Taqueria",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e276d947-9fc6-446e-b1e1-0d31c1c92f17",
+      "name": "Isaac's Craft Kitchen & Brewery - Centerville",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8c93a22b-7ddb-47cb-bc19-324e65de1644",
+      "name": "Sun Hing Chinese Restaurant",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "4721f5c0-7a03-4ff7-8538-69fa7d47fff8",
+      "name": "River Street Sweets",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "eb9c9285-0a03-43d9-b626-f5fdd7d95bf7",
+      "name": "Miesse Candies",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "85fb8240-ef85-4f81-97dc-b5130a06ea42",
+      "name": "CAVA",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a65606aa-3df0-41da-a1d2-ff6ace986c24",
+      "name": "Champagne Sunday Brunch at the Eden Resort & Suites",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "217ff5b0-384a-4251-98ec-9afee70bf9af",
+      "name": "Cherry Hill Orchards",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8fe4c9fb-fee1-4729-bdda-cd3c829de00d",
+      "name": "Sweet Legacy Gourmet",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "1f9206ad-44e9-4fa1-be9a-864973fe243f",
+      "name": "Chicken Hill Distillery - Lancaster County PA",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b24520bc-c0a7-4739-815d-c788787b3228",
+      "name": "Heritage Paris Patisserie (Park City Center",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ee4b69a5-8717-45d2-aa8a-5da7c66c788e",
+      "name": "sweetFrog Premium Frozen Yogurt",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "9d0e19c7-b5f0-4813-a275-a8119f7d05fd",
+      "name": "Groff's Candies",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f8e3b9af-8655-46ab-b431-4ccebd40cf00",
+      "name": "The Warren Confectionery",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "28a9eb75-d685-45be-b078-d6d5f345c7b2",
+      "name": "Gibraltar Restaurant",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "91b41980-4c9b-4b2a-9f99-c6678652d547",
+      "name": "Freeze & Frizz Drive-In, LLC",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "82784647-1852-4f3d-8f81-1103f6359755",
+      "name": "Wegmans",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e400f211-4ec9-41b2-9f99-0af7331d7048",
+      "name": "Lancaster Pickle Company LLC",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c8cd4054-39d9-416d-8bfe-33a5ef67a1d0",
+      "name": "Lolli & Pops",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "421d885d-7d22-4c17-98b9-71cfa3a547ed",
+      "name": "Grasshopper's Wicked Pickles",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d22ef2bd-5cb7-4e22-b724-f7e9dde9812c",
+      "name": "Parlor Doughnuts",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a050922b-af56-485f-8a02-80ede1729be6",
+      "name": "Menchies Frozen Yogurt",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c3b87530-a91b-4d1c-81cf-d4669cbc3a52",
+      "name": "Mezcla Ice Cream",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "cb0f8e01-b7f6-4772-87de-703b4d830263",
+      "name": "Penny's Ice Cream",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "6c6bfa40-4c3c-4af4-9208-96fc58f3f8a2",
+      "name": "Creamery (and coffee)",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "17ab9952-cdf1-4577-9882-a063c9e5eac1",
+      "name": "Isaac's Craft Kitchen & Brewery - Greenfield",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b5e8cf70-fe27-4540-9b9d-bad9790f1b85",
+      "name": "Juicy Crab Seafood & Steak",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b86c1c57-dd22-479a-972d-3ee80b17c94a",
+      "name": "Royal Farms",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "80101858-7def-4eee-8726-cf7874254809",
+      "name": "Sweetish North",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c28da7d3-ee72-448b-bab8-0a47b361f8ef",
+      "name": "Three Little Birds",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "06af8af1-40af-4c5b-95dc-bbb0726d837a",
+      "name": "Bobby Bay's Sandwich Shop (Lancaster)",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e182c867-2e13-4920-ac5c-5de8289c6888",
+      "name": "Honeysuckle Sweets",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8eb50172-3186-46af-811c-3f467d573010",
+      "name": "SPROUT of Rice & Noodles Vietnamese Eatery",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a844d8e7-67ea-4803-a25d-4129cb70e400",
+      "name": "Ted's",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d970bcab-f602-4394-8a7d-317dd2bd96d3",
+      "name": "Nothing Bundt Cakes",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "996b8a92-0deb-4073-b09c-2f164ca888ce",
+      "name": "O & M",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a3ae4904-7d7b-464f-829a-1d77dc94eee7",
+      "name": "Costco Bakery",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "4f829e34-fb2b-4af0-b207-0754976a02c0",
+      "name": "Stauffers of Kissel Hill Fresh Foods",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "79f53925-dfaf-402b-b7d9-ca29cc1a61db",
+      "name": "Closed Cafe",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5529a6d6-51e9-41de-83f6-9095fa408280",
+      "name": "Stoner Grille",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b6806fd8-2fce-4050-9810-af19b74f785c",
+      "name": "Finazzos Italian Restaurant and Pizzaria",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "4242c063-6652-4b78-9494-79121be0c135",
+      "name": "Walmart Bakery",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "1e6db934-d4d9-481e-af66-10bf38c34e93",
+      "name": "Weis Markets",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "0eae9a25-cc18-489a-8ae2-16aa85829129",
+      "name": "Exotic Snaxx",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "3d55fb56-be4e-4f02-bc14-83f0d1de64d3",
+      "name": "Stauffers of Kissel Hill Home & Garden Store",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5d4390ea-0f6f-47d5-bfd2-66c777950802",
+      "name": "Forry's Country Store",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d7c4d98c-2953-474c-84dc-daaa7ee42e7a",
+      "name": "Wholesale Nuts And Dried Fruit",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c9c9ad9f-2fc8-4a6b-a44b-9ae18f57df98",
+      "name": "Krispy Krunchy Chicken",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "9381ca0c-bf1b-4104-a796-7dce483ff234",
+      "name": "Rita's Italian Ice & Frozen Custard",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "3edc9b69-2bd2-43d0-88fe-b0eb0e01a088",
+      "name": "Enck's Plus Catering",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "4e6055bc-b261-4bff-8eb3-1a8476476200",
+      "name": "Super Natural Produce",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5515620d-690e-4bf9-8278-06835d4254d7",
+      "name": "Tropical Smoothie Cafe",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "1bb07d54-b2fe-47ed-9972-7d8421b8fa17",
+      "name": "Lidl",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "3937921e-0f91-45f1-a9b8-4b64c6a3b7f0",
+      "name": "Costco Wholesale",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "55f9920d-2918-42ab-9b13-02da6d10e444",
+      "name": "Rivera's",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "4eefeaa5-48da-4554-841c-2a32063a5990",
+      "name": "My Best Friend's Pawstry Shop",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "c31d1b2e-36c8-41d2-94bd-eb42f101e77c",
+      "name": "Walmart Supercenter",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b26ba81d-a8a7-4b72-a1ed-9f38f1c99d41",
+      "name": "Whole Foods Bakery",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "4a56a3f5-128e-4e7f-863f-60618e417da3",
+      "name": "KIVO",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "6f3bf586-48ed-4e02-bbf2-150cf1ab8df8",
+      "name": "Red Chili Indian and Nepali Food",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "94358e8b-1dd9-43e0-85ed-e923d55bd113",
+      "name": "Under The Tent (Seasonal)",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2e57d14d-15a6-43fe-a5a8-19b409902b53",
+      "name": "GIANT Direct",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e11f8fd5-2908-4a97-a287-cf8ecf18a80b",
+      "name": "Guacamole Specialists",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "3d68580c-429c-41c5-9af4-5080bdfee71e",
+      "name": "Prince Mini Mart",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "dd9e1a95-d671-404d-bd0e-a61f9e27bcfa",
+      "name": "Upohar World Kitchen",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ff120043-5536-4018-a65a-5b105312bdc3",
+      "name": "Pepper Theo Cafe and Events",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "971acc70-f496-45ed-a40a-6ec3ab23ff87",
+      "name": "Rafiki Shoppe",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "9c0b93a5-c554-4f4a-8070-279660220ea8",
+      "name": "Wayback Burgers",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b1b90c92-907c-4c48-ab26-b69d8c73c701",
+      "name": "House of Tacos",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d997ecc6-e0d4-4015-835e-57ce19b73ebd",
+      "name": "Danny's Let's get it!",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e7fc79b3-f2f3-4ccc-88ba-867f2fa6546b",
+      "name": "Oriental Chinese Restaurant",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "8c316dab-fa08-4f27-83ab-e70aec7f403e",
+      "name": "The Restaurants at Benjamin Franklin Hall",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f5517dea-f3c3-42f7-9fab-d3361f535af4",
+      "name": "Two cousins pizza Columbia Avenue Lancaster",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "9f5c8303-1dd7-46df-8c30-3a2c49a65c1c",
+      "name": "Excelsior",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "70fb88a9-956c-449b-9be2-bb5d0f00ddaa",
+      "name": "Iris Club",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f780ee2a-d6b3-4952-8b16-cece12b6dc47",
+      "name": "Trust46",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "1db94739-c571-44e5-aa44-9b3ba095a7af",
+      "name": "Lancaster Country Club",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "bca7fd9a-e506-4ce2-bec1-75daab025d83",
+      "name": "Conestoga House & Gardens",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5dc48633-782e-49f4-8e03-abe4827f2069",
+      "name": "The White Room Inc.",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e1e60cd0-d13a-405d-bffd-8fdeeb3a3a42",
+      "name": "Tequila Mexican Grill & Bar Events",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "900d004f-a3bc-437b-9835-609e8ac8c172",
+      "name": "Vue De La Lune",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "fe67ac06-8ff7-4671-825c-5e72f86d2dec",
+      "name": "Hamilton Club of Lancaster",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2fc2a018-e13a-4966-9bf3-55236e06d61d",
+      "name": "Buckley Manor",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b3797021-32a9-4ef2-a306-d872712e4c81",
+      "name": "Hunnah Events at Brothers & Sisters Restaurant",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "7a044f4b-756a-4699-b1fa-03270b4b9627",
+      "name": "Wyndham Lancaster Convention Center",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "fa3f9924-afdf-46a9-9b0b-81c7fae11eb4",
+      "name": "Shumaker PDT",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ac4c43ff-1463-4f5c-8476-429823bc28f8",
+      "name": "St. Joseph Catholic Club",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "72a1ebf5-1567-4d64-b0a8-06631af9572c",
+      "name": "Passenger Training Lab",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "28ab4f71-a91b-478a-bf33-ad72edcd53ca",
+      "name": "W.W. Griest Building",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "cd872762-6136-4951-ae44-624f61a70c97",
+      "name": "Candlewood Suites Lancaster West by IHG",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "0e368e16-3f15-4817-a581-f8aa3cc71252",
+      "name": "Ironstone Springs Farm",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "ccd3552c-5c54-45b5-a29c-166f2fec0caf",
+      "name": "Warehouse210",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "29b04d67-137b-4214-802e-0b49fe06c204",
+      "name": "TownePlace Suites by Marriott Lancaster",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "4de6cb82-6a53-475c-aa44-f392baa4b7c3",
+      "name": "Gerhart Coffee Co",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e482f664-a168-4f71-b4fc-cd6e77edbb4a",
+      "name": "Oola Bowls - Rockvale",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "102c339c-aef1-408a-83cf-5e95c8f712dc",
+      "name": "The BBQ Barn",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "40348682-5688-41e2-93b0-3aa3b5fc6e72",
+      "name": "E.J. Bowman House, A Bed & Breakfast",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a7088438-0d41-4f1a-9026-f2727b2e2361",
+      "name": "Infinito's Pizza",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "fa644b43-f449-4bec-81f4-a02875415108",
+      "name": "Twisted Spoon",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "6133eaf9-eaff-41f8-beea-f393dcedefe6",
+      "name": "Tacos El Gordo",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "908c386b-1ccb-4e40-a62f-6c6f9d2e14f7",
+      "name": "Tri-County Barbecue Catering Inc.",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "fd376c51-7916-466e-adb8-354fc45f4bc9",
+      "name": "Witmer Ox Roast",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b55f6d3c-79e9-4948-9953-0c17b2c8158a",
+      "name": "Outdoor Spanish Food",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f694ac40-64d6-41db-95b8-c29dda5255cd",
+      "name": "Park City Center",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d06f5e8d-1bc0-4afb-92d1-b775a2e73c22",
+      "name": "SeoulMates Korean Kitchen",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f9a5919d-82f8-4a73-a0e8-a778280a26ca",
+      "name": "Red Robin Gourmet Burgers and Brews",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "a76a0af5-2d54-4cdc-9fa5-be5080f1a97d",
+      "name": "Fat Pigs BBQ & Whiskey Bar",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "fb97b0ff-01e0-472d-ace1-145c2889d702",
+      "name": "GEMS Catering LLC",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5508d964-8fdd-4816-960a-dd80d5061d7f",
+      "name": "Thai PA Kitchen",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "dcae373d-c498-4d71-96f9-f5cf75a7ae51",
+      "name": "Go ‘N Bananas",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "9ff622d6-146d-4949-8269-e58c1e55f789",
+      "name": "Wawa",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "fdd6b3e4-454c-478f-92ec-cf6ae000968c",
+      "name": "Park City Strip Center",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "aed96cc6-1ac0-4d95-92f3-4d512e2c7321",
+      "name": "Travelodge by Wyndham Lancaster Amish Country",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e1763b3e-df96-4c49-9c2f-816917c948c8",
+      "name": "Homewood Suites by Hilton Lancaster",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "90dc28a8-228b-4803-bf39-0c0e90682b3b",
+      "name": "Sbarro Park City Center",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "1c6a6b4b-e9d3-4e0f-bdaa-4b66bef0f95d",
+      "name": "Fair Trade Cafe",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "0dadfec9-15d4-406c-aae4-bda81513346c",
+      "name": "Tabarek Al-Hana International Halal Food Store",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "88e9489c-cd05-4198-acf7-f4f8ad0a9823",
+      "name": "Avocados Food",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "63b98fcb-e0ba-4389-96fb-ec01e98f4f37",
+      "name": "Brooklyn Pizza - Grill",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5b0485ff-efd2-4e47-84f3-d0809bff96d6",
+      "name": "Columbo's Pizza",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "138cac84-cb2f-40b5-8de8-35698d08ad45",
+      "name": "Isla Borinquén",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "f5e77dd0-73b2-480f-80d5-c590408ecdfb",
+      "name": "Sharky's Grill",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b9e7f97f-7b39-4b98-9eb8-5916ea4253d4",
+      "name": "Pie In the Sky",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "873e6923-c24d-4ffb-839a-09d7c6c80231",
+      "name": "Sushi Heaven",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "9aaaece7-0c8e-48ac-a1dd-1ed238dc69f0",
+      "name": "Charleys Cheesesteaks",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "cd0ce1c7-3441-4b62-9b74-2a8e98e17556",
+      "name": "Cielito Lindo Snacks",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "07cb41c4-2203-47e8-9af8-f7f5ec0a3ea8",
+      "name": "It's Just Wings",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "354526a8-edf3-4666-a797-117db7147b53",
+      "name": "Jojo'Z Crazy Pizza",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "784ab923-4e5c-4a81-ba87-6f53c01d7c04",
+      "name": "Picasso Pizza",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5dc3f6cd-f8f1-4aa9-8fcd-27441761ac25",
+      "name": "Mama's kitchen",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "05de9148-5a26-4095-909e-1fb464114301",
+      "name": "Nori Japan Rice And Noodle Bar",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d9f9f325-413a-4e5b-940a-110f9d98c1b3",
+      "name": "Potato Patch",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "6355320d-5e50-4909-bcaa-0a5512afcfa3",
+      "name": "SNOWFOX Sushi",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5d35d659-48dc-4d21-89cf-ed9b25a62899",
+      "name": "MOD Pizza",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "1651ee91-4a68-4ca2-9433-fb9900fc5f56",
+      "name": "Caruso's Italian Restaurant & Pizzeria",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "375bdc93-0a42-4f2b-b4b1-1198d94a9d48",
+      "name": "Caruso's Pizzeria",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "5fdf850b-1b96-4c74-a01b-3c4d69b24845",
+      "name": "China King",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "93a4c4e4-e91a-4816-8b8f-1d7aa704d9f4",
+      "name": "Pizzeria Milano",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "61840ebf-ce7f-4628-97f4-8b07c6fb691c",
+      "name": "Zoup!",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "b140428b-ced5-4ee6-a3ae-064f581891a0",
+      "name": "Ruffino's Pizza & Pasta",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "76495aeb-e780-483f-b474-40c5192cb0b3",
+      "name": "Saladworks",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "33684950-fed7-41b1-bf45-c711d692a9dd",
+      "name": "Hummingbird Dining Room",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "839f129c-c817-44f2-b272-072d076f299a",
+      "name": "Sbarro Lancaster",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "fb1fcd80-40f7-447a-9ee3-dfba2faf06db",
+      "name": "Naan Pizza Co.",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "2fd525ad-8f65-49aa-938a-e3cbf087eaef",
+      "name": "Snack Shack",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "01894729-a68e-4f31-9635-5b6c2ce5715f",
+      "name": "Pizzeria LUCA",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "9bdbf3e7-f8d8-426a-bdd1-1f39f93293bc",
+      "name": "That Panini Place",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "3d2d975f-f1c8-4f42-9799-4205af853a33",
+      "name": "Madcap & Co.",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "6a08b33b-4516-4a6b-9a40-0c9d07313136",
+      "name": "Basura",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "27a4ac5c-7b0b-4da0-a251-79e797a5e098",
+      "name": "FARBO Co",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "0262b8e6-201c-4ef4-b375-e2bd5891a3b1",
+      "name": "Characters Pub",
+      "zip_code": "17602",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "0c709fa3-09ef-4acb-93ce-3491fe8e6b3f",
+      "name": "The Black Goat Lancaster",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "e62a3e07-a606-4824-a81d-eb904838106c",
+      "name": "The Good Java Company",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "95eb42c0-f06c-45a5-8e09-fce509e25cc2",
+      "name": "Prussian Street Arcade",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "221e6eeb-7a8d-432e-b3e9-3176fc3aa374",
+      "name": "Lancaster's Furniture To Go",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "3e607f18-0fce-42f3-a0ab-1f6ac9d4cd9e",
+      "name": "Habano International Coffe Shop",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "d903bb98-fac7-464e-8712-8418082d0d57",
+      "name": "Boba Cha Bubble Tea",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "7c8e4b49-c951-420f-8e46-b1efd9ab666b",
+      "name": "CAYA Coffee",
+      "zip_code": "17601",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    },
+    {
+      "id": "13fa540e-f9ef-4292-abc3-2a1809eefc74",
+      "name": "Pine St Express Deli",
+      "zip_code": "17603",
+      "original_tier_id": "670a7ba6-e5b9-4da5-a5af-f834c04b5a6b",
+      "original_tier_name": "basic"
+    }
+  ]
+}

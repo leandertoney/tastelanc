@@ -1,0 +1,44 @@
+{
+  "name": "@tastelanc/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@tastelanc/shared": "workspace:*",
+    "@anthropic-ai/sdk": "^0.71.2",
+    "@netlify/functions": "^5.1.1",
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.47.10",
+    "clsx": "^2.1.1",
+    "csv-parse": "^6.1.0",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.468.0",
+    "netlify-cli": "^23.12.3",
+    "next": "^14.2.18",
+    "openai": "^6.10.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "resend": "^6.5.2",
+    "stripe": "^20.0.0",
+    "tailwind-merge": "^2.6.0"
+  },
+  "devDependencies": {
+    "@netlify/plugin-nextjs": "^5.9.1",
+    "@types/node": "^22.10.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "autoprefixer": "^10.4.20",
+    "dotenv": "^17.2.3",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.18",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  }
+}

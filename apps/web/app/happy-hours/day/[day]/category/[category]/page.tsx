@@ -1,0 +1,60 @@
+import { fetchHappyHours, fetchHappyHourItems, fetchRestaurants } from '@/lib/seo/data';
+import { pickClaim } from '@/lib/seo/claims';
+import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
+import { buildMeta } from '@/lib/seo/meta';
+import { itemListJsonLd } from '@/lib/seo/structured';
+import { slugify } from '@/lib/seo/slug';
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
+const DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+export const revalidate = 900;
+
+export async function generateMetadata({ params }: { params: { day: string; category: string } }) {
+  return buildMeta({
+    title: `Happy Hours on ${params.day} for ${params.category} | TasteLanc`,
+    description: `Find ${params.day} happy hours in Lancaster for ${params.category}.`,
+    url: `${siteUrl}/happy-hours/day/${params.day}/category/${params.category}`,
+  });
+}
+
+export default async function HappyHoursByDayCategory({ params }: { params: { day: string; category: string } }) {
+  const day = params.day.toLowerCase();
+  if (!DAYS.includes(day)) return <main className="p-8 text-white">Not found</main>;
+  const [hh, restaurants] = await Promise.all([fetchHappyHours(), fetchRestaurants(true)]);
+  const hhItems = await fetchHappyHourItems(hh.map((h) => h.id));
+  const filtered = hh
+    .filter((h) => (h.days_of_week || []).includes(day as any))
+    .map((h) => ({ h, r: restaurants.find((x) => x.id === h.restaurant_id) }))
+    .filter(({ r }) => r && (r.categories || []).some((c) => slugify(c) === params.category));
+  if (!filtered.length) return <main className="p-8 text-white">No happy hours found.</main>;
+
+  const urls = filtered.map(({ r }) => `${siteUrl}/restaurants/${r!.slug}`);
+  const jsonLd = itemListJsonLd(urls);
+  const claim = pickClaim(`happy-hours-${day}-${params.category}`);
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <main className="max-w-5xl mx-auto px-4 py-10 text-white">
+        {leadershipLine(claim)}
+        <h1 className="text-3xl font-bold">Happy Hours on {day} • {params.category.replace(/-/g, ' ')}</h1>
+        <p className="text-gray-400 mt-2">Lancaster happy hours by day and category.</p>
+        {restaurantCTAButtons()}
+        <div className="space-y-4 mt-6">
+          {filtered.map(({ h, r }) => (
+            <a key={h.id} href={`/restaurants/${r!.slug}`} className="block p-4 bg-tastelanc-surface rounded-lg">
+              <h2 className="text-xl font-semibold text-white">{r!.name} — {h.name}</h2>
+              <p className="text-sm text-gray-400">{h.start_time} - {h.end_time}</p>
+              {h.description && <p className="text-gray-300 text-sm mt-1">{h.description}</p>}
+              <ul className="text-sm text-gray-300 mt-2 space-y-1">
+                {hhItems.filter((i) => i.happy_hour_id === h.id).map((i) => (
+                  <li key={i.id}>- {i.name} {i.description ? `• ${i.description}` : ''} {i.price ? `• $${i.price.toFixed(2)}` : ''}</li>
+                ))}
+              </ul>
+            </a>
+          ))}
+        </div>
+      </main>
+    </>
+  );
+}

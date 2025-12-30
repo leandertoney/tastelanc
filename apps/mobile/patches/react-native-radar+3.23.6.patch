@@ -1,0 +1,116 @@
+diff --git a/node_modules/react-native-radar/ios/RNRadar.h b/node_modules/react-native-radar/ios/RNRadar.h
+index e8699bb..a6a453d 100644
+--- a/node_modules/react-native-radar/ios/RNRadar.h
++++ b/node_modules/react-native-radar/ios/RNRadar.h
+@@ -7,11 +7,13 @@
+ #import <RadarSDK/RadarSDK.h>
+ #import <RadarSDK/RadarSettings.h>
+ #import <React/RCTBridgeModule.h>
++// Disable in-app messaging entirely for this build
++#define RADAR_HAS_INAPP 0
+ 
+ #ifdef RCT_NEW_ARCH_ENABLED
+-@interface RNRadar : NativeRadarSpecBase <NativeRadarSpec, RadarDelegate, CLLocationManagerDelegate, RadarVerifiedDelegate, RadarInAppMessageProtocol>
++@interface RNRadar : NativeRadarSpecBase <NativeRadarSpec, RadarDelegate, CLLocationManagerDelegate, RadarVerifiedDelegate>
+ #else
+-@interface RNRadar : RCTEventEmitter <RCTBridgeModule, RadarDelegate, CLLocationManagerDelegate, RadarVerifiedDelegate, RadarInAppMessageProtocol>
++@interface RNRadar : RCTEventEmitter <RCTBridgeModule, RadarDelegate, CLLocationManagerDelegate, RadarVerifiedDelegate>
+ #endif
+ 
+ @end
+diff --git a/node_modules/react-native-radar/ios/RNRadar.mm b/node_modules/react-native-radar/ios/RNRadar.mm
+index a4c734a..355471b 100644
+--- a/node_modules/react-native-radar/ios/RNRadar.mm
++++ b/node_modules/react-native-radar/ios/RNRadar.mm
+@@ -18,7 +18,6 @@ RCT_EXPORT_MODULE()
+         locationManager.delegate = self;
+         [Radar setDelegate:self];
+         [Radar setVerifiedDelegate:self];
+-        [Radar setInAppMessageDelegate:self];
+     }
+     return self;
+ }
+@@ -39,7 +38,14 @@ RCT_EXPORT_MODULE()
+ }
+ 
+ - (NSArray<NSString *> *)supportedEvents {
+-    return @[@"eventsEmitter", @"locationEmitter", @"clientLocationEmitter", @"errorEmitter", @"logEmitter", @"tokenEmitter", @"newInAppMessageEmitter", @"inAppMessageDismissedEmitter", @"inAppMessageClickedEmitter"];
++    return @[
++        @"eventsEmitter",
++        @"locationEmitter",
++        @"clientLocationEmitter",
++        @"errorEmitter",
++        @"logEmitter",
++        @"tokenEmitter"
++    ];
+ }
+ 
+ - (void)startObserving {
+@@ -50,51 +56,7 @@ RCT_EXPORT_MODULE()
+     hasListeners = NO;
+ }
+ 
+-- (void)onNewInAppMessage:(RadarInAppMessage *)inAppMessage {
+-
+-    NSMutableDictionary *body = [NSMutableDictionary new];
+-    [body setValue:[Radar dictionaryForInAppMessage:inAppMessage] forKey:@"inAppMessage"];
+-    #ifdef RCT_NEW_ARCH_ENABLED
+-    [self emitNewInAppMessageEmitter:body];
+-    #else
+-    if (hasListeners) {
+-        [self sendEventWithName:@"newInAppMessageEmitter" body:body];
+-    }
+-    #endif
+-}
+-
+-- (void)onInAppMessageDismissed:(RadarInAppMessage *)inAppMessage {
+-    NSMutableDictionary *body = [NSMutableDictionary new];
+-    [body setValue:[Radar dictionaryForInAppMessage:inAppMessage] forKey:@"inAppMessage"];
+-    #ifdef RCT_NEW_ARCH_ENABLED
+-    [self emitInAppMessageDismissedEmitter:body];
+-    #else
+-    if (hasListeners) {
+-        [self sendEventWithName:@"inAppMessageDismissedEmitter" body:body];
+-    }
+-    #endif
+-}
+-
+-- (void)onInAppMessageButtonClicked:(RadarInAppMessage *)inAppMessage {
+-    NSMutableDictionary *body = [NSMutableDictionary new];
+-    [body setValue:[Radar dictionaryForInAppMessage:inAppMessage] forKey:@"inAppMessage"];
+-    #ifdef RCT_NEW_ARCH_ENABLED
+-    [self emitInAppMessageClickedEmitter:body];
+-    #else
+-    if (hasListeners) {
+-        [self sendEventWithName:@"inAppMessageClickedEmitter" body:body];
+-    }
+-    #endif
+-}
+-
+-- (void) createInAppMessageView:(RadarInAppMessage * _Nonnull)message
+-                      onDismiss:(void (^)(void))onDismiss
+-          onInAppMessageClicked:(void (^)(void))onInAppMessageClicked
+-              completionHandler:(void (^)(UIViewController *))completionHandler {
+-                RadarInAppMessageDelegate *delegate = [RadarInAppMessageDelegate new];
+-                [delegate createInAppMessageView:message onDismiss:onDismiss onInAppMessageClicked:onInAppMessageClicked completionHandler:completionHandler];
+-
+-}
++// In-app messaging disabled
+ 
+ - (void)didReceiveEvents:(NSArray<RadarEvent *> *)events user:(RadarUser * _Nullable )user {
+     NSMutableDictionary *body = [NSMutableDictionary new];
+@@ -1288,10 +1250,14 @@ RCT_EXPORT_METHOD(getMatrix:(NSDictionary *)optionsDict resolve:(RCTPromiseResol
+ }
+ 
+ RCT_EXPORT_METHOD(showInAppMessage:(NSDictionary *)inAppMessageDict) {
++#if RADAR_HAS_INAPP
+     RadarInAppMessage *inAppMessage = [RadarInAppMessage fromDictionary:inAppMessageDict];
+     if (inAppMessage != nil) {
+         [Radar showInAppMessage:inAppMessage];
+     }
++#else
++    // No-op when In-App Messaging is not available
++#endif
+ }
+ 
+ RCT_EXPORT_METHOD(logConversion:(NSDictionary *)optionsDict resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject) {
