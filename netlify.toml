@@ -1,12 +1,12 @@
 [build]
-  base = "apps/web"
-  command = "npm run build"
-  publish = ".next"
-  functions = "netlify/functions"
+  command = "pnpm --filter @tastelanc/web build"
+  publish = "apps/web/.next"
+  functions = "apps/web/netlify/functions"
 
 [build.environment]
   NODE_VERSION = "20"
   NEXT_TELEMETRY_DISABLED = "1"
+  NPM_FLAGS = "--legacy-peer-deps"
 
 [functions]
   node_bundler = "esbuild"
