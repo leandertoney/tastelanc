@@ -117,8 +117,8 @@ export default async function EventsPage({ searchParams }: PageProps) {
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-3">
                     <Badge variant="accent" className="flex items-center gap-1">
-                      {getEventIcon(event.event_type)}
-                      {capitalizeWords(event.event_type.replace('_', ' '))}
+                      {getEventIcon(event.event_type as EventType)}
+                      {capitalizeWords(String(event.event_type).replace('_', ' '))}
                     </Badge>
                     <span className="text-tastelanc-accent text-sm font-medium">
                       {formatTime(event.start_time)}
