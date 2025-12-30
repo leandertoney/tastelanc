@@ -15,13 +15,23 @@ interface PageProps {
   searchParams: Promise<{ type?: string }>;
 }
 
-const EVENT_TYPES: { value: EventType; label: string; icon: React.ReactNode }[] = [
-  { value: 'live_music', label: 'Live Music', icon: <Music className="w-4 h-4" /> },
-  { value: 'trivia', label: 'Trivia', icon: <HelpCircle className="w-4 h-4" /> },
-  { value: 'karaoke', label: 'Karaoke', icon: <Mic2 className="w-4 h-4" /> },
-  { value: 'dj', label: 'DJ', icon: <Disc3 className="w-4 h-4" /> },
-  { value: 'comedy', label: 'Comedy', icon: <Laugh className="w-4 h-4" /> },
-  { value: 'sports', label: 'Sports', icon: <Trophy className="w-4 h-4" /> },
+const EVENT_ICONS: Record<EventType, JSX.Element> = {
+  live_music: <Music className="w-4 h-4" />,
+  trivia: <HelpCircle className="w-4 h-4" />,
+  karaoke: <Mic2 className="w-4 h-4" />,
+  dj: <Disc3 className="w-4 h-4" />,
+  comedy: <Laugh className="w-4 h-4" />,
+  sports: <Trophy className="w-4 h-4" />,
+  other: <Calendar className="w-4 h-4" />,
+};
+
+const EVENT_TYPES: { value: EventType; label: string }[] = [
+  { value: 'live_music', label: 'Live Music' },
+  { value: 'trivia', label: 'Trivia' },
+  { value: 'karaoke', label: 'Karaoke' },
+  { value: 'dj', label: 'DJ' },
+  { value: 'comedy', label: 'Comedy' },
+  { value: 'sports', label: 'Sports' },
 ];
 
 async function getEvents(type?: string) {
@@ -43,9 +53,9 @@ async function getEvents(type?: string) {
   return data || [];
 }
 
-function getEventIcon(type: EventType) {
-  const eventType = EVENT_TYPES.find(e => e.value === type);
-  return eventType?.icon || <Calendar className="w-4 h-4" />;
+function getEventIcon(type: string): JSX.Element {
+  const eventType = type as EventType;
+  return EVENT_ICONS[eventType] || EVENT_ICONS.other;
 }
 
 export default async function EventsPage({ searchParams }: PageProps) {
@@ -88,7 +98,7 @@ export default async function EventsPage({ searchParams }: PageProps) {
                   : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white'
               }`}
             >
-              {type.icon}
+              {EVENT_ICONS[type.value]}
               {type.label}
             </a>
           ))}
@@ -117,7 +127,7 @@ export default async function EventsPage({ searchParams }: PageProps) {
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-3">
                     <Badge variant="accent" className="flex items-center gap-1">
-                      {getEventIcon(event.event_type as EventType)}
+                      {getEventIcon(String(event.event_type))}
                       {capitalizeWords(String(event.event_type).replace('_', ' '))}
                     </Badge>
                     <span className="text-tastelanc-accent text-sm font-medium">

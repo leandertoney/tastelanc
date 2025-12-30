@@ -1,8 +1,8 @@
 'use client';
 
-import { ReactNode } from 'react';
+import type { PropsWithChildren } from 'react';
 import { RosieChatProvider } from '@/lib/contexts/RosieChatContext';
 
-export default function Providers({ children }: { children: ReactNode }) {
+export default function Providers({ children }: PropsWithChildren) {
   return <RosieChatProvider>{children}</RosieChatProvider>;
 }
