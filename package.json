@@ -6,6 +6,7 @@
     "packages/*"
   ],
   "scripts": {
+    "postinstall": "patch-package",
     "dev:web": "npm run dev --workspace=@tastelanc/web",
     "dev:mobile": "npm run start --workspace=@tastelanc/mobile",
     "build:web": "npm run build --workspace=@tastelanc/web",
@@ -14,6 +15,9 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "patch-package": "^8.0.1"
   },
   "overrides": {
     "react": "19.1.0",
