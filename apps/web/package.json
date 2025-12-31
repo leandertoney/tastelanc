@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@tastelanc/shared": "*",
     "@anthropic-ai/sdk": "^0.71.2",
     "@netlify/functions": "^5.1.1",
     "@supabase/ssr": "^0.5.2",

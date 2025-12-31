@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build --workspace=@tastelanc/web"
+  command = "rm -f package.json pnpm-workspace.yaml && cd apps/web && npm install && npm run build"
   publish = "apps/web/.next"
 
 [build.environment]
