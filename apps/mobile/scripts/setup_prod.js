@@ -10,7 +10,7 @@ const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-const PROJECT_REF = 'lfwkcitwjftgkpjxnttv';
+const PROJECT_REF = 'kufcxxynjvyharhtfptd';
 
 const MIGRATION_FILES = [
   '../supabase/migrations/001_initial_schema.sql',

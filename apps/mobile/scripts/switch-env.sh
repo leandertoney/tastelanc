@@ -6,7 +6,7 @@
 set -e
 
 DEV_PROJECT_REF="kcoszrcubshtsezcktnn"
-PROD_PROJECT_REF="lfwkcitwjftgkpjxnttv"
+PROD_PROJECT_REF="kufcxxynjvyharhtfptd"
 
 if [ -z "$1" ]; then
     echo "Usage: ./scripts/switch-env.sh [dev|prod]"
