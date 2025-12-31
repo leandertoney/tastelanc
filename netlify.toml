@@ -2,6 +2,9 @@
   command = "rm -f package.json pnpm-workspace.yaml && cd apps/web && npm install && npm run build"
   publish = "apps/web/.next"
 
+[functions]
+  directory = "apps/web/netlify/functions"
+
 [build.environment]
   NODE_VERSION = "20"
   NEXT_TELEMETRY_DISABLED = "1"

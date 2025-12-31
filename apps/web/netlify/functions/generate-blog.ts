@@ -356,6 +356,131 @@ function getSeason(): string {
 }
 
 /**
+ * Get holiday context if today is near a major holiday
+ * Returns null if no holiday, or an object with holiday info
+ */
+function getHolidayContext(): { name: string; prompt: string } | null {
+  const now = new Date();
+  const month = now.getMonth(); // 0-indexed
+  const day = now.getDate();
+  const dayOfWeek = now.getDay(); // 0 = Sunday
+
+  // New Year's Eve (Dec 31)
+  if (month === 11 && day === 31) {
+    return {
+      name: "New Year's Eve",
+      prompt: `🎉 It's New Year's Eve! Consider how Lancaster restaurants celebrate tonight - special prix fixe menus, champagne toasts, countdown parties, late-night dining options. Where should people ring in the new year? What are the best spots for a celebratory dinner?`
+    };
+  }
+
+  // New Year's Day (Jan 1)
+  if (month === 0 && day === 1) {
+    return {
+      name: "New Year's Day",
+      prompt: `🥂 Happy New Year! Consider recovery brunch spots, hair-of-the-dog drinks, comfort food for the first day of the year. What's open today and worth visiting?`
+    };
+  }
+
+  // Valentine's Day (Feb 14) or day before
+  if (month === 1 && (day === 13 || day === 14)) {
+    return {
+      name: day === 14 ? "Valentine's Day" : "Valentine's Day Eve",
+      prompt: `💕 It's ${day === 14 ? "Valentine's Day" : "almost Valentine's Day"}! Focus on romantic dining - intimate spots, special tasting menus, best date night restaurants. Where to impress? Where to propose? Where to celebrate love?`
+    };
+  }
+
+  // St. Patrick's Day (Mar 17)
+  if (month === 2 && day === 17) {
+    return {
+      name: "St. Patrick's Day",
+      prompt: `☘️ Happy St. Patrick's Day! Where to find the best Irish fare, green beer, corned beef and cabbage, and festive celebrations in Lancaster.`
+    };
+  }
+
+  // Cinco de Mayo (May 5)
+  if (month === 4 && day === 5) {
+    return {
+      name: "Cinco de Mayo",
+      prompt: `🎊 It's Cinco de Mayo! Highlight the best Mexican restaurants, margarita specials, taco deals, and authentic Mexican celebrations in Lancaster.`
+    };
+  }
+
+  // Mother's Day (2nd Sunday of May)
+  if (month === 4 && dayOfWeek === 0 && day >= 8 && day <= 14) {
+    return {
+      name: "Mother's Day",
+      prompt: `💐 Happy Mother's Day! Focus on brunch spots perfect for treating mom, special Mother's Day menus, restaurants that take reservations, and family-friendly fine dining.`
+    };
+  }
+
+  // Memorial Day (last Monday of May)
+  if (month === 4 && dayOfWeek === 1 && day >= 25) {
+    return {
+      name: "Memorial Day",
+      prompt: `🇺🇸 Happy Memorial Day! Kick off summer with outdoor dining, BBQ spots, patios opening for the season, and places to grab food before/after parades.`
+    };
+  }
+
+  // Father's Day (3rd Sunday of June)
+  if (month === 5 && dayOfWeek === 0 && day >= 15 && day <= 21) {
+    return {
+      name: "Father's Day",
+      prompt: `👔 Happy Father's Day! Highlight steakhouses, BBQ joints, sports bars, and restaurants with great whiskey selections - perfect spots to treat dad.`
+    };
+  }
+
+  // July 4th
+  if (month === 6 && day === 4) {
+    return {
+      name: "Independence Day",
+      prompt: `🎆 Happy 4th of July! BBQ, outdoor dining, rooftop spots for fireworks viewing, patriotic specials, and all-American fare in Lancaster.`
+    };
+  }
+
+  // Labor Day (1st Monday of September)
+  if (month === 8 && dayOfWeek === 1 && day <= 7) {
+    return {
+      name: "Labor Day",
+      prompt: `👷 Happy Labor Day! Last hurrah of summer - outdoor dining, end-of-summer specials, places to enjoy before fall arrives.`
+    };
+  }
+
+  // Halloween (Oct 31)
+  if (month === 9 && day === 31) {
+    return {
+      name: "Halloween",
+      prompt: `🎃 Happy Halloween! Spooky-themed cocktails, costume-friendly spots, late-night dining for after trick-or-treating, and festive Halloween celebrations.`
+    };
+  }
+
+  // Thanksgiving (4th Thursday of November)
+  if (month === 10 && dayOfWeek === 4 && day >= 22 && day <= 28) {
+    return {
+      name: "Thanksgiving",
+      prompt: `🦃 Happy Thanksgiving! Restaurants serving Thanksgiving dinner, places to dine if you're not cooking, pie shops, and where to grab a drink with family.`
+    };
+  }
+
+  // Christmas Eve (Dec 24)
+  if (month === 11 && day === 24) {
+    return {
+      name: "Christmas Eve",
+      prompt: `🎄 It's Christmas Eve! Restaurants open tonight, special holiday menus, cozy spots for a festive dinner before the big day.`
+    };
+  }
+
+  // Christmas Day (Dec 25)
+  if (month === 11 && day === 25) {
+    return {
+      name: "Christmas Day",
+      prompt: `🎁 Merry Christmas! What's open today? Chinese restaurants, hotel restaurants, and spots serving Christmas dinner for those celebrating out.`
+    };
+  }
+
+  return null;
+}
+
+/**
  * Extract featured restaurant images from the generated blog HTML
  * Returns up to 4 restaurant cover images mentioned in the post
  * Excludes images that were recently used as cover images
@@ -711,6 +836,9 @@ export default async function handler(req: Request, context: Context) {
     const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
     const topic = BLOG_TOPICS[dayOfYear % BLOG_TOPICS.length];
 
+    // Check for holiday context
+    const holidayContext = getHolidayContext();
+
     // Build prompts (pass recently featured restaurants to avoid repetition)
     const systemPrompt = buildSystemPrompt(blogContext, recentlyFeaturedRestaurants);
     const today = new Date().toLocaleDateString('en-US', {
@@ -720,13 +848,26 @@ export default async function handler(req: Request, context: Context) {
       day: 'numeric',
     });
 
-    const userPrompt = `Today is ${today}. It's ${getSeason()} in Lancaster.
+    // Build the prompt - if it's a holiday, prioritize holiday content
+    let userPrompt: string;
+    if (holidayContext) {
+      userPrompt = `Today is ${today}. It's ${getSeason()} in Lancaster.
+
+${holidayContext.prompt}
+
+While keeping the holiday theme central, you can also incorporate elements from this regular topic if relevant: ${topic.prompt}
+
+Use the restaurants, happy hours, events, and specials from your database. Be specific, be opinionated, and make it valuable.`;
+      console.log(`Holiday detected: ${holidayContext.name} - generating holiday-themed content`);
+    } else {
+      userPrompt = `Today is ${today}. It's ${getSeason()} in Lancaster.
 
 ${topic.prompt}
 
 Use the restaurants, happy hours, events, and specials from your database. Be specific, be opinionated, and make it valuable.`;
+    }
 
-    console.log(`Generating blog post for topic: ${topic.id}`);
+    console.log(`Generating blog post for topic: ${holidayContext ? `${holidayContext.name} + ${topic.id}` : topic.id}`);
 
     // Generate the blog post
     const response = await openai.chat.completions.create({
