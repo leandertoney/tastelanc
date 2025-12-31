@@ -186,8 +186,10 @@ Use the restaurants from your database. Be specific, be opinionated, and make it
     }
 
     // Extract featured restaurant slugs
-    const allLinks = Array.from(parsed.body_html.matchAll(/href="\/restaurants\/([^"]+)"/g));
-    const featuredRestaurants = Array.from(new Set(allLinks.map(m => m[1])));
+    const allLinks = Array.from(
+      parsed.body_html.matchAll(/href="\/restaurants\/([^"]+)"/g) as Iterable<RegExpMatchArray>
+    );
+    const featuredRestaurants = Array.from(new Set(allLinks.map((m: RegExpMatchArray) => m[1])));
 
     // Publish to Supabase
     const { error: upsertErr } = await supabaseAdmin.from('blog_posts').upsert({
