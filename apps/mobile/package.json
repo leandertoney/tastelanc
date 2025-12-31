@@ -9,10 +9,10 @@
     "web": "expo start --web",
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
-    "postinstall": "patch-package"
+    "postinstall": "npx patch-package"
   },
   "dependencies": {
-    "@tastelanc/shared": "workspace:*",
+    "@tastelanc/shared": "*",
     "@expo/vector-icons": "^15.0.3",
     "@gorhom/bottom-sheet": "^5.2.7",
     "@react-native-async-storage/async-storage": "2.2.0",

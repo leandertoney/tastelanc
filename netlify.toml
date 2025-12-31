@@ -1,5 +1,5 @@
 [build]
-  command = "pnpm --filter @tastelanc/web build"
+  command = "npm run build --workspace=@tastelanc/web"
   publish = "apps/web/.next"
 
 [build.environment]

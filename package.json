@@ -1,20 +1,22 @@
 {
   "name": "tastelanc",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev:web": "pnpm --filter @tastelanc/web dev",
-    "dev:mobile": "pnpm --filter @tastelanc/mobile start",
-    "build:web": "pnpm --filter @tastelanc/web build",
-    "lint": "pnpm -r lint",
-    "typecheck": "pnpm -r typecheck"
+    "dev:web": "npm run dev --workspace=@tastelanc/web",
+    "dev:mobile": "npm run start --workspace=@tastelanc/mobile",
+    "build:web": "npm run build --workspace=@tastelanc/web",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
   },
   "engines": {
     "node": ">=18"
   },
-  "pnpm": {
-    "overrides": {
-      "@types/react": "18.3.12",
-      "@types/react-dom": "18.3.1"
-    }
+  "overrides": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
   }
 }

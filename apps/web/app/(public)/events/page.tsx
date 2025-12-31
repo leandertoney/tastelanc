@@ -1,3 +1,4 @@
+import React from 'react';
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { Calendar, MapPin, Music, HelpCircle, Mic2, Disc3, Laugh, Trophy } from 'lucide-react';
@@ -15,7 +16,7 @@ interface PageProps {
   searchParams: Promise<{ type?: string }>;
 }
 
-const EVENT_ICONS: Record<EventType, JSX.Element> = {
+const EVENT_ICONS: Record<EventType, React.JSX.Element> = {
   live_music: <Music className="w-4 h-4" />,
   trivia: <HelpCircle className="w-4 h-4" />,
   karaoke: <Mic2 className="w-4 h-4" />,
@@ -53,7 +54,7 @@ async function getEvents(type?: string) {
   return data || [];
 }
 
-function getEventIcon(type: string): JSX.Element {
+function getEventIcon(type: string): React.JSX.Element {
   const eventType = type as EventType;
   return EVENT_ICONS[eventType] || EVENT_ICONS.other;
 }

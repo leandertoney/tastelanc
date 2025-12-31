@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@tastelanc/shared": "workspace:*",
+    "@tastelanc/shared": "*",
     "@anthropic-ai/sdk": "^0.71.2",
     "@netlify/functions": "^5.1.1",
     "@supabase/ssr": "^0.5.2",
@@ -21,8 +21,8 @@
     "netlify-cli": "^23.12.3",
     "next": "^14.2.18",
     "openai": "^6.10.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
     "resend": "^6.5.2",
     "stripe": "^20.0.0",
     "tailwind-merge": "^2.6.0"
@@ -30,8 +30,8 @@
   "devDependencies": {
     "@netlify/plugin-nextjs": "^5.9.1",
     "@types/node": "^22.10.1",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.20",
     "dotenv": "^17.2.3",
     "eslint": "^8.57.0",
