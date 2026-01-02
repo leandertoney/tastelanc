@@ -11,7 +11,7 @@ import { ONBOARDING_STORAGE_KEY, ONBOARDING_DATA_KEY } from '../types/onboarding
 import { colors } from '../constants/colors';
 import { env } from '../lib/env';
 import { initRadar, startTracking } from '../lib/radar';
-import { initRevenueCat } from '../lib/revenuecat';
+// import { initRevenueCat } from '../lib/revenuecat'; // Disabled - app is free
 import { useRadarVisits } from '../hooks/useRadarVisits';
 import { useNotifications } from '../hooks/useNotifications';
 import { incrementSessionCount, requestReviewIfEligible } from '../lib/reviewPrompts';
@@ -69,10 +69,11 @@ export default function Navigation() {
       startTracking();
     }
 
-    // Initialize RevenueCat for subscriptions
-    initRevenueCat().catch((error) => {
-      console.error('Failed to initialize RevenueCat:', error);
-    });
+    // RevenueCat disabled - app is currently free
+    // TODO: Re-enable when adding Android API key (current key is Apple-only)
+    // initRevenueCat().catch((error) => {
+    //   console.error('Failed to initialize RevenueCat:', error);
+    // });
 
     // Track session count and trigger review at 5th session
     incrementSessionCount().then((count) => {
