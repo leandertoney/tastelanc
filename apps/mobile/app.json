@@ -2,7 +2,7 @@
   "expo": {
     "name": "TasteLanc",
     "slug": "tastelanc",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -17,7 +17,7 @@
       "fallbackToCacheTimeout": 0,
       "url": "https://u.expo.dev/18a9e6d1-1240-4875-b38f-67edc5b50bdd"
     },
-    "runtimeVersion": "1.0.2",
+    "runtimeVersion": "1.0.3",
     "assetBundlePatterns": [
       "**/*"
     ],
