@@ -325,15 +325,17 @@ export default function HomePage() {
               <Smartphone className="w-5 h-5" />
               Download for iOS
             </a>
-            <Link
-              href="/premium"
-              className="border border-tastelanc-surface-light hover:border-tastelanc-accent text-white px-8 py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-lg"
+            <a
+              href="https://play.google.com/store/apps/details?id=com.tastelanc.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-lg shadow-lg shadow-green-600/25"
             >
-              Learn More
-              <ArrowRight className="w-5 h-5" />
-            </Link>
+              <Smartphone className="w-5 h-5" />
+              Download for Android
+            </a>
           </div>
-          <p className="text-gray-400 text-sm">Android Coming Soon</p>
+          <p className="text-gray-400 text-sm">Available on iOS and Android</p>
         </div>
       </section>
 
@@ -508,7 +510,14 @@ export default function HomePage() {
           >
             Download for iOS
           </a>
-          <span className="text-gray-500 text-sm">Android Coming Soon</span>
+          <a
+            href="https://play.google.com/store/apps/details?id=com.tastelanc.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold"
+          >
+            Download for Android
+          </a>
         </div>
       </section>
 
@@ -916,7 +925,7 @@ export default function HomePage() {
               {
                 step: '1',
                 title: 'Download the App',
-                description: 'Get TasteLanc from the App Store or Google Play (coming soon).',
+                description: 'Get TasteLanc from the App Store or Google Play.',
               },
               {
                 step: '2',
@@ -951,22 +960,32 @@ export default function HomePage() {
             <div className="relative">
               <Zap className="w-12 h-12 text-white mx-auto mb-6" />
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4">
-                TasteLanc is<span className="block sm:inline"> Live on iOS!</span>
+                TasteLanc is<span className="block sm:inline"> Now Live!</span>
               </h2>
               <p className="text-white/80 text-lg mb-8 max-w-2xl mx-auto">
                 Download the app now and discover Lancaster&apos;s best dining and nightlife.
               </p>
 
-              <a
-                href="https://apps.apple.com/us/app/tastelanc/id6755852717"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-white text-tastelanc-accent font-semibold px-8 py-4 rounded-xl hover:bg-gray-100 transition-colors inline-flex items-center gap-2 text-lg"
-              >
-                Download for iOS
-                <ChevronRight className="w-5 h-5" />
-              </a>
-              <p className="text-white/60 text-sm mt-4">Android Coming Soon</p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <a
+                  href="https://apps.apple.com/us/app/tastelanc/id6755852717"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-white text-tastelanc-accent font-semibold px-8 py-4 rounded-xl hover:bg-gray-100 transition-colors inline-flex items-center justify-center gap-2 text-lg"
+                >
+                  Download for iOS
+                  <ChevronRight className="w-5 h-5" />
+                </a>
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.tastelanc.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-white text-green-600 font-semibold px-8 py-4 rounded-xl hover:bg-gray-100 transition-colors inline-flex items-center justify-center gap-2 text-lg"
+                >
+                  Download for Android
+                  <ChevronRight className="w-5 h-5" />
+                </a>
+              </div>
             </div>
           </div>
         </div>
