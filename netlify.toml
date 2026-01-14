@@ -8,6 +8,9 @@
 [build.environment]
   NODE_VERSION = "20"
   NEXT_TELEMETRY_DISABLED = "1"
+  # Exclude mobile app from secrets scanning - Google Maps API keys are meant to be public
+  # (restricted by app bundle ID in Google Cloud Console, not by secrecy)
+  SECRETS_SCAN_OMIT_PATHS = "apps/mobile"
 
 # Security headers
 [[headers]]
