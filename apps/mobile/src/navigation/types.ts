@@ -1,6 +1,7 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { RestaurantCategory, CuisineType } from '../types/database';
 import type { VoteCategory } from '../types/voting';
+import type { ApiEvent } from '../lib/events';
 
 // Onboarding Stack param list
 export type OnboardingStackParamList = {
@@ -58,6 +59,8 @@ export type RootStackParamList = {
   FeaturedViewAll: undefined;
   CuisinesViewAll: undefined;
   CuisineDetail: { cuisine: CuisineType };
+  // Event detail
+  EventDetail: { event: ApiEvent };
   // Voting screens
   VoteCenter: undefined;
   VoteCategory: undefined;
