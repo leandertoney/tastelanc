@@ -226,7 +226,9 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
             )}
             <Text style={styles.heroTitle}>{restaurant.name}</Text>
             <View style={styles.heroMeta}>
-              <RatingStars rating={4.5} reviewCount={128} size="medium" />
+              {restaurant.average_rating && (
+                <RatingStars rating={restaurant.average_rating} size="medium" />
+              )}
             </View>
           </View>
         </LinearGradient>
