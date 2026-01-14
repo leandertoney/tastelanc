@@ -49,7 +49,7 @@ export default function EntertainmentListItem({ event, onPress }: EntertainmentL
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
       {/* Square thumbnail */}
       {imageUrl ? (
-        <Image source={{ uri: imageUrl }} style={styles.thumbnail} />
+        <Image source={{ uri: imageUrl, cache: 'reload' }} style={styles.thumbnail} />
       ) : (
         <View style={[styles.thumbnail, styles.thumbnailPlaceholder]}>
           <Ionicons name={icon} size={24} color={colors.textMuted} />

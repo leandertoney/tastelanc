@@ -124,6 +124,7 @@ export default async function EventsPage({ searchParams }: PageProps) {
                   src={event.image_url || `/images/events/${event.event_type}.png`}
                   alt={event.name}
                   className="w-full h-40 object-cover"
+                  referrerPolicy="no-referrer"
                 />
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-3">
