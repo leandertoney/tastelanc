@@ -71,6 +71,7 @@ export interface Restaurant {
   is_active: boolean;
   is_verified: boolean;
   tier_id: string | null;
+  average_rating: number | null;
   created_at: string;
   updated_at: string;
 }
