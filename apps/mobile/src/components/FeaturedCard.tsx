@@ -28,7 +28,7 @@ export default function FeaturedCard({
       {/* Full-height image background */}
       <View style={styles.imageContainer}>
         {restaurant.cover_image_url ? (
-          <Image source={{ uri: restaurant.cover_image_url }} style={styles.image} />
+          <Image source={{ uri: restaurant.cover_image_url, cache: 'reload' }} style={styles.image} />
         ) : (
           <View style={styles.imagePlaceholder}>
             <Ionicons name="restaurant-outline" size={48} color={colors.textSecondary} />
