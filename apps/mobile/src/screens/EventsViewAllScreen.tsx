@@ -216,9 +216,7 @@ export default function EventsViewAllScreen() {
 
   const handlePress = useCallback(
     (event: ApiEvent) => {
-      if (event.restaurant?.id) {
-        navigation.navigate('RestaurantDetail', { id: event.restaurant.id });
-      }
+      navigation.navigate('EventDetail', { event });
     },
     [navigation]
   );

@@ -9,6 +9,7 @@ import EntertainmentViewAllScreen from '../screens/EntertainmentViewAllScreen';
 import FeaturedViewAllScreen from '../screens/FeaturedViewAllScreen';
 import CuisinesViewAllScreen from '../screens/CuisinesViewAllScreen';
 import CuisineDetailScreen from '../screens/CuisineDetailScreen';
+import EventDetailScreen from '../screens/EventDetailScreen';
 import {
   VoteCenterScreen,
   VoteCategoryScreen,
@@ -83,6 +84,16 @@ export default function RootNavigator() {
         name="CuisineDetail"
         component={CuisineDetailScreen}
         options={{ title: 'Cuisine' }}
+      />
+      <Stack.Screen
+        name="EventDetail"
+        component={EventDetailScreen}
+        options={{
+          title: 'Event',
+          headerBackTitle: 'Back',
+          headerTransparent: true,
+          headerTintColor: colors.text,
+        }}
       />
       {/* Voting Screens */}
       <Stack.Screen

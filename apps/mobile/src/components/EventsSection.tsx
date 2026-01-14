@@ -26,6 +26,7 @@ interface DisplayEvent {
   imageUrl?: string;
   imageSource?: ImageSourcePropType;
   restaurantId?: string;
+  originalEvent?: ApiEvent; // Keep reference to original event for navigation
 }
 
 // Convert centralized mock data to DisplayEvent format
@@ -96,9 +97,9 @@ export default function EventsSection() {
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  const handleRestaurantNavigate = useCallback(
-    (restaurantId: string) => {
-      navigation.navigate('RestaurantDetail', { id: restaurantId });
+  const handleEventPress = useCallback(
+    (event: ApiEvent) => {
+      navigation.navigate('EventDetail', { event });
     },
     [navigation]
   );
@@ -113,14 +114,15 @@ export default function EventsSection() {
     imageUrl: event.image_url, // API always provides image_url
     isCityWide: !event.restaurant,
     restaurantId: event.restaurant?.id,
+    originalEvent: event, // Keep original for EventDetail navigation
   }));
 
   // Use real events, or mock events if enabled and no real data
   const displayData = events.length > 0 ? mappedEvents : ENABLE_MOCK_DATA ? MOCK_DISPLAY_EVENTS : [];
 
   const handleCardPress = (item: DisplayEvent) => {
-    if (item.restaurantId) {
-      handleRestaurantNavigate(item.restaurantId);
+    if (item.originalEvent) {
+      handleEventPress(item.originalEvent);
     }
   };
 
@@ -158,7 +160,7 @@ export default function EventsSection() {
             imageUrl={item.imageUrl}
             imageSource={item.imageSource}
             isCityWide={item.isCityWide}
-            onPress={item.restaurantId ? () => handleCardPress(item) : undefined}
+            onPress={item.originalEvent ? () => handleCardPress(item) : undefined}
           />
         )}
         keyExtractor={(item) => item.id}
