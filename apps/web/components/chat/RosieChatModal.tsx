@@ -306,7 +306,7 @@ export default function RosieChatModal({ isOpen, onClose }: RosieChatModalProps)
                 onClick={onClose}
                 className="inline-flex items-center gap-2 bg-lancaster-gold hover:bg-yellow-400 text-black px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
               >
-                Get the App - Early Access
+                Download the App
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -340,7 +340,7 @@ export default function RosieChatModal({ isOpen, onClose }: RosieChatModalProps)
             </form>
           ) : (
             <p className="text-center text-tastelanc-muted text-sm">
-              Sign up for early access to continue chatting with Rosie
+              Download the app to continue chatting with Rosie
             </p>
           )}
 

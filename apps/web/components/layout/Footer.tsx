@@ -41,7 +41,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/premium" className="hover:text-white transition-colors text-lancaster-gold">
-                  Early Access
+                  TasteLanc+
                 </Link>
               </li>
             </ul>

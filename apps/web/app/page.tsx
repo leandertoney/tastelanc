@@ -27,6 +27,7 @@ import Footer from '@/components/layout/Footer';
 import RosieChatBubble from '@/components/chat/RosieChatBubble';
 import { useRosieChat } from '@/lib/contexts/RosieChatContext';
 import { MessageCircle } from 'lucide-react';
+import { NavDownloadLink, HeaderDownloadButton } from '@/components/ui';
 
 
 // App preview screens
@@ -253,15 +254,7 @@ export default function HomePage() {
             <a href="#app-preview" className="text-gray-300 hover:text-white transition-colors">
               App Preview
             </a>
-            <a
-              href="https://apps.apple.com/us/app/tastelanc/id6755852717"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-lancaster-gold hover:text-yellow-400 transition-colors flex items-center gap-1 font-medium"
-            >
-              <Crown className="w-4 h-4" />
-              Download for iOS
-            </a>
+            <NavDownloadLink />
           </nav>
           <div className="flex items-center gap-4">
             <Link
@@ -270,14 +263,7 @@ export default function HomePage() {
             >
               Sign In
             </Link>
-            <a
-              href="https://apps.apple.com/us/app/tastelanc/id6755852717"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              Download for iOS
-            </a>
+            <HeaderDownloadButton />
           </div>
         </div>
       </header>
@@ -766,7 +752,7 @@ export default function HomePage() {
               className="inline-flex items-center gap-2 bg-lancaster-gold hover:bg-yellow-500 text-black font-bold px-8 py-4 rounded-xl transition-all"
             >
               <Crown className="w-5 h-5" />
-              Get Early Access
+              Get TasteLanc+
               <ArrowRight className="w-5 h-5" />
             </Link>
           </div>
@@ -1050,9 +1036,9 @@ export default function HomePage() {
                   className="w-full h-full object-contain"
                 />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2">Join the Waitlist</h3>
+              <h3 className="text-2xl font-bold text-white mb-2">Get TasteLanc+</h3>
               <p className="text-gray-400">
-                Get early access to TasteLanc and exclusive founder benefits when we launch.
+                Sign up for exclusive member benefits and special pricing on TasteLanc+.
               </p>
             </div>
 
@@ -1077,7 +1063,7 @@ export default function HomePage() {
                 disabled={isSubmitting}
                 className="w-full bg-tastelanc-accent hover:bg-tastelanc-accent-hover disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
               >
-                {isSubmitting ? 'Joining...' : 'Join Waitlist'}
+                {isSubmitting ? 'Signing up...' : 'Sign Up'}
               </button>
             </form>
 
