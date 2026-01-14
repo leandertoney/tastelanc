@@ -115,6 +115,7 @@ export default async function BlogPage() {
                     alt={posts[0].title}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-700"
+                    referrerPolicy="no-referrer"
                   />
                   {/* Gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent group-hover:via-black/60 transition-all duration-500" />
@@ -182,6 +183,7 @@ export default async function BlogPage() {
                         alt={post.title}
                         fill
                         className="object-cover group-hover:scale-110 transition-transform duration-700"
+                        referrerPolicy="no-referrer"
                       />
                       {/* Gradient overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent group-hover:via-black/60 transition-all duration-500" />

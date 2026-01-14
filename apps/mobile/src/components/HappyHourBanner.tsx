@@ -50,7 +50,7 @@ export default function HappyHourBanner({
         disabled={!onPress}
       >
         <ImageBackground
-          source={{ uri: imageUrl }}
+          source={{ uri: imageUrl, cache: 'reload' }}
           style={styles.imageBackground}
           imageStyle={styles.imageStyle}
         >

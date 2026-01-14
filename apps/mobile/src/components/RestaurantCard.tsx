@@ -23,7 +23,7 @@ export default function RestaurantCard({
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
       <View style={styles.imageContainer}>
         {restaurant.cover_image_url ? (
-          <Image source={{ uri: restaurant.cover_image_url }} style={styles.image} />
+          <Image source={{ uri: restaurant.cover_image_url, cache: 'reload' }} style={styles.image} />
         ) : (
           <View style={styles.imagePlaceholder}>
             <Ionicons name="restaurant-outline" size={32} color={colors.textSecondary} />

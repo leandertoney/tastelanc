@@ -30,6 +30,7 @@ function EditorialCover({ coverData, title }: { coverData: CoverImageData | null
           fill
           className="object-cover"
           priority
+          referrerPolicy="no-referrer"
         />
         {/* Diagonal accent overlay */}
         <div
@@ -56,6 +57,7 @@ function EditorialCover({ coverData, title }: { coverData: CoverImageData | null
             fill
             className="object-cover"
             priority
+            referrerPolicy="no-referrer"
           />
         </div>
         {/* Right image - triangle cut */}
@@ -68,6 +70,7 @@ function EditorialCover({ coverData, title }: { coverData: CoverImageData | null
             alt={title}
             fill
             className="object-cover"
+            referrerPolicy="no-referrer"
           />
         </div>
         {/* Center line accent */}
@@ -94,6 +97,7 @@ function EditorialCover({ coverData, title }: { coverData: CoverImageData | null
             fill
             className="object-cover"
             priority
+            referrerPolicy="no-referrer"
           />
         </div>
         {/* Right column - 2 stacked images */}
@@ -103,6 +107,7 @@ function EditorialCover({ coverData, title }: { coverData: CoverImageData | null
             alt={title}
             fill
             className="object-cover"
+            referrerPolicy="no-referrer"
           />
         </div>
         <div className="absolute right-0 bottom-0 w-1/3 h-1/2 border-l-4 border-t-2 border-lancaster-gold">
@@ -111,6 +116,7 @@ function EditorialCover({ coverData, title }: { coverData: CoverImageData | null
             alt={title}
             fill
             className="object-cover"
+            referrerPolicy="no-referrer"
           />
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-tastelanc-bg via-transparent to-transparent" />
@@ -131,6 +137,7 @@ function EditorialCover({ coverData, title }: { coverData: CoverImageData | null
                 fill
                 className="object-cover"
                 priority={i === 0}
+                referrerPolicy="no-referrer"
               />
             </div>
           ))}
@@ -224,6 +231,7 @@ export default async function BlogPostPage({ params }: PageProps) {
               fill
               className="object-cover"
               priority
+              referrerPolicy="no-referrer"
             />
             <div
               className="absolute inset-0 bg-gradient-to-br from-tastelanc-bg via-transparent to-transparent"
