@@ -168,6 +168,7 @@ export default function ProfilePage() {
                 src={restaurant.cover_image_url}
                 alt="Cover"
                 className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
               />
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
                 <div className="text-center">

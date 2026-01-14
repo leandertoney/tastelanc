@@ -196,7 +196,7 @@ export default function RestaurantMap({
                 {showLogo ? (
                   <View style={styles.logoMarkerContainer}>
                     <Image
-                      source={{ uri: restaurant.logo_url! }}
+                      source={{ uri: restaurant.logo_url!, cache: 'reload' }}
                       style={styles.logoMarker}
                       resizeMode="cover"
                     />

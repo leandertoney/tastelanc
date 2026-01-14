@@ -97,7 +97,7 @@ function CuisineCard({ cuisine, imageUrl, onPress }: CuisineCardProps) {
       <View style={[styles.imageContainer, !imageUrl && { backgroundColor: color }]}>
         {imageUrl ? (
           <Image
-            source={{ uri: imageUrl }}
+            source={{ uri: imageUrl, cache: 'reload' }}
             style={styles.cuisineImage}
             resizeMode="cover"
           />

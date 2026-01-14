@@ -48,8 +48,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'RestaurantDetail'>;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HERO_HEIGHT = 280;
 
-// Placeholder image for restaurants without cover images
-const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800';
+// No placeholder images - only show actual restaurant images
 
 // Tab configuration
 const TABS: Tab[] = [
@@ -202,11 +201,17 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
       >
       {/* Hero Section */}
       <View style={styles.heroContainer}>
-        <Image
-          source={{ uri: restaurant.cover_image_url || PLACEHOLDER_IMAGE }}
-          style={styles.heroImage}
-          resizeMode="cover"
-        />
+        {restaurant.cover_image_url ? (
+          <Image
+            source={{ uri: restaurant.cover_image_url, cache: 'reload' }}
+            style={styles.heroImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles.heroImage, { backgroundColor: colors.cardBgElevated, justifyContent: 'center', alignItems: 'center' }]}>
+            <Ionicons name="restaurant-outline" size={64} color={colors.textSecondary} />
+          </View>
+        )}
         <LinearGradient
           colors={['transparent', colors.primary]}
           style={styles.heroGradient}
@@ -214,7 +219,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
           <View style={styles.heroContent}>
             {restaurant.logo_url && (
               <Image
-                source={{ uri: restaurant.logo_url }}
+                source={{ uri: restaurant.logo_url, cache: 'reload' }}
                 style={styles.logo}
                 resizeMode="contain"
               />

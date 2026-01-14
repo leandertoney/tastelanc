@@ -155,7 +155,7 @@ function EventCard({ event, onPress }: EventCardProps) {
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
-      <Image source={{ uri: event.image_url }} style={styles.cardImage} />
+      <Image source={{ uri: event.image_url, cache: 'reload' }} style={styles.cardImage} />
       <View style={styles.cardContent}>
         <View style={styles.typeBadge}>
           <Ionicons name={icon} size={12} color={colors.accent} />
