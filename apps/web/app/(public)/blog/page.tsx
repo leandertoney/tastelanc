@@ -251,7 +251,7 @@ export default async function BlogPage() {
             href="/premium"
             className="inline-flex items-center gap-2 bg-amber-500 text-black font-semibold px-6 py-3 hover:bg-amber-400 transition-colors rounded"
           >
-            Get Early Access
+            Download the App
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
