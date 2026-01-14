@@ -3,12 +3,6 @@ import { createClient } from '@/lib/supabase/server';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
 
-// Paid tier IDs (premium and elite)
-const PAID_TIER_IDS = [
-  'dd1789e3-e816-44ff-a93f-962d51a7888e', // premium
-  '589e2533-fccd-4ac5-abe1-006dd9326485', // elite
-];
-
 // Default event images by type
 const DEFAULT_EVENT_IMAGES: Record<string, string> = {
   trivia: `${SITE_URL}/images/events/trivia.png`,
@@ -25,7 +19,6 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
     const restaurantId = searchParams.get('restaurant_id');
-    const paidOnly = searchParams.get('paid_only') === 'true';
     const limit = parseInt(searchParams.get('limit') || '50', 10);
 
     const supabase = await createClient();
@@ -47,10 +40,7 @@ export async function GET(request: Request) {
       query = query.eq('restaurant_id', restaurantId);
     }
 
-    // Filter to only paid restaurants if requested
-    if (paidOnly) {
-      query = query.in('restaurant.tier_id', PAID_TIER_IDS);
-    }
+    // Note: paid_only filter removed - show all events regardless of restaurant tier
 
     const { data: events, error } = await query;
 
