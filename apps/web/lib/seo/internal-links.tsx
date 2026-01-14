@@ -18,7 +18,14 @@ export function restaurantCTAButtons() {
       >
         Download for iOS
       </a>
-      <span className="text-gray-500 text-sm">Android Coming Soon</span>
+      <a
+        href="https://play.google.com/store/apps/details?id=com.tastelanc.app"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="px-4 py-2 rounded-lg bg-green-600 text-white font-semibold"
+      >
+        Download for Android
+      </a>
     </div>
   );
 }

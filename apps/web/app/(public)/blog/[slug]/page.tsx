@@ -389,7 +389,14 @@ export default async function BlogPostPage({ params }: PageProps) {
                 >
                   DOWNLOAD FOR iOS
                 </a>
-                <p className="text-gray-500 text-xs text-center mt-2">Android Coming Soon</p>
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.tastelanc.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full bg-green-600 text-white text-center font-semibold py-3 hover:bg-green-700 transition-colors mt-2"
+                >
+                  DOWNLOAD FOR ANDROID
+                </a>
               </div>
 
               {/* Tags */}
