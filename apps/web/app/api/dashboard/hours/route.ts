@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifyRestaurantAccess } from '@/lib/auth/restaurant-access';
 import type { DayOfWeek } from '@/types/database';
 
@@ -103,8 +103,11 @@ export async function PUT(request: Request) {
       );
     }
 
+    // Use service role client for admin operations to bypass RLS
+    const dbClient = accessResult.isAdmin ? createServiceRoleClient() : supabase;
+
     // Delete existing hours for this restaurant
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await dbClient
       .from('restaurant_hours')
       .delete()
       .eq('restaurant_id', restaurantId);
@@ -131,7 +134,7 @@ export async function PUT(request: Request) {
       is_closed: h.is_closed,
     }));
 
-    const { data: newHours, error: insertError } = await supabase
+    const { data: newHours, error: insertError } = await dbClient
       .from('restaurant_hours')
       .insert(hoursToInsert)
       .select();
