@@ -67,6 +67,8 @@ export type RootStackParamList = {
   VoteRestaurant: { category: VoteCategory };
   VoteHistory: undefined;
   VoteLeaderboard: { category?: VoteCategory };
+  // Feature request
+  FeatureRequest: undefined;
 };
 
 // Type helpers for useNavigation hook

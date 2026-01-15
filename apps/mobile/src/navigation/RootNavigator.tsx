@@ -10,6 +10,7 @@ import FeaturedViewAllScreen from '../screens/FeaturedViewAllScreen';
 import CuisinesViewAllScreen from '../screens/CuisinesViewAllScreen';
 import CuisineDetailScreen from '../screens/CuisineDetailScreen';
 import EventDetailScreen from '../screens/EventDetailScreen';
+import FeatureRequestScreen from '../screens/FeatureRequestScreen';
 import {
   VoteCenterScreen,
   VoteCategoryScreen,
@@ -120,6 +121,12 @@ export default function RootNavigator() {
         name="VoteLeaderboard"
         component={VoteLeaderboardScreen}
         options={{ title: 'Leaderboard' }}
+      />
+      {/* Feature Request */}
+      <Stack.Screen
+        name="FeatureRequest"
+        component={FeatureRequestScreen}
+        options={{ title: 'Suggest a Feature' }}
       />
     </Stack.Navigator>
   );

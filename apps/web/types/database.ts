@@ -86,6 +86,8 @@ export interface Restaurant {
   parking_info: string | null;
   noise_level: string | null;
   average_rating: number | null;
+  tastelancrating: number | null;
+  tastelancrating_count: number;
   reservation_links: string | null;
   stripe_subscription_id: string | null;
 }

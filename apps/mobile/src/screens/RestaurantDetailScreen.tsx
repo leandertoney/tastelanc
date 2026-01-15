@@ -39,6 +39,7 @@ import {
   MapPreview,
   CheckInModal,
   PhotosCarousel,
+  RatingSubmit,
 } from '../components';
 import type { Tab } from '../components';
 import { colors, radius } from '../constants/colors';
@@ -226,9 +227,25 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
             )}
             <Text style={styles.heroTitle}>{restaurant.name}</Text>
             <View style={styles.heroMeta}>
-              {restaurant.average_rating && (
-                <RatingStars rating={restaurant.average_rating} size="medium" />
-              )}
+              {restaurant.tastelancrating ? (
+                <View style={styles.ratingsRow}>
+                  <RatingStars
+                    rating={restaurant.tastelancrating}
+                    reviewCount={restaurant.tastelancrating_count}
+                    size="medium"
+                  />
+                  {restaurant.average_rating && (
+                    <Text style={styles.googleRating}>
+                      {restaurant.average_rating.toFixed(1)} Google
+                    </Text>
+                  )}
+                </View>
+              ) : restaurant.average_rating ? (
+                <View style={styles.ratingsRow}>
+                  <RatingStars rating={restaurant.average_rating} size="medium" />
+                  <Text style={styles.googleLabel}>Google</Text>
+                </View>
+              ) : null}
             </View>
           </View>
         </LinearGradient>
@@ -260,6 +277,18 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
         onFavoritePress={handleFavoritePress}
         isFavorite={isFavorite}
       />
+
+      {/* Rating Section */}
+      {userId && (
+        <View style={styles.ratingSection}>
+          <RatingSubmit
+            restaurantId={restaurant.id}
+            onRatingSubmitted={() => {
+              loadData();
+            }}
+          />
+        </View>
+      )}
 
       {/* Tab Bar - only for Premium/Elite restaurants */}
       {hasPremiumContent && (
@@ -510,6 +539,25 @@ const styles = StyleSheet.create({
   heroMeta: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  ratingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  googleRating: {
+    fontSize: 14,
+    color: colors.textMuted,
+    fontWeight: '500',
+  },
+  googleLabel: {
+    fontSize: 14,
+    color: colors.textMuted,
+    marginLeft: 4,
+  },
+  ratingSection: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
 
   // Tags

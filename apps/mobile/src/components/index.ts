@@ -6,6 +6,7 @@ export { default as SpotlightCard } from './SpotlightCard';
 export { default as RestaurantCard } from './RestaurantCard';
 export { default as TagChip } from './TagChip';
 export { default as RatingStars } from './RatingStars';
+export { default as RatingSubmit } from './RatingSubmit';
 export { default as QuickActionsBar } from './QuickActionsBar';
 export { default as SectionCard } from './SectionCard';
 export { default as HoursAccordion } from './HoursAccordion';

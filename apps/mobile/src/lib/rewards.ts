@@ -166,3 +166,73 @@ export async function getRewardsHistory(
 
   return response.json();
 }
+
+// ============ Rating API ============
+
+const RATINGS_API_BASE = 'https://tastelanc.com/api/mobile/ratings';
+
+export interface SubmitRatingResponse {
+  success: boolean;
+  rating: number;
+  is_first_rating: boolean;
+  points_earned: number;
+  restaurant_rating: number | null;
+  restaurant_rating_count: number;
+  message: string;
+}
+
+export interface UserRatingResponse {
+  has_rated: boolean;
+  rating: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+/**
+ * Submit a rating for a restaurant
+ * @param restaurantId - The restaurant ID to rate
+ * @param rating - Rating value (1-5)
+ * @returns Response with points earned (if first rating) and updated aggregate
+ */
+export async function submitRating(
+  restaurantId: string,
+  rating: number
+): Promise<SubmitRatingResponse> {
+  const headers = await getAuthHeaders();
+
+  const response = await fetch(RATINGS_API_BASE, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      restaurant_id: restaurantId,
+      rating,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Failed to submit rating' }));
+    throw new Error(error.error || `HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Get user's existing rating for a restaurant
+ * @param restaurantId - The restaurant ID to check
+ * @returns User's rating if they've rated, null otherwise
+ */
+export async function getUserRating(restaurantId: string): Promise<UserRatingResponse> {
+  const headers = await getAuthHeaders();
+
+  const response = await fetch(`${RATINGS_API_BASE}?restaurant_id=${restaurantId}`, {
+    method: 'GET',
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch rating: ${response.status}`);
+  }
+
+  return response.json();
+}
