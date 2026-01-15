@@ -13,9 +13,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigationContext } from '../navigation';
 import { colors, radius } from '../constants/colors';
 import { useAuth } from '../hooks/useAuth';
+import type { RootStackParamList } from '../navigation/types';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 import {
   simulateGeofenceEntry,
   getTestRestaurants,
@@ -93,6 +98,7 @@ function SectionHeader({ title }: { title: string }) {
 }
 
 export default function ProfileScreen() {
+  const navigation = useNavigation<NavigationProp>();
   const { restartOnboarding } = useNavigationContext();
   const { userId } = useAuth();
 
@@ -249,6 +255,10 @@ export default function ProfileScreen() {
     Linking.openURL('https://tastelanc.com/terms');
   };
 
+  const handleSuggestFeature = () => {
+    navigation.navigate('FeatureRequest');
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
@@ -295,6 +305,12 @@ export default function ProfileScreen() {
         {/* Support Section */}
         <SectionHeader title="Support" />
         <View style={styles.section}>
+          <SettingItem
+            icon="bulb-outline"
+            label="Suggest a Feature"
+            subtitle="Share your ideas with us"
+            onPress={handleSuggestFeature}
+          />
           <SettingItem
             icon="help-circle-outline"
             label="Help & Support"

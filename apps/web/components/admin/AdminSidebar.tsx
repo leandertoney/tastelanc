@@ -16,6 +16,7 @@ import {
   Zap,
   Crown,
   ClipboardCheck,
+  Lightbulb,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -42,6 +43,8 @@ const NAV_ITEMS: Array<{
   // Leads & Data
   { href: '/admin/business-leads', icon: Briefcase, label: 'Leads', highlight: true, section: 'Data' },
   { href: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
+  // Feedback
+  { href: '/admin/feature-requests', icon: Lightbulb, label: 'Feature Requests', highlight: true, section: 'Feedback' },
 ];
 
 interface AdminSidebarProps {
