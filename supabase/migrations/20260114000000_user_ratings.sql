@@ -19,6 +19,11 @@ ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS tastelancrating_count INTEGER D
 -- Enable RLS
 ALTER TABLE user_ratings ENABLE ROW LEVEL SECURITY;
 
+-- Drop policies if they exist (for idempotent migrations)
+DROP POLICY IF EXISTS "Users can insert own ratings" ON user_ratings;
+DROP POLICY IF EXISTS "Users can update own ratings" ON user_ratings;
+DROP POLICY IF EXISTS "Anyone can read ratings" ON user_ratings;
+
 -- RLS policies
 CREATE POLICY "Users can insert own ratings" ON user_ratings
   FOR INSERT WITH CHECK (auth.uid() = user_id);

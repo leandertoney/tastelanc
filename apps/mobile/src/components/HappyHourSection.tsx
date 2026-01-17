@@ -13,8 +13,10 @@ import { colors, radius, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_HAPPY_HOURS } from '../config/mockData';
 import { usePlatformSocialProof } from '../hooks';
 
-const DISPLAY_DURATION = 4000; // 4 seconds per banner
+const BANNER_DURATION = 4000; // 4 seconds per banner (equal for all)
 const FADE_DURATION = 300; // 300ms fade transition
+const DEAL_FADE_DURATION = 200; // 200ms fade for deal text rotation
+const DEAL_PAIR_DURATION = 2000; // 2 seconds per deal pair
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -26,7 +28,7 @@ interface HappyHourWithRestaurant extends HappyHour {
 // Display format for happy hour banners
 interface DisplayHappyHour {
   id: string;
-  deal: string;
+  deals: string[]; // Array of deal texts to rotate through
   restaurantName: string;
   timeWindow: string;
   imageUrl?: string;
@@ -36,7 +38,7 @@ interface DisplayHappyHour {
 // Convert centralized mock data to display format
 const MOCK_DISPLAY_HAPPY_HOURS: DisplayHappyHour[] = MOCK_HAPPY_HOURS.map((hh) => ({
   id: hh.id,
-  deal: hh.deal,
+  deals: [hh.deal], // Mock data has single deal
   restaurantName: hh.restaurantName,
   timeWindow: hh.timeWindow,
   imageUrl: hh.imageUrl,
@@ -47,18 +49,11 @@ function getDayOfWeek(): string {
   return new Date().toLocaleDateString('en-US', { weekday: 'long' });
 }
 
-// Paid tier IDs
-const PAID_TIER_IDS = [
-  'dd1789e3-e816-44ff-a93f-962d51a7888e', // premium
-  '589e2533-fccd-4ac5-abe1-006dd9326485', // elite
-];
-
 async function getActiveHappyHours(): Promise<HappyHourWithRestaurant[]> {
   const now = new Date();
   const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-  const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
 
-  // Get happy hours from paid restaurants only
+  // Get all happy hours for today (no time filter - show all day)
   const { data, error } = await supabase
     .from('happy_hours')
     .select(`
@@ -67,27 +62,30 @@ async function getActiveHappyHours(): Promise<HappyHourWithRestaurant[]> {
       items:happy_hour_items(*)
     `)
     .eq('is_active', true)
-    .in('restaurant.tier_id', PAID_TIER_IDS)
     .contains('days_of_week', [dayOfWeek])
-    .lte('start_time', currentTime)
-    .gte('end_time', currentTime)
+    .order('display_order', { referencedTable: 'happy_hour_items', ascending: true })
     .limit(10);
 
   if (error) throw error;
   return data || [];
 }
 
-function formatDealText(happyHour: HappyHourWithRestaurant): string {
-  // If there are items, use the first item's description
+function formatDealTexts(happyHour: HappyHourWithRestaurant): string[] {
+  // If there are individual items, format each one for rotation
   if (happyHour.items && happyHour.items.length > 0) {
-    const item = happyHour.items[0];
-    if (item.original_price && item.discounted_price) {
-      const discount = Math.round((1 - item.discounted_price / item.original_price) * 100);
-      return `${discount}% off ${item.name}`;
-    }
-    return item.discounted_price ? `$${item.discounted_price} ${item.name}` : item.name;
+    return happyHour.items.map((item) => {
+      if (item.discount_description) {
+        return `${item.discount_description} ${item.name}`;
+      }
+      if (item.original_price && item.discounted_price) {
+        const discount = Math.round((1 - item.discounted_price / item.original_price) * 100);
+        return `${discount}% off ${item.name}`;
+      }
+      return item.discounted_price ? `$${item.discounted_price} ${item.name}` : item.name;
+    });
   }
-  return happyHour.name;
+  // Fallback to description or name
+  return [happyHour.description || happyHour.name];
 }
 
 function formatTimeWindow(startTime: string, endTime: string): string {
@@ -104,9 +102,12 @@ function formatTimeWindow(startTime: string, endTime: string): string {
 export default function HappyHourSection() {
   const navigation = useNavigation<NavigationProp>();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentDealIndex, setCurrentDealIndex] = useState(0);
   const [dayOfWeek] = useState(getDayOfWeek());
   const fadeAnim = useRef(new Animated.Value(1)).current;
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const dealFadeAnim = useRef(new Animated.Value(1)).current;
+  const bannerTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const dealTimerRef = useRef<NodeJS.Timeout | null>(null);
   const { data: socialProof } = usePlatformSocialProof();
 
   const { data: happyHours = [], isLoading } = useQuery({
@@ -126,18 +127,39 @@ export default function HappyHourSection() {
   // Map real happy hours to display format
   const mappedHappyHours: DisplayHappyHour[] = happyHours.map((hh) => ({
     id: hh.id,
-    deal: formatDealText(hh),
+    deals: formatDealTexts(hh),
     restaurantName: hh.restaurant.name,
     restaurantId: hh.restaurant.id,
     timeWindow: formatTimeWindow(hh.start_time, hh.end_time),
-    imageUrl: hh.restaurant.cover_image_url || undefined,
+    imageUrl: hh.image_url || hh.restaurant.cover_image_url || undefined,
   }));
 
   // Use real data, or mock data if enabled and no real data
   const displayData: DisplayHappyHour[] =
     mappedHappyHours.length > 0 ? mappedHappyHours : ENABLE_MOCK_DATA ? MOCK_DISPLAY_HAPPY_HOURS : [];
 
-  // Auto-cycle with fade transition
+  // Ensure currentIndex is valid when displayData changes
+  const safeIndex = displayData.length > 0 ? currentIndex % displayData.length : 0;
+  const currentBanner = displayData[safeIndex];
+  const dealCount = currentBanner?.deals.length || 1;
+  // Number of pairs (2 deals per pair, rounded up)
+  const pairCount = Math.ceil(dealCount / 2);
+
+  // Reset indices when displayData changes
+  useEffect(() => {
+    setCurrentIndex(0);
+    setCurrentDealIndex(0);
+    fadeAnim.setValue(1);
+    dealFadeAnim.setValue(1);
+  }, [displayData.length, fadeAnim, dealFadeAnim]);
+
+  // Reset deal index when banner changes
+  useEffect(() => {
+    setCurrentDealIndex(0);
+    dealFadeAnim.setValue(1);
+  }, [safeIndex, dealFadeAnim]);
+
+  // Auto-cycle banners with fade transition
   useEffect(() => {
     if (displayData.length <= 1) return;
 
@@ -159,19 +181,48 @@ export default function HappyHourSection() {
       });
     };
 
-    timerRef.current = setInterval(cycleToNext, DISPLAY_DURATION);
+    bannerTimerRef.current = setInterval(cycleToNext, BANNER_DURATION);
 
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
+      if (bannerTimerRef.current) {
+        clearInterval(bannerTimerRef.current);
       }
     };
   }, [displayData.length, fadeAnim]);
 
-  const currentBanner = displayData[currentIndex];
+  // Auto-rotate deal pairs within current banner
+  useEffect(() => {
+    if (pairCount <= 1) return;
+
+    const rotateDealPair = () => {
+      // Fade out
+      Animated.timing(dealFadeAnim, {
+        toValue: 0,
+        duration: DEAL_FADE_DURATION,
+        useNativeDriver: true,
+      }).start(() => {
+        // Update to next pair
+        setCurrentDealIndex((prev) => (prev + 1) % pairCount);
+        // Fade in
+        Animated.timing(dealFadeAnim, {
+          toValue: 1,
+          duration: DEAL_FADE_DURATION,
+          useNativeDriver: true,
+        }).start();
+      });
+    };
+
+    dealTimerRef.current = setInterval(rotateDealPair, DEAL_PAIR_DURATION);
+
+    return () => {
+      if (dealTimerRef.current) {
+        clearInterval(dealTimerRef.current);
+      }
+    };
+  }, [pairCount, dealFadeAnim]);
 
   // No loading state - data is prefetched during splash screen
-  if (displayData.length === 0) {
+  if (displayData.length === 0 || !currentBanner) {
     return null;
   }
 
@@ -199,12 +250,14 @@ export default function HappyHourSection() {
       {/* Single banner with fade animation */}
       <Animated.View style={[styles.bannerContainer, { opacity: fadeAnim }]}>
         <HappyHourBanner
-          deal={currentBanner.deal}
+          deal={currentBanner.deals[currentDealIndex * 2] || currentBanner.deals[0]}
+          deal2={currentBanner.deals[currentDealIndex * 2 + 1]}
           restaurantName={currentBanner.restaurantName}
           timeWindow={currentBanner.timeWindow}
           imageUrl={currentBanner.imageUrl}
           onPress={currentBanner.restaurantId ? () => handleBannerPress(currentBanner.restaurantId!) : undefined}
           fullWidth
+          dealOpacity={pairCount > 1 ? dealFadeAnim : undefined}
         />
       </Animated.View>
 

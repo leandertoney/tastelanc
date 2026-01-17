@@ -63,6 +63,12 @@ export default function QuickActionsBar({
     // Will implement with expo-sharing later
   };
 
+  const handleFavorite = () => {
+    if (onFavoritePress) {
+      onFavoritePress();
+    }
+  };
+
   const actions = [
     {
       icon: 'call-outline' as const,
@@ -85,7 +91,7 @@ export default function QuickActionsBar({
     {
       icon: isFavorite ? 'heart' : 'heart-outline',
       label: 'Favorite',
-      onPress: onFavoritePress,
+      onPress: handleFavorite,
       disabled: false,
       iconColor: isFavorite ? colors.accent : undefined,
     },

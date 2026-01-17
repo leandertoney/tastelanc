@@ -1,30 +1,56 @@
-import { View, Text, StyleSheet, TouchableOpacity, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing } from '../constants/colors';
 
 interface HappyHourBannerProps {
-  deal: string; // e.g., "$2 off Blue Moons"
+  deal: string; // Primary deal line
+  deal2?: string; // Optional second deal line (stacked)
   restaurantName: string;
   timeWindow: string; // e.g., "4pm-6pm" or "Wed 6-11pm"
   imageUrl?: string;
   onPress?: () => void;
   fullWidth?: boolean;
+  dealOpacity?: Animated.Value; // Optional opacity for deal text rotation
 }
 
 export default function HappyHourBanner({
   deal,
+  deal2,
   restaurantName,
   timeWindow,
   imageUrl,
   onPress,
   fullWidth = false,
+  dealOpacity,
 }: HappyHourBannerProps) {
+  const DealText = dealOpacity ? (
+    <Animated.View style={{ opacity: dealOpacity }}>
+      <Text style={[styles.deal, fullWidth && styles.dealLarge]} numberOfLines={1}>
+        {deal}
+      </Text>
+      {deal2 && (
+        <Text style={[styles.deal, fullWidth && styles.dealLarge]} numberOfLines={1}>
+          {deal2}
+        </Text>
+      )}
+    </Animated.View>
+  ) : (
+    <View>
+      <Text style={[styles.deal, fullWidth && styles.dealLarge]} numberOfLines={1}>
+        {deal}
+      </Text>
+      {deal2 && (
+        <Text style={[styles.deal, fullWidth && styles.dealLarge]} numberOfLines={1}>
+          {deal2}
+        </Text>
+      )}
+    </View>
+  );
+
   const content = (
     <View style={styles.content}>
       <View style={styles.leftSection}>
-        <Text style={[styles.deal, fullWidth && styles.dealLarge]} numberOfLines={2}>
-          {deal}
-        </Text>
+        {DealText}
         <Text style={styles.restaurantName} numberOfLines={1}>
           {restaurantName}
         </Text>

@@ -15,6 +15,12 @@ CREATE TABLE IF NOT EXISTS feature_requests (
 -- Enable RLS
 ALTER TABLE feature_requests ENABLE ROW LEVEL SECURITY;
 
+-- Drop policies if they exist (for idempotent migrations)
+DROP POLICY IF EXISTS "Admin can read all feature requests" ON feature_requests;
+DROP POLICY IF EXISTS "Admin can update feature requests" ON feature_requests;
+DROP POLICY IF EXISTS "Admin can delete feature requests" ON feature_requests;
+DROP POLICY IF EXISTS "Anyone can submit feature requests" ON feature_requests;
+
 -- Policy: Admin can read all feature requests
 CREATE POLICY "Admin can read all feature requests" ON feature_requests
   FOR SELECT TO authenticated
@@ -49,6 +55,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS feature_requests_updated_at ON feature_requests;
 CREATE TRIGGER feature_requests_updated_at
   BEFORE UPDATE ON feature_requests
   FOR EACH ROW
