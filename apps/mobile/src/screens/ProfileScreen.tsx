@@ -27,6 +27,11 @@ import {
   clearTestVisits,
   logRecentVisits,
 } from '../lib/radarTestUtils';
+import {
+  registerForPushNotifications,
+  savePushToken,
+  scheduleLocalNotification,
+} from '../lib/notifications';
 
 // Storage keys for preferences
 const NOTIFICATIONS_KEY = '@tastelanc_notifications';
@@ -173,6 +178,47 @@ export default function ProfileScreen() {
         },
       },
     ]);
+  };
+
+  const handleTestPushNotification = async () => {
+    if (!__DEV__) return;
+
+    try {
+      // First, try to register and save the push token
+      console.log('Registering for push notifications...');
+      const token = await registerForPushNotifications();
+
+      if (token) {
+        console.log('Push token:', token);
+
+        // Save to database if we have a userId
+        if (userId) {
+          const saved = await savePushToken(token, userId);
+          console.log('Token saved to database:', saved);
+        }
+
+        // Send a local test notification
+        await scheduleLocalNotification(
+          'Happy Hour Alert!',
+          'The Imperial has $5 drafts, $8 wine & 50% off bar menu until 7pm!',
+          { screen: 'RestaurantDetail', restaurantId: '28b029d8-171b-4e05-9a2e-628e8e1d6f7d' },
+          2
+        );
+
+        Alert.alert(
+          'Success!',
+          `Token registered: ${token.substring(0, 25)}...\n\nA test notification will appear in 2 seconds.`
+        );
+      } else {
+        Alert.alert(
+          'No Token',
+          'Could not get push token. Make sure:\n\n1. You are on a physical device\n2. Notifications are enabled in Settings'
+        );
+      }
+    } catch (error) {
+      console.error('Push notification test error:', error);
+      Alert.alert('Error', `Failed to test push notifications: ${error}`);
+    }
   };
 
   const loadPreferences = async () => {
@@ -377,6 +423,12 @@ export default function ProfileScreen() {
                 subtitle="Remove manually recorded visits"
                 onPress={handleClearTestVisits}
                 danger
+              />
+              <SettingItem
+                icon="notifications-outline"
+                label="Test Push Notification"
+                subtitle="Register token & send local notification"
+                onPress={handleTestPushNotification}
               />
             </View>
             <View style={styles.devNote}>
