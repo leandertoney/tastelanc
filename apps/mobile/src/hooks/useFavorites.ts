@@ -1,7 +1,9 @@
+import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../lib/queryClient';
 import { getFavorites, toggleFavorite, isFavorited } from '../lib/favorites';
 import { useAuth } from './useAuth';
+import { useSignUpModal } from '../context/SignUpModalContext';
 
 /**
  * Hook to get all favorites for the current user
@@ -28,12 +30,14 @@ export function useIsFavorite(restaurantId: string) {
 
 /**
  * Hook to toggle favorite status
+ * Automatically prompts signup if user is anonymous
  */
 export function useToggleFavorite() {
-  const { userId } = useAuth();
+  const { userId, isAnonymous } = useAuth();
   const queryClient = useQueryClient();
+  const { showSignUpModal } = useSignUpModal();
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: async (restaurantId: string) => {
       if (!userId) {
         throw new Error('User not authenticated');
@@ -79,4 +83,30 @@ export function useToggleFavorite() {
       queryClient.invalidateQueries({ queryKey: [...queryKeys.favorites, userId] });
     },
   });
+
+  // Wrap mutate to check auth first
+  const mutate = useCallback(
+    (restaurantId: string) => {
+      // If no user or user is anonymous, show signup modal
+      if (!userId || isAnonymous) {
+        console.log('useToggleFavorite: User needs to sign up - userId:', userId, 'isAnonymous:', isAnonymous);
+        showSignUpModal({
+          action: 'save this restaurant',
+          onSuccess: () => {
+            // After signup, the user can tap again to favorite
+            // We don't auto-favorite because userId in this closure is stale
+          },
+        });
+        return;
+      }
+
+      mutation.mutate(restaurantId);
+    },
+    [userId, isAnonymous, showSignUpModal, mutation]
+  );
+
+  return {
+    ...mutation,
+    mutate,
+  };
 }

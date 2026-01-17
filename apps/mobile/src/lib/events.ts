@@ -101,3 +101,12 @@ export const ENTERTAINMENT_TYPES: EventType[] = [
 export async function fetchEntertainmentEvents(): Promise<ApiEvent[]> {
   return fetchEventsByTypes(ENTERTAINMENT_TYPES);
 }
+
+/**
+ * Fetch only non-entertainment events (e.g., promotions)
+ * Used by Upcoming Events section to avoid overlap with Entertainment section
+ */
+export async function fetchNonEntertainmentEvents(): Promise<ApiEvent[]> {
+  const allEvents = await fetchEvents();
+  return allEvents.filter(event => !ENTERTAINMENT_TYPES.includes(event.event_type));
+}

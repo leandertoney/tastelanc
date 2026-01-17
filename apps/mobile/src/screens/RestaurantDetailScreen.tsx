@@ -25,9 +25,9 @@ import type {
 } from '../types/database';
 import { supabase } from '../lib/supabase';
 import { fetchEvents } from '../lib/events';
-import { isFavorited, toggleFavorite } from '../lib/favorites';
 import { formatCategoryName } from '../lib/formatters';
 import { useAuth } from '../hooks/useAuth';
+import { useFavorites, useToggleFavorite } from '../hooks';
 import {
   TagChip,
   RatingStars,
@@ -63,6 +63,11 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const { id } = route.params;
   const { userId } = useAuth();
 
+  // Use hooks for favorites - handles signup modal automatically
+  const { data: favorites = [] } = useFavorites();
+  const toggleFavoriteMutation = useToggleFavorite();
+  const isFavorite = favorites.includes(id);
+
   const [restaurant, setRestaurant] = useState<RestaurantWithTier | null>(null);
   const [hours, setHours] = useState<RestaurantHours[]>([]);
   const [happyHours, setHappyHours] = useState<HappyHour[]>([]);
@@ -71,7 +76,6 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [activeTab, setActiveTab] = useState('menu');
   const [checkInModalVisible, setCheckInModalVisible] = useState(false);
 
@@ -143,26 +147,15 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
     fetchRestaurantData();
   }, [fetchRestaurantData]);
 
-  // Load favorite status on mount
-  useEffect(() => {
-    const loadFavoriteStatus = async () => {
-      if (!userId) return;
-      const favorited = await isFavorited(userId, id);
-      setIsFavorite(favorited);
-    };
-    loadFavoriteStatus();
-  }, [id, userId]);
-
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchRestaurantData();
   }, [fetchRestaurantData]);
 
-  const handleFavoritePress = useCallback(async () => {
-    if (!userId) return;
-    const newState = await toggleFavorite(userId, id);
-    setIsFavorite(newState);
-  }, [id, userId]);
+  // Handle favorite press - the hook handles signup modal automatically
+  const handleFavoritePress = useCallback(() => {
+    toggleFavoriteMutation.mutate(id);
+  }, [id, toggleFavoriteMutation]);
 
   if (loading) {
     return (
@@ -228,23 +221,13 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
             <Text style={styles.heroTitle}>{restaurant.name}</Text>
             <View style={styles.heroMeta}>
               {restaurant.tastelancrating ? (
-                <View style={styles.ratingsRow}>
-                  <RatingStars
-                    rating={restaurant.tastelancrating}
-                    reviewCount={restaurant.tastelancrating_count}
-                    size="medium"
-                  />
-                  {restaurant.average_rating && (
-                    <Text style={styles.googleRating}>
-                      {restaurant.average_rating.toFixed(1)} Google
-                    </Text>
-                  )}
-                </View>
+                <RatingStars
+                  rating={restaurant.tastelancrating}
+                  reviewCount={restaurant.tastelancrating_count}
+                  size="medium"
+                />
               ) : restaurant.average_rating ? (
-                <View style={styles.ratingsRow}>
-                  <RatingStars rating={restaurant.average_rating} size="medium" />
-                  <Text style={styles.googleLabel}>Google</Text>
-                </View>
+                <RatingStars rating={restaurant.average_rating} size="medium" />
               ) : null}
             </View>
           </View>
@@ -284,7 +267,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
           <RatingSubmit
             restaurantId={restaurant.id}
             onRatingSubmitted={() => {
-              loadData();
+              fetchRestaurantData();
             }}
           />
         </View>

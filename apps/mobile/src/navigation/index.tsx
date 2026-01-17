@@ -7,6 +7,7 @@ import OnboardingNavigator from './OnboardingNavigator';
 import SplashVideoScreen from '../screens/SplashVideoScreen';
 import { AuthProvider } from '../context/AuthContext';
 import { OnboardingProvider } from '../context/OnboardingContext';
+import { SignUpModalProvider } from '../context/SignUpModalContext';
 import { ONBOARDING_STORAGE_KEY, ONBOARDING_DATA_KEY } from '../types/onboarding';
 import { colors } from '../constants/colors';
 import { env } from '../lib/env';
@@ -136,11 +137,13 @@ export default function Navigation() {
 
   return (
     <AuthProvider>
-      <NavigationContext.Provider value={{ restartOnboarding, finishOnboarding }}>
-        <OnboardingProvider>
-          <NavigationInner hasCompletedOnboarding={hasCompletedOnboarding} />
-        </OnboardingProvider>
-      </NavigationContext.Provider>
+      <SignUpModalProvider>
+        <NavigationContext.Provider value={{ restartOnboarding, finishOnboarding }}>
+          <OnboardingProvider>
+            <NavigationInner hasCompletedOnboarding={hasCompletedOnboarding} />
+          </OnboardingProvider>
+        </NavigationContext.Provider>
+      </SignUpModalProvider>
     </AuthProvider>
   );
 }

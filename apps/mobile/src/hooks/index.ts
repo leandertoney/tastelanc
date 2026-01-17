@@ -28,6 +28,7 @@ export {
 
 // Favorites hooks
 export { useFavorites, useIsFavorite, useToggleFavorite } from './useFavorites';
+export { useAuthAwareFavorite } from './useAuthAwareFavorite';
 
 // Voting hooks
 export {

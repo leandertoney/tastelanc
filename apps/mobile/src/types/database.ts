@@ -22,7 +22,7 @@ export type CuisineType =
   | 'steakhouse'
   | 'pub_fare';
 
-export type EventType = 'live_music' | 'trivia' | 'karaoke' | 'dj' | 'comedy' | 'sports' | 'other';
+export type EventType = 'live_music' | 'trivia' | 'karaoke' | 'dj' | 'comedy' | 'sports' | 'other' | 'promotion';
 
 export type DayOfWeek =
   | 'monday'
@@ -113,10 +113,12 @@ export interface HappyHour {
   id: string;
   restaurant_id: string;
   name: string;
+  description: string | null;
   days_of_week: DayOfWeek[];
   start_time: string;
   end_time: string;
   is_active: boolean;
+  image_url: string | null;
   items?: HappyHourItem[];
 }
 
@@ -127,6 +129,7 @@ export interface HappyHourItem {
   description: string | null;
   original_price: number | null;
   discounted_price: number | null;
+  discount_description: string | null;
 }
 
 export interface Special {

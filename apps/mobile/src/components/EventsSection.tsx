@@ -6,7 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import EventCard, { EVENT_CARD_HEIGHT } from './EventCard';
 import SectionHeader from './SectionHeader';
 import Spacer from './Spacer';
-import { fetchEvents, ApiEvent } from '../lib/events';
+import { fetchNonEntertainmentEvents, ApiEvent } from '../lib/events';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_EVENTS } from '../config/mockData';
@@ -42,7 +42,7 @@ const MOCK_DISPLAY_EVENTS: DisplayEvent[] = MOCK_EVENTS.map((e) => ({
 }));
 
 async function getUpcomingEvents(): Promise<ApiEvent[]> {
-  const events = await fetchEvents();
+  const events = await fetchNonEntertainmentEvents();
 
   // Filter to upcoming/recurring events and limit to 10
   const today = new Date().toISOString().split('T')[0];

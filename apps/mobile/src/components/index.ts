@@ -15,6 +15,7 @@ export type { Tab } from './TabBar';
 export { default as MenuViewer } from './MenuViewer';
 export { default as MapPreview } from './MapPreview';
 export { default as CheckInModal } from './CheckInModal';
+export { default as SignUpModal } from './SignUpModal';
 export { default as RosieChat } from './RosieChat';
 export { default as PremiumBadge } from './PremiumBadge';
 export { default as PhotosCarousel } from './PhotosCarousel';
