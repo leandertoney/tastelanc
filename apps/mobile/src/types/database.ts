@@ -20,7 +20,8 @@ export type CuisineType =
   | 'latin'
   | 'seafood'
   | 'steakhouse'
-  | 'pub_fare';
+  | 'pub_fare'
+  | 'cafe';
 
 export type EventType = 'live_music' | 'trivia' | 'karaoke' | 'dj' | 'comedy' | 'sports' | 'other' | 'promotion';
 
@@ -173,6 +174,7 @@ export const CUISINE_LABELS: Record<CuisineType, string> = {
   seafood: 'Seafood',
   steakhouse: 'Steakhouse',
   pub_fare: 'Pub Fare',
+  cafe: 'Cafe & Coffee',
 };
 
 export const ALL_CUISINES: CuisineType[] = [
@@ -184,6 +186,7 @@ export const ALL_CUISINES: CuisineType[] = [
   'seafood',
   'steakhouse',
   'pub_fare',
+  'cafe',
 ];
 
 // User profile with premium subscription fields
