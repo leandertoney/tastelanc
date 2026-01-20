@@ -14,11 +14,6 @@ import { ALL_CUISINES, CuisineType } from '../types/database';
 
 // ========== Happy Hours Query Function ==========
 
-const PAID_TIER_IDS = [
-  'dd1789e3-e816-44ff-a93f-962d51a7888e', // premium
-  '589e2533-fccd-4ac5-abe1-006dd9326485', // elite
-];
-
 interface HappyHourWithRestaurant extends HappyHour {
   restaurant: Pick<Restaurant, 'id' | 'name' | 'cover_image_url'>;
   items?: HappyHourItem[];
@@ -27,8 +22,8 @@ interface HappyHourWithRestaurant extends HappyHour {
 async function getActiveHappyHours(): Promise<HappyHourWithRestaurant[]> {
   const now = new Date();
   const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-  const currentTime = now.toTimeString().slice(0, 5);
 
+  // Get all happy hours for today (no time filter - show all day)
   const { data, error } = await supabase
     .from('happy_hours')
     .select(`
@@ -37,10 +32,8 @@ async function getActiveHappyHours(): Promise<HappyHourWithRestaurant[]> {
       items:happy_hour_items(*)
     `)
     .eq('is_active', true)
-    .in('restaurant.tier_id', PAID_TIER_IDS)
     .contains('days_of_week', [dayOfWeek])
-    .lte('start_time', currentTime)
-    .gte('end_time', currentTime)
+    .order('display_order', { referencedTable: 'happy_hour_items', ascending: true })
     .limit(10);
 
   if (error) throw error;
