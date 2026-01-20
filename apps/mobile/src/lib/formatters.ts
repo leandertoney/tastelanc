@@ -37,6 +37,7 @@ export const CUISINE_LABELS: Record<string, string> = {
   seafood: 'Seafood',
   steakhouse: 'Steakhouse',
   pub_fare: 'Pub Fare',
+  cafe: 'Cafe & Coffee',
 };
 
 /**

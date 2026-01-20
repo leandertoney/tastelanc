@@ -28,6 +28,7 @@ const CUISINE_COLORS: Record<CuisineType, string> = {
   seafood: '#3498DB',
   steakhouse: '#8B4513',
   pub_fare: '#D4A574',
+  cafe: '#6F4E37',
 };
 
 // Fallback emoji icons for each cuisine type (used when no restaurant image)
@@ -40,6 +41,7 @@ const CUISINE_EMOJIS: Record<CuisineType, string> = {
   seafood: '🦞',
   steakhouse: '🥩',
   pub_fare: '🍔',
+  cafe: '☕',
 };
 
 type CuisineFeaturedRestaurant = Pick<Restaurant, 'id' | 'name' | 'cover_image_url' | 'cuisine'>;
