@@ -87,7 +87,7 @@ export default function EventDetailScreen({ route, navigation }: Props) {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
 
           {/* Event Type Badge */}
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   eventName: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: colors.textPrimary,
+    color: colors.text,
     marginBottom: 16,
   },
   dateTimeContainer: {
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: colors.text,
     marginBottom: 4,
   },
   timeText: {
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 16,
-    color: colors.textPrimary,
+    color: colors.text,
   },
   descriptionContainer: {
     marginTop: 24,
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: colors.text,
     marginBottom: 12,
   },
   description: {
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
   restaurantName: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: colors.text,
     marginBottom: 4,
   },
   viewRestaurantText: {
