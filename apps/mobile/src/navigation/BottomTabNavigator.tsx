@@ -2,6 +2,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabParamList } from './types';
 import { colors } from '../constants/colors';
+import HeaderLogo from '../components/HeaderLogo';
 
 import HomeScreen from '../screens/HomeScreen';
 import SearchScreen from '../screens/SearchScreen';
@@ -41,6 +42,7 @@ export default function BottomTabNavigator() {
           borderTopWidth: 1,
         },
         headerShown: true,
+        headerLeft: () => <HeaderLogo />,
         headerStyle: {
           backgroundColor: colors.primary,
         },
