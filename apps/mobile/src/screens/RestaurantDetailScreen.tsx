@@ -252,6 +252,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
 
       {/* Quick Actions */}
       <QuickActionsBar
+        restaurantName={restaurant.name}
         phone={restaurant.phone}
         website={restaurant.website}
         latitude={restaurant.latitude}

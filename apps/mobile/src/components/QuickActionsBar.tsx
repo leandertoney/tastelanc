@@ -1,9 +1,10 @@
-import { View, Text, TouchableOpacity, StyleSheet, Linking, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Linking, Platform, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import { colors, radius } from '../constants/colors';
 
 interface QuickActionsBarProps {
+  restaurantName?: string;
   phone?: string | null;
   website?: string | null;
   latitude?: number | null;
@@ -14,6 +15,7 @@ interface QuickActionsBarProps {
 }
 
 export default function QuickActionsBar({
+  restaurantName,
   phone,
   website,
   latitude,
@@ -59,8 +61,20 @@ export default function QuickActionsBar({
   };
 
   const handleShare = async () => {
-    // Placeholder for share functionality
-    // Will implement with expo-sharing later
+    const appStoreUrl =
+      Platform.OS === 'ios'
+        ? 'https://apps.apple.com/app/tastelanc/id6755852717'
+        : 'https://play.google.com/store/apps/details?id=com.tastelanc.app';
+
+    try {
+      await Share.share({
+        message: restaurantName
+          ? `Check out ${restaurantName} on TasteLanc! Download the app: ${appStoreUrl}`
+          : `Check out this restaurant on TasteLanc! Download the app: ${appStoreUrl}`,
+      });
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
   };
 
   const handleFavorite = () => {
