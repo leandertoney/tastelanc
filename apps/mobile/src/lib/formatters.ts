@@ -65,3 +65,76 @@ export function formatCuisineName(cuisine: string): string {
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
 }
+
+// Vibe tag emoji mapping
+const VIBE_EMOJI: Record<string, string> = {
+  romantic: '\u{1F495}',
+  trendy: '\u{1F525}',
+  intimate: '\u{1F56F}\uFE0F',
+  loud: '\u{1F50A}',
+  casual: '\u270C\uFE0F',
+  upscale: '\u2728',
+  cozy: '\u{1F3E0}',
+  lively: '\u{1F389}',
+  chill: '\u{1F60E}',
+  'family-friendly': '\u{1F468}\u200D\u{1F469}\u200D\u{1F467}',
+  elegant: '\u{1F947}',
+  eclectic: '\u{1F308}',
+  rustic: '\u{1F33F}',
+};
+
+export function getVibeEmoji(tag: string): string {
+  return VIBE_EMOJI[tag.toLowerCase()] || '\u2B50';
+}
+
+// Best-for emoji mapping
+const BEST_FOR_EMOJI: Record<string, string> = {
+  'date-night': '\u{1F491}',
+  families: '\u{1F468}\u200D\u{1F469}\u200D\u{1F467}\u200D\u{1F466}',
+  groups: '\u{1F465}',
+  solo: '\u{1F9D1}',
+  business: '\u{1F4BC}',
+  celebrations: '\u{1F389}',
+  'happy-hour': '\u{1F37B}',
+  brunch: '\u{1F942}',
+  'late-night': '\u{1F303}',
+  casual: '\u270C\uFE0F',
+};
+
+export function getBestForEmoji(value: string): string {
+  return BEST_FOR_EMOJI[value.toLowerCase()] || '\u2705';
+}
+
+/**
+ * Format a tag label for display (dash-case to Title Case)
+ */
+export function formatTagLabel(tag: string): string {
+  return tag
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+/**
+ * Get Ionicons icon name for noise level
+ */
+export function getNoiseIcon(level: string): string {
+  switch (level?.toLowerCase()) {
+    case 'quiet': return 'volume-low-outline';
+    case 'moderate': return 'volume-medium-outline';
+    case 'loud': return 'volume-high-outline';
+    default: return 'volume-medium-outline';
+  }
+}
+
+/**
+ * Format noise level for display
+ */
+export function formatNoiseLevel(level: string): string {
+  switch (level?.toLowerCase()) {
+    case 'quiet': return 'Quiet';
+    case 'moderate': return 'Moderate';
+    case 'loud': return 'Lively';
+    default: return level;
+  }
+}

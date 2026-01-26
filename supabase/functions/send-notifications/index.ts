@@ -6,7 +6,8 @@
  *
  * Endpoints:
  * - POST /happy-hour-alerts - Send alerts for upcoming happy hours (premium/elite only)
- * - POST /geofence-alert - Send alert when user enters a geofence (premium/elite only)
+ * - POST /geofence-alert - Send alert when user enters a restaurant geofence (premium/elite only)
+ * - POST /area-entry - Send alert when user enters an area geofence for the first time
  * - POST /event-reminder - Send reminder for upcoming events (premium/elite only)
  * - POST /broadcast - Send notification to all users (admin only)
  */
@@ -285,6 +286,49 @@ async function sendGeofenceAlert(
   return { sent: result.data[0]?.status === 'ok' };
 }
 
+/**
+ * Send area entry notification for first-time visits to neighborhoods
+ * Called when user enters an area geofence for the first time
+ */
+async function sendAreaEntryNotification(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  areaId: string,
+  areaName: string,
+  restaurantCount: number
+): Promise<{ sent: boolean; reason?: string }> {
+  // Get user's push token
+  const { data: tokenData } = await supabase
+    .from('push_tokens')
+    .select('token')
+    .eq('user_id', userId)
+    .single();
+
+  if (!tokenData) {
+    return { sent: false, reason: 'User has no push token' };
+  }
+
+  // Build the notification message
+  const countText = restaurantCount > 0
+    ? `Check out ${restaurantCount} restaurant${restaurantCount === 1 ? '' : 's'} on TasteLanc nearby`
+    : 'Discover restaurants on TasteLanc nearby';
+
+  const messages: PushMessage[] = [{
+    to: tokenData.token,
+    sound: 'default',
+    title: `You're in ${areaName}!`,
+    body: countText,
+    data: {
+      screen: 'AreaRestaurants',
+      areaId,
+      areaName,
+    },
+  }];
+
+  const result = await sendPushNotifications(messages);
+  return { sent: result.data[0]?.status === 'ok' };
+}
+
 // Main handler
 Deno.serve(async (req) => {
   try {
@@ -317,6 +361,30 @@ Deno.serve(async (req) => {
         }
 
         const result = await sendGeofenceAlert(supabase, userId, restaurantId);
+        return new Response(JSON.stringify(result), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'area-entry': {
+        // Send notification when user enters an area for the first time
+        const body = await req.json();
+        const { userId, areaId, areaName, restaurantCount } = body;
+
+        if (!userId || !areaId || !areaName) {
+          return new Response(JSON.stringify({ error: 'Missing userId, areaId, or areaName' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+
+        const result = await sendAreaEntryNotification(
+          supabase,
+          userId,
+          areaId,
+          areaName,
+          restaurantCount || 0
+        );
         return new Response(JSON.stringify(result), {
           headers: { 'Content-Type': 'application/json' },
         });

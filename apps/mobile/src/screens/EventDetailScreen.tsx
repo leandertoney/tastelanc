@@ -1,9 +1,12 @@
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Share, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, radius } from '../constants/colors';
+
+const APP_STORE_URL = 'https://apps.apple.com/app/tastelanc/id6755852717';
+const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.tastelanc.app';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventDetail'>;
 
@@ -67,6 +70,30 @@ export default function EventDetailScreen({ route, navigation }: Props) {
     }
   };
 
+  const handleShare = async () => {
+    try {
+      // Build event date string
+      let dateStr = '';
+      if (event.is_recurring) {
+        dateStr = `Every ${formatDaysOfWeek(event.days_of_week)}`;
+      } else if (event.event_date) {
+        dateStr = formatDate(event.event_date);
+      }
+
+      const timeStr = `${formatTime(event.start_time)}${event.end_time ? ` - ${formatTime(event.end_time)}` : ''}`;
+      const venueStr = event.restaurant?.name ? `at ${event.restaurant.name}` : '';
+      const downloadUrl = Platform.OS === 'ios' ? APP_STORE_URL : PLAY_STORE_URL;
+
+      const message = `Check out ${event.name} ${venueStr} on TasteLanc!\n\n${dateStr}\n${timeStr}\n\nDownload the app: ${downloadUrl}`;
+
+      await Share.share({
+        message,
+      });
+    } catch (error) {
+      console.error('Error sharing event:', error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} bounces={false}>
@@ -88,6 +115,14 @@ export default function EventDetailScreen({ route, navigation }: Props) {
             onPress={() => navigation.goBack()}
           >
             <Ionicons name="arrow-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+
+          {/* Share Button */}
+          <TouchableOpacity
+            style={styles.shareButton}
+            onPress={handleShare}
+          >
+            <Ionicons name="share-outline" size={22} color={colors.text} />
           </TouchableOpacity>
 
           {/* Event Type Badge */}
@@ -201,6 +236,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 50,
     left: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  shareButton: {
+    position: 'absolute',
+    top: 50,
+    left: 66,
     width: 40,
     height: 40,
     borderRadius: 20,

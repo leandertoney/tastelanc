@@ -11,6 +11,7 @@ import CuisinesViewAllScreen from '../screens/CuisinesViewAllScreen';
 import CuisineDetailScreen from '../screens/CuisineDetailScreen';
 import EventDetailScreen from '../screens/EventDetailScreen';
 import FeatureRequestScreen from '../screens/FeatureRequestScreen';
+import ItineraryBuilderScreen from '../screens/ItineraryBuilderScreen';
 import {
   VoteCenterScreen,
   VoteCategoryScreen,
@@ -43,10 +44,7 @@ export default function RootNavigator() {
       <Stack.Screen
         name="RestaurantDetail"
         component={RestaurantDetailScreen}
-        options={{
-          title: 'Loading...',
-          headerBackTitle: 'Back',
-        }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Category"
@@ -127,6 +125,12 @@ export default function RootNavigator() {
         name="FeatureRequest"
         component={FeatureRequestScreen}
         options={{ title: 'Suggest a Feature' }}
+      />
+      {/* Itinerary */}
+      <Stack.Screen
+        name="ItineraryBuilder"
+        component={ItineraryBuilderScreen}
+        options={{ title: 'Plan Your Day' }}
       />
     </Stack.Navigator>
   );

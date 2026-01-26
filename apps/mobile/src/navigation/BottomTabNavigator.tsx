@@ -60,7 +60,7 @@ export default function BottomTabNavigator() {
       <Tab.Screen
         name="Search"
         component={SearchScreen}
-        options={{ title: 'Search' }}
+        options={{ headerShown: false, title: 'Search' }}
       />
       <Tab.Screen
         name="Favorites"

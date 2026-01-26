@@ -19,6 +19,7 @@ import {
   SMART_DEFAULTS,
   calculateEndTime,
 } from './types';
+import EventImageUpload from './EventImageUpload';
 
 // Event templates
 const EVENT_TEMPLATES: Template<Partial<EventFormData>>[] = [
@@ -117,9 +118,10 @@ const INITIAL_FORM_DATA: EventFormData = {
 interface EventWizardProps {
   onClose: () => void;
   onSubmit: (data: EventFormData) => Promise<void>;
+  restaurantId: string;
 }
 
-export default function EventWizard({ onClose, onSubmit }: EventWizardProps) {
+export default function EventWizard({ onClose, onSubmit, restaurantId }: EventWizardProps) {
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
   const [formData, setFormData] = useState<EventFormData>(INITIAL_FORM_DATA);
@@ -296,6 +298,19 @@ export default function EventWizard({ onClose, onSubmit }: EventWizardProps) {
               onChange={(e) => setFormData({ ...formData, performer_name: e.target.value })}
               placeholder="e.g., The Jazz Quartet"
               className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+            />
+          </div>
+
+          {/* Custom Artwork */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Event Artwork
+              <span className="text-gray-500 font-normal ml-1">(optional)</span>
+            </label>
+            <EventImageUpload
+              value={formData.image_url}
+              onChange={(url) => setFormData({ ...formData, image_url: url })}
+              restaurantId={restaurantId}
             />
           </div>
 

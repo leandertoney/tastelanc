@@ -67,6 +67,7 @@ export interface EventFormData {
   is_recurring: boolean;
   days_of_week: DayOfWeek[];
   event_date: string;
+  image_url?: string;
 }
 
 export interface HappyHourFormData {

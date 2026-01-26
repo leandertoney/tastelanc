@@ -3,14 +3,17 @@ import { View, StyleSheet, FlatList, ImageSourcePropType } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import EventCard, { EVENT_CARD_HEIGHT } from './EventCard';
+import EventCard, { EVENT_CARD_HEIGHT, EVENT_CARD_WIDTH } from './EventCard';
+import PartnerCTACard from './PartnerCTACard';
 import SectionHeader from './SectionHeader';
 import Spacer from './Spacer';
 import { fetchNonEntertainmentEvents, ApiEvent } from '../lib/events';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_EVENTS } from '../config/mockData';
-import { usePlatformSocialProof } from '../hooks';
+import { usePlatformSocialProof, useEmailGate } from '../hooks';
+
+const CTA_ITEM_ID = '__partner_cta__';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -97,11 +100,13 @@ export default function EventsSection() {
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
+  const { requireEmailGate } = useEmailGate();
+
   const handleEventPress = useCallback(
     (event: ApiEvent) => {
-      navigation.navigate('EventDetail', { event });
+      requireEmailGate(() => navigation.navigate('EventDetail', { event }));
     },
-    [navigation]
+    [navigation, requireEmailGate]
   );
 
   // Map API events to display format
@@ -120,6 +125,9 @@ export default function EventsSection() {
   // Use real events, or mock events if enabled and no real data
   const displayData = events.length > 0 ? mappedEvents : ENABLE_MOCK_DATA ? MOCK_DISPLAY_EVENTS : [];
 
+  // Add CTA item at the end
+  const dataWithCTA = [...displayData, { id: CTA_ITEM_ID } as DisplayEvent];
+
   const handleCardPress = (item: DisplayEvent) => {
     if (item.originalEvent) {
       handleEventPress(item.originalEvent);
@@ -132,7 +140,7 @@ export default function EventsSection() {
   }
 
   const handleViewAll = () => {
-    navigation.navigate('EventsViewAll');
+    requireEmailGate(() => navigation.navigate('EventsViewAll'));
   };
 
   return (
@@ -150,19 +158,33 @@ export default function EventsSection() {
       <Spacer size="sm" />
 
       <FlatList
-        data={displayData}
-        renderItem={({ item }) => (
-          <EventCard
-            name={item.name}
-            date={item.date}
-            time={item.time}
-            venue={item.venue}
-            imageUrl={item.imageUrl}
-            imageSource={item.imageSource}
-            isCityWide={item.isCityWide}
-            onPress={item.originalEvent ? () => handleCardPress(item) : undefined}
-          />
-        )}
+        data={dataWithCTA}
+        renderItem={({ item }) => {
+          if (item.id === CTA_ITEM_ID) {
+            return (
+              <PartnerCTACard
+                icon="calendar"
+                headline="Promote your event"
+                subtext="Reach thousands of local diners"
+                category="event"
+                width={EVENT_CARD_WIDTH}
+                height={EVENT_CARD_HEIGHT}
+              />
+            );
+          }
+          return (
+            <EventCard
+              name={item.name}
+              date={item.date}
+              time={item.time}
+              venue={item.venue}
+              imageUrl={item.imageUrl}
+              imageSource={item.imageSource}
+              isCityWide={item.isCityWide}
+              onPress={item.originalEvent ? () => handleCardPress(item) : undefined}
+            />
+          );
+        }}
         keyExtractor={(item) => item.id}
         horizontal
         showsHorizontalScrollIndicator={false}

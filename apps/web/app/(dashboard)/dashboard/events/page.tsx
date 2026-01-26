@@ -79,6 +79,7 @@ export default function EventsPage() {
       is_recurring: formData.is_recurring,
       event_date: formData.is_recurring ? null : formData.event_date,
       days_of_week: formData.is_recurring ? formData.days_of_week : [],
+      image_url: formData.image_url,
     };
 
     const response = await fetch(buildApiUrl('/api/dashboard/events'), {
@@ -167,10 +168,11 @@ export default function EventsPage() {
       )}
 
       {/* Event Wizard */}
-      {showWizard && (
+      {showWizard && restaurant?.id && (
         <EventWizard
           onClose={() => setShowWizard(false)}
           onSubmit={handleCreateEvent}
+          restaurantId={restaurant.id}
         />
       )}
 

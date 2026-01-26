@@ -77,6 +77,16 @@ export interface Restaurant {
   tastelancrating_count: number;
   created_at: string;
   updated_at: string;
+  // Google Places enrichment
+  google_place_id: string | null;
+  // Enrichment fields
+  price_range: string | null;
+  signature_dishes: string[] | null;
+  vibe_tags: string[] | null;
+  best_for: string[] | null;
+  neighborhood: string | null;
+  parking_info: string | null;
+  noise_level: string | null;
 }
 
 // Restaurant with tier data joined

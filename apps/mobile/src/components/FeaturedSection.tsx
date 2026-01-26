@@ -13,7 +13,7 @@ import FeaturedCard, { CARD_WIDTH } from './FeaturedCard';
 import SectionHeader from './SectionHeader';
 import Spacer from './Spacer';
 import { getFeaturedRestaurants } from '../lib/recommendations';
-import { useFavorites, useToggleFavorite } from '../hooks';
+import { useFavorites, useToggleFavorite, useEmailGate } from '../hooks';
 import type { Restaurant } from '../types/database';
 import { colors, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_FEATURED_RESTAURANTS } from '../config/mockData';
@@ -32,6 +32,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function FeaturedSection({ onRestaurantPress }: FeaturedSectionProps) {
   const navigation = useNavigation<NavigationProp>();
+  const { requireEmailGate } = useEmailGate();
   const flatListRef = useRef<FlatList>(null);
   const [extendedData, setExtendedData] = useState<Restaurant[]>([]);
 
@@ -149,7 +150,7 @@ export default function FeaturedSection({ onRestaurantPress }: FeaturedSectionPr
       <SectionHeader
         title="Featured for You"
         actionText="View All"
-        onActionPress={() => navigation.navigate('FeaturedViewAll')}
+        onActionPress={() => requireEmailGate(() => navigation.navigate('FeaturedViewAll'))}
       />
       <Spacer size="sm" />
 

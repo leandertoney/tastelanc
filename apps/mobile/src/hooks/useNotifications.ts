@@ -57,6 +57,16 @@ export function useNotifications() {
           case 'VoteCenter':
             (navigation as any).navigate('VoteCenter');
             break;
+          case 'AreaRestaurants':
+            // Navigate to restaurant list filtered by area
+            // For now, navigate to Explore with the area context
+            if (data.areaId) {
+              (navigation as any).navigate('Explore', {
+                areaId: data.areaId,
+                areaName: data.areaName,
+              });
+            }
+            break;
           default:
             console.log('Unknown screen:', data.screen);
         }

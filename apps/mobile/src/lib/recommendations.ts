@@ -340,23 +340,32 @@ function shuffleArray<T>(array: T[]): T[] {
  */
 export async function getFeaturedRestaurants(limit: number = 16): Promise<Restaurant[]> {
   try {
-    // Fetch more restaurants than needed for randomization
-    const { data: restaurants, error } = await supabase
+    // First, fetch ALL premium/elite restaurants (guaranteed to include them)
+    const { data: paidRestaurants, error: paidError } = await supabase
+      .from('restaurants')
+      .select('*, tiers!inner(name)')
+      .eq('is_active', true)
+      .in('tiers.name', ['premium', 'elite']);
+
+    if (paidError) {
+      console.error('Error fetching paid restaurants:', paidError);
+    }
+
+    const paid = paidRestaurants || [];
+    const paidIds = new Set(paid.map((r) => r.id));
+
+    // Then fetch basic/unpaid restaurants to fill remaining slots
+    const remainingSlots = Math.max(0, limit - paid.length + 30); // Extra for randomization
+    const { data: unpaidRestaurants, error: unpaidError } = await supabase
       .from('restaurants')
       .select('*, tiers(name)')
       .eq('is_active', true)
-      .limit(50);
+      .limit(remainingSlots);
 
-    if (error) throw error;
-    if (!restaurants) return [];
+    if (unpaidError) throw unpaidError;
 
-    // Split into paid and unpaid
-    const paid = restaurants.filter(
-      (r: any) => r.tiers?.name === 'premium' || r.tiers?.name === 'elite'
-    );
-    const unpaid = restaurants.filter(
-      (r: any) => r.tiers?.name !== 'premium' && r.tiers?.name !== 'elite'
-    );
+    // Filter out any paid restaurants that might have been included
+    const unpaid = (unpaidRestaurants || []).filter((r) => !paidIds.has(r.id));
 
     // Shuffle each group and concat paid first
     const result = [...shuffleArray(paid), ...shuffleArray(unpaid)].slice(0, limit);

@@ -65,6 +65,10 @@ export const queryKeys = {
     subscription: ['user', 'subscription'] as const,
     profile: (userId: string) => ['user', 'profile', userId] as const,
   },
+  itineraries: {
+    all: ['itineraries'] as const,
+    detail: (id: string) => ['itineraries', 'detail', id] as const,
+  },
   visits: {
     all: (userId: string) => ['visits', userId] as const,
     list: (userId: string, limit?: number) => ['visits', userId, 'list', limit] as const,
