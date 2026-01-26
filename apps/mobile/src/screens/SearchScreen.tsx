@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  Dimensions,
   Platform,
   Keyboard,
   ActivityIndicator,
@@ -26,20 +25,16 @@ import {
   useUserLocation,
   LANCASTER_CENTER,
   calculateDistance,
-  formatDistance,
   isNearLancaster,
 } from '../hooks/useUserLocation';
-import { formatCuisineName } from '../lib/formatters';
 import type { RestaurantCategory, RestaurantWithTier } from '../types/database';
 import type { RootStackParamList } from '../navigation/types';
 import { SearchBar, CategoryChip, CompactRestaurantCard, MapRestaurantCard } from '../components';
-import { colors, radius, spacing } from '../constants/colors';
+import { colors, radius } from '../constants/colors';
 
 const markerIcon = require('../../assets/images/map/marker.png');
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const CATEGORIES: { key: RestaurantCategory | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -89,7 +84,6 @@ export default function SearchScreen() {
   const [selectedCategory, setSelectedCategory] = useState<RestaurantCategory | 'all'>('all');
   const [restaurants, setRestaurants] = useState<RestaurantWithTier[]>([]);
   const [loading, setLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
 
   // Map state
@@ -150,7 +144,7 @@ export default function SearchScreen() {
         console.error('Load error:', error);
       } else {
         setRestaurants(data || []);
-        setHasSearched(true);
+
       }
     } catch (err) {
       console.error('Load error:', err);
@@ -179,7 +173,7 @@ export default function SearchScreen() {
 
   const performSearch = useCallback(async () => {
     setLoading(true);
-    setHasSearched(true);
+
 
     try {
       let query = supabase.from('restaurants').select('*');
@@ -319,7 +313,7 @@ export default function SearchScreen() {
   const renderCluster = useCallback((cluster: any) => {
     if (!cluster) return <></>;
 
-    const { id, geometry, onPress, properties } = cluster;
+    const { id, geometry, onPress } = cluster;
 
     if (!geometry?.coordinates || geometry.coordinates.length < 2) return <></>;
 
@@ -334,8 +328,6 @@ export default function SearchScreen() {
     )
       return <></>;
 
-    const points = properties?.point_count ?? 0;
-
     return (
       <Marker
         key={`cluster-${id}`}
@@ -343,9 +335,7 @@ export default function SearchScreen() {
         onPress={onPress}
         tracksViewChanges={false}
       >
-        <View style={styles.clusterMarker}>
-          <Text style={styles.clusterText}>{points}</Text>
-        </View>
+        <View style={styles.clusterMarker} />
       </Marker>
     );
   }, []);
@@ -601,19 +591,10 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
   clusterMarker: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: colors.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: colors.text,
-  },
-  clusterText: {
-    color: colors.text,
-    fontWeight: 'bold',
-    fontSize: 14,
   },
 
   // Bottom sheet

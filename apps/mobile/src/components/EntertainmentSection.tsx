@@ -138,8 +138,8 @@ export default function EntertainmentSection() {
           if (item.id === CTA_ITEM_ID) {
             return (
               <PartnerCTACard
-                icon="musical-notes"
-                headline="Hosting live music?"
+                icon="calendar"
+                headline="Hosting events?"
                 subtext="Get your events featured here"
                 category="entertainment"
                 width={ENTERTAINMENT_CARD_SIZE}

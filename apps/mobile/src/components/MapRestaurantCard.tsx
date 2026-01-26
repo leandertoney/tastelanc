@@ -133,10 +133,7 @@ export default function MapRestaurantCard({
           {/* Favorite button */}
           <TouchableOpacity
             style={styles.favoriteButton}
-            onPress={(e) => {
-              e.stopPropagation();
-              onFavoritePress();
-            }}
+            onPress={onFavoritePress}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons
