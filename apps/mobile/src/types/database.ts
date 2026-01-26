@@ -199,6 +199,21 @@ export const ALL_CUISINES: CuisineType[] = [
   'cafe',
 ];
 
+// Blog post from Rosie's Blog
+export interface BlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string;
+  body_html: string;
+  tags: string[];
+  cover_image_url: string | null;
+  cover_image_data: string | null;
+  featured_restaurants: string[] | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // User profile with premium subscription fields
 export type PremiumSource = 'apple' | 'stripe' | null;
 

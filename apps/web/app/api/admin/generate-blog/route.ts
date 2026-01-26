@@ -207,6 +207,25 @@ Use the restaurants from your database. Be specific, be opinionated, and make it
       return NextResponse.json({ error: upsertErr.message }, { status: 500 });
     }
 
+    // Send push notification to all mobile app users
+    try {
+      const { error: pushError } = await supabaseAdmin.functions.invoke(
+        'send-notifications/new-blog-post',
+        {
+          body: {
+            title: parsed.title,
+            summary: parsed.summary,
+            slug,
+          },
+        }
+      );
+      if (pushError) {
+        console.error('Failed to send blog push notification:', pushError);
+      }
+    } catch (pushErr) {
+      console.error('Error invoking push notification function:', pushErr);
+    }
+
     return NextResponse.json({
       success: true,
       post: {

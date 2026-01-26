@@ -72,6 +72,9 @@ export type RootStackParamList = {
   // Itinerary
   ItineraryBuilder: { date?: string };
   ItineraryDetail: { id: string };
+  // Blog
+  BlogViewAll: undefined;
+  BlogDetail: { slug: string };
 };
 
 // Type helpers for useNavigation hook

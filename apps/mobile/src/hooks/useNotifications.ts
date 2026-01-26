@@ -67,6 +67,11 @@ export function useNotifications() {
               });
             }
             break;
+          case 'BlogDetail':
+            if (data.blogSlug) {
+              (navigation as any).navigate('BlogDetail', { slug: data.blogSlug });
+            }
+            break;
           default:
             console.log('Unknown screen:', data.screen);
         }

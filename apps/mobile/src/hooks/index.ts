@@ -94,6 +94,9 @@ export {
 // Promo card hooks
 export { usePromoCard } from './usePromoCard';
 
+// Blog hooks
+export { useBlogPosts, useLatestBlogPosts } from './useBlogPosts';
+
 // Itinerary hooks
 export {
   useItineraries,

@@ -12,6 +12,8 @@ import CuisineDetailScreen from '../screens/CuisineDetailScreen';
 import EventDetailScreen from '../screens/EventDetailScreen';
 import FeatureRequestScreen from '../screens/FeatureRequestScreen';
 import ItineraryBuilderScreen from '../screens/ItineraryBuilderScreen';
+import BlogViewAllScreen from '../screens/BlogViewAllScreen';
+import BlogDetailScreen from '../screens/BlogDetailScreen';
 import {
   VoteCenterScreen,
   VoteCategoryScreen,
@@ -131,6 +133,20 @@ export default function RootNavigator() {
         name="ItineraryBuilder"
         component={ItineraryBuilderScreen}
         options={{ title: 'Plan Your Day' }}
+      />
+      {/* Blog */}
+      <Stack.Screen
+        name="BlogViewAll"
+        component={BlogViewAllScreen}
+        options={{ title: "Rosie's Blog" }}
+      />
+      <Stack.Screen
+        name="BlogDetail"
+        component={BlogDetailScreen}
+        options={{
+          title: 'Blog Post',
+          headerBackTitle: 'Back',
+        }}
       />
     </Stack.Navigator>
   );
