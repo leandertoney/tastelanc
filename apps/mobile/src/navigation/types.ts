@@ -69,6 +69,9 @@ export type RootStackParamList = {
   VoteLeaderboard: { category?: VoteCategory };
   // Feature request
   FeatureRequest: undefined;
+  // Itinerary
+  ItineraryBuilder: { date?: string };
+  ItineraryDetail: { id: string };
 };
 
 // Type helpers for useNavigation hook

@@ -31,6 +31,7 @@ import {
   EntertainmentSection,
   SocialProofBanner,
   PromoCard,
+  PlanYourDayCard,
 } from '../components';
 import CuisinesSection from '../components/CuisinesSection';
 import { colors, radius, spacing } from '../constants/colors';
@@ -149,6 +150,9 @@ export default function HomeScreen() {
 
       {/* Section 3: Upcoming Events */}
       <EventsSection />
+
+      {/* Plan Your Day CTA */}
+      <PlanYourDayCard />
 
       {/* Section 4: Featured for You */}
       <FeaturedSection onRestaurantPress={handleRestaurantPress} />

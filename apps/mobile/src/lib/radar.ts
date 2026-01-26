@@ -15,12 +15,23 @@ export interface RadarVisit {
   confidence: 'high' | 'medium' | 'low';
 }
 
+export interface RadarAreaVisit {
+  areaId: string;
+  areaName: string;
+  timestamp: string;
+  confidence: 'high' | 'medium' | 'low';
+}
+
+export type GeofenceType = 'restaurant' | 'area';
+
 type VisitCallback = (visit: RadarVisit) => void;
+type AreaVisitCallback = (visit: RadarAreaVisit) => void;
 
 // Track if Radar is available and initialized
 let isRadarAvailable = false;
 let isInitialized = false;
 let eventCallback: VisitCallback | null = null;
+let areaEventCallback: AreaVisitCallback | null = null;
 let Radar: any = null;
 
 // Try to load Radar - will fail gracefully in Expo Go
@@ -111,24 +122,47 @@ export function stopTracking(): void {
 
 /**
  * Handle Radar events internally
+ * Differentiates between restaurant and area geofences based on tag
  */
 function handleRadarEvents(update: { events?: Array<any> }): void {
-  if (!update?.events || !eventCallback) return;
+  if (!update?.events) return;
 
   for (const event of update.events) {
     // Only handle geofence entry events
     if (event.type === 'user.entered_geofence' && event.geofence?.externalId) {
-      eventCallback({
-        restaurantId: event.geofence.externalId,
-        timestamp: event.createdAt || new Date().toISOString(),
-        confidence: confidenceToString(event.confidence),
-      });
+      const tag = event.geofence.tag;
+      const timestamp = event.createdAt || new Date().toISOString();
+      const confidence = confidenceToString(event.confidence);
+
+      if (tag === 'area' && areaEventCallback) {
+        // Area geofence entry
+        areaEventCallback({
+          areaId: event.geofence.externalId,
+          areaName: event.geofence.description || 'Unknown Area',
+          timestamp,
+          confidence,
+        });
+      } else if (tag === 'restaurant' && eventCallback) {
+        // Restaurant geofence entry (default behavior)
+        eventCallback({
+          restaurantId: event.geofence.externalId,
+          timestamp,
+          confidence,
+        });
+      } else if (!tag && eventCallback) {
+        // Legacy geofences without tag - treat as restaurant
+        eventCallback({
+          restaurantId: event.geofence.externalId,
+          timestamp,
+          confidence,
+        });
+      }
     }
   }
 }
 
 /**
- * Listen for geofence entry events
+ * Listen for restaurant geofence entry events
  * The externalId on the geofence should be the restaurant UUID
  * Returns a cleanup function
  */
@@ -139,7 +173,7 @@ export function onGeofenceEntry(callback: VisitCallback): () => void {
 
   eventCallback = callback;
 
-  // Register the event listener
+  // Register the event listener (shared between restaurant and area)
   try {
     Radar.onEventsReceived(handleRadarEvents);
   } catch (error) {
@@ -149,10 +183,46 @@ export function onGeofenceEntry(callback: VisitCallback): () => void {
   // Return cleanup function
   return () => {
     eventCallback = null;
-    try {
-      Radar.onEventsReceived(null);
-    } catch (error) {
-      // Ignore cleanup errors
+    // Only clear event listener if both callbacks are null
+    if (!areaEventCallback) {
+      try {
+        Radar.onEventsReceived(null);
+      } catch (error) {
+        // Ignore cleanup errors
+      }
+    }
+  };
+}
+
+/**
+ * Listen for area geofence entry events
+ * Used for neighborhood/district-level geofencing
+ * Returns a cleanup function
+ */
+export function onAreaGeofenceEntry(callback: AreaVisitCallback): () => void {
+  if (!isRadarAvailable) {
+    return () => {}; // No-op cleanup
+  }
+
+  areaEventCallback = callback;
+
+  // Register the event listener (shared between restaurant and area)
+  try {
+    Radar.onEventsReceived(handleRadarEvents);
+  } catch (error) {
+    console.error('[Radar] Failed to register area event listener:', error);
+  }
+
+  // Return cleanup function
+  return () => {
+    areaEventCallback = null;
+    // Only clear event listener if both callbacks are null
+    if (!eventCallback) {
+      try {
+        Radar.onEventsReceived(null);
+      } catch (error) {
+        // Ignore cleanup errors
+      }
     }
   };
 }

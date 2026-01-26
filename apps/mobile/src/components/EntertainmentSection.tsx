@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import EntertainmentCard, { ENTERTAINMENT_CARD_SIZE } from './EntertainmentCard';
+import PartnerCTACard from './PartnerCTACard';
 import SectionHeader from './SectionHeader';
 import Spacer from './Spacer';
 import { fetchEntertainmentEvents, ApiEvent, ENTERTAINMENT_TYPES } from '../lib/events';
@@ -11,6 +12,9 @@ import type { RootStackParamList } from '../navigation/types';
 import { colors, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_ENTERTAINMENT, type MockEntertainment } from '../config/mockData';
 import type { DayOfWeek } from '../types/database';
+import { useEmailGate } from '../hooks';
+
+const CTA_ITEM_ID = '__partner_cta__';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -77,8 +81,8 @@ export default function EntertainmentSection() {
   const events = data?.events || [];
   const isFallback = data?.isFallback ?? true;
 
-  // Map API events to display format
-  const mappedEvents: MockEntertainment[] = events.map((event) => ({
+  // Map API events to display format (keep original event for navigation)
+  const mappedEvents = events.map((event) => ({
     id: event.id,
     name: event.name,
     eventType: event.event_type,
@@ -86,26 +90,32 @@ export default function EntertainmentSection() {
     venue: event.restaurant?.name,
     imageUrl: event.image_url, // API always provides image_url
     restaurantId: event.restaurant?.id,
+    originalEvent: event, // Keep reference for navigation
   }));
 
   // Use real events if available, otherwise use mock data if enabled
   const displayData: MockEntertainment[] =
     mappedEvents.length > 0 ? mappedEvents : ENABLE_MOCK_DATA ? MOCK_ENTERTAINMENT : [];
 
-  const handleRestaurantNavigate = useCallback(
-    (restaurantId: string) => {
-      navigation.navigate('RestaurantDetail', { id: restaurantId });
+  const { requireEmailGate } = useEmailGate();
+
+  const handleEventPress = useCallback(
+    (event: ApiEvent) => {
+      requireEmailGate(() => navigation.navigate('EventDetail', { event }));
     },
-    [navigation]
+    [navigation, requireEmailGate]
   );
 
   const handleViewAll = useCallback(() => {
-    navigation.navigate('EntertainmentViewAll');
-  }, [navigation]);
+    requireEmailGate(() => navigation.navigate('EntertainmentViewAll'));
+  }, [navigation, requireEmailGate]);
 
   // No loading state - data is prefetched during splash screen
   // Ensure we always have data to show in dev mode
   const finalDisplayData = displayData.length > 0 ? displayData : ENABLE_MOCK_DATA ? MOCK_ENTERTAINMENT : [];
+
+  // Add CTA item at the end
+  const dataWithCTA = [...finalDisplayData, { id: CTA_ITEM_ID } as MockEntertainment];
 
   // Hide section if no data and mock is disabled
   if (finalDisplayData.length === 0) {
@@ -123,17 +133,31 @@ export default function EntertainmentSection() {
       <Spacer size="sm" />
 
       <FlatList
-        data={finalDisplayData}
-        renderItem={({ item }) => (
-          <EntertainmentCard
-            name={item.name}
-            eventType={item.eventType}
-            time={item.time}
-            venue={item.venue}
-            imageUrl={item.imageUrl}
-            onPress={item.restaurantId ? () => handleRestaurantNavigate(item.restaurantId!) : undefined}
-          />
-        )}
+        data={dataWithCTA}
+        renderItem={({ item }) => {
+          if (item.id === CTA_ITEM_ID) {
+            return (
+              <PartnerCTACard
+                icon="musical-notes"
+                headline="Hosting live music?"
+                subtext="Get your events featured here"
+                category="entertainment"
+                width={ENTERTAINMENT_CARD_SIZE}
+                height={ENTERTAINMENT_CARD_SIZE}
+              />
+            );
+          }
+          return (
+            <EntertainmentCard
+              name={item.name}
+              eventType={item.eventType}
+              time={item.time}
+              venue={item.venue}
+              imageUrl={item.imageUrl}
+              onPress={item.originalEvent ? () => handleEventPress(item.originalEvent!) : undefined}
+            />
+          );
+        }}
         keyExtractor={(item) => item.id}
         horizontal
         showsHorizontalScrollIndicator={false}

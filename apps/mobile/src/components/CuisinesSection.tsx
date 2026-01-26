@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { colors, spacing } from '../constants/colors';
 import SectionHeader from './SectionHeader';
 import Spacer from './Spacer';
+import { useEmailGate } from '../hooks';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -120,8 +121,10 @@ export default function CuisinesSection() {
     navigation.navigate('CuisineDetail', { cuisine });
   };
 
+  const { requireEmailGate } = useEmailGate();
+
   const handleViewAll = () => {
-    navigation.navigate('CuisinesViewAll');
+    requireEmailGate(() => navigation.navigate('CuisinesViewAll'));
   };
 
   return (

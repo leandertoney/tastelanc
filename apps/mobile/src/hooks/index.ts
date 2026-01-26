@@ -30,6 +30,9 @@ export {
 export { useFavorites, useIsFavorite, useToggleFavorite } from './useFavorites';
 export { useAuthAwareFavorite } from './useAuthAwareFavorite';
 
+// Email gate hooks
+export { useEmailGate } from './useEmailGate';
+
 // Voting hooks
 export {
   useVoteBalance,
@@ -90,3 +93,11 @@ export {
 
 // Promo card hooks
 export { usePromoCard } from './usePromoCard';
+
+// Itinerary hooks
+export {
+  useItineraries,
+  useItinerary,
+  useSaveItinerary,
+  useDeleteItinerary,
+} from './useItineraries';

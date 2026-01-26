@@ -3,15 +3,17 @@ import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 
 import HappyHourBanner from './HappyHourBanner';
+import PartnerContactModal from './PartnerContactModal';
 import Spacer from './Spacer';
 import { supabase } from '../lib/supabase';
 import type { HappyHour, HappyHourItem, Restaurant } from '../types/database';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_HAPPY_HOURS } from '../config/mockData';
-import { usePlatformSocialProof } from '../hooks';
+import { usePlatformSocialProof, useEmailGate } from '../hooks';
 
 const BANNER_DURATION = 4000; // 4 seconds per banner (equal for all)
 const FADE_DURATION = 300; // 300ms fade transition
@@ -104,6 +106,7 @@ export default function HappyHourSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentDealIndex, setCurrentDealIndex] = useState(0);
   const [dayOfWeek] = useState(getDayOfWeek());
+  const [contactModalVisible, setContactModalVisible] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const dealFadeAnim = useRef(new Animated.Value(1)).current;
   const bannerTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -120,8 +123,14 @@ export default function HappyHourSection() {
     navigation.navigate('RestaurantDetail', { id: restaurantId });
   };
 
+  const { requireEmailGate } = useEmailGate();
+
   const handleViewAll = () => {
-    navigation.navigate('HappyHoursViewAll');
+    requireEmailGate(() => navigation.navigate('HappyHoursViewAll'));
+  };
+
+  const handlePartnerCTA = () => {
+    setContactModalVisible(true);
   };
 
   // Map real happy hours to display format
@@ -263,9 +272,16 @@ export default function HappyHourSection() {
 
       {/* View All and Progress dots row */}
       <View style={styles.bottomRow}>
-        <TouchableOpacity onPress={handleViewAll}>
-          <Text style={styles.viewAll}>View All</Text>
-        </TouchableOpacity>
+        <View style={styles.bottomLinks}>
+          <TouchableOpacity onPress={handleViewAll}>
+            <Text style={styles.viewAll}>View All</Text>
+          </TouchableOpacity>
+          <Text style={styles.linkDivider}>|</Text>
+          <TouchableOpacity onPress={handlePartnerCTA} style={styles.ctaLink}>
+            <Text style={styles.ctaText}>List your deal</Text>
+            <Ionicons name="arrow-forward" size={12} color={colors.textMuted} />
+          </TouchableOpacity>
+        </View>
         {displayData.length > 1 && (
           <View style={styles.dotsContainer}>
             {displayData.map((_, index) => (
@@ -280,6 +296,12 @@ export default function HappyHourSection() {
           </View>
         )}
       </View>
+
+      <PartnerContactModal
+        visible={contactModalVisible}
+        onClose={() => setContactModalVisible(false)}
+        category="happy_hour"
+      />
     </View>
   );
 }
@@ -313,10 +335,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     marginTop: spacing.sm,
   },
+  bottomLinks: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   viewAll: {
     fontSize: 14,
     fontWeight: '600',
     color: colors.accent,
+  },
+  linkDivider: {
+    fontSize: 14,
+    color: colors.textMuted,
+    marginHorizontal: spacing.sm,
+    opacity: 0.5,
+  },
+  ctaLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ctaText: {
+    fontSize: 13,
+    color: colors.textMuted,
   },
   dayBadge: {
     backgroundColor: colors.accent,

@@ -1,33 +1,46 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   ScrollView,
-  ActivityIndicator,
   TouchableOpacity,
+  Image,
+  Dimensions,
+  Platform,
+  Keyboard,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import BottomSheet, { BottomSheetFlatList } from '@gorhom/bottom-sheet';
+import MapView, { Marker, Region, PROVIDER_GOOGLE } from 'react-native-maps';
+import ClusteredMapView from 'react-native-map-clustering';
 import { supabase } from '../lib/supabase';
 import { getFavorites, toggleFavorite } from '../lib/favorites';
 import { useAuth } from '../hooks/useAuth';
-import { usePromoCard } from '../hooks';
-import { injectPromoIntoList, type ListItem } from '../lib/listUtils';
-import type { Restaurant, RestaurantCategory, RestaurantWithTier } from '../types/database';
+import {
+  useUserLocation,
+  LANCASTER_CENTER,
+  calculateDistance,
+  formatDistance,
+  isNearLancaster,
+} from '../hooks/useUserLocation';
+import { formatCuisineName } from '../lib/formatters';
+import type { RestaurantCategory, RestaurantWithTier } from '../types/database';
 import type { RootStackParamList } from '../navigation/types';
-import { SearchBar, CategoryChip, RestaurantCard, PromoCard } from '../components';
-import RestaurantMap from '../components/RestaurantMap';
-import { colors, radius } from '../constants/colors';
+import { SearchBar, CategoryChip, CompactRestaurantCard, MapRestaurantCard } from '../components';
+import { colors, radius, spacing } from '../constants/colors';
 
-type ViewMode = 'list' | 'map';
+const markerIcon = require('../../assets/images/map/marker.png');
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-// All categories from architecture
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
 const CATEGORIES: { key: RestaurantCategory | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'bars', label: 'Bars' },
@@ -39,24 +52,79 @@ const CATEGORIES: { key: RestaurantCategory | 'all'; label: string }[] = [
   { key: 'outdoor_dining', label: 'Outdoor' },
 ];
 
+const INITIAL_REGION: Region = {
+  ...LANCASTER_CENTER,
+  latitudeDelta: 0.05,
+  longitudeDelta: 0.05,
+};
+
+// Dark map style for Google Maps
+const darkMapStyle = [
+  { elementType: 'geometry', stylers: [{ color: '#212121' }] },
+  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#212121' }] },
+  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#757575' }] },
+  { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#181818' }] },
+  { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
+  { featureType: 'road', elementType: 'geometry.fill', stylers: [{ color: '#2c2c2c' }] },
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#8a8a8a' }] },
+  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#373737' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#3c3c3c' }] },
+  { featureType: 'road.highway.controlled_access', elementType: 'geometry', stylers: [{ color: '#4e4e4e' }] },
+  { featureType: 'road.local', elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
+  { featureType: 'transit', elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#000000' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#3d3d3d' }] },
+];
+
 export default function SearchScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { userId } = useAuth();
+  const { location, permissionStatus, requestPermission } = useUserLocation();
+
+  // Search & filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<RestaurantCategory | 'all'>('all');
   const [restaurants, setRestaurants] = useState<RestaurantWithTier[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [radiusFilter, setRadiusFilter] = useState<number | null>(null);
-  const { isVisible: showPromo, dismiss: dismissPromo } = usePromoCard();
 
-  // Inject promo card into the list
-  const listData = useMemo(() => {
-    return injectPromoIntoList(restaurants, showPromo, 3);
-  }, [restaurants, showPromo]);
+  // Map state
+  const mapRef = useRef<MapView>(null);
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const hasCenteredOnUser = useRef(false);
+  const [mapReady, setMapReady] = useState(false);
+  const [selectedRestaurant, setSelectedRestaurant] = useState<
+    (RestaurantWithTier & { distance: number }) | null
+  >(null);
+
+  const snapPoints = useMemo(() => ['12%', '50%', '90%'], []);
+
+  // Clear card overlay on tab blur
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setSelectedRestaurant(null);
+      };
+    }, [])
+  );
+
+  // Auto-center on user location when in Lancaster area
+  useEffect(() => {
+    if (!location || !mapRef.current || !mapReady || hasCenteredOnUser.current) return;
+    hasCenteredOnUser.current = true;
+
+    if (isNearLancaster(location)) {
+      mapRef.current.animateToRegion({
+        ...location,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
+      });
+    }
+  }, [location, mapReady]);
 
   // Load favorites and initial restaurants on mount
   useEffect(() => {
@@ -65,7 +133,6 @@ export default function SearchScreen() {
         const favs = await getFavorites(userId);
         setFavorites(favs);
       }
-      // Load all restaurants on mount
       loadAllRestaurants();
     };
     loadInitialData();
@@ -98,7 +165,6 @@ export default function SearchScreen() {
       if (searchQuery.trim().length >= 2 || selectedCategory !== 'all') {
         performSearch();
       } else if (searchQuery.trim().length === 0 && selectedCategory === 'all') {
-        // Reload all restaurants when search is cleared
         loadAllRestaurants();
       }
     }, 300);
@@ -106,26 +172,26 @@ export default function SearchScreen() {
     return () => clearTimeout(timer);
   }, [searchQuery, selectedCategory]);
 
+  // Dismiss card on search/filter change
+  useEffect(() => {
+    setSelectedRestaurant(null);
+  }, [searchQuery, selectedCategory]);
+
   const performSearch = useCallback(async () => {
     setLoading(true);
     setHasSearched(true);
 
     try {
-      let query = supabase
-        .from('restaurants')
-        .select('*');
+      let query = supabase.from('restaurants').select('*');
 
-      // Apply text search if query exists
       if (searchQuery.trim().length >= 2) {
         query = query.ilike('name', `%${searchQuery.trim()}%`);
       }
 
-      // Apply category filter
       if (selectedCategory !== 'all') {
         query = query.contains('categories', [selectedCategory]);
       }
 
-      // Order by name
       query = query.order('name', { ascending: true });
 
       const { data, error } = await query;
@@ -144,36 +210,50 @@ export default function SearchScreen() {
     }
   }, [searchQuery, selectedCategory]);
 
-  const handleFavoritePress = useCallback(async (restaurantId: string) => {
-    if (!userId) return;
-    const newState = await toggleFavorite(userId, restaurantId);
-    setFavorites((prev) =>
-      newState ? [...prev, restaurantId] : prev.filter((id) => id !== restaurantId)
+  // Filter restaurants by distance and add distance field
+  const filteredRestaurants = useMemo(() => {
+    const userLat = location?.latitude ?? LANCASTER_CENTER.latitude;
+    const userLng = location?.longitude ?? LANCASTER_CENTER.longitude;
+
+    return restaurants
+      .filter((r) => r.latitude && r.longitude)
+      .map((r) => ({
+        ...r,
+        distance: calculateDistance(userLat, userLng, r.latitude!, r.longitude!),
+      }))
+      .sort((a, b) => a.distance - b.distance);
+  }, [restaurants, location]);
+
+  // Valid restaurants for map markers
+  const validRestaurants = useMemo(() => {
+    return filteredRestaurants.filter(
+      (r) =>
+        r.latitude != null &&
+        r.longitude != null &&
+        typeof r.latitude === 'number' &&
+        typeof r.longitude === 'number' &&
+        !isNaN(r.latitude) &&
+        !isNaN(r.longitude)
     );
-  }, [userId]);
+  }, [filteredRestaurants]);
 
-  const handleRestaurantPress = (restaurant: RestaurantWithTier) => {
-    // Save to recent searches if searching by name
-    if (searchQuery.trim().length >= 2) {
-      saveRecentSearch(searchQuery.trim());
-    }
-    navigation.navigate('RestaurantDetail', { id: restaurant.id });
-  };
+  const handleFavoritePress = useCallback(
+    async (restaurantId: string) => {
+      if (!userId) return;
+      const newState = await toggleFavorite(userId, restaurantId);
+      setFavorites((prev) =>
+        newState ? [...prev, restaurantId] : prev.filter((id) => id !== restaurantId)
+      );
+    },
+    [userId]
+  );
 
-  const saveRecentSearch = (query: string) => {
-    setRecentSearches((prev) => {
-      const filtered = prev.filter((s) => s.toLowerCase() !== query.toLowerCase());
-      return [query, ...filtered].slice(0, 5);
-    });
-  };
-
-  const handleRecentSearchPress = (query: string) => {
-    setSearchQuery(query);
-  };
-
-  const clearRecentSearches = () => {
-    setRecentSearches([]);
-  };
+  const handleRestaurantPress = useCallback(
+    (restaurant: RestaurantWithTier) => {
+      navigation.navigate('RestaurantDetail', { id: restaurant.id });
+    },
+    [navigation]
+  );
 
   const handleCategoryPress = (category: RestaurantCategory | 'all') => {
     setSelectedCategory(category);
@@ -181,82 +261,150 @@ export default function SearchScreen() {
 
   const handleClearSearch = () => {
     setSearchQuery('');
-    // Will trigger loadAllRestaurants via the debounced useEffect
   };
 
-  const renderRestaurant = ({ item }: { item: ListItem<RestaurantWithTier> }) => {
-    if (item.type === 'promo') {
-      return <PromoCard variant="full" onDismiss={dismissPromo} />;
-    }
-
-    const restaurant = item.data!;
-    return (
-      <RestaurantCard
-        restaurant={restaurant}
-        onPress={() => handleRestaurantPress(restaurant)}
-        isFavorite={favorites.includes(restaurant.id)}
-        onFavoritePress={() => handleFavoritePress(restaurant.id)}
-      />
-    );
-  };
-
-  const renderEmptyState = () => {
-    if (loading) return null;
-
-    if (!hasSearched) {
-      return (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="search" size={64} color={colors.textSecondary} />
-          <Text style={styles.emptyTitle}>Discover Lancaster</Text>
-          <Text style={styles.emptySubtitle}>
-            Search for restaurants, bars, and more{'\n'}or select a category to browse
-          </Text>
-        </View>
+  const handleMarkerPress = useCallback(
+    (restaurant: RestaurantWithTier & { distance: number }) => {
+      setSelectedRestaurant(restaurant);
+      bottomSheetRef.current?.snapToIndex(0);
+      mapRef.current?.animateToRegion(
+        {
+          latitude: restaurant.latitude!,
+          longitude: restaurant.longitude!,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        },
+        300
       );
+    },
+    []
+  );
+
+  const handleCardClose = useCallback(() => {
+    setSelectedRestaurant(null);
+  }, []);
+
+  const handleMapPress = useCallback(() => {
+    if (selectedRestaurant) {
+      setSelectedRestaurant(null);
+    }
+    Keyboard.dismiss();
+  }, [selectedRestaurant]);
+
+  const handleSheetChange = useCallback(
+    (index: number) => {
+      if (index > 0 && selectedRestaurant) {
+        setSelectedRestaurant(null);
+      }
+    },
+    [selectedRestaurant]
+  );
+
+  const centerOnUser = useCallback(async () => {
+    if (permissionStatus !== 'granted') {
+      const granted = await requestPermission();
+      if (!granted) return;
     }
 
-    return (
-      <View style={styles.emptyContainer}>
-        <Ionicons name="restaurant-outline" size={64} color={colors.textSecondary} />
-        <Text style={styles.emptyTitle}>No Results Found</Text>
-        <Text style={styles.emptySubtitle}>
-          Try adjusting your search or{'\n'}selecting a different category
-        </Text>
-      </View>
-    );
-  };
+    if (location && mapRef.current) {
+      mapRef.current.animateToRegion({
+        ...location,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
+      });
+    }
+  }, [location, permissionStatus, requestPermission]);
 
-  const renderRecentSearches = () => {
-    if (recentSearches.length === 0 || searchQuery.length > 0 || hasSearched) return null;
+  // Render custom cluster
+  const renderCluster = useCallback((cluster: any) => {
+    if (!cluster) return <></>;
+
+    const { id, geometry, onPress, properties } = cluster;
+
+    if (!geometry?.coordinates || geometry.coordinates.length < 2) return <></>;
+
+    const longitude = geometry.coordinates[0];
+    const latitude = geometry.coordinates[1];
+
+    if (
+      typeof longitude !== 'number' ||
+      typeof latitude !== 'number' ||
+      isNaN(longitude) ||
+      isNaN(latitude)
+    )
+      return <></>;
+
+    const points = properties?.point_count ?? 0;
 
     return (
-      <View style={styles.recentContainer}>
-        <View style={styles.recentHeader}>
-          <Text style={styles.recentTitle}>Recent Searches</Text>
-          <TouchableOpacity onPress={clearRecentSearches}>
-            <Text style={styles.clearText}>Clear</Text>
-          </TouchableOpacity>
+      <Marker
+        key={`cluster-${id}`}
+        coordinate={{ latitude, longitude }}
+        onPress={onPress}
+        tracksViewChanges={false}
+      >
+        <View style={styles.clusterMarker}>
+          <Text style={styles.clusterText}>{points}</Text>
         </View>
-        {recentSearches.map((search, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.recentItem}
-            onPress={() => handleRecentSearchPress(search)}
-          >
-            <Ionicons name="time-outline" size={18} color={colors.textMuted} />
-            <Text style={styles.recentItemText}>{search}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      </Marker>
     );
-  };
+  }, []);
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      {/* Search Header */}
-      <View style={styles.header}>
-        <View style={styles.searchRow}>
-          <View style={styles.searchBarWrapper}>
+    <GestureHandlerRootView style={styles.root}>
+      <View style={styles.container}>
+        {/* Full-screen map */}
+        <ClusteredMapView
+          ref={mapRef}
+          style={StyleSheet.absoluteFillObject}
+          provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+          initialRegion={INITIAL_REGION}
+          onMapReady={() => setMapReady(true)}
+          onPress={handleMapPress}
+          showsUserLocation={permissionStatus === 'granted'}
+          showsMyLocationButton={false}
+          showsCompass={false}
+          clusterColor={colors.accent}
+          clusterTextColor={colors.text}
+          renderCluster={renderCluster}
+          radius={50}
+          minZoom={1}
+          maxZoom={20}
+          customMapStyle={darkMapStyle}
+        >
+          {validRestaurants.map((restaurant) => {
+            const showLogo = !!restaurant.logo_url;
+            return (
+              <Marker
+                key={restaurant.id}
+                coordinate={{
+                  latitude: restaurant.latitude!,
+                  longitude: restaurant.longitude!,
+                }}
+                onPress={() => handleMarkerPress(restaurant)}
+                tracksViewChanges={false}
+              >
+                <View style={styles.markerWrapper}>
+                  {showLogo ? (
+                    <View style={styles.logoMarkerContainer}>
+                      <Image
+                        source={{ uri: restaurant.logo_url!, cache: 'reload' }}
+                        style={styles.logoMarker}
+                        resizeMode="cover"
+                      />
+                    </View>
+                  ) : (
+                    <Image source={markerIcon} style={styles.markerImage} resizeMode="contain" />
+                  )}
+                </View>
+              </Marker>
+            );
+          })}
+        </ClusteredMapView>
+
+        {/* Floating search bar + filter chips */}
+        <SafeAreaView edges={['top']} style={styles.floatingHeader}>
+          <View style={styles.searchBarContainer}>
             <SearchBar
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -265,212 +413,240 @@ export default function SearchScreen() {
               autoFocus={false}
             />
           </View>
-          <View style={styles.viewToggle}>
-            <TouchableOpacity
-              style={[styles.toggleButton, viewMode === 'list' && styles.toggleButtonActive]}
-              onPress={() => setViewMode('list')}
-            >
-              <Ionicons
-                name="list"
-                size={20}
-                color={viewMode === 'list' ? colors.text : colors.textMuted}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipsContent}
+            style={styles.chipsScroll}
+            keyboardShouldPersistTaps="handled"
+          >
+            {CATEGORIES.map((cat) => (
+              <CategoryChip
+                key={cat.key}
+                label={cat.label}
+                selected={selectedCategory === cat.key}
+                onPress={() => handleCategoryPress(cat.key)}
               />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.toggleButton, viewMode === 'map' && styles.toggleButtonActive]}
-              onPress={() => setViewMode('map')}
-            >
-              <Ionicons
-                name="map"
-                size={20}
-                color={viewMode === 'map' ? colors.text : colors.textMuted}
-              />
-            </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </SafeAreaView>
+
+        {/* Loading indicator */}
+        {loading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="small" color={colors.accent} />
           </View>
-        </View>
-      </View>
+        )}
 
-      {/* Category Chips */}
-      <View style={styles.categoriesWrapper}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoriesContainer}
-        >
-          {CATEGORIES.map((cat) => (
-            <CategoryChip
-              key={cat.key}
-              label={cat.label}
-              selected={selectedCategory === cat.key}
-              onPress={() => handleCategoryPress(cat.key)}
-            />
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* Results Count */}
-      {hasSearched && !loading && (
-        <View style={styles.resultsHeader}>
-          <Text style={styles.resultsCount}>
-            {restaurants.length} {restaurants.length === 1 ? 'result' : 'results'}
-            {searchQuery.trim() && ` for "${searchQuery.trim()}"`}
-            {selectedCategory !== 'all' && ` in ${CATEGORIES.find(c => c.key === selectedCategory)?.label}`}
-          </Text>
-        </View>
-      )}
-
-      {/* Loading State */}
-      {loading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.accent} />
-          <Text style={styles.loadingText}>Searching...</Text>
-        </View>
-      )}
-
-      {/* Recent Searches (only in list view) */}
-      {viewMode === 'list' && renderRecentSearches()}
-
-      {/* Results - List or Map View */}
-      {viewMode === 'list' ? (
-        // List View
-        !loading && (
-          <FlatList
-            data={listData}
-            renderItem={renderRestaurant}
-            keyExtractor={(item) => item.key}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={renderEmptyState}
+        {/* Location button */}
+        <TouchableOpacity style={styles.locationButton} onPress={centerOnUser}>
+          <Ionicons
+            name={permissionStatus === 'granted' ? 'locate' : 'locate-outline'}
+            size={22}
+            color={colors.text}
           />
-        )
-      ) : (
-        // Map View
-        <RestaurantMap
-          restaurants={restaurants}
-          radiusFilter={radiusFilter}
-          onRadiusChange={setRadiusFilter}
-        />
-      )}
-    </SafeAreaView>
+        </TouchableOpacity>
+
+        {/* Map restaurant card overlay */}
+        {selectedRestaurant && (
+          <MapRestaurantCard
+            restaurant={selectedRestaurant}
+            isFavorite={favorites.includes(selectedRestaurant.id)}
+            onFavoritePress={() => handleFavoritePress(selectedRestaurant.id)}
+            onPress={() => handleRestaurantPress(selectedRestaurant)}
+            onClose={handleCardClose}
+          />
+        )}
+
+        {/* Bottom sheet restaurant list */}
+        <BottomSheet
+          ref={bottomSheetRef}
+          index={0}
+          snapPoints={snapPoints}
+          onChange={handleSheetChange}
+          backgroundStyle={styles.sheetBackground}
+          handleIndicatorStyle={styles.handleIndicator}
+          enablePanDownToClose={false}
+        >
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetHeaderText}>
+              {filteredRestaurants.length}{' '}
+              {filteredRestaurants.length === 1 ? 'place' : 'places'}
+              {searchQuery.trim() ? ` for "${searchQuery.trim()}"` : ''}
+            </Text>
+          </View>
+          <BottomSheetFlatList
+            data={filteredRestaurants}
+            keyExtractor={(item: RestaurantWithTier & { distance: number }) => item.id}
+            renderItem={({ item }: { item: RestaurantWithTier & { distance: number } }) => (
+              <CompactRestaurantCard
+                restaurant={item}
+                onPress={() => handleRestaurantPress(item)}
+                isFavorite={favorites.includes(item.id)}
+                onFavoritePress={() => handleFavoritePress(item.id)}
+              />
+            )}
+            contentContainerStyle={styles.sheetListContent}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              !loading ? (
+                <View style={styles.sheetEmpty}>
+                  <Ionicons name="restaurant-outline" size={32} color={colors.textSecondary} />
+                  <Text style={styles.sheetEmptyText}>No restaurants found</Text>
+                </View>
+              ) : null
+            }
+          />
+        </BottomSheet>
+      </View>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.primary,
   },
-  header: {
+
+  // Floating search overlay
+  floatingHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  searchBarContainer: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  chipsScroll: {
+    marginTop: 10,
+  },
+  chipsContent: {
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    backgroundColor: colors.primaryLight,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  searchBarWrapper: {
-    flex: 1,
-  },
-  viewToggle: {
-    flexDirection: 'row',
+
+  // Loading overlay
+  loadingOverlay: {
+    position: 'absolute',
+    top: 140,
+    alignSelf: 'center',
     backgroundColor: colors.cardBg,
-    borderRadius: radius.sm,
-    padding: 4,
+    borderRadius: radius.full,
+    padding: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
-  toggleButton: {
-    padding: 8,
-    borderRadius: radius.xs,
-  },
-  toggleButtonActive: {
-    backgroundColor: colors.accent,
-  },
-  categoriesWrapper: {
-    backgroundColor: colors.primaryLight,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  categoriesContainer: {
-    paddingHorizontal: 16,
-  },
-  resultsHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: colors.primary,
-  },
-  resultsCount: {
-    fontSize: 14,
-    color: colors.textMuted,
-  },
-  loadingContainer: {
-    flex: 1,
+
+  // Location button
+  locationButton: {
+    position: 'absolute',
+    right: 16,
+    bottom: 140,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.cardBg,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingBottom: 100,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    zIndex: 5,
   },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
+
+  // Map markers
+  markerWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  markerImage: {
+    width: 36,
+    height: 36,
+  },
+  logoMarkerContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.cardBg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: colors.accent,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  logoMarker: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  clusterMarker: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.text,
+  },
+  clusterText: {
+    color: colors.text,
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+
+  // Bottom sheet
+  sheetBackground: {
+    backgroundColor: colors.primary,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  handleIndicator: {
+    backgroundColor: colors.textSecondary,
+    width: 40,
+  },
+  sheetHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  sheetHeaderText: {
+    fontSize: 14,
+    fontWeight: '600',
     color: colors.textMuted,
   },
-  listContent: {
+  sheetListContent: {
     paddingTop: 8,
     paddingBottom: 24,
   },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  sheetEmpty: {
+    paddingVertical: 32,
     alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingTop: 60,
+    gap: 8,
   },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.text,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 15,
-    color: colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  recentContainer: {
-    backgroundColor: colors.cardBg,
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: radius.md,
-    padding: 16,
-  },
-  recentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  recentTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  clearText: {
-    fontSize: 14,
-    color: colors.accent,
-  },
-  recentItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    gap: 10,
-  },
-  recentItemText: {
+  sheetEmptyText: {
     fontSize: 15,
     color: colors.textMuted,
   },

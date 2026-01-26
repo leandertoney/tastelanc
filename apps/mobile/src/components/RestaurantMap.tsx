@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useCallback } from 'react';
+import { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import {
   LANCASTER_CENTER,
   calculateDistance,
   formatDistance,
+  isNearLancaster,
 } from '../hooks/useUserLocation';
 import { formatCuisineName } from '../lib/formatters';
 
@@ -63,6 +64,22 @@ export default function RestaurantMap({
   const { location, permissionStatus, requestPermission } = useUserLocation();
   const [showRadiusSelector, setShowRadiusSelector] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<RestaurantWithTier | null>(null);
+  const hasCenteredOnUser = useRef(false);
+  const [mapReady, setMapReady] = useState(false);
+
+  // Auto-center on user location when in Lancaster area
+  useEffect(() => {
+    if (!location || !mapRef.current || !mapReady || hasCenteredOnUser.current) return;
+    hasCenteredOnUser.current = true;
+
+    if (isNearLancaster(location)) {
+      mapRef.current.animateToRegion({
+        ...location,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
+      });
+    }
+  }, [location, mapReady]);
 
   // Filter restaurants by radius and add distance
   const filteredRestaurants = useMemo(() => {
@@ -167,6 +184,7 @@ export default function RestaurantMap({
         style={styles.map}
         provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
         initialRegion={INITIAL_REGION}
+        onMapReady={() => setMapReady(true)}
         showsUserLocation={permissionStatus === 'granted'}
         showsMyLocationButton={false}
         showsCompass={false}

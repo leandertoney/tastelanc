@@ -1,18 +1,22 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from './useAuth';
-import { onGeofenceEntry, setRadarUserId, type RadarVisit } from '../lib/radar';
+import { onGeofenceEntry, onAreaGeofenceEntry, setRadarUserId, type RadarVisit, type RadarAreaVisit } from '../lib/radar';
 import { recordPassiveVisit, getVisitedRestaurants, getVisitCounts, getRecentVisits } from '../lib/visits';
+import { recordAreaVisit, markNotificationSent } from '../lib/areaVisits';
+import { triggerAreaNotification } from '../lib/notifications';
 import { queryKeys } from '../lib/queryClient';
 
 /**
  * Hook to handle Radar geofence events and record visits
+ * Handles both restaurant geofences and area (neighborhood) geofences
  * Should be used once at the app level (in Navigation or App component)
  */
 export function useRadarVisits(): void {
   const { userId } = useAuth();
   const queryClient = useQueryClient();
-  const cleanupRef = useRef<(() => void) | null>(null);
+  const restaurantCleanupRef = useRef<(() => void) | null>(null);
+  const areaCleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -20,9 +24,9 @@ export function useRadarVisits(): void {
     // Set user ID in Radar for analytics
     setRadarUserId(userId);
 
-    // Listen for geofence entry events
-    cleanupRef.current = onGeofenceEntry(async (visit: RadarVisit) => {
-      console.log('[useRadarVisits] Geofence entry detected:', visit.restaurantId);
+    // Listen for restaurant geofence entry events
+    restaurantCleanupRef.current = onGeofenceEntry(async (visit: RadarVisit) => {
+      console.log('[useRadarVisits] Restaurant geofence entry detected:', visit.restaurantId);
 
       // Record the visit (won't duplicate if already visited today)
       const result = await recordPassiveVisit(userId, visit.restaurantId, 'radar');
@@ -38,11 +42,45 @@ export function useRadarVisits(): void {
       }
     });
 
+    // Listen for area geofence entry events (neighborhoods/districts)
+    areaCleanupRef.current = onAreaGeofenceEntry(async (visit: RadarAreaVisit) => {
+      console.log('[useRadarVisits] Area geofence entry detected:', visit.areaId, visit.areaName);
+
+      // Record the area visit and check if it's the first visit
+      const result = await recordAreaVisit(userId, visit.areaId);
+
+      if (!result.error && result.isFirstVisit) {
+        // First visit to this area - send notification
+        console.log('[useRadarVisits] First visit to area, sending notification');
+
+        // Trigger the push notification (pass 0 for count to use generic message)
+        const notificationSent = await triggerAreaNotification(
+          userId,
+          visit.areaId,
+          visit.areaName,
+          0
+        );
+
+        if (notificationSent) {
+          // Mark notification as sent to prevent duplicates
+          await markNotificationSent(userId, visit.areaId);
+          console.log('[useRadarVisits] Area notification sent successfully');
+        }
+
+        // Invalidate area visits cache
+        queryClient.invalidateQueries({ queryKey: ['areaVisits', userId] });
+      }
+    });
+
     // Cleanup on unmount or userId change
     return () => {
-      if (cleanupRef.current) {
-        cleanupRef.current();
-        cleanupRef.current = null;
+      if (restaurantCleanupRef.current) {
+        restaurantCleanupRef.current();
+        restaurantCleanupRef.current = null;
+      }
+      if (areaCleanupRef.current) {
+        areaCleanupRef.current();
+        areaCleanupRef.current = null;
       }
     };
   }, [userId, queryClient]);

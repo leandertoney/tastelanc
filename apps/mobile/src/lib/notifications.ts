@@ -215,7 +215,47 @@ export async function getBadgeCount(): Promise<number> {
 
 // Type for notification data we send
 export interface TasteLancNotificationData {
-  screen?: 'RestaurantDetail' | 'HappyHoursViewAll' | 'EventsViewAll' | 'VoteCenter';
+  screen?: 'RestaurantDetail' | 'HappyHoursViewAll' | 'EventsViewAll' | 'VoteCenter' | 'AreaRestaurants';
   restaurantId?: string;
+  areaId?: string;
+  areaName?: string;
   category?: string;
+}
+
+/**
+ * Trigger an area entry notification via the edge function
+ * Called when user enters an area geofence for the first time
+ * @param userId - User ID to send notification to
+ * @param areaId - Area UUID
+ * @param areaName - Display name of the area
+ * @param restaurantCount - Number of restaurants in the area
+ * @returns true if notification was sent successfully
+ */
+export async function triggerAreaNotification(
+  userId: string,
+  areaId: string,
+  areaName: string,
+  restaurantCount: number
+): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.functions.invoke('send-notifications/area-entry', {
+      body: {
+        userId,
+        areaId,
+        areaName,
+        restaurantCount,
+      },
+    });
+
+    if (error) {
+      console.error('[Notifications] Error triggering area notification:', error);
+      return false;
+    }
+
+    console.log('[Notifications] Area notification response:', data);
+    return data?.sent === true;
+  } catch (error) {
+    console.error('[Notifications] Exception triggering area notification:', error);
+    return false;
+  }
 }

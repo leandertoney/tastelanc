@@ -112,6 +112,22 @@ export function useUserLocation(): UseUserLocationResult {
   };
 }
 
+const LANCASTER_RADIUS_MILES = 10;
+
+/**
+ * Check if coordinates are within the Lancaster area
+ */
+export function isNearLancaster(coords: LocationCoords): boolean {
+  return (
+    calculateDistance(
+      coords.latitude,
+      coords.longitude,
+      LANCASTER_CENTER.latitude,
+      LANCASTER_CENTER.longitude
+    ) <= LANCASTER_RADIUS_MILES
+  );
+}
+
 /**
  * Calculate distance between two coordinates in miles
  */

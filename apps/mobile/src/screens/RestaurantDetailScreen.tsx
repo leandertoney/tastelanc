@@ -25,7 +25,6 @@ import type {
 } from '../types/database';
 import { supabase } from '../lib/supabase';
 import { fetchEvents } from '../lib/events';
-import { formatCategoryName } from '../lib/formatters';
 import { useAuth } from '../hooks/useAuth';
 import { useFavorites, useToggleFavorite } from '../hooks';
 import {
@@ -40,14 +39,16 @@ import {
   CheckInModal,
   PhotosCarousel,
   RatingSubmit,
+  PersonalityDescription,
 } from '../components';
 import type { Tab } from '../components';
+import { formatCategoryName } from '../lib/formatters';
 import { colors, radius } from '../constants/colors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RestaurantDetail'>;
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const HERO_HEIGHT = 280;
+const HERO_HEIGHT = 320;
 
 // No placeholder images - only show actual restaurant images
 
@@ -102,9 +103,6 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
 
       // Set restaurant (no tier filtering - show all content)
       setRestaurant({ ...restaurantData, tiers: null });
-
-      // Update navigation title
-      navigation.setOptions({ title: restaurantData.name });
 
       // Fetch related data in parallel
       const [hoursRes, happyHoursRes, specialsRes, eventsData] = await Promise.all([
@@ -230,27 +228,50 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                 <RatingStars rating={restaurant.average_rating} size="medium" />
               ) : null}
             </View>
+            {/* Category Tags */}
+            {restaurant.categories && restaurant.categories.length > 0 && (
+              <View style={styles.tagsContainer}>
+                {restaurant.categories.map((category) => (
+                  <TagChip
+                    key={category}
+                    label={formatCategoryName(category)}
+                    variant="default"
+                  />
+                ))}
+                {restaurant.is_verified && (
+                  <TagChip label="Verified" variant="success" />
+                )}
+              </View>
+            )}
           </View>
         </LinearGradient>
+
+        {/* Back Button */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </TouchableOpacity>
       </View>
 
-      {/* Category Tags */}
-      {restaurant.categories && restaurant.categories.length > 0 && (
-        <View style={styles.tagsContainer}>
-          {restaurant.categories.map((category) => (
-            <TagChip
-              key={category}
-              label={formatCategoryName(category)}
-              variant="default"
-            />
-          ))}
-          {restaurant.is_verified && (
-            <TagChip label="Verified" variant="success" />
-          )}
-        </View>
+      {/* Description — pull-quote style */}
+      <PersonalityDescription
+        description={restaurant.description}
+        name={restaurant.name}
+      />
+
+      {/* Photos — elevated to standalone section */}
+      {restaurant.photos && restaurant.photos.length > 0 && (
+        <SectionCard title="Photos" icon="images-outline">
+          <PhotosCarousel
+            photos={restaurant.photos}
+            restaurantName={restaurant.name}
+          />
+        </SectionCard>
       )}
 
-      {/* Quick Actions */}
+      {/* Quick Actions (moved below value content) */}
       <QuickActionsBar
         restaurantName={restaurant.name}
         phone={restaurant.phone}
@@ -274,31 +295,14 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
         </View>
       )}
 
-      {/* Tab Bar - only for Premium/Elite restaurants */}
+      {/* Tab Bar */}
       {hasPremiumContent && (
         <TabBar tabs={TABS} activeTab={activeTab} onTabPress={setActiveTab} />
       )}
 
-      {/* Basic Info - shown for all restaurants OR as Menu tab for Premium/Elite */}
+      {/* Menu tab content (Hours, Location, Menu — About & Photos now above) */}
       {(!hasPremiumContent || activeTab === 'menu') && (
         <View style={styles.tabContent}>
-          {/* About Section */}
-          {restaurant.description && (
-            <SectionCard title="About" icon="information-circle-outline">
-              <Text style={styles.descriptionText}>{restaurant.description}</Text>
-            </SectionCard>
-          )}
-
-          {/* Photos Section */}
-          {restaurant.photos && restaurant.photos.length > 0 && (
-            <SectionCard title="Photos" icon="images-outline">
-              <PhotosCarousel
-                photos={restaurant.photos}
-                restaurantName={restaurant.name}
-              />
-            </SectionCard>
-          )}
-
           {/* Hours Section */}
           {hours.length > 0 && (
             <SectionCard title="Hours" icon="time-outline">
@@ -316,7 +320,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
             />
           </SectionCard>
 
-          {/* Menu Section - only for Premium/Elite */}
+          {/* Menu Section */}
           {hasPremiumContent && (
             <SectionCard title="Menu" icon="restaurant-outline">
               <MenuViewer
@@ -491,6 +495,18 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
   heroGradient: {
     position: 'absolute',
     bottom: 0,
@@ -548,9 +564,8 @@ const styles = StyleSheet.create({
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: colors.primaryLight,
+    gap: 6,
+    marginTop: 8,
   },
 
   // Description
