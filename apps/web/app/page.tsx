@@ -61,6 +61,11 @@ export default function HomePage() {
   const [featurePaused, setFeaturePaused] = useState(false);
   const featurePauseTimeout = useRef<NodeJS.Timeout | null>(null);
 
+  // Hero background cycling state
+  const [heroImages, setHeroImages] = useState<string[]>([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [firstImageReady, setFirstImageReady] = useState(false);
+
   // Your Lancaster map pins
   const [activePin, setActivePin] = useState<number | null>(null);
 
@@ -135,30 +140,69 @@ export default function HomePage() {
       setSubmitted(true);
       setEmail(savedEmail);
     }
-
-    // Track page view
-    const trackView = async () => {
-      try {
-        let visitorId = localStorage.getItem('tastelanc_visitor_id');
-        if (!visitorId) {
-          visitorId = crypto.randomUUID();
-          localStorage.setItem('tastelanc_visitor_id', visitorId);
-        }
-        await fetch('/api/analytics/page-view', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            page_path: '/',
-            visitor_id: visitorId,
-            referrer: document.referrer || null,
-          }),
-        });
-      } catch (e) {
-        console.error('Failed to track page view', e);
-      }
-    };
-    trackView();
   }, []);
+
+  // Fetch restaurant hero images
+  useEffect(() => {
+    const fetchHeroImages = async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('cover_image_url')
+        .not('cover_image_url', 'is', null)
+        .eq('is_active', true)
+        .limit(15);
+
+      if (error || !data || data.length === 0) return;
+
+      const urls = data
+        .map((r) => r.cover_image_url)
+        .filter((url): url is string => url !== null);
+
+      // Shuffle for variety on each visit
+      for (let i = urls.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [urls[i], urls[j]] = [urls[j], urls[i]];
+      }
+
+      setHeroImages(urls);
+    };
+
+    fetchHeroImages();
+  }, []);
+
+  // Preload initial hero images
+  useEffect(() => {
+    if (heroImages.length === 0) return;
+
+    const img = new window.Image();
+    img.src = heroImages[0];
+    img.onload = () => setFirstImageReady(true);
+
+    // Preload second image too
+    if (heroImages.length > 1) {
+      const img2 = new window.Image();
+      img2.src = heroImages[1];
+    }
+  }, [heroImages]);
+
+  // Cycle hero background images
+  useEffect(() => {
+    if (heroImages.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => {
+        const nextIndex = (prev + 1) % heroImages.length;
+        // Preload the image after next
+        const preloadIndex = (nextIndex + 1) % heroImages.length;
+        const img = new window.Image();
+        img.src = heroImages[preloadIndex];
+        return nextIndex;
+      });
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [heroImages]);
 
   // Tonight section feature rotation (2.5s interval)
   useEffect(() => {
@@ -271,7 +315,21 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="py-20 px-4 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-[url('/images/lanc_rooftop.jpg')] bg-cover bg-center" />
+          {/* Restaurant images with crossfade, or fallback to static image */}
+          {heroImages.length > 0 && firstImageReady ? (
+            heroImages.map((url, index) => (
+              <div
+                key={url}
+                className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out"
+                style={{
+                  backgroundImage: `url('${url}')`,
+                  opacity: index === currentImageIndex ? 1 : 0,
+                }}
+              />
+            ))
+          ) : (
+            <div className="absolute inset-0 bg-[url('/images/lanc_rooftop.jpg')] bg-cover bg-center" />
+          )}
           <div className="absolute inset-0 bg-black/40" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-transparent pointer-events-none" />
         </div>
