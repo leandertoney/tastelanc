@@ -22,25 +22,18 @@ export default function PlanYourDayCard() {
         onPress={() => navigation.navigate('ItineraryBuilder', {})}
         activeOpacity={0.85}
       >
-        {/* Icon row */}
-        <View style={styles.iconRow}>
-          <View style={styles.iconCircle}>
-            <Ionicons name="map" size={24} color={colors.text} />
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+        <View style={styles.iconCircle}>
+          <Ionicons name="map" size={18} color={colors.text} />
         </View>
 
-        {/* Text content */}
-        <Text style={styles.title}>Plan Your Day in Lancaster</Text>
-        <Text style={styles.subtitle}>
-          Get a personalized itinerary with dining, happy hours, and entertainment all mapped out for you.
-        </Text>
-
-        {/* CTA */}
-        <View style={styles.ctaRow}>
-          <Text style={styles.ctaText}>Get Started</Text>
-          <Ionicons name="arrow-forward" size={16} color={colors.accent} />
+        <View style={styles.textColumn}>
+          <Text style={styles.title}>Plan Your Day in Lancaster</Text>
+          <Text style={styles.subtitle}>
+            Dining, happy hours & entertainment — planned for you.
+          </Text>
         </View>
+
+        <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
       </TouchableOpacity>
     </View>
   );
@@ -49,48 +42,38 @@ export default function PlanYourDayCard() {
 const styles = StyleSheet.create({
   wrapper: {
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   card: {
     backgroundColor: colors.cardBg,
     borderRadius: radius.lg,
-    padding: spacing.lg,
+    padding: spacing.md,
     borderWidth: 1,
     borderColor: colors.accent,
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
   },
-  iconRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
   iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  textColumn: {
+    flex: 1,
+    gap: 2,
+  },
   title: {
-    fontSize: typography.title3,
+    fontSize: typography.subhead,
     fontWeight: '700',
     color: colors.text,
   },
   subtitle: {
-    fontSize: typography.subhead,
+    fontSize: typography.caption1,
     color: colors.textMuted,
-    lineHeight: 20,
-  },
-  ctaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.xs,
-  },
-  ctaText: {
-    fontSize: typography.subhead,
-    fontWeight: '600',
-    color: colors.accent,
+    lineHeight: 16,
   },
 });
