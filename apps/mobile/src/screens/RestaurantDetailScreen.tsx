@@ -25,6 +25,7 @@ import type {
 } from '../types/database';
 import { supabase } from '../lib/supabase';
 import { fetchEvents } from '../lib/events';
+import { trackScreenView } from '../lib/analytics';
 import { useAuth } from '../hooks/useAuth';
 import { useFavorites, useToggleFavorite } from '../hooks';
 import {
@@ -144,6 +145,13 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   useEffect(() => {
     fetchRestaurantData();
   }, [fetchRestaurantData]);
+
+  // Track screen view when restaurant loads
+  useEffect(() => {
+    if (restaurant) {
+      trackScreenView('RestaurantDetail', id);
+    }
+  }, [restaurant, id]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -273,6 +281,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
 
       {/* Quick Actions (moved below value content) */}
       <QuickActionsBar
+        restaurantId={restaurant.id}
         restaurantName={restaurant.name}
         phone={restaurant.phone}
         website={restaurant.website}

@@ -13,6 +13,7 @@ import { colors, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_ENTERTAINMENT, type MockEntertainment } from '../config/mockData';
 import type { DayOfWeek } from '../types/database';
 import { useEmailGate } from '../hooks';
+import { trackClick } from '../lib/analytics';
 
 const CTA_ITEM_ID = '__partner_cta__';
 
@@ -101,6 +102,7 @@ export default function EntertainmentSection() {
 
   const handleEventPress = useCallback(
     (event: ApiEvent) => {
+      trackClick('event', event.restaurant?.id);
       requireEmailGate(() => navigation.navigate('EventDetail', { event }));
     },
     [navigation, requireEmailGate]

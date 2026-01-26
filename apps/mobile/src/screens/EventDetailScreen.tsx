@@ -1,9 +1,11 @@
+import { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Share, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, radius } from '../constants/colors';
+import { trackScreenView } from '../lib/analytics';
 
 const APP_STORE_URL = 'https://apps.apple.com/app/tastelanc/id6755852717';
 const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.tastelanc.app';
@@ -63,6 +65,11 @@ const formatDaysOfWeek = (days: string[]): string => {
 
 export default function EventDetailScreen({ route, navigation }: Props) {
   const { event } = route.params;
+
+  // Track screen view on mount
+  useEffect(() => {
+    trackScreenView('EventDetail', event.restaurant?.id);
+  }, [event.id]);
 
   const handleViewRestaurant = () => {
     if (event.restaurant?.id) {

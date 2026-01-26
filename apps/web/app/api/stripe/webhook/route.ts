@@ -3,7 +3,14 @@ export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import { getStripe, CONSUMER_PRICE_IDS, EARLY_ACCESS_PRICE_IDS, ALL_CONSUMER_PRICE_IDS } from '@/lib/stripe';
+import {
+  getStripe,
+  CONSUMER_PRICE_IDS,
+  EARLY_ACCESS_PRICE_IDS,
+  ALL_CONSUMER_PRICE_IDS,
+  RESTAURANT_PRICE_IDS,
+  DURATION_TO_INTERVAL,
+} from '@/lib/stripe';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import type Stripe from 'stripe';
@@ -59,6 +66,407 @@ function getRestaurantTier(priceId: string): string {
   return 'premium';
 }
 
+// Helper to get price ID from plan and duration
+function getPriceId(plan: string, duration: string): string | null {
+  const key = `${plan}_${duration}` as keyof typeof RESTAURANT_PRICE_IDS;
+  return RESTAURANT_PRICE_IDS[key] || null;
+}
+
+// Helper to find or create a user account for admin sales
+async function findOrCreateUser(
+  email: string,
+  contactName: string,
+  businessNames: string[],
+  phone: string,
+  stripeCustomerId: string,
+  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>
+): Promise<string | null> {
+  // Check if user already exists by email
+  const { data: existingUser } = await supabaseAdmin
+    .from('profiles')
+    .select('id')
+    .eq('email', email)
+    .single();
+
+  if (existingUser) {
+    console.log(`Found existing user: ${existingUser.id}`);
+    return existingUser.id;
+  }
+
+  // Create new user account via Supabase Auth
+  const displayName = contactName || businessNames[0] || 'Restaurant Owner';
+  const tempPassword = crypto.randomUUID().slice(0, 12);
+  const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+    email,
+    password: tempPassword,
+    email_confirm: true,
+    user_metadata: {
+      full_name: displayName,
+      role: 'restaurant_owner',
+    },
+  });
+
+  if (createError || !newUser.user) {
+    console.error('Failed to create user:', createError);
+    return null;
+  }
+
+  const userId = newUser.user.id;
+  console.log(`Created new user: ${userId}`);
+
+  // Create profile for new user
+  await supabaseAdmin.from('profiles').upsert({
+    id: userId,
+    email,
+    full_name: displayName,
+    role: 'restaurant_owner',
+    stripe_customer_id: stripeCustomerId,
+  }, {
+    onConflict: 'id',
+  });
+
+  // Generate password setup link and send welcome email via Resend
+  const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+    type: 'recovery',
+    email,
+    options: {
+      redirectTo: 'https://tastelanc.com/owner/dashboard',
+    },
+  });
+
+  if (linkData?.properties?.action_link) {
+    const setupLink = linkData.properties.action_link;
+    const businessNamesList = businessNames.length > 1
+      ? businessNames.slice(0, -1).join(', ') + ' and ' + businessNames[businessNames.length - 1]
+      : businessNames[0];
+
+    await resend.emails.send({
+      from: 'TasteLanc <hello@tastelanc.com>',
+      to: email,
+      subject: `Welcome to TasteLanc! Set Up Your Account`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #1a1a1a; font-size: 28px; margin: 0;">Welcome to TasteLanc!</h1>
+          </div>
+
+          <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi${contactName ? ` ${contactName.split(' ')[0]}` : ''},</p>
+
+          <p style="font-size: 16px; color: #333; line-height: 1.6;">
+            Thank you for joining TasteLanc! Your account for <strong>${businessNamesList}</strong> is ready.
+          </p>
+
+          <p style="font-size: 16px; color: #333; line-height: 1.6;">
+            To get started, click the button below to set up your password and access your dashboard:
+          </p>
+
+          <div style="text-align: center; margin: 35px 0;">
+            <a href="${setupLink}" style="background-color: #3b82f6; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600; display: inline-block;">
+              Set Up Your Account
+            </a>
+          </div>
+
+          <p style="font-size: 16px; color: #333; line-height: 1.6;">
+            Once you're set up, you can manage your restaurant profiles, update hours, add specials, and more.
+          </p>
+
+          <p style="font-size: 16px; color: #333; line-height: 1.6;">
+            If you have any questions, just reply to this email - we're here to help!
+          </p>
+
+          <p style="font-size: 16px; color: #333; line-height: 1.6;">
+            Cheers,<br/>
+            <strong>The TasteLanc Team</strong>
+          </p>
+
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+
+          <p style="font-size: 12px; color: #9ca3af; text-align: center;">
+            TasteLanc - Lancaster's Local Food Guide<br/>
+            <a href="https://tastelanc.com" style="color: #6b7280;">tastelanc.com</a>
+          </p>
+        </div>
+      `,
+    });
+    console.log(`Welcome email sent to ${email}`);
+  } else {
+    console.error('Failed to generate setup link:', linkError);
+  }
+
+  return userId;
+}
+
+// Handle multi-restaurant checkout completion
+async function handleMultiRestaurantCheckout(
+  session: Stripe.Checkout.Session,
+  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>
+) {
+  const salesOrderId = session.metadata?.sales_order_id;
+  if (!salesOrderId) {
+    console.error('Missing sales_order_id in multi-restaurant checkout');
+    return;
+  }
+
+  // Check idempotency - skip if already processed
+  const { data: existingOrder } = await supabaseAdmin
+    .from('sales_orders')
+    .select('status')
+    .eq('id', salesOrderId)
+    .single();
+
+  if (existingOrder && existingOrder.status !== 'pending') {
+    console.log(`Sales order ${salesOrderId} already processed (status: ${existingOrder.status})`);
+    return;
+  }
+
+  // Fetch order + items
+  const { data: salesOrder } = await supabaseAdmin
+    .from('sales_orders')
+    .select('*')
+    .eq('id', salesOrderId)
+    .single();
+
+  if (!salesOrder) {
+    console.error(`Sales order ${salesOrderId} not found`);
+    return;
+  }
+
+  const { data: orderItems } = await supabaseAdmin
+    .from('sales_order_items')
+    .select('*')
+    .eq('sales_order_id', salesOrderId);
+
+  if (!orderItems || orderItems.length === 0) {
+    console.error(`No items found for sales order ${salesOrderId}`);
+    return;
+  }
+
+  // Update order status to processing
+  await supabaseAdmin
+    .from('sales_orders')
+    .update({
+      status: 'processing',
+      stripe_payment_intent_id: session.payment_intent as string,
+      stripe_checkout_session_id: session.id,
+    })
+    .eq('id', salesOrderId);
+
+  const email = salesOrder.customer_email;
+  const contactName = salesOrder.customer_name || '';
+  const phone = salesOrder.customer_phone || '';
+  const customerId = session.customer as string;
+  const discountPercent = salesOrder.discount_percent;
+
+  console.log('Processing multi-restaurant checkout:', {
+    salesOrderId,
+    email,
+    restaurantCount: orderItems.length,
+    discountPercent,
+  });
+
+  // Find or create user account
+  const businessNames = orderItems.map((item: { restaurant_name: string }) => item.restaurant_name);
+  const userId = await findOrCreateUser(email, contactName, businessNames, phone, customerId, supabaseAdmin);
+
+  if (!userId) {
+    await supabaseAdmin
+      .from('sales_orders')
+      .update({ status: 'failed' })
+      .eq('id', salesOrderId);
+    console.error('Failed to find or create user for multi-restaurant checkout');
+    return;
+  }
+
+  // Process each order item
+  let allSucceeded = true;
+  for (const item of orderItems) {
+    try {
+      // Link or create restaurant
+      let linkedRestaurantId: string;
+
+      if (item.restaurant_id && !item.is_new_restaurant) {
+        // Link existing restaurant to user
+        await supabaseAdmin
+          .from('restaurants')
+          .update({ owner_id: userId })
+          .eq('id', item.restaurant_id);
+        linkedRestaurantId = item.restaurant_id;
+        console.log(`Linked restaurant ${item.restaurant_id} to user ${userId}`);
+      } else {
+        // Create new restaurant
+        const slug = item.restaurant_name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '');
+
+        const { data: newRestaurant, error: restaurantError } = await supabaseAdmin
+          .from('restaurants')
+          .insert({
+            name: item.restaurant_name,
+            slug: `${slug}-${Date.now().toString(36)}`,
+            owner_id: userId,
+            phone,
+            email,
+            is_active: true,
+            is_verified: false,
+            city: 'Lancaster',
+            state: 'PA',
+          })
+          .select('id')
+          .single();
+
+        if (!newRestaurant) {
+          throw new Error(`Failed to create restaurant: ${restaurantError?.message}`);
+        }
+        linkedRestaurantId = newRestaurant.id;
+        console.log(`Created new restaurant: ${linkedRestaurantId}`);
+      }
+
+      // Create individual Stripe subscription with trial_end
+      const priceId = getPriceId(item.plan, item.duration);
+      if (!priceId) {
+        throw new Error(`Invalid plan/duration: ${item.plan}/${item.duration}`);
+      }
+
+      const intervalInfo = DURATION_TO_INTERVAL[item.duration];
+
+      // Calculate trial_end to skip the first billing period (already paid)
+      const now = new Date();
+      let trialEnd: Date;
+      if (intervalInfo.interval === 'year') {
+        trialEnd = new Date(now.getFullYear() + intervalInfo.interval_count, now.getMonth(), now.getDate());
+      } else {
+        trialEnd = new Date(now.getFullYear(), now.getMonth() + intervalInfo.interval_count, now.getDate());
+      }
+
+      const subParams: Stripe.SubscriptionCreateParams = {
+        customer: customerId,
+        items: [{ price: priceId }],
+        trial_end: Math.floor(trialEnd.getTime() / 1000),
+        metadata: {
+          sales_order_id: salesOrderId,
+          sales_order_item_id: item.id,
+          restaurant_id: linkedRestaurantId,
+          admin_sale: 'true',
+          multi_restaurant: 'true',
+        },
+      };
+
+      const subscription = await getStripe().subscriptions.create(subParams);
+
+      // Update restaurant with tier and subscription
+      const tier = item.plan; // 'premium' or 'elite'
+      const { data: tierData } = await supabaseAdmin
+        .from('tiers')
+        .select('id')
+        .eq('name', tier)
+        .single();
+
+      if (tierData) {
+        await supabaseAdmin
+          .from('restaurants')
+          .update({
+            tier_id: tierData.id,
+            stripe_subscription_id: subscription.id,
+          })
+          .eq('id', linkedRestaurantId);
+
+        console.log(`Restaurant ${linkedRestaurantId} upgraded to ${tier} tier (subscription: ${subscription.id})`);
+      }
+
+      // Update order item status
+      await supabaseAdmin
+        .from('sales_order_items')
+        .update({
+          stripe_subscription_id: subscription.id,
+          linked_restaurant_id: linkedRestaurantId,
+          processing_status: 'subscription_created',
+        })
+        .eq('id', item.id);
+
+    } catch (error) {
+      console.error(`Failed to process order item ${item.id}:`, error);
+      allSucceeded = false;
+      await supabaseAdmin
+        .from('sales_order_items')
+        .update({
+          processing_status: 'failed',
+          processing_error: error instanceof Error ? error.message : 'Unknown error',
+        })
+        .eq('id', item.id);
+    }
+  }
+
+  // Update order status
+  await supabaseAdmin
+    .from('sales_orders')
+    .update({
+      status: allSucceeded ? 'completed' : 'partially_failed',
+      completed_at: new Date().toISOString(),
+    })
+    .eq('id', salesOrderId);
+
+  // Send admin notification
+  const amountPaid = session.amount_total ? (session.amount_total / 100).toFixed(2) : 'N/A';
+  const restaurantList = orderItems.map((item: { restaurant_name: string; plan: string; duration: string }) => {
+    const planName = item.plan.charAt(0).toUpperCase() + item.plan.slice(1);
+    return `${item.restaurant_name} (${planName} - ${item.duration})`;
+  }).join(', ');
+
+  try {
+    await resend.emails.send({
+      from: 'TasteLanc <hello@tastelanc.com>',
+      to: 'admin@tastelanc.com',
+      subject: `Multi-Restaurant Payment: ${orderItems.length} restaurants - $${amountPaid}`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #1a1a1a; border-bottom: 2px solid #3b82f6; padding-bottom: 10px;">Multi-Restaurant Payment</h2>
+
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280; width: 140px;">Contact:</td>
+              <td style="padding: 8px 0; color: #1a1a1a; font-weight: 600;">${contactName || 'N/A'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Email:</td>
+              <td style="padding: 8px 0; color: #1a1a1a;"><a href="mailto:${email}" style="color: #3b82f6;">${email}</a></td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Phone:</td>
+              <td style="padding: 8px 0; color: #1a1a1a;">${phone || 'N/A'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Restaurants:</td>
+              <td style="padding: 8px 0; color: #1a1a1a;">${restaurantList}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Discount:</td>
+              <td style="padding: 8px 0; color: #1a1a1a; font-weight: 600;">${discountPercent}% off</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Total Paid:</td>
+              <td style="padding: 8px 0; color: #22c55e; font-weight: 600;">$${amountPaid}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Status:</td>
+              <td style="padding: 8px 0; color: #1a1a1a;">${allSucceeded ? 'All subscriptions created' : 'Some items failed - check logs'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Stripe Customer:</td>
+              <td style="padding: 8px 0; color: #1a1a1a;"><a href="https://dashboard.stripe.com/customers/${customerId}" style="color: #3b82f6;">${customerId}</a></td>
+            </tr>
+          </table>
+        </div>
+      `,
+    });
+    console.log('Admin notification sent for multi-restaurant checkout');
+  } catch (notifyError) {
+    console.error('Failed to send admin notification:', notifyError);
+  }
+
+  console.log(`Multi-restaurant checkout ${allSucceeded ? 'completed' : 'partially failed'}: ${orderItems.length} restaurants for ${email}`);
+}
+
 export async function POST(request: Request) {
   const body = await request.text();
   const headersList = await headers();
@@ -98,7 +506,15 @@ export async function POST(request: Request) {
         const subscriptionId = session.subscription as string;
         const isAdminSale = session.metadata?.admin_sale === 'true';
 
-        console.log('Checkout completed:', { subscriptionType, subscriptionId, isAdminSale });
+        const isMultiRestaurant = session.metadata?.multi_restaurant === 'true';
+
+        console.log('Checkout completed:', { subscriptionType, subscriptionId, isAdminSale, isMultiRestaurant });
+
+        // Handle multi-restaurant checkout (payment mode - no subscription ID)
+        if (isAdminSale && isMultiRestaurant) {
+          await handleMultiRestaurantCheckout(session, supabaseAdmin);
+          break;
+        }
 
         if (!subscriptionId) {
           console.error('Missing subscriptionId in checkout session');
@@ -485,7 +901,7 @@ export async function POST(request: Request) {
               .from('consumer_subscriptions')
               .update({
                 stripe_price_id: priceId,
-                status: subscription.status === 'active' ? 'active' : subscription.status,
+                status: (subscription.status === 'active' || subscription.status === 'trialing') ? 'active' : subscription.status,
                 billing_period: billingPeriod,
                 current_period_start: new Date(subItem.current_period_start * 1000).toISOString(),
                 current_period_end: new Date(subItem.current_period_end * 1000).toISOString(),
@@ -495,7 +911,7 @@ export async function POST(request: Request) {
             // Update premium status on profile
             await supabaseAdmin
               .from('profiles')
-              .update({ is_premium: subscription.status === 'active' })
+              .update({ is_premium: subscription.status === 'active' || subscription.status === 'trialing' })
               .eq('id', consumerSub.user_id);
           }
         } else {
@@ -637,6 +1053,14 @@ export async function POST(request: Request) {
                 console.error('Failed to send cancellation notification:', notifyError);
               }
             }
+          }
+
+          // Track cancellation in sales order if this was a multi-restaurant order
+          if (subscription.metadata?.multi_restaurant === 'true' && subscription.metadata?.sales_order_item_id) {
+            await supabaseAdmin
+              .from('sales_order_items')
+              .update({ processing_status: 'canceled' })
+              .eq('id', subscription.metadata.sales_order_item_id);
           }
         }
         break;

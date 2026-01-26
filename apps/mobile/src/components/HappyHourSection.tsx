@@ -14,6 +14,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_HAPPY_HOURS } from '../config/mockData';
 import { usePlatformSocialProof, useEmailGate } from '../hooks';
+import { trackClick } from '../lib/analytics';
 
 const BANNER_DURATION = 4000; // 4 seconds per banner (equal for all)
 const FADE_DURATION = 300; // 300ms fade transition
@@ -120,6 +121,7 @@ export default function HappyHourSection() {
   });
 
   const handleBannerPress = (restaurantId: string) => {
+    trackClick('happy_hour', restaurantId);
     navigation.navigate('RestaurantDetail', { id: restaurantId });
   };
 
