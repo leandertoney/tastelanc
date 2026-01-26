@@ -2,8 +2,10 @@ import { View, Text, TouchableOpacity, StyleSheet, Linking, Platform, Share } fr
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import { colors, radius } from '../constants/colors';
+import { trackClick } from '../lib/analytics';
 
 interface QuickActionsBarProps {
+  restaurantId?: string;
   restaurantName?: string;
   phone?: string | null;
   website?: string | null;
@@ -15,6 +17,7 @@ interface QuickActionsBarProps {
 }
 
 export default function QuickActionsBar({
+  restaurantId,
   restaurantName,
   phone,
   website,
@@ -26,6 +29,7 @@ export default function QuickActionsBar({
 }: QuickActionsBarProps) {
   const handleCall = () => {
     if (phone) {
+      trackClick('phone', restaurantId);
       const phoneUrl = `tel:${phone.replace(/[^0-9+]/g, '')}`;
       Linking.openURL(phoneUrl);
     }
@@ -33,6 +37,7 @@ export default function QuickActionsBar({
 
   const handleWebsite = async () => {
     if (website) {
+      trackClick('website', restaurantId);
       let url = website;
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
         url = `https://${url}`;
@@ -42,6 +47,7 @@ export default function QuickActionsBar({
   };
 
   const handleDirections = () => {
+    trackClick('directions', restaurantId);
     if (latitude && longitude) {
       const url = Platform.select({
         ios: `maps:?daddr=${latitude},${longitude}`,
@@ -61,6 +67,7 @@ export default function QuickActionsBar({
   };
 
   const handleShare = async () => {
+    trackClick('share', restaurantId);
     const appStoreUrl =
       Platform.OS === 'ios'
         ? 'https://apps.apple.com/app/tastelanc/id6755852717'

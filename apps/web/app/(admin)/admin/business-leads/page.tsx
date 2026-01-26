@@ -20,6 +20,7 @@ import {
   XCircle,
   Clock,
   MessageSquare,
+  ShoppingCart,
 } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 
@@ -413,6 +414,13 @@ export default function BusinessLeadsPage() {
                     >
                       <Mail className="w-4 h-4 text-white" />
                     </a>
+                    <Link
+                      href={`/admin/sales?email=${encodeURIComponent(lead.email)}&name=${encodeURIComponent(lead.contact_name || lead.business_name)}&phone=${encodeURIComponent(lead.phone || '')}&businessName=${encodeURIComponent(lead.business_name)}`}
+                      className="p-2 bg-green-500/20 hover:bg-green-500/30 rounded-lg transition-colors"
+                      title="Create Sale"
+                    >
+                      <ShoppingCart className="w-4 h-4 text-green-400" />
+                    </Link>
                   </div>
                 </div>
               </Card>

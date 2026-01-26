@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { Card, Badge } from '@/components/ui';
-import { Store, MapPin, CheckCircle, CreditCard, Calendar, ExternalLink, Edit, LayoutDashboard } from 'lucide-react';
+import { Store, MapPin, CheckCircle, CreditCard, Calendar, ExternalLink, Edit, LayoutDashboard, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 
 async function getPaidRestaurants() {
@@ -163,6 +163,13 @@ export default async function AdminPaidMembersPage() {
                       >
                         <LayoutDashboard className="w-3 h-3" />
                         Edit Dashboard
+                      </Link>
+                      <Link
+                        href={`/admin/sales?restaurantId=${restaurant.id}`}
+                        className="text-xs text-green-400 hover:underline flex items-center gap-1"
+                      >
+                        <ShoppingCart className="w-3 h-3" />
+                        Upgrade
                       </Link>
                     </div>
                   </div>

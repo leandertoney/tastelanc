@@ -70,5 +70,27 @@ export const PLAN_NAMES: Record<string, string> = {
   price_consumer_yearly: 'Premium (Annual)',
 };
 
+// Get discount percentage based on restaurant count
+export function getDiscountPercent(restaurantCount: number): number {
+  if (restaurantCount <= 1) return 0;
+  if (restaurantCount === 2) return 10;
+  if (restaurantCount === 3) return 15;
+  return 20; // 4+
+}
+
+// Duration to Stripe billing interval mapping (for programmatic subscription creation)
+export const DURATION_TO_INTERVAL: Record<string, { interval: 'month' | 'year'; interval_count: number }> = {
+  '3mo': { interval: 'month', interval_count: 3 },
+  '6mo': { interval: 'month', interval_count: 6 },
+  'yearly': { interval: 'year', interval_count: 1 },
+};
+
+// Duration display labels
+export const DURATION_LABELS: Record<string, string> = {
+  '3mo': '3 Months',
+  '6mo': '6 Months',
+  'yearly': '1 Year',
+};
+
 // Legacy support - keep for existing code
 export const PRICE_IDS = RESTAURANT_PRICE_IDS;

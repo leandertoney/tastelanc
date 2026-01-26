@@ -4,6 +4,7 @@ import { queryKeys } from '../lib/queryClient';
 import { getFavorites, toggleFavorite, isFavorited } from '../lib/favorites';
 import { useAuth } from './useAuth';
 import { useSignUpModal } from '../context/SignUpModalContext';
+import { trackClick } from '../lib/analytics';
 
 /**
  * Hook to get all favorites for the current user
@@ -42,7 +43,9 @@ export function useToggleFavorite() {
       if (!userId) {
         throw new Error('User not authenticated');
       }
-      return toggleFavorite(userId, restaurantId);
+      const result = await toggleFavorite(userId, restaurantId);
+      trackClick('favorite', restaurantId);
+      return result;
     },
     onMutate: async (restaurantId) => {
       if (!userId) return;

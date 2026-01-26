@@ -12,6 +12,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { colors, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_EVENTS } from '../config/mockData';
 import { usePlatformSocialProof, useEmailGate } from '../hooks';
+import { trackClick } from '../lib/analytics';
 
 const CTA_ITEM_ID = '__partner_cta__';
 
@@ -104,6 +105,7 @@ export default function EventsSection() {
 
   const handleEventPress = useCallback(
     (event: ApiEvent) => {
+      trackClick('event', event.restaurant?.id);
       requireEmailGate(() => navigation.navigate('EventDetail', { event }));
     },
     [navigation, requireEmailGate]
