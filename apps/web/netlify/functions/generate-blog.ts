@@ -954,6 +954,29 @@ Use the restaurants, happy hours, events, and specials from your database. Be sp
       // Don't fail the whole function if email fails
     }
 
+    // Send push notification to all mobile app users
+    let pushSent = 0;
+    try {
+      const { data: pushResult, error: pushError } = await supabase.functions.invoke(
+        'send-notifications/new-blog-post',
+        {
+          body: {
+            title: parsed.title,
+            summary: parsed.summary,
+            slug,
+          },
+        }
+      );
+      if (pushError) {
+        console.error('Failed to send blog push notification:', pushError);
+      } else {
+        pushSent = pushResult?.sent || 0;
+        console.log(`Sent ${pushSent} blog push notifications`);
+      }
+    } catch (pushErr) {
+      console.error('Error invoking push notification function:', pushErr);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -965,6 +988,7 @@ Use the restaurants, happy hours, events, and specials from your database. Be sp
           imageCount: coverData.images.length,
           featuredRestaurantCount: featuredRestaurants.length,
           emailsSent,
+          pushSent,
         },
       }),
       {

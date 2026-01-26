@@ -32,6 +32,7 @@ import {
   SocialProofBanner,
   PromoCard,
   PlanYourDayCard,
+  BlogSection,
 } from '../components';
 import CuisinesSection from '../components/CuisinesSection';
 import { colors, radius, spacing } from '../constants/colors';
@@ -114,6 +115,7 @@ export default function HomeScreen() {
     queryClient.invalidateQueries({ queryKey: ['activeHappyHours'] });
     queryClient.invalidateQueries({ queryKey: ['todayEntertainment'] });
     queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
+    queryClient.invalidateQueries({ queryKey: ['blog'] });
     refetch();
   }, [queryClient, refetch]);
 
@@ -164,7 +166,10 @@ export default function HomeScreen() {
 
       <Spacer size="md" />
 
-      {/* Section 6: Other Places Nearby */}
+      {/* Section 6: From Rosie's Blog */}
+      <BlogSection />
+
+      {/* Section 7: Other Places Nearby */}
       <SectionHeader
         title="Other Places Nearby"
         actionText="Search"

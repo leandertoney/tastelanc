@@ -10,6 +10,7 @@
  * - POST /area-entry - Send alert when user enters an area geofence for the first time
  * - POST /event-reminder - Send reminder for upcoming events (premium/elite only)
  * - POST /broadcast - Send notification to all users (admin only)
+ * - POST /new-blog-post - Send notification to all users about a new blog post
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -386,6 +387,39 @@ Deno.serve(async (req) => {
           restaurantCount || 0
         );
         return new Response(JSON.stringify(result), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'new-blog-post': {
+        // Send notification to all users about a new blog post
+        const body = await req.json();
+        const { title, summary, slug } = body;
+
+        if (!title || !summary || !slug) {
+          return new Response(JSON.stringify({ error: 'Missing title, summary, or slug' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+
+        const tokens = await getAllPushTokens(supabase);
+        const truncatedSummary = summary.length > 120 ? summary.substring(0, 117) + '...' : summary;
+        const messages: PushMessage[] = tokens.map(token => ({
+          to: token,
+          sound: 'default',
+          title: `New from Rosie: ${title}`,
+          body: truncatedSummary,
+          data: {
+            screen: 'BlogDetail',
+            blogSlug: slug,
+          },
+        }));
+
+        const result = await sendPushNotifications(messages);
+        const successCount = result.data.filter(r => r.status === 'ok').length;
+
+        return new Response(JSON.stringify({ sent: successCount, total: tokens.length }), {
           headers: { 'Content-Type': 'application/json' },
         });
       }
