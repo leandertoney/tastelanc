@@ -1,3 +1,6 @@
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
+const DEFAULT_OG_IMAGE = `${siteUrl}/icons/icon-512.png`;
+
 type BaseMeta = {
   title: string;
   description: string;
@@ -13,6 +16,7 @@ export function buildMeta({
   image,
   type = 'website',
 }: BaseMeta) {
+  const ogImage = image || DEFAULT_OG_IMAGE;
   return {
     title,
     description,
@@ -22,13 +26,13 @@ export function buildMeta({
       description,
       url,
       type,
-      images: image ? [{ url: image, alt: title }] : undefined,
+      images: [{ url: ogImage, alt: title }],
     },
     twitter: {
-      card: image ? 'summary_large_image' : 'summary',
+      card: 'summary_large_image' as const,
       title,
       description,
-      images: image ? [image] : undefined,
+      images: [ogImage],
     },
   };
 }
