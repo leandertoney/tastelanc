@@ -1,13 +1,29 @@
 import 'react-native-gesture-handler';
+import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { StyleSheet } from 'react-native';
+import * as Updates from 'expo-updates';
 import Navigation from './src/navigation';
 import { ErrorBoundary } from './src/components';
 import { queryClient } from './src/lib/queryClient';
 
 export default function App() {
+  useEffect(() => {
+    if (__DEV__) return;
+    (async () => {
+      try {
+        const { isAvailable } = await Updates.checkForUpdateAsync();
+        if (isAvailable) {
+          await Updates.fetchUpdateAsync();
+        }
+      } catch {
+        // Silent fail — update will be retried next launch
+      }
+    })();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={styles.container}>
