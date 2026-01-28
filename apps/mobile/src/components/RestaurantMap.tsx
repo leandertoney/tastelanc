@@ -26,8 +26,7 @@ import {
 } from '../hooks/useUserLocation';
 import { formatCuisineName } from '../lib/formatters';
 
-// Import marker icon
-const markerIcon = require('../../assets/images/map/marker.png');
+const tasteLancLogo = require('../../assets/images/tastelanc_logo.png');
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -220,7 +219,9 @@ export default function RestaurantMap({
                     />
                   </View>
                 ) : (
-                  <Image source={markerIcon} style={styles.markerImage} resizeMode="contain" />
+                  <View style={styles.logoMarkerContainer}>
+                    <Image source={tasteLancLogo} style={styles.logoMarker} resizeMode="cover" />
+                  </View>
                 )}
               </View>
               <Callout tooltip onPress={() => handleViewDetails(restaurant)}>
@@ -332,10 +333,6 @@ const styles = StyleSheet.create({
   markerWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  markerImage: {
-    width: 36,
-    height: 36,
   },
   logoMarkerContainer: {
     width: 44,
