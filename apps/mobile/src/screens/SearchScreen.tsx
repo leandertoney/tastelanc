@@ -32,7 +32,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { SearchBar, CategoryChip, CompactRestaurantCard, MapRestaurantCard } from '../components';
 import { colors, radius } from '../constants/colors';
 
-const markerIcon = require('../../assets/images/map/marker.png');
+const tasteLancLogo = require('../../assets/images/tastelanc_logo.png');
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -384,7 +384,9 @@ export default function SearchScreen() {
                       />
                     </View>
                   ) : (
-                    <Image source={markerIcon} style={styles.markerImage} resizeMode="contain" />
+                    <View style={styles.logoMarkerContainer}>
+                      <Image source={tasteLancLogo} style={styles.logoMarker} resizeMode="cover" />
+                    </View>
                   )}
                 </View>
               </Marker>
@@ -564,10 +566,6 @@ const styles = StyleSheet.create({
   markerWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  markerImage: {
-    width: 36,
-    height: 36,
   },
   logoMarkerContainer: {
     width: 44,
