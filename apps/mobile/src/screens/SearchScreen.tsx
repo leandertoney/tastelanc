@@ -32,7 +32,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { SearchBar, CategoryChip, CompactRestaurantCard, MapRestaurantCard } from '../components';
 import { colors, radius } from '../constants/colors';
 
-const tasteLancLogo = require('../../assets/images/tastelanc_logo.png');
+const tasteLancLogo = require('../../assets/icon.png');
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -362,9 +362,7 @@ export default function SearchScreen() {
           maxZoom={20}
           customMapStyle={darkMapStyle}
         >
-          {validRestaurants.map((restaurant) => {
-            const showLogo = !!restaurant.logo_url;
-            return (
+          {validRestaurants.map((restaurant) => (
               <Marker
                 key={restaurant.id}
                 coordinate={{
@@ -375,23 +373,12 @@ export default function SearchScreen() {
                 tracksViewChanges={false}
               >
                 <View style={styles.markerWrapper}>
-                  {showLogo ? (
-                    <View style={styles.logoMarkerContainer}>
-                      <Image
-                        source={{ uri: restaurant.logo_url!, cache: 'reload' }}
-                        style={styles.logoMarker}
-                        resizeMode="cover"
-                      />
-                    </View>
-                  ) : (
-                    <View style={styles.logoMarkerContainer}>
-                      <Image source={tasteLancLogo} style={styles.logoMarker} resizeMode="cover" />
-                    </View>
-                  )}
+                  <View style={styles.logoMarkerContainer}>
+                    <Image source={tasteLancLogo} style={styles.logoMarker} resizeMode="cover" />
+                  </View>
                 </View>
               </Marker>
-            );
-          })}
+          ))}
         </ClusteredMapView>
 
         {/* Floating search bar + filter chips */}

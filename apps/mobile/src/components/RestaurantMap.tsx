@@ -26,7 +26,7 @@ import {
 } from '../hooks/useUserLocation';
 import { formatCuisineName } from '../lib/formatters';
 
-const tasteLancLogo = require('../../assets/images/tastelanc_logo.png');
+const tasteLancLogo = require('../../assets/icon.png');
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -195,11 +195,7 @@ export default function RestaurantMap({
         maxZoom={20}
         customMapStyle={darkMapStyle}
       >
-        {validRestaurants.map((restaurant) => {
-          // Show logo for restaurants that have one
-          const showLogo = !!restaurant.logo_url;
-
-          return (
+        {validRestaurants.map((restaurant) => (
             <Marker
               key={restaurant.id}
               coordinate={{
@@ -210,19 +206,9 @@ export default function RestaurantMap({
               tracksViewChanges={false}
             >
               <View style={styles.markerWrapper}>
-                {showLogo ? (
-                  <View style={styles.logoMarkerContainer}>
-                    <Image
-                      source={{ uri: restaurant.logo_url!, cache: 'reload' }}
-                      style={styles.logoMarker}
-                      resizeMode="cover"
-                    />
-                  </View>
-                ) : (
-                  <View style={styles.logoMarkerContainer}>
-                    <Image source={tasteLancLogo} style={styles.logoMarker} resizeMode="cover" />
-                  </View>
-                )}
+                <View style={styles.logoMarkerContainer}>
+                  <Image source={tasteLancLogo} style={styles.logoMarker} resizeMode="cover" />
+                </View>
               </View>
               <Callout tooltip onPress={() => handleViewDetails(restaurant)}>
                 <View style={styles.calloutContainer}>
@@ -238,8 +224,7 @@ export default function RestaurantMap({
                 </View>
               </Callout>
             </Marker>
-          );
-        })}
+        ))}
       </ClusteredMapView>
 
       {/* Location Button */}
