@@ -8,7 +8,7 @@ export function getStripe() {
     throw new Error('STRIPE_SECRET_KEY is not set');
   }
   stripeClient = new Stripe(key, {
-    apiVersion: '2025-12-15.clover',
+    apiVersion: '2026-01-28.clover',
     typescript: true,
   });
   return stripeClient;
@@ -36,6 +36,15 @@ export const CONSUMER_PRICE_IDS = {
 export const EARLY_ACCESS_PRICE_IDS = {
   monthly: process.env.STRIPE_PRICE_EARLY_ACCESS_MONTHLY || 'price_1Sa4YbLikRpMKEPP0xFpkGHl',
   yearly: process.env.STRIPE_PRICE_EARLY_ACCESS_YEARLY || 'price_1Sa4b0LikRpMKEPPgGcJT2gr',
+} as const;
+
+// Self-Promoter Plans - $50/month for DJs, musicians, performers
+export const SELF_PROMOTER_PRICE_IDS = {
+  monthly: process.env.STRIPE_PRICE_SELF_PROMOTER_MONTHLY || 'price_self_promoter_monthly',
+} as const;
+
+export const SELF_PROMOTER_PRICES = {
+  monthly: 50,
 } as const;
 
 // All consumer price IDs (both regular and early access)
@@ -68,6 +77,8 @@ export const PLAN_NAMES: Record<string, string> = {
   // Consumer plans
   price_consumer_monthly: 'Premium (Monthly)',
   price_consumer_yearly: 'Premium (Annual)',
+  // Self-Promoter plans
+  price_self_promoter_monthly: 'Self-Promoter (Monthly)',
 };
 
 // Get discount percentage based on restaurant count
