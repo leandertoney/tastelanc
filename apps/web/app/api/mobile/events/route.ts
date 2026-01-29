@@ -19,43 +19,91 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
     const restaurantId = searchParams.get('restaurant_id');
+    const selfPromoterId = searchParams.get('self_promoter_id');
     const limit = parseInt(searchParams.get('limit') || '50', 10);
 
     const supabase = await createClient();
     const today = new Date().toISOString().split('T')[0];
 
-    let query = supabase
-      .from('events')
-      .select('*, restaurant:restaurants!inner(id, name, slug, logo_url, tier_id)')
-      .eq('is_active', true)
-      .or(`event_date.gte.${today},is_recurring.eq.true`)
-      .order('event_date', { ascending: true, nullsFirst: false })
-      .limit(limit);
+    // Build separate queries for restaurant events and self-promoter events
+    const results: Array<Record<string, unknown>> = [];
 
-    if (type) {
-      query = query.eq('event_type', type);
+    // Query 1: Restaurant events (unless filtering by self_promoter_id)
+    if (!selfPromoterId) {
+      let restaurantQuery = supabase
+        .from('events')
+        .select('*, restaurant:restaurants!inner(id, name, slug, logo_url, tier_id)')
+        .eq('is_active', true)
+        .not('restaurant_id', 'is', null)
+        .or(`event_date.gte.${today},is_recurring.eq.true`)
+        .order('event_date', { ascending: true, nullsFirst: false })
+        .limit(limit);
+
+      if (type) {
+        restaurantQuery = restaurantQuery.eq('event_type', type);
+      }
+
+      if (restaurantId) {
+        restaurantQuery = restaurantQuery.eq('restaurant_id', restaurantId);
+      }
+
+      const { data: restaurantEvents, error: restaurantError } = await restaurantQuery;
+
+      if (restaurantError) {
+        console.error('Error fetching restaurant events:', restaurantError);
+      } else if (restaurantEvents) {
+        results.push(...restaurantEvents.map((event) => ({
+          ...event,
+          source_type: 'restaurant',
+        })));
+      }
     }
 
-    if (restaurantId) {
-      query = query.eq('restaurant_id', restaurantId);
+    // Query 2: Self-promoter events (unless filtering by restaurant_id)
+    if (!restaurantId) {
+      let selfPromoterQuery = supabase
+        .from('events')
+        .select('*, self_promoter:self_promoters!inner(id, name, slug, profile_image_url)')
+        .eq('is_active', true)
+        .not('self_promoter_id', 'is', null)
+        .gte('event_date', today) // Self-promoter events are never recurring
+        .order('event_date', { ascending: true, nullsFirst: false })
+        .limit(limit);
+
+      if (type) {
+        selfPromoterQuery = selfPromoterQuery.eq('event_type', type);
+      }
+
+      if (selfPromoterId) {
+        selfPromoterQuery = selfPromoterQuery.eq('self_promoter_id', selfPromoterId);
+      }
+
+      const { data: selfPromoterEvents, error: selfPromoterError } = await selfPromoterQuery;
+
+      if (selfPromoterError) {
+        console.error('Error fetching self-promoter events:', selfPromoterError);
+      } else if (selfPromoterEvents) {
+        results.push(...selfPromoterEvents.map((event) => ({
+          ...event,
+          source_type: 'self_promoter',
+        })));
+      }
     }
 
-    // Note: paid_only filter removed - show all events regardless of restaurant tier
+    // Sort combined results by event_date
+    results.sort((a, b) => {
+      const dateA = a.event_date ? new Date(a.event_date as string).getTime() : Infinity;
+      const dateB = b.event_date ? new Date(b.event_date as string).getTime() : Infinity;
+      return dateA - dateB;
+    });
 
-    const { data: events, error } = await query;
+    // Limit total results
+    const limitedResults = results.slice(0, limit);
 
-    if (error) {
-      console.error('Error fetching events:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch events' },
-        { status: 500 }
-      );
-    }
-
-    // Add default image_url if not set
-    const eventsWithImages = (events || []).map((event) => ({
+    // Add default image_url if not set (only for restaurant events - self-promoter events require images)
+    const eventsWithImages = limitedResults.map((event) => ({
       ...event,
-      image_url: event.image_url || DEFAULT_EVENT_IMAGES[event.event_type] || DEFAULT_EVENT_IMAGES.other,
+      image_url: event.image_url || DEFAULT_EVENT_IMAGES[event.event_type as string] || DEFAULT_EVENT_IMAGES.other,
     }));
 
     return NextResponse.json({ events: eventsWithImages });
