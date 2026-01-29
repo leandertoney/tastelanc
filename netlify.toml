@@ -1,9 +1,13 @@
 [build]
-  command = "rm -f package.json pnpm-workspace.yaml && cd apps/web && npm install && npm run build"
-  publish = "apps/web/.next"
+  base = "apps/web"
+  command = "npm install && npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 [functions]
-  directory = "apps/web/netlify/functions"
+  directory = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "20"
