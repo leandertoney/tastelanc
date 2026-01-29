@@ -6,6 +6,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, radius } from '../constants/colors';
 import { trackScreenView } from '../lib/analytics';
+import { isSelfPromoterEvent, getEventVenueName } from '../lib/events';
 
 const APP_STORE_URL = 'https://apps.apple.com/app/tastelanc/id6755852717';
 const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.tastelanc.app';
@@ -65,10 +66,12 @@ const formatDaysOfWeek = (days: string[]): string => {
 
 export default function EventDetailScreen({ route, navigation }: Props) {
   const { event } = route.params;
+  const isFromSelfPromoter = isSelfPromoterEvent(event);
+  const venueName = getEventVenueName(event);
 
   // Track screen view on mount
   useEffect(() => {
-    trackScreenView('EventDetail', event.restaurant?.id);
+    trackScreenView('EventDetail', event.restaurant?.id || event.self_promoter?.id);
   }, [event.id]);
 
   const handleViewRestaurant = () => {
@@ -76,6 +79,17 @@ export default function EventDetailScreen({ route, navigation }: Props) {
       navigation.navigate('RestaurantDetail', { id: event.restaurant.id });
     }
   };
+
+  const handleViewArtist = () => {
+    if (event.self_promoter) {
+      navigation.navigate('ArtistDetail', {
+        artistId: event.self_promoter.id,
+        artistName: event.self_promoter.name,
+      });
+    }
+  };
+
+  const handleViewVenue = isFromSelfPromoter ? handleViewArtist : handleViewRestaurant;
 
   const handleShare = async () => {
     try {
@@ -88,7 +102,7 @@ export default function EventDetailScreen({ route, navigation }: Props) {
       }
 
       const timeStr = `${formatTime(event.start_time)}${event.end_time ? ` - ${formatTime(event.end_time)}` : ''}`;
-      const venueStr = event.restaurant?.name ? `at ${event.restaurant.name}` : '';
+      const venueStr = venueName ? `${isFromSelfPromoter ? 'by' : 'at'} ${venueName}` : '';
       const downloadUrl = Platform.OS === 'ios' ? APP_STORE_URL : PLAY_STORE_URL;
 
       const message = `Check out ${event.name} ${venueStr} on TasteLanc!\n\n${dateStr}\n${timeStr}\n\nDownload the app: ${downloadUrl}`;
@@ -185,32 +199,42 @@ export default function EventDetailScreen({ route, navigation }: Props) {
             </View>
           )}
 
-          {/* Restaurant Card */}
-          <View style={styles.restaurantCard}>
-            <Text style={styles.sectionTitle}>Venue</Text>
-            <TouchableOpacity
-              style={styles.restaurantInfo}
-              onPress={handleViewRestaurant}
-            >
-              <View style={styles.restaurantDetails}>
-                <Text style={styles.restaurantName}>{event.restaurant.name}</Text>
-                <Text style={styles.viewRestaurantText}>View Restaurant →</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={24} color={colors.textMuted} />
-            </TouchableOpacity>
-          </View>
+          {/* Venue / Artist Card */}
+          {venueName && (
+            <View style={styles.restaurantCard}>
+              <Text style={styles.sectionTitle}>
+                {isFromSelfPromoter ? 'Artist' : 'Venue'}
+              </Text>
+              <TouchableOpacity
+                style={styles.restaurantInfo}
+                onPress={handleViewVenue}
+              >
+                <View style={styles.restaurantDetails}>
+                  <Text style={styles.restaurantName}>{venueName}</Text>
+                  <Text style={styles.viewRestaurantText}>
+                    {isFromSelfPromoter ? 'View Artist →' : 'View Restaurant →'}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={24} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </ScrollView>
 
       {/* Bottom CTA */}
-      <View style={styles.bottomBar}>
-        <TouchableOpacity
-          style={styles.ctaButton}
-          onPress={handleViewRestaurant}
-        >
-          <Text style={styles.ctaButtonText}>View Restaurant</Text>
-        </TouchableOpacity>
-      </View>
+      {venueName && (
+        <View style={styles.bottomBar}>
+          <TouchableOpacity
+            style={styles.ctaButton}
+            onPress={handleViewVenue}
+          >
+            <Text style={styles.ctaButtonText}>
+              {isFromSelfPromoter ? 'View Artist' : 'View Restaurant'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }

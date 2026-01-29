@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, ImageBackground, TouchableOpacity } from 'react
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { ApiEvent } from '../lib/events';
+import { isSelfPromoterEvent, getEventVenueName } from '../lib/events';
 import type { EventType } from '../types/database';
 import { colors, radius } from '../constants/colors';
 
@@ -11,6 +12,7 @@ interface EventFlyerCardProps {
   height: number;
   onPress: () => void;
   onRestaurantPress?: () => void;
+  onArtistPress?: (artistId: string, artistName: string) => void;
 }
 
 const EVENT_TYPE_LABELS: Record<EventType, string> = {
@@ -39,8 +41,10 @@ function formatEventTime(startTime: string, endTime: string | null): string {
   return formatTime(startTime);
 }
 
-export default function EventFlyerCard({ event, width, height, onPress, onRestaurantPress }: EventFlyerCardProps) {
+export default function EventFlyerCard({ event, width, height, onPress, onRestaurantPress, onArtistPress }: EventFlyerCardProps) {
   const typeLabel = EVENT_TYPE_LABELS[event.event_type] || 'Event';
+  const isFromSelfPromoter = isSelfPromoterEvent(event);
+  const venueName = getEventVenueName(event);
 
   return (
     <TouchableOpacity activeOpacity={0.95} onPress={onPress} style={{ width, height }}>
@@ -81,21 +85,31 @@ export default function EventFlyerCard({ event, width, height, onPress, onRestau
               </Text>
             )}
 
-            {/* Restaurant link */}
-            {event.restaurant && onRestaurantPress && (
+            {/* Restaurant or Artist link */}
+            {venueName && (event.restaurant && onRestaurantPress) || (event.self_promoter && onArtistPress) ? (
               <TouchableOpacity
                 style={styles.restaurantLink}
                 onPress={(e) => {
                   e.stopPropagation();
-                  onRestaurantPress();
+                  if (isFromSelfPromoter && onArtistPress && event.self_promoter) {
+                    onArtistPress(event.self_promoter.id, event.self_promoter.name);
+                  } else if (onRestaurantPress) {
+                    onRestaurantPress();
+                  }
                 }}
                 activeOpacity={0.7}
               >
-                <Ionicons name="location" size={16} color={colors.accent} />
-                <Text style={styles.restaurantName}>@ {event.restaurant.name}</Text>
+                <Ionicons
+                  name={isFromSelfPromoter ? 'person' : 'location'}
+                  size={16}
+                  color={colors.accent}
+                />
+                <Text style={styles.restaurantName}>
+                  {isFromSelfPromoter ? `by ${venueName}` : `@ ${venueName}`}
+                </Text>
                 <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
               </TouchableOpacity>
-            )}
+            ) : null}
           </View>
         </LinearGradient>
       </ImageBackground>

@@ -17,9 +17,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
-import { fetchEvents, ApiEvent } from '../lib/events';
+import { fetchEvents, ApiEvent, getEventVenueName } from '../lib/events';
 import { colors, spacing } from '../constants/colors';
 import EventFlyerCard from '../components/EventFlyerCard';
+import SearchBar from '../components/SearchBar';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -94,9 +95,10 @@ interface DateEventCarouselProps {
   events: ApiEvent[];
   onEventPress: (event: ApiEvent) => void;
   onRestaurantPress: (restaurantId: string) => void;
+  onArtistPress: (artistSlug: string) => void;
 }
 
-function DateEventCarousel({ events, onEventPress, onRestaurantPress }: DateEventCarouselProps) {
+function DateEventCarousel({ events, onEventPress, onRestaurantPress, onArtistPress }: DateEventCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleScrollEnd = useCallback(
@@ -126,12 +128,17 @@ function DateEventCarousel({ events, onEventPress, onRestaurantPress }: DateEven
         onPress={() => onEventPress(item)}
         onRestaurantPress={
           item.restaurant?.id
-            ? () => onRestaurantPress(item.restaurant.id)
+            ? () => onRestaurantPress(item.restaurant!.id)
+            : undefined
+        }
+        onArtistPress={
+          item.self_promoter?.slug
+            ? () => onArtistPress(item.self_promoter!.slug)
             : undefined
         }
       />
     ),
-    [onEventPress, onRestaurantPress]
+    [onEventPress, onRestaurantPress, onArtistPress]
   );
 
   return (
@@ -171,6 +178,7 @@ function DateEventCarousel({ events, onEventPress, onRestaurantPress }: DateEven
 export default function EventsViewAllScreen() {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ['allEvents'],
@@ -178,7 +186,18 @@ export default function EventsViewAllScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const sections = useMemo(() => groupEventsByDate(events), [events]);
+  // Filter events by search query
+  const filteredEvents = useMemo(() => {
+    if (!searchQuery.trim()) return events;
+    const query = searchQuery.toLowerCase();
+    return events.filter((event) =>
+      event.name.toLowerCase().includes(query) ||
+      (event.performer_name && event.performer_name.toLowerCase().includes(query)) ||
+      (getEventVenueName(event) && getEventVenueName(event)!.toLowerCase().includes(query))
+    );
+  }, [events, searchQuery]);
+
+  const sections = useMemo(() => groupEventsByDate(filteredEvents), [filteredEvents]);
 
   const handleEventPress = useCallback(
     (event: ApiEvent) => {
@@ -190,6 +209,13 @@ export default function EventsViewAllScreen() {
   const handleRestaurantPress = useCallback(
     (restaurantId: string) => {
       navigation.navigate('RestaurantDetail', { id: restaurantId });
+    },
+    [navigation]
+  );
+
+  const handleArtistPress = useCallback(
+    (artistId: string, artistName: string) => {
+      navigation.navigate('ArtistDetail', { artistId, artistName });
     },
     [navigation]
   );
@@ -223,34 +249,48 @@ export default function EventsViewAllScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Search Bar */}
+      <View style={[styles.searchContainer, { paddingTop: insets.top + 60 }]}>
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search events or performers..."
+        />
+      </View>
+
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: insets.top + 60 },
-        ]}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {sections.map((section) => (
-          <View key={section.title} style={styles.section}>
-            {/* Date Header */}
-            <View style={styles.dateHeader}>
-              <Text style={styles.dateHeaderText}>{section.displayTitle}</Text>
-              {section.data.length > 1 && (
-                <Text style={styles.eventCount}>
-                  {section.data.length} events
-                </Text>
-              )}
-            </View>
-
-            {/* Horizontal Event Carousel */}
-            <DateEventCarousel
-              events={section.data}
-              onEventPress={handleEventPress}
-              onRestaurantPress={handleRestaurantPress}
-            />
+        {sections.length === 0 && searchQuery.trim() ? (
+          <View style={styles.noResultsContainer}>
+            <Ionicons name="search-outline" size={48} color={colors.textMuted} />
+            <Text style={styles.noResultsText}>No events match your search</Text>
           </View>
-        ))}
+        ) : (
+          sections.map((section) => (
+            <View key={section.title} style={styles.section}>
+              {/* Date Header */}
+              <View style={styles.dateHeader}>
+                <Text style={styles.dateHeaderText}>{section.displayTitle}</Text>
+                {section.data.length > 1 && (
+                  <Text style={styles.eventCount}>
+                    {section.data.length} events
+                  </Text>
+                )}
+              </View>
+
+              {/* Horizontal Event Carousel */}
+              <DateEventCarousel
+                events={section.data}
+                onEventPress={handleEventPress}
+                onRestaurantPress={handleRestaurantPress}
+                onArtistPress={handleArtistPress}
+              />
+            </View>
+          ))
+        )}
       </ScrollView>
 
       {/* Floating back button */}
@@ -275,6 +315,11 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 40,
   },
+  searchContainer: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
+    backgroundColor: colors.background,
+  },
   centered: {
     flex: 1,
     justifyContent: 'center',
@@ -283,6 +328,16 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 16,
     fontSize: 18,
+    color: colors.textMuted,
+  },
+  noResultsContainer: {
+    paddingVertical: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noResultsText: {
+    marginTop: 12,
+    fontSize: 16,
     color: colors.textMuted,
   },
   backButton: {

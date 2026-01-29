@@ -15,9 +15,10 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import type { EventType } from '../types/database';
-import { fetchEntertainmentEvents, ApiEvent, ENTERTAINMENT_TYPES } from '../lib/events';
+import { fetchEntertainmentEvents, ApiEvent, ENTERTAINMENT_TYPES, getEventVenueName } from '../lib/events';
 import { colors, radius, spacing } from '../constants/colors';
 import SpotifyStyleListItem from '../components/SpotifyStyleListItem';
+import SearchBar from '../components/SearchBar';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -88,6 +89,7 @@ function formatEventDate(dateString: string | null, isRecurring: boolean): strin
 export default function EntertainmentViewAllScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [selectedType, setSelectedType] = useState<EventType | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: events = [], isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['allEntertainmentEvents'],
@@ -95,11 +97,21 @@ export default function EntertainmentViewAllScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Filter events by selected type
+  // Filter events by selected type and search query
   const filteredEvents = useMemo(() => {
-    if (!selectedType) return events;
-    return events.filter((e) => e.event_type === selectedType);
-  }, [events, selectedType]);
+    let filtered = selectedType ? events.filter((e) => e.event_type === selectedType) : events;
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((e) =>
+        e.name.toLowerCase().includes(query) ||
+        (e.performer_name && e.performer_name.toLowerCase().includes(query)) ||
+        (getEventVenueName(e) && getEventVenueName(e)!.toLowerCase().includes(query))
+      );
+    }
+
+    return filtered;
+  }, [events, selectedType, searchQuery]);
 
   const handlePress = useCallback(
     (event: ApiEvent) => {
@@ -110,7 +122,7 @@ export default function EntertainmentViewAllScreen() {
 
   const renderItem = ({ item }: { item: ApiEvent }) => {
     const imageUrl = item.image_url; // API always provides image_url
-    const venueName = item.restaurant?.name || 'City-wide Event';
+    const venueName = getEventVenueName(item) || 'City-wide Event';
     const timeDisplay = formatEventTime(item.start_time, item.end_time);
     const dateDisplay = formatEventDate(item.event_date ?? null, item.is_recurring);
     const typeLabel = EVENT_TYPE_LABELS[item.event_type];
@@ -140,6 +152,15 @@ export default function EntertainmentViewAllScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search events or performers..."
+        />
+      </View>
+
       {/* Type Filter - Icon Pills */}
       <View style={styles.filterContainer}>
         {ENTERTAINMENT_TYPES.map((type) => {
@@ -206,6 +227,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.primary,
+  },
+  searchContainer: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
   },
   centered: {
     flex: 1,
