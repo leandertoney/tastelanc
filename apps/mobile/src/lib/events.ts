@@ -13,7 +13,19 @@ export interface EventRestaurant {
   name: string;
   slug: string;
   logo_url: string | null;
+  tier_id?: string | null;
 }
+
+// Self-promoter data included in API response
+export interface EventSelfPromoter {
+  id: string;
+  name: string;
+  slug: string;
+  profile_image_url: string | null;
+}
+
+// Event source type
+export type EventSourceType = 'restaurant' | 'self_promoter';
 
 // Event data from API response
 export interface ApiEvent {
@@ -30,7 +42,22 @@ export interface ApiEvent {
   performer_name?: string | null;
   cover_charge?: number | null;
   is_active?: boolean;
-  restaurant: EventRestaurant;
+  source_type?: EventSourceType;
+  restaurant?: EventRestaurant;
+  self_promoter?: EventSelfPromoter;
+}
+
+// Helper to get the venue/artist name for an event
+export function getEventVenueName(event: ApiEvent): string {
+  if (event.source_type === 'self_promoter' && event.self_promoter) {
+    return event.self_promoter.name;
+  }
+  return event.restaurant?.name || '';
+}
+
+// Helper to check if event is from a self-promoter
+export function isSelfPromoterEvent(event: ApiEvent): boolean {
+  return event.source_type === 'self_promoter';
 }
 
 // API response structure
