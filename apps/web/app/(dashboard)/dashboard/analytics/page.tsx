@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BarChart3, Eye, Heart, TrendingUp, Users, Phone, Globe, MapPin, Share2, ArrowUp, ArrowDown, Crown, MousePointer } from 'lucide-react';
+import { BarChart3, Eye, Heart, TrendingUp, Phone, Globe, MapPin, Share2, ArrowUp, ArrowDown, Crown, Calendar, Clock, Award } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 import Link from 'next/link';
 import TierGate, { useTierAccess } from '@/components/TierGate';
@@ -15,6 +15,11 @@ interface AnalyticsData {
     uniqueVisitors: number;
     favorites: number;
     totalClicks: number;
+    lifetimeViews: number;
+    todayViews: number;
+    thisWeekViews: number;
+    upcomingEvents: number;
+    tierName: string;
   };
   weeklyViews: Array<{ day: string; views: number }>;
   clicksByType: {
@@ -62,13 +67,33 @@ export default function AnalyticsPage() {
     fetchAnalytics();
   }, [restaurant?.id, buildApiUrl]);
 
+  // Format tier name for display
+  const formatTierName = (tier: string) => {
+    if (!tier || tier === 'free') return 'Free';
+    return tier.charAt(0).toUpperCase() + tier.slice(1);
+  };
+
   const stats = data ? [
     {
-      label: 'Profile Views',
-      value: data.stats.totalViews.toLocaleString(),
+      label: 'Lifetime Views',
+      value: data.stats.lifetimeViews.toLocaleString(),
+      change: null,
+      trend: 'up',
+      icon: Eye,
+    },
+    {
+      label: "Today's Views",
+      value: data.stats.todayViews.toLocaleString(),
+      change: null,
+      trend: 'up',
+      icon: Clock,
+    },
+    {
+      label: 'This Week',
+      value: data.stats.thisWeekViews.toLocaleString(),
       change: `${data.stats.viewsTrend >= 0 ? '+' : ''}${data.stats.viewsTrend}%`,
       trend: data.stats.viewsTrend >= 0 ? 'up' : 'down',
-      icon: Eye,
+      icon: TrendingUp,
     },
     {
       label: 'Favorites',
@@ -78,18 +103,18 @@ export default function AnalyticsPage() {
       icon: Heart,
     },
     {
-      label: 'Total Clicks',
-      value: data.stats.totalClicks.toLocaleString(),
+      label: 'Upcoming Events',
+      value: data.stats.upcomingEvents.toLocaleString(),
       change: null,
       trend: 'up',
-      icon: MousePointer,
+      icon: Calendar,
     },
     {
-      label: 'Unique Visitors',
-      value: data.stats.uniqueVisitors.toLocaleString(),
+      label: 'Current Plan',
+      value: formatTierName(data.stats.tierName),
       change: null,
       trend: 'up',
-      icon: Users,
+      icon: Award,
     },
   ] : [];
 
@@ -126,8 +151,8 @@ export default function AnalyticsPage() {
       </div>
 
       {loading ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
             <Card key={i} className="p-6 animate-pulse">
               <div className="h-4 bg-tastelanc-surface rounded w-24 mb-2" />
               <div className="h-8 bg-tastelanc-surface rounded w-16" />
@@ -141,7 +166,7 @@ export default function AnalyticsPage() {
       ) : (
         <>
           {/* Stats Grid */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {stats.map((stat) => {
               const Icon = stat.icon;
               return (
