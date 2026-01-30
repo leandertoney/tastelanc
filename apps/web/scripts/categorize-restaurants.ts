@@ -21,13 +21,13 @@ const anthropic = new Anthropic({
 // All valid categories
 const VALID_CATEGORIES = [
   // Existing
-  'bars', 'nightlife', 'rooftops', 'brunch', 'lunch', 'dinner', 'outdoor_dining',
+  'bars', 'nightlife', 'rooftops', 'breakfast', 'brunch', 'lunch', 'dinner', 'outdoor_dining',
   // Cuisines
   'american', 'italian', 'mexican', 'chinese', 'japanese_sushi', 'thai',
   'indian', 'mediterranean', 'vietnamese', 'korean', 'caribbean', 'bbq',
-  'seafood', 'steakhouse', 'pizza', 'deli_sandwiches', 'pa_dutch',
+  'seafood', 'steakhouse', 'pizza', 'deli_sandwiches', 'pa_dutch', 'desserts',
   // Dining Style
-  'fine_dining', 'casual', 'fast_casual', 'food_truck', 'cafe_coffee', 'bakery', 'desserts',
+  'fine_dining', 'casual', 'fast_casual', 'food_truck', 'cafe_coffee', 'bakery',
   // Drinks
   'brewery', 'winery', 'distillery', 'cocktail_bar',
   // Features
@@ -43,44 +43,58 @@ interface Restaurant {
   categories: string[];
   address: string;
   city: string;
+  google_types: string[] | null;
 }
 
 const SYSTEM_PROMPT = `You are a restaurant categorization expert for Lancaster, PA. Your job is to analyze restaurant information and assign appropriate categories.
 
-Given a restaurant's name, description, and location, select ALL applicable categories from the list below. Be thorough but accurate.
+Given a restaurant's name, description, location, and Google Place types (when available), select ALL applicable categories from the list below. Be thorough but accurate.
 
 VALID CATEGORIES:
-Cuisines: american, italian, mexican, chinese, japanese_sushi, thai, indian, mediterranean, vietnamese, korean, caribbean, bbq, seafood, steakhouse, pizza, deli_sandwiches, pa_dutch
-Meal Time: brunch, lunch, dinner, late_night
-Dining Style: fine_dining, casual, fast_casual, food_truck, cafe_coffee, bakery, desserts
+Cuisines: american, italian, mexican, chinese, japanese_sushi, thai, indian, mediterranean, vietnamese, korean, caribbean, bbq, seafood, steakhouse, pizza, deli_sandwiches, pa_dutch, desserts
+Meal Time: breakfast, brunch, lunch, dinner, late_night
+Dining Style: fine_dining, casual, fast_casual, food_truck, cafe_coffee, bakery
 Drinks: bars, nightlife, brewery, winery, distillery, cocktail_bar
 Features: outdoor_dining, rooftops, live_music, sports_bar, pet_friendly, byob, family_friendly, date_night
 
 GUIDELINES:
-- "Pizza" in name → pizza
-- "Sushi", "Japanese" → japanese_sushi
-- "Taqueria", "Mexican", "Cantina" → mexican
-- "Brewing", "Brewery" → brewery, bars
+- Use Google Place types as strong signals (e.g., "italian_restaurant" → italian, "bar" → bars)
+- "Pizza" in name or pizza_restaurant type → pizza
+- "Sushi", "Japanese" or japanese_restaurant/sushi_restaurant → japanese_sushi
+- "Taqueria", "Mexican", "Cantina" or mexican_restaurant → mexican
+- "Thai" or thai_restaurant → thai
+- "Vietnamese" or vietnamese_restaurant → vietnamese
+- "Korean" or korean_restaurant → korean
+- "Indian" or indian_restaurant → indian
+- "Chinese" or chinese_restaurant → chinese
+- "Brewing", "Brewery" or brewery type → brewery, bars
 - "Winery", "Vineyard" → winery
 - "BBQ", "Smokehouse", "Grill" → bbq
-- "Diner" → american, casual, brunch
+- "Diner" → american, casual, breakfast, brunch
 - "Bistro", "Fine" → fine_dining, dinner, date_night
-- "Cafe", "Coffee" → cafe_coffee, brunch
-- "Bakery" → bakery, brunch
+- "Cafe", "Coffee" or cafe type → cafe_coffee, breakfast, brunch
+- "Bakery" or bakery type → bakery, breakfast, brunch
 - "Ice Cream", "Creamery" → desserts
 - "Dutch", "Amish" → pa_dutch
-- "Pub", "Tavern", "Bar" → bars, casual
+- "Pub", "Tavern", "Bar" or bar/pub type → bars, casual
+- Use "breakfast" for places that specifically serve breakfast (diners, cafes, bakeries)
+- Use "brunch" for places with brunch menus or weekend brunch service
 - Most restaurants serve lunch and dinner unless clearly breakfast/brunch only
 
 Return ONLY a JSON array of category strings, no explanation. Example: ["italian", "dinner", "casual", "family_friendly"]`;
 
 async function categorizeRestaurant(restaurant: Restaurant): Promise<string[]> {
+  const googleTypesStr = restaurant.google_types?.length
+    ? restaurant.google_types.join(', ')
+    : 'Not available';
+
   const userPrompt = `Restaurant: ${restaurant.name}
 Location: ${restaurant.address}, ${restaurant.city}
 Description: ${restaurant.description || 'No description available'}
+Google Place Types: ${googleTypesStr}
 Current categories: ${restaurant.categories?.join(', ') || 'None'}
 
-Assign all applicable categories:`;
+Based on all available information, assign all applicable categories:`;
 
   try {
     const response = await anthropic.messages.create({
@@ -132,7 +146,7 @@ async function main() {
   // Fetch restaurants
   let query = supabase
     .from('restaurants')
-    .select('id, name, description, categories, address, city')
+    .select('id, name, description, categories, address, city, google_types')
     .eq('is_active', true)
     .order('name');
 

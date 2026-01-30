@@ -13,13 +13,14 @@ export type EventType = 'live_music' | 'trivia' | 'karaoke' | 'dj' | 'comedy' | 
 
 export type RestaurantCategory =
   // Existing
-  | 'bars' | 'nightlife' | 'rooftops' | 'brunch' | 'lunch' | 'dinner' | 'outdoor_dining'
+  | 'bars' | 'nightlife' | 'rooftops' | 'lunch' | 'dinner' | 'outdoor_dining'
   // Cuisines
   | 'american' | 'italian' | 'mexican' | 'chinese' | 'japanese_sushi' | 'thai'
   | 'indian' | 'mediterranean' | 'vietnamese' | 'korean' | 'caribbean' | 'bbq'
   | 'seafood' | 'steakhouse' | 'pizza' | 'deli_sandwiches' | 'pa_dutch'
+  | 'breakfast' | 'brunch' | 'desserts'
   // Dining Style
-  | 'fine_dining' | 'casual' | 'fast_casual' | 'food_truck' | 'cafe_coffee' | 'bakery' | 'desserts'
+  | 'fine_dining' | 'casual' | 'fast_casual' | 'food_truck' | 'cafe_coffee' | 'bakery'
   // Drinks
   | 'brewery' | 'winery' | 'distillery' | 'cocktail_bar'
   // Features

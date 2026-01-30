@@ -7,9 +7,11 @@ export type RestaurantCategory =
   | 'bars'
   | 'nightlife'
   | 'rooftops'
+  | 'breakfast'
   | 'brunch'
   | 'lunch'
   | 'dinner'
+  | 'desserts'
   | 'outdoor_dining';
 
 export type CuisineType =
