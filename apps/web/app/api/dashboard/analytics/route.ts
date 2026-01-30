@@ -46,6 +46,9 @@ export async function GET(request: Request) {
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const todayDateStr = now.toISOString().split('T')[0];
 
     // Run all queries in parallel using admin client to bypass RLS
     const [
@@ -56,6 +59,10 @@ export async function GET(request: Request) {
       clicksResult,
       favoritesResult,
       recentActivityResult,
+      lifetimeViewsResult,
+      todayViewsResult,
+      upcomingEventsResult,
+      restaurantInfoResult,
     ] = await Promise.all([
       // Total views (last 30 days)
       supabaseAdmin
@@ -106,6 +113,34 @@ export async function GET(request: Request) {
         .eq('restaurant_id', restaurantId)
         .order('viewed_at', { ascending: false })
         .limit(20),
+
+      // Lifetime views (all time)
+      supabaseAdmin
+        .from('analytics_page_views')
+        .select('*', { count: 'exact', head: true })
+        .eq('restaurant_id', restaurantId),
+
+      // Today's views
+      supabaseAdmin
+        .from('analytics_page_views')
+        .select('*', { count: 'exact', head: true })
+        .eq('restaurant_id', restaurantId)
+        .gte('viewed_at', todayStart.toISOString()),
+
+      // Upcoming events count
+      supabaseAdmin
+        .from('events')
+        .select('*', { count: 'exact', head: true })
+        .eq('restaurant_id', restaurantId)
+        .eq('is_active', true)
+        .or(`event_date.gte.${todayDateStr},is_recurring.eq.true`),
+
+      // Restaurant info with tier
+      supabaseAdmin
+        .from('restaurants')
+        .select('name, tiers(name)')
+        .eq('id', restaurantId)
+        .single(),
     ]);
 
     // Calculate stats
@@ -113,6 +148,11 @@ export async function GET(request: Request) {
     const previousViews = previousViewsResult.count || 0;
     const uniqueVisitors = new Set(uniqueVisitorsResult.data?.map(v => v.visitor_id) || []).size;
     const favorites = favoritesResult.count || 0;
+    const lifetimeViews = lifetimeViewsResult.count || 0;
+    const todayViews = todayViewsResult.count || 0;
+    const upcomingEvents = upcomingEventsResult.count || 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tierName = (restaurantInfoResult.data?.tiers as any)?.name || 'free';
 
     // Calculate trend percentage
     let viewsTrend = 0;
@@ -212,6 +252,9 @@ export async function GET(request: Request) {
       });
     }
 
+    // Calculate this week's total views from weeklyViews data
+    const thisWeekViews = weeklyViewsResult.data?.length || 0;
+
     return NextResponse.json({
       stats: {
         totalViews,
@@ -220,6 +263,11 @@ export async function GET(request: Request) {
         uniqueVisitors,
         favorites,
         totalClicks,
+        lifetimeViews,
+        todayViews,
+        thisWeekViews,
+        upcomingEvents,
+        tierName,
       },
       weeklyViews,
       clicksByType,
