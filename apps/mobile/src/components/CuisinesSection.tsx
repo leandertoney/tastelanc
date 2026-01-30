@@ -44,27 +44,20 @@ const CUISINE_EMOJIS: Record<CuisineType, string> = {
   desserts: '🍰',
 };
 
-type CuisineFeaturedRestaurant = Pick<Restaurant, 'id' | 'name' | 'cover_image_url' | 'cuisine'>;
+// These cuisines are stored in the categories array, not the cuisine column
+const CATEGORY_BASED_CUISINES: CuisineType[] = ['breakfast', 'brunch', 'desserts'];
+
+type CuisineFeaturedRestaurant = Pick<Restaurant, 'id' | 'name' | 'cover_image_url' | 'cuisine'> & { categories?: string[] };
 
 // Fetch one featured restaurant per cuisine
-// NOTE: Disabled until 'cuisine' column is added to restaurants table
 async function getCuisineFeaturedRestaurants(): Promise<Record<CuisineType, CuisineFeaturedRestaurant | null>> {
   const results: Partial<Record<CuisineType, CuisineFeaturedRestaurant | null>> = {};
 
-  // TODO: Re-enable once cuisine column exists in database
-  // For now, return empty results to use emoji fallbacks
-  ALL_CUISINES.forEach((c) => {
-    results[c] = null;
-  });
-  return results as Record<CuisineType, CuisineFeaturedRestaurant | null>;
-
-  /* Uncomment when cuisine column is added:
   const { data, error } = await supabase
     .from('restaurants')
-    .select('id, name, cover_image_url, cuisine')
+    .select('id, name, cover_image_url, cuisine, categories')
     .eq('is_active', true)
-    .not('cover_image_url', 'is', null)
-    .not('cuisine', 'is', null);
+    .not('cover_image_url', 'is', null);
 
   if (error) {
     console.error('Error fetching cuisine restaurants:', error);
@@ -75,12 +68,20 @@ async function getCuisineFeaturedRestaurants(): Promise<Record<CuisineType, Cuis
   }
 
   ALL_CUISINES.forEach((cuisine) => {
-    const restaurant = data?.find((r) => r.cuisine === cuisine);
+    let restaurant: CuisineFeaturedRestaurant | undefined;
+
+    if (CATEGORY_BASED_CUISINES.includes(cuisine)) {
+      // For breakfast, brunch, desserts - check categories array
+      restaurant = data?.find((r) => r.categories?.includes(cuisine));
+    } else {
+      // For traditional cuisines - check cuisine column
+      restaurant = data?.find((r) => r.cuisine === cuisine);
+    }
+
     results[cuisine] = restaurant || null;
   });
 
   return results as Record<CuisineType, CuisineFeaturedRestaurant | null>;
-  */
 }
 
 interface CuisineItemProps {
