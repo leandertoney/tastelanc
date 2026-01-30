@@ -50,7 +50,22 @@ export async function GET(request: Request) {
     todayStart.setHours(0, 0, 0, 0);
     const todayDateStr = now.toISOString().split('T')[0];
 
+    // First get restaurant slug to query page_views table
+    const { data: restaurantData } = await supabaseAdmin
+      .from('restaurants')
+      .select('slug, name, tiers(name)')
+      .eq('id', restaurantId)
+      .single();
+
+    if (!restaurantData?.slug) {
+      return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 });
+    }
+
+    // Pattern for matching page_views paths: /restaurants/{slug} or /restaurants/{slug}/...
+    const slugPattern = `/restaurants/${restaurantData.slug}%`;
+
     // Run all queries in parallel using admin client to bypass RLS
+    // Use page_views table for view counts (matches dashboard display)
     const [
       totalViewsResult,
       previousViewsResult,
@@ -62,38 +77,37 @@ export async function GET(request: Request) {
       lifetimeViewsResult,
       todayViewsResult,
       upcomingEventsResult,
-      restaurantInfoResult,
     ] = await Promise.all([
-      // Total views (last 30 days)
+      // Total views (last 30 days) - from page_views
       supabaseAdmin
-        .from('analytics_page_views')
+        .from('page_views')
         .select('*', { count: 'exact', head: true })
-        .eq('restaurant_id', restaurantId)
-        .gte('viewed_at', thirtyDaysAgo.toISOString()),
+        .like('page_path', slugPattern)
+        .gte('created_at', thirtyDaysAgo.toISOString()),
 
-      // Previous period views (30-60 days ago)
+      // Previous period views (30-60 days ago) - from page_views
       supabaseAdmin
-        .from('analytics_page_views')
+        .from('page_views')
         .select('*', { count: 'exact', head: true })
-        .eq('restaurant_id', restaurantId)
-        .gte('viewed_at', sixtyDaysAgo.toISOString())
-        .lt('viewed_at', thirtyDaysAgo.toISOString()),
+        .like('page_path', slugPattern)
+        .gte('created_at', sixtyDaysAgo.toISOString())
+        .lt('created_at', thirtyDaysAgo.toISOString()),
 
-      // Unique visitors (last 30 days) - get all and count unique
+      // Unique visitors (last 30 days) - from page_views
       supabaseAdmin
-        .from('analytics_page_views')
+        .from('page_views')
         .select('visitor_id')
-        .eq('restaurant_id', restaurantId)
-        .gte('viewed_at', thirtyDaysAgo.toISOString()),
+        .like('page_path', slugPattern)
+        .gte('created_at', thirtyDaysAgo.toISOString()),
 
-      // Weekly views (last 7 days)
+      // Weekly views (last 7 days) - from page_views
       supabaseAdmin
-        .from('analytics_page_views')
-        .select('viewed_at')
-        .eq('restaurant_id', restaurantId)
-        .gte('viewed_at', sevenDaysAgo.toISOString()),
+        .from('page_views')
+        .select('created_at')
+        .like('page_path', slugPattern)
+        .gte('created_at', sevenDaysAgo.toISOString()),
 
-      // Clicks by type (last 30 days)
+      // Clicks by type (last 30 days) - still from analytics_clicks
       supabaseAdmin
         .from('analytics_clicks')
         .select('click_type')
@@ -106,26 +120,26 @@ export async function GET(request: Request) {
         .select('*', { count: 'exact', head: true })
         .eq('restaurant_id', restaurantId),
 
-      // Recent activity (last 10)
+      // Recent activity (last 20) - from page_views
       supabaseAdmin
-        .from('analytics_page_views')
-        .select('page_type, viewed_at')
-        .eq('restaurant_id', restaurantId)
-        .order('viewed_at', { ascending: false })
+        .from('page_views')
+        .select('page_path, created_at')
+        .like('page_path', slugPattern)
+        .order('created_at', { ascending: false })
         .limit(20),
 
-      // Lifetime views (all time)
+      // Lifetime views (all time) - from page_views
       supabaseAdmin
-        .from('analytics_page_views')
+        .from('page_views')
         .select('*', { count: 'exact', head: true })
-        .eq('restaurant_id', restaurantId),
+        .like('page_path', slugPattern),
 
-      // Today's views
+      // Today's views - from page_views
       supabaseAdmin
-        .from('analytics_page_views')
+        .from('page_views')
         .select('*', { count: 'exact', head: true })
-        .eq('restaurant_id', restaurantId)
-        .gte('viewed_at', todayStart.toISOString()),
+        .like('page_path', slugPattern)
+        .gte('created_at', todayStart.toISOString()),
 
       // Upcoming events count
       supabaseAdmin
@@ -134,13 +148,6 @@ export async function GET(request: Request) {
         .eq('restaurant_id', restaurantId)
         .eq('is_active', true)
         .or(`event_date.gte.${todayDateStr},is_recurring.eq.true`),
-
-      // Restaurant info with tier
-      supabaseAdmin
-        .from('restaurants')
-        .select('name, tiers(name)')
-        .eq('id', restaurantId)
-        .single(),
     ]);
 
     // Calculate stats
@@ -152,7 +159,7 @@ export async function GET(request: Request) {
     const todayViews = todayViewsResult.count || 0;
     const upcomingEvents = upcomingEventsResult.count || 0;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const tierName = (restaurantInfoResult.data?.tiers as any)?.name || 'free';
+    const tierName = (restaurantData?.tiers as any)?.name || 'free';
 
     // Calculate trend percentage
     let viewsTrend = 0;
@@ -175,7 +182,7 @@ export async function GET(request: Request) {
 
     // Count views per day
     weeklyViewsResult.data?.forEach(view => {
-      const date = new Date(view.viewed_at);
+      const date = new Date(view.created_at);
       const dayName = dayNames[date.getDay()];
       weeklyMap.set(dayName, (weeklyMap.get(dayName) || 0) + 1);
     });
@@ -210,9 +217,19 @@ export async function GET(request: Request) {
     const recentActivity: Array<{ action: string; time: string; count: number }> = [];
     const activityData = recentActivityResult.data || [];
 
+    // Determine page type from path
+    const getPageTypeFromPath = (path: string): string => {
+      if (path.includes('/events')) return 'events';
+      if (path.includes('/menu')) return 'menu';
+      if (path.includes('/happy-hour')) return 'happy_hour';
+      return 'restaurant'; // Default: profile view
+    };
+
     const actionLabels: Record<string, string> = {
       restaurant: 'Profile viewed',
       events: 'Events viewed',
+      menu: 'Menu viewed',
+      happy_hour: 'Happy hour viewed',
       home: 'Appeared in feed',
       vote: 'Vote page viewed',
       other: 'Page viewed',
@@ -224,8 +241,9 @@ export async function GET(request: Request) {
     let currentTime = '';
 
     activityData.forEach((item, index) => {
-      const action = actionLabels[item.page_type] || 'Page viewed';
-      const time = formatTimeAgo(new Date(item.viewed_at));
+      const pageType = getPageTypeFromPath(item.page_path);
+      const action = actionLabels[pageType] || 'Page viewed';
+      const time = formatTimeAgo(new Date(item.created_at));
 
       if (action === currentAction && index < 5) {
         currentCount++;
