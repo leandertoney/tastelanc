@@ -113,7 +113,7 @@ export default function HomeScreen() {
     queryClient.invalidateQueries({ queryKey: ['featuredRestaurants'] });
     queryClient.invalidateQueries({ queryKey: ['socialProof'] });
     queryClient.invalidateQueries({ queryKey: ['activeHappyHours'] });
-    queryClient.invalidateQueries({ queryKey: ['todayEntertainment'] });
+    queryClient.invalidateQueries({ queryKey: ['entertainmentEvents'] });
     queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
     queryClient.invalidateQueries({ queryKey: ['blog'] });
     refetch();

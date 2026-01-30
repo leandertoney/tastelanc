@@ -44,10 +44,10 @@ async function getActiveHappyHours(): Promise<HappyHourWithRestaurant[]> {
 
 interface EntertainmentResult {
   events: ApiEvent[];
-  isFallback: boolean;
+  isUpcoming: boolean;
 }
 
-async function getTodayEntertainment(): Promise<EntertainmentResult> {
+async function getEntertainmentEvents(): Promise<EntertainmentResult> {
   const events = await fetchEntertainmentEvents();
   const now = new Date();
   const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as DayOfWeek;
@@ -60,7 +60,7 @@ async function getTodayEntertainment(): Promise<EntertainmentResult> {
   }).slice(0, 10);
 
   if (todayEvents.length > 0) {
-    return { events: todayEvents, isFallback: false };
+    return { events: todayEvents, isUpcoming: false };
   }
 
   const upcomingEvents = events.filter(event => {
@@ -69,7 +69,7 @@ async function getTodayEntertainment(): Promise<EntertainmentResult> {
     return false;
   }).slice(0, 10);
 
-  return { events: upcomingEvents, isFallback: true };
+  return { events: upcomingEvents, isUpcoming: true };
 }
 
 // ========== Upcoming Events Query Function ==========
@@ -239,10 +239,10 @@ export async function prefetchHomeScreenData(userId: string | null): Promise<voi
         staleTime: 5 * 60 * 1000,
       }),
 
-      // Today entertainment
+      // Entertainment events (today's or upcoming)
       queryClient.prefetchQuery({
-        queryKey: ['todayEntertainment'],
-        queryFn: getTodayEntertainment,
+        queryKey: ['entertainmentEvents'],
+        queryFn: getEntertainmentEvents,
         staleTime: 5 * 60 * 1000,
       }),
 
