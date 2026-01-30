@@ -4,6 +4,9 @@ import { Trash2, Mail, Clock, AlertCircle } from 'lucide-react';
 export const metadata: Metadata = {
   title: 'Delete Your Account | TasteLanc',
   description: 'Request deletion of your TasteLanc account and all associated data.',
+  alternates: {
+    canonical: 'https://tastelanc.com/delete-account',
+  },
 };
 
 export default function DeleteAccountPage() {

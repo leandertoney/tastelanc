@@ -14,6 +14,7 @@ import FeatureRequestScreen from '../screens/FeatureRequestScreen';
 import ItineraryBuilderScreen from '../screens/ItineraryBuilderScreen';
 import BlogViewAllScreen from '../screens/BlogViewAllScreen';
 import BlogDetailScreen from '../screens/BlogDetailScreen';
+import ArtistDetailScreen from '../screens/ArtistDetailScreen';
 import {
   VoteCenterScreen,
   VoteCategoryScreen,
@@ -147,6 +148,15 @@ export default function RootNavigator() {
           title: 'Blog Post',
           headerBackTitle: 'Back',
         }}
+      />
+      {/* Artist */}
+      <Stack.Screen
+        name="ArtistDetail"
+        component={ArtistDetailScreen}
+        options={({ route }) => ({
+          title: route.params.artistName,
+          headerBackTitle: 'Back',
+        })}
       />
     </Stack.Navigator>
   );

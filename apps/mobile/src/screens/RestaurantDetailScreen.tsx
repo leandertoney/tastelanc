@@ -33,17 +33,16 @@ import {
   RatingStars,
   QuickActionsBar,
   SectionCard,
-  HoursAccordion,
-  TabBar,
   MenuViewer,
   MapPreview,
   CheckInModal,
   PhotosCarousel,
   RatingSubmit,
   PersonalityDescription,
+  TabBar,
 } from '../components';
 import type { Tab } from '../components';
-import { formatCategoryName } from '../lib/formatters';
+import { formatCategoryName, formatTime } from '../lib/formatters';
 import { colors, radius } from '../constants/colors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RestaurantDetail'>;
@@ -53,12 +52,21 @@ const HERO_HEIGHT = 320;
 
 // No placeholder images - only show actual restaurant images
 
+// Day abbreviations for hours display
+const DAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+// Get current day of week
+const getCurrentDay = () => {
+  const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  return days[new Date().getDay()];
+};
+
 // Tab configuration
 const TABS: Tab[] = [
-  { key: 'menu', label: 'Menu' },
-  { key: 'happy_hour', label: 'Happy Hour' },
+  { key: 'happy_hours', label: 'Happy Hours' },
   { key: 'specials', label: 'Specials' },
   { key: 'events', label: 'Events' },
+  { key: 'menu', label: 'Menu' },
 ];
 
 export default function RestaurantDetailScreen({ route, navigation }: Props) {
@@ -78,8 +86,8 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('menu');
   const [checkInModalVisible, setCheckInModalVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState('happy_hours');
 
   const fetchRestaurantData = useCallback(async () => {
     try {
@@ -184,8 +192,18 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
     restaurant.zip_code ? ` ${restaurant.zip_code}` : ''
   }`;
 
-  // Show all content for all restaurants (no tier filtering)
-  const hasPremiumContent = true;
+  // Check if we have featured content
+  const hasHappyHours = happyHours.length > 0;
+  const hasSpecials = specials.length > 0;
+  const hasEvents = events.length > 0;
+  const hasFeaturedContent = hasHappyHours || hasSpecials || hasEvents;
+
+  // Get today's hours
+  const today = getCurrentDay();
+  const sortedHours = [...hours].sort(
+    (a, b) => DAY_ORDER.indexOf(a.day_of_week) - DAY_ORDER.indexOf(b.day_of_week)
+  );
+  const todayHours = hours.find((h) => h.day_of_week === today);
 
   return (
     <View style={styles.container}>
@@ -199,259 +217,260 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
           />
         }
       >
-      {/* Hero Section */}
-      <View style={styles.heroContainer}>
-        {restaurant.cover_image_url ? (
-          <Image
-            source={{ uri: restaurant.cover_image_url, cache: 'reload' }}
-            style={styles.heroImage}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={[styles.heroImage, { backgroundColor: colors.cardBgElevated, justifyContent: 'center', alignItems: 'center' }]}>
-            <Ionicons name="restaurant-outline" size={64} color={colors.textSecondary} />
-          </View>
-        )}
-        <LinearGradient
-          colors={['transparent', colors.primary]}
-          style={styles.heroGradient}
-        >
-          <View style={styles.heroContent}>
-            {restaurant.logo_url && (
-              <Image
-                source={{ uri: restaurant.logo_url, cache: 'reload' }}
-                style={styles.logo}
-                resizeMode="contain"
-              />
-            )}
-            <Text style={styles.heroTitle}>{restaurant.name}</Text>
-            <View style={styles.heroMeta}>
-              {restaurant.tastelancrating ? (
-                <RatingStars
-                  rating={restaurant.tastelancrating}
-                  reviewCount={restaurant.tastelancrating_count}
-                  size="medium"
-                />
-              ) : restaurant.average_rating ? (
-                <RatingStars rating={restaurant.average_rating} size="medium" />
-              ) : null}
+        {/* Hero Section */}
+        <View style={styles.heroContainer}>
+          {restaurant.cover_image_url ? (
+            <Image
+              source={{ uri: restaurant.cover_image_url, cache: 'reload' }}
+              style={styles.heroImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={[styles.heroImage, { backgroundColor: colors.cardBgElevated, justifyContent: 'center', alignItems: 'center' }]}>
+              <Ionicons name="restaurant-outline" size={64} color={colors.textSecondary} />
             </View>
-            {/* Category Tags */}
-            {restaurant.categories && restaurant.categories.length > 0 && (
-              <View style={styles.tagsContainer}>
-                {restaurant.categories.map((category) => (
-                  <TagChip
-                    key={category}
-                    label={formatCategoryName(category)}
-                    variant="default"
-                  />
-                ))}
-                {restaurant.is_verified && (
-                  <TagChip label="Verified" variant="success" />
-                )}
-              </View>
-            )}
-          </View>
-        </LinearGradient>
+          )}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.4)', colors.primary]}
+            style={styles.heroGradient}
+          >
+            <View style={styles.heroContent}>
+              <Text style={styles.heroTitle}>{restaurant.name}</Text>
+              {restaurant.categories && restaurant.categories.length > 0 && (
+                <View style={styles.tagsContainer}>
+                  {restaurant.categories.map((category) => (
+                    <TagChip
+                      key={category}
+                      label={formatCategoryName(category)}
+                      variant="default"
+                    />
+                  ))}
+                  {restaurant.is_verified && (
+                    <TagChip label="Verified" variant="success" />
+                  )}
+                </View>
+              )}
+            </View>
+          </LinearGradient>
 
-        {/* Back Button */}
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Description — pull-quote style */}
-      <PersonalityDescription
-        description={restaurant.description}
-        name={restaurant.name}
-      />
-
-      {/* Photos — elevated to standalone section */}
-      {restaurant.photos && restaurant.photos.length > 0 && (
-        <SectionCard title="Photos" icon="images-outline">
-          <PhotosCarousel
-            photos={restaurant.photos}
-            restaurantName={restaurant.name}
-          />
-        </SectionCard>
-      )}
-
-      {/* Quick Actions (moved below value content) */}
-      <QuickActionsBar
-        restaurantId={restaurant.id}
-        restaurantName={restaurant.name}
-        phone={restaurant.phone}
-        website={restaurant.website}
-        latitude={restaurant.latitude}
-        longitude={restaurant.longitude}
-        address={fullAddress}
-        onFavoritePress={handleFavoritePress}
-        isFavorite={isFavorite}
-      />
-
-      {/* Rating Section */}
-      {userId && (
-        <View style={styles.ratingSection}>
-          <RatingSubmit
-            restaurantId={restaurant.id}
-            onRatingSubmitted={() => {
-              fetchRestaurantData();
-            }}
-          />
+          {/* Back Button */}
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
+          </TouchableOpacity>
         </View>
-      )}
 
-      {/* Tab Bar */}
-      {hasPremiumContent && (
+        {/* Info Bar */}
+        <View style={styles.infoBar}>
+          <View style={styles.infoRow}>
+            <Ionicons name="location-outline" size={16} color={colors.textMuted} />
+            <Text style={styles.infoText}>{restaurant.address}, {restaurant.city}</Text>
+          </View>
+          {todayHours && !todayHours.is_closed && (
+            <Text style={styles.infoOpen}>
+              Open {formatTime(todayHours.open_time)} - {formatTime(todayHours.close_time)}
+            </Text>
+          )}
+        </View>
+
+        {/* Description */}
+        <PersonalityDescription
+          description={restaurant.description}
+          name={restaurant.name}
+        />
+
+        {/* Tab Bar */}
         <TabBar tabs={TABS} activeTab={activeTab} onTabPress={setActiveTab} />
-      )}
 
-      {/* Menu tab content (Hours, Location, Menu — About & Photos now above) */}
-      {(!hasPremiumContent || activeTab === 'menu') && (
+        {/* Tab Content */}
         <View style={styles.tabContent}>
-          {/* Hours Section */}
-          {hours.length > 0 && (
-            <SectionCard title="Hours" icon="time-outline">
-              <HoursAccordion hours={hours} />
-            </SectionCard>
+          {/* Happy Hours Tab */}
+          {activeTab === 'happy_hours' && (
+            <View style={styles.tabSection}>
+              {happyHours.length > 0 ? (
+                happyHours.map((hh) => (
+                  <View key={hh.id} style={styles.contentCard}>
+                    <Text style={styles.contentTitle}>{hh.name}</Text>
+                    <Text style={styles.contentTime}>
+                      {formatTime(hh.start_time)} - {formatTime(hh.end_time)}
+                    </Text>
+                    <Text style={styles.contentDays}>
+                      {hh.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
+                    </Text>
+                    {hh.items && hh.items.length > 0 && (
+                      <View style={styles.itemsList}>
+                        {hh.items.map((item) => (
+                          <View key={item.id} style={styles.itemRow}>
+                            <Text style={styles.itemName}>{item.name}</Text>
+                            {item.discounted_price && (
+                              <Text style={styles.itemPrice}>${item.discounted_price.toFixed(2)}</Text>
+                            )}
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                ))
+              ) : (
+                <View style={styles.emptyState}>
+                  <Ionicons name="beer-outline" size={48} color={colors.textSecondary} />
+                  <Text style={styles.emptyText}>No Happy Hours</Text>
+                  <Text style={styles.emptySubtext}>This restaurant hasn't added happy hour deals yet</Text>
+                </View>
+              )}
+            </View>
           )}
 
-          {/* Location Section */}
-          <SectionCard title="Location" icon="location-outline">
+          {/* Specials Tab */}
+          {activeTab === 'specials' && (
+            <View style={styles.tabSection}>
+              {specials.length > 0 ? (
+                specials.map((special) => (
+                  <View key={special.id} style={styles.contentCard}>
+                    <Text style={styles.contentTitle}>{special.name}</Text>
+                    {special.description && (
+                      <Text style={styles.contentDescription}>{special.description}</Text>
+                    )}
+                    {special.special_price && (
+                      <Text style={styles.contentPrice}>${special.special_price.toFixed(2)}</Text>
+                    )}
+                    <Text style={styles.contentDays}>
+                      {special.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
+                    </Text>
+                  </View>
+                ))
+              ) : (
+                <View style={styles.emptyState}>
+                  <Ionicons name="pricetag-outline" size={48} color={colors.textSecondary} />
+                  <Text style={styles.emptyText}>No Specials</Text>
+                  <Text style={styles.emptySubtext}>This restaurant hasn't added specials yet</Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Events Tab */}
+          {activeTab === 'events' && (
+            <View style={styles.tabSection}>
+              {events.length > 0 ? (
+                events.map((event) => (
+                  <View key={event.id} style={styles.contentCard}>
+                    <View style={styles.contentHeader}>
+                      <Text style={styles.contentTitle}>{event.name}</Text>
+                      <TagChip label={event.event_type.replace('_', ' ')} variant="info" />
+                    </View>
+                    {event.performer_name && (
+                      <Text style={styles.contentPerformer}>{event.performer_name}</Text>
+                    )}
+                    <Text style={styles.contentTime}>
+                      {formatTime(event.start_time)}
+                      {event.end_time && ` - ${formatTime(event.end_time)}`}
+                    </Text>
+                    {event.is_recurring && (
+                      <Text style={styles.contentDays}>
+                        {event.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
+                      </Text>
+                    )}
+                    {event.cover_charge && (
+                      <Text style={styles.contentPrice}>Cover: ${event.cover_charge}</Text>
+                    )}
+                  </View>
+                ))
+              ) : (
+                <View style={styles.emptyState}>
+                  <Ionicons name="calendar-outline" size={48} color={colors.textSecondary} />
+                  <Text style={styles.emptyText}>No Events</Text>
+                  <Text style={styles.emptySubtext}>This restaurant hasn't added events yet</Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Menu Tab */}
+          {activeTab === 'menu' && (
+            <View style={styles.tabSection}>
+              <MenuViewer
+                menuUrl={restaurant.menu_link}
+                restaurantName={restaurant.name}
+              />
+            </View>
+          )}
+        </View>
+
+        {/* Photos */}
+        {restaurant.photos && restaurant.photos.length > 0 && (
+          <View style={styles.photosSection}>
+            <Text style={styles.sectionTitle}>Photos</Text>
+            <PhotosCarousel
+              photos={restaurant.photos}
+              restaurantName={restaurant.name}
+            />
+          </View>
+        )}
+
+        {/* Hours */}
+        {sortedHours.length > 0 && (
+          <View style={styles.hoursSection}>
+            <Text style={styles.sectionTitle}>Hours</Text>
+            <View style={styles.hoursGrid}>
+              {sortedHours.map((h) => (
+                <View key={h.id} style={styles.hoursRow}>
+                  <Text style={[styles.hoursDay, h.day_of_week === today && styles.hoursTodayText]}>
+                    {h.day_of_week.charAt(0).toUpperCase() + h.day_of_week.slice(1, 3)}
+                  </Text>
+                  <Text style={[styles.hoursTime, h.day_of_week === today && styles.hoursTodayText]}>
+                    {h.is_closed ? 'Closed' : `${formatTime(h.open_time)} - ${formatTime(h.close_time)}`}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Rating */}
+        {userId && (
+          <View style={styles.ratingSection}>
+            <RatingSubmit
+              restaurantId={restaurant.id}
+              onRatingSubmitted={() => {
+                fetchRestaurantData();
+              }}
+            />
+          </View>
+        )}
+
+        {/* Location */}
+        <View style={styles.locationSection}>
+          <Text style={styles.sectionTitle}>Location</Text>
+          <View style={styles.sectionContent}>
             <MapPreview
               latitude={restaurant.latitude}
               longitude={restaurant.longitude}
               address={fullAddress}
               name={restaurant.name}
             />
-          </SectionCard>
-
-          {/* Menu Section */}
-          {hasPremiumContent && (
-            <SectionCard title="Menu" icon="restaurant-outline">
-              <MenuViewer
-                menuUrl={restaurant.menu_link}
-                restaurantName={restaurant.name}
-              />
-            </SectionCard>
-          )}
+          </View>
         </View>
-      )}
 
-      {hasPremiumContent && activeTab === 'happy_hour' && (
-        <View style={styles.tabContent}>
-          {happyHours.length > 0 ? (
-            <SectionCard title="Happy Hour" icon="beer-outline">
-              {happyHours.map((hh) => (
-                <View key={hh.id} style={styles.happyHourItem}>
-                  <Text style={styles.happyHourName}>{hh.name}</Text>
-                  <Text style={styles.happyHourTime}>
-                    {hh.start_time} - {hh.end_time}
-                  </Text>
-                  <Text style={styles.happyHourDays}>
-                    {hh.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
-                  </Text>
-                  {hh.items && hh.items.length > 0 && (
-                    <View style={styles.happyHourItems}>
-                      {hh.items.map((item) => (
-                        <View key={item.id} style={styles.dealRow}>
-                          <Text style={styles.dealName}>{item.name}</Text>
-                          {item.discounted_price && <Text style={styles.dealPrice}>${item.discounted_price.toFixed(2)}</Text>}
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </View>
-              ))}
-            </SectionCard>
-          ) : (
-            <View style={styles.emptyTabContainer}>
-              <Ionicons name="beer-outline" size={48} color={colors.textSecondary} />
-              <Text style={styles.placeholderText}>No Happy Hour</Text>
-              <Text style={styles.placeholderSubtext}>
-                This restaurant hasn't added happy hour deals yet
-              </Text>
-            </View>
-          )}
+        {/* Quick Actions - Now at bottom */}
+        <View style={styles.actionsSection}>
+          <QuickActionsBar
+            restaurantId={restaurant.id}
+            restaurantName={restaurant.name}
+            phone={restaurant.phone}
+            website={restaurant.website}
+            latitude={restaurant.latitude}
+            longitude={restaurant.longitude}
+            address={fullAddress}
+            onFavoritePress={handleFavoritePress}
+            isFavorite={isFavorite}
+          />
         </View>
-      )}
 
-      {hasPremiumContent && activeTab === 'specials' && (
-        <View style={styles.tabContent}>
-          {specials.length > 0 ? (
-            <SectionCard title="Specials" icon="pricetag-outline">
-              {specials.map((special) => (
-                <View key={special.id} style={styles.specialItem}>
-                  <Text style={styles.specialName}>{special.name}</Text>
-                  {special.description && (
-                    <Text style={styles.specialDescription}>{special.description}</Text>
-                  )}
-                  {special.special_price && (
-                    <Text style={styles.specialPrice}>${special.special_price.toFixed(2)}</Text>
-                  )}
-                  <Text style={styles.specialDays}>
-                    {special.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
-                  </Text>
-                </View>
-              ))}
-            </SectionCard>
-          ) : (
-            <View style={styles.emptyTabContainer}>
-              <Ionicons name="pricetag-outline" size={48} color={colors.textSecondary} />
-              <Text style={styles.placeholderText}>No Specials</Text>
-              <Text style={styles.placeholderSubtext}>
-                This restaurant hasn't added specials yet
-              </Text>
-            </View>
-          )}
-        </View>
-      )}
-
-      {hasPremiumContent && activeTab === 'events' && (
-        <View style={styles.tabContent}>
-          {events.length > 0 ? (
-            <SectionCard title="Events & Entertainment" icon="musical-notes-outline">
-              {events.map((event) => (
-                <View key={event.id} style={styles.eventItem}>
-                  <View style={styles.eventHeader}>
-                    <Text style={styles.eventName}>{event.name}</Text>
-                    <TagChip label={event.event_type.replace('_', ' ')} variant="info" />
-                  </View>
-                  {event.performer_name && (
-                    <Text style={styles.eventPerformer}>{event.performer_name}</Text>
-                  )}
-                  <Text style={styles.eventTime}>
-                    {event.start_time}
-                    {event.end_time && ` - ${event.end_time}`}
-                  </Text>
-                  {event.is_recurring && (
-                    <Text style={styles.eventDays}>
-                      {event.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
-                    </Text>
-                  )}
-                  {event.cover_charge && (
-                    <Text style={styles.eventCover}>Cover: ${event.cover_charge}</Text>
-                  )}
-                </View>
-              ))}
-            </SectionCard>
-          ) : (
-            <View style={styles.emptyTabContainer}>
-              <Ionicons name="musical-notes-outline" size={48} color={colors.textSecondary} />
-              <Text style={styles.placeholderText}>No Events</Text>
-              <Text style={styles.placeholderSubtext}>
-                This restaurant hasn't added events yet
-              </Text>
-            </View>
-          )}
-        </View>
-      )}
-
-      {/* Bottom spacing */}
-      <View style={styles.bottomSpacer} />
+        {/* Bottom spacing */}
+        <View style={styles.bottomSpacer} />
       </ScrollView>
 
       {/* Floating Check-In Button */}
@@ -521,7 +540,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: HERO_HEIGHT * 0.6,
+    height: HERO_HEIGHT * 0.7,
     justifyContent: 'flex-end',
     paddingHorizontal: 16,
     paddingBottom: 16,
@@ -529,177 +548,194 @@ const styles = StyleSheet.create({
   heroContent: {
     alignItems: 'flex-start',
   },
-  logo: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.cardBg,
-    marginBottom: 8,
-  },
-  heroTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 8,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  heroMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ratingsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  googleRating: {
-    fontSize: 14,
-    color: colors.textMuted,
-    fontWeight: '500',
-  },
-  googleLabel: {
-    fontSize: 14,
-    color: colors.textMuted,
-    marginLeft: 4,
-  },
-  ratingSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-
-  // Tags
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
     marginTop: 8,
   },
-
-  // Description
-  descriptionText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: colors.textMuted,
-  },
-
-  // Happy Hour
-  happyHourItem: {
-    marginBottom: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  happyHourName: {
-    fontSize: 16,
-    fontWeight: '600',
+  heroTitle: {
+    fontSize: 32,
+    fontWeight: '700',
     color: colors.text,
-    marginBottom: 4,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
-  happyHourTime: {
-    fontSize: 14,
-    color: colors.textMuted,
-    marginBottom: 2,
+
+  // Info Bar
+  infoBar: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  happyHourDays: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginBottom: 8,
-  },
-  happyHourItems: {
-    marginTop: 8,
-  },
-  dealRow: {
+  infoRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
+    alignItems: 'center',
+    gap: 6,
   },
-  dealName: {
-    fontSize: 14,
-    color: colors.text,
-  },
-  dealPrice: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.accent,
-  },
-
-  // Specials
-  specialItem: {
-    marginBottom: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  specialName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  specialDescription: {
+  infoText: {
     fontSize: 14,
     color: colors.textMuted,
-    marginBottom: 4,
   },
-  specialPrice: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.accent,
-    marginBottom: 4,
-  },
-  specialDays: {
+  infoOpen: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: '#4ade80',
+    marginTop: 4,
+    fontWeight: '500',
   },
 
-  // Events
-  eventItem: {
-    marginBottom: 16,
+  // Rating
+  ratingSection: {
+    paddingHorizontal: 16,
     paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
-  eventHeader: {
+
+  // Section titles
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 12,
+    paddingHorizontal: 16,
+  },
+  sectionContent: {
+    paddingHorizontal: 16,
+  },
+
+  // Tab content
+  tabContent: {
+    minHeight: 200,
+  },
+  tabSection: {
+    padding: 16,
+  },
+  contentCard: {
+    backgroundColor: colors.cardBg,
+    borderRadius: radius.md,
+    padding: 16,
+    marginBottom: 12,
+  },
+  contentHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-  eventName: {
+  contentTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.text,
+    marginBottom: 4,
     flex: 1,
   },
-  eventPerformer: {
+  contentTime: {
+    fontSize: 14,
+    color: colors.gold,
+    marginBottom: 4,
+  },
+  contentDays: {
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  contentDescription: {
+    fontSize: 14,
+    color: colors.textMuted,
+    marginBottom: 4,
+  },
+  contentPrice: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.accent,
+    marginTop: 4,
+  },
+  contentPerformer: {
     fontSize: 14,
     color: colors.textMuted,
     fontStyle: 'italic',
     marginBottom: 4,
   },
-  eventTime: {
-    fontSize: 14,
-    color: colors.textMuted,
-    marginBottom: 2,
+  itemsList: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: 12,
   },
-  eventDays: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginBottom: 4,
+  itemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
   },
-  eventCover: {
+  itemName: {
     fontSize: 14,
-    fontWeight: '500',
+    color: colors.text,
+  },
+  itemPrice: {
+    fontSize: 14,
+    fontWeight: '600',
     color: colors.accent,
   },
-
-  // Location
-  addressText: {
-    fontSize: 15,
+  emptyState: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
     color: colors.textMuted,
-    lineHeight: 22,
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+
+  // Photos section
+  photosSection: {
+    marginBottom: 24,
+  },
+
+  // Hours section
+  hoursSection: {
+    marginBottom: 24,
+  },
+  hoursGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 16,
+  },
+  hoursRow: {
+    width: '50%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    paddingRight: 16,
+  },
+  hoursDay: {
+    fontSize: 14,
+    color: colors.textMuted,
+  },
+  hoursTime: {
+    fontSize: 14,
+    color: colors.textMuted,
+  },
+  hoursTodayText: {
+    color: colors.text,
+    fontWeight: '600',
+  },
+
+  // Location section
+  locationSection: {
+    marginBottom: 24,
+  },
+
+  // Actions section
+  actionsSection: {
+    marginTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
 
   bottomSpacer: {
@@ -726,34 +762,5 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 16,
     fontWeight: '600',
-  },
-
-  // Tab content
-  tabContent: {
-    flex: 1,
-  },
-  emptyTabContainer: {
-    padding: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.cardBg,
-    margin: 16,
-    borderRadius: radius.md,
-  },
-  placeholderContainer: {
-    alignItems: 'center',
-    paddingVertical: 24,
-  },
-  placeholderText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.textMuted,
-    marginTop: 16,
-  },
-  placeholderSubtext: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 8,
-    textAlign: 'center',
   },
 });

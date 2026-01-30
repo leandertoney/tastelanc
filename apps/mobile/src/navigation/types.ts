@@ -75,6 +75,8 @@ export type RootStackParamList = {
   // Blog
   BlogViewAll: undefined;
   BlogDetail: { slug: string };
+  // Artist
+  ArtistDetail: { artistId: string; artistName: string };
 };
 
 // Type helpers for useNavigation hook

@@ -138,3 +138,22 @@ export function formatNoiseLevel(level: string): string {
     default: return level;
   }
 }
+
+/**
+ * Format time from 24-hour format (HH:MM) to 12-hour format (h:MM AM/PM)
+ * Examples: "17:00" -> "5:00 PM", "09:30" -> "9:30 AM"
+ */
+export function formatTime(time: string | null | undefined): string {
+  if (!time) return '';
+
+  const [hourStr, minuteStr] = time.split(':');
+  const hour = parseInt(hourStr, 10);
+  const minute = minuteStr || '00';
+
+  if (isNaN(hour)) return time;
+
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+
+  return `${hour12}:${minute} ${period}`;
+}

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -19,12 +19,14 @@ import { useFavorites, useToggleFavorite, usePromoCard } from '../hooks';
 import { injectPromoIntoList, type ListItem } from '../lib/listUtils';
 import CompactRestaurantCard from '../components/CompactRestaurantCard';
 import { PromoCard } from '../components';
+import SearchBar from '../components/SearchBar';
 import { colors, spacing } from '../constants/colors';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function FeaturedViewAllScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: restaurants = [], isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['allFeaturedRestaurants'],
@@ -36,10 +38,22 @@ export default function FeaturedViewAllScreen() {
   const toggleFavoriteMutation = useToggleFavorite();
   const { isVisible: showPromo, dismiss: dismissPromo } = usePromoCard();
 
+  // Filter restaurants by search query
+  const filteredRestaurants = useMemo(() => {
+    if (!searchQuery.trim()) return restaurants;
+    const query = searchQuery.toLowerCase();
+    return restaurants.filter((r) =>
+      r.name.toLowerCase().includes(query) ||
+      r.cuisine_type?.toLowerCase().includes(query) ||
+      r.categories?.some(cat => cat.toLowerCase().includes(query)) ||
+      r.neighborhood?.toLowerCase().includes(query)
+    );
+  }, [restaurants, searchQuery]);
+
   // Inject promo card into the list
   const listData = useMemo(() => {
-    return injectPromoIntoList(restaurants, showPromo, 3);
-  }, [restaurants, showPromo]);
+    return injectPromoIntoList(filteredRestaurants, showPromo, 3);
+  }, [filteredRestaurants, showPromo]);
 
   const handlePress = useCallback(
     (restaurant: Restaurant) => {
@@ -102,6 +116,13 @@ export default function FeaturedViewAllScreen() {
             <Text style={styles.headerSubtitle}>
               Curated picks based on your preferences
             </Text>
+            <View style={styles.searchContainer}>
+              <SearchBar
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="Search restaurants, cuisines..."
+              />
+            </View>
           </View>
         }
         ListEmptyComponent={
@@ -127,6 +148,9 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingBottom: spacing.md,
+  },
+  searchContainer: {
+    marginTop: spacing.sm,
   },
   headerTitle: {
     fontSize: 24,

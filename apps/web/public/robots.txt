@@ -1,5 +1,15 @@
 User-agent: *
 Allow: /
 
+# Block protected/authenticated routes
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /account
+Disallow: /login
+Disallow: /register
+Disallow: /delete-account
+Disallow: /unsubscribe
+Disallow: /api/
+
 # Sitemaps
 Sitemap: https://tastelanc.com/sitemap.xml

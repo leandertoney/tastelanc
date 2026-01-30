@@ -3,6 +3,7 @@ import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
 import { buildMeta } from '@/lib/seo/meta';
 import { itemListJsonLd } from '@/lib/seo/structured';
+import { notFound } from 'next/navigation';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
 const DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
@@ -18,7 +19,7 @@ export async function generateMetadata({ params }: { params: { day: string } }) 
 
 export default async function RosieTopDay({ params }: { params: { day: string } }) {
   const day = params.day.toLowerCase();
-  if (!DAYS.includes(day)) return <main className="p-8 text-white">Not found</main>;
+  if (!DAYS.includes(day)) notFound();
   const [restaurants, specials, hh, events] = await Promise.all([
     fetchRestaurants(true),
     fetchSpecials(),
@@ -30,7 +31,7 @@ export default async function RosieTopDay({ params }: { params: { day: string } 
   hh.filter((h) => (h.days_of_week || []).includes(day as any)).forEach((h) => ids.add(h.restaurant_id));
   events.filter((e) => (e.days_of_week || []).includes(day as any)).forEach((e) => ids.add(e.restaurant_id));
   const list = restaurants.filter((r) => ids.has(r.id)).slice(0, 30);
-  if (!list.length) return <main className="p-8 text-white">No picks found.</main>;
+  if (!list.length) notFound();
 
   const urls = list.map((r) => `${siteUrl}/restaurants/${r.slug}`);
   const jsonLd = itemListJsonLd(urls);

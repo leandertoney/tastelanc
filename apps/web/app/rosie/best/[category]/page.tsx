@@ -4,6 +4,7 @@ import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
 import { buildMeta } from '@/lib/seo/meta';
 import { itemListJsonLd } from '@/lib/seo/structured';
 import { slugify } from '@/lib/seo/slug';
+import { notFound } from 'next/navigation';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
 export const revalidate = 1800;
@@ -19,7 +20,7 @@ export async function generateMetadata({ params }: { params: { category: string 
 export default async function RosieBestCategory({ params }: { params: { category: string } }) {
   const restaurants = await fetchRestaurants(true);
   const filtered = restaurants.filter((r) => (r.categories || []).some((c) => slugify(c) === params.category));
-  if (!filtered.length) return <main className="p-8 text-white">No picks found.</main>;
+  if (!filtered.length) notFound();
 
   const urls = filtered.map((r) => `${siteUrl}/restaurants/${r.slug}`);
   const jsonLd = itemListJsonLd(urls);

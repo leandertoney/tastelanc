@@ -9,6 +9,9 @@ import type { DayOfWeek } from '@/types/database';
 export const metadata: Metadata = {
   title: 'Happy Hours | TasteLanc',
   description: 'Find the best happy hour deals in Lancaster, PA. Discover drink specials, food deals, and more at local restaurants and bars.',
+  alternates: {
+    canonical: 'https://tastelanc.com/happy-hours',
+  },
 };
 
 interface PageProps {

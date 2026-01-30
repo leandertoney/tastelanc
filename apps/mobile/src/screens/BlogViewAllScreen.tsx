@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import type { RootStackParamList } from '../navigation/types';
 import type { BlogPost } from '../types/database';
 import { useBlogPosts } from '../hooks';
 import { colors, radius, spacing } from '../constants/colors';
+import SearchBar from '../components/SearchBar';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -56,7 +57,19 @@ function BlogListItem({ post, onPress }: { post: BlogPost; onPress: () => void }
 export default function BlogViewAllScreen() {
   const navigation = useNavigation<NavigationProp>();
   const queryClient = useQueryClient();
+  const [searchQuery, setSearchQuery] = useState('');
   const { data: posts = [], isLoading, isRefetching, refetch } = useBlogPosts(50);
+
+  // Filter posts by search query
+  const filteredPosts = useMemo(() => {
+    if (!searchQuery.trim()) return posts;
+    const query = searchQuery.toLowerCase();
+    return posts.filter((post) =>
+      post.title.toLowerCase().includes(query) ||
+      post.summary?.toLowerCase().includes(query) ||
+      post.tags?.some(tag => tag.toLowerCase().includes(query))
+    );
+  }, [posts, searchQuery]);
 
   const onRefresh = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['blog'] });
@@ -70,7 +83,7 @@ export default function BlogViewAllScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <FlatList
-        data={posts}
+        data={filteredPosts}
         renderItem={({ item }) => (
           <BlogListItem post={item} onPress={() => handlePostPress(item)} />
         )}
@@ -84,11 +97,22 @@ export default function BlogViewAllScreen() {
             tintColor={colors.accent}
           />
         }
+        ListHeaderComponent={
+          <View style={styles.searchContainer}>
+            <SearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search articles..."
+            />
+          </View>
+        }
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={
           !isLoading ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No blog posts yet</Text>
+              <Text style={styles.emptyText}>
+                {searchQuery.trim() ? 'No matching articles' : 'No blog posts yet'}
+              </Text>
             </View>
           ) : null
         }
@@ -104,6 +128,9 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: spacing.md,
+  },
+  searchContainer: {
+    marginBottom: spacing.md,
   },
   listItem: {
     flexDirection: 'row',

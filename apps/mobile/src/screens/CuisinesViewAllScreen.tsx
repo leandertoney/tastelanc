@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { ALL_CUISINES, CUISINE_LABELS, CuisineType, Restaurant } from '../types/database';
 import { supabase } from '../lib/supabase';
 import { colors, radius, spacing } from '../constants/colors';
+import SearchBar from '../components/SearchBar';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -114,12 +115,23 @@ function CuisineCard({ cuisine, imageUrl, onPress }: CuisineCardProps) {
 
 export default function CuisinesViewAllScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: featuredRestaurants } = useQuery({
     queryKey: ['cuisineFeaturedRestaurants'],
     queryFn: getCuisineFeaturedRestaurants,
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
+
+  // Filter cuisines by search query
+  const filteredCuisines = useMemo(() => {
+    if (!searchQuery.trim()) return ALL_CUISINES;
+    const query = searchQuery.toLowerCase();
+    return ALL_CUISINES.filter((cuisine) =>
+      CUISINE_LABELS[cuisine].toLowerCase().includes(query) ||
+      cuisine.toLowerCase().includes(query)
+    );
+  }, [searchQuery]);
 
   const handlePress = useCallback(
     (cuisine: CuisineType) => {
@@ -139,7 +151,7 @@ export default function CuisinesViewAllScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <FlatList
-        data={ALL_CUISINES}
+        data={filteredCuisines}
         renderItem={renderItem}
         keyExtractor={(item) => item}
         numColumns={2}
@@ -152,6 +164,13 @@ export default function CuisinesViewAllScreen() {
             <Text style={styles.headerSubtitle}>
               Explore restaurants by food type
             </Text>
+            <View style={styles.searchContainer}>
+              <SearchBar
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="Search cuisines..."
+              />
+            </View>
           </View>
         }
       />
@@ -166,6 +185,9 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingBottom: spacing.lg,
+  },
+  searchContainer: {
+    marginTop: spacing.sm,
   },
   headerTitle: {
     fontSize: 24,

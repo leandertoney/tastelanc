@@ -18,6 +18,7 @@ import type { HappyHour, HappyHourItem, Restaurant, DayOfWeek } from '../types/d
 import { supabase } from '../lib/supabase';
 import { colors, radius, spacing } from '../constants/colors';
 import SpotifyStyleListItem from '../components/SpotifyStyleListItem';
+import SearchBar from '../components/SearchBar';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -81,6 +82,7 @@ export default function HappyHoursViewAllScreen() {
   const navigation = useNavigation<NavigationProp>();
   // Default to current day
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>(getCurrentDay());
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: happyHours = [], isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['allHappyHours'],
@@ -88,10 +90,21 @@ export default function HappyHoursViewAllScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Filter by selected day
+  // Filter by selected day and search query
   const filteredHappyHours = useMemo(() => {
-    return happyHours.filter((hh) => hh.days_of_week.includes(selectedDay));
-  }, [happyHours, selectedDay]);
+    let filtered = happyHours.filter((hh) => hh.days_of_week.includes(selectedDay));
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((hh) =>
+        hh.restaurant.name.toLowerCase().includes(query) ||
+        hh.name.toLowerCase().includes(query) ||
+        hh.items?.some(item => item.name.toLowerCase().includes(query))
+      );
+    }
+
+    return filtered;
+  }, [happyHours, selectedDay, searchQuery]);
 
   const handlePress = useCallback(
     (restaurantId: string) => {
@@ -130,6 +143,15 @@ export default function HappyHoursViewAllScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search restaurants or deals..."
+        />
+      </View>
+
       {/* Day Tabs */}
       <View style={styles.tabsContainer}>
         {DAY_TABS.map(({ day, label }) => {
@@ -202,6 +224,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.primary,
+  },
+  searchContainer: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
   },
   centered: {
     flex: 1,

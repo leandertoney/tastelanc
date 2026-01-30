@@ -10,6 +10,9 @@ import type { EventType } from '@/types/database';
 export const metadata: Metadata = {
   title: 'Events | TasteLanc',
   description: 'Discover live music, trivia nights, karaoke, and more events at Lancaster PA restaurants and bars.',
+  alternates: {
+    canonical: 'https://tastelanc.com/events',
+  },
 };
 
 interface PageProps {

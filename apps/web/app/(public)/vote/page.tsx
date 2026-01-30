@@ -7,6 +7,9 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Vote | TasteLanc',
   description: 'Vote for your favorite Lancaster restaurants and bars. See the leaderboards and help crown the best of Lancaster!',
+  alternates: {
+    canonical: 'https://tastelanc.com/vote',
+  },
 };
 
 const VOTE_CATEGORIES = [
