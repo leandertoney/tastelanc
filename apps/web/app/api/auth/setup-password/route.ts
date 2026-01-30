@@ -7,8 +7,12 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Generate a setup token for a user (internal utility, not exported)
-async function generateSetupToken(userId: string, email: string): Promise<string> {
+// Generate a setup token for a user with optional personalization data
+export async function generateSetupToken(
+  userId: string,
+  email: string,
+  options?: { name?: string; restaurantName?: string; coverImageUrl?: string }
+): Promise<string> {
   const token = crypto.randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
@@ -17,6 +21,9 @@ async function generateSetupToken(userId: string, email: string): Promise<string
     email,
     token,
     expires_at: expiresAt.toISOString(),
+    name: options?.name || null,
+    restaurant_name: options?.restaurantName || null,
+    cover_image_url: options?.coverImageUrl || null,
   });
 
   return token;
@@ -83,7 +90,7 @@ export async function GET(request: Request) {
 
     const { data: tokenData, error } = await supabaseAdmin
       .from('password_setup_tokens')
-      .select('email, expires_at, used_at')
+      .select('email, expires_at, used_at, name, restaurant_name, cover_image_url')
       .eq('token', token)
       .single();
 
@@ -99,7 +106,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ valid: false, error: 'Token expired' }, { status: 400 });
     }
 
-    return NextResponse.json({ valid: true, email: tokenData.email });
+    return NextResponse.json({
+      valid: true,
+      email: tokenData.email,
+      name: tokenData.name,
+      restaurantName: tokenData.restaurant_name,
+      coverImageUrl: tokenData.cover_image_url,
+    });
   } catch (error) {
     console.error('Verify token error:', error);
     return NextResponse.json({ valid: false, error: 'Server error' }, { status: 500 });
