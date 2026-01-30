@@ -8,6 +8,9 @@ import { CATEGORIES_BY_GROUP, CATEGORY_GROUPS, getCategoryLabel } from '@/lib/co
 export const metadata: Metadata = {
   title: 'Restaurants | TasteLanc',
   description: 'Browse restaurants, bars, and dining spots in Lancaster, PA. Filter by category, cuisine, and more.',
+  alternates: {
+    canonical: 'https://tastelanc.com/restaurants',
+  },
 };
 
 interface PageProps {

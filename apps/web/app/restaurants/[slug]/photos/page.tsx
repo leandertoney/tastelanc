@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import { fetchRestaurantBySlug } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -20,9 +21,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 export default async function RestaurantPhotos({ params }: { params: { slug: string } }) {
   const restaurant = await fetchRestaurantBySlug(params.slug);
-  if (!restaurant) return <main className="p-8 text-white">Not found</main>;
+  if (!restaurant) notFound();
   const images = [restaurant.cover_image_url, restaurant.logo_url].filter(Boolean) as string[];
-  if (!images.length) return <main className="p-8 text-white">No photos available.</main>;
+  if (!images.length) notFound();
 
   const claim = pickClaim(`${restaurant.slug}-photos`);
   const breadcrumbs = breadcrumbJsonLd([

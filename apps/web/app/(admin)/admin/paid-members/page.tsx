@@ -30,7 +30,7 @@ async function getStripeSubscriptions() {
 
     for (const sub of subscriptions.data) {
       const customer = sub.customer;
-      if (typeof customer !== 'object') continue;
+      if (typeof customer !== 'object' || customer.deleted) continue;
 
       const email = customer.email || 'unknown';
       const name = customer.name || customer.metadata?.business_name || email;

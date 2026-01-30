@@ -3,6 +3,7 @@ import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
 import { buildMeta } from '@/lib/seo/meta';
 import { itemListJsonLd } from '@/lib/seo/structured';
+import { notFound } from 'next/navigation';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
 export const revalidate = 1200;
@@ -19,7 +20,7 @@ export default async function EventsByType({ params }: { params: { eventType: st
   const type = params.eventType.toLowerCase().replace(/-/g, ' ');
   const items = await fetchEventsWithRestaurants();
   const filtered = items.filter(({ event }) => event.event_type?.toLowerCase() === type);
-  if (!filtered.length) return <main className="p-8 text-white">No events found.</main>;
+  if (!filtered.length) notFound();
 
   const urls = filtered
     .filter(({ restaurant }) => restaurant)

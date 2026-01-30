@@ -4,6 +4,7 @@ import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
 import { buildMeta } from '@/lib/seo/meta';
 import { breadcrumbJsonLd, offerJsonLd, restaurantJsonLd } from '@/lib/seo/structured';
 import { slugify } from '@/lib/seo/slug';
+import { notFound } from 'next/navigation';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
 export const revalidate = 1800;
@@ -21,10 +22,10 @@ export async function generateMetadata({ params }: { params: { restaurantSlug: s
 
 export default async function HappyHourDetail({ params }: { params: { restaurantSlug: string; entitySlug: string } }) {
   const restaurant = await fetchRestaurantBySlug(params.restaurantSlug);
-  if (!restaurant) return <main className="p-8 text-white">Not found</main>;
+  if (!restaurant) notFound();
   const happyHours = (await fetchHappyHours()).filter((h) => h.restaurant_id === restaurant.id);
   const happyHour = happyHours.find((h) => slugify(h.name) === params.entitySlug);
-  if (!happyHour) return <main className="p-8 text-white">Not found</main>;
+  if (!happyHour) notFound();
   const items = await fetchHappyHourItems([happyHour.id]);
 
   const claim = pickClaim(`${restaurant.slug}-hh-${happyHour.id}`);

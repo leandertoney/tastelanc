@@ -3,6 +3,9 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Support | TasteLanc',
   description: 'Get help and support for TasteLanc - Contact us, FAQs, and troubleshooting.',
+  alternates: {
+    canonical: 'https://tastelanc.com/support',
+  },
 };
 
 export default function SupportPage() {

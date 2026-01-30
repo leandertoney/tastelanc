@@ -3,6 +3,7 @@ import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
 import { buildMeta } from '@/lib/seo/meta';
 import { itemListJsonLd } from '@/lib/seo/structured';
+import { notFound } from 'next/navigation';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
 export const revalidate = 3600;
@@ -18,7 +19,7 @@ export async function generateMetadata({ params }: { params: { month: string } }
 export default async function RosieTrendingMonth({ params }: { params: { month: string } }) {
   const restaurants = await fetchRestaurants(true);
   const list = restaurants.sort((a, b) => a.name.localeCompare(b.name)).slice(0, 30);
-  if (!list.length) return <main className="p-8 text-white">No picks found.</main>;
+  if (!list.length) notFound();
 
   const urls = list.map((r) => `${siteUrl}/restaurants/${r.slug}`);
   const jsonLd = itemListJsonLd(urls);

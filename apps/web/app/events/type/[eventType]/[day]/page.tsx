@@ -3,6 +3,7 @@ import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
 import { buildMeta } from '@/lib/seo/meta';
 import { itemListJsonLd } from '@/lib/seo/structured';
+import { notFound } from 'next/navigation';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
 const DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
@@ -18,11 +19,11 @@ export async function generateMetadata({ params }: { params: { eventType: string
 
 export default async function EventsByTypeDay({ params }: { params: { eventType: string; day: string } }) {
   const day = params.day.toLowerCase();
-  if (!DAYS.includes(day)) return <main className="p-8 text-white">Not found</main>;
+  if (!DAYS.includes(day)) notFound();
   const type = params.eventType.toLowerCase().replace(/-/g, ' ');
   const items = await fetchEventsWithRestaurants();
   const filtered = items.filter(({ event }) => event.event_type?.toLowerCase() === type && (event.days_of_week || []).includes(day as any));
-  if (!filtered.length) return <main className="p-8 text-white">No events found.</main>;
+  if (!filtered.length) notFound();
 
   const urls = filtered
     .filter(({ restaurant }) => restaurant)

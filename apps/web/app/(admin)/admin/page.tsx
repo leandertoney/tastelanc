@@ -30,7 +30,7 @@ async function getStripeRevenue() {
 
     for (const sub of subscriptions.data) {
       const customer = sub.customer;
-      if (typeof customer !== 'object') continue;
+      if (typeof customer !== 'object' || customer.deleted) continue;
 
       const amount = (sub.items.data[0]?.price?.unit_amount || 0) / 100;
       const interval = sub.items.data[0]?.price?.recurring?.interval || 'month';

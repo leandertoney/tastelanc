@@ -7,7 +7,7 @@ import EventCard, { EVENT_CARD_HEIGHT, EVENT_CARD_WIDTH } from './EventCard';
 import PartnerCTACard from './PartnerCTACard';
 import SectionHeader from './SectionHeader';
 import Spacer from './Spacer';
-import { fetchNonEntertainmentEvents, ApiEvent } from '../lib/events';
+import { fetchNonEntertainmentEvents, ApiEvent, getEventVenueName, isSelfPromoterEvent } from '../lib/events';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_EVENTS } from '../config/mockData';
@@ -117,9 +117,9 @@ export default function EventsSection() {
     name: event.name,
     date: formatEventDate(event),
     time: formatEventTime(event.start_time, event.end_time),
-    venue: event.restaurant?.name,
+    venue: getEventVenueName(event),
     imageUrl: event.image_url, // API always provides image_url
-    isCityWide: !event.restaurant,
+    isCityWide: !event.restaurant && !event.self_promoter,
     restaurantId: event.restaurant?.id,
     originalEvent: event, // Keep original for EventDetail navigation
   }));

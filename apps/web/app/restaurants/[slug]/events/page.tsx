@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import { fetchRestaurantBySlug, fetchEvents } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -20,9 +21,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 export default async function RestaurantEvents({ params }: { params: { slug: string } }) {
   const restaurant = await fetchRestaurantBySlug(params.slug);
-  if (!restaurant) return <main className="p-8 text-white">Not found</main>;
+  if (!restaurant) notFound();
   const events = (await fetchEvents()).filter((e) => e.restaurant_id === restaurant.id);
-  if (!events.length) return <main className="p-8 text-white">No events for this restaurant.</main>;
+  if (!events.length) notFound();
 
   const claim = pickClaim(`${restaurant.slug}-events`);
   const breadcrumbs = breadcrumbJsonLd([

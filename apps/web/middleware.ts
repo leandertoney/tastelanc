@@ -36,6 +36,7 @@ export async function middleware(request: NextRequest) {
   const isAdmin = user?.email === 'admin@tastelanc.com';
   const userRole = user?.user_metadata?.role;
   const isRestaurantOwner = userRole === 'restaurant_owner';
+  const isSelfPromoter = userRole === 'self_promoter';
 
   // Admin routes - redirect to login if not admin
   if (request.nextUrl.pathname.startsWith('/admin')) {
@@ -85,7 +86,45 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Consumer Account routes - only for consumers (non-restaurant-owners)
+  // Self-Promoter Dashboard routes - only for self-promoters (or admin in admin_mode)
+  if (request.nextUrl.pathname.startsWith('/promoter')) {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      url.searchParams.set('redirect', request.nextUrl.pathname);
+      return NextResponse.redirect(url);
+    }
+
+    // Check for admin mode - allow admin to access promoter dashboard when editing
+    const adminMode = request.nextUrl.searchParams.get('admin_mode') === 'true';
+    const promoterId = request.nextUrl.searchParams.get('promoter_id');
+
+    if (isAdmin && adminMode && promoterId) {
+      // Admin in admin mode - allow access to promoter dashboard
+      return supabaseResponse;
+    }
+
+    // Redirect admin to admin dashboard (when not in admin mode)
+    if (isAdmin) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/admin';
+      return NextResponse.redirect(url);
+    }
+    // Redirect restaurant owners to their dashboard
+    if (isRestaurantOwner) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/dashboard';
+      return NextResponse.redirect(url);
+    }
+    // Redirect non-self-promoters (consumers) to account page
+    if (!isSelfPromoter) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/account';
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // Consumer Account routes - only for consumers (non-restaurant-owners, non-self-promoters)
   if (request.nextUrl.pathname.startsWith('/account')) {
     if (!user) {
       const url = request.nextUrl.clone();
@@ -105,6 +144,12 @@ export async function middleware(request: NextRequest) {
       url.pathname = '/dashboard';
       return NextResponse.redirect(url);
     }
+    // Redirect self-promoters to their dashboard
+    if (isSelfPromoter) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/promoter';
+      return NextResponse.redirect(url);
+    }
   }
 
   // Auth routes - redirect to appropriate dashboard if already authenticated
@@ -119,6 +164,8 @@ export async function middleware(request: NextRequest) {
         destination = '/admin';
       } else if (isRestaurantOwner) {
         destination = '/dashboard';
+      } else if (isSelfPromoter) {
+        destination = '/promoter';
       }
 
       if (redirect) {

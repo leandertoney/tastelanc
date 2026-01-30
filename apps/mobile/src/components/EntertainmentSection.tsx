@@ -7,7 +7,7 @@ import EntertainmentCard, { ENTERTAINMENT_CARD_SIZE } from './EntertainmentCard'
 import PartnerCTACard from './PartnerCTACard';
 import SectionHeader from './SectionHeader';
 import Spacer from './Spacer';
-import { fetchEntertainmentEvents, ApiEvent, ENTERTAINMENT_TYPES } from '../lib/events';
+import { fetchEntertainmentEvents, ApiEvent, ENTERTAINMENT_TYPES, getEventVenueName } from '../lib/events';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_ENTERTAINMENT, type MockEntertainment } from '../config/mockData';
@@ -88,7 +88,7 @@ export default function EntertainmentSection() {
     name: event.name,
     eventType: event.event_type,
     time: formatEventTime(event.start_time, event.end_time),
-    venue: event.restaurant?.name,
+    venue: getEventVenueName(event),
     imageUrl: event.image_url, // API always provides image_url
     restaurantId: event.restaurant?.id,
     originalEvent: event, // Keep reference for navigation

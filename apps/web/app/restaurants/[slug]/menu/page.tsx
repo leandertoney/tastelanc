@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import { fetchRestaurantBySlug } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 export default async function RestaurantMenu({ params }: { params: { slug: string } }) {
   const restaurant = await fetchRestaurantBySlug(params.slug);
-  if (!restaurant) return <main className="p-8 text-white">Not found</main>;
+  if (!restaurant) notFound();
   // No menu table yet; gate page
   const claim = pickClaim(`${restaurant.slug}-menu`);
   const breadcrumbs = breadcrumbJsonLd([

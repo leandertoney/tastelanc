@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import { fetchRestaurantBySlug, fetchHappyHours, fetchHappyHourItems } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -20,10 +21,10 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 export default async function RestaurantHappyHours({ params }: { params: { slug: string } }) {
   const restaurant = await fetchRestaurantBySlug(params.slug);
-  if (!restaurant) return <main className="p-8 text-white">Not found</main>;
+  if (!restaurant) notFound();
 
   const hh = (await fetchHappyHours()).filter((h) => h.restaurant_id === restaurant.id);
-  if (!hh.length) return <main className="p-8 text-white">No happy hours for this restaurant.</main>;
+  if (!hh.length) notFound();
 
   const hhItems = await fetchHappyHourItems(hh.map((h) => h.id));
   const claim = pickClaim(`${restaurant.slug}-hh`);

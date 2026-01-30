@@ -9,6 +9,7 @@ import {
   EARLY_ACCESS_PRICE_IDS,
   ALL_CONSUMER_PRICE_IDS,
   RESTAURANT_PRICE_IDS,
+  SELF_PROMOTER_PRICE_IDS,
   DURATION_TO_INTERVAL,
 } from '@/lib/stripe';
 import { createClient } from '@supabase/supabase-js';
@@ -57,6 +58,11 @@ function isFounderSubscription(priceId: string): boolean {
     priceId === EARLY_ACCESS_PRICE_IDS.monthly ||
     priceId === EARLY_ACCESS_PRICE_IDS.yearly
   );
+}
+
+// Helper to check if this is a self-promoter subscription
+function isSelfPromoterSubscription(priceId: string): boolean {
+  return priceId === SELF_PROMOTER_PRICE_IDS.monthly;
 }
 
 // Helper to determine restaurant tier from price ID (Starter tier removed)
@@ -770,6 +776,231 @@ export async function POST(request: Request) {
           }
 
           console.log(`Admin sale completed: ${tier} subscription for ${email}`);
+          break;
+        }
+
+        // Handle admin sale for self-promoter subscriptions
+        if (isAdminSale && subscriptionType === 'self_promoter') {
+          const email = session.metadata?.email || session.customer_email;
+          const artistName = session.metadata?.artist_name || '';
+          const contactName = session.metadata?.contact_name || '';
+          const phone = session.metadata?.phone || '';
+          const genre = session.metadata?.genre || '';
+
+          console.log('Processing self-promoter admin sale:', { email, artistName });
+
+          if (!email) {
+            console.error('No email found for self-promoter admin sale');
+            break;
+          }
+
+          // Step 1: Find or create user account
+          let selfPromoterUserId: string | null = null;
+
+          // Check if user already exists by email
+          const { data: existingSelfPromoterUser } = await supabaseAdmin
+            .from('profiles')
+            .select('id')
+            .eq('email', email)
+            .single();
+
+          if (existingSelfPromoterUser) {
+            selfPromoterUserId = existingSelfPromoterUser.id;
+            console.log(`Found existing user for self-promoter: ${selfPromoterUserId}`);
+
+            // Update user metadata to self_promoter role
+            if (selfPromoterUserId) {
+              await supabaseAdmin.auth.admin.updateUserById(selfPromoterUserId, {
+                user_metadata: {
+                  full_name: contactName || artistName,
+                  role: 'self_promoter',
+                },
+              });
+            }
+          } else {
+            // Create new user account via Supabase Auth
+            const tempPassword = crypto.randomUUID().slice(0, 12);
+            const { data: newSelfPromoterUser, error: createSelfPromoterError } = await supabaseAdmin.auth.admin.createUser({
+              email,
+              password: tempPassword,
+              email_confirm: true,
+              user_metadata: {
+                full_name: contactName || artistName,
+                role: 'self_promoter',
+              },
+            });
+
+            if (createSelfPromoterError || !newSelfPromoterUser.user) {
+              console.error('Failed to create self-promoter user:', createSelfPromoterError);
+              break;
+            }
+
+            selfPromoterUserId = newSelfPromoterUser.user.id;
+            console.log(`Created new self-promoter user: ${selfPromoterUserId}`);
+
+            // Create profile for new user
+            await supabaseAdmin.from('profiles').upsert({
+              id: selfPromoterUserId,
+              email,
+              full_name: contactName || artistName,
+              role: 'self_promoter',
+              stripe_customer_id: session.customer as string,
+            }, {
+              onConflict: 'id',
+            });
+
+            // Generate password setup link and send welcome email
+            const { data: selfPromoterLinkData, error: selfPromoterLinkError } = await supabaseAdmin.auth.admin.generateLink({
+              type: 'recovery',
+              email,
+              options: {
+                redirectTo: 'https://tastelanc.com/promoter',
+              },
+            });
+
+            if (selfPromoterLinkData?.properties?.action_link) {
+              const setupLink = selfPromoterLinkData.properties.action_link;
+
+              await resend.emails.send({
+                from: 'TasteLanc <hello@tastelanc.com>',
+                to: email,
+                subject: `Welcome to TasteLanc! Set Up Your ${artistName} Account`,
+                html: `
+                  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                      <h1 style="color: #1a1a1a; font-size: 28px; margin: 0;">Welcome to TasteLanc!</h1>
+                    </div>
+
+                    <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi${contactName ? ` ${contactName.split(' ')[0]}` : ''},</p>
+
+                    <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                      Thank you for joining TasteLanc as a Self-Promoter! Your account for <strong>${artistName}</strong> is ready.
+                    </p>
+
+                    <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                      To get started, click the button below to set up your password and access your dashboard:
+                    </p>
+
+                    <div style="text-align: center; margin: 35px 0;">
+                      <a href="${setupLink}" style="background-color: #3b82f6; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600; display: inline-block;">
+                        Set Up Your Account
+                      </a>
+                    </div>
+
+                    <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                      Once you're set up, you can create events, upload flyers, and promote your performances to Lancaster's local audience.
+                    </p>
+
+                    <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                      If you have any questions, just reply to this email - we're here to help!
+                    </p>
+
+                    <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                      Cheers,<br/>
+                      <strong>The TasteLanc Team</strong>
+                    </p>
+
+                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+
+                    <p style="font-size: 12px; color: #9ca3af; text-align: center;">
+                      TasteLanc - Lancaster's Local Food Guide<br/>
+                      <a href="https://tastelanc.com" style="color: #6b7280;">tastelanc.com</a>
+                    </p>
+                  </div>
+                `,
+              });
+              console.log(`Welcome email sent to self-promoter ${email}`);
+            } else {
+              console.error('Failed to generate self-promoter setup link:', selfPromoterLinkError);
+            }
+          }
+
+          // Step 2: Create self-promoter record
+          const slug = artistName
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
+
+          const { data: newSelfPromoter, error: selfPromoterError } = await supabaseAdmin
+            .from('self_promoters')
+            .insert({
+              name: artistName,
+              slug: `${slug}-${Date.now().toString(36)}`,
+              owner_id: selfPromoterUserId,
+              email,
+              phone,
+              genre,
+              stripe_subscription_id: subscriptionId,
+              stripe_customer_id: session.customer as string,
+              is_active: true,
+            })
+            .select('id')
+            .single();
+
+          if (selfPromoterError) {
+            console.error('Failed to create self-promoter record:', selfPromoterError);
+          } else {
+            console.log(`Created self-promoter: ${newSelfPromoter.id}`);
+          }
+
+          // Step 3: Send admin notification
+          const amountPaid = session.amount_total ? (session.amount_total / 100).toFixed(2) : 'N/A';
+          try {
+            await resend.emails.send({
+              from: 'TasteLanc <hello@tastelanc.com>',
+              to: 'admin@tastelanc.com',
+              subject: `New Self-Promoter: ${artistName} - $${amountPaid}/month`,
+              html: `
+                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <h2 style="color: #1a1a1a; border-bottom: 2px solid #8b5cf6; padding-bottom: 10px;">New Self-Promoter Signup</h2>
+
+                  <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                    <tr>
+                      <td style="padding: 8px 0; color: #6b7280; width: 140px;">Artist Name:</td>
+                      <td style="padding: 8px 0; color: #1a1a1a; font-weight: 600;">${artistName}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; color: #6b7280;">Contact:</td>
+                      <td style="padding: 8px 0; color: #1a1a1a;">${contactName || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; color: #6b7280;">Email:</td>
+                      <td style="padding: 8px 0; color: #1a1a1a;"><a href="mailto:${email}" style="color: #3b82f6;">${email}</a></td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; color: #6b7280;">Phone:</td>
+                      <td style="padding: 8px 0; color: #1a1a1a;">${phone || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; color: #6b7280;">Genre:</td>
+                      <td style="padding: 8px 0; color: #1a1a1a;">${genre || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; color: #6b7280;">Plan:</td>
+                      <td style="padding: 8px 0; color: #1a1a1a; font-weight: 600;">Self-Promoter ($50/month)</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; color: #6b7280;">Amount:</td>
+                      <td style="padding: 8px 0; color: #22c55e; font-weight: 600;">$${amountPaid}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; color: #6b7280;">Stripe Customer:</td>
+                      <td style="padding: 8px 0; color: #1a1a1a;"><a href="https://dashboard.stripe.com/customers/${session.customer}" style="color: #3b82f6;">${session.customer}</a></td>
+                    </tr>
+                  </table>
+
+                  <p style="color: #6b7280; font-size: 14px; margin-top: 20px;">
+                    Welcome email has been sent to the self-promoter with account setup instructions.
+                  </p>
+                </div>
+              `,
+            });
+            console.log('Admin notification sent for self-promoter');
+          } catch (notifyError) {
+            console.error('Failed to send self-promoter admin notification:', notifyError);
+          }
+
+          console.log(`Self-promoter admin sale completed for ${email}`);
           break;
         }
 

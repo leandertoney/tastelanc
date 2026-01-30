@@ -4,6 +4,7 @@ import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
 import { buildMeta } from '@/lib/seo/meta';
 import { breadcrumbJsonLd, offerJsonLd, restaurantJsonLd } from '@/lib/seo/structured';
 import { slugify } from '@/lib/seo/slug';
+import { notFound } from 'next/navigation';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
 export const revalidate = 1800;
@@ -21,10 +22,10 @@ export async function generateMetadata({ params }: { params: { restaurantSlug: s
 
 export default async function SpecialDetail({ params }: { params: { restaurantSlug: string; entitySlug: string } }) {
   const restaurant = await fetchRestaurantBySlug(params.restaurantSlug);
-  if (!restaurant) return <main className="p-8 text-white">Not found</main>;
+  if (!restaurant) notFound();
   const specials = (await fetchSpecials()).filter((s) => s.restaurant_id === restaurant.id);
   const special = specials.find((s) => slugify(s.name) === params.entitySlug);
-  if (!special) return <main className="p-8 text-white">Not found</main>;
+  if (!special) notFound();
 
   const claim = pickClaim(`${restaurant.slug}-special-${special.id}`);
   const breadcrumbs = breadcrumbJsonLd([

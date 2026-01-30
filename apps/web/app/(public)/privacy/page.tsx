@@ -3,6 +3,9 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Privacy Policy | TasteLanc',
   description: 'TasteLanc Privacy Policy - Learn how we collect, use, and protect your personal information.',
+  alternates: {
+    canonical: 'https://tastelanc.com/privacy',
+  },
 };
 
 export default function PrivacyPage() {

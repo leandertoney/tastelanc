@@ -4,6 +4,7 @@ import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
 import { buildMeta } from '@/lib/seo/meta';
 import { itemListJsonLd } from '@/lib/seo/structured';
 import { slugify } from '@/lib/seo/slug';
+import { notFound } from 'next/navigation';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
 const DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
@@ -19,10 +20,10 @@ export async function generateMetadata({ params }: { params: { category: string;
 
 export default async function CategoryDayPage({ params }: { params: { category: string; day: string } }) {
   const day = params.day.toLowerCase();
-  if (!DAYS.includes(day)) return <main className="p-8 text-white">Not found</main>;
+  if (!DAYS.includes(day)) notFound();
   const restaurants = await fetchRestaurants(true);
   const filtered = restaurants.filter((r) => (r.categories || []).some((c) => slugify(c) === params.category));
-  if (!filtered.length) return <main className="p-8 text-white">No restaurants found.</main>;
+  if (!filtered.length) notFound();
 
   const urls = filtered.map((r) => `${siteUrl}/restaurants/${r.slug}`);
   const jsonLd = itemListJsonLd(urls);
