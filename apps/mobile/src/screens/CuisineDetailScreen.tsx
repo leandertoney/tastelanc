@@ -25,13 +25,23 @@ import { colors, spacing } from '../constants/colors';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = NativeStackScreenProps<RootStackParamList, 'CuisineDetail'>['route'];
 
+// These cuisines are stored in the categories array, not the cuisine column
+const CATEGORY_BASED_CUISINES: CuisineType[] = ['breakfast', 'brunch', 'desserts'];
+
 async function getRestaurantsByCuisine(cuisine: CuisineType): Promise<Restaurant[]> {
-  const { data, error } = await supabase
+  let query = supabase
     .from('restaurants')
     .select('*')
-    .eq('cuisine', cuisine)
-    .eq('is_active', true)
-    .order('name', { ascending: true });
+    .eq('is_active', true);
+
+  // Check if this cuisine is stored in categories array vs cuisine column
+  if (CATEGORY_BASED_CUISINES.includes(cuisine)) {
+    query = query.contains('categories', [cuisine]);
+  } else {
+    query = query.eq('cuisine', cuisine);
+  }
+
+  const { data, error } = await query.order('name', { ascending: true });
 
   if (error) throw error;
   return data || [];
