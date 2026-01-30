@@ -17,6 +17,7 @@ import {
   Crown,
   ClipboardCheck,
   Lightbulb,
+  Music,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -35,6 +36,7 @@ const NAV_ITEMS: Array<{
   // Business Revenue
   { href: '/admin/paid-members', icon: CreditCard, label: 'Paid Members', highlight: true, section: 'Businesses' },
   { href: '/admin/sales', icon: Briefcase, label: 'Sales Pipeline', highlight: true },
+  { href: '/admin/self-promoters', icon: Music, label: 'Self-Promoters', highlight: true },
   { href: '/admin/restaurants', icon: Store, label: 'All Restaurants' },
   { href: '/admin/restaurants/pending-review', icon: ClipboardCheck, label: 'Pending Review', highlight: true },
   // Marketing

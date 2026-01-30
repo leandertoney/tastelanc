@@ -89,8 +89,6 @@ export default function EventDetailScreen({ route, navigation }: Props) {
     }
   };
 
-  const handleViewVenue = isFromSelfPromoter ? handleViewArtist : handleViewRestaurant;
-
   const handleShare = async () => {
     try {
       // Build event date string
@@ -199,21 +197,33 @@ export default function EventDetailScreen({ route, navigation }: Props) {
             </View>
           )}
 
-          {/* Venue / Artist Card */}
-          {venueName && (
+          {/* Venue Card (Restaurant events) */}
+          {!isFromSelfPromoter && venueName && (
             <View style={styles.restaurantCard}>
-              <Text style={styles.sectionTitle}>
-                {isFromSelfPromoter ? 'Artist' : 'Venue'}
-              </Text>
+              <Text style={styles.sectionTitle}>Venue</Text>
               <TouchableOpacity
                 style={styles.restaurantInfo}
-                onPress={handleViewVenue}
+                onPress={handleViewRestaurant}
               >
                 <View style={styles.restaurantDetails}>
                   <Text style={styles.restaurantName}>{venueName}</Text>
-                  <Text style={styles.viewRestaurantText}>
-                    {isFromSelfPromoter ? 'View Artist →' : 'View Restaurant →'}
-                  </Text>
+                  <Text style={styles.viewRestaurantText}>View Restaurant →</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={24} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* More from Artist (Self-promoter events) */}
+          {isFromSelfPromoter && event.self_promoter && (
+            <View style={styles.restaurantCard}>
+              <Text style={styles.sectionTitle}>More from {event.self_promoter.name}</Text>
+              <TouchableOpacity
+                style={styles.restaurantInfo}
+                onPress={handleViewArtist}
+              >
+                <View style={styles.restaurantDetails}>
+                  <Text style={styles.viewRestaurantText}>See more events →</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={24} color={colors.textMuted} />
               </TouchableOpacity>
@@ -222,19 +232,6 @@ export default function EventDetailScreen({ route, navigation }: Props) {
         </View>
       </ScrollView>
 
-      {/* Bottom CTA */}
-      {venueName && (
-        <View style={styles.bottomBar}>
-          <TouchableOpacity
-            style={styles.ctaButton}
-            onPress={handleViewVenue}
-          >
-            <Text style={styles.ctaButtonText}>
-              {isFromSelfPromoter ? 'View Artist' : 'View Restaurant'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </View>
   );
 }
@@ -360,7 +357,7 @@ const styles = StyleSheet.create({
   },
   restaurantCard: {
     marginTop: 8,
-    marginBottom: 100,
+    marginBottom: 24,
   },
   restaurantInfo: {
     flexDirection: 'row',
@@ -382,27 +379,5 @@ const styles = StyleSheet.create({
   viewRestaurantText: {
     fontSize: 14,
     color: colors.accent,
-  },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: colors.background,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    padding: 16,
-    paddingBottom: 34,
-  },
-  ctaButton: {
-    backgroundColor: colors.accent,
-    paddingVertical: 16,
-    borderRadius: radius.md,
-    alignItems: 'center',
-  },
-  ctaButtonText: {
-    color: colors.background,
-    fontSize: 16,
-    fontWeight: '600',
   },
 });
