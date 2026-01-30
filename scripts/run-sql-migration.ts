@@ -23,7 +23,9 @@ async function runMigration() {
     process.exit(1);
   }
 
-  const connectionString = `postgresql://postgres.kufcxxynjvyharhtfptd:${dbPassword}@aws-0-us-east-1.pooler.supabase.com:6543/postgres`;
+  // Use session mode pooler with URL-encoded password (! becomes %21)
+  const encodedPassword = encodeURIComponent(dbPassword);
+  const connectionString = `postgresql://postgres.kufcxxynjvyharhtfptd:${encodedPassword}@aws-0-us-west-2.pooler.supabase.com:5432/postgres`;
 
   console.log('Connecting to database...');
 
