@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { getStripe } from '@/lib/stripe';
 import { Card, Badge } from '@/components/ui';
 import {
   Store,
@@ -9,8 +10,55 @@ import {
   AlertCircle,
   Crown,
   Mail,
+  DollarSign,
 } from 'lucide-react';
 import Link from 'next/link';
+
+// Get real revenue data from Stripe
+async function getStripeRevenue() {
+  try {
+    const stripe = getStripe();
+    const subscriptions = await stripe.subscriptions.list({
+      status: 'active',
+      limit: 100,
+      expand: ['data.customer'],
+    });
+
+    let totalMRR = 0;
+    let restaurantCount = 0;
+    let consumerCount = 0;
+
+    for (const sub of subscriptions.data) {
+      const customer = sub.customer;
+      if (typeof customer !== 'object') continue;
+
+      const amount = (sub.items.data[0]?.price?.unit_amount || 0) / 100;
+      const interval = sub.items.data[0]?.price?.recurring?.interval || 'month';
+      const mrr = interval === 'year' ? amount / 12 : amount;
+      totalMRR += mrr;
+
+      const metadata = customer.metadata || {};
+      const isConsumer = metadata.type === 'consumer' || metadata.supabase_user_id;
+
+      if (isConsumer) {
+        consumerCount++;
+      } else {
+        restaurantCount++;
+      }
+    }
+
+    return {
+      mrr: Math.round(totalMRR * 100) / 100,
+      arr: Math.round(totalMRR * 12 * 100) / 100,
+      totalSubscriptions: subscriptions.data.length,
+      restaurantCount,
+      consumerCount,
+    };
+  } catch (error) {
+    console.error('Error fetching Stripe data:', error);
+    return { mrr: 0, arr: 0, totalSubscriptions: 0, restaurantCount: 0, consumerCount: 0 };
+  }
+}
 
 async function getAdminStats() {
   const supabase = await createClient();
@@ -114,7 +162,10 @@ async function getAdminStats() {
 }
 
 export default async function AdminDashboardPage() {
-  const stats = await getAdminStats();
+  const [stats, stripeRevenue] = await Promise.all([
+    getAdminStats(),
+    getStripeRevenue(),
+  ]);
 
   return (
     <div>
@@ -122,6 +173,35 @@ export default async function AdminDashboardPage() {
         <h1 className="text-2xl md:text-3xl font-bold text-white">Admin Dashboard</h1>
         <p className="text-gray-400 mt-1 text-sm md:text-base">Overview of TasteLanc platform</p>
       </div>
+
+      {/* Revenue Banner */}
+      <Card className="p-4 md:p-6 mb-6 md:mb-8 bg-gradient-to-r from-green-500/10 to-green-500/5 border-green-500/30">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+              <DollarSign className="w-6 h-6 text-green-400" />
+            </div>
+            <div>
+              <p className="text-gray-400 text-sm">Monthly Recurring Revenue</p>
+              <p className="text-3xl font-bold text-green-400">${stripeRevenue.mrr.toLocaleString()}</p>
+            </div>
+          </div>
+          <div className="flex gap-6">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-white">{stripeRevenue.restaurantCount}</p>
+              <p className="text-gray-400 text-xs">Restaurants</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-white">{stripeRevenue.consumerCount}</p>
+              <p className="text-gray-400 text-xs">TasteLanc+</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-white">${stripeRevenue.arr.toLocaleString()}</p>
+              <p className="text-gray-400 text-xs">ARR</p>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-6 mb-6 md:mb-8">
@@ -158,7 +238,7 @@ export default async function AdminDashboardPage() {
                 <Users className="w-5 h-5 md:w-6 md:h-6 text-green-500" />
               </div>
             </div>
-            <p className="text-2xl md:text-3xl font-bold text-white">{stats.activeSubscriptions}</p>
+            <p className="text-2xl md:text-3xl font-bold text-white">{stripeRevenue.totalSubscriptions}</p>
             <p className="text-gray-400 text-xs md:text-sm">Paid Members</p>
           </Card>
         </Link>

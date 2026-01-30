@@ -1,184 +1,233 @@
 import { createClient } from '@/lib/supabase/server';
+import { getStripe } from '@/lib/stripe';
 import { Card, Badge } from '@/components/ui';
-import { Store, MapPin, CheckCircle, CreditCard, Calendar, ExternalLink, Edit, LayoutDashboard, ShoppingCart } from 'lucide-react';
+import { Store, CheckCircle, CreditCard, Calendar, ExternalLink, Users } from 'lucide-react';
 import Link from 'next/link';
 
-async function getPaidRestaurants() {
-  const supabase = await createClient();
+interface StripeSubscription {
+  id: string;
+  name: string;
+  email: string;
+  amount: number;
+  interval: string;
+  mrr: number;
+  status: string;
+  createdAt: string;
+  customerId: string;
+}
 
-  // Get restaurants with active Stripe subscriptions
-  const { data: restaurants, error } = await supabase
-    .from('restaurants')
-    .select(`
-      *,
-      tiers(name, display_name)
-    `)
-    .not('stripe_subscription_id', 'is', null)
-    .order('updated_at', { ascending: false });
+async function getStripeSubscriptions() {
+  try {
+    const stripe = getStripe();
+    const subscriptions = await stripe.subscriptions.list({
+      status: 'active',
+      limit: 100,
+      expand: ['data.customer'],
+    });
 
-  if (error) {
-    console.error('Error fetching paid restaurants:', error);
-    return [];
+    const restaurants: StripeSubscription[] = [];
+    const consumers: StripeSubscription[] = [];
+
+    for (const sub of subscriptions.data) {
+      const customer = sub.customer;
+      if (typeof customer !== 'object') continue;
+
+      const email = customer.email || 'unknown';
+      const name = customer.name || customer.metadata?.business_name || email;
+      const amount = (sub.items.data[0]?.price?.unit_amount || 0) / 100;
+      const interval = sub.items.data[0]?.price?.recurring?.interval || 'month';
+      const mrr = interval === 'year' ? amount / 12 : amount;
+
+      const metadata = customer.metadata || {};
+      const isConsumer = metadata.type === 'consumer' || metadata.supabase_user_id;
+
+      const subData: StripeSubscription = {
+        id: sub.id,
+        name,
+        email,
+        amount,
+        interval,
+        mrr,
+        status: sub.status,
+        createdAt: new Date(sub.created * 1000).toISOString(),
+        customerId: customer.id,
+      };
+
+      if (isConsumer) {
+        consumers.push(subData);
+      } else {
+        restaurants.push(subData);
+      }
+    }
+
+    return { restaurants, consumers };
+  } catch (error) {
+    console.error('Error fetching Stripe subscriptions:', error);
+    return { restaurants: [], consumers: [] };
   }
-
-  return restaurants || [];
 }
 
 export default async function AdminPaidMembersPage() {
-  const restaurants = await getPaidRestaurants();
+  const { restaurants, consumers } = await getStripeSubscriptions();
 
-  // Calculate revenue (Premium = $585/year)
-  const monthlyRecurringRevenue = restaurants.length * (585 / 12);
-  const annualRecurringRevenue = restaurants.length * 585;
+  const restaurantMRR = restaurants.reduce((sum, r) => sum + r.mrr, 0);
+  const consumerMRR = consumers.reduce((sum, c) => sum + c.mrr, 0);
+  const totalMRR = restaurantMRR + consumerMRR;
 
   return (
     <div>
       <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Paid Members</h1>
-            <p className="text-gray-400 mt-1">
-              {restaurants.length} active paid restaurant{restaurants.length !== 1 ? 's' : ''}
-            </p>
-          </div>
-        </div>
+        <h1 className="text-3xl font-bold text-white">Paid Members</h1>
+        <p className="text-gray-400 mt-1">
+          {restaurants.length + consumers.length} active subscriptions from Stripe
+        </p>
       </div>
 
       {/* Revenue Stats */}
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
+      <div className="grid md:grid-cols-4 gap-6 mb-8">
+        <Card className="p-6 bg-gradient-to-br from-green-500/10 to-transparent border-green-500/30">
+          <div className="flex items-center gap-3 mb-2">
+            <CreditCard className="w-5 h-5 text-green-400" />
+            <span className="text-gray-400">Total MRR</span>
+          </div>
+          <p className="text-3xl font-bold text-green-400">${totalMRR.toFixed(0)}</p>
+          <p className="text-xs text-gray-500 mt-1">ARR: ${(totalMRR * 12).toLocaleString()}</p>
+        </Card>
+
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-2">
-            <CreditCard className="w-5 h-5 text-green-500" />
-            <span className="text-gray-400">Paid Restaurants</span>
+            <Store className="w-5 h-5 text-blue-500" />
+            <span className="text-gray-400">Restaurants</span>
           </div>
           <p className="text-3xl font-bold text-white">{restaurants.length}</p>
+          <p className="text-xs text-gray-500 mt-1">${restaurantMRR.toFixed(0)}/mo</p>
         </Card>
 
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-2">
-            <CreditCard className="w-5 h-5 text-lancaster-gold" />
-            <span className="text-gray-400">Monthly Recurring</span>
+            <Users className="w-5 h-5 text-purple-500" />
+            <span className="text-gray-400">TasteLanc+</span>
           </div>
-          <p className="text-3xl font-bold text-white">
-            ${monthlyRecurringRevenue.toFixed(0)}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">Based on $585/year Premium</p>
+          <p className="text-3xl font-bold text-white">{consumers.length}</p>
+          <p className="text-xs text-gray-500 mt-1">${consumerMRR.toFixed(0)}/mo</p>
         </Card>
 
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-2">
-            <CreditCard className="w-5 h-5 text-blue-500" />
-            <span className="text-gray-400">Annual Recurring</span>
+            <CheckCircle className="w-5 h-5 text-green-500" />
+            <span className="text-gray-400">All Active</span>
           </div>
-          <p className="text-3xl font-bold text-white">
-            ${annualRecurringRevenue.toLocaleString()}
-          </p>
+          <p className="text-3xl font-bold text-white">{restaurants.length + consumers.length}</p>
         </Card>
       </div>
 
-      {/* Paid Restaurant List */}
-      {restaurants.length === 0 ? (
-        <Card className="p-12 text-center">
-          <CreditCard className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-white mb-2">No paid members yet</h3>
-          <p className="text-gray-400">
-            Paid restaurants will appear here as they subscribe.
-          </p>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {restaurants.map((restaurant) => {
-            const tier = restaurant.tiers;
-            return (
-              <Card key={restaurant.id} className="p-6 hover:border-green-500/50 transition-colors">
+      {/* Restaurant Subscriptions */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+          <Store className="w-5 h-5 text-blue-500" />
+          Restaurant Subscriptions
+        </h2>
+        {restaurants.length === 0 ? (
+          <Card className="p-8 text-center">
+            <Store className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-400">No restaurant subscriptions yet</p>
+          </Card>
+        ) : (
+          <div className="grid gap-4">
+            {restaurants.map((sub) => (
+              <Card key={sub.id} className="p-6 hover:border-green-500/50 transition-colors">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-4">
-                    {restaurant.logo_url ? (
-                      <img
-                        src={restaurant.logo_url}
-                        alt={restaurant.name}
-                        className="w-16 h-16 rounded-lg object-cover bg-tastelanc-surface-light"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 bg-tastelanc-surface-light rounded-lg flex items-center justify-center">
-                        <Store className="w-8 h-8 text-gray-600" />
-                      </div>
-                    )}
+                    <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                      <Store className="w-6 h-6 text-blue-400" />
+                    </div>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-lg font-semibold text-white">{restaurant.name}</h3>
+                        <h3 className="text-lg font-semibold text-white">{sub.name}</h3>
                         <CheckCircle className="w-4 h-4 text-green-400" />
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3" />
-                          {restaurant.city}, {restaurant.state}
-                        </span>
-                      </div>
-                      {restaurant.stripe_subscription_id && (
-                        <p className="text-xs text-gray-500 mt-2 font-mono">
-                          {restaurant.stripe_subscription_id}
-                        </p>
-                      )}
+                      <p className="text-sm text-gray-400">{sub.email}</p>
+                      <p className="text-xs text-gray-500 mt-1 font-mono">{sub.id}</p>
                     </div>
                   </div>
-
                   <div className="text-right">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge
-                        variant={tier?.name === 'premium' ? 'gold' : 'default'}
-                        className="capitalize"
-                      >
-                        {tier?.display_name || tier?.name || 'Premium'}
-                      </Badge>
-                      <span className="inline-flex items-center gap-1 text-xs text-green-400">
-                        <CheckCircle className="w-3 h-3" />
-                        Active
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500 flex items-center gap-1 justify-end">
-                      <Calendar className="w-3 h-3" />
-                      Joined {new Date(restaurant.created_at).toLocaleDateString()}
+                    <p className="text-2xl font-bold text-white">
+                      ${sub.amount}
+                      <span className="text-sm font-normal text-gray-400">/{sub.interval}</span>
                     </p>
-                    <div className="flex gap-2 mt-3">
-                      <Link
-                        href={`/restaurants/${restaurant.slug}`}
-                        target="_blank"
-                        className="text-xs text-gray-400 hover:text-white flex items-center gap-1"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        View
-                      </Link>
-                      <Link
-                        href={`/admin/restaurants/${restaurant.id}`}
-                        className="text-xs text-gray-400 hover:text-white flex items-center gap-1"
-                      >
-                        <Edit className="w-3 h-3" />
-                        Details
-                      </Link>
-                      <Link
-                        href={`/dashboard?admin_mode=true&restaurant_id=${restaurant.id}`}
-                        className="text-xs text-tastelanc-accent hover:underline flex items-center gap-1"
-                      >
-                        <LayoutDashboard className="w-3 h-3" />
-                        Edit Dashboard
-                      </Link>
-                      <Link
-                        href={`/admin/sales?restaurantId=${restaurant.id}`}
-                        className="text-xs text-green-400 hover:underline flex items-center gap-1"
-                      >
-                        <ShoppingCart className="w-3 h-3" />
-                        Upgrade
-                      </Link>
-                    </div>
+                    <p className="text-xs text-gray-500 flex items-center gap-1 justify-end mt-1">
+                      <Calendar className="w-3 h-3" />
+                      Since {new Date(sub.createdAt).toLocaleDateString()}
+                    </p>
+                    <Link
+                      href={`https://dashboard.stripe.com/customers/${sub.customerId}`}
+                      target="_blank"
+                      className="text-xs text-blue-400 hover:underline flex items-center gap-1 justify-end mt-2"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      View in Stripe
+                    </Link>
                   </div>
                 </div>
               </Card>
-            );
-          })}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Consumer Subscriptions */}
+      <div>
+        <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+          <Users className="w-5 h-5 text-purple-500" />
+          TasteLanc+ Subscribers
+        </h2>
+        {consumers.length === 0 ? (
+          <Card className="p-8 text-center">
+            <Users className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-400">No consumer subscriptions yet</p>
+          </Card>
+        ) : (
+          <Card className="overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-tastelanc-surface-light">
+                <tr>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">Email</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">Plan</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">Since</th>
+                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-400">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-tastelanc-surface-light">
+                {consumers.map((sub) => (
+                  <tr key={sub.id} className="hover:bg-tastelanc-surface-light/50">
+                    <td className="px-4 py-3">
+                      <p className="text-white">{sub.email}</p>
+                      <p className="text-xs text-gray-500 font-mono">{sub.id}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge variant="default" className="bg-purple-500/20 text-purple-400">
+                        ${sub.amount}/{sub.interval}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-gray-400 text-sm">
+                      {new Date(sub.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link
+                        href={`https://dashboard.stripe.com/customers/${sub.customerId}`}
+                        target="_blank"
+                        className="text-xs text-blue-400 hover:underline"
+                      >
+                        View in Stripe
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }
