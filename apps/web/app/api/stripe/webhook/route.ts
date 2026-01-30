@@ -1115,15 +1115,92 @@ export async function POST(request: Request) {
         const subItem = subscription.items.data[0];
         const priceId = subItem.price.id;
 
-        console.log('Subscription updated:', { customerId, priceId, status: subscription.status });
+        console.log('Subscription event:', {
+          type: event.type,
+          customerId,
+          priceId,
+          status: subscription.status,
+          subscriptionId: subscription.id,
+        });
+
+        // Fetch customer details from Stripe to get email and metadata
+        const customer = await getStripe().customers.retrieve(customerId);
+        const customerEmail = !('deleted' in customer) ? customer.email : null;
+        const customerMetadata = !('deleted' in customer) ? customer.metadata : {};
+        const customerName = !('deleted' in customer) ? customer.name : null;
+
+        console.log('Customer details:', {
+          email: customerEmail,
+          name: customerName,
+          metadata: customerMetadata,
+        });
 
         if (isConsumerSubscription(priceId)) {
           // Consumer subscription update
-          const { data: consumerSub } = await supabaseAdmin
+          let consumerSub = await supabaseAdmin
             .from('consumer_subscriptions')
             .select('user_id')
             .eq('stripe_customer_id', customerId)
-            .single();
+            .single()
+            .then(r => r.data);
+
+          // If not found by customer ID, try by user ID from metadata or email
+          if (!consumerSub && customerMetadata?.supabase_user_id) {
+            consumerSub = await supabaseAdmin
+              .from('consumer_subscriptions')
+              .select('user_id')
+              .eq('user_id', customerMetadata.supabase_user_id)
+              .single()
+              .then(r => r.data);
+          }
+
+          // Try to find user by email if still not found
+          if (!consumerSub && customerEmail) {
+            const { data: profile } = await supabaseAdmin
+              .from('profiles')
+              .select('id')
+              .eq('email', customerEmail.toLowerCase())
+              .single();
+
+            if (profile) {
+              // Check if consumer_subscription exists for this user
+              consumerSub = await supabaseAdmin
+                .from('consumer_subscriptions')
+                .select('user_id')
+                .eq('user_id', profile.id)
+                .single()
+                .then(r => r.data);
+
+              // If no subscription record, create one
+              if (!consumerSub) {
+                const billingPeriod = getConsumerBillingPeriod(priceId);
+                const isFounder = isFounderSubscription(priceId);
+
+                await supabaseAdmin.from('consumer_subscriptions').insert({
+                  user_id: profile.id,
+                  stripe_subscription_id: subscription.id,
+                  stripe_customer_id: customerId,
+                  stripe_price_id: priceId,
+                  status: 'active',
+                  billing_period: billingPeriod,
+                  is_founder: isFounder,
+                  current_period_start: new Date(subItem.current_period_start * 1000).toISOString(),
+                  current_period_end: new Date(subItem.current_period_end * 1000).toISOString(),
+                });
+
+                await supabaseAdmin
+                  .from('profiles')
+                  .update({
+                    is_premium: true,
+                    stripe_customer_id: customerId,
+                  })
+                  .eq('id', profile.id);
+
+                console.log(`Created consumer subscription for user ${profile.id} (from Stripe-created subscription)`);
+                break;
+              }
+            }
+          }
 
           if (consumerSub) {
             const billingPeriod = getConsumerBillingPeriod(priceId);
@@ -1131,6 +1208,8 @@ export async function POST(request: Request) {
             await supabaseAdmin
               .from('consumer_subscriptions')
               .update({
+                stripe_subscription_id: subscription.id,
+                stripe_customer_id: customerId,
                 stripe_price_id: priceId,
                 status: (subscription.status === 'active' || subscription.status === 'trialing') ? 'active' : subscription.status,
                 billing_period: billingPeriod,
@@ -1142,11 +1221,51 @@ export async function POST(request: Request) {
             // Update premium status on profile
             await supabaseAdmin
               .from('profiles')
-              .update({ is_premium: subscription.status === 'active' || subscription.status === 'trialing' })
+              .update({
+                is_premium: subscription.status === 'active' || subscription.status === 'trialing',
+                stripe_customer_id: customerId,
+              })
               .eq('id', consumerSub.user_id);
+
+            console.log(`Consumer subscription updated for user ${consumerSub.user_id}`);
+          } else {
+            console.log('No matching user found for consumer subscription - may need manual linking');
+          }
+        } else if (isSelfPromoterSubscription(priceId)) {
+          // Self-promoter subscription - find by customer ID or email
+          let selfPromoter = await supabaseAdmin
+            .from('self_promoters')
+            .select('id, name')
+            .eq('stripe_customer_id', customerId)
+            .single()
+            .then(r => r.data);
+
+          // Try by email if not found
+          if (!selfPromoter && customerEmail) {
+            selfPromoter = await supabaseAdmin
+              .from('self_promoters')
+              .select('id, name')
+              .eq('email', customerEmail.toLowerCase())
+              .single()
+              .then(r => r.data);
+          }
+
+          if (selfPromoter) {
+            await supabaseAdmin
+              .from('self_promoters')
+              .update({
+                stripe_subscription_id: subscription.id,
+                stripe_customer_id: customerId,
+                is_active: subscription.status === 'active' || subscription.status === 'trialing',
+              })
+              .eq('id', selfPromoter.id);
+
+            console.log(`Self-promoter ${selfPromoter.name} subscription updated`);
+          } else {
+            console.log('No matching self-promoter found - may need manual linking');
           }
         } else {
-          // Restaurant subscription update - find restaurant by subscription ID
+          // Restaurant subscription update
           const subscriptionId = subscription.id;
           const tier = getRestaurantTier(priceId);
 
@@ -1157,22 +1276,26 @@ export async function POST(request: Request) {
             .single();
 
           if (tierData) {
-            // Find restaurant by stripe_subscription_id and update tier
-            const { data: restaurant, error: findError } = await supabaseAdmin
+            // Try multiple ways to find the restaurant
+            let restaurant = await supabaseAdmin
               .from('restaurants')
-              .select('id')
+              .select('id, name')
               .eq('stripe_subscription_id', subscriptionId)
-              .single();
+              .single()
+              .then(r => r.data);
 
-            if (restaurant) {
-              await supabaseAdmin
+            // Try by customer ID on restaurant
+            if (!restaurant) {
+              restaurant = await supabaseAdmin
                 .from('restaurants')
-                .update({ tier_id: tierData.id })
-                .eq('id', restaurant.id);
+                .select('id, name')
+                .eq('stripe_customer_id', customerId)
+                .single()
+                .then(r => r.data);
+            }
 
-              console.log(`Restaurant ${restaurant.id} tier updated to ${tier}`);
-            } else {
-              // Fallback: try to find by customer ID through profile
+            // Try by customer ID through profile (owner)
+            if (!restaurant) {
               const { data: profile } = await supabaseAdmin
                 .from('profiles')
                 .select('id')
@@ -1180,24 +1303,73 @@ export async function POST(request: Request) {
                 .single();
 
               if (profile) {
-                const { data: ownerRestaurant } = await supabaseAdmin
+                restaurant = await supabaseAdmin
                   .from('restaurants')
-                  .select('id')
+                  .select('id, name')
                   .eq('owner_id', profile.id)
-                  .single();
+                  .single()
+                  .then(r => r.data);
+              }
+            }
 
-                if (ownerRestaurant) {
-                  await supabaseAdmin
-                    .from('restaurants')
-                    .update({
-                      tier_id: tierData.id,
-                      stripe_subscription_id: subscriptionId,
-                    })
-                    .eq('id', ownerRestaurant.id);
+            // Try by customer email matching restaurant email
+            if (!restaurant && customerEmail) {
+              restaurant = await supabaseAdmin
+                .from('restaurants')
+                .select('id, name')
+                .eq('email', customerEmail.toLowerCase())
+                .single()
+                .then(r => r.data);
+            }
 
-                  console.log(`Restaurant ${ownerRestaurant.id} tier updated to ${tier} (linked subscription)`);
+            // Try by customer name matching restaurant name (fuzzy)
+            if (!restaurant && customerName) {
+              const { data: matchingRestaurants } = await supabaseAdmin
+                .from('restaurants')
+                .select('id, name')
+                .ilike('name', `%${customerName.split(' ')[0]}%`)
+                .limit(1);
+
+              if (matchingRestaurants && matchingRestaurants.length > 0) {
+                restaurant = matchingRestaurants[0];
+              }
+            }
+
+            if (restaurant) {
+              await supabaseAdmin
+                .from('restaurants')
+                .update({
+                  tier_id: tierData.id,
+                  stripe_subscription_id: subscriptionId,
+                  stripe_customer_id: customerId,
+                })
+                .eq('id', restaurant.id);
+
+              console.log(`Restaurant ${restaurant.name} updated: tier=${tier}, subscription=${subscriptionId}`);
+
+              // Send admin notification for new subscriptions created directly in Stripe
+              if (event.type === 'customer.subscription.created') {
+                try {
+                  await resend.emails.send({
+                    from: 'TasteLanc <hello@tastelanc.com>',
+                    to: 'admin@tastelanc.com',
+                    subject: `Subscription Synced: ${restaurant.name}`,
+                    html: `
+                      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                        <h2 style="color: #22c55e; border-bottom: 2px solid #22c55e; padding-bottom: 10px;">Subscription Synced</h2>
+                        <p><strong>${restaurant.name}</strong> has been upgraded to the <strong>${tier}</strong> tier.</p>
+                        <p>Customer: ${customerEmail || customerName || customerId}</p>
+                        <p><a href="https://dashboard.stripe.com/subscriptions/${subscriptionId}">View in Stripe</a></p>
+                      </div>
+                    `,
+                  });
+                } catch (notifyError) {
+                  console.error('Failed to send sync notification:', notifyError);
                 }
               }
+            } else {
+              console.log('No matching restaurant found for subscription - may need manual linking');
+              console.log('Customer info:', { email: customerEmail, name: customerName, id: customerId });
             }
           }
         }
