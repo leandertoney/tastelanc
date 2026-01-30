@@ -90,6 +90,7 @@ export async function fetchBlogPosts() {
     const { data, error } = await supabase()
       .from('blog_posts')
       .select('*')
+      .or('status.eq.published,status.is.null')
       .order('created_at', { ascending: false });
     if (error) throw error;
     return (data || []) as BlogPost[];
@@ -120,6 +121,7 @@ export async function fetchBlogPostsByTag(tag: string) {
       .from('blog_posts')
       .select('*')
       .contains('tags', [tag])
+      .or('status.eq.published,status.is.null')
       .order('created_at', { ascending: false });
     if (error) throw error;
     return (data || []) as BlogPost[];

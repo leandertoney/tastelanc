@@ -15,6 +15,26 @@ import {
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import type Stripe from 'stripe';
+import crypto from 'crypto';
+
+// Generate a secure setup token for password setup
+async function generateSetupToken(
+  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>,
+  userId: string,
+  email: string
+): Promise<string> {
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+  await supabaseAdmin.from('password_setup_tokens').insert({
+    user_id: userId,
+    email,
+    token,
+    expires_at: expiresAt.toISOString(),
+  });
+
+  return token;
+}
 
 // Initialize Resend for sending emails
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -131,73 +151,62 @@ async function findOrCreateUser(
     onConflict: 'id',
   });
 
-  // Generate password setup link and send welcome email via Resend
-  const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-    type: 'recovery',
-    email,
-    options: {
-      redirectTo: 'https://tastelanc.com/owner/dashboard',
-    },
-  });
+  // Generate password setup token and send welcome email via Resend
+  const setupToken = await generateSetupToken(supabaseAdmin, userId, email);
+  const setupLink = `https://tastelanc.com/setup-account?token=${setupToken}`;
+  const businessNamesList = businessNames.length > 1
+    ? businessNames.slice(0, -1).join(', ') + ' and ' + businessNames[businessNames.length - 1]
+    : businessNames[0];
 
-  if (linkData?.properties?.action_link) {
-    const setupLink = linkData.properties.action_link;
-    const businessNamesList = businessNames.length > 1
-      ? businessNames.slice(0, -1).join(', ') + ' and ' + businessNames[businessNames.length - 1]
-      : businessNames[0];
-
-    await resend.emails.send({
-      from: 'TasteLanc <hello@tastelanc.com>',
-      to: email,
-      subject: `Welcome to TasteLanc! Set Up Your Account`,
-      html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #1a1a1a; font-size: 28px; margin: 0;">Welcome to TasteLanc!</h1>
-          </div>
-
-          <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi${contactName ? ` ${contactName.split(' ')[0]}` : ''},</p>
-
-          <p style="font-size: 16px; color: #333; line-height: 1.6;">
-            Thank you for joining TasteLanc! Your account for <strong>${businessNamesList}</strong> is ready.
-          </p>
-
-          <p style="font-size: 16px; color: #333; line-height: 1.6;">
-            To get started, click the button below to set up your password and access your dashboard:
-          </p>
-
-          <div style="text-align: center; margin: 35px 0;">
-            <a href="${setupLink}" style="background-color: #3b82f6; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600; display: inline-block;">
-              Set Up Your Account
-            </a>
-          </div>
-
-          <p style="font-size: 16px; color: #333; line-height: 1.6;">
-            Once you're set up, you can manage your restaurant profiles, update hours, add specials, and more.
-          </p>
-
-          <p style="font-size: 16px; color: #333; line-height: 1.6;">
-            If you have any questions, just reply to this email - we're here to help!
-          </p>
-
-          <p style="font-size: 16px; color: #333; line-height: 1.6;">
-            Cheers,<br/>
-            <strong>The TasteLanc Team</strong>
-          </p>
-
-          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
-
-          <p style="font-size: 12px; color: #9ca3af; text-align: center;">
-            TasteLanc - Lancaster's Local Food Guide<br/>
-            <a href="https://tastelanc.com" style="color: #6b7280;">tastelanc.com</a>
-          </p>
+  await resend.emails.send({
+    from: 'TasteLanc <hello@tastelanc.com>',
+    to: email,
+    subject: `Welcome to TasteLanc! Set Up Your Account`,
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #1a1a1a; font-size: 28px; margin: 0;">Welcome to TasteLanc!</h1>
         </div>
-      `,
-    });
-    console.log(`Welcome email sent to ${email}`);
-  } else {
-    console.error('Failed to generate setup link:', linkError);
-  }
+
+        <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi${contactName ? ` ${contactName.split(' ')[0]}` : ''},</p>
+
+        <p style="font-size: 16px; color: #333; line-height: 1.6;">
+          Thank you for joining TasteLanc! Your account for <strong>${businessNamesList}</strong> is ready.
+        </p>
+
+        <p style="font-size: 16px; color: #333; line-height: 1.6;">
+          To get started, click the button below to set up your password and access your dashboard:
+        </p>
+
+        <div style="text-align: center; margin: 35px 0;">
+          <a href="${setupLink}" style="background-color: #3b82f6; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600; display: inline-block;">
+            Set Up Your Account
+          </a>
+        </div>
+
+        <p style="font-size: 16px; color: #333; line-height: 1.6;">
+          Once you're set up, you can manage your restaurant profiles, update hours, add specials, and more.
+        </p>
+
+        <p style="font-size: 16px; color: #333; line-height: 1.6;">
+          If you have any questions, just reply to this email - we're here to help!
+        </p>
+
+        <p style="font-size: 16px; color: #333; line-height: 1.6;">
+          Cheers,<br/>
+          <strong>The TasteLanc Team</strong>
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+
+        <p style="font-size: 12px; color: #9ca3af; text-align: center;">
+          TasteLanc - Lancaster's Local Food Guide<br/>
+          <a href="https://tastelanc.com" style="color: #6b7280;">tastelanc.com</a>
+        </p>
+      </div>
+    `,
+  });
+  console.log(`Welcome email sent to ${email}`);
 
   return userId;
 }
@@ -593,71 +602,59 @@ export async function POST(request: Request) {
               onConflict: 'id',
             });
 
-            // Generate password setup link and send welcome email via Resend
-            const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-              type: 'recovery',
-              email,
-              options: {
-                redirectTo: 'https://tastelanc.com/owner/dashboard',
-              },
-            });
+            // Generate password setup token and send welcome email via Resend
+            const setupToken = await generateSetupToken(supabaseAdmin, userId, email);
+            const setupLink = `https://tastelanc.com/setup-account?token=${setupToken}`;
 
-            if (linkData?.properties?.action_link) {
-              const setupLink = linkData.properties.action_link;
-
-              // Send welcome email with setup link via Resend
-              await resend.emails.send({
-                from: 'TasteLanc <hello@tastelanc.com>',
-                to: email,
-                subject: `Welcome to TasteLanc! Set Up Your ${businessName} Account`,
-                html: `
-                  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <div style="text-align: center; margin-bottom: 30px;">
-                      <h1 style="color: #1a1a1a; font-size: 28px; margin: 0;">Welcome to TasteLanc!</h1>
-                    </div>
-
-                    <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi${contactName ? ` ${contactName.split(' ')[0]}` : ''},</p>
-
-                    <p style="font-size: 16px; color: #333; line-height: 1.6;">
-                      Thank you for joining TasteLanc! Your account for <strong>${businessName}</strong> is ready.
-                    </p>
-
-                    <p style="font-size: 16px; color: #333; line-height: 1.6;">
-                      To get started, click the button below to set up your password and access your dashboard:
-                    </p>
-
-                    <div style="text-align: center; margin: 35px 0;">
-                      <a href="${setupLink}" style="background-color: #3b82f6; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600; display: inline-block;">
-                        Set Up Your Account
-                      </a>
-                    </div>
-
-                    <p style="font-size: 16px; color: #333; line-height: 1.6;">
-                      Once you're set up, you can manage your restaurant's profile, update your hours, add specials, and more.
-                    </p>
-
-                    <p style="font-size: 16px; color: #333; line-height: 1.6;">
-                      If you have any questions, just reply to this email - we're here to help!
-                    </p>
-
-                    <p style="font-size: 16px; color: #333; line-height: 1.6;">
-                      Cheers,<br/>
-                      <strong>The TasteLanc Team</strong>
-                    </p>
-
-                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
-
-                    <p style="font-size: 12px; color: #9ca3af; text-align: center;">
-                      TasteLanc - Lancaster's Local Food Guide<br/>
-                      <a href="https://tastelanc.com" style="color: #6b7280;">tastelanc.com</a>
-                    </p>
+            await resend.emails.send({
+              from: 'TasteLanc <hello@tastelanc.com>',
+              to: email,
+              subject: `Welcome to TasteLanc! Set Up Your ${businessName} Account`,
+              html: `
+                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <div style="text-align: center; margin-bottom: 30px;">
+                    <h1 style="color: #1a1a1a; font-size: 28px; margin: 0;">Welcome to TasteLanc!</h1>
                   </div>
-                `,
-              });
-              console.log(`Welcome email sent to ${email}`);
-            } else {
-              console.error('Failed to generate setup link:', linkError);
-            }
+
+                  <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi${contactName ? ` ${contactName.split(' ')[0]}` : ''},</p>
+
+                  <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                    Thank you for joining TasteLanc! Your account for <strong>${businessName}</strong> is ready.
+                  </p>
+
+                  <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                    To get started, click the button below to set up your password and access your dashboard:
+                  </p>
+
+                  <div style="text-align: center; margin: 35px 0;">
+                    <a href="${setupLink}" style="background-color: #3b82f6; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600; display: inline-block;">
+                      Set Up Your Account
+                    </a>
+                  </div>
+
+                  <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                    Once you're set up, you can manage your restaurant's profile, update your hours, add specials, and more.
+                  </p>
+
+                  <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                    If you have any questions, just reply to this email - we're here to help!
+                  </p>
+
+                  <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                    Cheers,<br/>
+                    <strong>The TasteLanc Team</strong>
+                  </p>
+
+                  <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+
+                  <p style="font-size: 12px; color: #9ca3af; text-align: center;">
+                    TasteLanc - Lancaster's Local Food Guide<br/>
+                    <a href="https://tastelanc.com" style="color: #6b7280;">tastelanc.com</a>
+                  </p>
+                </div>
+              `,
+            });
+            console.log(`Welcome email sent to ${email}`);
           }
 
           // Step 2: Link or create restaurant
@@ -849,70 +846,59 @@ export async function POST(request: Request) {
               onConflict: 'id',
             });
 
-            // Generate password setup link and send welcome email
-            const { data: selfPromoterLinkData, error: selfPromoterLinkError } = await supabaseAdmin.auth.admin.generateLink({
-              type: 'recovery',
-              email,
-              options: {
-                redirectTo: 'https://tastelanc.com/promoter',
-              },
-            });
+            // Generate password setup token and send welcome email
+            const selfPromoterSetupToken = await generateSetupToken(supabaseAdmin, selfPromoterUserId, email);
+            const setupLink = `https://tastelanc.com/setup-account?token=${selfPromoterSetupToken}`;
 
-            if (selfPromoterLinkData?.properties?.action_link) {
-              const setupLink = selfPromoterLinkData.properties.action_link;
-
-              await resend.emails.send({
-                from: 'TasteLanc <hello@tastelanc.com>',
-                to: email,
-                subject: `Welcome to TasteLanc! Set Up Your ${artistName} Account`,
-                html: `
-                  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <div style="text-align: center; margin-bottom: 30px;">
-                      <h1 style="color: #1a1a1a; font-size: 28px; margin: 0;">Welcome to TasteLanc!</h1>
-                    </div>
-
-                    <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi${contactName ? ` ${contactName.split(' ')[0]}` : ''},</p>
-
-                    <p style="font-size: 16px; color: #333; line-height: 1.6;">
-                      Thank you for joining TasteLanc as a Self-Promoter! Your account for <strong>${artistName}</strong> is ready.
-                    </p>
-
-                    <p style="font-size: 16px; color: #333; line-height: 1.6;">
-                      To get started, click the button below to set up your password and access your dashboard:
-                    </p>
-
-                    <div style="text-align: center; margin: 35px 0;">
-                      <a href="${setupLink}" style="background-color: #3b82f6; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600; display: inline-block;">
-                        Set Up Your Account
-                      </a>
-                    </div>
-
-                    <p style="font-size: 16px; color: #333; line-height: 1.6;">
-                      Once you're set up, you can create events, upload flyers, and promote your performances to Lancaster's local audience.
-                    </p>
-
-                    <p style="font-size: 16px; color: #333; line-height: 1.6;">
-                      If you have any questions, just reply to this email - we're here to help!
-                    </p>
-
-                    <p style="font-size: 16px; color: #333; line-height: 1.6;">
-                      Cheers,<br/>
-                      <strong>The TasteLanc Team</strong>
-                    </p>
-
-                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
-
-                    <p style="font-size: 12px; color: #9ca3af; text-align: center;">
-                      TasteLanc - Lancaster's Local Food Guide<br/>
-                      <a href="https://tastelanc.com" style="color: #6b7280;">tastelanc.com</a>
-                    </p>
+            await resend.emails.send({
+              from: 'TasteLanc <hello@tastelanc.com>',
+              to: email,
+              subject: `Welcome to TasteLanc! Set Up Your ${artistName} Account`,
+              html: `
+                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <div style="text-align: center; margin-bottom: 30px;">
+                    <h1 style="color: #1a1a1a; font-size: 28px; margin: 0;">Welcome to TasteLanc!</h1>
                   </div>
-                `,
-              });
-              console.log(`Welcome email sent to self-promoter ${email}`);
-            } else {
-              console.error('Failed to generate self-promoter setup link:', selfPromoterLinkError);
-            }
+
+                  <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi${contactName ? ` ${contactName.split(' ')[0]}` : ''},</p>
+
+                  <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                    Thank you for joining TasteLanc as a Self-Promoter! Your account for <strong>${artistName}</strong> is ready.
+                  </p>
+
+                  <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                    To get started, click the button below to set up your password and access your dashboard:
+                  </p>
+
+                  <div style="text-align: center; margin: 35px 0;">
+                    <a href="${setupLink}" style="background-color: #3b82f6; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600; display: inline-block;">
+                      Set Up Your Account
+                    </a>
+                  </div>
+
+                  <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                    Once you're set up, you can create events, upload flyers, and promote your performances to Lancaster's local audience.
+                  </p>
+
+                  <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                    If you have any questions, just reply to this email - we're here to help!
+                  </p>
+
+                  <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                    Cheers,<br/>
+                    <strong>The TasteLanc Team</strong>
+                  </p>
+
+                  <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+
+                  <p style="font-size: 12px; color: #9ca3af; text-align: center;">
+                    TasteLanc - Lancaster's Local Food Guide<br/>
+                    <a href="https://tastelanc.com" style="color: #6b7280;">tastelanc.com</a>
+                  </p>
+                </div>
+              `,
+            });
+            console.log(`Welcome email sent to self-promoter ${email}`);
           }
 
           // Step 2: Create self-promoter record
