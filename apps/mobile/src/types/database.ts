@@ -23,7 +23,10 @@ export type CuisineType =
   | 'seafood'
   | 'steakhouse'
   | 'pub_fare'
-  | 'cafe';
+  | 'cafe'
+  | 'breakfast'
+  | 'brunch'
+  | 'desserts';
 
 export type EventType = 'live_music' | 'trivia' | 'karaoke' | 'dj' | 'comedy' | 'sports' | 'other' | 'promotion';
 
@@ -187,9 +190,14 @@ export const CUISINE_LABELS: Record<CuisineType, string> = {
   steakhouse: 'Steakhouse',
   pub_fare: 'Pub Fare',
   cafe: 'Cafe & Coffee',
+  breakfast: 'Breakfast',
+  brunch: 'Brunch',
+  desserts: 'Desserts',
 };
 
 export const ALL_CUISINES: CuisineType[] = [
+  'breakfast',
+  'brunch',
   'american_contemporary',
   'italian',
   'mediterranean',
@@ -199,6 +207,7 @@ export const ALL_CUISINES: CuisineType[] = [
   'steakhouse',
   'pub_fare',
   'cafe',
+  'desserts',
 ];
 
 // Menu types
