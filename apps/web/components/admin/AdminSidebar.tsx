@@ -13,9 +13,7 @@ import {
   Mail,
   X,
   Briefcase,
-  Zap,
   Crown,
-  ClipboardCheck,
   Lightbulb,
   Music,
 } from 'lucide-react';
@@ -29,24 +27,20 @@ const NAV_ITEMS: Array<{
   highlight?: boolean;
   section?: string;
 }> = [
-  { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
-  // Consumer Revenue
-  { href: '/admin/consumers', icon: Crown, label: 'TasteLanc+', highlight: true, section: 'Consumers' },
-  { href: '/admin/early-access', icon: Sparkles, label: 'Waitlist', highlight: true },
-  // Business Revenue
-  { href: '/admin/paid-members', icon: CreditCard, label: 'Paid Members', highlight: true, section: 'Businesses' },
-  { href: '/admin/sales', icon: Briefcase, label: 'Sales Pipeline', highlight: true },
+  // REVENUE - All subscription/payment related
+  { href: '/admin', icon: LayoutDashboard, label: 'Overview', section: 'Revenue' },
+  { href: '/admin/paid-members', icon: CreditCard, label: 'Restaurants', highlight: true },
   { href: '/admin/self-promoters', icon: Music, label: 'Self-Promoters', highlight: true },
-  { href: '/admin/restaurants', icon: Store, label: 'All Restaurants' },
-  { href: '/admin/restaurants/pending-review', icon: ClipboardCheck, label: 'Pending Review', highlight: true },
-  // Marketing
+  { href: '/admin/consumers', icon: Crown, label: 'TasteLanc+', highlight: true },
+  { href: '/admin/sales', icon: Briefcase, label: 'Sales Pipeline', highlight: true },
+  // CONTENT - Restaurant management
+  { href: '/admin/restaurants', icon: Store, label: 'All Restaurants', section: 'Content' },
+  // MARKETING - Campaigns and outreach
   { href: '/admin/email-campaigns', icon: Mail, label: 'Campaigns', highlight: true, section: 'Marketing' },
-  { href: '/admin/automation', icon: Zap, label: 'Automation', highlight: true },
-  // Leads & Data
-  { href: '/admin/business-leads', icon: Briefcase, label: 'Leads', highlight: true, section: 'Data' },
-  { href: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
-  // Feedback
-  { href: '/admin/feature-requests', icon: Lightbulb, label: 'Feature Requests', highlight: true, section: 'Feedback' },
+  { href: '/admin/early-access', icon: Sparkles, label: 'Waitlist', highlight: true },
+  // INSIGHTS - Analytics and feedback
+  { href: '/admin/analytics', icon: BarChart3, label: 'Analytics', section: 'Insights' },
+  { href: '/admin/feature-requests', icon: Lightbulb, label: 'Feature Requests', highlight: true },
 ];
 
 interface AdminSidebarProps {
