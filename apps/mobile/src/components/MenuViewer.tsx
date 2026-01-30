@@ -182,7 +182,11 @@ function SwipeableMenuView({ menu }: { menu: Menu }) {
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleScroll}
         scrollEventThrottle={16}
+        decelerationRate="fast"
+        disableIntervalMomentum={true}
+        bounces={false}
         style={styles.pagesContainer}
+        contentContainerStyle={{ flexGrow: 1 }}
       >
         {sections.map((section) => (
           <View key={section.id} style={[styles.pageWrapper, { width: SCREEN_WIDTH }]}>
@@ -271,7 +275,11 @@ function StructuredMenuView({ menus }: { menus: Menu[] }) {
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleMenuScroll}
         scrollEventThrottle={16}
+        decelerationRate="fast"
+        disableIntervalMomentum={true}
+        bounces={false}
         style={styles.menuPagesContainer}
+        contentContainerStyle={{ flexGrow: 1 }}
       >
         {activeMenus.map((menu) => (
           <View key={menu.id} style={[styles.menuPageWrapper, { width: SCREEN_WIDTH }]}>
@@ -441,10 +449,11 @@ const styles = StyleSheet.create({
   },
   pageWrapper: {
     flex: 1,
+    overflow: 'hidden',
   },
   sectionPage: {
     flex: 1,
-    paddingHorizontal: 4,
+    paddingHorizontal: 12,
   },
   sectionPageContent: {
     paddingTop: 8,
@@ -493,11 +502,12 @@ const styles = StyleSheet.create({
   },
   menuPageWrapper: {
     flex: 1,
+    overflow: 'hidden',
   },
   // Menu item styles
   menuItem: {
     paddingVertical: 12,
-    paddingHorizontal: 4,
+    paddingHorizontal: 0,
     borderBottomWidth: 1,
     borderBottomColor: colors.border + '40',
   },
