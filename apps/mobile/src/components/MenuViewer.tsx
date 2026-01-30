@@ -85,12 +85,12 @@ function MenuItemCard({ item }: { item: MenuItem }) {
   );
 }
 
-function SectionPage({ section }: { section: MenuSection }) {
+function SectionPage({ section, pageWidth }: { section: MenuSection; pageWidth: number }) {
   const availableItems = section.menu_items.filter((item) => item.is_available);
 
   return (
     <ScrollView
-      style={styles.sectionPage}
+      style={[styles.sectionPage, { width: pageWidth }]}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.sectionPageContent}
     >
@@ -126,7 +126,7 @@ function SwipeableMenuView({ menu }: { menu: Menu }) {
 
   // If only one section, just show it without tabs
   if (sections.length === 1) {
-    return <SectionPage section={sections[0]} />;
+    return <SectionPage section={sections[0]} pageWidth={SCREEN_WIDTH} />;
   }
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -182,15 +182,14 @@ function SwipeableMenuView({ menu }: { menu: Menu }) {
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleScroll}
         scrollEventThrottle={16}
+        snapToInterval={SCREEN_WIDTH}
+        snapToAlignment="start"
         decelerationRate="fast"
-        disableIntervalMomentum={true}
-        bounces={false}
         style={styles.pagesContainer}
-        contentContainerStyle={{ flexGrow: 1 }}
       >
         {sections.map((section) => (
           <View key={section.id} style={[styles.pageWrapper, { width: SCREEN_WIDTH }]}>
-            <SectionPage section={section} />
+            <SectionPage section={section} pageWidth={SCREEN_WIDTH} />
           </View>
         ))}
       </ScrollView>
@@ -275,11 +274,10 @@ function StructuredMenuView({ menus }: { menus: Menu[] }) {
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleMenuScroll}
         scrollEventThrottle={16}
+        snapToInterval={SCREEN_WIDTH}
+        snapToAlignment="start"
         decelerationRate="fast"
-        disableIntervalMomentum={true}
-        bounces={false}
         style={styles.menuPagesContainer}
-        contentContainerStyle={{ flexGrow: 1 }}
       >
         {activeMenus.map((menu) => (
           <View key={menu.id} style={[styles.menuPageWrapper, { width: SCREEN_WIDTH }]}>
@@ -450,13 +448,15 @@ const styles = StyleSheet.create({
   pageWrapper: {
     flex: 1,
     overflow: 'hidden',
+    backgroundColor: colors.background,
   },
   sectionPage: {
     flex: 1,
-    paddingHorizontal: 12,
   },
   sectionPageContent: {
     paddingTop: 8,
+    paddingLeft: 16,
+    paddingRight: 40,
   },
   sectionPageDescription: {
     fontSize: 13,
@@ -503,6 +503,7 @@ const styles = StyleSheet.create({
   menuPageWrapper: {
     flex: 1,
     overflow: 'hidden',
+    backgroundColor: colors.background,
   },
   // Menu item styles
   menuItem: {
@@ -520,13 +521,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    marginRight: 12,
+    flexShrink: 1,
+    marginRight: 8,
   },
   menuItemName: {
     fontSize: 15,
     fontWeight: '500',
     color: colors.text,
     flexShrink: 1,
+    flexWrap: 'wrap',
   },
   featuredBadge: {
     backgroundColor: colors.accent + '20',
@@ -536,11 +539,14 @@ const styles = StyleSheet.create({
   },
   menuItemPrice: {
     alignItems: 'flex-end',
+    flexShrink: 0,
+    minWidth: 60,
   },
   priceText: {
     fontSize: 15,
     fontWeight: '600',
     color: colors.text,
+    textAlign: 'right',
   },
   priceDescription: {
     fontSize: 13,
