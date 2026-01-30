@@ -22,6 +22,7 @@ import type {
   Special,
   Event,
   Tier,
+  Menu,
 } from '../types/database';
 import { supabase } from '../lib/supabase';
 import { fetchEvents } from '../lib/events';
@@ -83,6 +84,8 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const [happyHours, setHappyHours] = useState<HappyHour[]>([]);
   const [specials, setSpecials] = useState<Special[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
+  const [menus, setMenus] = useState<Menu[]>([]);
+  const [menusLoading, setMenusLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -114,16 +117,23 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
       setRestaurant({ ...restaurantData, tiers: null });
 
       // Fetch related data in parallel
-      const [hoursRes, happyHoursRes, specialsRes, eventsData] = await Promise.all([
+      const [hoursRes, happyHoursRes, specialsRes, eventsData, menusRes] = await Promise.all([
         supabase.from('restaurant_hours').select('*').eq('restaurant_id', id),
         supabase.from('happy_hours').select('*, happy_hour_items(*)').eq('restaurant_id', id).eq('is_active', true),
         supabase.from('specials').select('*').eq('restaurant_id', id).eq('is_active', true),
         fetchEvents({ restaurant_id: id }),
+        supabase
+          .from('menus')
+          .select('*, menu_sections(*, menu_items(*))')
+          .eq('restaurant_id', id)
+          .eq('is_active', true)
+          .order('display_order'),
       ]);
 
       if (hoursRes.data) setHours(hoursRes.data);
       if (happyHoursRes.data) setHappyHours(happyHoursRes.data);
       if (specialsRes.data) setSpecials(specialsRes.data);
+      if (menusRes.data) setMenus(menusRes.data as Menu[]);
       // Map API events to Event type
       setEvents(eventsData.map(e => ({
         id: e.id,
@@ -394,6 +404,8 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
               <MenuViewer
                 menuUrl={restaurant.menu_link}
                 restaurantName={restaurant.name}
+                menus={menus}
+                loading={menusLoading}
               />
             </View>
           )}

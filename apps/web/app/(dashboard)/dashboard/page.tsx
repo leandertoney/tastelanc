@@ -88,12 +88,14 @@ export default function DashboardPage() {
           .select('*', { count: 'exact', head: true })
           .eq('restaurant_id', restaurantId);
 
-        // Get upcoming events count
+        // Get upcoming events count (only future events or recurring events)
+        const today = new Date().toISOString().split('T')[0];
         const { count: eventsCount } = await supabase
           .from('events')
           .select('*', { count: 'exact', head: true })
           .eq('restaurant_id', restaurantId)
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .or(`event_date.gte.${today},is_recurring.eq.true`);
 
         // Calculate percentage changes
         const viewsChange = lastWeekViews && lastWeekViews > 0

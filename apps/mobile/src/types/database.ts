@@ -201,6 +201,47 @@ export const ALL_CUISINES: CuisineType[] = [
   'cafe',
 ];
 
+// Menu types
+export type DietaryFlag = 'vegetarian' | 'vegan' | 'gluten-free' | 'dairy-free' | 'nut-free' | 'spicy';
+
+export interface MenuItem {
+  id: string;
+  section_id: string;
+  name: string;
+  description: string | null;
+  price: number | null;
+  price_description: string | null;
+  is_available: boolean;
+  is_featured: boolean;
+  dietary_flags: DietaryFlag[];
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MenuSection {
+  id: string;
+  menu_id: string;
+  name: string;
+  description: string | null;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+  menu_items: MenuItem[];
+}
+
+export interface Menu {
+  id: string;
+  restaurant_id: string;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+  menu_sections: MenuSection[];
+}
+
 // Blog post from Rosie's Blog
 export interface BlogPost {
   id: string;

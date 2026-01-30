@@ -100,13 +100,21 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
       }
 
       // Normal owner mode - find restaurant by owner_id
-      const { data: restaurantData, error: restaurantError } = await supabase
+      // Use limit(1) instead of single() to handle owners with multiple restaurants
+      const { data: restaurants, error: restaurantError } = await supabase
         .from('restaurants')
         .select('*, tiers(*)')
         .eq('owner_id', user.id)
-        .single();
+        .limit(1);
+
+      const restaurantData = restaurants?.[0];
 
       if (restaurantError || !restaurantData) {
+        // If admin is not in admin mode and has no restaurant, redirect to admin dashboard
+        if (userIsAdmin && !adminMode) {
+          window.location.href = '/admin';
+          return;
+        }
         setError('No restaurant found for this account');
         setIsLoading(false);
         return;
