@@ -40,9 +40,11 @@ export const ALL_CATEGORIES: CategoryDefinition[] = [
   { value: 'pizza', label: 'Pizza', group: 'cuisines' },
   { value: 'deli_sandwiches', label: 'Deli & Sandwiches', group: 'cuisines' },
   { value: 'pa_dutch', label: 'PA Dutch/Amish', group: 'cuisines' },
+  { value: 'breakfast', label: 'Breakfast', group: 'cuisines' },
+  { value: 'brunch', label: 'Brunch', group: 'cuisines' },
+  { value: 'desserts', label: 'Desserts', group: 'cuisines' },
 
   // Meal Time
-  { value: 'brunch', label: 'Brunch', group: 'meal_time' },
   { value: 'lunch', label: 'Lunch', group: 'meal_time' },
   { value: 'dinner', label: 'Dinner', group: 'meal_time' },
   { value: 'late_night', label: 'Late Night', group: 'meal_time' },
@@ -54,7 +56,6 @@ export const ALL_CATEGORIES: CategoryDefinition[] = [
   { value: 'food_truck', label: 'Food Truck', group: 'dining_style' },
   { value: 'cafe_coffee', label: 'Cafe & Coffee', group: 'dining_style' },
   { value: 'bakery', label: 'Bakery', group: 'dining_style' },
-  { value: 'desserts', label: 'Desserts & Ice Cream', group: 'dining_style' },
 
   // Drinks & Bars
   { value: 'bars', label: 'Bars', group: 'drinks' },

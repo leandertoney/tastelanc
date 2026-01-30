@@ -237,6 +237,7 @@ function computeUpdates(restaurant, googleData) {
     categories: [...(restaurant.categories || [])],
     cuisine: restaurant.cuisine,
     google_place_id: googleData.placeId,
+    google_types: googleData.types || [],
     reasons: [],
   };
 
@@ -481,7 +482,15 @@ async function main() {
         if (result.cuisineChanged) {
           updateBody.cuisine = result.updates.cuisine;
         }
-        if (!result.categoriesChanged && !result.cuisineChanged) continue;
+        // Always save google_place_id and google_types when available
+        if (result.updates.google_place_id) {
+          updateBody.google_place_id = result.updates.google_place_id;
+        }
+        if (result.updates.google_types && result.updates.google_types.length > 0) {
+          updateBody.google_types = result.updates.google_types;
+        }
+        // Skip if nothing to update
+        if (Object.keys(updateBody).length === 0) continue;
         updateBody.updated_at = new Date().toISOString();
 
         const { status } = await supabaseFetch(
