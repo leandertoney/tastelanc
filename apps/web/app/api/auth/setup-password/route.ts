@@ -8,7 +8,8 @@ const supabaseAdmin = createClient(
 );
 
 // Generate a setup token for a user with optional personalization data
-export async function generateSetupToken(
+// Note: This is an internal helper - call via scripts, not imported directly
+async function generateSetupToken(
   userId: string,
   email: string,
   options?: { name?: string; restaurantName?: string; coverImageUrl?: string }
