@@ -21,10 +21,10 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface EntertainmentResult {
   events: ApiEvent[];
-  isFallback: boolean;
+  isUpcoming: boolean;
 }
 
-async function getTodayEntertainment(): Promise<EntertainmentResult> {
+async function getEntertainmentEvents(): Promise<EntertainmentResult> {
   const events = await fetchEntertainmentEvents();
   const now = new Date();
   const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as DayOfWeek;
@@ -41,18 +41,19 @@ async function getTodayEntertainment(): Promise<EntertainmentResult> {
     return false;
   }).slice(0, 10);
 
+  // If we have today's events, show them
   if (todayEvents.length > 0) {
-    return { events: todayEvents, isFallback: false };
+    return { events: todayEvents, isUpcoming: false };
   }
 
-  // Fallback: upcoming entertainment events
+  // Otherwise, show upcoming events
   const upcomingEvents = events.filter(event => {
     if (event.is_recurring) return true;
     if (event.event_date && event.event_date >= todayDate) return true;
     return false;
   }).slice(0, 10);
 
-  return { events: upcomingEvents, isFallback: true };
+  return { events: upcomingEvents, isUpcoming: true };
 }
 
 function formatEventTime(startTime: string, endTime: string | null): string {
@@ -73,14 +74,14 @@ function formatEventTime(startTime: string, endTime: string | null): string {
 export default function EntertainmentSection() {
   const navigation = useNavigation<NavigationProp>();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['todayEntertainment'],
-    queryFn: getTodayEntertainment,
+  const { data } = useQuery({
+    queryKey: ['entertainmentEvents'],
+    queryFn: getEntertainmentEvents,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const events = data?.events || [];
-  const isFallback = data?.isFallback ?? true;
+  const isUpcoming = data?.isUpcoming ?? true;
 
   // Map API events to display format (keep original event for navigation)
   const mappedEvents = events.map((event) => ({
@@ -89,9 +90,9 @@ export default function EntertainmentSection() {
     eventType: event.event_type,
     time: formatEventTime(event.start_time, event.end_time),
     venue: getEventVenueName(event),
-    imageUrl: event.image_url, // API always provides image_url
+    imageUrl: event.image_url,
     restaurantId: event.restaurant?.id,
-    originalEvent: event, // Keep reference for navigation
+    originalEvent: event,
   }));
 
   // Use real events if available, otherwise use mock data if enabled
@@ -113,7 +114,6 @@ export default function EntertainmentSection() {
   }, [navigation, requireEmailGate]);
 
   // No loading state - data is prefetched during splash screen
-  // Ensure we always have data to show in dev mode
   const finalDisplayData = displayData.length > 0 ? displayData : ENABLE_MOCK_DATA ? MOCK_ENTERTAINMENT : [];
 
   // Add CTA item at the end
@@ -127,8 +127,8 @@ export default function EntertainmentSection() {
   return (
     <View style={styles.container}>
       <SectionHeader
-        title="Entertainment"
-        subtitle={isFallback ? 'Upcoming' : 'Tonight'}
+        title={isUpcoming ? 'Upcoming Entertainment' : 'Entertainment'}
+        subtitle={isUpcoming ? undefined : 'Tonight'}
         actionText="View All"
         onActionPress={handleViewAll}
       />
