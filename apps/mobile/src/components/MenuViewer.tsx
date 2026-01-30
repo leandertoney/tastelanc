@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,16 @@ import {
   Linking,
   Platform,
   ScrollView,
+  Dimensions,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius } from '../constants/colors';
 import type { Menu, MenuSection, MenuItem, DietaryFlag } from '../types/database';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface MenuViewerProps {
   menuUrl: string | null;
@@ -80,31 +85,122 @@ function MenuItemCard({ item }: { item: MenuItem }) {
   );
 }
 
-function MenuSectionCard({ section }: { section: MenuSection }) {
+function SectionPage({ section }: { section: MenuSection }) {
   const availableItems = section.menu_items.filter((item) => item.is_available);
-  if (availableItems.length === 0) return null;
 
   return (
-    <View style={styles.menuSection}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionName}>{section.name}</Text>
-        {section.description && (
-          <Text style={styles.sectionDescription}>{section.description}</Text>
-        )}
+    <ScrollView
+      style={styles.sectionPage}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.sectionPageContent}
+    >
+      {section.description && (
+        <Text style={styles.sectionPageDescription}>{section.description}</Text>
+      )}
+      {availableItems
+        .sort((a, b) => a.display_order - b.display_order)
+        .map((item) => (
+          <MenuItemCard key={item.id} item={item} />
+        ))}
+      <View style={styles.bottomPadding} />
+    </ScrollView>
+  );
+}
+
+function SwipeableMenuView({ menu }: { menu: Menu }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  const sections = menu.menu_sections
+    .filter((s) => s.menu_items.some((item) => item.is_available))
+    .sort((a, b) => a.display_order - b.display_order);
+
+  if (sections.length === 0) {
+    return (
+      <View style={styles.placeholderContainer}>
+        <Ionicons name="restaurant-outline" size={48} color={colors.textSecondary} />
+        <Text style={styles.placeholderText}>No items available</Text>
       </View>
-      <View style={styles.sectionItems}>
-        {availableItems
-          .sort((a, b) => a.display_order - b.display_order)
-          .map((item) => (
-            <MenuItemCard key={item.id} item={item} />
+    );
+  }
+
+  // If only one section, just show it without tabs
+  if (sections.length === 1) {
+    return <SectionPage section={sections[0]} />;
+  }
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / SCREEN_WIDTH);
+    if (index !== activeIndex && index >= 0 && index < sections.length) {
+      setActiveIndex(index);
+    }
+  };
+
+  const handleTabPress = (index: number) => {
+    setActiveIndex(index);
+    scrollViewRef.current?.scrollTo({ x: index * SCREEN_WIDTH, animated: true });
+  };
+
+  return (
+    <View style={styles.swipeableContainer}>
+      {/* Section Tabs */}
+      <View style={styles.tabsWrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabsContainer}
+        >
+          {sections.map((section, index) => (
+            <TouchableOpacity
+              key={section.id}
+              style={[
+                styles.sectionTab,
+                activeIndex === index && styles.sectionTabActive,
+              ]}
+              onPress={() => handleTabPress(index)}
+            >
+              <Text
+                style={[
+                  styles.sectionTabText,
+                  activeIndex === index && styles.sectionTabTextActive,
+                ]}
+                numberOfLines={1}
+              >
+                {section.name}
+              </Text>
+            </TouchableOpacity>
           ))}
+        </ScrollView>
       </View>
+
+      {/* Swipeable Pages */}
+      <ScrollView
+        ref={scrollViewRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={handleScroll}
+        scrollEventThrottle={16}
+        style={styles.pagesContainer}
+      >
+        {sections.map((section) => (
+          <View key={section.id} style={[styles.pageWrapper, { width: SCREEN_WIDTH }]}>
+            <SectionPage section={section} />
+          </View>
+        ))}
+      </ScrollView>
     </View>
   );
 }
 
 function StructuredMenuView({ menus }: { menus: Menu[] }) {
-  const activeMenus = menus.filter((menu) => menu.is_active);
+  const [activeMenuIndex, setActiveMenuIndex] = useState(0);
+  const menuScrollRef = useRef<ScrollView>(null);
+
+  const activeMenus = menus
+    .filter((menu) => menu.is_active)
+    .sort((a, b) => a.display_order - b.display_order);
 
   if (activeMenus.length === 0) {
     return (
@@ -116,29 +212,74 @@ function StructuredMenuView({ menus }: { menus: Menu[] }) {
     );
   }
 
+  // If only one menu, just show its sections
+  if (activeMenus.length === 1) {
+    return <SwipeableMenuView menu={activeMenus[0]} />;
+  }
+
+  // Multiple menus - show menu selector at top
+  const handleMenuScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / SCREEN_WIDTH);
+    if (index !== activeMenuIndex && index >= 0 && index < activeMenus.length) {
+      setActiveMenuIndex(index);
+    }
+  };
+
+  const handleMenuTabPress = (index: number) => {
+    setActiveMenuIndex(index);
+    menuScrollRef.current?.scrollTo({ x: index * SCREEN_WIDTH, animated: true });
+  };
+
   return (
-    <ScrollView style={styles.structuredMenuContainer} showsVerticalScrollIndicator={false}>
-      {activeMenus
-        .sort((a, b) => a.display_order - b.display_order)
-        .map((menu) => (
-          <View key={menu.id} style={styles.menuContainer}>
-            {activeMenus.length > 1 && (
-              <View style={styles.menuHeader}>
-                <Text style={styles.menuName}>{menu.name}</Text>
-                {menu.description && (
-                  <Text style={styles.menuDescription}>{menu.description}</Text>
-                )}
-              </View>
-            )}
-            {menu.menu_sections
-              .sort((a, b) => a.display_order - b.display_order)
-              .map((section) => (
-                <MenuSectionCard key={section.id} section={section} />
-              ))}
+    <View style={styles.multiMenuContainer}>
+      {/* Menu Selector Tabs */}
+      <View style={styles.menuTabsWrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.menuTabsContainer}
+        >
+          {activeMenus.map((menu, index) => (
+            <TouchableOpacity
+              key={menu.id}
+              style={[
+                styles.menuTab,
+                activeMenuIndex === index && styles.menuTabActive,
+              ]}
+              onPress={() => handleMenuTabPress(index)}
+            >
+              <Text
+                style={[
+                  styles.menuTabText,
+                  activeMenuIndex === index && styles.menuTabTextActive,
+                ]}
+                numberOfLines={1}
+              >
+                {menu.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Menu Pages */}
+      <ScrollView
+        ref={menuScrollRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={handleMenuScroll}
+        scrollEventThrottle={16}
+        style={styles.menuPagesContainer}
+      >
+        {activeMenus.map((menu) => (
+          <View key={menu.id} style={[styles.menuPageWrapper, { width: SCREEN_WIDTH }]}>
+            <SwipeableMenuView menu={menu} />
           </View>
         ))}
-      <View style={styles.bottomPadding} />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -263,51 +404,97 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 60,
   },
-  structuredMenuContainer: {
+  // Swipeable menu styles
+  swipeableContainer: {
     flex: 1,
   },
-  menuContainer: {
-    marginBottom: 16,
-  },
-  menuHeader: {
-    paddingVertical: 12,
-    paddingHorizontal: 4,
+  tabsWrapper: {
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    marginBottom: 8,
   },
-  menuName: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  menuDescription: {
-    fontSize: 14,
-    color: colors.textMuted,
-    marginTop: 4,
-  },
-  menuSection: {
-    marginBottom: 20,
-  },
-  sectionHeader: {
+  tabsContainer: {
+    paddingHorizontal: 4,
     paddingVertical: 8,
-    paddingHorizontal: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    gap: 8,
   },
-  sectionName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
+  sectionTab: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: radius.full,
+    backgroundColor: colors.cardBgElevated,
+    marginRight: 8,
   },
-  sectionDescription: {
-    fontSize: 13,
+  sectionTabActive: {
+    backgroundColor: colors.accent,
+  },
+  sectionTabText: {
+    fontSize: 14,
+    fontWeight: '500',
     color: colors.textMuted,
-    marginTop: 2,
   },
-  sectionItems: {
+  sectionTabTextActive: {
+    color: colors.text,
+    fontWeight: '600',
+  },
+  pagesContainer: {
+    flex: 1,
+  },
+  pageWrapper: {
+    flex: 1,
+  },
+  sectionPage: {
+    flex: 1,
+    paddingHorizontal: 4,
+  },
+  sectionPageContent: {
     paddingTop: 8,
   },
+  sectionPageDescription: {
+    fontSize: 13,
+    color: colors.textMuted,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  // Multi-menu styles
+  multiMenuContainer: {
+    flex: 1,
+  },
+  menuTabsWrapper: {
+    borderBottomWidth: 2,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.cardBg,
+  },
+  menuTabsContainer: {
+    paddingHorizontal: 4,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  menuTab: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: radius.sm,
+    marginRight: 8,
+  },
+  menuTabActive: {
+    borderBottomWidth: 2,
+    borderBottomColor: colors.accent,
+  },
+  menuTabText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: colors.textMuted,
+  },
+  menuTabTextActive: {
+    color: colors.text,
+    fontWeight: '600',
+  },
+  menuPagesContainer: {
+    flex: 1,
+  },
+  menuPageWrapper: {
+    flex: 1,
+  },
+  // Menu item styles
   menuItem: {
     paddingVertical: 12,
     paddingHorizontal: 4,
@@ -374,6 +561,7 @@ const styles = StyleSheet.create({
   bottomPadding: {
     height: 24,
   },
+  // WebView and other styles
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
