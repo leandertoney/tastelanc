@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { getStripe } from '@/lib/stripe';
+import { getStripe, ALL_CONSUMER_PRICE_IDS, SELF_PROMOTER_PRICE_IDS } from '@/lib/stripe';
 import { Card, Badge } from '@/components/ui';
 import {
   Store,
@@ -14,34 +14,65 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+// Helper to check if price ID is a consumer subscription
+function isConsumerPrice(priceId: string): boolean {
+  return ALL_CONSUMER_PRICE_IDS.includes(priceId as typeof ALL_CONSUMER_PRICE_IDS[number]);
+}
+
+// Helper to check if price ID is a self-promoter subscription
+function isSelfPromoterPrice(priceId: string): boolean {
+  return priceId === SELF_PROMOTER_PRICE_IDS.monthly;
+}
+
 // Get real revenue data from Stripe
 async function getStripeRevenue() {
   try {
     const stripe = getStripe();
-    const subscriptions = await stripe.subscriptions.list({
-      status: 'active',
-      limit: 100,
-      expand: ['data.customer'],
-    });
+
+    // Fetch both active AND trialing subscriptions (trialing = paid but waiting to renew)
+    const [activeSubscriptions, trialingSubscriptions] = await Promise.all([
+      stripe.subscriptions.list({
+        status: 'active',
+        limit: 100,
+        expand: ['data.customer'],
+      }),
+      stripe.subscriptions.list({
+        status: 'trialing',
+        limit: 100,
+        expand: ['data.customer'],
+      }),
+    ]);
+
+    const allSubscriptions = [...activeSubscriptions.data, ...trialingSubscriptions.data];
 
     let totalMRR = 0;
     let restaurantCount = 0;
     let consumerCount = 0;
+    let selfPromoterCount = 0;
 
-    for (const sub of subscriptions.data) {
+    for (const sub of allSubscriptions) {
       const customer = sub.customer;
       if (typeof customer !== 'object' || customer.deleted) continue;
 
+      const priceId = sub.items.data[0]?.price?.id || '';
       const amount = (sub.items.data[0]?.price?.unit_amount || 0) / 100;
       const interval = sub.items.data[0]?.price?.recurring?.interval || 'month';
-      const mrr = interval === 'year' ? amount / 12 : amount;
+      const intervalCount = sub.items.data[0]?.price?.recurring?.interval_count || 1;
+
+      // Calculate MRR based on interval (handle 3mo, 6mo, yearly)
+      let mrr = amount;
+      if (interval === 'year') {
+        mrr = amount / 12;
+      } else if (interval === 'month' && intervalCount > 1) {
+        mrr = amount / intervalCount;
+      }
       totalMRR += mrr;
 
-      const metadata = customer.metadata || {};
-      const isConsumer = metadata.type === 'consumer' || metadata.supabase_user_id;
-
-      if (isConsumer) {
+      // Classify by price ID (more reliable than customer metadata)
+      if (isConsumerPrice(priceId)) {
         consumerCount++;
+      } else if (isSelfPromoterPrice(priceId)) {
+        selfPromoterCount++;
       } else {
         restaurantCount++;
       }
@@ -50,13 +81,14 @@ async function getStripeRevenue() {
     return {
       mrr: Math.round(totalMRR * 100) / 100,
       arr: Math.round(totalMRR * 12 * 100) / 100,
-      totalSubscriptions: subscriptions.data.length,
+      totalSubscriptions: allSubscriptions.length,
       restaurantCount,
       consumerCount,
+      selfPromoterCount,
     };
   } catch (error) {
     console.error('Error fetching Stripe data:', error);
-    return { mrr: 0, arr: 0, totalSubscriptions: 0, restaurantCount: 0, consumerCount: 0 };
+    return { mrr: 0, arr: 0, totalSubscriptions: 0, restaurantCount: 0, consumerCount: 0, selfPromoterCount: 0 };
   }
 }
 
