@@ -362,17 +362,23 @@ export async function POST(request: Request) {
 
     // Find or create user account
     const businessNames = itemsWithPrices.map(item => item.restaurantName);
-    const userId = await findOrCreateUser(
-      email,
-      contactName || '',
-      businessNames,
-      phone || '',
-      customerId,
-      supabaseAdmin
-    );
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Failed to create user account' }, { status: 500 });
+    // Try to find or create user account (non-blocking - sale proceeds even if this fails)
+    let userId: string | null = null;
+    try {
+      userId = await findOrCreateUser(
+        email,
+        contactName || '',
+        businessNames,
+        phone || '',
+        customerId,
+        supabaseAdmin
+      );
+      if (!userId) {
+        console.warn('Could not create user account, proceeding with sale anyway');
+      }
+    } catch (userError) {
+      console.error('Error creating user account:', userError);
+      // Continue with the sale - user account can be created later
     }
 
     // Check if customer has a payment method
@@ -462,7 +468,7 @@ export async function POST(request: Request) {
 
           linkedRestaurantId = newRestaurant.id;
           console.log(`Created new restaurant: ${linkedRestaurantId} (${item.restaurantName})`);
-        } else {
+        } else if (userId) {
           // Link existing restaurant to user if not already owned
           await supabaseAdmin
             .from('restaurants')
