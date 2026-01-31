@@ -72,6 +72,7 @@ export async function POST(request: Request) {
       ],
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/admin/self-promoters/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/admin/self-promoters/new?canceled=true`,
+      automatic_tax: { enabled: true },
       metadata: {
         subscription_type: 'self_promoter',
         artist_name: artistName,

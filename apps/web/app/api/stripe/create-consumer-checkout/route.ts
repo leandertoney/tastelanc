@@ -89,6 +89,7 @@ export async function POST(request: Request) {
       ],
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/account?success=true&plan=premium`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/premium?cancelled=true`,
+      automatic_tax: { enabled: true },
       metadata: {
         user_id: user.id,
         subscription_type: 'consumer',
