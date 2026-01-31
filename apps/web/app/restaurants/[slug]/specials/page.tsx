@@ -4,6 +4,7 @@ import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
 import { buildMeta } from '@/lib/seo/meta';
 import { breadcrumbJsonLd, offerJsonLd, restaurantJsonLd } from '@/lib/seo/structured';
+import PageViewTracker from '@/components/PageViewTracker';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
 export const revalidate = 1800;
@@ -36,6 +37,7 @@ export default async function RestaurantSpecials({ params }: { params: { slug: s
 
   return (
     <>
+      <PageViewTracker pagePath={`/restaurants/${restaurant.slug}/specials`} pageType="specials" restaurantId={restaurant.id} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaRestaurant) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
       {schemaOffers.length > 0 && (
