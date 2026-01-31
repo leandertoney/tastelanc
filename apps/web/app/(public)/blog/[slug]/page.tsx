@@ -348,13 +348,15 @@ export default async function BlogPostPage({ params }: PageProps) {
                     {ROSIE_AUTHOR_BIO}
                   </p>
                   <div className="flex items-center gap-4 mt-3">
-                    <Link
-                      href="/premium"
+                    <a
+                      href="https://apps.apple.com/us/app/tastelanc/id6755852717"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-lancaster-gold text-sm font-medium hover:gap-2 transition-all"
                     >
-                      Get personalized recommendations
+                      Get the App
                       <ArrowRight className="w-4 h-4" />
-                    </Link>
+                    </a>
                     <a
                       href="https://www.instagram.com/tastelanc/"
                       target="_blank"
