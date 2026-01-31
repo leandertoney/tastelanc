@@ -74,7 +74,7 @@ async function findOrCreateUser(
   stripeCustomerId: string,
   supabaseAdmin: ReturnType<typeof getSupabaseAdmin>
 ): Promise<string | null> {
-  // Check if user already exists by email
+  // Check if user already exists by email in profiles table
   const { data: existingUser } = await supabaseAdmin
     .from('profiles')
     .select('id')
@@ -82,30 +82,43 @@ async function findOrCreateUser(
     .single();
 
   if (existingUser) {
-    console.log(`Found existing user: ${existingUser.id}`);
+    console.log(`Found existing user in profiles: ${existingUser.id}`);
     return existingUser.id;
   }
 
-  // Create new user account via Supabase Auth
   const displayName = contactName || businessNames[0] || 'Restaurant Owner';
-  const tempPassword = crypto.randomUUID().slice(0, 12);
-  const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-    email,
-    password: tempPassword,
-    email_confirm: true,
-    user_metadata: {
-      full_name: displayName,
-      role: 'restaurant_owner',
-    },
-  });
 
-  if (createError || !newUser.user) {
-    console.error('Failed to create user:', createError);
-    return null;
+  // Check if user exists in Supabase Auth but not in profiles
+  const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+  const existingAuthUser = authUsers?.users?.find(u => u.email === email);
+
+  let userId: string;
+
+  if (existingAuthUser) {
+    // User exists in Auth but not profiles - use their existing ID
+    userId = existingAuthUser.id;
+    console.log(`Found existing user in Auth (not in profiles): ${userId}`);
+  } else {
+    // Create new user account via Supabase Auth
+    const tempPassword = crypto.randomUUID().slice(0, 12);
+    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: {
+        full_name: displayName,
+        role: 'restaurant_owner',
+      },
+    });
+
+    if (createError || !newUser.user) {
+      console.error('Failed to create user:', createError);
+      return null;
+    }
+
+    userId = newUser.user.id;
+    console.log(`Created new user: ${userId}`);
   }
-
-  const userId = newUser.user.id;
-  console.log(`Created new user: ${userId}`);
 
   // Create profile for new user
   await supabaseAdmin.from('profiles').upsert({
