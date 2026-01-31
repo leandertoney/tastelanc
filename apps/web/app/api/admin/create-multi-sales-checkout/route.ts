@@ -88,36 +88,74 @@ async function findOrCreateUser(
 
   const displayName = contactName || businessNames[0] || 'Restaurant Owner';
 
-  // Check if user exists in Supabase Auth but not in profiles
-  const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
-  const existingAuthUser = authUsers?.users?.find(u => u.email === email);
+  // Try to create new user account via Supabase Auth
+  const tempPassword = crypto.randomUUID().slice(0, 12);
+  const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+    email,
+    password: tempPassword,
+    email_confirm: true,
+    user_metadata: {
+      full_name: displayName,
+      role: 'restaurant_owner',
+    },
+  });
 
-  let userId: string;
+  let userId: string | null = null;
 
-  if (existingAuthUser) {
-    // User exists in Auth but not profiles - use their existing ID
-    userId = existingAuthUser.id;
-    console.log(`Found existing user in Auth (not in profiles): ${userId}`);
-  } else {
-    // Create new user account via Supabase Auth
-    const tempPassword = crypto.randomUUID().slice(0, 12);
-    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password: tempPassword,
-      email_confirm: true,
-      user_metadata: {
-        full_name: displayName,
-        role: 'restaurant_owner',
-      },
-    });
+  if (createError) {
+    // Check if user already exists in Auth
+    if (createError.message?.includes('already been registered') ||
+        createError.message?.includes('already exists') ||
+        createError.message?.includes('duplicate key')) {
+      // User exists in Auth - query auth.users table directly
+      const { data: existingAuthUser } = await supabaseAdmin
+        .from('auth.users')
+        .select('id')
+        .eq('email', email)
+        .single();
 
-    if (createError || !newUser.user) {
+      if (existingAuthUser) {
+        userId = existingAuthUser.id;
+        console.log(`Found existing user in Auth: ${userId}`);
+      } else {
+        // Fallback: try paginated listUsers as last resort
+        for (let page = 1; page <= 10; page++) {
+          const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers({
+            page,
+            perPage: 1000,
+          });
+          const user = authUsers?.users?.find(u => u.email === email);
+          if (user) {
+            userId = user.id;
+            console.log(`Found existing user in Auth (page ${page}): ${userId}`);
+            break;
+          }
+          if (!authUsers?.users?.length || authUsers.users.length < 1000) {
+            break;
+          }
+        }
+      }
+
+      if (!userId) {
+        console.error('User exists but could not be found:', email);
+        return null;
+      }
+    } else {
       console.error('Failed to create user:', createError);
       return null;
     }
-
+  } else if (newUser?.user) {
     userId = newUser.user.id;
     console.log(`Created new user: ${userId}`);
+  } else {
+    console.error('Failed to create user: no user returned');
+    return null;
+  }
+
+  // Safety check - should never happen due to returns above
+  if (!userId) {
+    console.error('Failed to create user: userId not set');
+    return null;
   }
 
   // Create profile for new user
