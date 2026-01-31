@@ -673,6 +673,10 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error creating multi-restaurant subscriptions:', error);
     const message = error instanceof Error ? error.message : 'Failed to create subscriptions';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const stack = error instanceof Error ? error.stack : undefined;
+    return NextResponse.json({
+      error: message,
+      details: stack,
+    }, { status: 500 });
   }
 }
