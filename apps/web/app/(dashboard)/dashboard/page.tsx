@@ -57,30 +57,30 @@ export default function DashboardPage() {
       const supabase = createClient();
 
       try {
-        // Get profile views (all time) - count page views for this restaurant's slug
+        // Get profile views (all time) - use analytics_page_views which has actual data
         const { count: totalViews } = await supabase
-          .from('page_views')
+          .from('analytics_page_views')
           .select('*', { count: 'exact', head: true })
-          .like('page_path', `/restaurants/${restaurant.slug}%`);
+          .eq('restaurant_id', restaurantId);
 
         // Get profile views (this week)
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
         const { count: weeklyViews } = await supabase
-          .from('page_views')
+          .from('analytics_page_views')
           .select('*', { count: 'exact', head: true })
-          .like('page_path', `/restaurants/${restaurant.slug}%`)
-          .gte('created_at', weekAgo.toISOString());
+          .eq('restaurant_id', restaurantId)
+          .gte('viewed_at', weekAgo.toISOString());
 
         // Get profile views (last week for comparison)
         const twoWeeksAgo = new Date();
         twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
         const { count: lastWeekViews } = await supabase
-          .from('page_views')
+          .from('analytics_page_views')
           .select('*', { count: 'exact', head: true })
-          .like('page_path', `/restaurants/${restaurant.slug}%`)
-          .gte('created_at', twoWeeksAgo.toISOString())
-          .lt('created_at', weekAgo.toISOString());
+          .eq('restaurant_id', restaurantId)
+          .gte('viewed_at', twoWeeksAgo.toISOString())
+          .lt('viewed_at', weekAgo.toISOString());
 
         // Get favorites count
         const { count: favoritesCount } = await supabase
