@@ -273,8 +273,18 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
                   Upcoming Events
                 </h2>
                 <div className="space-y-4">
-                  {restaurant.events.map((event: { id: string; name: string; event_type: string; start_time: string; performer_name: string | null; is_recurring: boolean; days_of_week: string[]; event_date: string | null }) => (
+                  {restaurant.events.map((event: { id: string; name: string; event_type: string; start_time: string; performer_name: string | null; is_recurring: boolean; days_of_week: string[]; event_date: string | null; image_url: string | null }) => (
                     <div key={event.id} className="border-b border-tastelanc-surface-light pb-4 last:border-0 last:pb-0">
+                      {event.image_url && (
+                        <div className="mb-3 rounded-lg overflow-hidden">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={event.image_url}
+                            alt={event.name}
+                            className="w-full h-48 object-cover"
+                          />
+                        </div>
+                      )}
                       <div className="flex justify-between items-start">
                         <div>
                           <h3 className="font-medium text-white">{event.name}</h3>

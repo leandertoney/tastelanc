@@ -11,7 +11,7 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
@@ -177,7 +177,6 @@ function DateEventCarousel({ events, onEventPress, onRestaurantPress, onArtistPr
 
 export default function EventsViewAllScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: events = [], isLoading } = useQuery({
@@ -222,35 +221,29 @@ export default function EventsViewAllScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (events.length === 0) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.centered}>
           <Ionicons name="calendar-outline" size={64} color={colors.textMuted} />
           <Text style={styles.emptyText}>No events found</Text>
         </View>
-        <TouchableOpacity
-          style={[styles.backButton, { top: insets.top + 10 }]}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       {/* Search Bar */}
-      <View style={[styles.searchContainer, { paddingTop: insets.top + 60 }]}>
+      <View style={styles.searchContainer}>
         <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -292,15 +285,7 @@ export default function EventsViewAllScreen() {
           ))
         )}
       </ScrollView>
-
-      {/* Floating back button */}
-      <TouchableOpacity
-        style={[styles.backButton, { top: insets.top + 10 }]}
-        onPress={() => navigation.goBack()}
-      >
-        <Ionicons name="arrow-back" size={24} color={colors.text} />
-      </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -317,6 +302,7 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
     backgroundColor: colors.background,
   },
@@ -339,17 +325,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     color: colors.textMuted,
-  },
-  backButton: {
-    position: 'absolute',
-    left: 16,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
   },
   section: {
     marginBottom: spacing.lg,
