@@ -12,7 +12,7 @@ function getSupabaseAdmin() {
 export async function POST(request: Request) {
   try {
     const supabaseAdmin = getSupabaseAdmin();
-    const { pagePath, visitorId } = await request.json();
+    const { pagePath, visitorId, pageType, restaurantId } = await request.json();
     const headersList = await headers();
 
     const userAgent = headersList.get('user-agent') || '';
@@ -24,8 +24,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, tracked: false });
     }
 
-    await supabaseAdmin.from('page_views').insert({
+    // Write to analytics_page_views (the main analytics table)
+    await supabaseAdmin.from('analytics_page_views').insert({
       page_path: pagePath,
+      page_type: pageType || 'other',
+      restaurant_id: restaurantId || null,
       visitor_id: visitorId,
       referrer,
       user_agent: userAgent,

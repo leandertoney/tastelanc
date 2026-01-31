@@ -81,7 +81,7 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
   return (
     <div>
       {/* Track page view */}
-      <PageViewTracker pagePath={`/restaurants/${slug}`} />
+      <PageViewTracker pagePath={`/restaurants/${slug}`} pageType="restaurant" restaurantId={restaurant.id} />
 
       {/* Cover Image */}
       <div className="relative h-64 md:h-80 bg-tastelanc-surface">
