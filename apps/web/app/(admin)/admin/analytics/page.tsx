@@ -14,23 +14,23 @@ async function getAnalytics() {
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  // Page views - 30 days (using page_views table for consistency with restaurant dashboard)
+  // Page views - 30 days
   const { count: pageViews30d } = await supabase
-    .from('page_views')
+    .from('analytics_page_views')
     .select('*', { count: 'exact', head: true })
-    .gte('created_at', thirtyDaysAgo.toISOString());
+    .gte('viewed_at', thirtyDaysAgo.toISOString());
 
   // Page views - 7 days
   const { count: pageViews7d } = await supabase
-    .from('page_views')
+    .from('analytics_page_views')
     .select('*', { count: 'exact', head: true })
-    .gte('created_at', sevenDaysAgo.toISOString());
+    .gte('viewed_at', sevenDaysAgo.toISOString());
 
   // Page views - today
   const { count: pageViewsToday } = await supabase
-    .from('page_views')
+    .from('analytics_page_views')
     .select('*', { count: 'exact', head: true })
-    .gte('created_at', yesterday.toISOString());
+    .gte('viewed_at', yesterday.toISOString());
 
   // Clicks - 30 days
   const { count: clicks30d } = await supabase
@@ -38,73 +38,44 @@ async function getAnalytics() {
     .select('*', { count: 'exact', head: true })
     .gte('clicked_at', thirtyDaysAgo.toISOString());
 
-  // Top restaurants by views - parse from page_path
-  const { data: topRestaurantsViews } = await supabase
-    .from('page_views')
-    .select('page_path')
-    .like('page_path', '/restaurants/%')
-    .gte('created_at', thirtyDaysAgo.toISOString());
+  // Top restaurants by views
+  const { data: topRestaurants } = await supabase
+    .from('analytics_page_views')
+    .select('restaurant_id, restaurants(name, slug)')
+    .gte('viewed_at', thirtyDaysAgo.toISOString());
 
-  // Extract slugs and count views
-  const slugViewCounts: Record<string, number> = {};
-  topRestaurantsViews?.forEach((view) => {
-    // Extract slug from path like /restaurants/some-slug or /restaurants/some-slug/menu
-    const match = view.page_path.match(/^\/restaurants\/([^/]+)/);
-    if (match) {
-      const slug = match[1];
-      slugViewCounts[slug] = (slugViewCounts[slug] || 0) + 1;
+  // Count views per restaurant
+  const restaurantViews: Record<string, { name: string; slug: string; count: number }> = {};
+  topRestaurants?.forEach((view) => {
+    const restaurant = Array.isArray(view.restaurants)
+      ? view.restaurants[0]
+      : view.restaurants;
+
+    if (restaurant && view.restaurant_id) {
+      if (!restaurantViews[view.restaurant_id]) {
+        restaurantViews[view.restaurant_id] = {
+          name: restaurant.name,
+          slug: restaurant.slug,
+          count: 0,
+        };
+      }
+      restaurantViews[view.restaurant_id].count++;
     }
   });
 
-  // Get restaurant names for the top slugs
-  const topSlugs = Object.entries(slugViewCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-    .map(([slug]) => slug);
+  const topRestaurantsList = Object.values(restaurantViews)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
 
-  const { data: restaurantNames } = await supabase
-    .from('restaurants')
-    .select('name, slug')
-    .in('slug', topSlugs);
-
-  const slugToName: Record<string, string> = {};
-  restaurantNames?.forEach((r) => {
-    slugToName[r.slug] = r.name;
-  });
-
-  const topRestaurantsList = topSlugs.map((slug) => ({
-    name: slugToName[slug] || slug,
-    slug,
-    count: slugViewCounts[slug],
-  }));
-
-  // Views by page type - derive from page_path
-  const { data: viewsByPath } = await supabase
-    .from('page_views')
-    .select('page_path')
-    .gte('created_at', thirtyDaysAgo.toISOString());
+  // Views by page type
+  const { data: viewsByType } = await supabase
+    .from('analytics_page_views')
+    .select('page_type')
+    .gte('viewed_at', thirtyDaysAgo.toISOString());
 
   const pageTypeStats: Record<string, number> = {};
-  viewsByPath?.forEach((view: { page_path: string }) => {
-    let pageType = 'other';
-    const path = view.page_path;
-
-    if (path.startsWith('/restaurants/')) {
-      if (path.includes('/events')) pageType = 'events';
-      else if (path.includes('/menu')) pageType = 'menu';
-      else if (path.includes('/happy-hour')) pageType = 'happy_hour';
-      else pageType = 'restaurant';
-    } else if (path === '/' || path.startsWith('/home')) {
-      pageType = 'home';
-    } else if (path.startsWith('/happy-hours')) {
-      pageType = 'happy_hours';
-    } else if (path.startsWith('/events')) {
-      pageType = 'events';
-    } else if (path.startsWith('/specials')) {
-      pageType = 'specials';
-    }
-
-    pageTypeStats[pageType] = (pageTypeStats[pageType] || 0) + 1;
+  viewsByType?.forEach((view: { page_type: string }) => {
+    pageTypeStats[view.page_type] = (pageTypeStats[view.page_type] || 0) + 1;
   });
 
   // Clicks by type
