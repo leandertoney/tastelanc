@@ -173,6 +173,7 @@ export async function POST(request: Request) {
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/admin/sales?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/admin/sales?canceled=true`,
       discounts: couponId ? [{ coupon: couponId }] : undefined,
+      automatic_tax: { enabled: true },
       metadata: {
         subscription_type: 'restaurant_multi',
         admin_sale: 'true',

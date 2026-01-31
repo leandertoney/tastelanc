@@ -64,6 +64,7 @@ export async function POST(request: Request) {
       ],
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/subscription?success=true`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/subscription?canceled=true`,
+      automatic_tax: { enabled: true },
       metadata: {
         user_id: user.id,
       },
