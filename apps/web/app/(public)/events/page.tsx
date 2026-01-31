@@ -47,7 +47,8 @@ async function getEvents(type?: string) {
     .select('*, restaurant:restaurants(*)')
     .eq('is_active', true)
     .or(`event_date.gte.${today},is_recurring.eq.true`)
-    .order('event_date', { ascending: true, nullsFirst: false });
+    .order('event_date', { ascending: true, nullsFirst: false })
+    .order('start_time', { ascending: true });
 
   if (type) {
     query = query.eq('event_type', type);

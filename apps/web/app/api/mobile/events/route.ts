@@ -11,6 +11,7 @@ const DEFAULT_EVENT_IMAGES: Record<string, string> = {
   dj: `${SITE_URL}/images/events/dj.png`,
   comedy: `${SITE_URL}/images/events/comedy.png`,
   sports: `${SITE_URL}/images/events/sports.png`,
+  music_bingo: `${SITE_URL}/images/events/music_bingo.jpg`,
   other: `${SITE_URL}/images/events/other.png`,
 };
 
@@ -37,6 +38,7 @@ export async function GET(request: Request) {
         .not('restaurant_id', 'is', null)
         .or(`event_date.gte.${today},is_recurring.eq.true`)
         .order('event_date', { ascending: true, nullsFirst: false })
+        .order('start_time', { ascending: true })
         .limit(limit);
 
       if (type) {
@@ -68,6 +70,7 @@ export async function GET(request: Request) {
         .not('self_promoter_id', 'is', null)
         .gte('event_date', today) // Self-promoter events are never recurring
         .order('event_date', { ascending: true, nullsFirst: false })
+        .order('start_time', { ascending: true })
         .limit(limit);
 
       if (type) {
@@ -90,11 +93,15 @@ export async function GET(request: Request) {
       }
     }
 
-    // Sort combined results by event_date
+    // Sort combined results by event_date, then by start_time
     results.sort((a, b) => {
       const dateA = a.event_date ? new Date(a.event_date as string).getTime() : Infinity;
       const dateB = b.event_date ? new Date(b.event_date as string).getTime() : Infinity;
-      return dateA - dateB;
+      if (dateA !== dateB) return dateA - dateB;
+      // Secondary sort by start_time
+      const timeA = a.start_time as string || '23:59:59';
+      const timeB = b.start_time as string || '23:59:59';
+      return timeA.localeCompare(timeB);
     });
 
     // Limit total results
