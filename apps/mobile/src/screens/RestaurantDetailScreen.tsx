@@ -302,25 +302,34 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
               {happyHours.length > 0 ? (
                 happyHours.map((hh) => (
                   <View key={hh.id} style={styles.contentCard}>
-                    <Text style={styles.contentTitle}>{hh.name}</Text>
-                    <Text style={styles.contentTime}>
-                      {formatTime(hh.start_time)} - {formatTime(hh.end_time)}
-                    </Text>
-                    <Text style={styles.contentDays}>
-                      {hh.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
-                    </Text>
-                    {hh.items && hh.items.length > 0 && (
-                      <View style={styles.itemsList}>
-                        {hh.items.map((item) => (
-                          <View key={item.id} style={styles.itemRow}>
-                            <Text style={styles.itemName}>{item.name}</Text>
-                            {item.discounted_price && (
-                              <Text style={styles.itemPrice}>${item.discounted_price.toFixed(2)}</Text>
-                            )}
-                          </View>
-                        ))}
-                      </View>
+                    {hh.image_url && (
+                      <Image
+                        source={{ uri: hh.image_url }}
+                        style={styles.contentImage}
+                        resizeMode="cover"
+                      />
                     )}
+                    <View style={styles.contentCardBody}>
+                      <Text style={styles.contentTitle}>{hh.name}</Text>
+                      <Text style={styles.contentTime}>
+                        {formatTime(hh.start_time)} - {formatTime(hh.end_time)}
+                      </Text>
+                      <Text style={styles.contentDays}>
+                        {hh.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
+                      </Text>
+                      {hh.items && hh.items.length > 0 && (
+                        <View style={styles.itemsList}>
+                          {hh.items.map((item) => (
+                            <View key={item.id} style={styles.itemRow}>
+                              <Text style={styles.itemName}>{item.name}</Text>
+                              {item.discounted_price && (
+                                <Text style={styles.itemPrice}>${item.discounted_price.toFixed(2)}</Text>
+                              )}
+                            </View>
+                          ))}
+                        </View>
+                      )}
+                    </View>
                   </View>
                 ))
               ) : (
@@ -339,16 +348,39 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
               {specials.length > 0 ? (
                 specials.map((special) => (
                   <View key={special.id} style={styles.contentCard}>
-                    <Text style={styles.contentTitle}>{special.name}</Text>
-                    {special.description && (
-                      <Text style={styles.contentDescription}>{special.description}</Text>
+                    {special.image_url && (
+                      <Image
+                        source={{ uri: special.image_url }}
+                        style={styles.contentImage}
+                        resizeMode="cover"
+                      />
                     )}
-                    {special.special_price && (
-                      <Text style={styles.contentPrice}>${special.special_price.toFixed(2)}</Text>
-                    )}
-                    <Text style={styles.contentDays}>
-                      {special.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
-                    </Text>
+                    <View style={styles.contentCardBody}>
+                      <Text style={styles.contentTitle}>{special.name}</Text>
+                      {special.start_time && special.end_time && (
+                        <Text style={styles.contentTime}>
+                          {formatTime(special.start_time)} - {formatTime(special.end_time)}
+                        </Text>
+                      )}
+                      {!special.start_time && !special.end_time && (
+                        <Text style={styles.contentTime}>All Day</Text>
+                      )}
+                      {special.description && (
+                        <Text style={styles.contentDescription}>{special.description}</Text>
+                      )}
+                      {special.original_price && special.special_price && (
+                        <View style={styles.priceRow}>
+                          <Text style={styles.originalPrice}>${special.original_price.toFixed(2)}</Text>
+                          <Text style={styles.contentPrice}>${special.special_price.toFixed(2)}</Text>
+                        </View>
+                      )}
+                      {!special.original_price && special.special_price && (
+                        <Text style={styles.contentPrice}>${special.special_price.toFixed(2)}</Text>
+                      )}
+                      <Text style={styles.contentDays}>
+                        {special.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
+                      </Text>
+                    </View>
                   </View>
                 ))
               ) : (
@@ -367,25 +399,34 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
               {events.length > 0 ? (
                 events.map((event) => (
                   <View key={event.id} style={styles.contentCard}>
-                    <View style={styles.contentHeader}>
-                      <Text style={styles.contentTitle}>{event.name}</Text>
-                      <TagChip label={event.event_type.replace('_', ' ')} variant="info" />
-                    </View>
-                    {event.performer_name && (
-                      <Text style={styles.contentPerformer}>{event.performer_name}</Text>
+                    {event.image_url && (
+                      <Image
+                        source={{ uri: event.image_url }}
+                        style={styles.contentImage}
+                        resizeMode="cover"
+                      />
                     )}
-                    <Text style={styles.contentTime}>
-                      {formatTime(event.start_time)}
-                      {event.end_time && ` - ${formatTime(event.end_time)}`}
-                    </Text>
-                    {event.is_recurring && (
-                      <Text style={styles.contentDays}>
-                        {event.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
+                    <View style={styles.contentCardBody}>
+                      <View style={styles.contentHeader}>
+                        <Text style={styles.contentTitle}>{event.name}</Text>
+                        <TagChip label={event.event_type.replace('_', ' ')} variant="info" />
+                      </View>
+                      {event.performer_name && (
+                        <Text style={styles.contentPerformer}>{event.performer_name}</Text>
+                      )}
+                      <Text style={styles.contentTime}>
+                        {formatTime(event.start_time)}
+                        {event.end_time && ` - ${formatTime(event.end_time)}`}
                       </Text>
-                    )}
-                    {event.cover_charge && (
-                      <Text style={styles.contentPrice}>Cover: ${event.cover_charge}</Text>
-                    )}
+                      {event.is_recurring && (
+                        <Text style={styles.contentDays}>
+                          {event.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
+                        </Text>
+                      )}
+                      {event.cover_charge && (
+                        <Text style={styles.contentPrice}>Cover: ${event.cover_charge}</Text>
+                      )}
+                    </View>
                   </View>
                 ))
               ) : (
@@ -624,8 +665,15 @@ const styles = StyleSheet.create({
   contentCard: {
     backgroundColor: colors.cardBg,
     borderRadius: radius.md,
-    padding: 16,
+    overflow: 'hidden',
     marginBottom: 12,
+  },
+  contentCardBody: {
+    padding: 16,
+  },
+  contentImage: {
+    width: '100%',
+    height: 160,
   },
   contentHeader: {
     flexDirection: 'row',
@@ -659,6 +707,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.accent,
     marginTop: 4,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  originalPrice: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textDecorationLine: 'line-through',
   },
   contentPerformer: {
     fontSize: 14,

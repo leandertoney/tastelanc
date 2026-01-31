@@ -216,15 +216,49 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
                   Specials
                 </h2>
                 <div className="space-y-4">
-                  {restaurant.specials.map((special: { id: string; name: string; description: string | null; days_of_week: string[]; special_price: number | null }) => (
+                  {restaurant.specials.map((special: { id: string; name: string; description: string | null; days_of_week: string[]; start_time: string | null; end_time: string | null; special_price: number | null; original_price: number | null; image_url: string | null }) => (
                     <div key={special.id} className="border-b border-tastelanc-surface-light pb-4 last:border-0 last:pb-0">
-                      <h3 className="font-medium text-white">{special.name}</h3>
-                      {special.description && (
-                        <p className="text-sm text-gray-400 mt-1">{special.description}</p>
+                      {special.image_url && (
+                        <div className="relative aspect-video rounded-lg overflow-hidden mb-3">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={special.image_url}
+                            alt={special.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
                       )}
-                      <p className="text-sm text-gray-500 mt-1">
-                        {special.days_of_week.map((d: string) => capitalizeWords(d)).join(', ')}
-                      </p>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-medium text-white">{special.name}</h3>
+                          {special.description && (
+                            <p className="text-sm text-gray-400 mt-1">{special.description}</p>
+                          )}
+                          <p className="text-sm text-gray-500 mt-1">
+                            {special.days_of_week.map((d: string) => capitalizeWords(d)).join(', ')}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          {special.start_time && special.end_time && (
+                            <span className="text-tastelanc-accent text-sm">
+                              {formatTime(special.start_time)} - {formatTime(special.end_time)}
+                            </span>
+                          )}
+                          {!special.start_time && !special.end_time && (
+                            <span className="text-tastelanc-accent text-sm">All Day</span>
+                          )}
+                          {special.original_price && special.special_price && (
+                            <div className="text-sm mt-1">
+                              <span className="line-through text-gray-500 mr-1">
+                                ${special.original_price.toFixed(2)}
+                              </span>
+                              <span className="text-green-400 font-semibold">
+                                ${special.special_price.toFixed(2)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

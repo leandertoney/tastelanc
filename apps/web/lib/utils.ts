@@ -24,6 +24,8 @@ export function formatPrice(price: number | null | undefined): string {
  */
 export function formatTime(time: string | null): string {
   if (!time) return '';
+  // Special case for midnight
+  if (time === '00:00' || time === '00:00:00') return 'Midnight';
   const [hours, minutes] = time.split(':');
   const hour = parseInt(hours, 10);
   const ampm = hour >= 12 ? 'PM' : 'AM';

@@ -163,6 +163,7 @@ export interface HappyHour {
   start_time: string;
   end_time: string;
   is_active: boolean;
+  image_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -194,6 +195,7 @@ export interface Special {
   original_price: number | null;
   special_price: number | null;
   discount_description: string | null;
+  image_url: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

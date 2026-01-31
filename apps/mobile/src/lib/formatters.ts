@@ -141,10 +141,13 @@ export function formatNoiseLevel(level: string): string {
 
 /**
  * Format time from 24-hour format (HH:MM) to 12-hour format (h:MM AM/PM)
- * Examples: "17:00" -> "5:00 PM", "09:30" -> "9:30 AM"
+ * Examples: "17:00" -> "5:00 PM", "09:30" -> "9:30 AM", "00:00" -> "Midnight"
  */
 export function formatTime(time: string | null | undefined): string {
   if (!time) return '';
+
+  // Special case for midnight
+  if (time === '00:00' || time === '00:00:00') return 'Midnight';
 
   const [hourStr, minuteStr] = time.split(':');
   const hour = parseInt(hourStr, 10);

@@ -12,6 +12,7 @@ interface TimePickerProps {
   showPresets?: boolean;
   minTime?: string;
   maxTime?: string;
+  isEndTime?: boolean;
   className?: string;
 }
 
@@ -22,17 +23,20 @@ export default function TimePicker({
   showPresets = true,
   minTime,
   maxTime,
+  isEndTime = false,
   className,
 }: TimePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const selectedRef = useRef<HTMLButtonElement>(null);
 
-  // Generate time slots
-  const timeSlots = generateTimeSlots(6, 24, 30);
+  // Generate time slots (include midnight option for end times)
+  const timeSlots = generateTimeSlots(6, 24, 30, isEndTime);
 
   // Filter by min/max if provided
   const filteredSlots = timeSlots.filter((slot) => {
+    // Midnight (00:00) is always allowed for end times since it represents next day
+    if (isEndTime && slot.value === '00:00') return true;
     if (minTime && slot.value < minTime) return false;
     if (maxTime && slot.value > maxTime) return false;
     return true;

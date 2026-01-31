@@ -89,42 +89,61 @@ export default async function HappyHoursPage({ searchParams }: PageProps) {
               <Link
                 key={hh.id}
                 href={`/restaurants/${hh.restaurant?.slug}`}
-                className="bg-tastelanc-card rounded-xl p-6 hover:ring-2 hover:ring-lancaster-gold transition-all"
+                className="bg-tastelanc-card rounded-xl overflow-hidden hover:ring-2 hover:ring-lancaster-gold transition-all"
               >
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-semibold text-white text-lg">{hh.restaurant?.name}</h3>
-                    <p className="text-gray-400 text-sm flex items-center gap-1 mt-1">
-                      <MapPin className="w-3 h-3" />
-                      {hh.restaurant?.address}
-                    </p>
-                  </div>
-                  <Badge variant="gold">
-                    {formatTime(hh.start_time)} - {formatTime(hh.end_time)}
-                  </Badge>
-                </div>
-
-                <h4 className="text-white font-medium mb-2">{hh.name}</h4>
-
-                {hh.description && (
-                  <p className="text-gray-400 text-sm mb-3">{hh.description}</p>
-                )}
-
-                {hh.happy_hour_items && hh.happy_hour_items.length > 0 && (
-                  <div className="border-t border-tastelanc-surface-light pt-3 mt-3">
-                    <p className="text-sm text-gray-500 mb-2">Deals:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {hh.happy_hour_items.slice(0, 4).map((item: { id: string; name: string; discounted_price: number | null }) => (
-                        <span key={item.id} className="text-sm text-lancaster-gold">
-                          {item.name} {item.discounted_price && `$${item.discounted_price}`}
-                        </span>
-                      ))}
-                      {hh.happy_hour_items.length > 4 && (
-                        <span className="text-sm text-gray-500">+{hh.happy_hour_items.length - 4} more</span>
-                      )}
+                {/* Image */}
+                {(hh.image_url || hh.restaurant?.cover_image_url) && (
+                  <div className="aspect-video relative">
+                    <img
+                      src={hh.image_url || hh.restaurant?.cover_image_url}
+                      alt={hh.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-3 right-3">
+                      <Badge variant="gold">
+                        {formatTime(hh.start_time)} - {formatTime(hh.end_time)}
+                      </Badge>
                     </div>
                   </div>
                 )}
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="font-semibold text-white text-lg">{hh.restaurant?.name}</h3>
+                      <p className="text-gray-400 text-sm flex items-center gap-1 mt-1">
+                        <MapPin className="w-3 h-3" />
+                        {hh.restaurant?.address}
+                      </p>
+                    </div>
+                    {!(hh.image_url || hh.restaurant?.cover_image_url) && (
+                      <Badge variant="gold">
+                        {formatTime(hh.start_time)} - {formatTime(hh.end_time)}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <h4 className="text-white font-medium mb-2">{hh.name}</h4>
+
+                  {hh.description && (
+                    <p className="text-gray-400 text-sm mb-3">{hh.description}</p>
+                  )}
+
+                  {hh.happy_hour_items && hh.happy_hour_items.length > 0 && (
+                    <div className="border-t border-tastelanc-surface-light pt-3 mt-3">
+                      <p className="text-sm text-gray-500 mb-2">Deals:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {hh.happy_hour_items.slice(0, 4).map((item: { id: string; name: string; discounted_price: number | null }) => (
+                          <span key={item.id} className="text-sm text-lancaster-gold">
+                            {item.name} {item.discounted_price && `$${item.discounted_price}`}
+                          </span>
+                        ))}
+                        {hh.happy_hour_items.length > 4 && (
+                          <span className="text-sm text-gray-500">+{hh.happy_hour_items.length - 4} more</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </Link>
             ))}
           </div>

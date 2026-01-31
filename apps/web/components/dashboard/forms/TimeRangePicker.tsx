@@ -36,6 +36,7 @@ export default function TimeRangePicker({
           onChange={onEndTimeChange}
           label={endLabel}
           minTime={startTime}
+          isEndTime={true}
         />
       </div>
 

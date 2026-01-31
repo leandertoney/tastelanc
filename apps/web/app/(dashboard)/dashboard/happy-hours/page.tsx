@@ -9,6 +9,7 @@ import HappyHourImageUpload from '@/components/dashboard/forms/HappyHourImageUpl
 import DaySelector from '@/components/dashboard/forms/DaySelector';
 import TimeRangePicker from '@/components/dashboard/forms/TimeRangePicker';
 import TierGate from '@/components/TierGate';
+import type { DayOfWeek } from '@/types/database';
 
 interface HappyHourItem {
   id: string;
@@ -21,7 +22,7 @@ interface HappyHour {
   id: string;
   name: string;
   description: string;
-  days_of_week: string[];
+  days_of_week: DayOfWeek[];
   start_time: string;
   end_time: string;
   is_active: boolean;
