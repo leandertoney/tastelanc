@@ -62,6 +62,7 @@ export async function POST(request: Request) {
     // Create checkout session for self-promoter subscription
     const session = await getStripe().checkout.sessions.create({
       customer: customerId,
+      customer_update: { address: 'auto' },
       mode: 'subscription',
       payment_method_types: ['card'],
       line_items: [
