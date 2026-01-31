@@ -46,6 +46,7 @@ export async function PUT(
       original_price,
       special_price,
       discount_description,
+      image_url,
       is_active,
     } = body;
 
@@ -61,6 +62,7 @@ export async function PUT(
     if (original_price !== undefined) updateData.original_price = original_price;
     if (special_price !== undefined) updateData.special_price = special_price;
     if (discount_description !== undefined) updateData.discount_description = discount_description;
+    if (image_url !== undefined) updateData.image_url = image_url;
     if (is_active !== undefined) updateData.is_active = is_active;
     updateData.updated_at = new Date().toISOString();
 

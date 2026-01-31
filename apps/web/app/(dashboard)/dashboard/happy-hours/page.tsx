@@ -1,10 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Clock, Beer, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Clock, Beer, Loader2, Pencil, X } from 'lucide-react';
 import { Button, Card, Badge } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import { HappyHourWizard, HappyHourFormData } from '@/components/dashboard/forms';
+import HappyHourImageUpload from '@/components/dashboard/forms/HappyHourImageUpload';
+import DaySelector from '@/components/dashboard/forms/DaySelector';
+import TimeRangePicker from '@/components/dashboard/forms/TimeRangePicker';
 import TierGate from '@/components/TierGate';
 
 interface HappyHourItem {
@@ -22,6 +25,7 @@ interface HappyHour {
   start_time: string;
   end_time: string;
   is_active: boolean;
+  image_url?: string | null;
   happy_hour_items: HappyHourItem[];
 }
 
@@ -31,6 +35,8 @@ export default function HappyHoursPage() {
   const [showWizard, setShowWizard] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editingHappyHour, setEditingHappyHour] = useState<HappyHour | null>(null);
+  const [saving, setSaving] = useState(false);
 
   // Fetch happy hours on mount
   useEffect(() => {
@@ -69,6 +75,7 @@ export default function HappyHoursPage() {
       days_of_week: formData.days_of_week,
       start_time: formData.start_time,
       end_time: formData.end_time,
+      image_url: formData.image_url,
     };
 
     const response = await fetch(buildApiUrl('/api/dashboard/happy-hours'), {
@@ -129,7 +136,42 @@ export default function HappyHoursPage() {
     }
   };
 
+  const handleUpdateHappyHour = async () => {
+    if (!editingHappyHour) return;
+    setSaving(true);
+    setError(null);
+
+    try {
+      const response = await fetch(buildApiUrl(`/api/dashboard/happy-hours/${editingHappyHour.id}`), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editingHappyHour.name,
+          description: editingHappyHour.description,
+          days_of_week: editingHappyHour.days_of_week,
+          start_time: editingHappyHour.start_time,
+          end_time: editingHappyHour.end_time,
+          image_url: editingHappyHour.image_url,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update happy hour');
+      }
+
+      await fetchHappyHours();
+      setEditingHappyHour(null);
+    } catch (err) {
+      console.error('Error updating happy hour:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update happy hour');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const formatTime = (time: string) => {
+    if (time === '00:00') return 'Midnight';
     const [hours, minutes] = time.split(':');
     const h = parseInt(hours);
     const ampm = h >= 12 ? 'PM' : 'AM';
@@ -173,11 +215,103 @@ export default function HappyHoursPage() {
       )}
 
       {/* Happy Hour Wizard */}
-      {showWizard && (
+      {showWizard && restaurant && (
         <HappyHourWizard
+          restaurantId={restaurant.id}
           onClose={() => setShowWizard(false)}
           onSubmit={handleCreateHappyHour}
         />
+      )}
+
+      {/* Edit Happy Hour Modal */}
+      {editingHappyHour && restaurant?.id && (
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-white">Edit Happy Hour</h3>
+            <button onClick={() => setEditingHappyHour(null)} className="text-gray-400 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="space-y-5">
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Happy Hour Name *
+              </label>
+              <input
+                type="text"
+                value={editingHappyHour.name}
+                onChange={(e) => setEditingHappyHour({ ...editingHappyHour, name: e.target.value })}
+                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Description
+              </label>
+              <textarea
+                value={editingHappyHour.description || ''}
+                onChange={(e) => setEditingHappyHour({ ...editingHappyHour, description: e.target.value })}
+                rows={2}
+                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold resize-none"
+              />
+            </div>
+
+            {/* Days */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-3">
+                Which days? *
+              </label>
+              <DaySelector
+                value={editingHappyHour.days_of_week || []}
+                onChange={(days) => setEditingHappyHour({ ...editingHappyHour, days_of_week: days })}
+              />
+            </div>
+
+            {/* Time Range */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Time *
+              </label>
+              <TimeRangePicker
+                startTime={editingHappyHour.start_time || ''}
+                endTime={editingHappyHour.end_time || ''}
+                onStartTimeChange={(time) => setEditingHappyHour({ ...editingHappyHour, start_time: time })}
+                onEndTimeChange={(time) => setEditingHappyHour({ ...editingHappyHour, end_time: time })}
+                startLabel="Start Time"
+                endLabel="End Time"
+              />
+            </div>
+
+            {/* Image Upload */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Custom Image
+              </label>
+              <HappyHourImageUpload
+                value={editingHappyHour.image_url || undefined}
+                onChange={(url) => setEditingHappyHour({ ...editingHappyHour, image_url: url || null })}
+                restaurantId={restaurant.id}
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
+              <Button variant="secondary" onClick={() => setEditingHappyHour(null)} className="flex-1">
+                Cancel
+              </Button>
+              <Button
+                onClick={handleUpdateHappyHour}
+                disabled={saving || !editingHappyHour.name.trim() || editingHappyHour.days_of_week.length === 0 || !editingHappyHour.start_time || !editingHappyHour.end_time}
+                className="flex-1"
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </div>
+        </Card>
       )}
 
       {/* List */}
@@ -200,6 +334,12 @@ export default function HappyHoursPage() {
                   className="text-gray-400 hover:text-white text-sm"
                 >
                   {hh.is_active ? 'Deactivate' : 'Activate'}
+                </button>
+                <button
+                  onClick={() => setEditingHappyHour(hh)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <Pencil className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => deleteHappyHour(hh.id)}

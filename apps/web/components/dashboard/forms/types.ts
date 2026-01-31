@@ -76,6 +76,7 @@ export interface HappyHourFormData {
   days_of_week: DayOfWeek[];
   start_time: string;
   end_time: string;
+  image_url?: string;
 }
 
 export interface SpecialFormData {
@@ -90,6 +91,7 @@ export interface SpecialFormData {
   special_price: string;
   discount_description: string;
   is_recurring: boolean;
+  image_url?: string;
 }
 
 // Smart Defaults
@@ -134,7 +136,8 @@ export const TIME_PRESETS: TimePreset[] = [
 export function generateTimeSlots(
   startHour = 6,
   endHour = 24,
-  increment = 30
+  increment = 30,
+  includeMidnight = false
 ): TimeSlot[] {
   const slots: TimeSlot[] = [];
 
@@ -148,12 +151,19 @@ export function generateTimeSlots(
     }
   }
 
+  // Add midnight option at the end for end times (represents next day)
+  if (includeMidnight) {
+    slots.push({ value: '00:00', display: 'Midnight' });
+  }
+
   return slots;
 }
 
 // Format time for display
 export function formatTimeDisplay(time: string): string {
   if (!time) return '';
+  // Special case for midnight
+  if (time === '00:00') return 'Midnight';
   const [hours, minutes] = time.split(':');
   const h = parseInt(hours) % 12 || 12;
   const ampm = parseInt(hours) >= 12 ? 'PM' : 'AM';

@@ -82,6 +82,7 @@ export async function POST(request: Request) {
       start_time,
       end_time,
       is_active,
+      image_url,
       items,
     } = body;
 
@@ -99,6 +100,7 @@ export async function POST(request: Request) {
         start_time,
         end_time,
         is_active: is_active ?? true,
+        image_url: image_url || null,
       })
       .select()
       .single();

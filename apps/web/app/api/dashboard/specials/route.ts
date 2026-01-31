@@ -83,6 +83,7 @@ export async function POST(request: Request) {
       original_price,
       special_price,
       discount_description,
+      image_url,
       is_active,
     } = body;
 
@@ -104,6 +105,7 @@ export async function POST(request: Request) {
         original_price,
         special_price,
         discount_description,
+        image_url: image_url || null,
         is_active: is_active ?? true,
       })
       .select()
