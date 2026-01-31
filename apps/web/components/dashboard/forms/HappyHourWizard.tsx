@@ -10,6 +10,7 @@ import DaySelector from './DaySelector';
 import TimeRangePicker from './TimeRangePicker';
 import SmartSuggestion from './SmartSuggestion';
 import SuccessCelebration from './SuccessCelebration';
+import HappyHourImageUpload from './HappyHourImageUpload';
 import { useSmartDefaults, applySmartDefaults } from './useSmartDefaults';
 import { HappyHourFormData, Template, HAPPY_HOUR_DEFAULT } from './types';
 
@@ -42,12 +43,12 @@ const HAPPY_HOUR_TEMPLATES: Template<Partial<HappyHourFormData>>[] = [
   {
     id: 'late_night',
     name: 'Late Night Happy Hour',
-    description: '9pm-close',
+    description: '9pm-midnight',
     icon: Moon,
     defaults: {
       name: 'Late Night Specials',
       start_time: '21:00',
-      end_time: '23:00',
+      end_time: '00:00',
       days_of_week: ['thursday', 'friday', 'saturday'],
     },
   },
@@ -71,14 +72,16 @@ const INITIAL_FORM_DATA: HappyHourFormData = {
   days_of_week: [],
   start_time: '16:00',
   end_time: '18:00',
+  image_url: undefined,
 };
 
 interface HappyHourWizardProps {
+  restaurantId: string;
   onClose: () => void;
   onSubmit: (data: HappyHourFormData) => Promise<void>;
 }
 
-export default function HappyHourWizard({ onClose, onSubmit }: HappyHourWizardProps) {
+export default function HappyHourWizard({ restaurantId, onClose, onSubmit }: HappyHourWizardProps) {
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
   const [formData, setFormData] = useState<HappyHourFormData>(INITIAL_FORM_DATA);
@@ -249,6 +252,19 @@ export default function HappyHourWizard({ onClose, onSubmit }: HappyHourWizardPr
             onEndTimeChange={(time) => setFormData({ ...formData, end_time: time })}
           />
 
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Custom Image
+              <span className="text-gray-500 font-normal ml-1">(optional)</span>
+            </label>
+            <HappyHourImageUpload
+              value={formData.image_url}
+              onChange={(url) => setFormData({ ...formData, image_url: url })}
+              restaurantId={restaurantId}
+            />
+          </div>
+
           {/* Navigation */}
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" onClick={goBack} className="flex-1">
@@ -265,27 +281,38 @@ export default function HappyHourWizard({ onClose, onSubmit }: HappyHourWizardPr
       <WizardStep isActive={step === 2} direction={direction}>
         <div className="space-y-6">
           {/* Preview Card */}
-          <div className="p-4 bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light">
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="w-5 h-5 text-lancaster-gold" />
-              <h3 className="text-lg font-semibold text-white">{formData.name}</h3>
-            </div>
-            {formData.description && (
-              <p className="text-gray-400 text-sm mb-3">{formData.description}</p>
+          <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light overflow-hidden">
+            {formData.image_url && (
+              <div className="aspect-video">
+                <img
+                  src={formData.image_url}
+                  alt={formData.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
             )}
+            <div className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="w-5 h-5 text-lancaster-gold" />
+                <h3 className="text-lg font-semibold text-white">{formData.name}</h3>
+              </div>
+              {formData.description && (
+                <p className="text-gray-400 text-sm mb-3">{formData.description}</p>
+              )}
 
-            <div className="flex flex-wrap gap-2 text-sm">
-              <span className="px-2 py-1 bg-tastelanc-bg rounded text-gray-300">
-                {formatTime(formData.start_time)} - {formatTime(formData.end_time)}
-              </span>
-              {formData.days_of_week.map((day) => (
-                <span
-                  key={day}
-                  className="px-2 py-1 bg-lancaster-gold/20 text-lancaster-gold rounded capitalize"
-                >
-                  {day.slice(0, 3)}
+              <div className="flex flex-wrap gap-2 text-sm">
+                <span className="px-2 py-1 bg-tastelanc-bg rounded text-gray-300">
+                  {formatTime(formData.start_time)} - {formatTime(formData.end_time)}
                 </span>
-              ))}
+                {formData.days_of_week.map((day) => (
+                  <span
+                    key={day}
+                    className="px-2 py-1 bg-lancaster-gold/20 text-lancaster-gold rounded capitalize"
+                  >
+                    {day.slice(0, 3)}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -324,6 +351,7 @@ export default function HappyHourWizard({ onClose, onSubmit }: HappyHourWizardPr
 
 function formatTime(time: string): string {
   if (!time) return '';
+  if (time === '00:00') return 'Midnight';
   const [hours, minutes] = time.split(':');
   const h = parseInt(hours) % 12 || 12;
   const ampm = parseInt(hours) >= 12 ? 'PM' : 'AM';

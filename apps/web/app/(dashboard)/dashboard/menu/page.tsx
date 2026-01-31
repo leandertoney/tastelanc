@@ -708,7 +708,15 @@ export default function MenuPage() {
             </Button>
             <Button variant="secondary" onClick={() => setShowUrlImport(true)}>
               <Link2 className="w-4 h-4 mr-2" />
-              Import from URL
+              URL
+            </Button>
+            <Button variant="secondary" onClick={() => setShowImageImport(true)}>
+              <Image className="w-4 h-4 mr-2" />
+              Image
+            </Button>
+            <Button variant="secondary" onClick={() => setShowPdfImport(true)}>
+              <FileText className="w-4 h-4 mr-2" />
+              PDF
             </Button>
           </div>
         </div>

@@ -41,6 +41,7 @@ export async function PUT(
       start_time,
       end_time,
       is_active,
+      image_url,
       items,
     } = body;
 
@@ -52,6 +53,7 @@ export async function PUT(
     if (start_time !== undefined) updateData.start_time = start_time;
     if (end_time !== undefined) updateData.end_time = end_time;
     if (is_active !== undefined) updateData.is_active = is_active;
+    if (image_url !== undefined) updateData.image_url = image_url;
     updateData.updated_at = new Date().toISOString();
 
     // Use service role client for admin operations to bypass RLS

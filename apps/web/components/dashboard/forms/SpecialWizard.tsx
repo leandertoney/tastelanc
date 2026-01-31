@@ -7,10 +7,12 @@ import StepWizard from './StepWizard';
 import WizardStep from './WizardStep';
 import TemplateSelector from './TemplateSelector';
 import DaySelector from './DaySelector';
+import TimeRangePicker from './TimeRangePicker';
 import SmartSuggestion from './SmartSuggestion';
 import SuccessCelebration from './SuccessCelebration';
+import SpecialImageUpload from './SpecialImageUpload';
 import { useSmartDefaults, applySmartDefaults } from './useSmartDefaults';
-import { SpecialFormData, Template } from './types';
+import { SpecialFormData, Template, formatTimeDisplay } from './types';
 
 // Special templates
 const SPECIAL_TEMPLATES: Template<Partial<SpecialFormData>>[] = [
@@ -75,14 +77,16 @@ const INITIAL_FORM_DATA: SpecialFormData = {
   special_price: '',
   discount_description: '',
   is_recurring: true,
+  image_url: undefined,
 };
 
 interface SpecialWizardProps {
+  restaurantId: string;
   onClose: () => void;
   onSubmit: (data: SpecialFormData) => Promise<void>;
 }
 
-export default function SpecialWizard({ onClose, onSubmit }: SpecialWizardProps) {
+export default function SpecialWizard({ restaurantId, onClose, onSubmit }: SpecialWizardProps) {
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
   const [formData, setFormData] = useState<SpecialFormData>(INITIAL_FORM_DATA);
@@ -242,6 +246,35 @@ export default function SpecialWizard({ onClose, onSubmit }: SpecialWizardProps)
             />
           </div>
 
+          {/* Time Range (optional) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Time Available
+              <span className="text-gray-500 font-normal ml-1">(optional - leave blank for all day)</span>
+            </label>
+            <TimeRangePicker
+              startTime={formData.start_time}
+              endTime={formData.end_time}
+              onStartTimeChange={(time) => setFormData({ ...formData, start_time: time })}
+              onEndTimeChange={(time) => setFormData({ ...formData, end_time: time })}
+              startLabel="Start Time"
+              endLabel="End Time"
+            />
+          </div>
+
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Custom Image
+              <span className="text-gray-500 font-normal ml-1">(optional)</span>
+            </label>
+            <SpecialImageUpload
+              value={formData.image_url}
+              onChange={(url) => setFormData({ ...formData, image_url: url })}
+              restaurantId={restaurantId}
+            />
+          </div>
+
           {/* Price (optional) */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -296,16 +329,36 @@ export default function SpecialWizard({ onClose, onSubmit }: SpecialWizardProps)
       <WizardStep isActive={step === 2} direction={direction}>
         <div className="space-y-6">
           {/* Preview Card */}
-          <div className="p-4 bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light">
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-5 h-5 text-lancaster-gold" />
-              <h3 className="text-lg font-semibold text-white">{formData.name}</h3>
-            </div>
-            {formData.description && (
-              <p className="text-gray-400 text-sm mb-3">{formData.description}</p>
+          <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light overflow-hidden">
+            {formData.image_url && (
+              <div className="aspect-video">
+                <img
+                  src={formData.image_url}
+                  alt={formData.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
             )}
+            <div className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-5 h-5 text-lancaster-gold" />
+                <h3 className="text-lg font-semibold text-white">{formData.name}</h3>
+              </div>
+              {formData.description && (
+                <p className="text-gray-400 text-sm mb-3">{formData.description}</p>
+              )}
 
             <div className="flex flex-wrap gap-2 text-sm">
+              {formData.start_time && formData.end_time && (
+                <span className="px-2 py-1 bg-tastelanc-bg rounded text-gray-300">
+                  {formatTimeDisplay(formData.start_time)} - {formatTimeDisplay(formData.end_time)}
+                </span>
+              )}
+              {!formData.start_time && !formData.end_time && (
+                <span className="px-2 py-1 bg-tastelanc-bg rounded text-gray-300">
+                  All Day
+                </span>
+              )}
               {formData.original_price && formData.special_price && (
                 <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded">
                   <span className="line-through text-gray-500 mr-1">
@@ -322,6 +375,7 @@ export default function SpecialWizard({ onClose, onSubmit }: SpecialWizardProps)
                   {day.slice(0, 3)}
                 </span>
               ))}
+              </div>
             </div>
           </div>
 
