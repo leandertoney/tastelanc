@@ -167,6 +167,7 @@ export async function POST(request: Request) {
     // Create Stripe Checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
+      customer_update: { address: 'auto' },
       mode: 'subscription',
       payment_method_types: ['card'],
       line_items: lineItems,
