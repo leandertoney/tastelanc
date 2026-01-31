@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Clock,
@@ -16,10 +15,7 @@ import {
   Check,
   Smartphone,
   Bell,
-  Heart,
   ArrowRight,
-  X,
-  Crown,
   Trophy,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -40,13 +36,7 @@ const APP_SCREENS = [
 ];
 
 export default function HomePage() {
-  const router = useRouter();
   const { openChat } = useRosieChat();
-  const [showModal, setShowModal] = useState(false);
-  const [email, setEmail] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState('');
 
   // Carousel state
   const [activeScreen, setActiveScreen] = useState(0);
@@ -132,15 +122,6 @@ export default function HomePage() {
 
     return () => observer.disconnect();
   }, [hasInteracted]);
-
-  useEffect(() => {
-    // Check if already signed up
-    const savedEmail = localStorage.getItem('tastelanc_early_access_email');
-    if (savedEmail) {
-      setSubmitted(true);
-      setEmail(savedEmail);
-    }
-  }, []);
 
   // Fetch restaurant hero images
   useEffect(() => {
@@ -231,48 +212,6 @@ export default function HomePage() {
     }, 5000);
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setIsSubmitting(true);
-
-    try {
-      const supabase = createClient();
-      const { error: dbError } = await supabase
-        .from('early_access_signups')
-        .insert({
-          email,
-          source: 'homepage',
-        });
-
-      if (dbError) {
-        if (dbError.code === '23505') {
-          // Already signed up - still redirect to premium
-          localStorage.setItem('tastelanc_early_access_email', email);
-          localStorage.setItem('tastelanc_early_access', email);
-          setSubmitted(true);
-          setShowModal(false);
-          // Redirect to premium page with email
-          router.push(`/premium?email=${encodeURIComponent(email)}`);
-        } else {
-          throw dbError;
-        }
-      } else {
-        localStorage.setItem('tastelanc_early_access_email', email);
-        localStorage.setItem('tastelanc_early_access', email);
-        setSubmitted(true);
-        setShowModal(false);
-        // Redirect to premium page with email
-        router.push(`/premium?email=${encodeURIComponent(email)}`);
-      }
-    } catch (err) {
-      console.error('Signup error:', err);
-      setError('Something went wrong. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
     <main className="min-h-screen bg-tastelanc-bg">
       {/* Header */}
@@ -315,8 +254,17 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="py-20 px-4 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
-          {/* Restaurant images with crossfade, or fallback to static image */}
-          {heroImages.length > 0 && firstImageReady ? (
+          {/* Restaurant images with crossfade */}
+          {/* Initial image from The Fridge (paid restaurant) - shows immediately */}
+          <div
+            className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out"
+            style={{
+              backgroundImage: `url('https://kufcxxynjvyharhtfptd.supabase.co/storage/v1/object/public/images/restaurants/ffbb8eb2-bd67-4c4d-bd23-f7c0f6f34030/cover.jpg')`,
+              opacity: heroImages.length > 0 && firstImageReady ? 0 : 1,
+            }}
+          />
+          {/* Restaurant images with crossfade */}
+          {heroImages.length > 0 && firstImageReady && (
             heroImages.map((url, index) => (
               <div
                 key={url}
@@ -327,8 +275,6 @@ export default function HomePage() {
                 }}
               />
             ))
-          ) : (
-            <div className="absolute inset-0 bg-[url('/images/lanc_rooftop.jpg')] bg-cover bg-center" />
           )}
           <div className="absolute inset-0 bg-black/40" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-transparent pointer-events-none" />
@@ -654,13 +600,13 @@ export default function HomePage() {
           </div>
 
           <div className="text-center mt-10">
-            <Link
-              href="/premium"
+            <a
+              href="#app-preview"
               className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-tastelanc-accent hover:from-orange-600 hover:to-tastelanc-accent-hover text-white font-bold px-8 py-4 rounded-xl transition-all shadow-lg shadow-orange-500/25"
             >
-              Explore Tonight
+              See the App
               <ArrowRight className="w-5 h-5" />
-            </Link>
+            </a>
           </div>
         </div>
       </section>
@@ -804,15 +750,25 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="text-center mt-10">
-            <Link
-              href="/premium"
-              className="inline-flex items-center gap-2 bg-lancaster-gold hover:bg-yellow-500 text-black font-bold px-8 py-4 rounded-xl transition-all"
+          <div className="text-center mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+            <a
+              href="https://apps.apple.com/us/app/tastelanc/id6755852717"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white font-bold px-8 py-4 rounded-xl transition-all"
             >
-              <Crown className="w-5 h-5" />
-              Get TasteLanc+
-              <ArrowRight className="w-5 h-5" />
-            </Link>
+              <Smartphone className="w-5 h-5" />
+              Download for iOS
+            </a>
+            <a
+              href="https://play.google.com/store/apps/details?id=com.tastelanc.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold px-8 py-4 rounded-xl transition-all"
+            >
+              <Smartphone className="w-5 h-5" />
+              Download for Android
+            </a>
           </div>
         </div>
       </section>
@@ -1072,65 +1028,6 @@ export default function HomePage() {
 
       {/* Footer */}
       <Footer />
-
-      {/* Email Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-tastelanc-surface rounded-2xl max-w-md w-full p-8 relative">
-            <button
-              onClick={() => setShowModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white"
-            >
-              <X className="w-6 h-6" />
-            </button>
-
-            <div className="text-center mb-6">
-              <div className="w-24 h-24 mx-auto mb-4">
-                <Image
-                  src="/images/tastelanc_new_dark.png"
-                  alt="TasteLanc"
-                  width={96}
-                  height={96}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-2">Get TasteLanc+</h3>
-              <p className="text-gray-400">
-                Sign up for exclusive member benefits and special pricing on TasteLanc+.
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  required
-                  className="w-full px-4 py-3 bg-tastelanc-card border border-tastelanc-surface-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
-                />
-              </div>
-
-              {error && (
-                <p className="text-red-400 text-sm">{error}</p>
-              )}
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-tastelanc-accent hover:bg-tastelanc-accent-hover disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
-              >
-                {isSubmitting ? 'Signing up...' : 'Sign Up'}
-              </button>
-            </form>
-
-            <p className="text-center text-gray-500 text-sm mt-4">
-              No spam, ever. Unsubscribe anytime.
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Rosie Chat Widget */}
       <RosieChatBubble />

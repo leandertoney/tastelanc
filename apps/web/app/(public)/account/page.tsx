@@ -279,13 +279,17 @@ export default function AccountPage() {
               <div className="text-center py-4">
                 <AlertCircle className="w-8 h-8 text-gray-500 mx-auto mb-3" />
                 <p className="text-gray-400 mb-4">
-                  You don&apos;t have an active TasteLanc+ subscription.
+                  Download the TasteLanc app to get started.
                 </p>
-                <Link href="/premium">
+                <a
+                  href="https://apps.apple.com/us/app/tastelanc/id6755852717"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <Button variant="primary" className="w-full">
-                    Get TasteLanc+
+                    Download the App
                   </Button>
-                </Link>
+                </a>
               </div>
             )}
           </Card>

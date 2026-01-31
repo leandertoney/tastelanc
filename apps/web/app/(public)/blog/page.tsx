@@ -247,13 +247,15 @@ export default async function BlogPage() {
           <p className="text-gray-400 mb-6 max-w-md mx-auto">
             Join TasteLanc for real-time happy hours, specials, and personalized recommendations from Rosie.
           </p>
-          <Link
-            href="/premium"
+          <a
+            href="https://apps.apple.com/us/app/tastelanc/id6755852717"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 bg-amber-500 text-black font-semibold px-6 py-3 hover:bg-amber-400 transition-colors rounded"
           >
             Download the App
             <ArrowRight className="w-4 h-4" />
-          </Link>
+          </a>
         </div>
       </main>
     </>
