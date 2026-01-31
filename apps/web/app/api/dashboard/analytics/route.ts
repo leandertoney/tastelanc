@@ -50,22 +50,19 @@ export async function GET(request: Request) {
     todayStart.setHours(0, 0, 0, 0);
     const todayDateStr = now.toISOString().split('T')[0];
 
-    // First get restaurant slug to query page_views table
+    // Get restaurant data for tier info
     const { data: restaurantData } = await supabaseAdmin
       .from('restaurants')
       .select('slug, name, tiers(name)')
       .eq('id', restaurantId)
       .single();
 
-    if (!restaurantData?.slug) {
+    if (!restaurantData) {
       return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 });
     }
 
-    // Pattern for matching page_views paths: /restaurants/{slug} or /restaurants/{slug}/...
-    const slugPattern = `/restaurants/${restaurantData.slug}%`;
-
     // Run all queries in parallel using admin client to bypass RLS
-    // Use page_views table for view counts (matches dashboard display)
+    // Use analytics_page_views table which has the actual view data
     const [
       totalViewsResult,
       previousViewsResult,
@@ -78,36 +75,36 @@ export async function GET(request: Request) {
       todayViewsResult,
       upcomingEventsResult,
     ] = await Promise.all([
-      // Total views (last 30 days) - from page_views
+      // Total views (last 30 days)
       supabaseAdmin
-        .from('page_views')
+        .from('analytics_page_views')
         .select('*', { count: 'exact', head: true })
-        .like('page_path', slugPattern)
-        .gte('created_at', thirtyDaysAgo.toISOString()),
+        .eq('restaurant_id', restaurantId)
+        .gte('viewed_at', thirtyDaysAgo.toISOString()),
 
-      // Previous period views (30-60 days ago) - from page_views
+      // Previous period views (30-60 days ago)
       supabaseAdmin
-        .from('page_views')
+        .from('analytics_page_views')
         .select('*', { count: 'exact', head: true })
-        .like('page_path', slugPattern)
-        .gte('created_at', sixtyDaysAgo.toISOString())
-        .lt('created_at', thirtyDaysAgo.toISOString()),
+        .eq('restaurant_id', restaurantId)
+        .gte('viewed_at', sixtyDaysAgo.toISOString())
+        .lt('viewed_at', thirtyDaysAgo.toISOString()),
 
-      // Unique visitors (last 30 days) - from page_views
+      // Unique visitors (last 30 days)
       supabaseAdmin
-        .from('page_views')
+        .from('analytics_page_views')
         .select('visitor_id')
-        .like('page_path', slugPattern)
-        .gte('created_at', thirtyDaysAgo.toISOString()),
+        .eq('restaurant_id', restaurantId)
+        .gte('viewed_at', thirtyDaysAgo.toISOString()),
 
-      // Weekly views (last 7 days) - from page_views
+      // Weekly views (last 7 days)
       supabaseAdmin
-        .from('page_views')
-        .select('created_at')
-        .like('page_path', slugPattern)
-        .gte('created_at', sevenDaysAgo.toISOString()),
+        .from('analytics_page_views')
+        .select('viewed_at')
+        .eq('restaurant_id', restaurantId)
+        .gte('viewed_at', sevenDaysAgo.toISOString()),
 
-      // Clicks by type (last 30 days) - still from analytics_clicks
+      // Clicks by type (last 30 days)
       supabaseAdmin
         .from('analytics_clicks')
         .select('click_type')
@@ -120,26 +117,26 @@ export async function GET(request: Request) {
         .select('*', { count: 'exact', head: true })
         .eq('restaurant_id', restaurantId),
 
-      // Recent activity (last 20) - from page_views
+      // Recent activity (last 20)
       supabaseAdmin
-        .from('page_views')
-        .select('page_path, created_at')
-        .like('page_path', slugPattern)
-        .order('created_at', { ascending: false })
+        .from('analytics_page_views')
+        .select('page_path, page_type, viewed_at')
+        .eq('restaurant_id', restaurantId)
+        .order('viewed_at', { ascending: false })
         .limit(20),
 
-      // Lifetime views (all time) - from page_views
+      // Lifetime views (all time)
       supabaseAdmin
-        .from('page_views')
+        .from('analytics_page_views')
         .select('*', { count: 'exact', head: true })
-        .like('page_path', slugPattern),
+        .eq('restaurant_id', restaurantId),
 
-      // Today's views - from page_views
+      // Today's views
       supabaseAdmin
-        .from('page_views')
+        .from('analytics_page_views')
         .select('*', { count: 'exact', head: true })
-        .like('page_path', slugPattern)
-        .gte('created_at', todayStart.toISOString()),
+        .eq('restaurant_id', restaurantId)
+        .gte('viewed_at', todayStart.toISOString()),
 
       // Upcoming events count
       supabaseAdmin
@@ -182,7 +179,7 @@ export async function GET(request: Request) {
 
     // Count views per day
     weeklyViewsResult.data?.forEach(view => {
-      const date = new Date(view.created_at);
+      const date = new Date(view.viewed_at);
       const dayName = dayNames[date.getDay()];
       weeklyMap.set(dayName, (weeklyMap.get(dayName) || 0) + 1);
     });
@@ -217,14 +214,6 @@ export async function GET(request: Request) {
     const recentActivity: Array<{ action: string; time: string; count: number }> = [];
     const activityData = recentActivityResult.data || [];
 
-    // Determine page type from path
-    const getPageTypeFromPath = (path: string): string => {
-      if (path.includes('/events')) return 'events';
-      if (path.includes('/menu')) return 'menu';
-      if (path.includes('/happy-hour')) return 'happy_hour';
-      return 'restaurant'; // Default: profile view
-    };
-
     const actionLabels: Record<string, string> = {
       restaurant: 'Profile viewed',
       events: 'Events viewed',
@@ -241,9 +230,10 @@ export async function GET(request: Request) {
     let currentTime = '';
 
     activityData.forEach((item, index) => {
-      const pageType = getPageTypeFromPath(item.page_path);
+      // Use page_type directly from analytics_page_views
+      const pageType = item.page_type || 'restaurant';
       const action = actionLabels[pageType] || 'Page viewed';
-      const time = formatTimeAgo(new Date(item.created_at));
+      const time = formatTimeAgo(new Date(item.viewed_at));
 
       if (action === currentAction && index < 5) {
         currentCount++;
