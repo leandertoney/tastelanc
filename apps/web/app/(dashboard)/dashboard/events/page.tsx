@@ -376,9 +376,20 @@ export default function EventsPage() {
           <Card key={event.id} className="p-6">
             <div className="flex items-start justify-between">
               <div className="flex gap-4">
-                <div className="p-3 bg-tastelanc-surface rounded-lg text-tastelanc-accent">
-                  {getEventTypeIcon(event.event_type)}
-                </div>
+                {event.image_url ? (
+                  <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={event.image_url}
+                      alt={event.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="p-3 bg-tastelanc-surface rounded-lg text-tastelanc-accent">
+                    {getEventTypeIcon(event.event_type)}
+                  </div>
+                )}
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="text-lg font-semibold text-white">{event.name}</h3>
