@@ -9,6 +9,7 @@ import EventImageUpload from '@/components/dashboard/forms/EventImageUpload';
 import DaySelector from '@/components/dashboard/forms/DaySelector';
 import TimeRangePicker from '@/components/dashboard/forms/TimeRangePicker';
 import TierGate from '@/components/TierGate';
+import type { DayOfWeek } from '@/types/database';
 
 const EVENT_TYPES = [
   { value: 'live_music', label: 'Live Music', icon: Music },
@@ -29,7 +30,7 @@ interface Event {
   start_time: string;
   end_time: string | null;
   is_recurring: boolean;
-  days_of_week: string[];
+  days_of_week: DayOfWeek[];
   event_date: string | null;
   is_active: boolean;
   image_url?: string | null;

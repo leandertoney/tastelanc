@@ -156,7 +156,9 @@ export interface Special {
   days_of_week: DayOfWeek[];
   start_time: string | null;
   end_time: string | null;
+  original_price: number | null;
   special_price: number | null;
+  image_url: string | null;
   is_active: boolean;
 }
 

@@ -9,6 +9,7 @@ import SpecialImageUpload from '@/components/dashboard/forms/SpecialImageUpload'
 import DaySelector from '@/components/dashboard/forms/DaySelector';
 import TimeRangePicker from '@/components/dashboard/forms/TimeRangePicker';
 import TierGate from '@/components/TierGate';
+import type { DayOfWeek } from '@/types/database';
 
 // Format time for display (handles midnight)
 function formatTime(time: string | null): string {
@@ -24,7 +25,7 @@ interface Special {
   id: string;
   name: string;
   description: string;
-  days_of_week: string[];
+  days_of_week: DayOfWeek[];
   start_time: string | null;
   end_time: string | null;
   special_price: number | null;
