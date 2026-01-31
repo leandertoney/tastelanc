@@ -144,12 +144,17 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
     return () => subscription.unsubscribe();
   }, [fetchRestaurant]);
 
-  // Helper to build API URLs with restaurant_id
+  // Helper to build API URLs with restaurant_id and admin_mode
   const buildApiUrl = useCallback((path: string): string => {
     if (!restaurant?.id) return path;
     const separator = path.includes('?') ? '&' : '?';
-    return `${path}${separator}restaurant_id=${restaurant.id}`;
-  }, [restaurant?.id]);
+    let url = `${path}${separator}restaurant_id=${restaurant.id}`;
+    // Add admin_mode parameter if in admin mode
+    if (adminMode && isAdmin) {
+      url += '&admin_mode=true';
+    }
+    return url;
+  }, [restaurant?.id, adminMode, isAdmin]);
 
   const value: RestaurantContextType = {
     restaurant,
