@@ -1,8 +1,17 @@
 import { createClient } from '@/lib/supabase/server';
 import { getStripe, ALL_CONSUMER_PRICE_IDS, SELF_PROMOTER_PRICE_IDS } from '@/lib/stripe';
 import { Card, Badge } from '@/components/ui';
-import { Store, CheckCircle, CreditCard, Calendar, ExternalLink, Users, Clock } from 'lucide-react';
+import { Store, CheckCircle, CreditCard, Calendar, ExternalLink, Users, Clock, Gift, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+
+interface PromotionalRestaurant {
+  id: string;
+  name: string;
+  city: string | null;
+  state: string | null;
+  tier_name: string;
+  created_at: string;
+}
 
 interface StripeSubscription {
   id: string;
@@ -120,8 +129,53 @@ function formatInterval(interval: string, intervalCount: number): string {
   return `${intervalCount}mo`;
 }
 
+// Get promotional restaurants (premium/elite tier but no subscription)
+async function getPromotionalRestaurants(): Promise<PromotionalRestaurant[]> {
+  try {
+    const supabase = await createClient();
+
+    // Get restaurants with premium/elite tier but no stripe_subscription_id
+    const { data, error } = await supabase
+      .from('restaurants')
+      .select(`
+        id,
+        name,
+        city,
+        state,
+        created_at,
+        tiers!inner(name)
+      `)
+      .in('tier_id', [
+        '00000000-0000-0000-0000-000000000002', // premium
+        '00000000-0000-0000-0000-000000000003', // elite
+      ])
+      .is('stripe_subscription_id', null)
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching promotional restaurants:', error);
+      return [];
+    }
+
+    return (data || []).map((r) => ({
+      id: r.id,
+      name: r.name,
+      city: r.city,
+      state: r.state,
+      tier_name: Array.isArray(r.tiers) ? r.tiers[0]?.name : (r.tiers as { name: string })?.name || 'unknown',
+      created_at: r.created_at,
+    }));
+  } catch (error) {
+    console.error('Error in getPromotionalRestaurants:', error);
+    return [];
+  }
+}
+
 export default async function AdminPaidMembersPage() {
-  const { restaurants, consumers, selfPromoters } = await getStripeSubscriptions();
+  const [{ restaurants, consumers, selfPromoters }, promotionalRestaurants] = await Promise.all([
+    getStripeSubscriptions(),
+    getPromotionalRestaurants(),
+  ]);
 
   const restaurantMRR = restaurants.reduce((sum, r) => sum + r.mrr, 0);
   const consumerMRR = consumers.reduce((sum, c) => sum + c.mrr, 0);
@@ -139,7 +193,7 @@ export default async function AdminPaidMembersPage() {
       </div>
 
       {/* Revenue Stats */}
-      <div className="grid md:grid-cols-5 gap-6 mb-8">
+      <div className="grid md:grid-cols-6 gap-6 mb-8">
         <Card className="p-6 bg-gradient-to-br from-green-500/10 to-transparent border-green-500/30">
           <div className="flex items-center gap-3 mb-2">
             <CreditCard className="w-5 h-5 text-green-400" />
@@ -178,12 +232,24 @@ export default async function AdminPaidMembersPage() {
           </Card>
         )}
 
+        {promotionalRestaurants.length > 0 && (
+          <Card className="p-6 border-yellow-500/30">
+            <div className="flex items-center gap-3 mb-2">
+              <Gift className="w-5 h-5 text-yellow-500" />
+              <span className="text-gray-400">Demo/Free</span>
+            </div>
+            <p className="text-3xl font-bold text-yellow-400">{promotionalRestaurants.length}</p>
+            <p className="text-xs text-gray-500 mt-1">$0/mo (promotional)</p>
+          </Card>
+        )}
+
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-2">
             <CheckCircle className="w-5 h-5 text-green-500" />
-            <span className="text-gray-400">Total</span>
+            <span className="text-gray-400">Paying</span>
           </div>
           <p className="text-3xl font-bold text-white">{totalCount}</p>
+          <p className="text-xs text-gray-500 mt-1">active subscriptions</p>
         </Card>
       </div>
 
@@ -250,6 +316,63 @@ export default async function AdminPaidMembersPage() {
           </div>
         )}
       </div>
+
+      {/* Promotional/Demo Accounts */}
+      {promotionalRestaurants.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+            <Gift className="w-5 h-5 text-yellow-500" />
+            Demo / Promotional Accounts
+            <Badge variant="default" className="bg-yellow-500/20 text-yellow-400 ml-2">
+              {promotionalRestaurants.length} free
+            </Badge>
+          </h2>
+          <p className="text-gray-400 text-sm mb-4">
+            These restaurants have premium/elite access without a subscription. Click &quot;Convert to Paid&quot; to create a checkout.
+          </p>
+          <div className="grid gap-4">
+            {promotionalRestaurants.map((restaurant) => (
+              <Card key={restaurant.id} className="p-6 border-yellow-500/30 hover:border-yellow-500/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-yellow-500/20 rounded-lg flex items-center justify-center">
+                      <Gift className="w-6 h-6 text-yellow-400" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-lg font-semibold text-white">{restaurant.name}</h3>
+                        <Badge variant="default" className={`text-xs ${restaurant.tier_name === 'elite' ? 'bg-purple-500/20 text-purple-400' : 'bg-lancaster-gold/20 text-lancaster-gold'}`}>
+                          {restaurant.tier_name}
+                        </Badge>
+                        <Badge variant="default" className="text-xs bg-yellow-500/20 text-yellow-400">
+                          Free
+                        </Badge>
+                      </div>
+                      {(restaurant.city || restaurant.state) && (
+                        <p className="text-sm text-gray-400">
+                          {[restaurant.city, restaurant.state].filter(Boolean).join(', ')}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-500 mt-1">
+                        Added {new Date(restaurant.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Link
+                      href={`/admin/sales?restaurantId=${restaurant.id}&businessName=${encodeURIComponent(restaurant.name)}`}
+                      className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors"
+                    >
+                      Convert to Paid
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Consumer Subscriptions */}
       <div className="mb-8">
