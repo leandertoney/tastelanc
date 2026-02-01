@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import {
   getStripe,
   RESTAURANT_PRICE_IDS,
@@ -15,6 +16,13 @@ interface CheckoutItem {
   duration: '3mo' | '6mo' | 'yearly';
 }
 
+function getSupabaseAdmin() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
 function getPriceId(plan: string, duration: string): string | null {
   const key = `${plan}_${duration}` as keyof typeof RESTAURANT_PRICE_IDS;
   return RESTAURANT_PRICE_IDS[key] || null;
@@ -22,7 +30,6 @@ function getPriceId(plan: string, duration: string): string | null {
 
 /**
  * Creates or retrieves a Stripe coupon for bulk discounts.
- * Coupons are reusable and named by percentage.
  */
 async function getOrCreateBulkCoupon(discountPercent: number): Promise<string | null> {
   if (discountPercent <= 0) return null;
@@ -31,15 +38,13 @@ async function getOrCreateBulkCoupon(discountPercent: number): Promise<string | 
   const couponId = `BULK_${discountPercent}PCT`;
 
   try {
-    // Try to retrieve existing coupon
     const existingCoupon = await stripe.coupons.retrieve(couponId);
     return existingCoupon.id;
   } catch {
-    // Coupon doesn't exist, create it
     const coupon = await stripe.coupons.create({
       id: couponId,
       percent_off: discountPercent,
-      duration: 'forever', // Applies to all billing cycles
+      duration: 'forever',
       name: `${discountPercent}% Multi-Location Discount`,
     });
     return coupon.id;
@@ -113,6 +118,7 @@ export async function POST(request: Request) {
     const totalCents = subtotalCents - discountAmountCents;
 
     const stripe = getStripe();
+    const supabaseAdmin = getSupabaseAdmin();
 
     // Create or retrieve Stripe customer
     const existingCustomers = await stripe.customers.list({
@@ -123,7 +129,6 @@ export async function POST(request: Request) {
     let customerId: string;
     if (existingCustomers.data.length > 0) {
       customerId = existingCustomers.data[0].id;
-      // Update customer info if needed
       await stripe.customers.update(customerId, {
         name: contactName || existingCustomers.data[0].name || items[0].restaurantName,
         phone: phone || existingCustomers.data[0].phone || undefined,
@@ -146,25 +151,64 @@ export async function POST(request: Request) {
       customerId = customer.id;
     }
 
+    // Create sales_order in database FIRST (webhook will look this up)
+    const { data: salesOrder, error: orderError } = await supabaseAdmin
+      .from('sales_orders')
+      .insert({
+        customer_email: email,
+        customer_name: contactName || null,
+        customer_phone: phone || null,
+        stripe_customer_id: customerId,
+        restaurant_count: items.length,
+        discount_percent: discountPercent,
+        subtotal_cents: subtotalCents,
+        discount_amount_cents: discountAmountCents,
+        total_cents: totalCents,
+        created_by_admin: user.id,
+        status: 'pending',
+      })
+      .select('id')
+      .single();
+
+    if (orderError || !salesOrder) {
+      console.error('Failed to create sales order:', orderError);
+      return NextResponse.json({ error: 'Failed to create sales order' }, { status: 500 });
+    }
+
+    // Create sales_order_items for each restaurant
+    const orderItems = itemsWithPrices.map(item => ({
+      sales_order_id: salesOrder.id,
+      restaurant_id: item.restaurantId || null,
+      restaurant_name: item.restaurantName,
+      is_new_restaurant: item.isNewRestaurant || !item.restaurantId,
+      plan: item.plan,
+      duration: item.duration,
+      price_cents: item.priceCents,
+      discounted_price_cents: item.priceCents - Math.round(item.priceCents * discountPercent / 100),
+      processing_status: 'pending',
+    }));
+
+    const { error: itemsError } = await supabaseAdmin
+      .from('sales_order_items')
+      .insert(orderItems);
+
+    if (itemsError) {
+      console.error('Failed to create sales order items:', itemsError);
+      // Clean up the sales order
+      await supabaseAdmin.from('sales_orders').delete().eq('id', salesOrder.id);
+      return NextResponse.json({ error: 'Failed to create sales order items' }, { status: 500 });
+    }
+
     // Get or create bulk discount coupon
     const couponId = await getOrCreateBulkCoupon(discountPercent);
 
-    // Create line items for Stripe Checkout
+    // Create line items for Stripe Checkout (one item per restaurant subscription)
     const lineItems = itemsWithPrices.map(item => ({
       price: item.priceId,
       quantity: 1,
     }));
 
-    // Build metadata for webhook to process
-    const itemsMetadata = items.map((item) => ({
-      restaurantId: item.restaurantId || '',
-      restaurantName: item.restaurantName,
-      isNewRestaurant: item.isNewRestaurant,
-      plan: item.plan,
-      duration: item.duration,
-    }));
-
-    // Create Stripe Checkout session
+    // Create Stripe Checkout session with sales_order_id in metadata
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_update: { address: 'auto' },
@@ -176,21 +220,22 @@ export async function POST(request: Request) {
       discounts: couponId ? [{ coupon: couponId }] : undefined,
       automatic_tax: { enabled: true },
       metadata: {
-        subscription_type: 'restaurant_multi',
+        multi_restaurant: 'true',  // This is what the webhook checks for!
         admin_sale: 'true',
+        sales_order_id: salesOrder.id,  // Webhook looks this up
         contact_name: contactName || '',
         email,
         phone: phone || '',
         created_by_admin: user.id,
         restaurant_count: String(items.length),
-        items_json: JSON.stringify(itemsMetadata),
       },
-      allow_promotion_codes: false, // We're applying our own discount
+      allow_promotion_codes: false,
     });
 
     return NextResponse.json({
       checkoutUrl: session.url,
       sessionId: session.id,
+      salesOrderId: salesOrder.id,
       subtotal: subtotalCents / 100,
       discountPercent,
       discountAmount: discountAmountCents / 100,
