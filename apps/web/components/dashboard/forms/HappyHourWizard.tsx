@@ -131,7 +131,7 @@ export default function HappyHourWizard({ restaurantId, onClose, onSubmit }: Hap
     setError(null);
     try {
       await onSubmit(formData);
-      setIsSuccess(true);
+      onClose(); // Close modal after successful creation
     } catch (err) {
       console.error('Failed to create happy hour:', err);
       setError(err instanceof Error ? err.message : 'Failed to create happy hour. Please try again.');
