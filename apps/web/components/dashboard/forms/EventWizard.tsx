@@ -180,7 +180,7 @@ export default function EventWizard({ onClose, onSubmit, restaurantId }: EventWi
     setError(null);
     try {
       await onSubmit(formData);
-      setIsSuccess(true);
+      onClose(); // Close modal after successful creation
     } catch (err) {
       console.error('Failed to create event:', err);
       setError(err instanceof Error ? err.message : 'Failed to create event. Please try again.');
