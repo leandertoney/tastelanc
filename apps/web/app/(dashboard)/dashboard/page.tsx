@@ -141,21 +141,11 @@ export default function DashboardPage() {
           .lt('viewed_at', weekAgo.toISOString());
 
         // Calculate percentage changes
-        const viewsChange = lastWeekViews && lastWeekViews > 0
-          ? Math.round(((weeklyViews || 0) - lastWeekViews) / lastWeekViews * 100)
-          : (weeklyViews || 0) > 0 ? 100 : 0;
-
-        const favoritesChange = lastWeekFavorites && lastWeekFavorites > 0
-          ? Math.round(((thisWeekFavorites || 0) - lastWeekFavorites) / lastWeekFavorites * 100)
-          : (thisWeekFavorites || 0) > 0 ? 100 : 0;
-
-        const happyHourChange = lastWeekHappyHourViews && lastWeekHappyHourViews > 0
-          ? Math.round(((happyHourViews || 0) - lastWeekHappyHourViews) / lastWeekHappyHourViews * 100)
-          : (happyHourViews || 0) > 0 ? 100 : 0;
-
-        const menuChange = lastWeekMenuViews && lastWeekMenuViews > 0
-          ? Math.round(((menuViews || 0) - lastWeekMenuViews) / lastWeekMenuViews * 100)
-          : (menuViews || 0) > 0 ? 100 : 0;
+        // When previous period is 0, treat it as 1 to show actual growth percentage
+        const viewsChange = Math.round(((weeklyViews || 0) - (lastWeekViews || 0)) / Math.max(lastWeekViews || 0, 1) * 100);
+        const favoritesChange = Math.round(((thisWeekFavorites || 0) - (lastWeekFavorites || 0)) / Math.max(lastWeekFavorites || 0, 1) * 100);
+        const happyHourChange = Math.round(((happyHourViews || 0) - (lastWeekHappyHourViews || 0)) / Math.max(lastWeekHappyHourViews || 0, 1) * 100);
+        const menuChange = Math.round(((menuViews || 0) - (lastWeekMenuViews || 0)) / Math.max(lastWeekMenuViews || 0, 1) * 100);
 
         setStats({
           profileViews: totalViews || 0,
