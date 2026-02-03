@@ -1,59 +1,194 @@
 'use client';
 
-import { useState } from 'react';
-import { Upload, Trash2, Image as ImageIcon, Star, Check } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Upload, Trash2, Image as ImageIcon, Star, Check, Loader2 } from 'lucide-react';
 import { Button, Card, Badge } from '@/components/ui';
+import { useRestaurant } from '@/contexts/RestaurantContext';
+import { toast } from 'sonner';
 
 interface Photo {
   id: string;
   url: string;
-  caption: string;
+  caption: string | null;
   is_cover: boolean;
+  display_order: number;
 }
 
-// Mock data
-const initialPhotos: Photo[] = [
-  {
-    id: '1',
-    url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800',
-    caption: 'Our beautiful dining room',
-    is_cover: true,
-  },
-  {
-    id: '2',
-    url: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800',
-    caption: 'Signature dish',
-    is_cover: false,
-  },
-  {
-    id: '3',
-    url: 'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=800',
-    caption: 'Bar area',
-    is_cover: false,
-  },
-];
-
 export default function PhotosPage() {
-  const [photos, setPhotos] = useState<Photo[]>(initialPhotos);
+  const { restaurant, buildApiUrl } = useRestaurant();
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const setCoverPhoto = (id: string) => {
-    setPhotos((prev) =>
-      prev.map((photo) => ({
-        ...photo,
-        is_cover: photo.id === id,
-      }))
-    );
+  // Fetch photos on mount
+  useEffect(() => {
+    if (restaurant?.id) {
+      fetchPhotos();
+    }
+  }, [restaurant?.id]);
+
+  const fetchPhotos = async () => {
+    if (!restaurant?.id) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(buildApiUrl('/api/dashboard/photos'));
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch photos');
+      }
+
+      setPhotos(data);
+    } catch (err) {
+      console.error('Error fetching photos:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to load photos');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const deletePhoto = (id: string) => {
-    setPhotos((prev) => prev.filter((photo) => photo.id !== id));
+  const handleFileSelect = useCallback(async (file: File) => {
+    if (!restaurant?.id) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Invalid file type. Please upload a JPEG, PNG, or WebP image.');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('File too large. Maximum size is 5MB.');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(
+        buildApiUrl('/api/dashboard/photos/upload'),
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Upload failed');
+      }
+
+      toast.success('Photo uploaded successfully!');
+      await fetchPhotos(); // Refresh photos list
+    } catch (err) {
+      console.error('Error uploading photo:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to upload photo');
+    } finally {
+      setUploading(false);
+    }
+  }, [restaurant?.id, buildApiUrl]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+    // Reset input so same file can be selected again
+    e.target.value = '';
   };
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      handleFileSelect(file);
+    } else {
+      toast.error('Please drop an image file');
+    }
+  }, [handleFileSelect]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  }, []);
 
   const handleUpload = () => {
-    // TODO: Implement file upload
-    alert('File upload coming soon!');
+    fileInputRef.current?.click();
   };
+
+  const setCoverPhoto = async (id: string) => {
+    try {
+      const response = await fetch(
+        `/api/dashboard/photos/${id}/cover`,
+        {
+          method: 'POST',
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to set cover photo');
+      }
+
+      toast.success('Cover photo updated!');
+      await fetchPhotos(); // Refresh photos list
+    } catch (err) {
+      console.error('Error setting cover photo:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to set cover photo');
+    }
+  };
+
+  const deletePhoto = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this photo?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/dashboard/photos/${id}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete photo');
+      }
+
+      toast.success('Photo deleted!');
+      await fetchPhotos(); // Refresh photos list
+    } catch (err) {
+      console.error('Error deleting photo:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to delete photo');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 text-lancaster-gold animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -67,21 +202,61 @@ export default function PhotosPage() {
             Manage photos of your restaurant ({photos.length}/10)
           </p>
         </div>
-        <Button onClick={handleUpload} disabled={photos.length >= 10}>
-          <Upload className="w-4 h-4 mr-2" />
-          Upload Photos
+        <Button onClick={handleUpload} disabled={photos.length >= 10 || uploading}>
+          {uploading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Uploading...
+            </>
+          ) : (
+            <>
+              <Upload className="w-4 h-4 mr-2" />
+              Upload Photos
+            </>
+          )}
         </Button>
       </div>
 
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={handleInputChange}
+        className="hidden"
+      />
+
       {/* Upload Zone */}
       <Card
-        className="p-8 border-2 border-dashed border-tastelanc-surface-light hover:border-tastelanc-accent transition-colors cursor-pointer"
-        onClick={handleUpload}
+        className={`p-8 border-2 border-dashed transition-colors ${
+          isDragOver
+            ? 'border-lancaster-gold bg-lancaster-gold/10'
+            : 'border-tastelanc-surface-light hover:border-tastelanc-accent'
+        } ${photos.length >= 10 || uploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+        onClick={() => {
+          if (photos.length < 10 && !uploading) {
+            handleUpload();
+          }
+        }}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
       >
         <div className="text-center">
-          <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-300 mb-2">Drag and drop photos here, or click to browse</p>
-          <p className="text-gray-500 text-sm">PNG, JPG up to 5MB each. Max 10 photos.</p>
+          {uploading ? (
+            <>
+              <Loader2 className="w-12 h-12 text-lancaster-gold mx-auto mb-4 animate-spin" />
+              <p className="text-gray-300 mb-2">Uploading photo...</p>
+            </>
+          ) : (
+            <>
+              <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-300 mb-2">
+                {isDragOver ? 'Drop photo here' : 'Drag and drop photos here, or click to browse'}
+              </p>
+              <p className="text-gray-500 text-sm">PNG, JPG, WebP up to 5MB each. Max 10 photos.</p>
+            </>
+          )}
         </div>
       </Card>
 
@@ -136,9 +311,11 @@ export default function PhotosPage() {
               )}
 
               {/* Caption */}
-              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-                <p className="text-white text-sm truncate">{photo.caption}</p>
-              </div>
+              {photo.caption && (
+                <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+                  <p className="text-white text-sm truncate">{photo.caption}</p>
+                </div>
+              )}
             </div>
           ))}
         </div>

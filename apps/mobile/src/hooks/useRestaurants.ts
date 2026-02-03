@@ -10,6 +10,21 @@ interface UseRestaurantsOptions {
 }
 
 /**
+ * Helper to transform restaurant data with photos
+ */
+function transformRestaurantWithPhotos(data: any): Restaurant {
+  const photos = data.restaurant_photos
+    ?.sort((a: any, b: any) => a.display_order - b.display_order)
+    ?.map((p: any) => p.url) || [];
+
+  return {
+    ...data,
+    photos,
+    restaurant_photos: undefined,
+  };
+}
+
+/**
  * Hook to fetch list of restaurants with optional category filter
  */
 export function useRestaurants(options: UseRestaurantsOptions = {}) {
@@ -20,7 +35,7 @@ export function useRestaurants(options: UseRestaurantsOptions = {}) {
     queryFn: async (): Promise<Restaurant[]> => {
       let query = supabase
         .from('restaurants')
-        .select('*')
+        .select('*, restaurant_photos(url, display_order)')
         .eq('is_active', true)
         .limit(limit);
 
@@ -31,7 +46,7 @@ export function useRestaurants(options: UseRestaurantsOptions = {}) {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map(transformRestaurantWithPhotos);
     },
     enabled,
   });
@@ -46,12 +61,12 @@ export function useRestaurant(id: string, enabled = true) {
     queryFn: async (): Promise<Restaurant | null> => {
       const { data, error } = await supabase
         .from('restaurants')
-        .select('*')
+        .select('*, restaurant_photos(url, display_order)')
         .eq('id', id)
         .single();
 
       if (error) throw error;
-      return data;
+      return data ? transformRestaurantWithPhotos(data) : null;
     },
     enabled: enabled && !!id,
   });
@@ -70,7 +85,7 @@ export function useRestaurantSearch(
     queryFn: async (): Promise<Restaurant[]> => {
       let supabaseQuery = supabase
         .from('restaurants')
-        .select('*')
+        .select('*, restaurant_photos(url, display_order)')
         .eq('is_active', true)
         .or(`name.ilike.%${query}%,description.ilike.%${query}%,address.ilike.%${query}%`)
         .order('is_premium', { ascending: false })
@@ -83,7 +98,7 @@ export function useRestaurantSearch(
       const { data, error } = await supabaseQuery;
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map(transformRestaurantWithPhotos);
     },
     enabled: enabled && query.length >= 2,
     // Shorter stale time for search results
@@ -103,12 +118,12 @@ export function usePrefetchRestaurant() {
       queryFn: async () => {
         const { data, error } = await supabase
           .from('restaurants')
-          .select('*')
+          .select('*, restaurant_photos(url, display_order)')
           .eq('id', id)
           .single();
 
         if (error) throw error;
-        return data;
+        return data ? transformRestaurantWithPhotos(data) : null;
       },
     });
   };

@@ -113,13 +113,12 @@ export default function EntertainmentSection() {
     requireEmailGate(() => navigation.navigate('EntertainmentViewAll'));
   }, [navigation, requireEmailGate]);
 
-  // No loading state - data is prefetched during splash screen
   const finalDisplayData = displayData.length > 0 ? displayData : ENABLE_MOCK_DATA ? MOCK_ENTERTAINMENT : [];
 
   // Add CTA item at the end
   const dataWithCTA = [...finalDisplayData, { id: CTA_ITEM_ID } as MockEntertainment];
 
-  // Hide section if no data and mock is disabled
+  // Return null if no data - cache persistence will prevent flash
   if (finalDisplayData.length === 0) {
     return null;
   }

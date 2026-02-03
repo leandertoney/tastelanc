@@ -11,6 +11,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
     "@netlify/functions": "^5.1.1",
+    "@sparticuz/chromium": "^143.0.4",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
     "@types/pdf-parse": "^1.1.5",
@@ -22,9 +23,11 @@
     "next": "^14.2.18",
     "openai": "^6.10.0",
     "pdf-parse": "^2.4.5",
+    "puppeteer-core": "^24.36.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "resend": "^6.5.2",
+    "sonner": "^2.0.7",
     "stripe": "^20.0.0",
     "tailwind-merge": "^2.6.0"
   },

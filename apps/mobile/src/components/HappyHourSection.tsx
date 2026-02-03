@@ -232,7 +232,7 @@ export default function HappyHourSection() {
     };
   }, [pairCount, dealFadeAnim]);
 
-  // No loading state - data is prefetched during splash screen
+  // Return null if no data - cache persistence will prevent flash
   if (displayData.length === 0 || !currentBanner) {
     return null;
   }
