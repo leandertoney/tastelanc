@@ -273,7 +273,7 @@ export default function PhotosPage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={photo.url}
-                alt={photo.caption}
+                alt={photo.caption ?? ''}
                 className="w-full aspect-[4/3] object-cover"
                 referrerPolicy="no-referrer"
               />
