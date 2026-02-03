@@ -47,11 +47,12 @@ export default function EventFlyerCard({ event, width, height, onPress, onRestau
   const venueName = getEventVenueName(event);
 
   return (
-    <TouchableOpacity activeOpacity={0.95} onPress={onPress} style={{ width, height }}>
+    <TouchableOpacity activeOpacity={0.95} onPress={onPress} style={[styles.cardContainer, { width, height }]}>
       <ImageBackground
         source={{ uri: event.image_url }}
         style={[styles.imageBackground, { width, height }]}
-        resizeMode="cover"
+        resizeMode="contain"
+        imageStyle={styles.imageStyle}
       >
         <LinearGradient
           colors={['rgba(0,0,0,0.4)', 'transparent', 'transparent', 'rgba(0,0,0,0.85)']}
@@ -118,8 +119,16 @@ export default function EventFlyerCard({ event, width, height, onPress, onRestau
 }
 
 const styles = StyleSheet.create({
+  cardContainer: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+  },
   imageBackground: {
     backgroundColor: colors.surface,
+  },
+  imageStyle: {
+    borderRadius: radius.lg,
   },
   topRow: {
     flexDirection: 'row',

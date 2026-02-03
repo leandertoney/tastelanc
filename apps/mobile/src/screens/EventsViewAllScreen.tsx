@@ -6,7 +6,6 @@ import {
   FlatList,
   ScrollView,
   ActivityIndicator,
-  TouchableOpacity,
   Dimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
@@ -25,7 +24,8 @@ import SearchBar from '../components/SearchBar';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const FLYER_HEIGHT = SCREEN_HEIGHT * 0.75;
+const FLYER_WIDTH = SCREEN_WIDTH - 32; // Leave padding on sides to peek next card
+const FLYER_HEIGHT = SCREEN_HEIGHT * 0.6; // Reduced to fit better on screen
 
 interface DateSection {
   title: string;
@@ -95,50 +95,58 @@ interface DateEventCarouselProps {
   events: ApiEvent[];
   onEventPress: (event: ApiEvent) => void;
   onRestaurantPress: (restaurantId: string) => void;
-  onArtistPress: (artistSlug: string) => void;
+  onArtistPress: (artistId: string, artistName: string) => void;
 }
 
 function DateEventCarousel({ events, onEventPress, onRestaurantPress, onArtistPress }: DateEventCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  const CARD_WIDTH = FLYER_WIDTH + spacing.md; // Card width plus gap
+
   const handleScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offsetX = event.nativeEvent.contentOffset.x;
-      const newIndex = Math.round(offsetX / SCREEN_WIDTH);
+      const newIndex = Math.round(offsetX / CARD_WIDTH);
       setCurrentIndex(Math.max(0, Math.min(newIndex, events.length - 1)));
     },
-    [events.length]
+    [events.length, CARD_WIDTH]
   );
 
   const getItemLayout = useCallback(
     (_: unknown, index: number) => ({
-      length: SCREEN_WIDTH,
-      offset: SCREEN_WIDTH * index,
+      length: CARD_WIDTH,
+      offset: CARD_WIDTH * index,
       index,
     }),
-    []
+    [CARD_WIDTH]
   );
 
   const renderFlyer = useCallback(
-    ({ item }: { item: ApiEvent }) => (
-      <EventFlyerCard
-        event={item}
-        width={SCREEN_WIDTH}
-        height={FLYER_HEIGHT}
-        onPress={() => onEventPress(item)}
-        onRestaurantPress={
-          item.restaurant?.id
-            ? () => onRestaurantPress(item.restaurant!.id)
-            : undefined
-        }
-        onArtistPress={
-          item.self_promoter?.slug
-            ? () => onArtistPress(item.self_promoter!.slug)
-            : undefined
-        }
-      />
+    ({ item, index }: { item: ApiEvent; index: number }) => (
+      <View style={{
+        width: CARD_WIDTH,
+        paddingLeft: index === 0 ? spacing.md : 0,
+        paddingRight: spacing.md,
+      }}>
+        <EventFlyerCard
+          event={item}
+          width={FLYER_WIDTH}
+          height={FLYER_HEIGHT}
+          onPress={() => onEventPress(item)}
+          onRestaurantPress={
+            item.restaurant?.id
+              ? () => onRestaurantPress(item.restaurant!.id)
+              : undefined
+          }
+          onArtistPress={
+            item.self_promoter?.id
+              ? () => onArtistPress(item.self_promoter!.id, item.self_promoter!.name)
+              : undefined
+          }
+        />
+      </View>
     ),
-    [onEventPress, onRestaurantPress, onArtistPress]
+    [onEventPress, onRestaurantPress, onArtistPress, CARD_WIDTH]
   );
 
   return (
@@ -148,27 +156,33 @@ function DateEventCarousel({ events, onEventPress, onRestaurantPress, onArtistPr
         renderItem={renderFlyer}
         keyExtractor={(item) => item.id}
         horizontal
-        pagingEnabled
         showsHorizontalScrollIndicator={false}
-        snapToInterval={SCREEN_WIDTH}
+        snapToInterval={CARD_WIDTH}
         snapToAlignment="start"
         decelerationRate="fast"
         onMomentumScrollEnd={handleScrollEnd}
         getItemLayout={getItemLayout}
       />
 
-      {/* Pagination dots */}
+      {/* Swipe hint and pagination */}
       {events.length > 1 && (
         <View style={styles.paginationContainer}>
-          {events.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.dot,
-                index === currentIndex ? styles.dotActive : styles.dotInactive,
-              ]}
-            />
-          ))}
+          <View style={styles.swipeHint}>
+            <Ionicons name="chevron-back" size={14} color={colors.textMuted} />
+            <Text style={styles.swipeHintText}>Swipe for more</Text>
+            <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
+          </View>
+          <View style={styles.dotsRow}>
+            {events.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.dot,
+                  index === currentIndex ? styles.dotActive : styles.dotInactive,
+                ]}
+              />
+            ))}
+          </View>
         </View>
       )}
     </View>
@@ -251,10 +265,21 @@ export default function EventsViewAllScreen() {
         />
       </View>
 
+      {/* Scroll hint at top when there are multiple dates */}
+      {sections.length > 1 && (
+        <View style={styles.scrollHintTop}>
+          <Ionicons name="chevron-down" size={16} color={colors.textMuted} />
+          <Text style={styles.scrollHintText}>
+            {sections.length} dates with events • Scroll to see all
+          </Text>
+          <Ionicons name="chevron-down" size={16} color={colors.textMuted} />
+        </View>
+      )}
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
       >
         {sections.length === 0 && searchQuery.trim() ? (
           <View style={styles.noResultsContainer}>
@@ -306,6 +331,18 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
     backgroundColor: colors.background,
   },
+  scrollHintTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.surface,
+  },
+  scrollHintText: {
+    fontSize: 13,
+    color: colors.textMuted,
+  },
   centered: {
     flex: 1,
     justifyContent: 'center',
@@ -346,14 +383,27 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   carouselContainer: {
-    height: FLYER_HEIGHT + 40, // Extra space for dots
+    height: FLYER_HEIGHT + 70, // Extra space for swipe hint and dots
   },
   paginationContainer: {
+    alignItems: 'center',
+    marginTop: 12,
+    gap: 8,
+  },
+  swipeHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  swipeHintText: {
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+  dotsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
-    marginTop: 12,
   },
   dot: {
     width: 8,

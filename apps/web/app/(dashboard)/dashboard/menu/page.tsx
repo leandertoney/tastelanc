@@ -79,6 +79,23 @@ export default function MenuPage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Tab state - tracks active section per menu
+  const [activeTabByMenu, setActiveTabByMenu] = useState<Record<string, string>>({});
+
+  // Get active section ID for a menu, defaulting to first section
+  const getActiveSection = (menuId: string, sections: MenuSection[]) => {
+    const sorted = [...sections].sort((a, b) => a.display_order - b.display_order);
+    if (activeTabByMenu[menuId] && sorted.some(s => s.id === activeTabByMenu[menuId])) {
+      return activeTabByMenu[menuId];
+    }
+    return sorted[0]?.id || '';
+  };
+
+  // Set active tab for a menu
+  const setActiveTab = (menuId: string, sectionId: string) => {
+    setActiveTabByMenu(prev => ({ ...prev, [menuId]: sectionId }));
+  };
+
   // Modal states
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showAddSection, setShowAddSection] = useState<string | null>(null); // menu ID
@@ -249,6 +266,10 @@ export default function MenuPage() {
       }
 
       await fetchMenus();
+      // Auto-switch to the newly created section
+      if (data.section?.id) {
+        setActiveTab(menuId, data.section.id);
+      }
       setShowAddSection(null);
       setNewSection({ name: '', description: '' });
     } catch (err) {
@@ -289,7 +310,7 @@ export default function MenuPage() {
     }
   };
 
-  const handleDeleteSection = async (sectionId: string) => {
+  const handleDeleteSection = async (sectionId: string, menuId: string) => {
     if (!confirm('Are you sure you want to delete this section? All items will be deleted.')) return;
 
     try {
@@ -300,6 +321,15 @@ export default function MenuPage() {
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'Failed to delete section');
+      }
+
+      // Clear active tab if the deleted section was active (will auto-fallback to first section)
+      if (activeTabByMenu[menuId] === sectionId) {
+        setActiveTabByMenu(prev => {
+          const newState = { ...prev };
+          delete newState[menuId];
+          return newState;
+        });
       }
 
       await fetchMenus();
@@ -1022,8 +1052,50 @@ export default function MenuPage() {
               </div>
             )}
 
+            {/* Section Tabs */}
+            {menu.menu_sections.length > 0 && (
+              <div
+                className="border-b border-tastelanc-surface-light mb-6 overflow-x-auto"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                <div className="flex items-center min-w-max">
+                  {[...menu.menu_sections]
+                    .sort((a, b) => a.display_order - b.display_order)
+                    .map((section) => {
+                      const isActive = getActiveSection(menu.id, menu.menu_sections) === section.id;
+                      return (
+                        <button
+                          key={section.id}
+                          onClick={() => setActiveTab(menu.id, section.id)}
+                          className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors ${
+                            isActive
+                              ? 'text-white border-tastelanc-accent'
+                              : 'text-gray-400 border-transparent hover:text-white hover:border-tastelanc-surface-light'
+                          }`}
+                        >
+                          {section.name}
+                          <span className={`ml-2 text-xs ${isActive ? 'text-tastelanc-accent' : 'opacity-60'}`}>
+                            ({section.menu_items.length})
+                          </span>
+                        </button>
+                      );
+                    })}
+                  <button
+                    onClick={() => setShowAddSection(menu.id)}
+                    className="px-3 py-3 text-gray-400 hover:text-white transition-colors"
+                    title="Add Section"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Active Section Content */}
             <div className="space-y-6">
-              {menu.menu_sections.map((section) => (
+              {menu.menu_sections
+                .filter((section) => section.id === getActiveSection(menu.id, menu.menu_sections))
+                .map((section) => (
                 <div key={section.id} className="border border-tastelanc-surface-light rounded-lg">
                   <div className="flex items-center justify-between p-4 bg-tastelanc-surface rounded-t-lg">
                     <div className="flex items-center gap-2">
@@ -1035,7 +1107,7 @@ export default function MenuPage() {
                       <button onClick={() => setEditingSection(section)} className="text-gray-400 hover:text-white">
                         <Pencil className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDeleteSection(section.id)} className="text-gray-400 hover:text-red-400">
+                      <button onClick={() => handleDeleteSection(section.id, menu.id)} className="text-gray-400 hover:text-red-400">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
