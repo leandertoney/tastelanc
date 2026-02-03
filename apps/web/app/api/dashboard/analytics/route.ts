@@ -74,6 +74,8 @@ export async function GET(request: Request) {
       lifetimeViewsResult,
       todayViewsResult,
       upcomingEventsResult,
+      happyHourViewsResult,
+      menuViewsResult,
     ] = await Promise.all([
       // Total views (last 30 days)
       supabaseAdmin
@@ -145,6 +147,22 @@ export async function GET(request: Request) {
         .eq('restaurant_id', restaurantId)
         .eq('is_active', true)
         .or(`event_date.gte.${todayDateStr},is_recurring.eq.true`),
+
+      // Happy hour views (last 30 days)
+      supabaseAdmin
+        .from('analytics_page_views')
+        .select('*', { count: 'exact', head: true })
+        .eq('restaurant_id', restaurantId)
+        .eq('page_type', 'happy_hour')
+        .gte('viewed_at', thirtyDaysAgo.toISOString()),
+
+      // Menu views (last 30 days)
+      supabaseAdmin
+        .from('analytics_page_views')
+        .select('*', { count: 'exact', head: true })
+        .eq('restaurant_id', restaurantId)
+        .eq('page_type', 'menu')
+        .gte('viewed_at', thirtyDaysAgo.toISOString()),
     ]);
 
     // Calculate stats
@@ -155,6 +173,8 @@ export async function GET(request: Request) {
     const lifetimeViews = lifetimeViewsResult.count || 0;
     const todayViews = todayViewsResult.count || 0;
     const upcomingEvents = upcomingEventsResult.count || 0;
+    const happyHourViews = happyHourViewsResult.count || 0;
+    const menuViews = menuViewsResult.count || 0;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tierName = (restaurantData?.tiers as any)?.name || 'free';
 
@@ -275,6 +295,8 @@ export async function GET(request: Request) {
         todayViews,
         thisWeekViews,
         upcomingEvents,
+        happyHourViews,
+        menuViews,
         tierName,
       },
       weeklyViews,

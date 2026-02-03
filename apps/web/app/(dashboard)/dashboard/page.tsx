@@ -7,7 +7,6 @@ import {
   Eye,
   Heart,
   Calendar,
-  TrendingUp,
   Clock,
   Sparkles,
   ArrowRight,
@@ -25,6 +24,10 @@ interface DashboardStats {
   upcomingEvents: number;
   weeklyViews: number;
   weeklyChange: string;
+  happyHourViews: number;
+  happyHourChange: string;
+  menuViews: number;
+  menuChange: string;
 }
 
 interface ProfileCompletion {
@@ -82,34 +85,90 @@ export default function DashboardPage() {
           .gte('viewed_at', twoWeeksAgo.toISOString())
           .lt('viewed_at', weekAgo.toISOString());
 
-        // Get favorites count
+        // Get favorites count (this week)
         const { count: favoritesCount } = await supabase
           .from('favorites')
           .select('*', { count: 'exact', head: true })
           .eq('restaurant_id', restaurantId);
 
-        // Get upcoming events count (only future events or recurring events)
-        const today = new Date().toISOString().split('T')[0];
-        const { count: eventsCount } = await supabase
-          .from('events')
+        // Get favorites from this week
+        const { count: thisWeekFavorites } = await supabase
+          .from('favorites')
           .select('*', { count: 'exact', head: true })
           .eq('restaurant_id', restaurantId)
-          .eq('is_active', true)
-          .or(`event_date.gte.${today},is_recurring.eq.true`);
+          .gte('created_at', weekAgo.toISOString());
+
+        // Get favorites from last week (for comparison)
+        const { count: lastWeekFavorites } = await supabase
+          .from('favorites')
+          .select('*', { count: 'exact', head: true })
+          .eq('restaurant_id', restaurantId)
+          .gte('created_at', twoWeeksAgo.toISOString())
+          .lt('created_at', weekAgo.toISOString());
+
+        // Get happy hour views (this week)
+        const { count: happyHourViews } = await supabase
+          .from('analytics_page_views')
+          .select('*', { count: 'exact', head: true })
+          .eq('restaurant_id', restaurantId)
+          .eq('page_type', 'happy_hour')
+          .gte('viewed_at', weekAgo.toISOString());
+
+        // Get happy hour views (last week for comparison)
+        const { count: lastWeekHappyHourViews } = await supabase
+          .from('analytics_page_views')
+          .select('*', { count: 'exact', head: true })
+          .eq('restaurant_id', restaurantId)
+          .eq('page_type', 'happy_hour')
+          .gte('viewed_at', twoWeeksAgo.toISOString())
+          .lt('viewed_at', weekAgo.toISOString());
+
+        // Get menu views (this week)
+        const { count: menuViews } = await supabase
+          .from('analytics_page_views')
+          .select('*', { count: 'exact', head: true })
+          .eq('restaurant_id', restaurantId)
+          .eq('page_type', 'menu')
+          .gte('viewed_at', weekAgo.toISOString());
+
+        // Get menu views (last week for comparison)
+        const { count: lastWeekMenuViews } = await supabase
+          .from('analytics_page_views')
+          .select('*', { count: 'exact', head: true })
+          .eq('restaurant_id', restaurantId)
+          .eq('page_type', 'menu')
+          .gte('viewed_at', twoWeeksAgo.toISOString())
+          .lt('viewed_at', weekAgo.toISOString());
 
         // Calculate percentage changes
         const viewsChange = lastWeekViews && lastWeekViews > 0
           ? Math.round(((weeklyViews || 0) - lastWeekViews) / lastWeekViews * 100)
-          : 0;
+          : (weeklyViews || 0) > 0 ? 100 : 0;
+
+        const favoritesChange = lastWeekFavorites && lastWeekFavorites > 0
+          ? Math.round(((thisWeekFavorites || 0) - lastWeekFavorites) / lastWeekFavorites * 100)
+          : (thisWeekFavorites || 0) > 0 ? 100 : 0;
+
+        const happyHourChange = lastWeekHappyHourViews && lastWeekHappyHourViews > 0
+          ? Math.round(((happyHourViews || 0) - lastWeekHappyHourViews) / lastWeekHappyHourViews * 100)
+          : (happyHourViews || 0) > 0 ? 100 : 0;
+
+        const menuChange = lastWeekMenuViews && lastWeekMenuViews > 0
+          ? Math.round(((menuViews || 0) - lastWeekMenuViews) / lastWeekMenuViews * 100)
+          : (menuViews || 0) > 0 ? 100 : 0;
 
         setStats({
           profileViews: totalViews || 0,
           viewsChange: viewsChange >= 0 ? `+${viewsChange}%` : `${viewsChange}%`,
           favorites: favoritesCount || 0,
-          favoritesChange: '+0%', // Would need historical data to calculate
-          upcomingEvents: eventsCount || 0,
+          favoritesChange: favoritesChange >= 0 ? `+${favoritesChange}%` : `${favoritesChange}%`,
+          upcomingEvents: 0,
           weeklyViews: weeklyViews || 0,
           weeklyChange: viewsChange >= 0 ? `+${viewsChange}%` : `${viewsChange}%`,
+          happyHourViews: happyHourViews || 0,
+          happyHourChange: happyHourChange >= 0 ? `+${happyHourChange}%` : `${happyHourChange}%`,
+          menuViews: menuViews || 0,
+          menuChange: menuChange >= 0 ? `+${menuChange}%` : `${menuChange}%`,
         });
 
         // Calculate profile completion
@@ -165,8 +224,8 @@ export default function DashboardPage() {
   const statsDisplay = [
     { label: 'Profile Views', value: stats?.profileViews.toLocaleString() || '0', change: stats?.viewsChange || '0%', icon: Eye },
     { label: 'Favorites', value: stats?.favorites.toLocaleString() || '0', change: stats?.favoritesChange || '0%', icon: Heart },
-    { label: 'Upcoming Events', value: stats?.upcomingEvents.toString() || '0', change: '', icon: Calendar },
-    { label: 'This Week', value: stats?.weeklyViews.toLocaleString() || '0', change: stats?.weeklyChange || '0%', icon: TrendingUp },
+    { label: 'Happy Hour Views', value: stats?.happyHourViews.toLocaleString() || '0', change: stats?.happyHourChange || '0%', icon: Clock },
+    { label: 'Menu Views', value: stats?.menuViews.toLocaleString() || '0', change: stats?.menuChange || '0%', icon: Sparkles },
   ];
 
   return (
