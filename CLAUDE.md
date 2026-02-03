@@ -31,6 +31,18 @@ npx supabase link --project-ref kufcxxynjvyharhtfptd
 - `packages/shared/` - Shared types and constants
 - `supabase/` - Supabase migrations and config
 
+## Deployment
+
+**IMPORTANT: This project uses Netlify for web application deployment, NOT Vercel.**
+
+- **Web App (apps/web):** Deployed on Netlify
+- **Mobile App (apps/mobile):** Uses Expo EAS for OTA updates and app store builds
+
+When discussing deployment or making deployment-related changes:
+- Web changes are deployed via Netlify's automatic Git integration
+- Mobile changes can be pushed via OTA updates using `eas update --branch production`
+- Never assume or mention Vercel - it has never been used for this project
+
 ## Common Scripts
 
 ### Restaurant Categorization
