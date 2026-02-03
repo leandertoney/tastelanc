@@ -19,6 +19,8 @@ interface AnalyticsData {
     todayViews: number;
     thisWeekViews: number;
     upcomingEvents: number;
+    happyHourViews: number;
+    menuViews: number;
     tierName: string;
   };
   weeklyViews: Array<{ day: string; views: number }>;
@@ -103,15 +105,15 @@ export default function AnalyticsPage() {
       icon: Heart,
     },
     {
-      label: 'Upcoming Events',
-      value: data.stats.upcomingEvents.toLocaleString(),
+      label: 'Happy Hour Views',
+      value: data.stats.happyHourViews.toLocaleString(),
       change: null,
       trend: 'up',
-      icon: Calendar,
+      icon: Clock,
     },
     {
-      label: 'Current Plan',
-      value: formatTierName(data.stats.tierName),
+      label: 'Menu Views',
+      value: data.stats.menuViews.toLocaleString(),
       change: null,
       trend: 'up',
       icon: Award,
