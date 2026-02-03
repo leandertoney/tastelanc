@@ -296,17 +296,6 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
           name={restaurant.name}
         />
 
-        {/* Photos */}
-        {restaurant.photos && restaurant.photos.length > 0 && (
-          <View style={styles.photosSection}>
-            <Text style={styles.sectionTitle}>Photos</Text>
-            <PhotosCarousel
-              photos={restaurant.photos}
-              restaurantName={restaurant.name}
-            />
-          </View>
-        )}
-
         {/* Tab Bar */}
         <TabBar tabs={TABS} activeTab={activeTab} onTabPress={setActiveTab} />
 
@@ -467,6 +456,17 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
             </View>
           )}
         </View>
+
+        {/* Photos */}
+        {restaurant.photos && restaurant.photos.length > 0 && (
+          <View style={styles.photosSection}>
+            <Text style={styles.sectionTitle}>Photos</Text>
+            <PhotosCarousel
+              photos={restaurant.photos}
+              restaurantName={restaurant.name}
+            />
+          </View>
+        )}
 
         {/* Hours */}
         {sortedHours.length > 0 && (
