@@ -136,9 +136,9 @@ export default function EventsSection() {
     }
   };
 
-  // No loading state - data is prefetched during splash screen
+  // Return null if no data - cache persistence will prevent flash
   if (displayData.length === 0) {
-    return null; // Don't show section if no events
+    return null;
   }
 
   const handleViewAll = () => {

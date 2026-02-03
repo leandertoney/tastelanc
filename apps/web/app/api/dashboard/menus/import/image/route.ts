@@ -156,16 +156,11 @@ export async function POST(request: Request) {
       );
     }
 
-    if (parsedMenu.error) {
+    if (parsedMenu.error || parsedMenu.sections.length === 0) {
       return NextResponse.json(
-        { error: parsedMenu.error },
-        { status: 422 }
-      );
-    }
-
-    if (parsedMenu.sections.length === 0) {
-      return NextResponse.json(
-        { error: 'No menu items found in this image. Please try a different image.' },
+        {
+          error: 'No menu items found in this image. Make sure the image clearly shows the menu with item names and prices. If the image is blurry or the text is too small, try a higher quality image or a closer crop of the menu section.'
+        },
         { status: 422 }
       );
     }

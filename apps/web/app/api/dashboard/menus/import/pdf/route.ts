@@ -171,16 +171,11 @@ export async function POST(request: Request) {
       );
     }
 
-    if (parsedMenu.error) {
+    if (parsedMenu.error || parsedMenu.sections.length === 0) {
       return NextResponse.json(
-        { error: parsedMenu.error },
-        { status: 422 }
-      );
-    }
-
-    if (parsedMenu.sections.length === 0) {
-      return NextResponse.json(
-        { error: 'No menu items found in this PDF. Please try a different file.' },
+        {
+          error: 'No menu items found in this PDF. This can happen if the PDF is image-based (scanned) rather than text-based. Try using the image import instead, or ensure you have a text-based PDF.'
+        },
         { status: 422 }
       );
     }

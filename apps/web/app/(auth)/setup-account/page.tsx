@@ -147,11 +147,12 @@ function SetupAccountContent() {
   }
 
   // Split-screen layout when we have a cover image
-  if (coverImageUrl && name) {
+  if (coverImageUrl) {
+    const displayName = name || 'there';
     return (
       <div className="min-h-screen flex flex-col lg:flex-row">
         {/* Left side - Restaurant Image */}
-        <div className="relative lg:w-1/2 h-64 lg:h-auto">
+        <div className="relative lg:w-1/2 h-64 lg:h-auto min-h-[250px]">
           <Image
             src={coverImageUrl}
             alt={restaurantName || 'Restaurant'}
@@ -163,27 +164,27 @@ function SetupAccountContent() {
           <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
 
           {/* Restaurant info overlay */}
-          <div className="absolute bottom-0 left-0 right-0 lg:bottom-auto lg:top-1/2 lg:-translate-y-1/2 p-8 lg:p-12">
-            <Link href="/" className="inline-block mb-6">
+          <div className="absolute bottom-0 left-0 right-0 lg:bottom-auto lg:top-1/2 lg:-translate-y-1/2 p-6 lg:p-12">
+            <Link href="/" className="inline-block mb-4 lg:mb-6">
               <Image
                 src="/images/tastelanc_new_dark.png"
                 alt="TasteLanc"
                 width={140}
                 height={42}
-                className="h-10 w-auto"
+                className="h-8 lg:h-10 w-auto"
               />
             </Link>
-            <h1 className="text-3xl lg:text-4xl font-bold text-white mb-2">
+            <h1 className="text-2xl lg:text-4xl font-bold text-white mb-1 lg:mb-2">
               {restaurantName}
             </h1>
-            <p className="text-gray-300 text-lg">
+            <p className="text-gray-300 text-base lg:text-lg">
               Welcome to TasteLanc
             </p>
           </div>
         </div>
 
         {/* Right side - Form */}
-        <div className="flex-1 flex items-center justify-center px-6 py-12 lg:px-12">
+        <div className="flex-1 flex items-center justify-center px-6 py-8 lg:py-12 lg:px-12">
           <div className="w-full max-w-md">
             {success ? (
               <div className="text-center">
@@ -191,7 +192,7 @@ function SetupAccountContent() {
                   <CheckCircle className="w-10 h-10 text-green-500" />
                 </div>
                 <h2 className="text-3xl font-bold text-white mb-2">
-                  You&apos;re all set, {name}!
+                  You&apos;re all set{name ? `, ${name}` : ''}!
                 </h2>
                 <p className="text-gray-400 text-lg">
                   Your {restaurantName} dashboard is ready.
@@ -204,10 +205,10 @@ function SetupAccountContent() {
               <>
                 <div className="mb-8">
                   <h2 className="text-3xl font-bold text-white mb-2">
-                    Hey {name}!
+                    Hey {displayName}!
                   </h2>
                   <p className="text-gray-400 text-lg">
-                    One last step to access your dashboard.
+                    One last step to access your {restaurantName} dashboard.
                   </p>
                   <p className="text-gray-500 mt-1">
                     Create a password below and you&apos;re in.

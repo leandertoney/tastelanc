@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Dimensions, Animated } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
+import { useIsRestoring } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { prefetchHomeScreenData } from '../lib/prefetch';
 
@@ -15,6 +16,7 @@ export default function SplashVideoScreen({ onComplete }: SplashVideoScreenProps
   const opacity = useRef(new Animated.Value(1)).current;
   const [prefetchComplete, setPrefetchComplete] = useState(false);
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
+  const isRestoring = useIsRestoring(); // Wait for cache hydration from AsyncStorage
 
   const player = useVideoPlayer(videoSource, player => {
     player.loop = false;
@@ -48,9 +50,9 @@ export default function SplashVideoScreen({ onComplete }: SplashVideoScreenProps
     return () => clearTimeout(timeout);
   }, []);
 
-  // Complete when BOTH conditions are met: prefetch done AND min time elapsed
+  // Complete when ALL conditions are met: cache hydrated, prefetch done, AND min time elapsed
   useEffect(() => {
-    if (prefetchComplete && minTimeElapsed) {
+    if (!isRestoring && prefetchComplete && minTimeElapsed) {
       Animated.timing(opacity, {
         toValue: 0,
         duration: 600,
@@ -59,7 +61,7 @@ export default function SplashVideoScreen({ onComplete }: SplashVideoScreenProps
         onComplete();
       });
     }
-  }, [prefetchComplete, minTimeElapsed, onComplete, opacity]);
+  }, [isRestoring, prefetchComplete, minTimeElapsed, onComplete, opacity]);
 
   return (
     <Animated.View style={[styles.container, { opacity }]}>

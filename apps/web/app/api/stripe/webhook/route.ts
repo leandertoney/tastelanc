@@ -23,11 +23,18 @@ import {
   type StripeCustomerInfo,
 } from '@/lib/subscription-matching';
 
-// Generate a secure setup token for password setup
+// Generate a secure setup token for password setup with personalization
+interface SetupTokenOptions {
+  name?: string;
+  restaurantName?: string;
+  coverImageUrl?: string;
+}
+
 async function generateSetupToken(
   supabaseAdmin: ReturnType<typeof getSupabaseAdmin>,
   userId: string,
-  email: string
+  email: string,
+  options?: SetupTokenOptions
 ): Promise<string> {
   const token = crypto.randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
@@ -37,9 +44,188 @@ async function generateSetupToken(
     email,
     token,
     expires_at: expiresAt.toISOString(),
+    name: options?.name || null,
+    restaurant_name: options?.restaurantName || null,
+    cover_image_url: options?.coverImageUrl || null,
   });
 
   return token;
+}
+
+// Generate branded welcome email HTML with restaurant cover image
+function generateBrandedWelcomeEmail(
+  setupLink: string,
+  contactName: string,
+  restaurantName: string,
+  coverImageUrl?: string
+): string {
+  const firstName = contactName?.split(' ')[0] || '';
+
+  // If we have a cover image, use the branded split-screen style
+  if (coverImageUrl) {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0a0a0a;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a;">
+          <tr>
+            <td align="center" style="padding: 20px;">
+              <table width="600" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border-radius: 16px; overflow: hidden;">
+                <!-- Restaurant Cover Image -->
+                <tr>
+                  <td style="position: relative;">
+                    <img src="${coverImageUrl}" alt="${restaurantName}" width="600" style="display: block; width: 100%; height: 280px; object-fit: cover;" />
+                    <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 30px; background: linear-gradient(transparent, rgba(0,0,0,0.8));">
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Content -->
+                <tr>
+                  <td style="padding: 40px;">
+                    <!-- Logo -->
+                    <img src="https://tastelanc.com/images/tastelanc_new_dark.png" alt="TasteLanc" height="36" style="margin-bottom: 24px;" />
+
+                    <!-- Restaurant Name Badge -->
+                    <div style="background-color: #2563eb; color: white; display: inline-block; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-bottom: 20px;">
+                      ${restaurantName}
+                    </div>
+
+                    <h1 style="color: #ffffff; font-size: 28px; margin: 0 0 16px 0; font-weight: 700;">
+                      Hey ${firstName}! 👋
+                    </h1>
+
+                    <p style="color: #a3a3a3; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+                      Welcome to TasteLanc! Your <strong style="color: #ffffff;">${restaurantName}</strong> dashboard is ready and waiting for you.
+                    </p>
+
+                    <p style="color: #a3a3a3; font-size: 16px; line-height: 1.6; margin: 0 0 32px 0;">
+                      Just one quick step — set your password and you're in. Takes less than a minute.
+                    </p>
+
+                    <!-- CTA Button -->
+                    <table cellpadding="0" cellspacing="0" style="margin-bottom: 32px;">
+                      <tr>
+                        <td style="background-color: #3b82f6; border-radius: 10px;">
+                          <a href="${setupLink}" style="display: inline-block; padding: 16px 40px; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px;">
+                            Set Up Your Account →
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <p style="color: #737373; font-size: 14px; line-height: 1.6; margin: 0 0 8px 0;">
+                      Once you're in, you can:
+                    </p>
+                    <ul style="color: #a3a3a3; font-size: 14px; line-height: 1.8; margin: 0 0 24px 0; padding-left: 20px;">
+                      <li>Update your restaurant profile & photos</li>
+                      <li>Post specials and happy hours</li>
+                      <li>See your analytics and engagement</li>
+                      <li>Connect with Lancaster foodies</li>
+                    </ul>
+
+                    <p style="color: #737373; font-size: 14px; margin: 0;">
+                      Questions? Just reply to this email — we're here to help!
+                    </p>
+
+                    <!-- Divider -->
+                    <hr style="border: none; border-top: 1px solid #333; margin: 32px 0;" />
+
+                    <p style="color: #525252; font-size: 12px; text-align: center; margin: 0;">
+                      TasteLanc — Lancaster's Local Food Guide<br/>
+                      <a href="https://tastelanc.com" style="color: #6b7280;">tastelanc.com</a>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+  }
+
+  // Fallback to simpler branded email without image
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0a0a0a;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a;">
+        <tr>
+          <td align="center" style="padding: 40px 20px;">
+            <table width="600" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border-radius: 16px; overflow: hidden;">
+              <tr>
+                <td style="padding: 40px;">
+                  <!-- Logo -->
+                  <img src="https://tastelanc.com/images/tastelanc_new_dark.png" alt="TasteLanc" height="36" style="margin-bottom: 24px;" />
+
+                  <!-- Restaurant Name Badge -->
+                  <div style="background-color: #2563eb; color: white; display: inline-block; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-bottom: 20px;">
+                    ${restaurantName}
+                  </div>
+
+                  <h1 style="color: #ffffff; font-size: 28px; margin: 0 0 16px 0; font-weight: 700;">
+                    Hey ${firstName}! 👋
+                  </h1>
+
+                  <p style="color: #a3a3a3; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+                    Welcome to TasteLanc! Your <strong style="color: #ffffff;">${restaurantName}</strong> dashboard is ready and waiting for you.
+                  </p>
+
+                  <p style="color: #a3a3a3; font-size: 16px; line-height: 1.6; margin: 0 0 32px 0;">
+                    Just one quick step — set your password and you're in. Takes less than a minute.
+                  </p>
+
+                  <!-- CTA Button -->
+                  <table cellpadding="0" cellspacing="0" style="margin-bottom: 32px;">
+                    <tr>
+                      <td style="background-color: #3b82f6; border-radius: 10px;">
+                        <a href="${setupLink}" style="display: inline-block; padding: 16px 40px; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px;">
+                          Set Up Your Account →
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+
+                  <p style="color: #737373; font-size: 14px; line-height: 1.6; margin: 0 0 8px 0;">
+                    Once you're in, you can:
+                  </p>
+                  <ul style="color: #a3a3a3; font-size: 14px; line-height: 1.8; margin: 0 0 24px 0; padding-left: 20px;">
+                    <li>Update your restaurant profile & photos</li>
+                    <li>Post specials and happy hours</li>
+                    <li>See your analytics and engagement</li>
+                    <li>Connect with Lancaster foodies</li>
+                  </ul>
+
+                  <p style="color: #737373; font-size: 14px; margin: 0;">
+                    Questions? Just reply to this email — we're here to help!
+                  </p>
+
+                  <!-- Divider -->
+                  <hr style="border: none; border-top: 1px solid #333; margin: 32px 0;" />
+
+                  <p style="color: #525252; font-size: 12px; text-align: center; margin: 0;">
+                    TasteLanc — Lancaster's Local Food Guide<br/>
+                    <a href="https://tastelanc.com" style="color: #6b7280;">tastelanc.com</a>
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
 }
 
 // Initialize Resend for sending emails
@@ -105,13 +291,20 @@ function getPriceId(plan: string, duration: string): string | null {
 }
 
 // Helper to find or create a user account for admin sales
+interface RestaurantBrandingInfo {
+  restaurantId?: string;
+  restaurantName: string;
+  coverImageUrl?: string;
+}
+
 async function findOrCreateUser(
   email: string,
   contactName: string,
   businessNames: string[],
   phone: string,
   stripeCustomerId: string,
-  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>
+  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>,
+  primaryRestaurant?: RestaurantBrandingInfo
 ): Promise<string | null> {
   // Check if user already exists by email
   const { data: existingUser } = await supabaseAdmin
@@ -157,62 +350,31 @@ async function findOrCreateUser(
     onConflict: 'id',
   });
 
-  // Generate password setup token and send welcome email via Resend
-  const setupToken = await generateSetupToken(supabaseAdmin, userId, email);
-  const setupLink = `https://tastelanc.com/setup-account?token=${setupToken}`;
+  // Determine the display name for the email
   const businessNamesList = businessNames.length > 1
     ? businessNames.slice(0, -1).join(', ') + ' and ' + businessNames[businessNames.length - 1]
     : businessNames[0];
 
+  // Use primary restaurant info for branding if available
+  const emailRestaurantName = primaryRestaurant?.restaurantName || businessNamesList;
+  const emailCoverImage = primaryRestaurant?.coverImageUrl;
+
+  // Generate password setup token with personalization
+  const setupToken = await generateSetupToken(supabaseAdmin, userId, email, {
+    name: contactName,
+    restaurantName: emailRestaurantName,
+    coverImageUrl: emailCoverImage,
+  });
+  const setupLink = `https://tastelanc.com/setup-account?token=${setupToken}`;
+
+  // Send branded welcome email
   await resend.emails.send({
     from: 'TasteLanc <hello@tastelanc.com>',
     to: email,
-    subject: `Welcome to TasteLanc! Set Up Your Account`,
-    html: `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #1a1a1a; font-size: 28px; margin: 0;">Welcome to TasteLanc!</h1>
-        </div>
-
-        <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi${contactName ? ` ${contactName.split(' ')[0]}` : ''},</p>
-
-        <p style="font-size: 16px; color: #333; line-height: 1.6;">
-          Thank you for joining TasteLanc! Your account for <strong>${businessNamesList}</strong> is ready.
-        </p>
-
-        <p style="font-size: 16px; color: #333; line-height: 1.6;">
-          To get started, click the button below to set up your password and access your dashboard:
-        </p>
-
-        <div style="text-align: center; margin: 35px 0;">
-          <a href="${setupLink}" style="background-color: #3b82f6; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600; display: inline-block;">
-            Set Up Your Account
-          </a>
-        </div>
-
-        <p style="font-size: 16px; color: #333; line-height: 1.6;">
-          Once you're set up, you can manage your restaurant profiles, update hours, add specials, and more.
-        </p>
-
-        <p style="font-size: 16px; color: #333; line-height: 1.6;">
-          If you have any questions, just reply to this email - we're here to help!
-        </p>
-
-        <p style="font-size: 16px; color: #333; line-height: 1.6;">
-          Cheers,<br/>
-          <strong>The TasteLanc Team</strong>
-        </p>
-
-        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
-
-        <p style="font-size: 12px; color: #9ca3af; text-align: center;">
-          TasteLanc - Lancaster's Local Food Guide<br/>
-          <a href="https://tastelanc.com" style="color: #6b7280;">tastelanc.com</a>
-        </p>
-      </div>
-    `,
+    subject: `Welcome to TasteLanc! Set Up Your ${emailRestaurantName} Account`,
+    html: generateBrandedWelcomeEmail(setupLink, contactName, emailRestaurantName, emailCoverImage),
   });
-  console.log(`Welcome email sent to ${email}`);
+  console.log(`Branded welcome email sent to ${email}`);
 
   return userId;
 }
@@ -285,9 +447,29 @@ async function handleMultiRestaurantCheckout(
     discountPercent,
   });
 
+  // Fetch primary restaurant branding for welcome email
+  let primaryRestaurant: RestaurantBrandingInfo | undefined;
+  const firstItemWithRestaurant = orderItems.find((item: { restaurant_id?: string }) => item.restaurant_id);
+  if (firstItemWithRestaurant?.restaurant_id) {
+    const { data: restaurantData } = await supabaseAdmin
+      .from('restaurants')
+      .select('name, cover_image_url')
+      .eq('id', firstItemWithRestaurant.restaurant_id)
+      .single();
+
+    if (restaurantData) {
+      primaryRestaurant = {
+        restaurantId: firstItemWithRestaurant.restaurant_id,
+        restaurantName: restaurantData.name,
+        coverImageUrl: restaurantData.cover_image_url || undefined,
+      };
+      console.log(`Fetched primary restaurant branding: ${restaurantData.name}`);
+    }
+  }
+
   // Find or create user account
   const businessNames = orderItems.map((item: { restaurant_name: string }) => item.restaurant_name);
-  const userId = await findOrCreateUser(email, contactName, businessNames, phone, customerId, supabaseAdmin);
+  const userId = await findOrCreateUser(email, contactName, businessNames, phone, customerId, supabaseAdmin, primaryRestaurant);
 
   if (!userId) {
     await supabaseAdmin
@@ -563,6 +745,24 @@ export async function POST(request: Request) {
             break;
           }
 
+          // Step 0: Fetch restaurant data FIRST (for branded email)
+          let restaurantCoverImage: string | null = null;
+          let restaurantDisplayName = businessName;
+
+          if (restaurantId) {
+            const { data: restaurantData } = await supabaseAdmin
+              .from('restaurants')
+              .select('name, cover_image_url')
+              .eq('id', restaurantId)
+              .single();
+
+            if (restaurantData) {
+              restaurantCoverImage = restaurantData.cover_image_url;
+              restaurantDisplayName = restaurantData.name || businessName;
+              console.log(`Fetched restaurant data: ${restaurantDisplayName}, cover: ${restaurantCoverImage ? 'yes' : 'no'}`);
+            }
+          }
+
           // Step 1: Find or create user account
           let userId: string | null = null;
 
@@ -608,59 +808,22 @@ export async function POST(request: Request) {
               onConflict: 'id',
             });
 
-            // Generate password setup token and send welcome email via Resend
-            const setupToken = await generateSetupToken(supabaseAdmin, userId, email);
+            // Generate password setup token with personalization
+            const setupToken = await generateSetupToken(supabaseAdmin, userId, email, {
+              name: contactName,
+              restaurantName: restaurantDisplayName,
+              coverImageUrl: restaurantCoverImage || undefined,
+            });
             const setupLink = `https://tastelanc.com/setup-account?token=${setupToken}`;
 
+            // Send branded welcome email
             await resend.emails.send({
               from: 'TasteLanc <hello@tastelanc.com>',
               to: email,
-              subject: `Welcome to TasteLanc! Set Up Your ${businessName} Account`,
-              html: `
-                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                  <div style="text-align: center; margin-bottom: 30px;">
-                    <h1 style="color: #1a1a1a; font-size: 28px; margin: 0;">Welcome to TasteLanc!</h1>
-                  </div>
-
-                  <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi${contactName ? ` ${contactName.split(' ')[0]}` : ''},</p>
-
-                  <p style="font-size: 16px; color: #333; line-height: 1.6;">
-                    Thank you for joining TasteLanc! Your account for <strong>${businessName}</strong> is ready.
-                  </p>
-
-                  <p style="font-size: 16px; color: #333; line-height: 1.6;">
-                    To get started, click the button below to set up your password and access your dashboard:
-                  </p>
-
-                  <div style="text-align: center; margin: 35px 0;">
-                    <a href="${setupLink}" style="background-color: #3b82f6; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600; display: inline-block;">
-                      Set Up Your Account
-                    </a>
-                  </div>
-
-                  <p style="font-size: 16px; color: #333; line-height: 1.6;">
-                    Once you're set up, you can manage your restaurant's profile, update your hours, add specials, and more.
-                  </p>
-
-                  <p style="font-size: 16px; color: #333; line-height: 1.6;">
-                    If you have any questions, just reply to this email - we're here to help!
-                  </p>
-
-                  <p style="font-size: 16px; color: #333; line-height: 1.6;">
-                    Cheers,<br/>
-                    <strong>The TasteLanc Team</strong>
-                  </p>
-
-                  <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
-
-                  <p style="font-size: 12px; color: #9ca3af; text-align: center;">
-                    TasteLanc - Lancaster's Local Food Guide<br/>
-                    <a href="https://tastelanc.com" style="color: #6b7280;">tastelanc.com</a>
-                  </p>
-                </div>
-              `,
+              subject: `Welcome to TasteLanc! Set Up Your ${restaurantDisplayName} Account`,
+              html: generateBrandedWelcomeEmail(setupLink, contactName, restaurantDisplayName, restaurantCoverImage || undefined),
             });
-            console.log(`Welcome email sent to ${email}`);
+            console.log(`Branded welcome email sent to ${email}`);
           }
 
           // Step 2: Link or create restaurant

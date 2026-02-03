@@ -2,12 +2,12 @@ import 'react-native-gesture-handler';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { StyleSheet } from 'react-native';
 import * as Updates from 'expo-updates';
 import Navigation from './src/navigation';
 import { ErrorBoundary } from './src/components';
-import { queryClient } from './src/lib/queryClient';
+import { queryClient, asyncStoragePersister } from './src/lib/queryClient';
 
 export default function App() {
   useEffect(() => {
@@ -25,7 +25,10 @@ export default function App() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister: asyncStoragePersister }}
+    >
       <GestureHandlerRootView style={styles.container}>
         <SafeAreaProvider>
           <ErrorBoundary level="screen">
@@ -33,7 +36,7 @@ export default function App() {
           </ErrorBoundary>
         </SafeAreaProvider>
       </GestureHandlerRootView>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }
 

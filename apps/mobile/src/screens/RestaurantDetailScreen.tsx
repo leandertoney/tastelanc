@@ -99,7 +99,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
       // Fetch restaurant details first
       const { data: restaurantData, error: restaurantError } = await supabase
         .from('restaurants')
-        .select('*')
+        .select('*, restaurant_photos(url, display_order)')
         .eq('id', id)
         .single();
 
@@ -113,8 +113,13 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
         throw new Error('Restaurant not found');
       }
 
+      // Transform photos array
+      const photos = restaurantData.restaurant_photos
+        ?.sort((a: any, b: any) => a.display_order - b.display_order)
+        ?.map((p: any) => p.url) || [];
+
       // Set restaurant (no tier filtering - show all content)
-      setRestaurant({ ...restaurantData, tiers: null });
+      setRestaurant({ ...restaurantData, photos, tiers: null });
 
       // Fetch related data in parallel
       const [hoursRes, happyHoursRes, specialsRes, eventsData, menusRes] = await Promise.all([
