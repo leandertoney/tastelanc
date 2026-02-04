@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, Dimensions, ImageSourcePropType } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors, radius, spacing } from '../constants/colors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -21,52 +21,26 @@ interface EventCardProps {
 export default function EventCard({
   name,
   date,
-  time,
-  venue,
-  description,
   imageUrl,
   imageSource,
-  isCityWide = false,
   onPress,
 }: EventCardProps) {
   const cardContent = (
     <View style={styles.overlay}>
-          {/* Badge for city-wide events */}
-          {isCityWide && (
-            <View style={styles.badge}>
-              <Ionicons name="location" size={12} color={colors.text} />
-              <Text style={styles.badgeText}>City Event</Text>
-            </View>
-          )}
+          {/* Date badge at top */}
+          <View style={styles.dateBadge}>
+            <Text style={styles.dateBadgeText}>{date}</Text>
+          </View>
 
-          {/* Content at bottom */}
-          <View style={styles.content}>
+          {/* Gradient at bottom for name */}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.8)']}
+            style={styles.bottomGradient}
+          >
             <Text style={styles.name} numberOfLines={2}>
               {name}
             </Text>
-
-            {venue && (
-              <View style={styles.venueRow}>
-                <Ionicons name="business-outline" size={14} color={colors.textMuted} />
-                <Text style={styles.venue} numberOfLines={1}>
-                  {venue}
-                </Text>
-              </View>
-            )}
-
-            <View style={styles.dateTimeRow}>
-              <View style={styles.dateContainer}>
-                <Ionicons name="calendar-outline" size={14} color={colors.accent} />
-                <Text style={styles.date}>{date}</Text>
-              </View>
-              {time && (
-                <View style={styles.timeContainer}>
-                  <Ionicons name="time-outline" size={14} color={colors.accent} />
-                  <Text style={styles.time}>{time}</Text>
-                </View>
-              )}
-            </View>
-          </View>
+          </LinearGradient>
         </View>
   );
 
@@ -86,6 +60,7 @@ export default function EventCard({
           source={source}
           style={styles.imageBackground}
           imageStyle={styles.imageStyle}
+          resizeMode="cover"
         >
           {cardContent}
         </ImageBackground>
@@ -132,67 +107,33 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    padding: spacing.md,
     justifyContent: 'space-between',
   },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  dateBadge: {
     alignSelf: 'flex-start',
-    gap: 4,
-    backgroundColor: colors.accent,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: radius.sm,
+    margin: spacing.sm,
   },
-  badgeText: {
-    fontSize: 11,
+  dateBadgeText: {
+    fontSize: 12,
     fontWeight: '600',
     color: colors.text,
   },
-  content: {
-    gap: 6,
+  bottomGradient: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingTop: 30,
   },
   name: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     color: colors.text,
-    lineHeight: 24,
-  },
-  venueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  venue: {
-    fontSize: 14,
-    color: colors.textMuted,
-    flex: 1,
-  },
-  dateTimeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  dateContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  date: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.accent,
-  },
-  timeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  time: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.accent,
+    lineHeight: 22,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
 });
