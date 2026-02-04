@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   },
   badge: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: 'rgba(164, 30, 34, 0.85)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: radius.sm,
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 10,
-    fontWeight: '600',
-    color: colors.text,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });
