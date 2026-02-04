@@ -1,5 +1,4 @@
 import { View, Text, StyleSheet, TouchableOpacity, ImageBackground } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { EventType } from '../types/database';
 import { colors, radius, spacing } from '../constants/colors';
@@ -54,16 +53,6 @@ export default function EntertainmentCard({
       <View style={styles.badge}>
         <Text style={styles.badgeText}>{typeLabel}</Text>
       </View>
-
-      {/* Gradient at bottom for name */}
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.85)']}
-        style={styles.bottomGradient}
-      >
-        <Text style={styles.name} numberOfLines={2}>
-          {name}
-        </Text>
-      </LinearGradient>
     </View>
   );
 
@@ -100,11 +89,8 @@ export default function EntertainmentCard({
           <Text style={styles.badgeText}>{typeLabel}</Text>
         </View>
         <View style={styles.iconContainer}>
-          <Ionicons name={icon} size={36} color={colors.accent} />
+          <Ionicons name={icon} size={48} color={colors.accent} />
         </View>
-        <Text style={styles.name} numberOfLines={2}>
-          {name}
-        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -160,19 +146,5 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     color: colors.text,
-  },
-  bottomGradient: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    paddingTop: 20,
-  },
-  name: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.text,
-    lineHeight: 16,
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
 });
