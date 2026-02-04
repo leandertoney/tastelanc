@@ -54,6 +54,7 @@ export type RootStackParamList = {
   };
   // View All screens
   HappyHoursViewAll: undefined;
+  SpecialsViewAll: undefined;
   EventsViewAll: undefined;
   EntertainmentViewAll: undefined;
   FeaturedViewAll: undefined;

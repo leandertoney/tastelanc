@@ -67,6 +67,7 @@
       "color": "#D4382C"
     },
     "plugins": [
+      "expo-notifications",
       "expo-font",
       "expo-web-browser",
       [
