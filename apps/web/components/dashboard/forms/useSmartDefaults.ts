@@ -29,6 +29,7 @@ const SMART_MESSAGES: Record<EventType, string> = {
   dj: "DJ nights peak on weekends starting at 10pm. Get ready to party!",
   comedy: "Comedy shows do best on Friday and Saturday at 8pm. Laughter guaranteed!",
   sports: "Sunday at noon is perfect for sports watch parties. Go Eagles!",
+  bingo: "Bingo nights are a hit on Wednesday and Thursday at 7pm. Get your daubers ready!",
   other: "Evening events on Fridays tend to draw the biggest crowds.",
 };
 

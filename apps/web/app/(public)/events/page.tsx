@@ -1,7 +1,7 @@
 import React from 'react';
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
-import { Calendar, MapPin, Music, HelpCircle, Mic2, Disc3, Laugh, Trophy } from 'lucide-react';
+import { Calendar, MapPin, Music, HelpCircle, Mic2, Disc3, Laugh, Trophy, Grid3x3 } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import { formatTime, capitalizeWords } from '@/lib/utils';
 import type { Metadata } from 'next';
@@ -26,6 +26,7 @@ const EVENT_ICONS: Record<EventType, React.JSX.Element> = {
   dj: <Disc3 className="w-4 h-4" />,
   comedy: <Laugh className="w-4 h-4" />,
   sports: <Trophy className="w-4 h-4" />,
+  bingo: <Grid3x3 className="w-4 h-4" />,
   other: <Calendar className="w-4 h-4" />,
 };
 
@@ -36,6 +37,7 @@ const EVENT_TYPES: { value: EventType; label: string }[] = [
   { value: 'dj', label: 'DJ' },
   { value: 'comedy', label: 'Comedy' },
   { value: 'sports', label: 'Sports' },
+  { value: 'bingo', label: 'Bingo' },
 ];
 
 async function getEvents(type?: string) {

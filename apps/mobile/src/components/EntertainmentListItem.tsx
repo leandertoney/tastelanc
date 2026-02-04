@@ -12,7 +12,9 @@ const EVENT_TYPE_ICONS: Record<EventType, keyof typeof Ionicons.glyphMap> = {
   karaoke: 'mic',
   comedy: 'happy',
   sports: 'football',
+  bingo: 'grid',
   other: 'calendar',
+  promotion: 'megaphone',
 };
 
 export interface EventWithRestaurant extends Event {

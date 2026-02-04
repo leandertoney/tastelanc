@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Music, HelpCircle, Mic2, Calendar, PartyPopper, Tv, Laugh } from 'lucide-react';
+import { Music, HelpCircle, Mic2, Calendar, PartyPopper, Tv, Laugh, Grid3x3 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import StepWizard from './StepWizard';
 import WizardStep from './WizardStep';
@@ -98,6 +98,19 @@ const EVENT_TEMPLATES: Template<Partial<EventFormData>>[] = [
       name: 'Game Day',
       start_time: '12:00',
       days_of_week: ['sunday'],
+      is_recurring: true,
+    },
+  },
+  {
+    id: 'bingo',
+    name: 'Bingo Night',
+    description: 'Classic bingo fun',
+    icon: Grid3x3,
+    defaults: {
+      event_type: 'bingo',
+      name: 'Bingo Night',
+      start_time: '19:00',
+      days_of_week: ['wednesday'],
       is_recurring: true,
     },
   },

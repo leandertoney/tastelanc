@@ -12,7 +12,7 @@ const DEFAULT_EVENT_IMAGES: Record<string, string> = {
   dj: `${SITE_URL}/images/events/dj.png`,
   comedy: `${SITE_URL}/images/events/comedy.png`,
   sports: `${SITE_URL}/images/events/sports.png`,
-  music_bingo: `${SITE_URL}/images/events/music_bingo.jpg`,
+  bingo: `${SITE_URL}/images/events/music_bingo.jpg`,
   other: `${SITE_URL}/images/events/other.png`,
 };
 
