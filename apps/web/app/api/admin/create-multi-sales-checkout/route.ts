@@ -202,10 +202,15 @@ export async function POST(request: Request) {
     // Get or create bulk discount coupon
     const couponId = await getOrCreateBulkCoupon(discountPercent);
 
-    // Create line items for Stripe Checkout (one item per restaurant subscription)
-    const lineItems = itemsWithPrices.map(item => ({
-      price: item.priceId,
-      quantity: 1,
+    // Consolidate line items by price ID (Stripe doesn't allow duplicate price IDs)
+    const priceQuantities = itemsWithPrices.reduce((acc, item) => {
+      acc[item.priceId] = (acc[item.priceId] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const lineItems = Object.entries(priceQuantities).map(([priceId, quantity]) => ({
+      price: priceId,
+      quantity,
     }));
 
     // Create Stripe Checkout session with sales_order_id in metadata
