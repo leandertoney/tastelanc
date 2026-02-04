@@ -57,9 +57,9 @@ If you're a Lancaster restaurant looking to grow without wasting money on ads, T
 
 ### Premium ($$)
 **Pricing:**
-- $200 / 3 months
-- $350 / 6 months
-- $650 / Year
+- $250 / 3 months
+- $450 / 6 months
+- $800 / Year
 
 **Features:**
 - Basic Package
@@ -73,8 +73,8 @@ If you're a Lancaster restaurant looking to grow without wasting money on ads, T
 
 ### Elite ($$$)
 **Pricing:**
-- $300 / 3 months
-- $575 / 6 months
+- $350 / 3 months
+- $600 / 6 months
 - $1100 / Year
 
 **Features:**
@@ -159,7 +159,7 @@ If you're a Lancaster restaurant looking to grow without wasting money on ads, T
 - `/dashboard/photos` - Cover photo only
 - `/dashboard/subscription` - Upgrade page
 
-### Premium Tier ($200-650)
+### Premium Tier ($250-800)
 Everything in Basic, plus:
 - `/dashboard/menu` - Full menu management
 - `/dashboard/analytics` - Consumer analytics
@@ -168,7 +168,7 @@ Everything in Basic, plus:
 - `/dashboard/events` - Entertainment/events
 - Logo upload in profile
 
-### Elite Tier ($300-1100)
+### Elite Tier ($350-1100)
 Everything in Premium, plus:
 - Logo displayed on map
 - Advanced analytics dashboard

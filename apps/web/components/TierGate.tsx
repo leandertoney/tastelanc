@@ -120,14 +120,14 @@ export default function TierGate({
           {requiredTier === 'elite' ? (
             <div>
               <p className="text-yellow-500 font-semibold mb-1">Elite Plan</p>
-              <p className="text-gray-300">Starting at $300 for 3 months</p>
-              <p className="text-gray-500 text-sm">or $1,100/year (save $100)</p>
+              <p className="text-gray-300">Starting at $350 for 3 months</p>
+              <p className="text-gray-500 text-sm">or $1,100/year (save $300)</p>
             </div>
           ) : (
             <div>
               <p className="text-tastelanc-accent font-semibold mb-1">Premium Plan</p>
-              <p className="text-gray-300">Starting at $200 for 3 months</p>
-              <p className="text-gray-500 text-sm">or $650/year (save $150)</p>
+              <p className="text-gray-300">Starting at $250 for 3 months</p>
+              <p className="text-gray-500 text-sm">or $800/year (save $200)</p>
             </div>
           )}
         </div>
