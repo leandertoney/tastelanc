@@ -22,6 +22,7 @@ const EVENT_TYPE_LABELS: Record<EventType, string> = {
   karaoke: 'Karaoke',
   comedy: 'Comedy',
   sports: 'Sports',
+  bingo: 'Bingo',
   other: 'Event',
   promotion: 'Promo',
 };

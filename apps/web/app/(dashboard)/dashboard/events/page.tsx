@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Calendar, Music, Mic2, HelpCircle, PartyPopper, Loader2, Tv, Laugh, Pencil, X } from 'lucide-react';
+import { Plus, Trash2, Calendar, Music, Mic2, HelpCircle, PartyPopper, Loader2, Tv, Laugh, Pencil, X, Grid3x3 } from 'lucide-react';
 import { Button, Card, Badge } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import { EventWizard, EventFormData } from '@/components/dashboard/forms';
@@ -18,6 +18,7 @@ const EVENT_TYPES = [
   { value: 'dj', label: 'DJ Night', icon: Music },
   { value: 'comedy', label: 'Comedy Night', icon: Laugh },
   { value: 'sports', label: 'Sports Event', icon: Tv },
+  { value: 'bingo', label: 'Bingo Night', icon: Grid3x3 },
   { value: 'other', label: 'Special Event / Other', icon: PartyPopper },
 ];
 
