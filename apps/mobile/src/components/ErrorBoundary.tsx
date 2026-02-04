@@ -136,6 +136,34 @@ function ScreenErrorFallback({
 }) {
   const [showDetails, setShowDetails] = React.useState(false);
 
+  // Show friendly maintenance message in production
+  if (!__DEV__) {
+    return (
+      <View style={styles.screenError}>
+        <View style={styles.screenErrorContent}>
+          <View style={styles.maintenanceIconContainer}>
+            <Ionicons name="construct-outline" size={64} color={colors.accent} />
+          </View>
+
+          <Text style={styles.screenErrorTitle}>We'll Be Right Back</Text>
+          <Text style={styles.maintenanceMessage}>
+            We're making some improvements to give you a better experience. Please check back shortly!
+          </Text>
+
+          <TouchableOpacity style={styles.screenRetryButton} onPress={onRetry}>
+            <Ionicons name="refresh-outline" size={20} color="#FFF" />
+            <Text style={styles.screenRetryText}>Try Again</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.maintenanceNote}>
+            If this persists, try closing and reopening the app.
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Development mode - show full error details
   return (
     <View style={styles.screenError}>
       <View style={styles.screenErrorContent}>
@@ -161,7 +189,7 @@ function ScreenErrorFallback({
           <Text style={styles.screenRetryText}>Try Again</Text>
         </TouchableOpacity>
 
-        {__DEV__ && errorInfo && (
+        {errorInfo && (
           <>
             <TouchableOpacity
               style={styles.detailsToggle}
@@ -272,6 +300,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
+  },
+  maintenanceIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(212, 175, 55, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  maintenanceMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 24,
+    paddingHorizontal: 16,
+  },
+  maintenanceNote: {
+    fontSize: 13,
+    color: '#888',
+    textAlign: 'center',
+    marginTop: 24,
+    fontStyle: 'italic',
   },
   screenErrorTitle: {
     fontSize: 28,
