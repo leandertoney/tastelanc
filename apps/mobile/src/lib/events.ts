@@ -111,7 +111,7 @@ export async function fetchEventsByTypes(types: EventType[]): Promise<ApiEvent[]
   return allEvents.filter(event => types.includes(event.event_type));
 }
 
-// Entertainment event types for filtering
+// Entertainment event types for filtering (specific categories only, not 'other')
 export const ENTERTAINMENT_TYPES: EventType[] = [
   'live_music',
   'dj',
@@ -120,7 +120,6 @@ export const ENTERTAINMENT_TYPES: EventType[] = [
   'comedy',
   'sports',
   'bingo',
-  'other',
 ];
 
 /**
