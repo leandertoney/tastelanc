@@ -7,7 +7,7 @@ import EventCard, { EVENT_CARD_HEIGHT, EVENT_CARD_WIDTH } from './EventCard';
 import PartnerCTACard from './PartnerCTACard';
 import SectionHeader from './SectionHeader';
 import Spacer from './Spacer';
-import { fetchNonEntertainmentEvents, ApiEvent, getEventVenueName, isSelfPromoterEvent } from '../lib/events';
+import { fetchEvents, ENTERTAINMENT_TYPES, ApiEvent, getEventVenueName, isSelfPromoterEvent } from '../lib/events';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_EVENTS } from '../config/mockData';
@@ -46,11 +46,15 @@ const MOCK_DISPLAY_EVENTS: DisplayEvent[] = MOCK_EVENTS.map((e) => ({
 }));
 
 async function getUpcomingEvents(): Promise<ApiEvent[]> {
-  const events = await fetchNonEntertainmentEvents();
+  // Fetch all events and filter out entertainment types inline
+  const allEvents = await fetchEvents();
+  const nonEntertainment = allEvents.filter(
+    event => !ENTERTAINMENT_TYPES.includes(event.event_type)
+  );
 
   // Filter to upcoming/recurring events and limit to 10
   const today = new Date().toISOString().split('T')[0];
-  return events
+  return nonEntertainment
     .filter(event => {
       if (event.is_recurring) return true;
       if (event.event_date && event.event_date >= today) return true;

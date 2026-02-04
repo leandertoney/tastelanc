@@ -6,7 +6,7 @@
 import { queryClient } from './queryClient';
 import { supabase } from './supabase';
 import { getFeaturedRestaurants, getOtherRestaurants } from './recommendations';
-import { fetchEntertainmentEvents, fetchNonEntertainmentEvents, ApiEvent } from './events';
+import { fetchEntertainmentEvents, fetchEvents, ENTERTAINMENT_TYPES, ApiEvent } from './events';
 import { getFavorites } from './favorites';
 import { getLeaderboard } from './voting';
 import type { HappyHour, HappyHourItem, Restaurant, DayOfWeek } from '../types/database';
@@ -75,10 +75,16 @@ async function getEntertainmentEvents(): Promise<EntertainmentResult> {
 // ========== Upcoming Events Query Function ==========
 
 async function getUpcomingEvents(): Promise<ApiEvent[]> {
-  const events = await fetchNonEntertainmentEvents();
+  // Fetch all events and filter out entertainment types inline
+  // (avoiding separate function to prevent potential bundling issues)
+  const allEvents = await fetchEvents();
+  const nonEntertainment = allEvents.filter(
+    (event: ApiEvent) => !ENTERTAINMENT_TYPES.includes(event.event_type)
+  );
+
   const today = new Date().toISOString().split('T')[0];
-  return events
-    .filter(event => {
+  return nonEntertainment
+    .filter((event: ApiEvent) => {
       if (event.is_recurring) return true;
       if (event.event_date && event.event_date >= today) return true;
       return false;
