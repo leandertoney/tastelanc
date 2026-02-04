@@ -3,9 +3,9 @@ import { createClient } from '@/lib/supabase/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import {
   getStripe,
-  RESTAURANT_PRICE_IDS,
   RESTAURANT_PRICES,
   getDiscountPercent,
+  DURATION_LABELS,
 } from '@/lib/stripe';
 
 interface CheckoutItem {
@@ -21,34 +21,6 @@ function getSupabaseAdmin() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
-}
-
-function getPriceId(plan: string, duration: string): string | null {
-  const key = `${plan}_${duration}` as keyof typeof RESTAURANT_PRICE_IDS;
-  return RESTAURANT_PRICE_IDS[key] || null;
-}
-
-/**
- * Creates or retrieves a Stripe coupon for bulk discounts.
- */
-async function getOrCreateBulkCoupon(discountPercent: number): Promise<string | null> {
-  if (discountPercent <= 0) return null;
-
-  const stripe = getStripe();
-  const couponId = `BULK_${discountPercent}PCT`;
-
-  try {
-    const existingCoupon = await stripe.coupons.retrieve(couponId);
-    return existingCoupon.id;
-  } catch {
-    const coupon = await stripe.coupons.create({
-      id: couponId,
-      percent_off: discountPercent,
-      duration: 'forever',
-      name: `${discountPercent}% Multi-Location Discount`,
-    });
-    return coupon.id;
-  }
 }
 
 export async function POST(request: Request) {
@@ -99,16 +71,11 @@ export async function POST(request: Request) {
         throw new Error(`Item ${index + 1}: Invalid duration "${item.duration}"`);
       }
 
-      const priceId = getPriceId(item.plan, item.duration);
-      if (!priceId) {
-        throw new Error(`Item ${index + 1}: Invalid plan/duration combination`);
-      }
-
       const prices = RESTAURANT_PRICES[item.plan as keyof typeof RESTAURANT_PRICES];
       const priceDollars = prices[item.duration as keyof typeof prices];
       const priceCents = priceDollars * 100;
 
-      return { ...item, priceCents, priceId, priceDollars };
+      return { ...item, priceCents, priceDollars };
     });
 
     // Calculate totals
@@ -199,41 +166,49 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to create sales order items' }, { status: 500 });
     }
 
-    // Get or create bulk discount coupon
-    const couponId = await getOrCreateBulkCoupon(discountPercent);
+    // Create line items using price_data (avoids all price ID issues)
+    // Each restaurant gets its own line item with discounted price baked in
+    const lineItems = itemsWithPrices.map(item => {
+      const discountedCents = item.priceCents - Math.round(item.priceCents * discountPercent / 100);
+      const planName = item.plan.charAt(0).toUpperCase() + item.plan.slice(1);
+      const durationLabel = DURATION_LABELS[item.duration] || item.duration;
 
-    // Consolidate line items by price ID (Stripe doesn't allow duplicate price IDs)
-    const priceQuantities = itemsWithPrices.reduce((acc, item) => {
-      acc[item.priceId] = (acc[item.priceId] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+      return {
+        price_data: {
+          currency: 'usd',
+          unit_amount: discountedCents,
+          product_data: {
+            name: `${item.restaurantName} - ${planName} (${durationLabel})`,
+            description: discountPercent > 0
+              ? `TasteLanc ${planName} subscription (${discountPercent}% multi-location discount applied)`
+              : `TasteLanc ${planName} subscription`,
+          },
+        },
+        quantity: 1,
+      };
+    });
 
-    const lineItems = Object.entries(priceQuantities).map(([priceId, quantity]) => ({
-      price: priceId,
-      quantity,
-    }));
-
-    // Create Stripe Checkout session with sales_order_id in metadata
-    // Note: Can't use both 'discounts' and 'allow_promotion_codes' together
+    // Create Stripe Checkout session in PAYMENT mode (simpler, no subscription restrictions)
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_update: { address: 'auto' },
-      mode: 'subscription',
+      mode: 'payment',
       payment_method_types: ['card'],
       line_items: lineItems,
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/admin/sales?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/admin/sales?canceled=true`,
-      ...(couponId ? { discounts: [{ coupon: couponId }] } : { allow_promotion_codes: true }),
       automatic_tax: { enabled: true },
+      invoice_creation: { enabled: true },
       metadata: {
-        multi_restaurant: 'true',  // This is what the webhook checks for!
+        multi_restaurant: 'true',
         admin_sale: 'true',
-        sales_order_id: salesOrder.id,  // Webhook looks this up
+        sales_order_id: salesOrder.id,
         contact_name: contactName || '',
         email,
         phone: phone || '',
         created_by_admin: user.id,
         restaurant_count: String(items.length),
+        discount_percent: String(discountPercent),
       },
     });
 
