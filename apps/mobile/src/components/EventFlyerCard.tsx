@@ -52,7 +52,7 @@ export default function EventFlyerCard({ event, width, height, onPress, onRestau
       <ImageBackground
         source={{ uri: event.image_url }}
         style={[styles.imageBackground, { width, height }]}
-        resizeMode="contain"
+        resizeMode="cover"
         imageStyle={styles.imageStyle}
       >
         <LinearGradient
