@@ -76,7 +76,7 @@ export default function EntertainmentCard({
     );
   }
 
-  // Fallback without image - icon centered
+  // Fallback without image - icon centered, badge at bottom
   return (
     <TouchableOpacity
       style={[styles.card, styles.solidCard]}
@@ -85,11 +85,11 @@ export default function EntertainmentCard({
       disabled={!onPress}
     >
       <View style={styles.solidOverlay}>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{typeLabel}</Text>
-        </View>
         <View style={styles.iconContainer}>
           <Ionicons name={icon} size={48} color={colors.accent} />
+        </View>
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{typeLabel}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
   },
   solidOverlay: {
     flex: 1,
