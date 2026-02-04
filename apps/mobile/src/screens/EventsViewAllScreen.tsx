@@ -16,7 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
-import { fetchEvents, ApiEvent, getEventVenueName } from '../lib/events';
+import { fetchNonEntertainmentEvents, ApiEvent, getEventVenueName } from '../lib/events';
 import { colors, spacing } from '../constants/colors';
 import EventFlyerCard from '../components/EventFlyerCard';
 import SearchBar from '../components/SearchBar';
@@ -34,7 +34,7 @@ interface DateSection {
 }
 
 async function getAllEvents(): Promise<ApiEvent[]> {
-  const events = await fetchEvents();
+  const events = await fetchNonEntertainmentEvents();
 
   // Filter to upcoming/recurring events
   const today = new Date().toISOString().split('T')[0];
