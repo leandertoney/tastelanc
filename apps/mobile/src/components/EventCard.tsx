@@ -1,5 +1,4 @@
 import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, Dimensions, ImageSourcePropType } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { colors, radius, spacing } from '../constants/colors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -32,15 +31,12 @@ export default function EventCard({
             <Text style={styles.dateBadgeText}>{date}</Text>
           </View>
 
-          {/* Gradient at bottom for name */}
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.8)']}
-            style={styles.bottomGradient}
-          >
+          {/* Name at bottom with dark background */}
+          <View style={styles.bottomContainer}>
             <Text style={styles.name} numberOfLines={2}>
               {name}
             </Text>
-          </LinearGradient>
+          </View>
         </View>
   );
 
@@ -122,10 +118,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
   },
-  bottomGradient: {
+  bottomContainer: {
+    backgroundColor: 'rgba(0,0,0,0.7)',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    paddingTop: 30,
   },
   name: {
     fontSize: 18,
