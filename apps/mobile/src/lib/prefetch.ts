@@ -6,7 +6,7 @@
 import { queryClient } from './queryClient';
 import { supabase } from './supabase';
 import { getFeaturedRestaurants, getOtherRestaurants } from './recommendations';
-import { fetchEntertainmentEvents, fetchEvents, ApiEvent } from './events';
+import { fetchEntertainmentEvents, fetchNonEntertainmentEvents, ApiEvent } from './events';
 import { getFavorites } from './favorites';
 import { getLeaderboard } from './voting';
 import type { HappyHour, HappyHourItem, Restaurant, DayOfWeek } from '../types/database';
@@ -75,7 +75,7 @@ async function getEntertainmentEvents(): Promise<EntertainmentResult> {
 // ========== Upcoming Events Query Function ==========
 
 async function getUpcomingEvents(): Promise<ApiEvent[]> {
-  const events = await fetchEvents();
+  const events = await fetchNonEntertainmentEvents();
   const today = new Date().toISOString().split('T')[0];
   return events
     .filter(event => {
