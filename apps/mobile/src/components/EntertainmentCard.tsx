@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, ImageBackground } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { EventType } from '../types/database';
 import { colors, radius, spacing } from '../constants/colors';
@@ -41,8 +42,6 @@ interface EntertainmentCardProps {
 export default function EntertainmentCard({
   name,
   eventType,
-  time,
-  venue,
   imageUrl,
   onPress,
 }: EntertainmentCardProps) {
@@ -53,17 +52,18 @@ export default function EntertainmentCard({
     <View style={styles.overlay}>
       {/* Event type badge - top left */}
       <View style={styles.badge}>
-        <Ionicons name={icon} size={12} color={colors.text} />
         <Text style={styles.badgeText}>{typeLabel}</Text>
       </View>
 
-      {/* Content at bottom */}
-      <View style={styles.content}>
+      {/* Gradient at bottom for name */}
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.85)']}
+        style={styles.bottomGradient}
+      >
         <Text style={styles.name} numberOfLines={2}>
           {name}
         </Text>
-        <Text style={styles.time}>{time}</Text>
-      </View>
+      </LinearGradient>
     </View>
   );
 
@@ -79,6 +79,7 @@ export default function EntertainmentCard({
           source={{ uri: imageUrl, cache: 'reload' }}
           style={styles.imageBackground}
           imageStyle={styles.imageStyle}
+          resizeMode="cover"
         >
           {cardContent}
         </ImageBackground>
@@ -95,15 +96,15 @@ export default function EntertainmentCard({
       disabled={!onPress}
     >
       <View style={styles.solidOverlay}>
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{typeLabel}</Text>
+        </View>
         <View style={styles.iconContainer}>
-          <Ionicons name={icon} size={32} color={colors.textMuted} />
+          <Ionicons name={icon} size={36} color={colors.accent} />
         </View>
-        <View style={styles.content}>
-          <Text style={styles.name} numberOfLines={2}>
-            {name}
-          </Text>
-          <Text style={styles.time}>{time}</Text>
-        </View>
+        <Text style={styles.name} numberOfLines={2}>
+          {name}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -135,8 +136,6 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    padding: spacing.sm,
     justifyContent: 'space-between',
   },
   solidOverlay: {
@@ -150,32 +149,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
     alignSelf: 'flex-start',
-    gap: 4,
-    backgroundColor: colors.accent,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: radius.sm,
+    margin: spacing.xs,
   },
   badgeText: {
     fontSize: 10,
     fontWeight: '600',
     color: colors.text,
   },
-  content: {
-    gap: 2,
+  bottomGradient: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    paddingTop: 20,
   },
   name: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: colors.text,
-    lineHeight: 18,
-  },
-  time: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.accent,
+    lineHeight: 16,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 });
