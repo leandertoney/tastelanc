@@ -209,6 +209,7 @@ export async function POST(request: Request) {
     }));
 
     // Create Stripe Checkout session with sales_order_id in metadata
+    // Note: Can't use both 'discounts' and 'allow_promotion_codes' together
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_update: { address: 'auto' },
@@ -217,7 +218,7 @@ export async function POST(request: Request) {
       line_items: lineItems,
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/admin/sales?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/admin/sales?canceled=true`,
-      discounts: couponId ? [{ coupon: couponId }] : undefined,
+      ...(couponId ? { discounts: [{ coupon: couponId }] } : { allow_promotion_codes: true }),
       automatic_tax: { enabled: true },
       metadata: {
         multi_restaurant: 'true',  // This is what the webhook checks for!
@@ -229,7 +230,6 @@ export async function POST(request: Request) {
         created_by_admin: user.id,
         restaurant_count: String(items.length),
       },
-      allow_promotion_codes: false,
     });
 
     return NextResponse.json({
