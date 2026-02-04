@@ -4,6 +4,7 @@ import BottomTabNavigator from './BottomTabNavigator';
 import RestaurantDetailScreen from '../screens/RestaurantDetailScreen';
 import CategoryScreen from '../screens/CategoryScreen';
 import HappyHoursViewAllScreen from '../screens/HappyHoursViewAllScreen';
+import SpecialsViewAllScreen from '../screens/SpecialsViewAllScreen';
 import EventsViewAllScreen from '../screens/EventsViewAllScreen';
 import EntertainmentViewAllScreen from '../screens/EntertainmentViewAllScreen';
 import FeaturedViewAllScreen from '../screens/FeaturedViewAllScreen';
@@ -61,6 +62,11 @@ export default function RootNavigator() {
         name="HappyHoursViewAll"
         component={HappyHoursViewAllScreen}
         options={{ title: 'Happy Hours' }}
+      />
+      <Stack.Screen
+        name="SpecialsViewAll"
+        component={SpecialsViewAllScreen}
+        options={{ title: 'Specials' }}
       />
       <Stack.Screen
         name="EventsViewAll"

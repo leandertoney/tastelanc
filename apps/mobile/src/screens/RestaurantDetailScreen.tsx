@@ -42,9 +42,18 @@ import {
   PersonalityDescription,
   TabBar,
 } from '../components';
+import TierLockedEmptyState from '../components/TierLockedEmptyState';
 import type { Tab } from '../components';
 import { formatCategoryName, formatTime } from '../lib/formatters';
 import { colors, radius } from '../constants/colors';
+import { isTierGatingEnabled } from '../lib/feature-flags';
+import {
+  hasMenuAccess,
+  hasSpecialsAccess,
+  hasHappyHourAccess,
+  hasEventsAccess,
+  type SubscriptionTier,
+} from '../lib/tier-access';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RestaurantDetail'>;
 
@@ -80,6 +89,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const isFavorite = favorites.includes(id);
 
   const [restaurant, setRestaurant] = useState<RestaurantWithTier | null>(null);
+  const [tierName, setTierName] = useState<SubscriptionTier | null>(null);
   const [hours, setHours] = useState<RestaurantHours[]>([]);
   const [happyHours, setHappyHours] = useState<HappyHour[]>([]);
   const [specials, setSpecials] = useState<Special[]>([]);
@@ -92,14 +102,17 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const [checkInModalVisible, setCheckInModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('happy_hours');
 
+  // Feature flag for tier gating
+  const tierGatingEnabled = isTierGatingEnabled();
+
   const fetchRestaurantData = useCallback(async () => {
     try {
       setError(null);
 
-      // Fetch restaurant details first
+      // Fetch restaurant details first (with tier information for gating)
       const { data: restaurantData, error: restaurantError } = await supabase
         .from('restaurants')
-        .select('*, restaurant_photos(url, display_order)')
+        .select('*, restaurant_photos(url, display_order), tiers(name, display_name)')
         .eq('id', id)
         .single();
 
@@ -118,8 +131,13 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
         ?.sort((a: any, b: any) => a.display_order - b.display_order)
         ?.map((p: any) => p.url) || [];
 
-      // Set restaurant (no tier filtering - show all content)
-      setRestaurant({ ...restaurantData, photos, tiers: null });
+      // Extract tier data
+      const tierData = restaurantData.tiers;
+      const { tiers: _, ...rest } = restaurantData;
+
+      // Set restaurant and tier
+      setRestaurant({ ...rest, photos, tiers: tierData });
+      setTierName(tierData?.name || null);
 
       // Fetch related data in parallel
       const [hoursRes, happyHoursRes, specialsRes, eventsData, menusRes] = await Promise.all([
@@ -315,7 +333,19 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
           {/* Happy Hours Tab */}
           {activeTab === 'happy_hours' && (
             <View style={styles.tabSection}>
-              {happyHours.length > 0 ? (
+              {/* Check tier access if feature flag is enabled */}
+              {tierGatingEnabled && !hasHappyHourAccess(tierName) ? (
+                <TierLockedEmptyState
+                  featureName="Happy Hours"
+                  restaurantName={restaurant.name}
+                  restaurantId={restaurant.id}
+                  tier={tierName}
+                  icon="beer-outline"
+                  itemCount={happyHours.length}
+                  previewText={happyHours.length > 0 ? 'Special pricing on drinks & food' : undefined}
+                  userId={userId}
+                />
+              ) : happyHours.length > 0 ? (
                 happyHours.map((hh) => (
                   <View key={hh.id} style={styles.contentCard}>
                     {hh.image_url && (
@@ -361,7 +391,19 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
           {/* Specials Tab */}
           {activeTab === 'specials' && (
             <View style={styles.tabSection}>
-              {specials.length > 0 ? (
+              {/* Check tier access if feature flag is enabled */}
+              {tierGatingEnabled && !hasSpecialsAccess(tierName) ? (
+                <TierLockedEmptyState
+                  featureName="Specials"
+                  restaurantName={restaurant.name}
+                  restaurantId={restaurant.id}
+                  tier={tierName}
+                  icon="pricetag-outline"
+                  itemCount={specials.length}
+                  previewText={specials.length > 0 ? 'Daily deals and offers' : undefined}
+                  userId={userId}
+                />
+              ) : specials.length > 0 ? (
                 specials.map((special) => (
                   <View key={special.id} style={styles.contentCard}>
                     {special.image_url && (
@@ -412,7 +454,19 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
           {/* Events Tab */}
           {activeTab === 'events' && (
             <View style={styles.tabSection}>
-              {events.length > 0 ? (
+              {/* Check tier access if feature flag is enabled */}
+              {tierGatingEnabled && !hasEventsAccess(tierName) ? (
+                <TierLockedEmptyState
+                  featureName="Events"
+                  restaurantName={restaurant.name}
+                  restaurantId={restaurant.id}
+                  tier={tierName}
+                  icon="calendar-outline"
+                  itemCount={events.length}
+                  previewText={events.length > 0 ? 'Live music, trivia, and more' : undefined}
+                  userId={userId}
+                />
+              ) : events.length > 0 ? (
                 events.map((event) => (
                   <View key={event.id} style={styles.contentCard}>
                     {event.image_url && (
@@ -458,12 +512,26 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
           {/* Menu Tab */}
           {activeTab === 'menu' && (
             <View style={styles.tabSection}>
-              <MenuViewer
-                menuUrl={restaurant.menu_link}
-                restaurantName={restaurant.name}
-                menus={menus}
-                loading={menusLoading}
-              />
+              {/* Check tier access if feature flag is enabled */}
+              {tierGatingEnabled && !hasMenuAccess(tierName) ? (
+                <TierLockedEmptyState
+                  featureName="Menu"
+                  restaurantName={restaurant.name}
+                  restaurantId={restaurant.id}
+                  tier={tierName}
+                  icon="restaurant-outline"
+                  itemCount={menus.length}
+                  previewText={menus.length > 0 ? 'Full menu with pricing' : undefined}
+                  userId={userId}
+                />
+              ) : (
+                <MenuViewer
+                  menuUrl={restaurant.menu_link}
+                  restaurantName={restaurant.name}
+                  menus={menus}
+                  loading={menusLoading}
+                />
+              )}
             </View>
           )}
         </View>
