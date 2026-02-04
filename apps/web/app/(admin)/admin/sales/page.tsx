@@ -45,8 +45,8 @@ const DURATIONS = [
 ];
 
 const PRICES: Record<string, Record<string, number>> = {
-  premium: { '3mo': 200, '6mo': 350, yearly: 650 },
-  elite: { '3mo': 300, '6mo': 575, yearly: 1100 },
+  premium: { '3mo': 250, '6mo': 450, yearly: 800 },
+  elite: { '3mo': 350, '6mo': 600, yearly: 1100 },
 };
 
 function getDiscountPercent(count: number): number {

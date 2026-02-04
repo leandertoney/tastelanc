@@ -16,11 +16,11 @@ export function getStripe() {
 
 // Restaurant Plans - 6 prices (2 tiers × 3 durations) - Starter tier removed
 export const RESTAURANT_PRICE_IDS = {
-  // Premium: $200/3mo, $350/6mo, $650/year
+  // Premium: $250/3mo, $450/6mo, $800/year
   premium_3mo: process.env.STRIPE_PRICE_PREMIUM_3MO || 'price_premium_3mo',
   premium_6mo: process.env.STRIPE_PRICE_PREMIUM_6MO || 'price_premium_6mo',
   premium_yearly: process.env.STRIPE_PRICE_PREMIUM_YEARLY || 'price_premium_yearly',
-  // Elite: $300/3mo, $575/6mo, $1100/year
+  // Elite: $350/3mo, $600/6mo, $1100/year
   elite_3mo: process.env.STRIPE_PRICE_ELITE_3MO || 'price_elite_3mo',
   elite_6mo: process.env.STRIPE_PRICE_ELITE_6MO || 'price_elite_6mo',
   elite_yearly: process.env.STRIPE_PRICE_ELITE_YEARLY || 'price_elite_yearly',
@@ -57,8 +57,8 @@ export const ALL_CONSUMER_PRICE_IDS = [
 
 // Price info for display - Starter tier removed
 export const RESTAURANT_PRICES = {
-  premium: { '3mo': 200, '6mo': 350, yearly: 650 },
-  elite: { '3mo': 300, '6mo': 575, yearly: 1100 },
+  premium: { '3mo': 250, '6mo': 450, yearly: 800 },
+  elite: { '3mo': 350, '6mo': 600, yearly: 1100 },
 } as const;
 
 export const CONSUMER_PRICES = {

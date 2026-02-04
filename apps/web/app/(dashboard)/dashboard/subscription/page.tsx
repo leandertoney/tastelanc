@@ -22,7 +22,7 @@ const PLANS = [
   {
     id: 'premium',
     name: 'Premium',
-    prices: { '3mo': 200, '6mo': 350, yearly: 650 },
+    prices: { '3mo': 250, '6mo': 450, yearly: 800 },
     period: '',
     description: 'Best for active restaurants',
     features: [
@@ -41,7 +41,7 @@ const PLANS = [
   {
     id: 'elite',
     name: 'Elite',
-    prices: { '3mo': 300, '6mo': 575, yearly: 1100 },
+    prices: { '3mo': 350, '6mo': 600, yearly: 1100 },
     period: '',
     description: 'Maximum visibility & features',
     features: [
