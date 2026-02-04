@@ -112,6 +112,7 @@ export async function fetchEventsByTypes(types: EventType[]): Promise<ApiEvent[]
 }
 
 // Entertainment event types for filtering
+// Note: 'other' is NOT entertainment - it's a regular event type shown in Upcoming Events
 export const ENTERTAINMENT_TYPES: EventType[] = [
   'live_music',
   'dj',
@@ -120,7 +121,6 @@ export const ENTERTAINMENT_TYPES: EventType[] = [
   'comedy',
   'sports',
   'bingo',
-  'other',
 ];
 
 /**
