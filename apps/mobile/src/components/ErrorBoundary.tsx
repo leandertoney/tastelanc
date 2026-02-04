@@ -151,6 +151,11 @@ function ScreenErrorFallback({
           {error?.message || 'An unknown error occurred'}
         </Text>
 
+        {/* Always show error name for debugging */}
+        <Text style={styles.errorDebug}>
+          {error?.name}: {error?.message?.substring(0, 100)}
+        </Text>
+
         <TouchableOpacity style={styles.screenRetryButton} onPress={onRetry}>
           <Ionicons name="refresh-outline" size={20} color="#FFF" />
           <Text style={styles.screenRetryText}>Try Again</Text>
@@ -283,8 +288,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#888',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 12,
     lineHeight: 20,
+  },
+  errorDebug: {
+    fontSize: 11,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+    fontFamily: 'monospace',
+    backgroundColor: '#f0f0f0',
+    padding: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
   },
   screenRetryButton: {
     flexDirection: 'row',
