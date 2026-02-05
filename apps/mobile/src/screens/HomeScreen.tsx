@@ -70,7 +70,7 @@ export default function HomeScreen() {
 
   // Helper to determine if a restaurant should show a trending badge
   const getTrendingBadge = useCallback((restaurantId: string): BadgeType | null => {
-    if (trendingIds?.has(restaurantId)) {
+    if (Array.isArray(trendingIds) && trendingIds.includes(restaurantId)) {
       return 'trending';
     }
     return null;

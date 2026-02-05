@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, Animated } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing } from '../constants/colors';
 
@@ -80,7 +81,13 @@ export default function HappyHourBanner({
           style={styles.imageBackground}
           imageStyle={styles.imageStyle}
         >
-          <View style={styles.imageOverlay}>{content}</View>
+          <LinearGradient
+            colors={['rgba(0,0,0,0.35)', 'rgba(0,0,0,0.75)', 'rgba(0,0,0,0.85)']}
+            locations={[0, 0.5, 1]}
+            style={styles.imageOverlay}
+          >
+            {content}
+          </LinearGradient>
         </ImageBackground>
       </TouchableOpacity>
     );
@@ -127,7 +134,6 @@ const styles = StyleSheet.create({
   },
   imageOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
   },
   content: {
@@ -146,6 +152,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
     marginBottom: 2,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   dealLarge: {
     fontSize: 18,
@@ -154,6 +163,9 @@ const styles = StyleSheet.create({
   restaurantName: {
     fontSize: 13,
     color: colors.textMuted,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   rightSection: {
     flexDirection: 'row',

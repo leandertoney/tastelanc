@@ -20,8 +20,13 @@ interface SocialProofBannerProps {
   onPress?: () => void;
 }
 
-// Fallback message when no live data available
-const FALLBACK_MESSAGE = { text: 'Vote for Lancaster\'s Best', subtext: null };
+// Message type with CTA info
+interface BannerMessage {
+  text: string;
+  subtext: string | null;
+  ctaText: string;
+  navigateTo: 'VoteCenter' | 'HappyHoursViewAll' | 'EntertainmentViewAll' | 'EventsViewAll' | 'Rewards' | 'BlogViewAll';
+}
 
 /**
  * SocialProofBanner - Displays platform activity with animated cycling text
@@ -35,16 +40,51 @@ export default function SocialProofBanner({ variant = 'voting', onPress }: Socia
   const [messageIndex, setMessageIndex] = useState(0);
   const textOpacity = useSharedValue(1);
 
-  // Build messages array from live data
-  const messages = data ? [
-    { text: data.votingBannerText, subtext: data.restaurantsCompeting },
-    { text: data.checkinBannerText, subtext: data.checkinsThisWeek > 0 ? `${data.checkinsThisWeek} this week` : null },
-    // Only show if we have live counts
-    data.happyHoursBannerText ? { text: data.happyHoursBannerText, subtext: null } : null,
-    data.specialsBannerText ? { text: data.specialsBannerText, subtext: null } : null,
-    // Static fallback
-    FALLBACK_MESSAGE,
-  ].filter((m): m is { text: string; subtext: string | null } => m !== null && !!m.text) : [FALLBACK_MESSAGE];
+  // Build messages array for main sections with CTAs
+  const messages: BannerMessage[] = [
+    // Voting
+    {
+      text: data?.votingBannerText || '🗳️ Vote for Lancaster\'s Best',
+      subtext: data?.restaurantsCompeting || null,
+      ctaText: 'Vote',
+      navigateTo: 'VoteCenter'
+    },
+    // Happy Hours
+    {
+      text: data?.happyHoursBannerText || '🍹 Find today\'s happy hour deals',
+      subtext: null,
+      ctaText: 'View',
+      navigateTo: 'HappyHoursViewAll'
+    },
+    // Entertainment
+    {
+      text: '🎵 Live music, trivia & more tonight',
+      subtext: null,
+      ctaText: 'Explore',
+      navigateTo: 'EntertainmentViewAll'
+    },
+    // Events
+    {
+      text: data?.specialsBannerText || '📅 Discover upcoming events',
+      subtext: null,
+      ctaText: 'View',
+      navigateTo: 'EventsViewAll'
+    },
+    // Rewards / Check-ins
+    {
+      text: data?.checkinBannerText || '📍 Check in to earn rewards',
+      subtext: data?.checkinsThisWeek && data.checkinsThisWeek > 0 ? `${data.checkinsThisWeek} this week` : null,
+      ctaText: 'Rewards',
+      navigateTo: 'Rewards'
+    },
+    // Blog
+    {
+      text: '📖 Tips from Rosie\'s Blog',
+      subtext: null,
+      ctaText: 'Read',
+      navigateTo: 'BlogViewAll'
+    },
+  ];
 
   // Cycle through messages
   useEffect(() => {
@@ -74,15 +114,15 @@ export default function SocialProofBanner({ variant = 'voting', onPress }: Socia
     return null;
   }
 
+  const currentMessage = messages[messageIndex] || messages[0];
+
   const handlePress = () => {
     if (onPress) {
       onPress();
-    } else if (variant === 'voting') {
-      navigation.navigate('VoteCenter');
+    } else {
+      navigation.navigate(currentMessage.navigateTo);
     }
   };
-
-  const currentMessage = messages[messageIndex] || messages[0];
 
   // Styling based on variant (keeping accent red as default)
   const getColors = () => {
@@ -134,11 +174,9 @@ export default function SocialProofBanner({ variant = 'voting', onPress }: Socia
           <Text style={styles.subtext} numberOfLines={1}>{currentMessage.subtext}</Text>
         )}
       </Animated.View>
-      {variant === 'voting' && (
-        <View style={[styles.arrow, { backgroundColor: colorScheme.buttonBgColor }]}>
-          <Text style={styles.arrowText}>Vote</Text>
-        </View>
-      )}
+      <View style={[styles.arrow, { backgroundColor: colorScheme.buttonBgColor }]}>
+        <Text style={styles.arrowText}>{currentMessage.ctaText}</Text>
+      </View>
     </TouchableOpacity>
   );
 }
