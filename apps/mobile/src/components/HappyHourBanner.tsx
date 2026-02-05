@@ -1,5 +1,4 @@
 import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, Animated } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing } from '../constants/colors';
 
@@ -81,13 +80,7 @@ export default function HappyHourBanner({
           style={styles.imageBackground}
           imageStyle={styles.imageStyle}
         >
-          <LinearGradient
-            colors={['rgba(0,0,0,0.35)', 'rgba(0,0,0,0.75)', 'rgba(0,0,0,0.85)']}
-            locations={[0, 0.5, 1]}
-            style={styles.imageOverlay}
-          >
-            {content}
-          </LinearGradient>
+          <View style={styles.imageOverlay}>{content}</View>
         </ImageBackground>
       </TouchableOpacity>
     );
@@ -135,6 +128,7 @@ const styles = StyleSheet.create({
   imageOverlay: {
     flex: 1,
     justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.75)',
   },
   content: {
     flexDirection: 'row',
