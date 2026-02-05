@@ -127,8 +127,8 @@ const styles = StyleSheet.create({
   },
   imageOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.75)',
   },
   content: {
     flexDirection: 'row',
@@ -146,9 +146,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
     marginBottom: 2,
-    textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
   },
   dealLarge: {
     fontSize: 18,
@@ -157,9 +154,6 @@ const styles = StyleSheet.create({
   restaurantName: {
     fontSize: 13,
     color: colors.textMuted,
-    textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   rightSection: {
     flexDirection: 'row',
