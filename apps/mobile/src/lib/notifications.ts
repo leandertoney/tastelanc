@@ -27,7 +27,7 @@ Notifications.setNotificationHandler({
 export async function registerForPushNotifications(): Promise<string | null> {
   // Push notifications only work on physical devices
   if (!Device.isDevice) {
-    console.log('Push notifications require a physical device');
+    console.warn('[Notifications] Not a physical device — skipping registration');
     return null;
   }
 
@@ -43,14 +43,14 @@ export async function registerForPushNotifications(): Promise<string | null> {
     }
 
     if (finalStatus !== 'granted') {
-      console.log('Push notification permission denied');
+      console.warn('[Notifications] Permission denied (status:', finalStatus, ')');
       return null;
     }
 
     // Get the Expo push token
     const projectId = Constants.expoConfig?.extra?.eas?.projectId;
     if (!projectId) {
-      console.error('No projectId found in app config');
+      console.warn('[Notifications] No projectId in app config — cannot get push token');
       return null;
     }
 
@@ -68,10 +68,10 @@ export async function registerForPushNotifications(): Promise<string | null> {
       });
     }
 
-    console.log('Push token:', tokenData.data);
+    console.log('[Notifications] Token obtained:', tokenData.data);
     return tokenData.data;
   } catch (error) {
-    console.error('Error registering for push notifications:', error);
+    console.warn('[Notifications] Token generation failed:', error);
     return null;
   }
 }
@@ -98,14 +98,14 @@ export async function savePushToken(token: string, userId: string): Promise<bool
       );
 
     if (error) {
-      console.error('Error saving push token:', error);
+      console.warn('[Notifications] Save to Supabase failed:', error.message, error.code);
       return false;
     }
 
-    console.log('Push token saved successfully');
+    console.log('[Notifications] Token saved to Supabase');
     return true;
   } catch (error) {
-    console.error('Error saving push token:', error);
+    console.warn('[Notifications] Save to Supabase exception:', error);
     return false;
   }
 }
