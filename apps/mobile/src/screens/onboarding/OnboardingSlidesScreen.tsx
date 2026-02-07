@@ -134,7 +134,7 @@ export default function OnboardingSlidesScreen({ navigation }: Props) {
   }));
 
   const handleContinue = () => {
-    navigation.navigate('OnboardingHappyHours');
+    navigation.navigate('OnboardingProblems');
   };
 
   // Calculate word delays for dramatic reveal

@@ -15,147 +15,84 @@ import Animated, {
   withDelay,
   withSpring,
   withSequence,
-  withRepeat,
   Easing,
-  runOnJS,
-  interpolateColor,
 } from 'react-native-reanimated';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/types';
 import { colors, radius } from '../../constants/colors';
+import { duration, spring, reveal } from '../../constants/animations';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingVoting'>;
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const VOTING_CATEGORIES = [
-  { id: 'best_wings', label: 'Best Wings', emoji: '🍗', color: '#FF6B35' },
-  { id: 'best_burgers', label: 'Best Burgers', emoji: '🍔', color: '#E63946' },
-  { id: 'best_pizza', label: 'Best Pizza', emoji: '🍕', color: '#F4A261' },
-  { id: 'best_cocktails', label: 'Best Cocktails', emoji: '🍸', color: '#9B5DE5' },
-  { id: 'best_happy_hour', label: 'Best Happy Hour', emoji: '🍻', color: '#FFD700' },
-  { id: 'best_brunch', label: 'Best Brunch', emoji: '🥞', color: '#F8961E' },
-  { id: 'best_late_night', label: 'Best Late Night', emoji: '🌙', color: '#577590' },
-  { id: 'best_live_music', label: 'Best Live Music', emoji: '🎵', color: '#43AA8B' },
+  { id: 'best_wings', label: 'Wings', emoji: '🍗', color: '#FF6B35' },
+  { id: 'best_burgers', label: 'Burgers', emoji: '🍔', color: '#E63946' },
+  { id: 'best_pizza', label: 'Pizza', emoji: '🍕', color: '#F4A261' },
+  { id: 'best_cocktails', label: 'Cocktails', emoji: '🍸', color: '#9B5DE5' },
+  { id: 'best_happy_hour', label: 'Happy Hour', emoji: '🍻', color: '#FFD700' },
+  { id: 'best_brunch', label: 'Brunch', emoji: '🥞', color: '#F8961E' },
+  { id: 'best_late_night', label: 'Late Night', emoji: '🌙', color: '#577590' },
+  { id: 'best_live_music', label: 'Live Music', emoji: '🎵', color: '#43AA8B' },
 ];
 
-// Demo restaurant for the animation
-const DEMO_RESTAURANT = {
-  name: "American Bar & Grill",
-  category: "Best Wings",
-};
-
 export default function OnboardingVotingScreen({ navigation }: Props) {
-  const [demoPhase, setDemoPhase] = useState<'badges' | 'selecting' | 'voting' | 'complete'>('badges');
-  const [selectedBadgeIndex, setSelectedBadgeIndex] = useState(-1);
+  const [showVoteDemo, setShowVoteDemo] = useState(false);
+  const [showWinner, setShowWinner] = useState(false);
 
-  // Animation values
+  // Header
   const headerOpacity = useSharedValue(0);
   const headerTranslate = useSharedValue(-20);
 
-  // Badge animations (staggered entrance)
-  const badgeAnimations = VOTING_CATEGORIES.map(() => ({
-    opacity: useSharedValue(0),
-    scale: useSharedValue(0.6),
-    rotate: useSharedValue(-10),
-  }));
+  // Badge grid
+  const gridOpacity = useSharedValue(0);
 
-  // Demo card animations
-  const demoCardOpacity = useSharedValue(0);
-  const demoCardScale = useSharedValue(0.8);
-  const demoCardTranslate = useSharedValue(50);
+  // Demo card
+  const demoOpacity = useSharedValue(0);
+  const demoTranslate = useSharedValue(30);
 
-  // Vote button pulse
-  const voteButtonScale = useSharedValue(1);
-  const voteButtonOpacity = useSharedValue(0);
+  // Vote checkmark
+  const checkScale = useSharedValue(0);
 
-  // Checkmark animation
-  const checkmarkScale = useSharedValue(0);
-  const checkmarkOpacity = useSharedValue(0);
+  // Winner badge
+  const winnerScale = useSharedValue(0);
 
-  // Confetti / celebration
-  const celebrationOpacity = useSharedValue(0);
-
-  // Footer button
+  // Button
   const buttonOpacity = useSharedValue(0);
-  const buttonTranslate = useSharedValue(30);
-
-  // Selection highlight
-  const selectionGlow = useSharedValue(0);
-
-  const startDemoAnimation = () => {
-    // Phase 2: Highlight a badge (simulate selection)
-    setTimeout(() => {
-      setDemoPhase('selecting');
-      setSelectedBadgeIndex(0); // Select "Best Wings"
-      selectionGlow.value = withRepeat(
-        withSequence(
-          withTiming(1, { duration: 600 }),
-          withTiming(0.5, { duration: 600 })
-        ),
-        3,
-        true
-      );
-
-      // Scale up selected badge
-      badgeAnimations[0].scale.value = withSpring(1.1, { damping: 10 });
-    }, 1800);
-
-    // Phase 3: Show demo restaurant card
-    setTimeout(() => {
-      setDemoPhase('voting');
-      demoCardOpacity.value = withTiming(1, { duration: 400 });
-      demoCardScale.value = withSpring(1, { damping: 12 });
-      demoCardTranslate.value = withTiming(0, { duration: 500, easing: Easing.out(Easing.cubic) });
-
-      // Show vote button with pulse
-      voteButtonOpacity.value = withDelay(300, withTiming(1, { duration: 300 }));
-      voteButtonScale.value = withDelay(500, withRepeat(
-        withSequence(
-          withTiming(1.05, { duration: 400 }),
-          withTiming(1, { duration: 400 })
-        ),
-        2,
-        true
-      ));
-    }, 3000);
-
-    // Phase 4: Simulate vote cast
-    setTimeout(() => {
-      setDemoPhase('complete');
-
-      // Hide vote button, show checkmark
-      voteButtonOpacity.value = withTiming(0, { duration: 200 });
-      checkmarkOpacity.value = withDelay(200, withTiming(1, { duration: 300 }));
-      checkmarkScale.value = withDelay(200, withSpring(1, { damping: 8, stiffness: 150 }));
-
-      // Celebration effect
-      celebrationOpacity.value = withDelay(400, withSequence(
-        withTiming(1, { duration: 300 }),
-        withDelay(800, withTiming(0, { duration: 500 }))
-      ));
-
-      // Show continue button
-      buttonOpacity.value = withDelay(1000, withTiming(1, { duration: 400 }));
-      buttonTranslate.value = withDelay(1000, withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) }));
-    }, 4500);
-  };
+  const buttonTranslate = useSharedValue(20);
 
   useEffect(() => {
-    // Header entrance
-    headerOpacity.value = withTiming(1, { duration: 500 });
-    headerTranslate.value = withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) });
+    // Header
+    headerOpacity.value = withTiming(1, { duration: duration.entrance });
+    headerTranslate.value = withSpring(0, spring.default);
 
-    // Staggered badge entrance with rotation
-    badgeAnimations.forEach((anim, index) => {
-      const delay = 300 + index * 100;
-      anim.opacity.value = withDelay(delay, withTiming(1, { duration: 400 }));
-      anim.scale.value = withDelay(delay, withSpring(1, { damping: 12, stiffness: 100 }));
-      anim.rotate.value = withDelay(delay, withSpring(0, { damping: 15 }));
-    });
+    // Badge grid
+    gridOpacity.value = withDelay(reveal.content, withTiming(1, { duration: duration.normal }));
 
-    // Start demo sequence
-    startDemoAnimation();
+    // Demo card slides in
+    setTimeout(() => {
+      setShowVoteDemo(true);
+      demoOpacity.value = withTiming(1, { duration: duration.normal });
+      demoTranslate.value = withSpring(0, spring.default);
+    }, 1200);
+
+    // Vote cast animation
+    setTimeout(() => {
+      checkScale.value = withSpring(1, { damping: 8, stiffness: 150 });
+    }, 2200);
+
+    // Winner badge
+    setTimeout(() => {
+      setShowWinner(true);
+      winnerScale.value = withSpring(1, { damping: 10, stiffness: 120 });
+    }, 3000);
+
+    // Continue button
+    setTimeout(() => {
+      buttonOpacity.value = withTiming(1, { duration: duration.normal });
+      buttonTranslate.value = withSpring(0, spring.default);
+    }, 3500);
   }, []);
 
   const headerAnimatedStyle = useAnimatedStyle(() => ({
@@ -163,26 +100,21 @@ export default function OnboardingVotingScreen({ navigation }: Props) {
     transform: [{ translateY: headerTranslate.value }],
   }));
 
-  const demoCardAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: demoCardOpacity.value,
-    transform: [
-      { scale: demoCardScale.value },
-      { translateY: demoCardTranslate.value },
-    ],
+  const gridAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: gridOpacity.value,
   }));
 
-  const voteButtonAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: voteButtonOpacity.value,
-    transform: [{ scale: voteButtonScale.value }],
+  const demoAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: demoOpacity.value,
+    transform: [{ translateY: demoTranslate.value }],
   }));
 
-  const checkmarkAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: checkmarkOpacity.value,
-    transform: [{ scale: checkmarkScale.value }],
+  const checkAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: checkScale.value }],
   }));
 
-  const celebrationAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: celebrationOpacity.value,
+  const winnerAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: winnerScale.value }],
   }));
 
   const buttonAnimatedStyle = useAnimatedStyle(() => ({
@@ -191,7 +123,7 @@ export default function OnboardingVotingScreen({ navigation }: Props) {
   }));
 
   const handleContinue = () => {
-    navigation.navigate('OnboardingVotingBadges');
+    navigation.navigate('OnboardingReviewAsk');
   };
 
   return (
@@ -207,122 +139,63 @@ export default function OnboardingVotingScreen({ navigation }: Props) {
         {/* Header */}
         <Animated.View style={[styles.headerSection, headerAnimatedStyle]}>
           <View style={styles.trophyIcon}>
-            <Ionicons name="trophy" size={36} color="#FFD700" />
+            <Ionicons name="trophy" size={32} color="#FFD700" />
           </View>
           <Text style={styles.headline}>Vote for Lancaster's Best</Text>
           <Text style={styles.subheadline}>
-            Crown the winners in 8 categories every month
+            8 categories. Monthly winners.{'\n'}Your vote matters.
           </Text>
         </Animated.View>
 
-        {/* Badge Grid - Award Ribbon Style */}
-        <View style={styles.badgeGrid}>
-          {VOTING_CATEGORIES.map((category, index) => {
-            const animatedStyle = useAnimatedStyle(() => ({
-              opacity: badgeAnimations[index].opacity.value,
-              transform: [
-                { scale: badgeAnimations[index].scale.value },
-                { rotate: `${badgeAnimations[index].rotate.value}deg` },
-              ],
-            }));
-
-            const isSelected = selectedBadgeIndex === index;
-            const glowStyle = useAnimatedStyle(() => ({
-              shadowOpacity: isSelected ? selectionGlow.value * 0.8 : 0,
-              borderColor: isSelected
-                ? `rgba(255, 215, 0, ${0.5 + selectionGlow.value * 0.5})`
-                : 'transparent',
-            }));
-
-            return (
-              <Animated.View
-                key={category.id}
-                style={[
-                  styles.badge,
-                  animatedStyle,
-                  isSelected && styles.badgeSelected,
-                  glowStyle,
-                ]}
-              >
-                {/* Ribbon top */}
-                <View style={[styles.ribbonTop, { backgroundColor: category.color }]}>
-                  <Text style={styles.badgeEmoji}>{category.emoji}</Text>
-                </View>
-                {/* Badge body */}
-                <View style={styles.badgeBody}>
-                  <Text style={styles.badgeLabel} numberOfLines={2}>
-                    {category.label.replace('Best ', '')}
-                  </Text>
-                </View>
-                {/* Ribbon tails */}
-                <View style={styles.ribbonTails}>
-                  <View style={[styles.ribbonTail, styles.ribbonTailLeft, { backgroundColor: category.color }]} />
-                  <View style={[styles.ribbonTail, styles.ribbonTailRight, { backgroundColor: category.color }]} />
-                </View>
-                {isSelected && (
-                  <View style={styles.selectionIndicator}>
-                    <Ionicons name="checkmark-circle" size={20} color="#FFD700" />
-                  </View>
-                )}
-              </Animated.View>
-            );
-          })}
-        </View>
-
-        {/* Demo Restaurant Card */}
-        <Animated.View style={[styles.demoSection, demoCardAnimatedStyle]}>
-          <View style={styles.demoCard}>
-            <View style={styles.demoCardHeader}>
-              <Text style={styles.demoLabel}>YOUR VOTE</Text>
+        {/* Compact Badge Grid */}
+        <Animated.View style={[styles.badgeGrid, gridAnimatedStyle]}>
+          {VOTING_CATEGORIES.map((cat) => (
+            <View key={cat.id} style={styles.badge}>
+              <Text style={styles.badgeEmoji}>{cat.emoji}</Text>
+              <Text style={styles.badgeLabel}>{cat.label}</Text>
             </View>
-            <View style={styles.demoCardContent}>
-              <View style={styles.restaurantInfo}>
-                <Text style={styles.categoryBadgeText}>🍗 Best Wings</Text>
-                <Text style={styles.restaurantName}>{DEMO_RESTAURANT.name}</Text>
-                <View style={styles.starRow}>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Ionicons key={star} name="star" size={14} color="#FFD700" />
-                  ))}
-                </View>
-              </View>
-
-              {/* Vote Button */}
-              <Animated.View style={[styles.voteButtonContainer, voteButtonAnimatedStyle]}>
-                <View style={styles.voteButton}>
-                  <Ionicons name="checkmark-circle" size={24} color={colors.text} />
-                  <Text style={styles.voteButtonText}>Cast Vote</Text>
-                </View>
-              </Animated.View>
-
-              {/* Checkmark (after vote) */}
-              <Animated.View style={[styles.checkmarkContainer, checkmarkAnimatedStyle]}>
-                <View style={styles.checkmarkCircle}>
-                  <Ionicons name="checkmark" size={32} color="#121212" />
-                </View>
-                <Text style={styles.votedText}>Vote Cast!</Text>
-              </Animated.View>
-            </View>
-          </View>
-
-          {/* Celebration particles */}
-          <Animated.View style={[styles.celebration, celebrationAnimatedStyle]}>
-            <Text style={styles.celebrationEmoji}>🎉</Text>
-            <Text style={styles.celebrationEmoji}>✨</Text>
-            <Text style={styles.celebrationEmoji}>🏆</Text>
-          </Animated.View>
+          ))}
         </Animated.View>
 
-        {/* Premium Info */}
-        <View style={styles.premiumInfo}>
+        {/* Demo: Vote → Winner */}
+        {showVoteDemo && (
+          <Animated.View style={[styles.demoCard, demoAnimatedStyle]}>
+            <View style={styles.demoRow}>
+              <View style={styles.demoInfo}>
+                <Text style={styles.demoCategoryText}>🍗 Best Wings</Text>
+                <Text style={styles.demoRestaurantName}>American Bar & Grill</Text>
+              </View>
+
+              {!showWinner ? (
+                <Animated.View style={[styles.checkCircle, checkAnimatedStyle]}>
+                  <Ionicons name="checkmark" size={24} color="#121212" />
+                </Animated.View>
+              ) : (
+                <Animated.View style={[styles.winnerBadge, winnerAnimatedStyle]}>
+                  <Ionicons name="trophy" size={14} color="#121212" />
+                  <Text style={styles.winnerText}>TOP PICK</Text>
+                </Animated.View>
+              )}
+            </View>
+            {showWinner && (
+              <Text style={styles.winnerCaption}>
+                Winners get badges on their listing
+              </Text>
+            )}
+          </Animated.View>
+        )}
+
+        {/* Info note */}
+        <View style={styles.infoRow}>
           <Ionicons name="star" size={16} color={colors.accent} />
-          <Text style={styles.premiumText}>4 votes per month • Included</Text>
+          <Text style={styles.infoText}>4 votes per month • Included free</Text>
         </View>
       </View>
 
       {/* Continue Button */}
       <Animated.View style={[styles.footer, buttonAnimatedStyle]}>
         <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-          <Text style={styles.continueText}>See Winner Badges</Text>
+          <Text style={styles.continueText}>Continue</Text>
           <Ionicons name="arrow-forward" size={20} color={colors.text} />
         </TouchableOpacity>
       </Animated.View>
@@ -350,15 +223,15 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   trophyIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(255, 215, 0, 0.15)',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255, 215, 0, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 215, 0, 0.3)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 215, 0, 0.25)',
   },
   headline: {
     fontSize: 26,
@@ -366,183 +239,95 @@ const styles = StyleSheet.create({
     color: colors.text,
     textAlign: 'center',
     marginBottom: 8,
-    letterSpacing: -0.5,
   },
   subheadline: {
     fontSize: 15,
     color: colors.textMuted,
     textAlign: 'center',
+    lineHeight: 22,
   },
   badgeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 10,
+    gap: 8,
     marginBottom: 24,
   },
   badge: {
     width: BADGE_SIZE,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
+    backgroundColor: colors.cardBg,
     borderRadius: radius.md,
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  badgeSelected: {
-    transform: [{ scale: 1.05 }],
-  },
-  ribbonTop: {
-    width: '100%',
-    height: 40,
-    borderTopLeftRadius: radius.md,
-    borderTopRightRadius: radius.md,
-    justifyContent: 'center',
+    paddingVertical: 10,
     alignItems: 'center',
   },
   badgeEmoji: {
-    fontSize: 22,
-  },
-  badgeBody: {
-    backgroundColor: colors.cardBg,
-    width: '100%',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    alignItems: 'center',
+    fontSize: 20,
+    marginBottom: 4,
   },
   badgeLabel: {
     fontSize: 10,
-    fontWeight: '700',
-    color: colors.text,
+    fontWeight: '600',
+    color: colors.textMuted,
     textAlign: 'center',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  ribbonTails: {
-    flexDirection: 'row',
-    width: '100%',
-    justifyContent: 'space-between',
-  },
-  ribbonTail: {
-    width: '45%',
-    height: 12,
-  },
-  ribbonTailLeft: {
-    borderBottomLeftRadius: 6,
-    transform: [{ skewY: '-10deg' }],
-  },
-  ribbonTailRight: {
-    borderBottomRightRadius: 6,
-    transform: [{ skewY: '10deg' }],
-  },
-  selectionIndicator: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    backgroundColor: '#121212',
-    borderRadius: 12,
-  },
-  demoSection: {
-    width: '100%',
-    marginBottom: 20,
-    position: 'relative',
   },
   demoCard: {
+    width: '100%',
     backgroundColor: colors.cardBg,
     borderRadius: radius.lg,
-    overflow: 'hidden',
+    padding: 16,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  demoCardHeader: {
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 215, 0, 0.2)',
-  },
-  demoLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#FFD700',
-    letterSpacing: 1,
-    textAlign: 'center',
-  },
-  demoCardContent: {
-    padding: 16,
+  demoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  restaurantInfo: {
+  demoInfo: {
     flex: 1,
   },
-  categoryBadgeText: {
+  demoCategoryText: {
     fontSize: 12,
     color: colors.textMuted,
     marginBottom: 4,
   },
-  restaurantName: {
-    fontSize: 18,
+  demoRestaurantName: {
+    fontSize: 17,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: 6,
   },
-  starRow: {
-    flexDirection: 'row',
-    gap: 2,
-  },
-  voteButtonContainer: {
-    position: 'absolute',
-    right: 16,
-  },
-  voteButton: {
-    backgroundColor: colors.accent,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: radius.full,
-    gap: 6,
-  },
-  voteButtonText: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  checkmarkContainer: {
-    position: 'absolute',
-    right: 16,
-    alignItems: 'center',
-  },
-  checkmarkCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  checkCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#4CAF50',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 4,
   },
-  votedText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#4CAF50',
-  },
-  celebration: {
-    position: 'absolute',
-    top: -20,
-    left: 0,
-    right: 0,
+  winnerBadge: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFD700',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 12,
   },
-  celebrationEmoji: {
-    fontSize: 28,
+  winnerText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#121212',
+    letterSpacing: 0.5,
   },
-  premiumInfo: {
+  winnerCaption: {
+    fontSize: 13,
+    color: colors.textMuted,
+    marginTop: 12,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -551,7 +336,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: radius.full,
   },
-  premiumText: {
+  infoText: {
     fontSize: 13,
     color: colors.textMuted,
   },

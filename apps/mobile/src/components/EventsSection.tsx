@@ -8,9 +8,11 @@ import PartnerCTACard from './PartnerCTACard';
 import SectionHeader from './SectionHeader';
 import Spacer from './Spacer';
 import { fetchEvents, ENTERTAINMENT_TYPES, ApiEvent, getEventVenueName, isSelfPromoterEvent } from '../lib/events';
+import { paidFairRotate } from '../lib/fairRotation';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_EVENTS } from '../config/mockData';
+import type { PremiumTier } from '../types/database';
 import { usePlatformSocialProof, useEmailGate } from '../hooks';
 import { trackClick } from '../lib/analytics';
 
@@ -45,6 +47,10 @@ const MOCK_DISPLAY_EVENTS: DisplayEvent[] = MOCK_EVENTS.map((e) => ({
   restaurantId: e.restaurantId,
 }));
 
+function getEventTierName(event: ApiEvent): PremiumTier {
+  return (event.restaurant?.tiers?.name as PremiumTier) || 'basic';
+}
+
 async function getUpcomingEvents(): Promise<ApiEvent[]> {
   // Fetch all events and filter out entertainment types inline
   const allEvents = await fetchEvents();
@@ -52,15 +58,17 @@ async function getUpcomingEvents(): Promise<ApiEvent[]> {
     event => !ENTERTAINMENT_TYPES.includes(event.event_type)
   );
 
-  // Filter to upcoming/recurring events and limit to 10
+  // Filter to upcoming/recurring events
   const today = new Date().toISOString().split('T')[0];
-  return nonEntertainment
-    .filter(event => {
-      if (event.is_recurring) return true;
-      if (event.event_date && event.event_date >= today) return true;
-      return false;
-    })
-    .slice(0, 10);
+  const upcoming = nonEntertainment.filter(event => {
+    if (event.is_recurring) return true;
+    if (event.event_date && event.event_date >= today) return true;
+    return false;
+  });
+
+  // Filter to paid only and apply fair rotation (Elite first, Premium shuffled)
+  const paidRotated = paidFairRotate(upcoming, getEventTierName);
+  return paidRotated.slice(0, 15);
 }
 
 function formatEventDate(event: ApiEvent): string {

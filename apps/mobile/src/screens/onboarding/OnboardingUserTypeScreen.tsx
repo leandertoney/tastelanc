@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   headerSection: {
-    marginBottom: 48,
+    marginBottom: 32,
   },
   headline: {
     fontSize: 28,
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   cardsContainer: {
-    gap: 16,
+    gap: 12,
   },
   card: {
     backgroundColor: colors.cardBg,

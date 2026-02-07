@@ -9,7 +9,8 @@ import HappyHourBanner from './HappyHourBanner';
 import PartnerContactModal from './PartnerContactModal';
 import Spacer from './Spacer';
 import { supabase } from '../lib/supabase';
-import type { HappyHour, HappyHourItem, Restaurant } from '../types/database';
+import { paidFairRotate, getTierName } from '../lib/fairRotation';
+import type { HappyHour, HappyHourItem, Restaurant, Tier } from '../types/database';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_HAPPY_HOURS } from '../config/mockData';
@@ -24,7 +25,9 @@ const DEAL_PAIR_DURATION = 2000; // 2 seconds per deal pair
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface HappyHourWithRestaurant extends HappyHour {
-  restaurant: Pick<Restaurant, 'id' | 'name' | 'cover_image_url'>;
+  restaurant: Pick<Restaurant, 'id' | 'name' | 'cover_image_url'> & {
+    tiers: Pick<Tier, 'name'> | null;
+  };
   items?: HappyHourItem[];
 }
 
@@ -56,21 +59,27 @@ async function getActiveHappyHours(): Promise<HappyHourWithRestaurant[]> {
   const now = new Date();
   const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 
-  // Get all happy hours for today (no time filter - show all day)
+  // Fetch all today's happy hours with tier data (no limit - we filter client-side)
   const { data, error } = await supabase
     .from('happy_hours')
     .select(`
       *,
-      restaurant:restaurants!inner(id, name, cover_image_url, tier_id),
+      restaurant:restaurants!inner(id, name, cover_image_url, tier_id, tiers(name)),
       items:happy_hour_items(*)
     `)
     .eq('is_active', true)
     .contains('days_of_week', [dayOfWeek])
-    .order('display_order', { referencedTable: 'happy_hour_items', ascending: true })
-    .limit(10);
+    .order('display_order', { referencedTable: 'happy_hour_items', ascending: true });
 
   if (error) throw error;
-  return data || [];
+
+  // Filter to paid restaurants only and apply fair rotation (Elite first, Premium shuffled)
+  const paidRotated = paidFairRotate(
+    data || [],
+    (hh) => getTierName({ restaurant: hh.restaurant }),
+  );
+
+  return paidRotated.slice(0, 15);
 }
 
 function formatDealTexts(happyHour: HappyHourWithRestaurant): string[] {

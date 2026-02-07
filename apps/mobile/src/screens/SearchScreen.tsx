@@ -20,6 +20,7 @@ import MapView, { Marker, Region, PROVIDER_GOOGLE } from 'react-native-maps';
 import ClusteredMapView from 'react-native-map-clustering';
 import { supabase } from '../lib/supabase';
 import { getFavorites, toggleFavorite } from '../lib/favorites';
+import { tieredFairRotate, getTierName } from '../lib/fairRotation';
 import { useAuth } from '../hooks/useAuth';
 import {
   useUserLocation,
@@ -137,14 +138,13 @@ export default function SearchScreen() {
     try {
       const { data, error } = await supabase
         .from('restaurants')
-        .select('*')
-        .order('name', { ascending: true });
+        .select('*, tiers(name)');
 
       if (error) {
         console.error('Load error:', error);
       } else {
-        setRestaurants(data || []);
-
+        // Apply tiered fair rotation: Elite first, Premium second, Basic third
+        setRestaurants(tieredFairRotate(data || []));
       }
     } catch (err) {
       console.error('Load error:', err);
@@ -174,9 +174,8 @@ export default function SearchScreen() {
   const performSearch = useCallback(async () => {
     setLoading(true);
 
-
     try {
-      let query = supabase.from('restaurants').select('*');
+      let query = supabase.from('restaurants').select('*, tiers(name)');
 
       if (searchQuery.trim().length >= 2) {
         query = query.ilike('name', `%${searchQuery.trim()}%`);
@@ -186,15 +185,14 @@ export default function SearchScreen() {
         query = query.contains('categories', [selectedCategory]);
       }
 
-      query = query.order('name', { ascending: true });
-
       const { data, error } = await query;
 
       if (error) {
         console.error('Search error:', error);
         setRestaurants([]);
       } else {
-        setRestaurants(data || []);
+        // Apply tiered fair rotation: Elite first, Premium second, Basic third
+        setRestaurants(tieredFairRotate(data || []));
       }
     } catch (err) {
       console.error('Search error:', err);

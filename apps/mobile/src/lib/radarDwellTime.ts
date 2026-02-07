@@ -201,12 +201,12 @@ export async function canVoteForRestaurant(
 export async function batchCheckVotingEligibility(
   _userId: string,
   restaurantIds: string[]
-): Promise<Map<string, boolean>> {
-  const eligibilityMap = new Map<string, boolean>();
+): Promise<Record<string, boolean>> {
+  const eligibilityMap: Record<string, boolean> = {};
 
   if (!isRadarSDKAvailable() || !Radar || restaurantIds.length === 0) {
     // Return all false if SDK not available
-    restaurantIds.forEach((id) => eligibilityMap.set(id, false));
+    restaurantIds.forEach((id) => { eligibilityMap[id] = false; });
     return eligibilityMap;
   }
 
@@ -217,10 +217,10 @@ export async function batchCheckVotingEligibility(
     const result = await Radar.getTrips();
 
     // Initialize all as ineligible
-    const dwellTimes = new Map<string, number>();
+    const dwellTimes: Record<string, number> = {};
     restaurantIds.forEach((id) => {
-      eligibilityMap.set(id, false);
-      dwellTimes.set(id, 0);
+      eligibilityMap[id] = false;
+      dwellTimes[id] = 0;
     });
 
     if (!result?.trips) {
@@ -232,12 +232,12 @@ export async function batchCheckVotingEligibility(
       if (trip.geofenceEvents) {
         for (const event of trip.geofenceEvents) {
           const externalId = event.geofence?.externalId;
-          if (externalId && dwellTimes.has(externalId)) {
+          if (externalId && externalId in dwellTimes) {
             const eventDate = new Date(event.createdAt || event.timestamp);
 
             if (eventDate >= monthStart) {
               const dwellMinutes = event.duration ? event.duration / 60 : 0;
-              dwellTimes.set(externalId, (dwellTimes.get(externalId) || 0) + dwellMinutes);
+              dwellTimes[externalId] = (dwellTimes[externalId] || 0) + dwellMinutes;
             }
           }
         }
@@ -245,26 +245,26 @@ export async function batchCheckVotingEligibility(
 
       // Check destination geofence
       const destId = trip.destinationGeofence?.externalId;
-      if (destId && dwellTimes.has(destId)) {
+      if (destId && destId in dwellTimes) {
         const tripDate = new Date(trip.createdAt || trip.startedAt);
 
         if (tripDate >= monthStart && trip.duration) {
           const dwellMinutes = trip.duration / 60;
-          dwellTimes.set(destId, (dwellTimes.get(destId) || 0) + dwellMinutes);
+          dwellTimes[destId] = (dwellTimes[destId] || 0) + dwellMinutes;
         }
       }
     }
 
     // Check eligibility based on accumulated dwell time
-    for (const [restaurantId, totalMinutes] of dwellTimes) {
-      eligibilityMap.set(restaurantId, totalMinutes >= MINIMUM_DWELL_TIME_MINUTES);
+    for (const restaurantId of Object.keys(dwellTimes)) {
+      eligibilityMap[restaurantId] = dwellTimes[restaurantId] >= MINIMUM_DWELL_TIME_MINUTES;
     }
 
     return eligibilityMap;
   } catch (error) {
     console.error('[RadarDwellTime] Batch check error:', error);
     // Return all false on error
-    restaurantIds.forEach((id) => eligibilityMap.set(id, false));
+    restaurantIds.forEach((id) => { eligibilityMap[id] = false; });
     return eligibilityMap;
   }
 }

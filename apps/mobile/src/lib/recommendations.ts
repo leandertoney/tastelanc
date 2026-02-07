@@ -2,7 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './supabase';
 import { getFavorites } from './favorites';
 import { getRecentVisitCounts } from './visits';
-import type { Restaurant, RestaurantCategory } from '../types/database';
+import { getEpochSeed, seededShuffle, basicFairRotate } from './fairRotation';
+import type { Restaurant, RestaurantCategory, PremiumTier } from '../types/database';
 import { ONBOARDING_DATA_KEY, type OnboardingData } from '../types/onboarding';
 
 // Scoring configuration
@@ -322,53 +323,36 @@ export async function trackRestaurantView(restaurantId: string): Promise<void> {
 }
 
 /**
- * Shuffle array randomly (Fisher-Yates algorithm)
+ * Get featured restaurants for homepage — PAID ONLY.
+ * Elite restaurants appear first (guaranteed block), Premium shuffled after.
+ * Uses epoch-based seeded shuffle for consistent ordering within 30-minute windows.
+ * @param limit - Number of restaurants to return (default 24)
  */
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
-
-/**
- * Get featured restaurants for homepage
- * Shows paid restaurants first (randomized), then unpaid (randomized)
- * @param limit - Number of restaurants to return (default 16)
- */
-export async function getFeaturedRestaurants(limit: number = 16): Promise<Restaurant[]> {
+export async function getFeaturedRestaurants(limit: number = 24): Promise<Restaurant[]> {
   try {
-    // First, fetch ALL premium/elite restaurants (guaranteed to include them)
-    const { data: paidRestaurants, error: paidError } = await supabase
+    // Fetch ALL premium/elite restaurants only
+    const { data: paidRestaurants, error } = await supabase
       .from('restaurants')
       .select('*, tiers!inner(name)')
       .eq('is_active', true)
       .in('tiers.name', ['premium', 'elite']);
 
-    if (paidError) {
-      console.error('Error fetching paid restaurants:', paidError);
+    if (error) {
+      console.error('Error fetching paid restaurants:', error);
+      return [];
     }
 
     const paid = paidRestaurants || [];
-    const paidIds = new Set(paid.map((r) => r.id));
+    const seed = getEpochSeed();
 
-    // Then fetch basic/unpaid restaurants to fill remaining slots
-    const remainingSlots = Math.max(0, limit - paid.length + 30); // Extra for randomization
-    const { data: unpaidRestaurants, error: unpaidError } = await supabase
-      .from('restaurants')
-      .select('*, tiers(name)')
-      .eq('is_active', true)
-      .limit(remainingSlots);
+    // Separate elite and premium, shuffle each with epoch seed
+    const elite = paid.filter((r: any) => r.tiers?.name === 'elite');
+    const premium = paid.filter((r: any) => r.tiers?.name === 'premium');
 
-    if (unpaidError) throw unpaidError;
-
-    // Filter out any paid restaurants that might have been included
-    const unpaid = (unpaidRestaurants || []).filter((r) => !paidIds.has(r.id));
-
-    // Shuffle each group and concat paid first
-    const result = [...shuffleArray(paid), ...shuffleArray(unpaid)].slice(0, limit);
+    const result = [
+      ...seededShuffle(elite, seed),
+      ...seededShuffle(premium, seed + 1),
+    ].slice(0, limit);
 
     return result;
   } catch (error) {
@@ -378,8 +362,9 @@ export async function getFeaturedRestaurants(limit: number = 16): Promise<Restau
 }
 
 /**
- * Get "Other Places Nearby" restaurants (excludes featured restaurants)
- * Less prominent section with pagination support
+ * Get "Other Places Nearby" restaurants — BASIC (free) ONLY.
+ * Uses epoch-based fair rotation instead of alphabetical ordering.
+ * Serves as an upsell funnel: basic restaurants see paid ones above them.
  */
 export async function getOtherRestaurants(
   excludeIds: string[],
@@ -387,15 +372,12 @@ export async function getOtherRestaurants(
   pageSize: number = 10
 ): Promise<{ restaurants: Restaurant[]; hasMore: boolean }> {
   try {
-    const offset = page * pageSize;
-
-    // Get total count for hasMore calculation
+    // Fetch all active basic restaurants (no tier or basic tier)
+    // We fetch all at once and paginate client-side to enable fair rotation
     let query = supabase
       .from('restaurants')
-      .select('*', { count: 'exact' })
-      .eq('is_active', true)
-      .order('name', { ascending: true })
-      .range(offset, offset + pageSize);
+      .select('*, tiers(name)', { count: 'exact' })
+      .eq('is_active', true);
 
     // Exclude featured restaurants if provided
     if (excludeIds.length > 0) {
@@ -406,10 +388,21 @@ export async function getOtherRestaurants(
 
     if (error) throw error;
 
-    const hasMore = count ? offset + pageSize < count : false;
+    // Filter to basic-only (no tier or tier name is 'basic')
+    const basicOnly = (data || []).filter(
+      (r: any) => !r.tiers?.name || r.tiers.name === 'basic'
+    );
+
+    // Apply fair rotation (epoch-based seeded shuffle)
+    const rotated = basicFairRotate(basicOnly);
+
+    // Paginate the rotated results
+    const offset = page * pageSize;
+    const pageData = rotated.slice(offset, offset + pageSize);
+    const hasMore = offset + pageSize < rotated.length;
 
     return {
-      restaurants: data || [],
+      restaurants: pageData,
       hasMore,
     };
   } catch (error) {

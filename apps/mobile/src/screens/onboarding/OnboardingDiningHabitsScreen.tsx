@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.cardBg,
     borderRadius: radius.lg,
-    padding: 18,
+    padding: 20,
     borderWidth: 2,
     borderColor: 'transparent',
   },

@@ -8,10 +8,11 @@ import PartnerCTACard from './PartnerCTACard';
 import SectionHeader from './SectionHeader';
 import Spacer from './Spacer';
 import { fetchEntertainmentEvents, ApiEvent, ENTERTAINMENT_TYPES, getEventVenueName } from '../lib/events';
+import { paidFairRotate, isPaidTier } from '../lib/fairRotation';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_ENTERTAINMENT, type MockEntertainment } from '../config/mockData';
-import type { DayOfWeek } from '../types/database';
+import type { DayOfWeek, PremiumTier } from '../types/database';
 import { useEmailGate } from '../hooks';
 import { trackClick } from '../lib/analytics';
 
@@ -22,6 +23,10 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 interface EntertainmentResult {
   events: ApiEvent[];
   isUpcoming: boolean;
+}
+
+function getEventTierName(event: ApiEvent): PremiumTier {
+  return (event.restaurant?.tiers?.name as PremiumTier) || 'basic';
 }
 
 async function getEntertainmentEvents(): Promise<EntertainmentResult> {
@@ -39,21 +44,23 @@ async function getEntertainmentEvents(): Promise<EntertainmentResult> {
       return true;
     }
     return false;
-  }).slice(0, 10);
+  });
 
-  // If we have today's events, show them
+  // If we have today's events, filter to paid only and apply fair rotation
   if (todayEvents.length > 0) {
-    return { events: todayEvents, isUpcoming: false };
+    const paidRotated = paidFairRotate(todayEvents, getEventTierName);
+    return { events: paidRotated.slice(0, 15), isUpcoming: false };
   }
 
-  // Otherwise, show upcoming events
+  // Otherwise, show upcoming paid events with fair rotation
   const upcomingEvents = events.filter(event => {
     if (event.is_recurring) return true;
     if (event.event_date && event.event_date >= todayDate) return true;
     return false;
-  }).slice(0, 10);
+  });
 
-  return { events: upcomingEvents, isUpcoming: true };
+  const paidRotated = paidFairRotate(upcomingEvents, getEventTierName);
+  return { events: paidRotated.slice(0, 15), isUpcoming: true };
 }
 
 function formatEventTime(startTime: string, endTime: string | null): string {

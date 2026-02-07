@@ -3,6 +3,9 @@ import type { OnboardingStackParamList } from './types';
 import {
   // Welcome
   OnboardingSlidesScreen,
+  // Problem & Solution
+  OnboardingProblemsScreen,
+  OnboardingSolutionScreen,
   // Feature Discovery
   OnboardingHappyHoursScreen,
   OnboardingEventsScreen,
@@ -41,8 +44,11 @@ export default function OnboardingNavigator() {
         gestureEnabled: true,
       }}
     >
-      {/* Phase 1: Welcome & Feature Discovery */}
+      {/* Phase 1: Welcome, Problem & Solution */}
       <Stack.Screen name="OnboardingSlides" component={OnboardingSlidesScreen} />
+      <Stack.Screen name="OnboardingProblems" component={OnboardingProblemsScreen} />
+      <Stack.Screen name="OnboardingSolution" component={OnboardingSolutionScreen} />
+      {/* Feature Discovery */}
       <Stack.Screen name="OnboardingHappyHours" component={OnboardingHappyHoursScreen} />
       <Stack.Screen name="OnboardingEvents" component={OnboardingEventsScreen} />
       <Stack.Screen name="OnboardingSpecials" component={OnboardingSpecialsScreen} />

@@ -5,8 +5,11 @@ import type { ApiEvent } from '../lib/events';
 
 // Onboarding Stack param list
 export type OnboardingStackParamList = {
-  // Phase 1: Welcome & Feature Discovery
+  // Phase 1: Welcome, Problem & Solution
   OnboardingSlides: undefined;
+  OnboardingProblems: undefined;
+  OnboardingSolution: undefined;
+  // Feature Discovery
   OnboardingHappyHours: undefined;
   OnboardingEvents: undefined;
   OnboardingSpecials: undefined;

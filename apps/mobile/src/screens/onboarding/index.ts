@@ -1,6 +1,10 @@
 // Welcome
 export { default as OnboardingSlidesScreen } from './OnboardingSlidesScreen';
 
+// Problem & Solution
+export { default as OnboardingProblemsScreen } from './OnboardingProblemsScreen';
+export { default as OnboardingSolutionScreen } from './OnboardingSolutionScreen';
+
 // Feature Discovery (animated)
 export { default as OnboardingHappyHoursScreen } from './OnboardingHappyHoursScreen';
 export { default as OnboardingEventsScreen } from './OnboardingEventsScreen';

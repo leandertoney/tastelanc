@@ -373,11 +373,12 @@ function formatCategory(category: string): string {
 
 /**
  * Hook to get trending restaurants (for badges)
+ * Returns string[] (not Set) so it survives JSON serialization in React Query cache
  */
 export function useTrendingRestaurants() {
   return useQuery({
     queryKey: ['socialProof', 'trending'],
-    queryFn: async (): Promise<Set<string>> => {
+    queryFn: async (): Promise<string[]> => {
       // Get from leaderboard - top picks and leading picks are "trending"
       const leaderboard = await getLeaderboard();
       const trendingIds = new Set<string>();
@@ -400,7 +401,7 @@ export function useTrendingRestaurants() {
         // Ignore - fallback to leaderboard data
       }
 
-      return trendingIds;
+      return Array.from(trendingIds);
     },
     staleTime: 5 * 60 * 1000,
   });

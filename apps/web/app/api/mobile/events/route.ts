@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     if (!selfPromoterId) {
       let restaurantQuery = supabase
         .from('events')
-        .select('*, restaurant:restaurants!inner(id, name, slug, logo_url, tier_id)')
+        .select('*, restaurant:restaurants!inner(id, name, slug, logo_url, tier_id, tiers(name))')
         .eq('is_active', true)
         .not('restaurant_id', 'is', null)
         .or(`event_date.gte.${today},is_recurring.eq.true`)

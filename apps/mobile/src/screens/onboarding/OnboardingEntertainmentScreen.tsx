@@ -31,12 +31,12 @@ const ENTERTAINMENT_GRID_OPTIONS = ENTERTAINMENT_OPTIONS.map((option) => ({
   id: option,
   label: option,
   icon: {
-    'Live music': 'musical-notes',
-    'Trivia': 'help-circle',
-    'Cocktails': 'wine',
-    'Outdoor dining': 'sunny',
-    'Brunch': 'cafe',
-    'Late night': 'moon',
+    'Date night': 'heart',
+    'Casual hangout': 'people',
+    'After work drinks': 'beer',
+    'Weekend brunch': 'cafe',
+    'Late night eats': 'moon',
+    'Special occasion': 'sparkles',
   }[option] || 'ellipse',
 }));
 
@@ -130,7 +130,7 @@ export default function OnboardingEntertainmentScreen({ navigation }: Props) {
 
       <View style={styles.content}>
         <Animated.View style={[styles.headerSection, titleAnimatedStyle]}>
-          <Text style={styles.headline}>What's your vibe?</Text>
+          <Text style={styles.headline}>What brings you out?</Text>
           <Text style={styles.subheadline}>
             Pick up to 3 ({data.entertainmentPreferences.length}/3 selected)
           </Text>

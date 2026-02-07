@@ -130,7 +130,7 @@ export default function VoteRestaurantScreen() {
   const handleVote = useCallback(
     async (restaurantId: string) => {
       // Check eligibility first
-      const isEligible = eligibilityMap.get(restaurantId) ?? false;
+      const isEligible = eligibilityMap[restaurantId] ?? false;
       if (!isEligible) {
         const restaurant = restaurants.find((r) => r.id === restaurantId);
         Alert.alert(
@@ -201,7 +201,7 @@ export default function VoteRestaurantScreen() {
         onVote={() => handleVote(item.id)}
         isVoting={votingRestaurantId === item.id}
         isVoted={votedRestaurantId === item.id}
-        isEligible={eligibilityMap.get(item.id) ?? false}
+        isEligible={eligibilityMap[item.id] ?? false}
         isCheckingEligibility={isCheckingEligibility}
       />
     ),
