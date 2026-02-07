@@ -133,28 +133,24 @@ export const TIME_PRESETS: TimePreset[] = [
   { label: 'Late Night', time: '21:00' },
 ];
 
-// Generate time slots (30-minute increments)
+// Generate time slots (30-minute increments, full 24 hours)
 export function generateTimeSlots(
-  startHour = 6,
+  startHour = 0,
   endHour = 24,
   increment = 30,
-  includeMidnight = false
 ): TimeSlot[] {
   const slots: TimeSlot[] = [];
 
   for (let hour = startHour; hour < endHour; hour++) {
     for (let minute = 0; minute < 60; minute += increment) {
       const value = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      const h = hour % 12 || 12;
+      const displayHour = hour === 0 ? 12 : hour % 12 || 12;
       const ampm = hour >= 12 ? 'PM' : 'AM';
-      const display = `${h}:${minute.toString().padStart(2, '0')} ${ampm}`;
+      const display = hour === 0 && minute === 0
+        ? 'Midnight'
+        : `${displayHour}:${minute.toString().padStart(2, '0')} ${ampm}`;
       slots.push({ value, display });
     }
-  }
-
-  // Add midnight option at the end for end times (represents next day)
-  if (includeMidnight) {
-    slots.push({ value: '00:00', display: 'Midnight' });
   }
 
   return slots;
