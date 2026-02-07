@@ -404,7 +404,6 @@ export default function EventWizard({ onClose, onSubmit, restaurantId }: EventWi
               value={formData.end_time}
               onChange={(time) => setFormData({ ...formData, end_time: time })}
               label="End Time"
-              minTime={formData.start_time}
               showPresets={false}
             />
           </div>
