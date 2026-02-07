@@ -147,14 +147,14 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   cardsContainer: {
-    gap: 16,
+    gap: 12,
   },
   budgetCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.cardBg,
     borderRadius: radius.lg,
-    padding: 24,
+    padding: 20,
     borderWidth: 2,
     borderColor: 'transparent',
   },

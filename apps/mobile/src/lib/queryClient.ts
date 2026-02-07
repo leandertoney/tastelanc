@@ -22,7 +22,7 @@ export const queryClient = new QueryClient({
 // Create persister for AsyncStorage
 export const asyncStoragePersister = createAsyncStoragePersister({
   storage: AsyncStorage,
-  key: 'TASTELANC_QUERY_CACHE',
+  key: 'TASTELANC_QUERY_CACHE_V2',
   throttleTime: 1000,
 });
 

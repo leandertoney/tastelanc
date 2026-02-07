@@ -14,6 +14,7 @@ export interface EventRestaurant {
   slug: string;
   logo_url: string | null;
   tier_id?: string | null;
+  tiers?: { name: string } | null;
 }
 
 // Self-promoter data included in API response

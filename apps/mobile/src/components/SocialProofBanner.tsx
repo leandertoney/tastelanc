@@ -15,36 +15,66 @@ import type { RootStackParamList } from '../navigation/types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-interface SocialProofBannerProps {
-  variant?: 'voting' | 'checkins' | 'community';
-  onPress?: () => void;
+type NavigationTarget =
+  | { screen: keyof RootStackParamList }
+  | { tab: string };
+
+interface BannerMessage {
+  text: string;
+  subtext: string | null;
+  cta: string;
+  target: NavigationTarget;
 }
 
-// Fallback message when no live data available
-const FALLBACK_MESSAGE = { text: 'Vote for Lancaster\'s Best', subtext: null };
+const FALLBACK_MESSAGE: BannerMessage = {
+  text: 'Vote for Lancaster\'s Best',
+  subtext: null,
+  cta: 'Vote',
+  target: { screen: 'VoteCenter' },
+};
 
 /**
  * SocialProofBanner - Displays platform activity with animated cycling text
  *
- * Text cycles through different messages with smooth fade animation
- * Red pill container stays fixed
+ * Each message has its own CTA button and navigation target.
+ * Text cycles through different messages with smooth fade animation.
  */
-export default function SocialProofBanner({ variant = 'voting', onPress }: SocialProofBannerProps) {
+export default function SocialProofBanner() {
   const navigation = useNavigation<NavigationProp>();
   const { data, isLoading } = usePlatformSocialProof();
   const [messageIndex, setMessageIndex] = useState(0);
   const textOpacity = useSharedValue(1);
 
-  // Build messages array from live data
-  const messages = data ? [
-    { text: data.votingBannerText, subtext: data.restaurantsCompeting },
-    { text: data.checkinBannerText, subtext: data.checkinsThisWeek > 0 ? `${data.checkinsThisWeek} this week` : null },
+  // Build messages array from live data, each with its own CTA + nav target
+  const messages: BannerMessage[] = data ? [
+    {
+      text: data.votingBannerText,
+      subtext: data.restaurantsCompeting,
+      cta: 'Vote',
+      target: { screen: 'VoteCenter' },
+    },
+    {
+      text: data.checkinBannerText,
+      subtext: data.checkinsThisWeek > 0 ? `${data.checkinsThisWeek} this week` : null,
+      cta: 'Check In',
+      target: { tab: 'Rewards' },
+    },
     // Only show if we have live counts
-    data.happyHoursBannerText ? { text: data.happyHoursBannerText, subtext: null } : null,
-    data.specialsBannerText ? { text: data.specialsBannerText, subtext: null } : null,
+    data.happyHoursBannerText ? {
+      text: data.happyHoursBannerText,
+      subtext: null,
+      cta: 'View',
+      target: { screen: 'HappyHoursViewAll' },
+    } : null,
+    data.specialsBannerText ? {
+      text: data.specialsBannerText,
+      subtext: null,
+      cta: 'View',
+      target: { screen: 'SpecialsViewAll' },
+    } : null,
     // Static fallback
     FALLBACK_MESSAGE,
-  ].filter((m): m is { text: string; subtext: string | null } => m !== null && !!m.text) : [FALLBACK_MESSAGE];
+  ].filter((m): m is BannerMessage => m !== null && !!m.text) : [FALLBACK_MESSAGE];
 
   // Cycle through messages
   useEffect(() => {
@@ -74,71 +104,39 @@ export default function SocialProofBanner({ variant = 'voting', onPress }: Socia
     return null;
   }
 
+  const currentMessage = messages[messageIndex] || messages[0];
+
   const handlePress = () => {
-    if (onPress) {
-      onPress();
-    } else if (variant === 'voting') {
+    try {
+      const { target } = currentMessage;
+      if ('tab' in target) {
+        navigation.navigate('MainTabs', { screen: target.tab } as any);
+      } else {
+        navigation.navigate(target.screen as any);
+      }
+    } catch {
+      // Fallback — navigate to VoteCenter if anything goes wrong
       navigation.navigate('VoteCenter');
     }
   };
 
-  const currentMessage = messages[messageIndex] || messages[0];
-
-  // Styling based on variant (keeping accent red as default)
-  const getColors = () => {
-    switch (variant) {
-      case 'checkins':
-        return {
-          textColor: colors.valueGreen,
-          bgColor: colors.valueGreenLight,
-          borderColor: colors.valueGreenBorder,
-          buttonBgColor: colors.valueGreen,
-        };
-      case 'community':
-        return {
-          textColor: colors.gold,
-          bgColor: colors.goldLight,
-          borderColor: colors.goldBorder,
-          buttonBgColor: colors.gold,
-        };
-      case 'voting':
-      default:
-        return {
-          textColor: colors.text, // White text for readability
-          bgColor: 'rgba(164, 30, 34, 0.15)',
-          borderColor: 'rgba(164, 30, 34, 0.3)',
-          buttonBgColor: colors.accent, // Red button stays red
-        };
-    }
-  };
-
-  const colorScheme = getColors();
-
   return (
     <TouchableOpacity
-      style={[
-        styles.container,
-        {
-          backgroundColor: colorScheme.bgColor,
-          borderColor: colorScheme.borderColor,
-        },
-      ]}
+      style={styles.container}
       onPress={handlePress}
       activeOpacity={0.8}
     >
       <Animated.View style={[styles.content, animatedTextStyle]}>
-        <Text style={[styles.mainText, { color: colorScheme.textColor }]} numberOfLines={1}>
+        <Text style={styles.mainText} numberOfLines={1}>
           {currentMessage.text}
         </Text>
         {currentMessage.subtext && (
           <Text style={styles.subtext} numberOfLines={1}>{currentMessage.subtext}</Text>
         )}
       </Animated.View>
-      {variant === 'voting' && (
-        <View style={[styles.arrow, { backgroundColor: colorScheme.buttonBgColor }]}>
-          <Text style={styles.arrowText}>Vote</Text>
-        </View>
-      )}
+      <Animated.View style={[styles.arrow, animatedTextStyle]}>
+        <Text style={styles.arrowText}>{currentMessage.cta}</Text>
+      </Animated.View>
     </TouchableOpacity>
   );
 }
@@ -150,6 +148,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     borderRadius: radius.md,
     borderWidth: 1,
+    backgroundColor: 'rgba(164, 30, 34, 0.15)',
+    borderColor: 'rgba(164, 30, 34, 0.3)',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -162,6 +162,7 @@ const styles = StyleSheet.create({
   mainText: {
     fontSize: typography.subhead,
     fontWeight: '600',
+    color: colors.text,
   },
   subtext: {
     fontSize: typography.caption1,
@@ -172,6 +173,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm + 4,
     paddingVertical: spacing.xs + 2,
     borderRadius: radius.sm,
+    backgroundColor: colors.accent,
   },
   arrowText: {
     color: colors.text,

@@ -11,6 +11,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { getFavorites, toggleFavorite } from '../lib/favorites';
+import { tieredFairRotate, getTierName } from '../lib/fairRotation';
 import { useAuth, usePromoCard } from '../hooks';
 import { injectPromoIntoList, type ListItem } from '../lib/listUtils';
 import type { Restaurant, RestaurantCategory } from '../types/database';
@@ -101,17 +102,16 @@ export default function CategoryScreen({ route, navigation }: Props) {
     try {
       const { data, error } = await supabase
         .from('restaurants')
-        .select('*')
+        .select('*, tiers(name)')
         .eq('is_active', true)
-        .contains('categories', [category])
-        .order('is_premium', { ascending: false })
-        .order('name', { ascending: true });
+        .contains('categories', [category]);
 
       if (error) {
         console.error('Error fetching category restaurants:', error);
         setRestaurants([]);
       } else {
-        setRestaurants(data || []);
+        // Apply tiered fair rotation: Elite first, Premium second, Basic third
+        setRestaurants(tieredFairRotate(data || []));
       }
     } catch (err) {
       console.error('Error:', err);

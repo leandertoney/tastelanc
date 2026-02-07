@@ -14,8 +14,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
-import type { HappyHour, HappyHourItem, Restaurant, DayOfWeek } from '../types/database';
+import type { HappyHour, HappyHourItem, Restaurant, DayOfWeek, Tier } from '../types/database';
 import { supabase } from '../lib/supabase';
+import { tieredFairRotate, getTierName } from '../lib/fairRotation';
 import { colors, radius, spacing } from '../constants/colors';
 import SpotifyStyleListItem from '../components/SpotifyStyleListItem';
 import SearchBar from '../components/SearchBar';
@@ -23,7 +24,9 @@ import SearchBar from '../components/SearchBar';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface HappyHourWithRestaurant extends HappyHour {
-  restaurant: Pick<Restaurant, 'id' | 'name' | 'cover_image_url'>;
+  restaurant: Pick<Restaurant, 'id' | 'name' | 'cover_image_url'> & {
+    tiers: Pick<Tier, 'name'> | null;
+  };
   items?: HappyHourItem[];
 }
 
@@ -45,19 +48,23 @@ function getCurrentDay(): DayOfWeek {
 }
 
 async function getAllHappyHours(): Promise<HappyHourWithRestaurant[]> {
-  // Get all active happy hours
+  // Get all active happy hours with tier data
   const { data, error } = await supabase
     .from('happy_hours')
     .select(`
       *,
-      restaurant:restaurants!inner(id, name, cover_image_url),
+      restaurant:restaurants!inner(id, name, cover_image_url, tier_id, tiers(name)),
       items:happy_hour_items(*)
     `)
-    .eq('is_active', true)
-    .order('start_time', { ascending: true });
+    .eq('is_active', true);
 
   if (error) throw error;
-  return data || [];
+
+  // Apply tiered fair rotation: Elite first, Premium second, Basic third
+  return tieredFairRotate(
+    data || [],
+    (hh) => getTierName({ restaurant: hh.restaurant }),
+  );
 }
 
 function formatTimeWindow(startTime: string, endTime: string): string {

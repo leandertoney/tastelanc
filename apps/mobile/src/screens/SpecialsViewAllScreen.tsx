@@ -14,8 +14,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
-import type { Special, Restaurant, DayOfWeek } from '../types/database';
+import type { Special, Restaurant, DayOfWeek, Tier } from '../types/database';
 import { supabase } from '../lib/supabase';
+import { tieredFairRotate, getTierName } from '../lib/fairRotation';
 import { colors, radius, spacing } from '../constants/colors';
 import SpotifyStyleListItem from '../components/SpotifyStyleListItem';
 import SearchBar from '../components/SearchBar';
@@ -23,7 +24,9 @@ import SearchBar from '../components/SearchBar';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface SpecialWithRestaurant extends Special {
-  restaurant: Pick<Restaurant, 'id' | 'name' | 'cover_image_url'>;
+  restaurant: Pick<Restaurant, 'id' | 'name' | 'cover_image_url'> & {
+    tiers: Pick<Tier, 'name'> | null;
+  };
 }
 
 // Day tabs configuration
@@ -44,18 +47,22 @@ function getCurrentDay(): DayOfWeek {
 }
 
 async function getAllSpecials(): Promise<SpecialWithRestaurant[]> {
-  // Get all active specials
+  // Get all active specials with tier data
   const { data, error } = await supabase
     .from('specials')
     .select(`
       *,
-      restaurant:restaurants!inner(id, name, cover_image_url)
+      restaurant:restaurants!inner(id, name, cover_image_url, tier_id, tiers(name))
     `)
-    .eq('is_active', true)
-    .order('name', { ascending: true });
+    .eq('is_active', true);
 
   if (error) throw error;
-  return data || [];
+
+  // Apply tiered fair rotation: Elite first, Premium second, Basic third
+  return tieredFairRotate(
+    data || [],
+    (s) => getTierName({ restaurant: s.restaurant }),
+  );
 }
 
 function formatTimeWindow(startTime: string | null, endTime: string | null): string {

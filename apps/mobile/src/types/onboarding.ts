@@ -36,12 +36,12 @@ export const DISCOVERY_OPTIONS = [
 export const BUDGET_OPTIONS = ['$', '$$', '$$$'];
 
 export const ENTERTAINMENT_OPTIONS = [
-  'Live music',
-  'Trivia',
-  'Cocktails',
-  'Outdoor dining',
-  'Brunch',
-  'Late night',
+  'Date night',
+  'Casual hangout',
+  'After work drinks',
+  'Weekend brunch',
+  'Late night eats',
+  'Special occasion',
 ];
 
 export const FOOD_OPTIONS = [

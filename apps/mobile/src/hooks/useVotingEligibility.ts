@@ -61,12 +61,12 @@ export function useBatchVotingEligibility(restaurantIds: string[]) {
   });
 
   return {
-    eligibilityMap: data ?? new Map<string, boolean>(),
+    eligibilityMap: data ?? {},
     isLoading,
     error,
     refetch,
     // Helper to check a specific restaurant
-    isEligible: (restaurantId: string) => data?.get(restaurantId) ?? false,
+    isEligible: (restaurantId: string) => data?.[restaurantId] ?? false,
   };
 }
 
@@ -76,10 +76,10 @@ export function useBatchVotingEligibility(restaurantIds: string[]) {
  */
 export function useRestaurantEligibilityStatus(
   restaurantId: string,
-  eligibilityMap: Map<string, boolean>,
+  eligibilityMap: Record<string, boolean>,
   isMapLoading: boolean
 ): 'loading' | 'eligible' | 'ineligible' {
   if (isMapLoading) return 'loading';
-  if (!eligibilityMap.has(restaurantId)) return 'loading';
-  return eligibilityMap.get(restaurantId) ? 'eligible' : 'ineligible';
+  if (!(restaurantId in eligibilityMap)) return 'loading';
+  return eligibilityMap[restaurantId] ? 'eligible' : 'ineligible';
 }
