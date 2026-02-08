@@ -7,13 +7,17 @@ const PAGE_TYPE_MAP: Record<string, string> = {
   Home: 'home',
   Search: 'other',
   Favorites: 'other',
-  HappyHoursViewAll: 'events',
+  HappyHoursViewAll: 'happy_hour',
   EventsViewAll: 'events',
   EntertainmentViewAll: 'events',
   Category: 'other',
   Vote: 'vote',
   Rewards: 'other',
   Profile: 'other',
+  RestaurantHappyHours: 'happy_hour',
+  RestaurantSpecials: 'specials',
+  RestaurantEvents: 'events',
+  RestaurantMenu: 'menu',
 };
 
 async function getVisitorId(): Promise<string> {
