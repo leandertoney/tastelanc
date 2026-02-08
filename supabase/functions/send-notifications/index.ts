@@ -198,27 +198,44 @@ async function sendHappyHourAlerts(supabase: ReturnType<typeof createClient>): P
     // @ts-ignore - Supabase join typing
     const restaurant = hh.restaurant;
     restaurantNames.push(restaurant.name);
+  }
 
-    // Format the start time
+  // Build a single digest notification instead of one per restaurant
+  const count = restaurantNames.length;
+  let title: string;
+  let body: string;
+
+  if (count === 1) {
+    const hh = happyHours[0];
+    // @ts-ignore - Supabase join typing
+    const restaurant = hh.restaurant;
     const [hours] = hh.start_time.split(':');
     const h = parseInt(hours, 10);
     const suffix = h >= 12 ? 'pm' : 'am';
     const displayHour = h > 12 ? h - 12 : h === 0 ? 12 : h;
-    const startTimeDisplay = `${displayHour}${suffix}`;
+    title = `Happy Hour at ${restaurant.name}!`;
+    body = hh.description || `Starting at ${displayHour}${suffix}`;
+  } else if (count === 2) {
+    title = `${count} Happy Hours Starting Soon!`;
+    body = `${restaurantNames[0]} and ${restaurantNames[1]} have happy hours right now`;
+  } else {
+    title = `${count} Happy Hours Starting Soon!`;
+    const preview = restaurantNames.slice(0, 2).join(', ');
+    body = `${preview} + ${count - 2} more have happy hours right now`;
+  }
 
-    // Create message for each token
-    for (const token of tokens) {
-      messages.push({
-        to: token,
-        sound: 'default',
-        title: `Happy Hour at ${restaurant.name}!`,
-        body: hh.description || `Starting at ${startTimeDisplay}`,
-        data: {
-          screen: 'RestaurantDetail',
-          restaurantId: restaurant.id,
-        },
-      });
-    }
+  for (const token of tokens) {
+    messages.push({
+      to: token,
+      sound: 'default',
+      title,
+      body,
+      data: {
+        screen: count === 1 ? 'RestaurantDetail' : 'HappyHours',
+        // @ts-ignore - Supabase join typing
+        restaurantId: count === 1 ? happyHours[0].restaurant.id : undefined,
+      },
+    });
   }
 
   // Send notifications
