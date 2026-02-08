@@ -8,12 +8,11 @@ import PartnerCTACard from './PartnerCTACard';
 import SectionHeader from './SectionHeader';
 import Spacer from './Spacer';
 import { fetchEvents, ENTERTAINMENT_TYPES, ApiEvent, getEventVenueName, isSelfPromoterEvent } from '../lib/events';
-import { paidFairRotate } from '../lib/fairRotation';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_EVENTS } from '../config/mockData';
-import type { PremiumTier } from '../types/database';
-import { usePlatformSocialProof, useEmailGate } from '../hooks';
+import type { DayOfWeek } from '../types/database';
+import { useEmailGate } from '../hooks';
 import { trackClick } from '../lib/analytics';
 import { trackImpression } from '../lib/impressions';
 
@@ -48,28 +47,52 @@ const MOCK_DISPLAY_EVENTS: DisplayEvent[] = MOCK_EVENTS.map((e) => ({
   restaurantId: e.restaurantId,
 }));
 
-function getEventTierName(event: ApiEvent): PremiumTier {
-  return (event.restaurant?.tiers?.name as PremiumTier) || 'basic';
+interface EventsResult {
+  events: ApiEvent[];
+  hasTodayEvents: boolean;
 }
 
-async function getUpcomingEvents(): Promise<ApiEvent[]> {
-  // Fetch all events and filter out entertainment types inline
+async function getUpcomingEvents(): Promise<EventsResult> {
   const allEvents = await fetchEvents();
   const nonEntertainment = allEvents.filter(
     event => !ENTERTAINMENT_TYPES.includes(event.event_type)
   );
 
+  const now = new Date();
+  const todayDate = now.toISOString().split('T')[0];
+  const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as DayOfWeek;
+
   // Filter to upcoming/recurring events
-  const today = new Date().toISOString().split('T')[0];
   const upcoming = nonEntertainment.filter(event => {
     if (event.is_recurring) return true;
-    if (event.event_date && event.event_date >= today) return true;
+    if (event.event_date && event.event_date >= todayDate) return true;
     return false;
   });
 
-  // Filter to paid only and apply fair rotation (Elite first, Premium shuffled)
-  const paidRotated = paidFairRotate(upcoming, getEventTierName);
-  return paidRotated.slice(0, 15);
+  // Identify today's events (one-time today OR recurring on this day of week)
+  const isToday = (event: ApiEvent) => {
+    if (event.event_date === todayDate) return true;
+    if (event.is_recurring && event.days_of_week.includes(dayOfWeek)) return true;
+    return false;
+  };
+
+  const todayEvents = upcoming.filter(isToday);
+  const futureEvents = upcoming.filter(e => !isToday(e));
+
+  // Sort today's events by start time
+  todayEvents.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+
+  // Sort future events by date (ascending), then start time; recurring without dates go last
+  futureEvents.sort((a, b) => {
+    const dateA = a.event_date || '9999-12-31';
+    const dateB = b.event_date || '9999-12-31';
+    if (dateA !== dateB) return dateA.localeCompare(dateB);
+    return (a.start_time || '').localeCompare(b.start_time || '');
+  });
+
+  // Today's events first, then future events, capped at 5
+  const sorted = [...todayEvents, ...futureEvents];
+  return { events: sorted.slice(0, 5), hasTodayEvents: todayEvents.length > 0 };
 }
 
 function formatEventDate(event: ApiEvent): string {
@@ -106,13 +129,15 @@ function formatEventTime(startTime: string, endTime: string | null): string {
 
 export default function EventsSection() {
   const navigation = useNavigation<NavigationProp>();
-  const { data: socialProof } = usePlatformSocialProof();
 
-  const { data: events = [], isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: ['upcomingEvents'],
     queryFn: getUpcomingEvents,
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
+
+  const events = data?.events || [];
+  const hasTodayEvents = data?.hasTodayEvents ?? false;
 
   const { requireEmailGate } = useEmailGate();
 
@@ -172,12 +197,8 @@ export default function EventsSection() {
   return (
     <View style={styles.container}>
       <SectionHeader
-        title="Upcoming Events"
-        subtitle={
-          socialProof?.checkinsThisWeek && socialProof.checkinsThisWeek > 5
-            ? `${displayData.length} events this week`
-            : "Don't Miss Out"
-        }
+        title={hasTodayEvents ? 'Events Today' : 'Upcoming Events'}
+        subtitle={hasTodayEvents ? undefined : "Don't Miss Out"}
         actionText="View All"
         onActionPress={handleViewAll}
       />

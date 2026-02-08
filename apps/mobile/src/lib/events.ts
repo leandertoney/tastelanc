@@ -84,7 +84,7 @@ export async function fetchEvents(params?: FetchEventsParams): Promise<ApiEvent[
 
   // Default to paid restaurants only
   url.searchParams.set('paid_only', params?.paid_only !== false ? 'true' : 'false');
-  url.searchParams.set('limit', String(params?.limit ?? 10));
+  url.searchParams.set('limit', String(params?.limit ?? 50));
 
   if (params?.type) {
     url.searchParams.set('type', params.type);

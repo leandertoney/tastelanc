@@ -8,11 +8,10 @@ import PartnerCTACard from './PartnerCTACard';
 import SectionHeader from './SectionHeader';
 import Spacer from './Spacer';
 import { fetchEntertainmentEvents, ApiEvent, ENTERTAINMENT_TYPES, getEventVenueName } from '../lib/events';
-import { paidFairRotate, isPaidTier } from '../lib/fairRotation';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_ENTERTAINMENT, type MockEntertainment } from '../config/mockData';
-import type { DayOfWeek, PremiumTier } from '../types/database';
+import type { DayOfWeek } from '../types/database';
 import { useEmailGate } from '../hooks';
 import { trackClick } from '../lib/analytics';
 import { trackImpression } from '../lib/impressions';
@@ -23,11 +22,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface EntertainmentResult {
   events: ApiEvent[];
-  isUpcoming: boolean;
-}
-
-function getEventTierName(event: ApiEvent): PremiumTier {
-  return (event.restaurant?.tiers?.name as PremiumTier) || 'basic';
+  hasTodayEvents: boolean;
 }
 
 async function getEntertainmentEvents(): Promise<EntertainmentResult> {
@@ -36,32 +31,37 @@ async function getEntertainmentEvents(): Promise<EntertainmentResult> {
   const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as DayOfWeek;
   const todayDate = now.toISOString().split('T')[0];
 
-  // Filter for today's entertainment (recurring on this day OR one-time today)
-  const todayEvents = events.filter(event => {
-    if (event.is_recurring && event.days_of_week.includes(dayOfWeek)) {
-      return true;
-    }
-    if (event.event_date === todayDate) {
-      return true;
-    }
-    return false;
-  });
-
-  // If we have today's events, filter to paid only and apply fair rotation
-  if (todayEvents.length > 0) {
-    const paidRotated = paidFairRotate(todayEvents, getEventTierName);
-    return { events: paidRotated.slice(0, 15), isUpcoming: false };
-  }
-
-  // Otherwise, show upcoming paid events with fair rotation
-  const upcomingEvents = events.filter(event => {
+  // Filter to upcoming/recurring events
+  const upcoming = events.filter(event => {
     if (event.is_recurring) return true;
     if (event.event_date && event.event_date >= todayDate) return true;
     return false;
   });
 
-  const paidRotated = paidFairRotate(upcomingEvents, getEventTierName);
-  return { events: paidRotated.slice(0, 15), isUpcoming: true };
+  // Identify today's events (one-time today OR recurring on this day of week)
+  const isToday = (event: ApiEvent) => {
+    if (event.event_date === todayDate) return true;
+    if (event.is_recurring && event.days_of_week.includes(dayOfWeek)) return true;
+    return false;
+  };
+
+  const todayEvents = upcoming.filter(isToday);
+  const futureEvents = upcoming.filter(e => !isToday(e));
+
+  // Sort today's events by start time
+  todayEvents.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+
+  // Sort future events by date (ascending), then start time; recurring without dates go last
+  futureEvents.sort((a, b) => {
+    const dateA = a.event_date || '9999-12-31';
+    const dateB = b.event_date || '9999-12-31';
+    if (dateA !== dateB) return dateA.localeCompare(dateB);
+    return (a.start_time || '').localeCompare(b.start_time || '');
+  });
+
+  // Today's events first, then future events, capped at 5
+  const sorted = [...todayEvents, ...futureEvents];
+  return { events: sorted.slice(0, 5), hasTodayEvents: todayEvents.length > 0 };
 }
 
 function formatEventTime(startTime: string, endTime: string | null): string {
@@ -89,7 +89,7 @@ export default function EntertainmentSection() {
   });
 
   const events = data?.events || [];
-  const isUpcoming = data?.isUpcoming ?? true;
+  const hasTodayEvents = data?.hasTodayEvents ?? false;
 
   // Map API events to display format (keep original event for navigation)
   const mappedEvents = events.map((event) => ({
@@ -145,8 +145,8 @@ export default function EntertainmentSection() {
   return (
     <View style={styles.container}>
       <SectionHeader
-        title={isUpcoming ? 'Upcoming Entertainment' : 'Entertainment'}
-        subtitle={isUpcoming ? undefined : 'Tonight'}
+        title={hasTodayEvents ? 'Entertainment Tonight' : 'Upcoming Entertainment'}
+        subtitle={hasTodayEvents ? undefined : "Don't Miss Out"}
         actionText="View All"
         onActionPress={handleViewAll}
       />
