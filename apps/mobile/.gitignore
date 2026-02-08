@@ -34,7 +34,6 @@ coverage/
 *.local
 
 # Sensitive files (App Store / Play Store)
-google-services.json
 google-service-account.json
 *.keystore
 *.jks
