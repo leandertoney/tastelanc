@@ -3,11 +3,26 @@ import { supabase } from './supabase';
 import { getFavorites } from './favorites';
 import { getRecentVisitCounts } from './visits';
 import { getEpochSeed, seededShuffle, basicFairRotate } from './fairRotation';
-import type { Restaurant, RestaurantCategory, PremiumTier } from '../types/database';
-import { ONBOARDING_DATA_KEY, type OnboardingData } from '../types/onboarding';
+import type { Restaurant, RestaurantCategory, CuisineType, PremiumTier } from '../types/database';
+import { ONBOARDING_DATA_KEY, FOOD_PREFERENCE_TO_CUISINE, type OnboardingData } from '../types/onboarding';
 
 // Scoring configuration
 const SCORING = {
+  // Cuisine match (onboarding food pref → restaurant.cuisine)
+  CUISINE_MATCH: 25,
+
+  // Category match (entertainment pref → restaurant.categories)
+  CATEGORY_MATCH: 15,
+
+  // Food search term match (name/description)
+  FOOD_TERM_MATCH: 20,
+
+  // Budget match (onboarding budget → restaurant.price_range)
+  BUDGET_MATCH: 10,
+
+  // Vibe/best_for match per tag
+  VIBE_MATCH: 15,
+
   // Recent visit bonus: +5 per visit in last 30 days, capped at +20
   VISIT_BONUS_PER_VISIT: 5,
   VISIT_BONUS_MAX: 20,
@@ -15,6 +30,9 @@ const SCORING = {
 
   // Favorite bonus
   FAVORITE_BONUS: 10,
+
+  // Verified bonus
+  VERIFIED_BONUS: 5,
 
   // Distance penalty: -1 per mile, capped at -15
   DISTANCE_PENALTY_PER_MILE: 1,
@@ -24,14 +42,31 @@ const SCORING = {
 // Storage key for viewed restaurants (for freshness)
 const VIEWED_RESTAURANTS_KEY = '@tastelanc_viewed_restaurants';
 
-// Map entertainment preferences to categories
+// Map entertainment preferences to categories (matches ENTERTAINMENT_OPTIONS in onboarding)
 const ENTERTAINMENT_TO_CATEGORY: Record<string, RestaurantCategory[]> = {
-  'Live music': ['bars', 'nightlife'],
-  'Trivia': ['bars'],
-  'Cocktails': ['bars', 'nightlife', 'rooftops'],
-  'Outdoor dining': ['outdoor_dining', 'rooftops'],
-  'Brunch': ['brunch'],
-  'Late night': ['nightlife', 'bars'],
+  'Date night': ['dinner', 'rooftops'],
+  'Casual hangout': ['bars', 'lunch'],
+  'After work drinks': ['bars', 'nightlife'],
+  'Weekend brunch': ['brunch'],
+  'Late night eats': ['nightlife', 'bars'],
+  'Special occasion': ['dinner', 'rooftops'],
+};
+
+// Map entertainment preferences to vibe/best_for tags for matching
+const ENTERTAINMENT_TO_VIBE: Record<string, string[]> = {
+  'Date night': ['date night', 'romantic', 'intimate', 'upscale'],
+  'Casual hangout': ['casual', 'laid-back', 'chill', 'hangout'],
+  'After work drinks': ['happy hour', 'after work', 'cocktails', 'drinks'],
+  'Weekend brunch': ['brunch', 'weekend', 'mimosas'],
+  'Late night eats': ['late night', 'late-night', 'night owl'],
+  'Special occasion': ['special occasion', 'celebration', 'upscale', 'fine dining'],
+};
+
+// Map budget preference to price_range values
+const BUDGET_TO_PRICE: Record<string, string[]> = {
+  '$': ['$', '1'],
+  '$$': ['$$', '2', '$'],
+  '$$$': ['$$$', '3', '$$'],
 };
 
 // Map food preferences to search terms (for description/name matching)
@@ -103,9 +138,10 @@ function calculateDistanceMiles(
 }
 
 /**
- * Score a restaurant based on user preferences, visit history, favorites, and distance
+ * Score a restaurant based on user preferences, visit history, favorites, and distance.
+ * Exported so FeaturedSection can use it for reason badges.
  */
-function scoreRestaurant(
+export function scoreRestaurant(
   restaurant: Restaurant,
   preferences: OnboardingData,
   favorites: string[],
@@ -116,29 +152,66 @@ function scoreRestaurant(
 
   // Boost for verified restaurants
   if (restaurant.is_verified) {
-    score += 5;
+    score += SCORING.VERIFIED_BONUS;
   }
 
-  // Boost for restaurants in preferred categories
+  // 1. Cuisine match: onboarding food preference → restaurant.cuisine field
+  if (restaurant.cuisine) {
+    for (const foodPref of preferences.foodPreferences) {
+      const cuisineType = FOOD_PREFERENCE_TO_CUISINE[foodPref] as CuisineType | undefined;
+      if (cuisineType && restaurant.cuisine === cuisineType) {
+        score += SCORING.CUISINE_MATCH;
+        break; // One match is enough
+      }
+    }
+  }
+
+  // 2. Category match: entertainment preferences → restaurant categories
   const preferredCategories = getRecommendedCategories(preferences);
   const matchingCategories = restaurant.categories.filter((cat) =>
     preferredCategories.includes(cat)
   );
-  score += matchingCategories.length * 15;
+  score += matchingCategories.length * SCORING.CATEGORY_MATCH;
 
-  // Boost for food preference matches in name/description
-  preferences.foodPreferences.forEach((foodPref) => {
+  // 3. Food search term match in name/description
+  const nameAndDesc = `${restaurant.name} ${restaurant.description || ''}`.toLowerCase();
+  for (const foodPref of preferences.foodPreferences) {
     const searchTerms = FOOD_SEARCH_TERMS[foodPref] || [];
-    const nameAndDesc = `${restaurant.name} ${restaurant.description || ''}`.toLowerCase();
-
-    searchTerms.forEach((term) => {
+    for (const term of searchTerms) {
       if (nameAndDesc.includes(term.toLowerCase())) {
-        score += 20;
+        score += SCORING.FOOD_TERM_MATCH;
+        break; // One match per food pref is enough
       }
-    });
-  });
+    }
+  }
 
-  // Recent visit bonus: +5 per visit in last 30 days, capped at +20
+  // 4. Budget match: onboarding budget → restaurant.price_range
+  if (preferences.budget && restaurant.price_range) {
+    const acceptablePrices = BUDGET_TO_PRICE[preferences.budget] || [];
+    if (acceptablePrices.includes(restaurant.price_range)) {
+      score += SCORING.BUDGET_MATCH;
+    }
+  }
+
+  // 5. Vibe/best_for match: entertainment preferences → vibe_tags + best_for
+  const restaurantVibes = [
+    ...(restaurant.vibe_tags || []),
+    ...(restaurant.best_for || []),
+  ].map((v) => v.toLowerCase());
+
+  if (restaurantVibes.length > 0) {
+    for (const entPref of preferences.entertainmentPreferences) {
+      const vibeTerms = ENTERTAINMENT_TO_VIBE[entPref] || [];
+      for (const term of vibeTerms) {
+        if (restaurantVibes.some((v) => v.includes(term))) {
+          score += SCORING.VIBE_MATCH;
+          break; // One match per entertainment pref
+        }
+      }
+    }
+  }
+
+  // 6. Recent visit bonus: +5 per visit in last 30 days, capped at +20
   if (recentVisitCounts[restaurant.id]) {
     const visitBoost = Math.min(
       recentVisitCounts[restaurant.id] * SCORING.VISIT_BONUS_PER_VISIT,
@@ -147,12 +220,12 @@ function scoreRestaurant(
     score += visitBoost;
   }
 
-  // Favorite bonus: +10
+  // 7. Favorite bonus
   if (favorites.includes(restaurant.id)) {
     score += SCORING.FAVORITE_BONUS;
   }
 
-  // Distance penalty: -1 per mile, capped at -15
+  // 8. Distance penalty: -1 per mile, capped at -15
   if (userLocation && restaurant.latitude && restaurant.longitude) {
     const distance = calculateDistanceMiles(
       userLocation.latitude,
@@ -166,9 +239,6 @@ function scoreRestaurant(
     );
     score -= distancePenalty;
   }
-
-  // Small random factor for variety (0-3)
-  score += Math.random() * 3;
 
   return score;
 }
@@ -264,7 +334,8 @@ export async function getRecommendations(
 }
 
 /**
- * Get a personalized greeting based on time and preferences
+ * Get a personalized greeting based on time and preferences.
+ * Uses actual onboarding ENTERTAINMENT_OPTIONS labels.
  */
 export function getPersonalizedGreeting(preferences: OnboardingData | null): string {
   const hour = new Date().getHours();
@@ -282,17 +353,25 @@ export function getPersonalizedGreeting(preferences: OnboardingData | null): str
     return `${timeGreeting}! Here are some spots we think you'll love.`;
   }
 
-  // Personalize based on preferences
-  if (preferences.entertainmentPreferences.includes('Brunch') && hour < 14) {
+  // Time-aware personalization using actual onboarding option labels
+  if (preferences.entertainmentPreferences.includes('Weekend brunch') && hour < 14) {
     return `${timeGreeting}! Ready for brunch? Check out these spots.`;
   }
 
-  if (preferences.entertainmentPreferences.includes('Late night') && hour >= 20) {
-    return `${timeGreeting}! Looking for late-night fun? We've got you.`;
+  if (preferences.entertainmentPreferences.includes('Late night eats') && hour >= 20) {
+    return `${timeGreeting}! Looking for late-night eats? We've got you.`;
   }
 
-  if (preferences.entertainmentPreferences.includes('Cocktails') && hour >= 17) {
-    return `${timeGreeting}! Time for cocktails? Here are our picks.`;
+  if (preferences.entertainmentPreferences.includes('After work drinks') && hour >= 16 && hour < 20) {
+    return `${timeGreeting}! Time for after-work drinks? Here are our picks.`;
+  }
+
+  if (preferences.entertainmentPreferences.includes('Date night') && hour >= 17) {
+    return `${timeGreeting}! Planning a date night? These spots are perfect.`;
+  }
+
+  if (preferences.name) {
+    return `${timeGreeting}, ${preferences.name}! Here are your picks.`;
   }
 
   return `${timeGreeting}! Based on your taste, you'll love these.`;
@@ -363,7 +442,8 @@ export async function getFeaturedRestaurants(limit: number = 24): Promise<Restau
 
 /**
  * Get "Other Places Nearby" restaurants — BASIC (free) ONLY.
- * Uses epoch-based fair rotation instead of alphabetical ordering.
+ * Personalized: scores restaurants by user preferences, then sorts.
+ * Falls back to epoch-based fair rotation if no preferences exist.
  * Serves as an upsell funnel: basic restaurants see paid ones above them.
  */
 export async function getOtherRestaurants(
@@ -373,7 +453,6 @@ export async function getOtherRestaurants(
 ): Promise<{ restaurants: Restaurant[]; hasMore: boolean }> {
   try {
     // Fetch all active basic restaurants (no tier or basic tier)
-    // We fetch all at once and paginate client-side to enable fair rotation
     let query = supabase
       .from('restaurants')
       .select('*, tiers(name)', { count: 'exact' })
@@ -384,7 +463,7 @@ export async function getOtherRestaurants(
       query = query.not('id', 'in', `(${excludeIds.join(',')})`);
     }
 
-    const { data, error, count } = await query;
+    const { data, error } = await query;
 
     if (error) throw error;
 
@@ -393,13 +472,27 @@ export async function getOtherRestaurants(
       (r: any) => !r.tiers?.name || r.tiers.name === 'basic'
     );
 
-    // Apply fair rotation (epoch-based seeded shuffle)
-    const rotated = basicFairRotate(basicOnly);
+    // Try preference-based scoring; fall back to fair rotation
+    const preferences = await getUserPreferences();
+    let sorted: Restaurant[];
 
-    // Paginate the rotated results
+    if (preferences) {
+      // Score and sort by preference match (basic = free, no fairness obligation)
+      const scored = basicOnly.map((r) => ({
+        restaurant: r as Restaurant,
+        score: scoreRestaurant(r as Restaurant, preferences, []),
+      }));
+      scored.sort((a, b) => b.score - a.score);
+      sorted = scored.map((s) => s.restaurant);
+    } else {
+      // No preferences — use epoch-based fair rotation
+      sorted = basicFairRotate(basicOnly) as Restaurant[];
+    }
+
+    // Paginate the sorted results
     const offset = page * pageSize;
-    const pageData = rotated.slice(offset, offset + pageSize);
-    const hasMore = offset + pageSize < rotated.length;
+    const pageData = sorted.slice(offset, offset + pageSize);
+    const hasMore = offset + pageSize < sorted.length;
 
     return {
       restaurants: pageData,
@@ -412,48 +505,74 @@ export async function getOtherRestaurants(
 }
 
 /**
- * Get suggestion text for why a restaurant is recommended
+ * Get suggestion text for why a restaurant is recommended.
+ *
+ * Trust hierarchy — only claims backed by real evidence:
+ * 1. Google review highlights (real reviewers said this)
+ * 2. Google rating (crowd-validated score)
+ * 3. TasteLanc user ratings (our own community sentiment)
+ * 4. Signature dishes (curated enrichment)
+ * 5. Vibe/occasion match (safe: describes atmosphere, not food quality)
+ * 6. Verified fallback
+ *
+ * Deliberately avoids "Great [cuisine]" claims — cuisine field only means
+ * they serve it, not that they're good at it.
  */
 export function getRecommendationReason(
   restaurant: Restaurant,
   preferences: OnboardingData | null
 ): string | null {
-  if (!preferences) return null;
+  // 1. Google review highlight (strongest signal — real reviewers said this)
+  if (
+    restaurant.google_review_highlights &&
+    restaurant.google_review_highlights.length > 0
+  ) {
+    return restaurant.google_review_highlights[0];
+  }
 
-  // Check category matches
-  const preferredCategories = preferences ? getRecommendedCategories(preferences) : [];
+  // 2. Google rating (crowd-validated from Google)
+  if (
+    restaurant.google_rating &&
+    restaurant.google_rating >= 4.2 &&
+    restaurant.google_review_count >= 10
+  ) {
+    return `${restaurant.google_rating.toFixed(1)}★ on Google`;
+  }
 
-  for (const category of restaurant.categories) {
-    if (preferredCategories.includes(category)) {
-      switch (category) {
-        case 'brunch':
-          return 'Perfect for brunch lovers';
-        case 'bars':
-          return 'Great bar scene';
-        case 'nightlife':
-          return 'Perfect for night owls';
-        case 'outdoor_dining':
-          return 'Al fresco dining';
-        case 'rooftops':
-          return 'Amazing rooftop views';
-        default:
-          return null;
+  // 3. TasteLanc user ratings (our own community)
+  if (
+    restaurant.tastelancrating &&
+    restaurant.tastelancrating >= 4.0 &&
+    restaurant.tastelancrating_count >= 3
+  ) {
+    return `Highly rated (${restaurant.tastelancrating.toFixed(1)}★)`;
+  }
+
+  // 4. Signature dishes (curated enrichment — verifiable claims)
+  if (restaurant.signature_dishes && restaurant.signature_dishes.length > 0) {
+    return `Known for ${restaurant.signature_dishes[0]}`;
+  }
+
+  // 5. Vibe/occasion match (safe: describes atmosphere, not food quality)
+  if (preferences) {
+    const restaurantVibes = [
+      ...(restaurant.vibe_tags || []),
+      ...(restaurant.best_for || []),
+    ].map((v) => v.toLowerCase());
+
+    if (restaurantVibes.length > 0) {
+      for (const entPref of preferences.entertainmentPreferences) {
+        const vibeTerms = ENTERTAINMENT_TO_VIBE[entPref] || [];
+        for (const term of vibeTerms) {
+          if (restaurantVibes.some((v) => v.includes(term))) {
+            return `Great for ${entPref.toLowerCase()}`;
+          }
+        }
       }
     }
   }
 
-  // Check food preference matches
-  for (const foodPref of preferences.foodPreferences) {
-    const searchTerms = FOOD_SEARCH_TERMS[foodPref] || [];
-    const nameAndDesc = `${restaurant.name} ${restaurant.description || ''}`.toLowerCase();
-
-    for (const term of searchTerms) {
-      if (nameAndDesc.includes(term.toLowerCase())) {
-        return `Great ${foodPref.toLowerCase()}`;
-      }
-    }
-  }
-
+  // 6. Verified fallback
   if (restaurant.is_verified) {
     return 'TasteLanc verified';
   }

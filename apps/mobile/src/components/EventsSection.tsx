@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { View, StyleSheet, FlatList, ImageSourcePropType } from 'react-native';
+import { useCallback, useRef } from 'react';
+import { View, StyleSheet, FlatList, ImageSourcePropType, ViewToken } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,6 +15,7 @@ import { ENABLE_MOCK_DATA, MOCK_EVENTS } from '../config/mockData';
 import type { PremiumTier } from '../types/database';
 import { usePlatformSocialProof, useEmailGate } from '../hooks';
 import { trackClick } from '../lib/analytics';
+import { trackImpression } from '../lib/impressions';
 
 const CTA_ITEM_ID = '__partner_cta__';
 
@@ -148,6 +149,17 @@ export default function EventsSection() {
     }
   };
 
+  // Track impressions when items become visible
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    for (const token of viewableItems) {
+      const item = token.item as DisplayEvent;
+      if (item?.restaurantId && item.id !== CTA_ITEM_ID) {
+        trackImpression(item.restaurantId, 'events', token.index ?? 0);
+      }
+    }
+  }).current;
+
   // Return null if no data - cache persistence will prevent flash
   if (displayData.length === 0) {
     return null;
@@ -205,6 +217,8 @@ export default function EventsSection() {
         contentContainerStyle={styles.listContent}
         snapToInterval={EVENT_CARD_HEIGHT + spacing.md}
         decelerationRate="fast"
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
       />
     </View>
   );

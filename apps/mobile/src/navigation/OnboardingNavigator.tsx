@@ -23,7 +23,6 @@ import {
   OnboardingPremiumScreen,
   OnboardingRosieAskScreen,
   OnboardingVotingScreen,
-  OnboardingVotingBadgesScreen,
   OnboardingReviewAskScreen,
   OnboardingPremiumIntroScreen,
   // Legacy (keeping for backward compatibility)
@@ -68,7 +67,6 @@ export default function OnboardingNavigator() {
       <Stack.Screen name="OnboardingPremium" component={OnboardingPremiumScreen} />
       <Stack.Screen name="OnboardingRosieAsk" component={OnboardingRosieAskScreen} />
       <Stack.Screen name="OnboardingVoting" component={OnboardingVotingScreen} />
-      <Stack.Screen name="OnboardingVotingBadges" component={OnboardingVotingBadgesScreen} />
       <Stack.Screen name="OnboardingReviewAsk" component={OnboardingReviewAskScreen} />
       <Stack.Screen name="OnboardingPremiumIntro" component={OnboardingPremiumIntroScreen} />
 

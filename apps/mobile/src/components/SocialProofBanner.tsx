@@ -48,12 +48,6 @@ export default function SocialProofBanner() {
   // Build messages array from live data, each with its own CTA + nav target
   const messages: BannerMessage[] = data ? [
     {
-      text: data.votingBannerText,
-      subtext: data.restaurantsCompeting,
-      cta: 'Vote',
-      target: { screen: 'VoteCenter' },
-    },
-    {
       text: data.checkinBannerText,
       subtext: data.checkinsThisWeek > 0 ? `${data.checkinsThisWeek} this week` : null,
       cta: 'Check In',
@@ -72,7 +66,7 @@ export default function SocialProofBanner() {
       cta: 'View',
       target: { screen: 'SpecialsViewAll' },
     } : null,
-    // Static fallback
+    // Static voting CTA (no countdown)
     FALLBACK_MESSAGE,
   ].filter((m): m is BannerMessage => m !== null && !!m.text) : [FALLBACK_MESSAGE];
 

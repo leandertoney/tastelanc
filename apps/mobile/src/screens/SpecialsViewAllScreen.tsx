@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   TouchableOpacity,
+  ViewToken,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +21,7 @@ import { tieredFairRotate, getTierName } from '../lib/fairRotation';
 import { colors, radius, spacing } from '../constants/colors';
 import SpotifyStyleListItem from '../components/SpotifyStyleListItem';
 import SearchBar from '../components/SearchBar';
+import { trackImpression } from '../lib/impressions';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -130,6 +132,17 @@ export default function SpecialsViewAllScreen() {
     [navigation]
   );
 
+  // Track impressions when items become visible
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    for (const token of viewableItems) {
+      const item = token.item as SpecialWithRestaurant;
+      if (item?.restaurant?.id) {
+        trackImpression(item.restaurant.id, 'specials_view_all', token.index ?? 0);
+      }
+    }
+  }).current;
+
   const renderItem = ({ item }: { item: SpecialWithRestaurant }) => {
     const priceText = formatPrice(item.original_price, item.special_price);
     const accentText = priceText || item.name;
@@ -214,6 +227,8 @@ export default function SpecialsViewAllScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}

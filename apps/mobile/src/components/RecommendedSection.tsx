@@ -19,6 +19,7 @@ import {
 } from '../lib/recommendations';
 import { toggleFavorite, isFavorited } from '../lib/favorites';
 import { useAuth } from '../hooks/useAuth';
+import { trackVisibleItems } from '../lib/impressions';
 import { colors, radius } from '../constants/colors';
 
 interface RecommendedSectionProps {
@@ -70,6 +71,16 @@ export default function RecommendedSection({
   useEffect(() => {
     loadRecommendations();
   }, [loadRecommendations]);
+
+  // Track impressions for all recommended restaurants when they load
+  useEffect(() => {
+    if (recommendations.length > 0) {
+      trackVisibleItems(
+        recommendations.map((r, i) => ({ restaurantId: r.id, index: i })),
+        'recommended',
+      );
+    }
+  }, [recommendations]);
 
   const handleFavoritePress = async (restaurantId: string) => {
     if (!userId) return;

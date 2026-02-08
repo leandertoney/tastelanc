@@ -84,6 +84,9 @@ export interface Restaurant {
   updated_at: string;
   // Google Places enrichment
   google_place_id: string | null;
+  google_rating: number | null;
+  google_review_count: number;
+  google_review_highlights: string[] | null;
   // Enrichment fields
   price_range: string | null;
   signature_dishes: string[] | null;

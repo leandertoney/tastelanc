@@ -4,6 +4,7 @@ import {
   StyleSheet,
   FlatList,
   Dimensions,
+  ViewToken,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
@@ -12,11 +13,13 @@ import type { RootStackParamList } from '../navigation/types';
 import FeaturedCard, { CARD_WIDTH } from './FeaturedCard';
 import SectionHeader from './SectionHeader';
 import Spacer from './Spacer';
-import { getFeaturedRestaurants } from '../lib/recommendations';
+import { getFeaturedRestaurants, getUserPreferences, getRecommendationReason } from '../lib/recommendations';
+import type { OnboardingData } from '../types/onboarding';
 import { useFavorites, useToggleFavorite, useEmailGate } from '../hooks';
 import type { Restaurant } from '../types/database';
 import { colors, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_FEATURED_RESTAURANTS } from '../config/mockData';
+import { trackImpression } from '../lib/impressions';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -49,6 +52,13 @@ export default function FeaturedSection({ onRestaurantPress }: FeaturedSectionPr
 
   const { data: favorites = [] } = useFavorites();
   const toggleFavoriteMutation = useToggleFavorite();
+
+  // Load user preferences for recommendation reason badges
+  const { data: userPreferences = null } = useQuery<OnboardingData | null>({
+    queryKey: ['userPreferences'],
+    queryFn: getUserPreferences,
+    staleTime: 30 * 60 * 1000, // 30 min — preferences change rarely
+  });
 
   // Use real data, or mock data if enabled and no real data
   // useMemo gives stable reference for useEffect dependency
@@ -93,6 +103,21 @@ export default function FeaturedSection({ onRestaurantPress }: FeaturedSectionPr
     [toggleFavoriteMutation]
   );
 
+  // Track impressions when items become visible
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    for (const token of viewableItems) {
+      const item = token.item as Restaurant;
+      if (item?.id) {
+        // Use modulo to get real position (data is tripled for infinite scroll)
+        const realIndex = displayRestaurants.length > 0
+          ? (token.index ?? 0) % displayRestaurants.length
+          : token.index ?? 0;
+        trackImpression(item.id, 'featured', realIndex);
+      }
+    }
+  }).current;
+
   // Handle scroll to loop back when reaching edges
   const handleScrollEnd = useCallback(
     (event: { nativeEvent: { contentOffset: { x: number } } }) => {
@@ -126,9 +151,10 @@ export default function FeaturedSection({ onRestaurantPress }: FeaturedSectionPr
         onPress={() => onRestaurantPress(item)}
         isFavorite={favorites.includes(item.id)}
         onFavoritePress={() => handleFavoritePress(item.id)}
+        reasonBadge={getRecommendationReason(item, userPreferences)}
       />
     ),
-    [favorites, handleFavoritePress, onRestaurantPress]
+    [favorites, handleFavoritePress, onRestaurantPress, userPreferences]
   );
 
   const getItemLayout = useCallback(
@@ -170,6 +196,8 @@ export default function FeaturedSection({ onRestaurantPress }: FeaturedSectionPr
         initialNumToRender={3}
         maxToRenderPerBatch={5}
         windowSize={5}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
       />
     </View>
   );

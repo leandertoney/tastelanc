@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabParamList } from './types';
 import { colors } from '../constants/colors';
 import HeaderLogo from '../components/HeaderLogo';
+import HeaderGreeting from '../components/HeaderGreeting';
 
 import HomeScreen from '../screens/HomeScreen';
 import SearchScreen from '../screens/SearchScreen';
@@ -55,7 +56,11 @@ export default function BottomTabNavigator() {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{ title: 'TasteLanc' }}
+        options={{
+          headerTitle: () => <HeaderLogo />,
+          headerLeft: () => <HeaderGreeting />,
+          headerTitleAlign: 'center',
+        }}
       />
       <Tab.Screen
         name="Search"

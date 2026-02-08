@@ -16,6 +16,7 @@ import { colors, radius, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_HAPPY_HOURS } from '../config/mockData';
 import { usePlatformSocialProof, useEmailGate } from '../hooks';
 import { trackClick } from '../lib/analytics';
+import { trackImpression } from '../lib/impressions';
 
 const BANNER_DURATION = 4000; // 4 seconds per banner (equal for all)
 const FADE_DURATION = 300; // 300ms fade transition
@@ -173,11 +174,17 @@ export default function HappyHourSection() {
     dealFadeAnim.setValue(1);
   }, [displayData.length, fadeAnim, dealFadeAnim]);
 
-  // Reset deal index when banner changes
+  // Reset deal index when banner changes + track impression
   useEffect(() => {
     setCurrentDealIndex(0);
     dealFadeAnim.setValue(1);
-  }, [safeIndex, dealFadeAnim]);
+
+    // Track impression for the currently visible banner
+    const banner = displayData[safeIndex];
+    if (banner?.restaurantId) {
+      trackImpression(banner.restaurantId, 'happy_hours', safeIndex);
+    }
+  }, [safeIndex, dealFadeAnim, displayData]);
 
   // Auto-cycle banners with fade transition
   useEffect(() => {

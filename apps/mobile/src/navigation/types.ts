@@ -26,7 +26,6 @@ export type OnboardingStackParamList = {
   OnboardingPremium: undefined;
   OnboardingRosieAsk: undefined;
   OnboardingVoting: undefined;
-  OnboardingVotingBadges: undefined;
   OnboardingReviewAsk: undefined;
   OnboardingPremiumIntro: undefined;
   // OnboardingTrialOffer removed - replaced with automatic 3-day trial

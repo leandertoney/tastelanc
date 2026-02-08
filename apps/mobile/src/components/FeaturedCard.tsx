@@ -13,6 +13,7 @@ interface FeaturedCardProps {
   onPress?: () => void;
   isFavorite?: boolean;
   onFavoritePress?: () => void;
+  reasonBadge?: string | null;
 }
 
 export default function FeaturedCard({
@@ -20,6 +21,7 @@ export default function FeaturedCard({
   onPress,
   isFavorite = false,
   onFavoritePress,
+  reasonBadge,
 }: FeaturedCardProps) {
   const displayCategories = restaurant.categories?.slice(0, 2) || [];
 
@@ -38,6 +40,12 @@ export default function FeaturedCard({
         {/* Gradient overlay for text readability */}
         <View style={styles.gradientOverlay} />
 
+        {/* Recommendation reason badge - top left */}
+        {reasonBadge && (
+          <View style={styles.reasonBadge}>
+            <Text style={styles.reasonText}>{reasonBadge}</Text>
+          </View>
+        )}
 
         {/* Favorite button - top right */}
         {onFavoritePress && (
@@ -130,10 +138,19 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: radius.lg,
     borderBottomRightRadius: radius.lg,
   },
-  premiumBadgeContainer: {
+  reasonBadge: {
     position: 'absolute',
     top: spacing.sm,
     left: spacing.sm,
+    backgroundColor: colors.accent,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+  },
+  reasonText: {
+    color: colors.text,
+    fontSize: 11,
+    fontWeight: '600',
   },
   favoriteButton: {
     position: 'absolute',

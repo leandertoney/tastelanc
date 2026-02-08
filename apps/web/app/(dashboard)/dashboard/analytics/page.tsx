@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BarChart3, Eye, Heart, TrendingUp, Phone, Globe, MapPin, Share2, ArrowUp, ArrowDown, Crown, Calendar, Clock, Award } from 'lucide-react';
+import { BarChart3, Eye, Heart, TrendingUp, Phone, Globe, MapPin, Share2, ArrowUp, ArrowDown, Crown, Calendar, Clock, Award, Crosshair, Layers } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 import Link from 'next/link';
 import TierGate, { useTierAccess } from '@/components/TierGate';
@@ -22,6 +22,8 @@ interface AnalyticsData {
     happyHourViews: number;
     menuViews: number;
     tierName: string;
+    impressionsThisWeek: number;
+    avgPosition: number | null;
   };
   weeklyViews: Array<{ day: string; views: number }>;
   clicksByType: {
@@ -35,6 +37,15 @@ interface AnalyticsData {
     event: number;
   };
   recentActivity: Array<{ action: string; time: string; count: number }>;
+  dailyImpressions: Array<{ day: string; impressions: number }>;
+  impressionsBySection: Array<{ section: string; count: number }>;
+  conversionFunnel: {
+    impressions: number;
+    clicks: number;
+    detailViews: number;
+    clickRate: number;
+    viewRate: number;
+  };
 }
 
 export default function AnalyticsPage() {
@@ -105,6 +116,20 @@ export default function AnalyticsPage() {
       icon: Heart,
     },
     {
+      label: 'Impressions This Week',
+      value: data.stats.impressionsThisWeek.toLocaleString(),
+      change: null,
+      trend: 'up',
+      icon: Layers,
+    },
+    {
+      label: 'Avg Position',
+      value: data.stats.avgPosition !== null ? `#${data.stats.avgPosition}` : '--',
+      change: null,
+      trend: 'up',
+      icon: Crosshair,
+    },
+    {
       label: 'Happy Hour Views',
       value: data.stats.happyHourViews.toLocaleString(),
       change: null,
@@ -153,8 +178,8 @@ export default function AnalyticsPage() {
       </div>
 
       {loading ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <Card key={i} className="p-6 animate-pulse">
               <div className="h-4 bg-tastelanc-surface rounded w-24 mb-2" />
               <div className="h-8 bg-tastelanc-surface rounded w-16" />
@@ -168,7 +193,7 @@ export default function AnalyticsPage() {
       ) : (
         <>
           {/* Stats Grid */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {stats.map((stat) => {
               const Icon = stat.icon;
               return (
@@ -258,6 +283,104 @@ export default function AnalyticsPage() {
               )}
             </Card>
           </div>
+
+          {/* Visibility Section */}
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Daily Impressions Chart */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-white mb-6">Daily Impressions (7d)</h3>
+              {(!data?.dailyImpressions || data.dailyImpressions.every(d => d.impressions === 0)) ? (
+                <div className="h-48 flex items-center justify-center text-gray-500">
+                  No impression data yet. Impressions will appear as your restaurant shows up in the app.
+                </div>
+              ) : (
+                <div className="flex items-end justify-between h-48 gap-2">
+                  {data.dailyImpressions.map((dayData) => {
+                    const maxImpressions = Math.max(...(data.dailyImpressions?.map(d => d.impressions) || []), 1);
+                    return (
+                      <div key={dayData.day} className="flex flex-col items-center flex-1">
+                        <div
+                          className="w-full bg-blue-500 rounded-t transition-all hover:bg-blue-400"
+                          style={{ height: `${Math.max((dayData.impressions / maxImpressions) * 100, 4)}%` }}
+                          title={`${dayData.impressions} impressions`}
+                        />
+                        <span className="text-xs text-gray-400 mt-2">{dayData.day}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+
+            {/* Section Breakdown */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-white mb-6">Visibility by Section</h3>
+              {(!data?.impressionsBySection || data.impressionsBySection.length === 0) ? (
+                <div className="h-48 flex items-center justify-center text-gray-500">
+                  No section data yet. This will show where your restaurant appears most.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {data.impressionsBySection.slice(0, 6).map((section) => {
+                    const maxCount = data.impressionsBySection[0]?.count || 1;
+                    const percentage = Math.round((section.count / maxCount) * 100);
+                    return (
+                      <div key={section.section}>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-gray-300">{section.section}</span>
+                          <span className="text-gray-400">{section.count.toLocaleString()}</span>
+                        </div>
+                        <div className="w-full bg-tastelanc-surface rounded-full h-2">
+                          <div
+                            className="bg-blue-500 h-2 rounded-full"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+          </div>
+
+          {/* Conversion Funnel */}
+          {data?.conversionFunnel && data.conversionFunnel.impressions > 0 && (
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-white mb-6">Conversion Funnel (30d)</h3>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-white">{data.conversionFunnel.impressions.toLocaleString()}</p>
+                  <p className="text-gray-400 text-sm mt-1">Impressions</p>
+                </div>
+                <div className="text-center relative">
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-600 text-xs">
+                    {data.conversionFunnel.clickRate}%
+                  </div>
+                  <p className="text-3xl font-bold text-white">{data.conversionFunnel.clicks.toLocaleString()}</p>
+                  <p className="text-gray-400 text-sm mt-1">Clicks</p>
+                </div>
+                <div className="text-center relative">
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-600 text-xs">
+                    {data.conversionFunnel.viewRate}%
+                  </div>
+                  <p className="text-3xl font-bold text-white">{data.conversionFunnel.detailViews.toLocaleString()}</p>
+                  <p className="text-gray-400 text-sm mt-1">Detail Views</p>
+                </div>
+              </div>
+              {/* Funnel bar */}
+              <div className="mt-4 flex gap-1 h-3 rounded-full overflow-hidden">
+                <div className="bg-blue-500 flex-1 rounded-l-full" />
+                <div className="bg-tastelanc-accent" style={{ flex: Math.max(data.conversionFunnel.clickRate / 100, 0.05) }} />
+                <div className="bg-green-500 rounded-r-full" style={{ flex: Math.max((data.conversionFunnel.viewRate * data.conversionFunnel.clickRate) / 10000, 0.02) }} />
+              </div>
+              <div className="flex justify-between mt-2 text-xs text-gray-500">
+                <span>Seen in app</span>
+                <span>Clicked</span>
+                <span>Viewed profile</span>
+              </div>
+            </Card>
+          )}
 
           {/* Elite Features - Show upsell for Premium users who don't have Elite */}
           {!hasElite && (
