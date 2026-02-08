@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
-import { createClient } from '@/lib/supabase/client';
 
 interface DashboardStats {
   profileViews: number;
@@ -36,7 +35,7 @@ interface ProfileCompletion {
 }
 
 export default function DashboardPage() {
-  const { restaurant, restaurantId, isLoading: contextLoading } = useRestaurant();
+  const { restaurant, restaurantId, isLoading: contextLoading, buildApiUrl } = useRestaurant();
   const searchParams = useSearchParams();
   const adminMode = searchParams.get('admin_mode') === 'true';
   const adminRestaurantId = searchParams.get('restaurant_id');
@@ -57,136 +56,17 @@ export default function DashboardPage() {
 
     const fetchStats = async () => {
       setIsLoading(true);
-      const supabase = createClient();
 
       try {
-        // Get profile views (all time) - use analytics_page_views which has actual data
-        const { count: totalViews } = await supabase
-          .from('analytics_page_views')
-          .select('*', { count: 'exact', head: true })
-          .eq('restaurant_id', restaurantId);
+        const response = await fetch(buildApiUrl('/api/dashboard/overview-stats'));
 
-        // Get profile views (this week)
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        const { count: weeklyViews } = await supabase
-          .from('analytics_page_views')
-          .select('*', { count: 'exact', head: true })
-          .eq('restaurant_id', restaurantId)
-          .gte('viewed_at', weekAgo.toISOString());
+        if (!response.ok) {
+          throw new Error('Failed to fetch overview stats');
+        }
 
-        // Get profile views (last week for comparison)
-        const twoWeeksAgo = new Date();
-        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-        const { count: lastWeekViews } = await supabase
-          .from('analytics_page_views')
-          .select('*', { count: 'exact', head: true })
-          .eq('restaurant_id', restaurantId)
-          .gte('viewed_at', twoWeeksAgo.toISOString())
-          .lt('viewed_at', weekAgo.toISOString());
-
-        // Get favorites count (this week)
-        const { count: favoritesCount } = await supabase
-          .from('favorites')
-          .select('*', { count: 'exact', head: true })
-          .eq('restaurant_id', restaurantId);
-
-        // Get favorites from this week
-        const { count: thisWeekFavorites } = await supabase
-          .from('favorites')
-          .select('*', { count: 'exact', head: true })
-          .eq('restaurant_id', restaurantId)
-          .gte('created_at', weekAgo.toISOString());
-
-        // Get favorites from last week (for comparison)
-        const { count: lastWeekFavorites } = await supabase
-          .from('favorites')
-          .select('*', { count: 'exact', head: true })
-          .eq('restaurant_id', restaurantId)
-          .gte('created_at', twoWeeksAgo.toISOString())
-          .lt('created_at', weekAgo.toISOString());
-
-        // Get happy hour views (this week)
-        const { count: happyHourViews } = await supabase
-          .from('analytics_page_views')
-          .select('*', { count: 'exact', head: true })
-          .eq('restaurant_id', restaurantId)
-          .eq('page_type', 'happy_hour')
-          .gte('viewed_at', weekAgo.toISOString());
-
-        // Get happy hour views (last week for comparison)
-        const { count: lastWeekHappyHourViews } = await supabase
-          .from('analytics_page_views')
-          .select('*', { count: 'exact', head: true })
-          .eq('restaurant_id', restaurantId)
-          .eq('page_type', 'happy_hour')
-          .gte('viewed_at', twoWeeksAgo.toISOString())
-          .lt('viewed_at', weekAgo.toISOString());
-
-        // Get menu views (this week)
-        const { count: menuViews } = await supabase
-          .from('analytics_page_views')
-          .select('*', { count: 'exact', head: true })
-          .eq('restaurant_id', restaurantId)
-          .eq('page_type', 'menu')
-          .gte('viewed_at', weekAgo.toISOString());
-
-        // Get menu views (last week for comparison)
-        const { count: lastWeekMenuViews } = await supabase
-          .from('analytics_page_views')
-          .select('*', { count: 'exact', head: true })
-          .eq('restaurant_id', restaurantId)
-          .eq('page_type', 'menu')
-          .gte('viewed_at', twoWeeksAgo.toISOString())
-          .lt('viewed_at', weekAgo.toISOString());
-
-        // Calculate percentage changes
-        // When previous period is 0, treat it as 1 to show actual growth percentage
-        const viewsChange = Math.round(((weeklyViews || 0) - (lastWeekViews || 0)) / Math.max(lastWeekViews || 0, 1) * 100);
-        const favoritesChange = Math.round(((thisWeekFavorites || 0) - (lastWeekFavorites || 0)) / Math.max(lastWeekFavorites || 0, 1) * 100);
-        const happyHourChange = Math.round(((happyHourViews || 0) - (lastWeekHappyHourViews || 0)) / Math.max(lastWeekHappyHourViews || 0, 1) * 100);
-        const menuChange = Math.round(((menuViews || 0) - (lastWeekMenuViews || 0)) / Math.max(lastWeekMenuViews || 0, 1) * 100);
-
-        setStats({
-          profileViews: totalViews || 0,
-          viewsChange: viewsChange >= 0 ? `+${viewsChange}%` : `${viewsChange}%`,
-          favorites: favoritesCount || 0,
-          favoritesChange: favoritesChange >= 0 ? `+${favoritesChange}%` : `${favoritesChange}%`,
-          upcomingEvents: 0,
-          weeklyViews: weeklyViews || 0,
-          weeklyChange: viewsChange >= 0 ? `+${viewsChange}%` : `${viewsChange}%`,
-          happyHourViews: happyHourViews || 0,
-          happyHourChange: happyHourChange >= 0 ? `+${happyHourChange}%` : `${happyHourChange}%`,
-          menuViews: menuViews || 0,
-          menuChange: menuChange >= 0 ? `+${menuChange}%` : `${menuChange}%`,
-        });
-
-        // Calculate profile completion
-        const completionItems = [
-          { label: 'Basic info added', completed: !!(restaurant.name && restaurant.address) },
-          { label: 'Description written', completed: !!restaurant.description },
-          { label: 'Phone number added', completed: !!restaurant.phone },
-          { label: 'Website linked', completed: !!restaurant.website },
-          { label: 'Categories selected', completed: restaurant.categories && restaurant.categories.length > 0 },
-        ];
-
-        // Check if hours are set
-        const { count: hoursCount } = await supabase
-          .from('restaurant_hours')
-          .select('*', { count: 'exact', head: true })
-          .eq('restaurant_id', restaurantId);
-
-        completionItems.push({ label: 'Hours set up', completed: (hoursCount || 0) > 0 });
-
-        // Check if photos uploaded
-        const hasPhotos = !!(restaurant.cover_image_url || restaurant.logo_url);
-        completionItems.push({ label: 'Photos uploaded', completed: hasPhotos });
-
-        const completedCount = completionItems.filter(item => item.completed).length;
-        const percentage = Math.round((completedCount / completionItems.length) * 100);
-
-        setProfileCompletion({ percentage, items: completionItems });
-
+        const data = await response.json();
+        setStats(data.stats);
+        setProfileCompletion(data.profileCompletion);
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
       }
@@ -195,7 +75,7 @@ export default function DashboardPage() {
     };
 
     fetchStats();
-  }, [restaurantId, restaurant]);
+  }, [restaurantId, restaurant, buildApiUrl]);
 
   const quickActions = [
     { label: 'Add Happy Hour', href: buildNavHref('/dashboard/happy-hours'), icon: Clock },

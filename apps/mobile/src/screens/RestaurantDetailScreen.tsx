@@ -192,8 +192,24 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   useEffect(() => {
     if (restaurant) {
       trackScreenView('RestaurantDetail', id);
+      trackScreenView('RestaurantHappyHours', id);
     }
   }, [restaurant, id]);
+
+  // Track tab views when user switches tabs
+  const handleTabPress = useCallback((tabKey: string) => {
+    setActiveTab(tabKey);
+    const tabScreenMap: Record<string, string> = {
+      happy_hours: 'RestaurantHappyHours',
+      specials: 'RestaurantSpecials',
+      events: 'RestaurantEvents',
+      menu: 'RestaurantMenu',
+    };
+    const screenName = tabScreenMap[tabKey];
+    if (screenName) {
+      trackScreenView(screenName, id);
+    }
+  }, [id]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -327,7 +343,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
         )}
 
         {/* Tab Bar */}
-        <TabBar tabs={TABS} activeTab={activeTab} onTabPress={setActiveTab} />
+        <TabBar tabs={TABS} activeTab={activeTab} onTabPress={handleTabPress} />
 
         {/* Tab Content */}
         <View style={styles.tabContent}>
