@@ -73,9 +73,11 @@ export default async function handler(req: Request, context: Context) {
       .toLocaleDateString('en-US', { weekday: 'long', timeZone: 'America/New_York' })
       .toLowerCase();
 
-    // Get current time + 30 minutes in ET
+    // Get current time in ET, truncated to minutes (no seconds) to avoid
+    // missing happy hours that start at exact :00/:30 boundaries.
+    // We also look back 2 minutes to catch HHs that just started.
     const etOptions = { timeZone: 'America/New_York' };
-    const currentTimeStr = now.toLocaleTimeString('en-US', {
+    const currentHour = now.toLocaleTimeString('en-US', {
       ...etOptions,
       hour12: false,
       hour: '2-digit',
@@ -83,16 +85,21 @@ export default async function handler(req: Request, context: Context) {
       second: '2-digit',
     });
 
-    const alertTime = new Date(now.getTime() + 30 * 60 * 1000);
-    const alertTimeStr = alertTime.toLocaleTimeString('en-US', {
-      ...etOptions,
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
+    // Truncate seconds and subtract 2 minutes for a small look-back buffer
+    const [hh, mm] = currentHour.split(':').map(Number);
+    const lookBackMinutes = hh * 60 + mm - 2; // 2 min look-back
+    const lookAheadMinutes = hh * 60 + mm + 30; // 30 min look-ahead
 
-    console.log(`[Happy Hour Alerts] Day: ${dayOfWeek}, Current: ${currentTimeStr}, Alert window: ${alertTimeStr}`);
+    const formatTime = (totalMinutes: number) => {
+      const h = Math.floor(totalMinutes / 60) % 24;
+      const m = totalMinutes % 60;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
+    };
+
+    const currentTimeStr = formatTime(Math.max(0, lookBackMinutes));
+    const alertTimeStr = formatTime(lookAheadMinutes);
+
+    console.log(`[Happy Hour Alerts] Day: ${dayOfWeek}, Window: ${currentTimeStr} - ${alertTimeStr}`);
 
     // Find happy hours starting in the next 30 minutes for paid tier restaurants
     const { data: happyHours, error: hhError } = await supabase
@@ -122,18 +129,35 @@ export default async function handler(req: Request, context: Context) {
       PAID_TIER_IDS.includes(hh.restaurant?.tier_id)
     );
 
-    if (paidHappyHours.length === 0) {
-      console.log('[Happy Hour Alerts] No upcoming happy hours for paid restaurants');
+    // Deduplicate: check if we already sent alerts for these happy hours today
+    const { data: recentLogs } = await supabase
+      .from('notification_logs')
+      .select('details')
+      .eq('job_type', 'happy_hour_alerts')
+      .eq('status', 'completed')
+      .gte('created_at', new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString());
+
+    const alreadySentHHIds = new Set<string>();
+    for (const log of recentLogs || []) {
+      const ids = (log.details as any)?.happy_hour_ids;
+      if (Array.isArray(ids)) ids.forEach((id: string) => alreadySentHHIds.add(id));
+    }
+
+    const newHappyHours = paidHappyHours.filter((hh: any) => !alreadySentHHIds.has(hh.id));
+
+    if (newHappyHours.length === 0) {
+      const reason = paidHappyHours.length > 0 ? 'Already sent today' : 'No upcoming happy hours';
+      console.log(`[Happy Hour Alerts] ${reason} for paid restaurants`);
 
       // Log the run
       await supabase.from('notification_logs').insert({
         job_type: 'happy_hour_alerts',
         status: 'completed',
-        details: { message: 'No upcoming happy hours', day: dayOfWeek, time: currentTimeStr },
+        details: { message: reason, day: dayOfWeek, time: currentTimeStr },
       });
 
       return new Response(
-        JSON.stringify({ sent: 0, restaurants: [], message: 'No upcoming happy hours' }),
+        JSON.stringify({ sent: 0, restaurants: [], message: reason }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -149,7 +173,7 @@ export default async function handler(req: Request, context: Context) {
       await supabase.from('notification_logs').insert({
         job_type: 'happy_hour_alerts',
         status: 'completed',
-        details: { message: 'No push tokens', restaurants: paidHappyHours.length },
+        details: { message: 'No push tokens', restaurants: newHappyHours.length },
       });
 
       return new Response(
@@ -162,7 +186,7 @@ export default async function handler(req: Request, context: Context) {
     const messages: PushMessage[] = [];
     const restaurantNames: string[] = [];
 
-    for (const hh of paidHappyHours) {
+    for (const hh of newHappyHours) {
       const restaurant = (hh as any).restaurant;
       restaurantNames.push(restaurant.name);
 
@@ -201,6 +225,7 @@ export default async function handler(req: Request, context: Context) {
         sent: successCount,
         total: messages.length,
         restaurants: restaurantNames,
+        happy_hour_ids: newHappyHours.map((hh: any) => hh.id),
         day: dayOfWeek,
         time: currentTimeStr,
       },
@@ -237,10 +262,11 @@ export default async function handler(req: Request, context: Context) {
   }
 }
 
-// Run every 30 minutes from 2pm-10pm ET (19:00-03:00 UTC next day)
-// Note: Netlify cron uses UTC, so we need to account for ET offset
-// ET is UTC-5 (or UTC-4 during DST)
-// 2pm ET = 7pm UTC (19:00), 10pm ET = 3am UTC next day (03:00)
+// Run every 30 minutes from 11am-10pm ET
+// Netlify cron uses UTC. ET is UTC-5 (EST) or UTC-4 (EDT).
+// 11am ET = 4pm UTC (EST) / 3pm UTC (EDT)
+// 10pm ET = 3am UTC (EST) / 2am UTC (EDT)
+// Using 15:00-23:59 + 00:00-03:00 to cover both EST and EDT
 export const config: Config = {
-  schedule: '*/30 19-23,0-3 * * *',
+  schedule: '*/30 15-23,0-3 * * *',
 };

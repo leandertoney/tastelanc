@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "5532856838",
+    "project_id": "tastelanc",
+    "storage_bucket": "tastelanc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:5532856838:android:f521757ffd51d4d8980987",
+        "android_client_info": {
+          "package_name": "com.tastelanc.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxwOTIx88LrHaxS_MVKdCoEgQJLm4ST0U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

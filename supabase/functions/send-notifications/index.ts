@@ -141,12 +141,26 @@ async function sendHappyHourAlerts(supabase: ReturnType<typeof createClient>): P
   restaurants: string[];
 }> {
   const now = new Date();
-  const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+  // Use ET timezone for day/time calculations since restaurants are in ET
+  const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'America/New_York' }).toLowerCase();
 
-  // Get current time + 30 minutes
-  const alertTime = new Date(now.getTime() + 30 * 60 * 1000);
-  const alertTimeStr = alertTime.toTimeString().slice(0, 8); // HH:MM:SS format
-  const currentTimeStr = now.toTimeString().slice(0, 8);
+  // Get current time in ET, truncated to minutes with 2-min look-back buffer
+  const etTime = now.toLocaleTimeString('en-US', {
+    timeZone: 'America/New_York',
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  const [hh, mm] = etTime.split(':').map(Number);
+  const lookBackMin = hh * 60 + mm - 2;
+  const lookAheadMin = hh * 60 + mm + 30;
+  const fmt = (t: number) => {
+    const h = Math.floor(t / 60) % 24;
+    const m = t % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
+  };
+  const currentTimeStr = fmt(Math.max(0, lookBackMin));
+  const alertTimeStr = fmt(lookAheadMin);
 
   // Find happy hours starting in the next 30 minutes for paid tier restaurants
   const { data: happyHours, error } = await supabase
