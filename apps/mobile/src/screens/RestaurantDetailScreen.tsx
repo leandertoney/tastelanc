@@ -112,7 +112,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
       // Fetch restaurant details first (with tier information for gating)
       const { data: restaurantData, error: restaurantError } = await supabase
         .from('restaurants')
-        .select('*, restaurant_photos(url, display_order), tiers(name, display_name)')
+        .select('*, restaurant_photos(url, display_order, is_cover), tiers(name, display_name)')
         .eq('id', id)
         .single();
 
@@ -126,8 +126,9 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
         throw new Error('Restaurant not found');
       }
 
-      // Transform photos array
+      // Transform photos array - exclude cover photo since it's already shown at the top
       const photos = restaurantData.restaurant_photos
+        ?.filter((p: any) => !p.is_cover)
         ?.sort((a: any, b: any) => a.display_order - b.display_order)
         ?.map((p: any) => p.url) || [];
 
