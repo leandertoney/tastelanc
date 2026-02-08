@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   RefreshControl,
   TouchableOpacity,
   Image,
+  ViewToken,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -33,10 +34,12 @@ import {
   PromoCard,
   PlanYourDayCard,
   BlogSection,
+  RecommendedSection,
 } from '../components';
 import CuisinesSection from '../components/CuisinesSection';
 import { colors, radius, spacing } from '../constants/colors';
 import type { BadgeType } from '../components/TrendingBadge';
+import { trackImpression } from '../lib/impressions';
 
 // Rosie image for FAB
 const rosieImage = require('../../assets/images/rosie_121212.png');
@@ -133,6 +136,17 @@ export default function HomeScreen() {
     return injectPromoIntoList(otherRestaurants, showPromo, 3);
   }, [otherRestaurants, showPromo]);
 
+  // Track impressions for "Other Places Nearby" as items become visible
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    for (const token of viewableItems) {
+      const item = token.item as ListItem<Restaurant>;
+      if (item?.type === 'item' && item.data?.id) {
+        trackImpression(item.data.id, 'other_places', token.index ?? 0);
+      }
+    }
+  }).current;
+
   const renderHeader = () => (
     <View>
       <Spacer size="sm" />
@@ -156,8 +170,13 @@ export default function HomeScreen() {
       {/* Plan Your Day CTA */}
       <PlanYourDayCard />
 
-      {/* Section 4: Featured for You */}
+      {/* Section 4: Featured for You (PAID — always above Recommended) */}
       <FeaturedSection onRestaurantPress={handleRestaurantPress} />
+
+      <Spacer size="md" />
+
+      {/* Section 5: Recommended for You (personalized, all restaurants) */}
+      <RecommendedSection onRestaurantPress={handleRestaurantPress} />
 
       <Spacer size="md" />
 
@@ -244,6 +263,8 @@ export default function HomeScreen() {
           ListFooterComponent={renderFooter}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}

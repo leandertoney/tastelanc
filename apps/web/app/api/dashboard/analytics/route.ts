@@ -76,6 +76,10 @@ export async function GET(request: Request) {
       upcomingEventsResult,
       happyHourViewsResult,
       menuViewsResult,
+      impressionsWeekResult,
+      impressionsDailyResult,
+      impressionsBySectionResult,
+      impressionsAvgPositionResult,
     ] = await Promise.all([
       // Total views (last 30 days)
       supabaseAdmin
@@ -163,6 +167,36 @@ export async function GET(request: Request) {
         .eq('restaurant_id', restaurantId)
         .eq('page_type', 'menu')
         .gte('viewed_at', thirtyDaysAgo.toISOString()),
+
+      // --- Impression tracking queries ---
+
+      // Total impressions this week
+      supabaseAdmin
+        .from('section_impressions')
+        .select('*', { count: 'exact', head: true })
+        .eq('restaurant_id', restaurantId)
+        .gte('impressed_at', sevenDaysAgo.toISOString()),
+
+      // Daily impressions (last 7 days) for chart
+      supabaseAdmin
+        .from('section_impressions')
+        .select('impressed_at')
+        .eq('restaurant_id', restaurantId)
+        .gte('impressed_at', sevenDaysAgo.toISOString()),
+
+      // Impressions by section (last 30 days)
+      supabaseAdmin
+        .from('section_impressions')
+        .select('section_name')
+        .eq('restaurant_id', restaurantId)
+        .gte('impressed_at', thirtyDaysAgo.toISOString()),
+
+      // Average position (last 7 days)
+      supabaseAdmin
+        .from('section_impressions')
+        .select('position_index')
+        .eq('restaurant_id', restaurantId)
+        .gte('impressed_at', sevenDaysAgo.toISOString()),
     ]);
 
     // Calculate stats
@@ -283,6 +317,65 @@ export async function GET(request: Request) {
     // Calculate this week's total views from weeklyViews data
     const thisWeekViews = weeklyViewsResult.data?.length || 0;
 
+    // --- Process impression data ---
+    const impressionsThisWeek = impressionsWeekResult.count || 0;
+
+    // Daily impressions chart data
+    const dailyImpressionsMap = new Map<string, number>();
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const dayName = dayNames[date.getDay()];
+      dailyImpressionsMap.set(dayName, 0);
+    }
+    impressionsDailyResult.data?.forEach((imp: { impressed_at: string }) => {
+      const date = new Date(imp.impressed_at);
+      const dayName = dayNames[date.getDay()];
+      dailyImpressionsMap.set(dayName, (dailyImpressionsMap.get(dayName) || 0) + 1);
+    });
+    const dailyImpressions = orderedDays.map(day => ({
+      day,
+      impressions: dailyImpressionsMap.get(day) || 0,
+    }));
+
+    // Impressions by section
+    const sectionMap = new Map<string, number>();
+    impressionsBySectionResult.data?.forEach((imp: { section_name: string }) => {
+      sectionMap.set(imp.section_name, (sectionMap.get(imp.section_name) || 0) + 1);
+    });
+    const sectionLabels: Record<string, string> = {
+      happy_hours: 'Happy Hours',
+      entertainment: 'Entertainment',
+      events: 'Events',
+      featured: 'Featured',
+      other_places: 'Other Places',
+      search: 'Search',
+      category: 'Category',
+      specials_view_all: 'Specials',
+      happy_hours_view_all: 'Happy Hours (All)',
+    };
+    const impressionsBySection = Array.from(sectionMap.entries())
+      .map(([section, count]) => ({
+        section: sectionLabels[section] || section,
+        count,
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    // Average position
+    const positions = impressionsAvgPositionResult.data?.map((r: { position_index: number }) => r.position_index) || [];
+    const avgPosition = positions.length > 0
+      ? Math.round((positions.reduce((sum: number, p: number) => sum + p, 0) / positions.length) * 10) / 10
+      : null;
+
+    // Conversion funnel: Impressions → Clicks → Detail Views
+    const totalImpressions30d = impressionsBySectionResult.data?.length || 0;
+    const conversionFunnel = {
+      impressions: totalImpressions30d,
+      clicks: totalClicks,
+      detailViews: totalViews,
+      clickRate: totalImpressions30d > 0 ? Math.round((totalClicks / totalImpressions30d) * 1000) / 10 : 0,
+      viewRate: totalClicks > 0 ? Math.round((totalViews / totalClicks) * 1000) / 10 : 0,
+    };
+
     return NextResponse.json({
       stats: {
         totalViews,
@@ -298,10 +391,15 @@ export async function GET(request: Request) {
         happyHourViews,
         menuViews,
         tierName,
+        impressionsThisWeek,
+        avgPosition,
       },
       weeklyViews,
       clicksByType,
       recentActivity,
+      dailyImpressions,
+      impressionsBySection,
+      conversionFunnel,
     });
   } catch (error) {
     console.error('Error fetching analytics:', error);

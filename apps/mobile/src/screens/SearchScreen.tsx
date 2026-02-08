@@ -32,6 +32,7 @@ import type { RestaurantCategory, RestaurantWithTier } from '../types/database';
 import type { RootStackParamList } from '../navigation/types';
 import { SearchBar, CategoryChip, CompactRestaurantCard, MapRestaurantCard } from '../components';
 import { colors, radius } from '../constants/colors';
+import { trackImpression } from '../lib/impressions';
 
 const tasteLancLogo = require('../../assets/icon.png');
 
@@ -255,6 +256,16 @@ export default function SearchScreen() {
     setSearchQuery('');
   };
 
+  // Track impressions when items become visible in search results
+  const searchViewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
+  const onSearchViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: { item: RestaurantWithTier & { distance: number }; index: number | null }[] }) => {
+    for (const token of viewableItems) {
+      if (token.item?.id) {
+        trackImpression(token.item.id, 'search', token.index ?? 0);
+      }
+    }
+  }).current;
+
   const handleMarkerPress = useCallback(
     (restaurant: RestaurantWithTier & { distance: number }) => {
       setSelectedRestaurant(restaurant);
@@ -465,6 +476,8 @@ export default function SearchScreen() {
             )}
             contentContainerStyle={styles.sheetListContent}
             showsVerticalScrollIndicator={false}
+            onViewableItemsChanged={onSearchViewableItemsChanged}
+            viewabilityConfig={searchViewabilityConfig}
             ListEmptyComponent={
               !loading ? (
                 <View style={styles.sheetEmpty}>

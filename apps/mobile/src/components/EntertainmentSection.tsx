@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { View, StyleSheet, FlatList } from 'react-native';
+import { useCallback, useRef } from 'react';
+import { View, StyleSheet, FlatList, ViewToken } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,6 +15,7 @@ import { ENABLE_MOCK_DATA, MOCK_ENTERTAINMENT, type MockEntertainment } from '..
 import type { DayOfWeek, PremiumTier } from '../types/database';
 import { useEmailGate } from '../hooks';
 import { trackClick } from '../lib/analytics';
+import { trackImpression } from '../lib/impressions';
 
 const CTA_ITEM_ID = '__partner_cta__';
 
@@ -120,6 +121,17 @@ export default function EntertainmentSection() {
     requireEmailGate(() => navigation.navigate('EntertainmentViewAll'));
   }, [navigation, requireEmailGate]);
 
+  // Track impressions when items become visible
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    for (const token of viewableItems) {
+      const item = token.item as MockEntertainment;
+      if (item?.restaurantId && item.id !== CTA_ITEM_ID) {
+        trackImpression(item.restaurantId, 'entertainment', token.index ?? 0);
+      }
+    }
+  }).current;
+
   const finalDisplayData = displayData.length > 0 ? displayData : ENABLE_MOCK_DATA ? MOCK_ENTERTAINMENT : [];
 
   // Add CTA item at the end
@@ -172,6 +184,8 @@ export default function EntertainmentSection() {
         contentContainerStyle={styles.listContent}
         snapToInterval={ENTERTAINMENT_CARD_SIZE + spacing.md}
         decelerationRate="fast"
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
       />
     </View>
   );

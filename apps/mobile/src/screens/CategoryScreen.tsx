@@ -1,10 +1,11 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   ActivityIndicator,
+  ViewToken,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -18,6 +19,7 @@ import type { Restaurant, RestaurantCategory } from '../types/database';
 import type { RootStackParamList } from '../navigation/types';
 import { RestaurantCard, PromoCard } from '../components';
 import { colors } from '../constants/colors';
+import { trackImpression } from '../lib/impressions';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Category'>;
 
@@ -133,6 +135,17 @@ export default function CategoryScreen({ route, navigation }: Props) {
     navigation.navigate('RestaurantDetail', { id: restaurant.id });
   };
 
+  // Track impressions when items become visible
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    for (const token of viewableItems) {
+      const item = token.item as ListItem<Restaurant>;
+      if (item?.type === 'item' && item.data?.id) {
+        trackImpression(item.data.id, 'category', token.index ?? 0);
+      }
+    }
+  }).current;
+
   const renderRestaurant = ({ item }: { item: ListItem<Restaurant> }) => {
     if (item.type === 'promo') {
       return <PromoCard variant="full" onDismiss={dismissPromo} />;
@@ -196,6 +209,8 @@ export default function CategoryScreen({ route, navigation }: Props) {
         ListEmptyComponent={renderEmpty}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
       />
     </SafeAreaView>
   );

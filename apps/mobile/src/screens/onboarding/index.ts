@@ -25,7 +25,6 @@ export { default as OnboardingFoodScreen } from './OnboardingFoodScreen';
 export { default as OnboardingPremiumScreen } from './OnboardingPremiumScreen';
 export { default as OnboardingRosieAskScreen } from './OnboardingRosieAskScreen';
 export { default as OnboardingVotingScreen } from './OnboardingVotingScreen';
-export { default as OnboardingVotingBadgesScreen } from './OnboardingVotingBadgesScreen';
 export { default as OnboardingReviewAskScreen } from './OnboardingReviewAskScreen';
 export { default as OnboardingPremiumIntroScreen } from './OnboardingPremiumIntroScreen';
 
