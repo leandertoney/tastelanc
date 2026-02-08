@@ -189,31 +189,48 @@ export default async function handler(req: Request, context: Context) {
     for (const hh of newHappyHours) {
       const restaurant = (hh as any).restaurant;
       restaurantNames.push(restaurant.name);
+    }
 
-      // Format the start time for display
+    // Build a single digest notification instead of one per restaurant
+    const count = restaurantNames.length;
+    let title: string;
+    let body: string;
+
+    if (count === 1) {
+      // Single happy hour - use specific messaging
+      const hh = newHappyHours[0];
+      const restaurant = (hh as any).restaurant;
       const [hours] = hh.start_time.split(':');
       const h = parseInt(hours, 10);
       const suffix = h >= 12 ? 'pm' : 'am';
       const displayHour = h > 12 ? h - 12 : h === 0 ? 12 : h;
-      const startTimeDisplay = `${displayHour}${suffix}`;
+      title = `Happy Hour at ${restaurant.name}!`;
+      body = hh.description || `Starting at ${displayHour}${suffix}`;
+    } else if (count === 2) {
+      title = `${count} Happy Hours Starting Soon!`;
+      body = `${restaurantNames[0]} and ${restaurantNames[1]} have happy hours right now`;
+    } else {
+      title = `${count} Happy Hours Starting Soon!`;
+      const preview = restaurantNames.slice(0, 2).join(', ');
+      body = `${preview} + ${count - 2} more have happy hours right now`;
+    }
 
-      // Create message for each token
-      for (const token of tokens) {
-        messages.push({
-          to: token,
-          sound: 'default',
-          title: `Happy Hour at ${restaurant.name}!`,
-          body: hh.description || `Starting at ${startTimeDisplay}`,
-          data: {
-            screen: 'RestaurantDetail',
-            restaurantId: restaurant.id,
-          },
-        });
-      }
+    // Send one digest notification to each device
+    for (const token of tokens) {
+      messages.push({
+        to: token,
+        sound: 'default',
+        title,
+        body,
+        data: {
+          screen: count === 1 ? 'RestaurantDetail' : 'HappyHours',
+          restaurantId: count === 1 ? (newHappyHours[0] as any).restaurant.id : undefined,
+        },
+      });
     }
 
     // Send notifications
-    console.log(`[Happy Hour Alerts] Sending ${messages.length} notifications for ${restaurantNames.length} restaurants`);
+    console.log(`[Happy Hour Alerts] Sending ${messages.length} digest notifications for ${count} restaurants`);
     const result = await sendPushNotifications(messages);
     const successCount = result.data.filter((r) => r.status === 'ok').length;
 
