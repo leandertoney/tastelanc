@@ -316,12 +316,28 @@ export default function SearchScreen() {
     setSelectedRestaurant(null);
   }, []);
 
-  const handleMapPress = useCallback(() => {
-    if (selectedRestaurant) {
-      setSelectedRestaurant(null);
-    }
-    Keyboard.dismiss();
-  }, [selectedRestaurant]);
+  const handleMapPress = useCallback(
+    (e: any) => {
+      if (selectedRestaurant) {
+        setSelectedRestaurant(null);
+      }
+      Keyboard.dismiss();
+
+      // Detect neighborhood polygon taps
+      if (showNeighborhoods && e?.nativeEvent?.coordinate) {
+        const coord = e.nativeEvent.coordinate;
+        const tappedHood = NEIGHBORHOOD_BOUNDARIES.find((hood) =>
+          pointInPolygon(coord, hood.coordinates)
+        );
+        if (tappedHood) {
+          setSelectedNeighborhood((prev) =>
+            prev === tappedHood.slug ? null : tappedHood.slug
+          );
+        }
+      }
+    },
+    [selectedRestaurant, showNeighborhoods]
+  );
 
   const handleSheetChange = useCallback(
     (index: number) => {
@@ -418,7 +434,7 @@ export default function SearchScreen() {
               </Marker>
           ))}
 
-          {/* Neighborhood boundary polygons */}
+          {/* Neighborhood boundary polygons (no tappable/onPress — handled via map onPress) */}
           {showNeighborhoods &&
             NEIGHBORHOOD_BOUNDARIES.map((hood) => {
               const isSelected = selectedNeighborhood === hood.slug;
@@ -440,30 +456,7 @@ export default function SearchScreen() {
                       : hood.strokeColor
                   }
                   strokeWidth={isSelected ? 3 : 2}
-                  tappable
-                  onPress={() => handleNeighborhoodPress(hood.slug)}
                 />
-              );
-            })}
-
-          {/* Neighborhood labels */}
-          {showNeighborhoods &&
-            NEIGHBORHOOD_BOUNDARIES.map((hood) => {
-              const isDimmed = selectedNeighborhood != null && selectedNeighborhood !== hood.slug;
-              return (
-                <Marker
-                  key={`label-${hood.slug}`}
-                  coordinate={hood.labelCoordinate}
-                  anchor={{ x: 0.5, y: 0.5 }}
-                  tracksViewChanges={false}
-                  onPress={() => handleNeighborhoodPress(hood.slug)}
-                >
-                  <View style={[styles.neighborhoodLabel, isDimmed && styles.neighborhoodLabelDimmed]}>
-                    <Text style={[styles.neighborhoodLabelText, isDimmed && styles.neighborhoodLabelTextDimmed]}>
-                      {hood.name}
-                    </Text>
-                  </View>
-                </Marker>
               );
             })}
         </ClusteredMapView>
@@ -534,6 +527,29 @@ export default function SearchScreen() {
             onPress={() => handleRestaurantPress(selectedRestaurant)}
             onClose={handleCardClose}
           />
+        )}
+
+        {/* Neighborhood legend */}
+        {showNeighborhoods && (
+          <View style={styles.neighborhoodLegend}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.legendContent}>
+              {NEIGHBORHOOD_BOUNDARIES.map((hood) => {
+                const isSelected = selectedNeighborhood === hood.slug;
+                const isDimmed = selectedNeighborhood != null && !isSelected;
+                return (
+                  <TouchableOpacity
+                    key={hood.slug}
+                    style={[styles.legendItem, isSelected && styles.legendItemSelected, isDimmed && styles.legendItemDimmed]}
+                    onPress={() => handleNeighborhoodPress(hood.slug)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.legendDot, { backgroundColor: hood.strokeColor.replace('0.6)', '1)') }]} />
+                    <Text style={[styles.legendText, isDimmed && styles.legendTextDimmed]}>{hood.name}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
         )}
 
         {/* Bottom sheet restaurant list */}
@@ -717,22 +733,50 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
   },
 
-  // Neighborhood labels
-  neighborhoodLabel: {
-    backgroundColor: 'rgba(37, 37, 37, 0.85)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+  // Neighborhood legend
+  neighborhoodLegend: {
+    position: 'absolute',
+    bottom: 100,
+    left: 0,
+    right: 60,
+    zIndex: 5,
   },
-  neighborhoodLabelDimmed: {
-    opacity: 0.3,
+  legendContent: {
+    paddingHorizontal: 12,
+    gap: 6,
   },
-  neighborhoodLabelText: {
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.cardBg,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+    gap: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  legendItemSelected: {
+    borderWidth: 1,
+    borderColor: colors.text,
+  },
+  legendItemDimmed: {
+    opacity: 0.4,
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  legendText: {
     color: colors.text,
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
   },
-  neighborhoodLabelTextDimmed: {
+  legendTextDimmed: {
     color: colors.textSecondary,
   },
 
