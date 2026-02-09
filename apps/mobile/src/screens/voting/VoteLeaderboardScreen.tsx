@@ -67,7 +67,7 @@ function LeaderboardItem({
   restaurantName,
   onPress,
 }: {
-  entry: LeaderboardEntry & { vote_count?: number };
+  entry: LeaderboardEntry;
   rank: number;
   restaurantName: string;
   onPress: () => void;
@@ -93,11 +93,9 @@ function LeaderboardItem({
               {entry.tier.replace('_', ' ').toUpperCase()}
             </Text>
           </View>
-          {entry.vote_count !== undefined && (
-            <Text style={styles.voteCount}>
-              {entry.vote_count} vote{entry.vote_count !== 1 ? 's' : ''}
-            </Text>
-          )}
+          <Text style={styles.voteCount}>
+            {entry.vote_count} vote{entry.vote_count !== 1 ? 's' : ''}
+          </Text>
         </View>
       </View>
 

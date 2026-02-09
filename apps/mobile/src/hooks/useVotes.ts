@@ -2,15 +2,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../lib/queryClient';
 import {
   getVoteBalance,
+  getNextResetDate,
   getUserVotes,
   getCurrentMonthVotes,
   submitVote,
   getCategoryLeaderboard,
   getCurrentWinners,
-  hasVotedInCategory,
 } from '../lib/voting';
 import { useAuth } from './useAuth';
-import type { VoteCategory, VoteRecord, LeaderboardEntry } from '../types/voting';
+import type { VoteCategory, LeaderboardEntry } from '../types/voting';
 
 /**
  * Hook to get the user's current vote balance
@@ -26,8 +26,8 @@ export function useVoteBalance() {
   });
 
   return {
-    votesAvailable: data?.votes_available ?? 0,
-    nextReset: data?.next_reset ?? null,
+    votesAvailable: data?.votesRemaining ?? 0,
+    nextReset: getNextResetDate(),
     isLoading,
     refetch,
   };
@@ -119,10 +119,11 @@ export function useLeaderboard(category?: VoteCategory) {
     queryKey: queryKeys.voting.leaderboard(category),
     queryFn: () => (category ? getCategoryLeaderboard(category) : Promise.resolve([])),
     enabled: !!category,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
   return {
-    entries: (data ?? []) as (LeaderboardEntry & { vote_count?: number })[],
+    entries: (data ?? []) as LeaderboardEntry[],
     isLoading,
     refetch,
   };
@@ -134,12 +135,12 @@ export function useLeaderboard(category?: VoteCategory) {
 export function useCurrentWinners() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: queryKeys.voting.winners,
-    queryFn: getCurrentWinners,
-    staleTime: 60 * 1000, // 1 minute
+    queryFn: () => getCurrentWinners(),
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
   return {
-    winners: (data ?? []) as (LeaderboardEntry & { vote_count?: number })[],
+    winners: (data ?? []) as LeaderboardEntry[],
     isLoading,
     refetch,
   };

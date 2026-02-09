@@ -16,7 +16,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import BottomSheet, { BottomSheetFlatList } from '@gorhom/bottom-sheet';
-import MapView, { Marker, Region, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Polygon, Region, PROVIDER_GOOGLE } from 'react-native-maps';
 import ClusteredMapView from 'react-native-map-clustering';
 import { supabase } from '../lib/supabase';
 import { getFavorites, toggleFavorite } from '../lib/favorites';
@@ -33,6 +33,8 @@ import type { RootStackParamList } from '../navigation/types';
 import { SearchBar, CategoryChip, CompactRestaurantCard, MapRestaurantCard } from '../components';
 import { colors, radius } from '../constants/colors';
 import { trackImpression } from '../lib/impressions';
+import { NEIGHBORHOOD_BOUNDARIES } from '../data/neighborhoodBoundaries';
+import { pointInPolygon } from '../utils/pointInPolygon';
 
 const tasteLancLogo = require('../../assets/icon.png');
 
@@ -96,6 +98,10 @@ export default function SearchScreen() {
   const [selectedRestaurant, setSelectedRestaurant] = useState<
     (RestaurantWithTier & { distance: number }) | null
   >(null);
+
+  // Neighborhood state
+  const [showNeighborhoods, setShowNeighborhoods] = useState(true);
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState<string | null>(null);
 
   const snapPoints = useMemo(() => ['12%', '50%', '90%'], []);
 
@@ -230,6 +236,24 @@ export default function SearchScreen() {
     );
   }, [filteredRestaurants]);
 
+  // Filter by selected neighborhood
+  const neighborhoodFilteredRestaurants = useMemo(() => {
+    if (!selectedNeighborhood) return filteredRestaurants;
+    const boundary = NEIGHBORHOOD_BOUNDARIES.find((n) => n.slug === selectedNeighborhood);
+    if (!boundary) return filteredRestaurants;
+    return filteredRestaurants.filter(
+      (r) =>
+        r.latitude != null &&
+        r.longitude != null &&
+        pointInPolygon({ latitude: r.latitude, longitude: r.longitude }, boundary.coordinates)
+    );
+  }, [filteredRestaurants, selectedNeighborhood]);
+
+  const selectedNeighborhoodName = useMemo(
+    () => NEIGHBORHOOD_BOUNDARIES.find((n) => n.slug === selectedNeighborhood)?.name ?? null,
+    [selectedNeighborhood]
+  );
+
   const handleFavoritePress = useCallback(
     async (restaurantId: string) => {
       if (!userId) return;
@@ -284,6 +308,11 @@ export default function SearchScreen() {
   );
 
   const handleCardClose = useCallback(() => {
+    setSelectedRestaurant(null);
+  }, []);
+
+  const handleNeighborhoodPress = useCallback((slug: string) => {
+    setSelectedNeighborhood((prev) => (prev === slug ? null : slug));
     setSelectedRestaurant(null);
   }, []);
 
@@ -388,6 +417,55 @@ export default function SearchScreen() {
                 </View>
               </Marker>
           ))}
+
+          {/* Neighborhood boundary polygons */}
+          {showNeighborhoods &&
+            NEIGHBORHOOD_BOUNDARIES.map((hood) => {
+              const isSelected = selectedNeighborhood === hood.slug;
+              const isDimmed = selectedNeighborhood != null && !isSelected;
+              return (
+                <Polygon
+                  key={hood.slug}
+                  coordinates={hood.coordinates}
+                  fillColor={
+                    isSelected
+                      ? hood.fillColor.replace('0.12)', '0.25)')
+                      : isDimmed
+                        ? hood.fillColor.replace('0.12)', '0.05)')
+                        : hood.fillColor
+                  }
+                  strokeColor={
+                    isDimmed
+                      ? hood.strokeColor.replace('0.6)', '0.2)')
+                      : hood.strokeColor
+                  }
+                  strokeWidth={isSelected ? 3 : 2}
+                  tappable
+                  onPress={() => handleNeighborhoodPress(hood.slug)}
+                />
+              );
+            })}
+
+          {/* Neighborhood labels */}
+          {showNeighborhoods &&
+            NEIGHBORHOOD_BOUNDARIES.map((hood) => {
+              const isDimmed = selectedNeighborhood != null && selectedNeighborhood !== hood.slug;
+              return (
+                <Marker
+                  key={`label-${hood.slug}`}
+                  coordinate={hood.labelCoordinate}
+                  anchor={{ x: 0.5, y: 0.5 }}
+                  tracksViewChanges={false}
+                  onPress={() => handleNeighborhoodPress(hood.slug)}
+                >
+                  <View style={[styles.neighborhoodLabel, isDimmed && styles.neighborhoodLabelDimmed]}>
+                    <Text style={[styles.neighborhoodLabelText, isDimmed && styles.neighborhoodLabelTextDimmed]}>
+                      {hood.name}
+                    </Text>
+                  </View>
+                </Marker>
+              );
+            })}
         </ClusteredMapView>
 
         {/* Floating search bar + filter chips */}
@@ -426,6 +504,18 @@ export default function SearchScreen() {
           </View>
         )}
 
+        {/* Neighborhoods toggle button */}
+        <TouchableOpacity
+          style={[styles.neighborhoodToggle, !showNeighborhoods && styles.neighborhoodToggleOff]}
+          onPress={() => setShowNeighborhoods((prev) => !prev)}
+        >
+          <Ionicons
+            name="map-outline"
+            size={20}
+            color={showNeighborhoods ? colors.text : colors.textSecondary}
+          />
+        </TouchableOpacity>
+
         {/* Location button */}
         <TouchableOpacity style={styles.locationButton} onPress={centerOnUser}>
           <Ionicons
@@ -457,14 +547,26 @@ export default function SearchScreen() {
           enablePanDownToClose={false}
         >
           <View style={styles.sheetHeader}>
-            <Text style={styles.sheetHeaderText}>
-              {filteredRestaurants.length}{' '}
-              {filteredRestaurants.length === 1 ? 'place' : 'places'}
-              {searchQuery.trim() ? ` for "${searchQuery.trim()}"` : ''}
-            </Text>
+            <View style={styles.sheetHeaderRow}>
+              <Text style={styles.sheetHeaderText}>
+                {neighborhoodFilteredRestaurants.length}{' '}
+                {neighborhoodFilteredRestaurants.length === 1 ? 'place' : 'places'}
+                {selectedNeighborhoodName ? ` in ${selectedNeighborhoodName}` : ''}
+                {searchQuery.trim() ? ` for "${searchQuery.trim()}"` : ''}
+              </Text>
+              {selectedNeighborhood && (
+                <TouchableOpacity
+                  style={styles.clearNeighborhoodButton}
+                  onPress={() => setSelectedNeighborhood(null)}
+                >
+                  <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+                  <Text style={styles.clearNeighborhoodText}>Clear</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
           <BottomSheetFlatList
-            data={filteredRestaurants}
+            data={neighborhoodFilteredRestaurants}
             keyExtractor={(item: RestaurantWithTier & { distance: number }) => item.id}
             renderItem={({ item }: { item: RestaurantWithTier & { distance: number } }) => (
               <CompactRestaurantCard
@@ -541,6 +643,28 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
 
+  // Neighborhoods toggle
+  neighborhoodToggle: {
+    position: 'absolute',
+    right: 16,
+    bottom: 196,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.cardBg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    zIndex: 5,
+  },
+  neighborhoodToggleOff: {
+    opacity: 0.6,
+  },
+
   // Location button
   locationButton: {
     position: 'absolute',
@@ -593,6 +717,25 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
   },
 
+  // Neighborhood labels
+  neighborhoodLabel: {
+    backgroundColor: 'rgba(37, 37, 37, 0.85)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  neighborhoodLabelDimmed: {
+    opacity: 0.3,
+  },
+  neighborhoodLabelText: {
+    color: colors.text,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  neighborhoodLabelTextDimmed: {
+    color: colors.textSecondary,
+  },
+
   // Bottom sheet
   sheetBackground: {
     backgroundColor: colors.primary,
@@ -609,9 +752,25 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
+  sheetHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   sheetHeaderText: {
     fontSize: 14,
     fontWeight: '600',
+    color: colors.textMuted,
+    flex: 1,
+  },
+  clearNeighborhoodButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingLeft: 8,
+  },
+  clearNeighborhoodText: {
+    fontSize: 13,
     color: colors.textMuted,
   },
   sheetListContent: {

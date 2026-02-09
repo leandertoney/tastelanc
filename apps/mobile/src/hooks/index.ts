@@ -85,7 +85,7 @@ export {
   useInvalidateRewards,
 } from './useRewards';
 
-// Voting eligibility hooks (dwell time)
+// Voting eligibility hooks (visit-based)
 export {
   useVotingEligibility,
   useBatchVotingEligibility,
