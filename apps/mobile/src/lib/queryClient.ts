@@ -59,6 +59,8 @@ export const queryKeys = {
     monthVotes: ['voting', 'monthVotes'] as const,
     leaderboard: (category?: string) => ['voting', 'leaderboard', category] as const,
     winners: ['voting', 'winners'] as const,
+    eligibility: (restaurantIds?: string[]) =>
+      ['voting', 'eligibility', restaurantIds?.sort().join(',')] as const,
   },
   user: {
     preferences: ['user', 'preferences'] as const,

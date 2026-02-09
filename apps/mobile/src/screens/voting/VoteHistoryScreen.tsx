@@ -35,7 +35,7 @@ interface VoteHistoryItem {
   id: string;
   restaurant_id: string;
   category: VoteCategory;
-  month_year: string;
+  month: string;
   created_at: string;
 }
 
@@ -56,8 +56,8 @@ function VoteCard({
     year: 'numeric',
   });
 
-  // Parse month_year (format: "2024-12")
-  const [year, month] = vote.month_year.split('-');
+  // Parse month (format: "2024-12")
+  const [year, month] = vote.month.split('-');
   const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('en-US', {
     month: 'long',
     year: 'numeric',
@@ -126,7 +126,7 @@ export default function VoteHistoryScreen() {
   // Group votes by month
   const groupedVotes = votes.reduce(
     (acc, vote) => {
-      const monthYear = vote.month_year;
+      const monthYear = vote.month;
       if (!acc[monthYear]) {
         acc[monthYear] = [];
       }

@@ -1,42 +1,33 @@
 /**
- * React Query hooks for voting eligibility based on Radar dwell time
+ * React Query hooks for voting eligibility based on Supabase visits
  */
 
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from './useAuth';
+import { queryKeys } from '../lib/queryClient';
 import {
   canVoteForRestaurant,
   batchCheckVotingEligibility,
-  type VotingEligibility,
-} from '../lib/radarDwellTime';
-
-export const votingEligibilityKeys = {
-  single: (restaurantId: string) => ['votingEligibility', restaurantId] as const,
-  batch: (restaurantIds: string[]) =>
-    ['votingEligibility', 'batch', restaurantIds.sort().join(',')] as const,
-};
+} from '../lib/votingEligibility';
+import type { VotingEligibility } from '../types/voting';
 
 /**
  * Hook to check voting eligibility for a single restaurant
- * Used when viewing a specific restaurant's details before voting
  */
 export function useVotingEligibility(restaurantId: string, restaurantName: string) {
   const { userId } = useAuth();
 
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: userId
-      ? [...votingEligibilityKeys.single(restaurantId), userId]
-      : votingEligibilityKeys.single(restaurantId),
+  const { data, isLoading, error, refetch } = useQuery<VotingEligibility>({
+    queryKey: [...queryKeys.voting.eligibility([restaurantId]), userId],
     queryFn: () => canVoteForRestaurant(userId!, restaurantId, restaurantName),
     enabled: !!userId && !!restaurantId,
-    staleTime: 5 * 60 * 1000, // 5 minutes - dwell time doesn't change rapidly
+    staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,
   });
 
   return {
     canVote: data?.canVote ?? false,
     reason: data?.reason,
-    dwellTimeResult: data?.dwellTimeResult,
     isLoading,
     error,
     refetch,
@@ -45,15 +36,12 @@ export function useVotingEligibility(restaurantId: string, restaurantName: strin
 
 /**
  * Hook to batch check voting eligibility for multiple restaurants
- * Used on the voting screen to show eligibility status for all restaurants
  */
 export function useBatchVotingEligibility(restaurantIds: string[]) {
   const { userId } = useAuth();
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: userId
-      ? [...votingEligibilityKeys.batch(restaurantIds), userId]
-      : votingEligibilityKeys.batch(restaurantIds),
+    queryKey: [...queryKeys.voting.eligibility(restaurantIds), userId],
     queryFn: () => batchCheckVotingEligibility(userId!, restaurantIds),
     enabled: !!userId && restaurantIds.length > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -65,14 +53,12 @@ export function useBatchVotingEligibility(restaurantIds: string[]) {
     isLoading,
     error,
     refetch,
-    // Helper to check a specific restaurant
     isEligible: (restaurantId: string) => data?.[restaurantId] ?? false,
   };
 }
 
 /**
- * Hook to get eligibility status with loading state for a restaurant in a list
- * Returns simplified status for UI display
+ * Hook to get eligibility status for a restaurant in a list
  */
 export function useRestaurantEligibilityStatus(
   restaurantId: string,
