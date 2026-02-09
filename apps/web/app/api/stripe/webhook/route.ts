@@ -291,10 +291,16 @@ function getPriceId(plan: string, duration: string): string | null {
 }
 
 // Helper to find or create a user account for admin sales
+// NOTE: Does NOT send welcome email - caller must send after restaurant linking
 interface RestaurantBrandingInfo {
   restaurantId?: string;
   restaurantName: string;
   coverImageUrl?: string;
+}
+
+interface FindOrCreateUserResult {
+  userId: string | null;
+  isNewUser: boolean;
 }
 
 async function findOrCreateUser(
@@ -304,8 +310,7 @@ async function findOrCreateUser(
   phone: string,
   stripeCustomerId: string,
   supabaseAdmin: ReturnType<typeof getSupabaseAdmin>,
-  primaryRestaurant?: RestaurantBrandingInfo
-): Promise<string | null> {
+): Promise<FindOrCreateUserResult> {
   // Check if user already exists by email
   const { data: existingUser } = await supabaseAdmin
     .from('profiles')
@@ -315,7 +320,7 @@ async function findOrCreateUser(
 
   if (existingUser) {
     console.log(`Found existing user: ${existingUser.id}`);
-    return existingUser.id;
+    return { userId: existingUser.id, isNewUser: false };
   }
 
   // Create new user account via Supabase Auth
@@ -333,7 +338,7 @@ async function findOrCreateUser(
 
   if (createError || !newUser.user) {
     console.error('Failed to create user:', createError);
-    return null;
+    return { userId: null, isNewUser: false };
   }
 
   const userId = newUser.user.id;
@@ -350,33 +355,34 @@ async function findOrCreateUser(
     onConflict: 'id',
   });
 
-  // Determine the display name for the email
-  const businessNamesList = businessNames.length > 1
-    ? businessNames.slice(0, -1).join(', ') + ' and ' + businessNames[businessNames.length - 1]
-    : businessNames[0];
+  return { userId, isNewUser: true };
+}
 
-  // Use primary restaurant info for branding if available
-  const emailRestaurantName = primaryRestaurant?.restaurantName || businessNamesList;
-  const emailCoverImage = primaryRestaurant?.coverImageUrl;
+// Send branded welcome email with setup token - call AFTER restaurant linking is confirmed
+async function sendBrandedWelcomeEmailWithToken(
+  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>,
+  email: string,
+  contactName: string,
+  restaurantName: string,
+  coverImageUrl?: string,
+  userId?: string,
+): Promise<void> {
+  if (!userId) return;
 
-  // Generate password setup token with personalization
   const setupToken = await generateSetupToken(supabaseAdmin, userId, email, {
     name: contactName,
-    restaurantName: emailRestaurantName,
-    coverImageUrl: emailCoverImage,
+    restaurantName,
+    coverImageUrl,
   });
   const setupLink = `https://tastelanc.com/setup-account?token=${setupToken}`;
 
-  // Send branded welcome email
   await resend.emails.send({
     from: 'TasteLanc <hello@tastelanc.com>',
     to: email,
-    subject: `Welcome to TasteLanc! Set Up Your ${emailRestaurantName} Account`,
-    html: generateBrandedWelcomeEmail(setupLink, contactName, emailRestaurantName, emailCoverImage),
+    subject: `Welcome to TasteLanc! Set Up Your ${restaurantName} Account`,
+    html: generateBrandedWelcomeEmail(setupLink, contactName, restaurantName, coverImageUrl),
   });
   console.log(`Branded welcome email sent to ${email}`);
-
-  return userId;
 }
 
 // Handle multi-restaurant checkout completion
@@ -467,9 +473,9 @@ async function handleMultiRestaurantCheckout(
     }
   }
 
-  // Find or create user account
+  // Find or create user account (does NOT send welcome email yet)
   const businessNames = orderItems.map((item: { restaurant_name: string }) => item.restaurant_name);
-  const userId = await findOrCreateUser(email, contactName, businessNames, phone, customerId, supabaseAdmin, primaryRestaurant);
+  const { userId, isNewUser } = await findOrCreateUser(email, contactName, businessNames, phone, customerId, supabaseAdmin);
 
   if (!userId) {
     await supabaseAdmin
@@ -480,7 +486,7 @@ async function handleMultiRestaurantCheckout(
     return;
   }
 
-  // Process each order item
+  // Process each order item - link restaurants BEFORE sending welcome email
   let allSucceeded = true;
   for (const item of orderItems) {
     try {
@@ -489,12 +495,28 @@ async function handleMultiRestaurantCheckout(
 
       if (item.restaurant_id && !item.is_new_restaurant) {
         // Link existing restaurant to user
-        await supabaseAdmin
+        const { error: linkError } = await supabaseAdmin
           .from('restaurants')
           .update({ owner_id: userId })
           .eq('id', item.restaurant_id);
+
+        if (linkError) {
+          throw new Error(`Failed to link restaurant ${item.restaurant_id}: ${linkError.message}`);
+        }
+
+        // Verify owner_id was actually set
+        const { data: verifyData } = await supabaseAdmin
+          .from('restaurants')
+          .select('owner_id')
+          .eq('id', item.restaurant_id)
+          .single();
+
+        if (!verifyData || verifyData.owner_id !== userId) {
+          throw new Error(`owner_id verification failed for restaurant ${item.restaurant_id}: expected ${userId}, got ${verifyData?.owner_id}`);
+        }
+
         linkedRestaurantId = item.restaurant_id;
-        console.log(`Linked restaurant ${item.restaurant_id} to user ${userId}`);
+        console.log(`Linked restaurant ${item.restaurant_id} to user ${userId} (verified)`);
       } else {
         // Create new restaurant
         const slug = item.restaurant_name
@@ -509,7 +531,6 @@ async function handleMultiRestaurantCheckout(
             slug: `${slug}-${Date.now().toString(36)}`,
             owner_id: userId,
             phone,
-            email,
             is_active: true,
             is_verified: false,
             city: 'Lancaster',
@@ -608,6 +629,28 @@ async function handleMultiRestaurantCheckout(
       completed_at: new Date().toISOString(),
     })
     .eq('id', salesOrderId);
+
+  // Send welcome email AFTER all restaurants are linked (only for new users)
+  if (isNewUser && allSucceeded) {
+    // Determine email branding from primary restaurant
+    const businessNamesList = businessNames.length > 1
+      ? businessNames.slice(0, -1).join(', ') + ' and ' + businessNames[businessNames.length - 1]
+      : businessNames[0];
+    const emailRestaurantName = primaryRestaurant?.restaurantName || businessNamesList;
+    const emailCoverImage = primaryRestaurant?.coverImageUrl;
+
+    try {
+      await sendBrandedWelcomeEmailWithToken(
+        supabaseAdmin, email, contactName, emailRestaurantName, emailCoverImage, userId
+      );
+    } catch (emailError) {
+      console.error('Failed to send welcome email (restaurants are linked, email failed):', emailError);
+      // Don't fail the order - restaurants are linked, email can be resent manually
+    }
+  } else if (isNewUser && !allSucceeded) {
+    console.error('CRITICAL: New user created but restaurant linking partially failed - welcome email NOT sent to prevent broken setup');
+    console.error(`User ${userId} (${email}) needs manual intervention`);
+  }
 
   // Send admin notification
   const amountPaid = session.amount_total ? (session.amount_total / 100).toFixed(2) : 'N/A';
@@ -763,8 +806,9 @@ export async function POST(request: Request) {
             }
           }
 
-          // Step 1: Find or create user account
+          // Step 1: Find or create user account (does NOT send welcome email)
           let userId: string | null = null;
+          let isNewSingleUser = false;
 
           // Check if user already exists by email
           const { data: existingUser } = await supabaseAdmin
@@ -795,6 +839,7 @@ export async function POST(request: Request) {
             }
 
             userId = newUser.user.id;
+            isNewSingleUser = true;
             console.log(`Created new user: ${userId}`);
 
             // Create profile for new user
@@ -807,35 +852,36 @@ export async function POST(request: Request) {
             }, {
               onConflict: 'id',
             });
-
-            // Generate password setup token with personalization
-            const setupToken = await generateSetupToken(supabaseAdmin, userId, email, {
-              name: contactName,
-              restaurantName: restaurantDisplayName,
-              coverImageUrl: restaurantCoverImage || undefined,
-            });
-            const setupLink = `https://tastelanc.com/setup-account?token=${setupToken}`;
-
-            // Send branded welcome email
-            await resend.emails.send({
-              from: 'TasteLanc <hello@tastelanc.com>',
-              to: email,
-              subject: `Welcome to TasteLanc! Set Up Your ${restaurantDisplayName} Account`,
-              html: generateBrandedWelcomeEmail(setupLink, contactName, restaurantDisplayName, restaurantCoverImage || undefined),
-            });
-            console.log(`Branded welcome email sent to ${email}`);
           }
 
-          // Step 2: Link or create restaurant
+          // Step 2: Link or create restaurant FIRST (before sending welcome email)
           let linkedRestaurantId = restaurantId;
+          let restaurantLinkSucceeded = false;
 
           if (restaurantId) {
             // Link existing restaurant to user
-            await supabaseAdmin
+            const { error: linkError } = await supabaseAdmin
               .from('restaurants')
               .update({ owner_id: userId })
               .eq('id', restaurantId);
-            console.log(`Linked restaurant ${restaurantId} to user ${userId}`);
+
+            if (linkError) {
+              console.error(`Failed to link restaurant ${restaurantId}:`, linkError);
+            } else {
+              // Verify owner_id was actually set
+              const { data: verifyData } = await supabaseAdmin
+                .from('restaurants')
+                .select('owner_id')
+                .eq('id', restaurantId)
+                .single();
+
+              if (verifyData && verifyData.owner_id === userId) {
+                restaurantLinkSucceeded = true;
+                console.log(`Linked restaurant ${restaurantId} to user ${userId} (verified)`);
+              } else {
+                console.error(`owner_id verification failed for restaurant ${restaurantId}: expected ${userId}, got ${verifyData?.owner_id}`);
+              }
+            }
           } else if (businessName) {
             // Create new restaurant
             const slug = businessName
@@ -850,7 +896,6 @@ export async function POST(request: Request) {
                 slug: `${slug}-${Date.now().toString(36)}`,
                 owner_id: userId,
                 phone,
-                email,
                 is_active: true,
                 is_verified: false,
                 city: 'Lancaster',
@@ -861,6 +906,7 @@ export async function POST(request: Request) {
 
             if (newRestaurant) {
               linkedRestaurantId = newRestaurant.id;
+              restaurantLinkSucceeded = true;
               console.log(`Created new restaurant: ${linkedRestaurantId}`);
             } else {
               console.error('Failed to create restaurant:', restaurantError);
@@ -886,6 +932,22 @@ export async function POST(request: Request) {
               .eq('id', linkedRestaurantId);
 
             console.log(`Restaurant ${linkedRestaurantId} upgraded to ${tier} tier (subscription: ${subscriptionId})`);
+          }
+
+          // Step 3.5: Send welcome email AFTER restaurant is linked (only for new users)
+          if (isNewSingleUser && restaurantLinkSucceeded) {
+            try {
+              await sendBrandedWelcomeEmailWithToken(
+                supabaseAdmin, email, contactName, restaurantDisplayName,
+                restaurantCoverImage || undefined, userId || undefined
+              );
+            } catch (emailError) {
+              console.error('Failed to send welcome email (restaurant is linked, email failed):', emailError);
+              // Don't fail the sale - restaurant is linked, email can be resent manually
+            }
+          } else if (isNewSingleUser && !restaurantLinkSucceeded) {
+            console.error('CRITICAL: New user created but restaurant linking failed - welcome email NOT sent');
+            console.error(`User ${userId} (${email}) needs manual intervention`);
           }
 
           // Step 4: Send admin notification
