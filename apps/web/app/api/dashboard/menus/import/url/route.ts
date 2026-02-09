@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { verifyRestaurantAccess } from '@/lib/auth/restaurant-access';
 import { anthropic, CLAUDE_CONFIG } from '@/lib/anthropic';
-import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
+
+// Allow up to 60s for this route (fetch URL + Claude API parsing)
+export const maxDuration = 60;
 
 const MENU_IMAGE_VISION_PROMPT = `You are a menu parser. Extract menu data from this menu image.
 
@@ -84,65 +85,7 @@ interface ParsedMenu {
   error?: string;
 }
 
-interface PageFetchResult {
-  html: string;
-  imageUrls: string[];
-}
-
-async function fetchWithHeadlessBrowser(url: string): Promise<PageFetchResult> {
-  const browser = await puppeteer.launch({
-    args: chromium.args,
-    defaultViewport: { width: 1280, height: 800 },
-    executablePath: await chromium.executablePath(),
-    headless: true,
-  });
-
-  try {
-    const page = await browser.newPage();
-    await page.setUserAgent(
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    );
-
-    await page.goto(url, {
-      waitUntil: 'networkidle2',
-      timeout: 30000,
-    });
-
-    // Wait a bit for any lazy-loaded content
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    // Get the full page content after JS execution
-    const html = await page.content();
-
-    // Extract image URLs that might be menus
-    const imageUrls = await page.evaluate(() => {
-      const images = Array.from(document.querySelectorAll('img'));
-      return images
-        .map((img) => img.src)
-        .filter((src) => {
-          if (!src || src.startsWith('data:')) return false;
-          const lowerSrc = src.toLowerCase();
-          // Look for menu-related image names or larger images
-          return (
-            lowerSrc.includes('menu') ||
-            lowerSrc.includes('food') ||
-            lowerSrc.includes('drink') ||
-            lowerSrc.includes('lunch') ||
-            lowerSrc.includes('dinner') ||
-            lowerSrc.includes('breakfast') ||
-            lowerSrc.includes('appetizer') ||
-            lowerSrc.includes('entree')
-          );
-        });
-    });
-
-    return { html, imageUrls };
-  } finally {
-    await browser.close();
-  }
-}
-
-// Extract potential menu images from HTML without headless browser
+// Extract potential menu images from HTML
 function extractMenuImageUrls(html: string, baseUrl: string): string[] {
   const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
   const images: string[] = [];
@@ -304,7 +247,6 @@ export async function POST(request: Request) {
 
     // First, try simple fetch (faster)
     let pageContent: string;
-    let usedHeadlessBrowser = false;
 
     try {
       const controller = new AbortController();
@@ -330,32 +272,18 @@ export async function POST(request: Request) {
     }
 
     // Check if simple fetch got meaningful content
-    let textContent = extractTextFromHtml(pageContent);
-    let menuImageUrls: string[] = extractMenuImageUrls(pageContent, parsedUrl.toString());
+    const textContent = extractTextFromHtml(pageContent);
+    const menuImageUrls: string[] = extractMenuImageUrls(pageContent, parsedUrl.toString());
 
-    // If simple fetch didn't get enough content, try headless browser
-    // This handles JavaScript-rendered menus
-    if (textContent.length < 500) {
-      try {
-        console.log('Simple fetch returned limited content, trying headless browser...');
-        const browserResult = await fetchWithHeadlessBrowser(parsedUrl.toString());
-        pageContent = browserResult.html;
-        textContent = extractTextFromHtml(pageContent);
-        menuImageUrls = Array.from(new Set([...menuImageUrls, ...browserResult.imageUrls]));
-        usedHeadlessBrowser = true;
-      } catch (browserError) {
-        console.error('Headless browser failed:', browserError);
-        // If we had some content from simple fetch, use it
-        if (textContent.length < 100 && menuImageUrls.length === 0) {
-          return NextResponse.json(
-            { error: 'Could not extract meaningful content from the page. The menu may be loaded dynamically or the site may be blocking access.' },
-            { status: 400 }
-          );
-        }
-      }
+    // If we got almost nothing, bail early with a helpful message
+    if (textContent.length < 100 && menuImageUrls.length === 0) {
+      return NextResponse.json(
+        { error: 'Could not extract meaningful content from the page. The menu may be loaded dynamically (JavaScript-rendered) or the site may be blocking access. Try using image or PDF import instead.' },
+        { status: 400 }
+      );
     }
 
-    console.log(`Extracted ${textContent.length} chars of text content, found ${menuImageUrls.length} potential menu images (headless: ${usedHeadlessBrowser})`)
+    console.log(`Extracted ${textContent.length} chars of text content, found ${menuImageUrls.length} potential menu images`)
 
     // First, try to parse menu from text content (if we have enough)
     let parsedMenu: ParsedMenu = { sections: [] };

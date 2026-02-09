@@ -38,6 +38,7 @@ export default function RootNavigator() {
         headerTitleStyle: {
           fontWeight: '600',
         },
+        headerBackTitleVisible: false,
       }}
     >
       <Stack.Screen
@@ -53,9 +54,7 @@ export default function RootNavigator() {
       <Stack.Screen
         name="Category"
         component={CategoryScreen}
-        options={{
-          headerBackTitle: 'Back',
-        }}
+        options={{}}
       />
       {/* View All Screens */}
       <Stack.Screen
@@ -98,7 +97,6 @@ export default function RootNavigator() {
         component={EventDetailScreen}
         options={{
           title: 'Event',
-          headerBackTitle: 'Back',
           headerTransparent: true,
           headerTintColor: colors.text,
         }}
@@ -150,10 +148,7 @@ export default function RootNavigator() {
       <Stack.Screen
         name="BlogDetail"
         component={BlogDetailScreen}
-        options={{
-          title: 'Blog Post',
-          headerBackTitle: 'Back',
-        }}
+        options={{ title: 'Blog Post' }}
       />
       {/* Artist */}
       <Stack.Screen
@@ -161,7 +156,6 @@ export default function RootNavigator() {
         component={ArtistDetailScreen}
         options={({ route }) => ({
           title: route.params.artistName,
-          headerBackTitle: 'Back',
         })}
       />
     </Stack.Navigator>

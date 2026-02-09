@@ -443,6 +443,15 @@ export default function MenuPage() {
         body: JSON.stringify({ url: importUrl }),
       });
 
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error(
+          response.status === 504
+            ? 'The request timed out. This URL may take too long to process. Try using image or PDF import instead.'
+            : `Server error (${response.status}). Try using image or PDF import instead.`
+        );
+      }
+
       const data = await response.json();
 
       if (!response.ok) {
