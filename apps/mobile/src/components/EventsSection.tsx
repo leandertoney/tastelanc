@@ -130,7 +130,7 @@ function formatEventTime(startTime: string, endTime: string | null): string {
 export default function EventsSection() {
   const navigation = useNavigation<NavigationProp>();
 
-  const { data } = useQuery({
+  const { data, isLoading, isFetching } = useQuery({
     queryKey: ['upcomingEvents'],
     queryFn: getUpcomingEvents,
     staleTime: 10 * 60 * 1000, // 10 minutes
@@ -185,8 +185,9 @@ export default function EventsSection() {
     }
   }).current;
 
-  // Return null if no data - cache persistence will prevent flash
+  // Hide only when query has settled and there's genuinely no data
   if (displayData.length === 0) {
+    if (isLoading || isFetching) return <View />;
     return null;
   }
 

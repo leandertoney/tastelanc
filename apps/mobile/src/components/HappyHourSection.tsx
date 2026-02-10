@@ -124,7 +124,7 @@ export default function HappyHourSection() {
   const dealTimerRef = useRef<NodeJS.Timeout | null>(null);
   const { data: socialProof } = usePlatformSocialProof();
 
-  const { data: happyHours = [], isLoading } = useQuery({
+  const { data: happyHours = [], isLoading, isFetching } = useQuery({
     queryKey: ['activeHappyHours'],
     queryFn: getActiveHappyHours,
     staleTime: 5 * 60 * 1000,
@@ -248,8 +248,9 @@ export default function HappyHourSection() {
     };
   }, [pairCount, dealFadeAnim]);
 
-  // Return null if no data - cache persistence will prevent flash
+  // Hide only when query has settled and there's genuinely no data
   if (displayData.length === 0 || !currentBanner) {
+    if (isLoading || isFetching) return <View />;
     return null;
   }
 
