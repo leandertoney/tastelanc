@@ -411,6 +411,7 @@ export default function SearchScreen() {
           clusterColor={colors.accent}
           clusterTextColor={colors.text}
           renderCluster={renderCluster}
+          animationEnabled={false}
           radius={50}
           minZoom={1}
           maxZoom={20}
