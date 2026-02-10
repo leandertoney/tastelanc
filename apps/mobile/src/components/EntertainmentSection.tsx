@@ -82,7 +82,7 @@ function formatEventTime(startTime: string, endTime: string | null): string {
 export default function EntertainmentSection() {
   const navigation = useNavigation<NavigationProp>();
 
-  const { data } = useQuery({
+  const { data, isLoading, isFetching } = useQuery({
     queryKey: ['entertainmentEvents'],
     queryFn: getEntertainmentEvents,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -137,8 +137,9 @@ export default function EntertainmentSection() {
   // Add CTA item at the end
   const dataWithCTA = [...finalDisplayData, { id: CTA_ITEM_ID } as MockEntertainment];
 
-  // Return null if no data - cache persistence will prevent flash
+  // Hide only when query has settled and there's genuinely no data
   if (finalDisplayData.length === 0) {
+    if (isLoading || isFetching) return <View />;
     return null;
   }
 
