@@ -36,7 +36,10 @@ async function getActiveHappyHours(): Promise<HappyHourWithRestaurant[]> {
     .order('display_order', { referencedTable: 'happy_hour_items', ascending: true })
     .limit(10);
 
-  if (error) throw error;
+  if (error) {
+    console.warn('[Prefetch] getActiveHappyHours query failed:', error.message);
+    return [];
+  }
   return data || [];
 }
 

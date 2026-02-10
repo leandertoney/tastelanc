@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode, ComponentType } from 'react';
 import {
   View,
   Text,
@@ -392,3 +392,21 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
   },
 });
+
+/**
+ * HOC to wrap any screen component with a screen-level error boundary.
+ * If the screen crashes, it shows an inline error with retry instead of
+ * letting it bubble up to the root error boundary ("We'll Be Right Back").
+ */
+export function withScreenErrorBoundary<P extends object>(
+  ScreenComponent: ComponentType<P>,
+  displayName?: string
+) {
+  const Wrapped = (props: P) => (
+    <ErrorBoundary level="screen">
+      <ScreenComponent {...props} />
+    </ErrorBoundary>
+  );
+  Wrapped.displayName = `WithErrorBoundary(${displayName || ScreenComponent.displayName || ScreenComponent.name || 'Screen'})`;
+  return Wrapped;
+}

@@ -43,7 +43,10 @@ async function getRestaurantsByCuisine(cuisine: CuisineType): Promise<Restaurant
 
   const { data, error } = await query.order('name', { ascending: true });
 
-  if (error) throw error;
+  if (error) {
+    console.warn('getRestaurantsByCuisine query failed:', error.message);
+    return [];
+  }
   return data || [];
 }
 

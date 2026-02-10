@@ -16,7 +16,10 @@ export function useBlogPosts(limit = 20) {
         .order('created_at', { ascending: false })
         .limit(limit);
 
-      if (error) throw error;
+      if (error) {
+        console.warn('useBlogPosts query failed:', error.message);
+        return [];
+      }
       return (data as BlogPost[]) || [];
     },
     staleTime: 10 * 60 * 1000,
@@ -37,7 +40,10 @@ export function useLatestBlogPosts(limit = 5) {
         .order('created_at', { ascending: false })
         .limit(limit);
 
-      if (error) throw error;
+      if (error) {
+        console.warn('useBlogPosts query failed:', error.message);
+        return [];
+      }
       return (data as BlogPost[]) || [];
     },
     staleTime: 10 * 60 * 1000,

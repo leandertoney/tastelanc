@@ -73,7 +73,10 @@ function useAllRestaurants() {
         .select('*')
         .eq('is_active', true)
         .limit(200);
-      if (error) throw error;
+      if (error) {
+        console.warn('useAllRestaurants query failed:', error.message);
+        return [];
+      }
       return data || [];
     },
     staleTime: 10 * 60 * 1000,
@@ -87,7 +90,10 @@ function useAllRestaurantHours() {
       const { data, error } = await supabase
         .from('restaurant_hours')
         .select('*');
-      if (error) throw error;
+      if (error) {
+        console.warn('useAllRestaurantHours query failed:', error.message);
+        return {};
+      }
 
       // Group by restaurant_id
       const grouped: Record<string, RestaurantHours[]> = {};
@@ -111,7 +117,10 @@ function useAllHappyHours() {
         .from('happy_hours')
         .select('*')
         .eq('is_active', true);
-      if (error) throw error;
+      if (error) {
+        console.warn('useAllHappyHours query failed:', error.message);
+        return [];
+      }
       return data || [];
     },
     staleTime: 10 * 60 * 1000,

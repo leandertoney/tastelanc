@@ -29,7 +29,8 @@ export function useRestaurantInsights(restaurantId: string | null) {
       const { data, error } = await getRestaurantInsights(restaurantId);
 
       if (error) {
-        throw error;
+        console.warn('useRestaurantInsights query failed:', error);
+        return null;
       }
 
       return data;

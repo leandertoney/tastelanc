@@ -22,7 +22,10 @@ export function useRestaurantHours(restaurantId: string, enabled = true) {
         .eq('restaurant_id', restaurantId)
         .order('day_of_week', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.warn('useRestaurantHours query failed:', error.message);
+        return [];
+      }
       return data || [];
     },
     enabled: enabled && !!restaurantId,
@@ -42,7 +45,10 @@ export function useHappyHours(restaurantId: string, enabled = true) {
         .eq('restaurant_id', restaurantId)
         .eq('is_active', true);
 
-      if (error) throw error;
+      if (error) {
+        console.warn('useHappyHours query failed:', error.message);
+        return [];
+      }
       return data || [];
     },
     enabled: enabled && !!restaurantId,
@@ -62,7 +68,10 @@ export function useSpecials(restaurantId: string, enabled = true) {
         .eq('restaurant_id', restaurantId)
         .eq('is_active', true);
 
-      if (error) throw error;
+      if (error) {
+        console.warn('useSpecials query failed:', error.message);
+        return [];
+      }
       return data || [];
     },
     enabled: enabled && !!restaurantId,
@@ -113,7 +122,10 @@ export function useRestaurantAllData(restaurantId: string, enabled = true) {
             .select('*')
             .eq('restaurant_id', restaurantId)
             .order('day_of_week', { ascending: true });
-          if (error) throw error;
+          if (error) {
+            console.warn('useRestaurantAllData hours query failed:', error.message);
+            return [];
+          }
           return data || [];
         },
         enabled: enabled && !!restaurantId,
@@ -126,7 +138,10 @@ export function useRestaurantAllData(restaurantId: string, enabled = true) {
             .select('*, happy_hour_items(*)')
             .eq('restaurant_id', restaurantId)
             .eq('is_active', true);
-          if (error) throw error;
+          if (error) {
+            console.warn('useRestaurantAllData happyHours query failed:', error.message);
+            return [];
+          }
           return data || [];
         },
         enabled: enabled && !!restaurantId,
@@ -139,7 +154,10 @@ export function useRestaurantAllData(restaurantId: string, enabled = true) {
             .select('*')
             .eq('restaurant_id', restaurantId)
             .eq('is_active', true);
-          if (error) throw error;
+          if (error) {
+            console.warn('useRestaurantAllData specials query failed:', error.message);
+            return [];
+          }
           return data || [];
         },
         enabled: enabled && !!restaurantId,

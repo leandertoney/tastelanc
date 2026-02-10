@@ -4,12 +4,20 @@ import type { BottomTabParamList } from './types';
 import { colors } from '../constants/colors';
 import HeaderLogo from '../components/HeaderLogo';
 import HeaderGreeting from '../components/HeaderGreeting';
+import { withScreenErrorBoundary } from '../components/ErrorBoundary';
 
 import HomeScreen from '../screens/HomeScreen';
 import SearchScreen from '../screens/SearchScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
 import RewardsScreen from '../screens/RewardsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+
+// Wrap each tab screen so crashes show inline error instead of killing the app
+const SafeHomeScreen = withScreenErrorBoundary(HomeScreen, 'HomeScreen');
+const SafeSearchScreen = withScreenErrorBoundary(SearchScreen, 'SearchScreen');
+const SafeFavoritesScreen = withScreenErrorBoundary(FavoritesScreen, 'FavoritesScreen');
+const SafeRewardsScreen = withScreenErrorBoundary(RewardsScreen, 'RewardsScreen');
+const SafeProfileScreen = withScreenErrorBoundary(ProfileScreen, 'ProfileScreen');
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 
@@ -55,7 +63,7 @@ export default function BottomTabNavigator() {
     >
       <Tab.Screen
         name="Home"
-        component={HomeScreen}
+        component={SafeHomeScreen}
         options={{
           headerTitle: () => <HeaderLogo />,
           headerLeft: () => <HeaderGreeting />,
@@ -64,22 +72,22 @@ export default function BottomTabNavigator() {
       />
       <Tab.Screen
         name="Search"
-        component={SearchScreen}
+        component={SafeSearchScreen}
         options={{ headerShown: false, title: 'Search' }}
       />
       <Tab.Screen
         name="Favorites"
-        component={FavoritesScreen}
+        component={SafeFavoritesScreen}
         options={{ title: 'Favorites' }}
       />
       <Tab.Screen
         name="Rewards"
-        component={RewardsScreen}
+        component={SafeRewardsScreen}
         options={{ title: 'Rewards' }}
       />
       <Tab.Screen
         name="Profile"
-        component={ProfileScreen}
+        component={SafeProfileScreen}
         options={{ title: 'Profile' }}
       />
     </Tab.Navigator>

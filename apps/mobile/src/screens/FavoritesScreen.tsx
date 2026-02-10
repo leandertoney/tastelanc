@@ -36,7 +36,10 @@ function useFavoriteRestaurants(favoriteIds: string[]) {
         .in('id', favoriteIds)
         .eq('is_active', true);
 
-      if (error) throw error;
+      if (error) {
+        console.warn('useFavoriteRestaurants query failed:', error.message);
+        return [];
+      }
 
       // Sort by the order they were favorited (most recent first)
       const sortedData = favoriteIds
