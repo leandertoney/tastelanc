@@ -33,7 +33,7 @@ export { default as EntertainmentCard } from './EntertainmentCard';
 export { default as EntertainmentSection } from './EntertainmentSection';
 export { default as EntertainmentListItem } from './EntertainmentListItem';
 export { default as DateHeader } from './DateHeader';
-export { default as ErrorBoundary } from './ErrorBoundary';
+export { default as ErrorBoundary, withScreenErrorBoundary } from './ErrorBoundary';
 export {
   NetworkErrorFallback,
   EmptyStateFallback,

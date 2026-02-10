@@ -60,7 +60,10 @@ async function getAllHappyHours(): Promise<HappyHourWithRestaurant[]> {
     `)
     .eq('is_active', true);
 
-  if (error) throw error;
+  if (error) {
+    console.warn('getAllHappyHours query failed:', error.message);
+    return [];
+  }
 
   // Apply tiered fair rotation: Elite first, Premium second, Basic third
   return tieredFairRotate(

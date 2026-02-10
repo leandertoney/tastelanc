@@ -72,7 +72,10 @@ async function getActiveHappyHours(): Promise<HappyHourWithRestaurant[]> {
     .contains('days_of_week', [dayOfWeek])
     .order('display_order', { referencedTable: 'happy_hour_items', ascending: true });
 
-  if (error) throw error;
+  if (error) {
+    console.warn('getActiveHappyHours query failed:', error.message);
+    return [];
+  }
 
   // Filter to paid restaurants only and apply fair rotation (Elite first, Premium shuffled)
   const paidRotated = paidFairRotate(

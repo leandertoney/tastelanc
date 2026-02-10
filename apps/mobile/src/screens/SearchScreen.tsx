@@ -365,11 +365,11 @@ export default function SearchScreen() {
 
   // Render custom cluster
   const renderCluster = useCallback((cluster: any) => {
-    if (!cluster) return <></>;
+    if (!cluster) return null;
 
     const { id, geometry, onPress } = cluster;
 
-    if (!geometry?.coordinates || geometry.coordinates.length < 2) return <></>;
+    if (!geometry?.coordinates || geometry.coordinates.length < 2) return null;
 
     const longitude = geometry.coordinates[0];
     const latitude = geometry.coordinates[1];
@@ -380,7 +380,7 @@ export default function SearchScreen() {
       isNaN(longitude) ||
       isNaN(latitude)
     )
-      return <></>;
+      return null;
 
     return (
       <Marker
@@ -414,6 +414,7 @@ export default function SearchScreen() {
           radius={50}
           minZoom={1}
           maxZoom={20}
+          minZoomLevel={10}
           customMapStyle={darkMapStyle}
         >
           {validRestaurants.map((restaurant) => (
