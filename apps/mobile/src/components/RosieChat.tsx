@@ -4,13 +4,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
   ActivityIndicator,
   Image,
   Keyboard,
 } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import BottomSheet, { BottomSheetBackdrop, BottomSheetTextInput } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetBackdrop, BottomSheetFlatList, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
@@ -114,7 +113,7 @@ async function getUserPreferences(): Promise<OnboardingData | null> {
 
 export default function RosieChat({ visible, onClose, onNavigateToRestaurant }: RosieChatProps) {
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const flatListRef = useRef<FlatList>(null);
+  const flatListRef = useRef<any>(null);
 
   const rosiePlayer = useVideoPlayer(rosieAnimated, player => {
     player.loop = true;
@@ -404,11 +403,11 @@ export default function RosieChat({ visible, onClose, onNavigateToRestaurant }: 
         </View>
 
         {/* Messages */}
-        <FlatList
+        <BottomSheetFlatList
           ref={flatListRef}
           data={messages}
           renderItem={renderMessage}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item: Message) => item.id}
           style={styles.messagesList}
           contentContainerStyle={styles.messagesContainer}
           showsVerticalScrollIndicator={false}
