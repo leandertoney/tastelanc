@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
-  Store,
   Mail,
   CreditCard,
   Check,
@@ -30,9 +29,8 @@ interface Restaurant {
 
 interface CartItem {
   id: string;
-  restaurantId: string | null;
+  restaurantId: string;
   restaurantName: string;
-  isNewRestaurant: boolean;
   plan: 'premium' | 'elite';
   duration: '3mo' | '6mo' | 'yearly';
   price: number;
@@ -82,7 +80,6 @@ function AdminSalesPageContent() {
 
   // "Add restaurant" form state
   const [currentRestaurantId, setCurrentRestaurantId] = useState<string>('');
-  const [currentNewName, setCurrentNewName] = useState('');
   const [currentPlan, setCurrentPlan] = useState<string>('premium');
   const [currentDuration, setCurrentDuration] = useState<string>('yearly');
 
@@ -108,13 +105,11 @@ function AdminSalesPageContent() {
     const paramName = searchParams.get('name');
     const paramPhone = searchParams.get('phone');
     const paramRestaurantId = searchParams.get('restaurantId');
-    const paramBusinessName = searchParams.get('businessName');
 
     if (paramEmail) setEmail(paramEmail);
     if (paramName) setContactName(paramName);
     if (paramPhone) setPhone(paramPhone);
     if (paramRestaurantId) setCurrentRestaurantId(paramRestaurantId);
-    if (paramBusinessName && !paramRestaurantId) setCurrentNewName(paramBusinessName);
   }, [searchParams]);
 
   // Filter restaurants (exclude already-in-cart)
@@ -181,22 +176,18 @@ function AdminSalesPageContent() {
   const handleAddToCart = () => {
     setAddError('');
 
-    if (!currentRestaurantId && !currentNewName.trim()) {
-      setAddError('Select a restaurant or enter a new name');
+    if (!currentRestaurantId) {
+      setAddError('Select a restaurant');
       return;
     }
 
-    const restaurantName = currentRestaurantId
-      ? restaurants.find(r => r.id === currentRestaurantId)?.name || ''
-      : currentNewName.trim();
-
+    const restaurantName = restaurants.find(r => r.id === currentRestaurantId)?.name || '';
     const price = PRICES[currentPlan]?.[currentDuration] || 0;
 
     const newItem: CartItem = {
       id: crypto.randomUUID(),
-      restaurantId: currentRestaurantId || null,
+      restaurantId: currentRestaurantId,
       restaurantName,
-      isNewRestaurant: !currentRestaurantId,
       plan: currentPlan as 'premium' | 'elite',
       duration: currentDuration as '3mo' | '6mo' | 'yearly',
       price,
@@ -204,7 +195,6 @@ function AdminSalesPageContent() {
 
     setCart(prev => [...prev, newItem]);
     setCurrentRestaurantId('');
-    setCurrentNewName('');
     setRestaurantSearch('');
     setIsDropdownOpen(false);
     setStepError('');
@@ -235,7 +225,7 @@ function AdminSalesPageContent() {
           items: cart.map(item => ({
             restaurantId: item.restaurantId,
             restaurantName: item.restaurantName,
-            isNewRestaurant: item.isNewRestaurant,
+            isNewRestaurant: false,
             plan: item.plan,
             duration: item.duration,
           })),
@@ -264,7 +254,6 @@ function AdminSalesPageContent() {
     setPhone('');
     setCart([]);
     setCurrentRestaurantId('');
-    setCurrentNewName('');
     setCheckoutUrl('');
     setError('');
     setAddError('');
@@ -433,7 +422,6 @@ function AdminSalesPageContent() {
                           <p className="text-white text-sm font-medium truncate">{item.restaurantName}</p>
                           <p className="text-gray-400 text-xs capitalize">
                             {item.plan} &middot; {DURATIONS.find(d => d.id === item.duration)?.label}
-                            {item.isNewRestaurant && <span className="text-tastelanc-accent ml-1">(New)</span>}
                           </p>
                         </div>
                         <span className="text-white text-sm font-semibold ml-3">${item.price}</span>
@@ -480,7 +468,7 @@ function AdminSalesPageContent() {
                   <div className="space-y-4">
                     {/* Restaurant search */}
                     <div ref={dropdownRef} className="relative">
-                      <label className="block text-sm font-medium text-gray-300 mb-1">Existing Restaurant</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">Restaurant</label>
                       {currentRestaurantId && !isDropdownOpen ? (
                         <div
                           onClick={() => setIsDropdownOpen(true)}
@@ -528,7 +516,6 @@ function AdminSalesPageContent() {
                                 key={r.id}
                                 onClick={() => {
                                   setCurrentRestaurantId(r.id);
-                                  setCurrentNewName('');
                                   setRestaurantSearch('');
                                   setIsDropdownOpen(false);
                                 }}
@@ -542,22 +529,6 @@ function AdminSalesPageContent() {
                           )}
                         </div>
                       )}
-                    </div>
-
-                    <div className="text-center text-gray-500 text-xs">or</div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">New Restaurant Name</label>
-                      <div className="relative">
-                        <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                        <input
-                          type="text"
-                          value={currentNewName}
-                          onChange={(e) => { setCurrentNewName(e.target.value); if (e.target.value) setCurrentRestaurantId(''); }}
-                          placeholder="Restaurant Name"
-                          className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
-                        />
-                      </div>
                     </div>
 
                     <hr className="border-tastelanc-surface-light" />
