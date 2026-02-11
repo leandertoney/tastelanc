@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
+import { saveCrash } from '../lib/crashLog';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -46,6 +47,9 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     // Log error for debugging
     console.error('ErrorBoundary caught an error:', error, errorInfo);
 
+    // Persist crash details so we can retrieve them after a restart
+    saveCrash(error, `ErrorBoundary:${this.props.level || 'screen'}`, errorInfo.componentStack ?? undefined);
+
     // Report to Sentry if available
     try {
       const { reportError } = require('../lib/sentry');
@@ -60,17 +64,31 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     // Call optional error handler
     this.props.onError?.(error, errorInfo);
 
-    // Auto-retry once for section/component level errors (handles transient render errors)
+    // Auto-retry for ALL levels (handles transient render errors)
+    // Screen level gets more retries since it blocks the entire app
     const { level = 'screen' } = this.props;
-    if (this.state.retryCount === 0 && level !== 'screen') {
+    const maxRetries = level === 'screen' ? 3 : 1;
+    const retryDelay = level === 'screen' ? 3000 : 2000;
+
+    if (this.state.retryCount < maxRetries) {
       this.autoRetryTimer = setTimeout(() => {
-        this.setState({
+        // On last auto-retry for screen-level, clear query cache as a Hail Mary
+        if (level === 'screen' && this.state.retryCount === maxRetries - 1) {
+          try {
+            const { queryClient } = require('../lib/queryClient');
+            queryClient.clear();
+          } catch {
+            // Ignore
+          }
+        }
+
+        this.setState((prev) => ({
           hasError: false,
           error: null,
           errorInfo: null,
-          retryCount: 1,
-        });
-      }, 2000);
+          retryCount: prev.retryCount + 1,
+        }));
+      }, retryDelay);
     }
   }
 
@@ -81,6 +99,16 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
   }
 
   handleRetry = (): void => {
+    // For screen-level errors, clear the in-memory query cache to fix data-driven crashes
+    if (this.props.level === 'screen') {
+      try {
+        const { queryClient } = require('../lib/queryClient');
+        queryClient.clear();
+      } catch {
+        // Ignore — cache clearing is best-effort
+      }
+    }
+
     this.setState({
       hasError: false,
       error: null,

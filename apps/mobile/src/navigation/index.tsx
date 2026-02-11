@@ -9,6 +9,7 @@ import { AuthProvider } from '../context/AuthContext';
 import { OnboardingProvider } from '../context/OnboardingContext';
 import { SignUpModalProvider } from '../context/SignUpModalContext';
 import { EmailGateProvider } from '../context/EmailGateContext';
+import { ErrorBoundary } from '../components';
 import { ONBOARDING_STORAGE_KEY, ONBOARDING_DATA_KEY } from '../types/onboarding';
 import { colors } from '../constants/colors';
 import { env } from '../lib/env';
@@ -63,26 +64,28 @@ export default function Navigation() {
   const [showSplash, setShowSplash] = useState(true);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
-  // Initialize SDKs once on mount
+  // Initialize SDKs once on mount (all wrapped in try/catch for production resilience)
   useEffect(() => {
-    // Initialize Radar for location tracking
-    if (env.RADAR_PUBLISHABLE_KEY) {
-      initRadar(env.RADAR_PUBLISHABLE_KEY);
-      startTracking();
+    try {
+      if (env.RADAR_PUBLISHABLE_KEY) {
+        initRadar(env.RADAR_PUBLISHABLE_KEY);
+        startTracking();
+      }
+    } catch (e) {
+      console.warn('[Navigation] Radar initialization failed:', e);
     }
 
-    // RevenueCat disabled - app is currently free
-    // TODO: Re-enable when adding Android API key (current key is Apple-only)
-    // initRevenueCat().catch((error) => {
-    //   console.error('Failed to initialize RevenueCat:', error);
-    // });
-
-    // Track session count and trigger review at 5th session
-    incrementSessionCount().then((count) => {
-      if (count === 5) {
-        requestReviewIfEligible('session_milestone');
-      }
-    });
+    try {
+      incrementSessionCount().then((count) => {
+        if (count === 5) {
+          requestReviewIfEligible('session_milestone');
+        }
+      }).catch((e) => {
+        console.warn('[Navigation] Session count/review prompt failed:', e);
+      });
+    } catch (e) {
+      console.warn('[Navigation] Session tracking failed:', e);
+    }
   }, []);
 
   useEffect(() => {
@@ -131,9 +134,16 @@ export default function Navigation() {
     );
   }
 
-  // Show splash video first
+  // Show splash video first (wrapped in ErrorBoundary so video player crash doesn't kill app)
   if (showSplash) {
-    return <SplashVideoScreen onComplete={handleSplashComplete} />;
+    return (
+      <ErrorBoundary
+        level="section"
+        fallback={<SplashFallback onComplete={handleSplashComplete} />}
+      >
+        <SplashVideoScreen onComplete={handleSplashComplete} />
+      </ErrorBoundary>
+    );
   }
 
   return (
@@ -142,12 +152,36 @@ export default function Navigation() {
         <SignUpModalProvider>
           <NavigationContext.Provider value={{ restartOnboarding, finishOnboarding }}>
             <OnboardingProvider>
-              <NavigationInner hasCompletedOnboarding={hasCompletedOnboarding} />
+              <ErrorBoundary
+                level="section"
+                fallback={<NavigationFallback hasCompletedOnboarding={hasCompletedOnboarding} />}
+              >
+                <NavigationInner hasCompletedOnboarding={hasCompletedOnboarding} />
+              </ErrorBoundary>
             </OnboardingProvider>
           </NavigationContext.Provider>
         </SignUpModalProvider>
       </EmailGateProvider>
     </AuthProvider>
+  );
+}
+
+// Minimal fallback if splash video crashes — dark screen that auto-completes
+function SplashFallback({ onComplete }: { onComplete: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onComplete, 1500);
+    return () => clearTimeout(t);
+  }, [onComplete]);
+  return <View style={styles.splashFallback} />;
+}
+
+// Fallback navigation without risky hooks (Radar visits, notifications)
+// App still works — just loses geofence tracking and notification deep-linking
+function NavigationFallback({ hasCompletedOnboarding }: { hasCompletedOnboarding: boolean }) {
+  return (
+    <NavigationContainer>
+      {hasCompletedOnboarding ? <RootNavigator /> : <OnboardingNavigator />}
+    </NavigationContainer>
   );
 }
 
@@ -157,5 +191,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#FFF',
+  },
+  splashFallback: {
+    flex: 1,
+    backgroundColor: '#121212',
   },
 });
