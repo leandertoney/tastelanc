@@ -141,6 +141,36 @@ export async function POST(request: Request) {
       );
     }
 
+    // Auto-activate restaurant if it's inactive with a paid tier and now has photos
+    // Also auto-set cover image if none exists
+    const { data: restaurant } = await storageClient
+      .from('restaurants')
+      .select('is_active, cover_image_url, tier_id, tiers(name)')
+      .eq('id', restaurantId)
+      .single();
+
+    if (restaurant) {
+      const updates: Record<string, unknown> = {};
+
+      // Set cover image if restaurant doesn't have one
+      if (!restaurant.cover_image_url) {
+        updates.cover_image_url = urlData.publicUrl;
+      }
+
+      // Auto-activate if inactive and on a paid tier
+      const tierName = (restaurant.tiers as { name: string } | null)?.name;
+      if (!restaurant.is_active && (tierName === 'premium' || tierName === 'elite')) {
+        updates.is_active = true;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await storageClient
+          .from('restaurants')
+          .update(updates)
+          .eq('id', restaurantId);
+      }
+    }
+
     return NextResponse.json(photoData);
   } catch (error) {
     console.error('Error in photo upload:', error);
