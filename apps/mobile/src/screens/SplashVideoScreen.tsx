@@ -11,9 +11,11 @@ interface SplashVideoScreenProps {
 
 const videoSource = require('../../assets/animation/tastelanc_dark_spin.mp4');
 const MIN_SPLASH_DURATION = 2800; // Video length in ms
+const MAX_SPLASH_TIMEOUT = 8000; // Never show splash longer than 8s
 
 export default function SplashVideoScreen({ onComplete }: SplashVideoScreenProps) {
   const opacity = useRef(new Animated.Value(1)).current;
+  const hasCompleted = useRef(false);
   const [prefetchComplete, setPrefetchComplete] = useState(false);
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
   const isRestoring = useIsRestoring(); // Wait for cache hydration from AsyncStorage
@@ -50,9 +52,24 @@ export default function SplashVideoScreen({ onComplete }: SplashVideoScreenProps
     return () => clearTimeout(timeout);
   }, []);
 
+  // Force complete after absolute max timeout (safety net)
+  // Prevents splash from staying forever if prefetch hangs or isRestoring gets stuck
+  useEffect(() => {
+    const forceTimeout = setTimeout(() => {
+      if (!hasCompleted.current) {
+        console.warn('[Splash] Force completing after max timeout');
+        hasCompleted.current = true;
+        onComplete();
+      }
+    }, MAX_SPLASH_TIMEOUT);
+
+    return () => clearTimeout(forceTimeout);
+  }, [onComplete]);
+
   // Complete when ALL conditions are met: cache hydrated, prefetch done, AND min time elapsed
   useEffect(() => {
-    if (!isRestoring && prefetchComplete && minTimeElapsed) {
+    if (!isRestoring && prefetchComplete && minTimeElapsed && !hasCompleted.current) {
+      hasCompleted.current = true;
       Animated.timing(opacity, {
         toValue: 0,
         duration: 600,

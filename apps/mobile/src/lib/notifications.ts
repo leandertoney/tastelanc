@@ -10,15 +10,21 @@ import { Platform } from 'react-native';
 import { supabase } from './supabase';
 
 // Configure how notifications appear when app is in foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// Wrapped in try/catch because this runs at import time — if the native module
+// is in a bad state, an unguarded throw here crashes the entire app on import
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+} catch (e) {
+  console.warn('[Notifications] Failed to set notification handler:', e);
+}
 
 /**
  * Register for push notifications and get the Expo push token
