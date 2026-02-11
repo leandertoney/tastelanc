@@ -158,7 +158,7 @@ export async function POST(request: Request) {
       }
 
       // Auto-activate if inactive and on a paid tier
-      const tierName = (restaurant.tiers as { name: string } | null)?.name;
+      const tierName = (restaurant.tiers as { name: string }[])?.[0]?.name ?? null;
       if (!restaurant.is_active && (tierName === 'premium' || tierName === 'elite')) {
         updates.is_active = true;
       }
