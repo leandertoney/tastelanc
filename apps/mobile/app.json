@@ -15,7 +15,10 @@
     },
     "updates": {
       "fallbackToCacheTimeout": 0,
-      "url": "https://u.expo.dev/18a9e6d1-1240-4875-b38f-67edc5b50bdd"
+      "url": "https://u.expo.dev/18a9e6d1-1240-4875-b38f-67edc5b50bdd",
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      }
     },
     "runtimeVersion": "1.0.5",
     "assetBundlePatterns": [
@@ -33,7 +36,9 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "TasteLanc uses your location to find restaurants near you.",
         "NSCameraUsageDescription": "TasteLanc uses the camera for check-in verification.",
         "NSMotionUsageDescription": "TasteLanc uses motion data to improve location accuracy for check-ins and visit insights.",
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       },
       "config": {
         "usesNonExemptEncryption": false
