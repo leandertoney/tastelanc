@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Save, Upload, MapPin, Phone, Globe, Mail, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Save, Upload, MapPin, Phone, Globe, Mail, AlertCircle, Loader2 } from 'lucide-react';
 import { Button, Card } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import type { RestaurantCategory } from '@/types/database';
@@ -46,6 +46,8 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   // Load restaurant data into form when context updates
   useEffect(() => {
@@ -120,6 +122,51 @@ export default function ProfilePage() {
     }));
   };
 
+  const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !restaurantId) return;
+
+    // Reset input so the same file can be selected again
+    e.target.value = '';
+
+    setUploadingCover(true);
+    setError(null);
+
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', file);
+
+      // Upload the photo
+      const uploadRes = await fetch(buildApiUrl('/api/dashboard/photos/upload'), {
+        method: 'POST',
+        body: uploadFormData,
+      });
+
+      const uploadData = await uploadRes.json();
+
+      if (!uploadRes.ok) {
+        throw new Error(uploadData.error || 'Failed to upload image');
+      }
+
+      // Set the uploaded photo as cover
+      const coverRes = await fetch(buildApiUrl(`/api/dashboard/photos/${uploadData.id}/cover`), {
+        method: 'POST',
+      });
+
+      if (!coverRes.ok) {
+        const coverData = await coverRes.json();
+        throw new Error(coverData.error || 'Failed to set cover photo');
+      }
+
+      // Refresh restaurant data to show the new cover image
+      await refreshRestaurant();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload cover image');
+    } finally {
+      setUploadingCover(false);
+    }
+  };
+
   if (contextLoading) {
     return (
       <div className="max-w-4xl space-y-8">
@@ -162,8 +209,18 @@ export default function ProfilePage() {
         {/* Cover Image */}
         <Card className="p-6">
           <h3 className="text-lg font-semibold text-white mb-4">Cover Image</h3>
+          <input
+            ref={coverInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleCoverImageUpload}
+            className="hidden"
+          />
           {restaurant?.cover_image_url ? (
-            <div className="relative aspect-[3/1] bg-tastelanc-surface rounded-lg overflow-hidden">
+            <div
+              className="relative aspect-[3/1] bg-tastelanc-surface rounded-lg overflow-hidden"
+              onClick={() => !uploadingCover && coverInputRef.current?.click()}
+            >
               <img
                 src={restaurant.cover_image_url}
                 alt="Cover"
@@ -172,17 +229,38 @@ export default function ProfilePage() {
               />
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
                 <div className="text-center">
-                  <Upload className="w-8 h-8 text-white mx-auto mb-2" />
-                  <p className="text-white">Click to change</p>
+                  {uploadingCover ? (
+                    <>
+                      <Loader2 className="w-8 h-8 text-white mx-auto mb-2 animate-spin" />
+                      <p className="text-white">Uploading...</p>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-8 h-8 text-white mx-auto mb-2" />
+                      <p className="text-white">Click to change</p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
           ) : (
-            <div className="aspect-[3/1] bg-tastelanc-surface rounded-lg flex items-center justify-center border-2 border-dashed border-tastelanc-surface-light hover:border-tastelanc-accent transition-colors cursor-pointer">
+            <div
+              className="aspect-[3/1] bg-tastelanc-surface rounded-lg flex items-center justify-center border-2 border-dashed border-tastelanc-surface-light hover:border-tastelanc-accent transition-colors cursor-pointer"
+              onClick={() => !uploadingCover && coverInputRef.current?.click()}
+            >
               <div className="text-center">
-                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-400">Click to upload or drag and drop</p>
-                <p className="text-gray-500 text-sm mt-1">PNG, JPG up to 5MB</p>
+                {uploadingCover ? (
+                  <>
+                    <Loader2 className="w-8 h-8 text-gray-400 mx-auto mb-2 animate-spin" />
+                    <p className="text-gray-400">Uploading...</p>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-400">Click to upload or drag and drop</p>
+                    <p className="text-gray-500 text-sm mt-1">PNG, JPG up to 5MB</p>
+                  </>
+                )}
               </div>
             </div>
           )}
