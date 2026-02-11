@@ -100,7 +100,7 @@ export async function fetchEvents(params?: FetchEventsParams): Promise<ApiEvent[
   }
 
   const data: EventsApiResponse = await response.json();
-  return data.events;
+  return data?.events || [];
 }
 
 /**

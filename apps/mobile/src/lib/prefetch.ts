@@ -6,6 +6,7 @@
 import { queryClient } from './queryClient';
 import { supabase } from './supabase';
 import { getFeaturedRestaurants, getOtherRestaurants } from './recommendations';
+import { getActiveAds } from './ads';
 import { fetchEntertainmentEvents, fetchEvents, ENTERTAINMENT_TYPES, ApiEvent } from './events';
 import { getFavorites } from './favorites';
 import { getLeaderboard } from './voting';
@@ -178,7 +179,7 @@ async function getPlatformSocialProof() {
   };
 }
 
-async function getTrendingRestaurants(): Promise<Set<string>> {
+async function getTrendingRestaurants(): Promise<string[]> {
   const leaderboard = await getLeaderboard();
   const trendingIds = new Set<string>();
 
@@ -198,7 +199,7 @@ async function getTrendingRestaurants(): Promise<Set<string>> {
     // Ignore - fallback to leaderboard data
   }
 
-  return trendingIds;
+  return Array.from(trendingIds);
 }
 
 // ========== Main Prefetch Function ==========
@@ -273,6 +274,13 @@ export async function prefetchHomeScreenData(userId: string | null): Promise<voi
       queryClient.prefetchQuery({
         queryKey: ['otherRestaurantsPage0', featuredIds],
         queryFn: () => getOtherRestaurants(featuredIds, 0, 10),
+        staleTime: 5 * 60 * 1000,
+      }),
+
+      // Featured ads (for carousel ad slots)
+      queryClient.prefetchQuery({
+        queryKey: ['featuredAds'],
+        queryFn: getActiveAds,
         staleTime: 5 * 60 * 1000,
       }),
     ];

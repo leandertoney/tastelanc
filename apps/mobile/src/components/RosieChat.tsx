@@ -204,7 +204,7 @@ export default function RosieChat({ visible, onClose, onNavigateToRestaurant }: 
 
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: data.answer || "I'm not sure how to respond to that. Could you try asking differently?",
+        text: data?.answer || "I'm not sure how to respond to that. Could you try asking differently?",
         isUser: false,
         timestamp: new Date(),
       };
@@ -338,7 +338,7 @@ export default function RosieChat({ visible, onClose, onNavigateToRestaurant }: 
 
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: data.answer || "I'm not sure how to respond to that. Could you try asking differently?",
+        text: data?.answer || "I'm not sure how to respond to that. Could you try asking differently?",
         isUser: false,
         timestamp: new Date(),
       };

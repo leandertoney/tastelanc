@@ -94,6 +94,9 @@ export {
 // Promo card hooks
 export { usePromoCard } from './usePromoCard';
 
+// Ad hooks
+export { useActiveAds } from './useAds';
+
 // Blog hooks
 export { useBlogPosts, useLatestBlogPosts } from './useBlogPosts';
 

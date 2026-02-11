@@ -172,6 +172,18 @@ export async function submitVote(
 }
 
 /**
+ * Get leaderboard across all categories (used by social proof and trending badges)
+ */
+export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
+  try {
+    return await getCurrentWinners();
+  } catch (error) {
+    console.error('[Voting] Exception getting leaderboard:', error);
+    return [];
+  }
+}
+
+/**
  * Get leaderboard for a specific category (aggregated across all users)
  */
 export async function getCategoryLeaderboard(

@@ -54,8 +54,14 @@ export async function registerForPushNotifications(): Promise<string | null> {
       return null;
     }
 
+    // Get native device token first, then pass it explicitly to ensure
+    // Expo updates the APNs routing to THIS app (not Expo Go)
+    const devicePushToken = await Notifications.getDevicePushTokenAsync();
+    console.log('[Notifications] Device token type:', devicePushToken.type);
+
     const tokenData = await Notifications.getExpoPushTokenAsync({
       projectId,
+      devicePushToken,
     });
 
     // Android requires a notification channel

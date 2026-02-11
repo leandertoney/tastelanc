@@ -1,6 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { reportError } from './sentry';
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,8 +17,21 @@ export const queryClient = new QueryClient({
       // Refetch when reconnecting
       refetchOnReconnect: true,
     },
+    mutations: {
+      onError: (error) => {
+        reportError(error as Error, { source: 'mutation' });
+      },
+    },
   },
 });
+
+// Report failed queries to Sentry for production visibility
+queryClient.getQueryCache().config.onError = (error, query) => {
+  reportError(error as Error, {
+    source: 'query',
+    queryKey: JSON.stringify(query.queryKey),
+  });
+};
 
 // Create persister for AsyncStorage
 export const asyncStoragePersister = createAsyncStoragePersister({
