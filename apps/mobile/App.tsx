@@ -10,9 +10,17 @@ import Navigation from './src/navigation';
 import { ErrorBoundary } from './src/components';
 import { queryClient } from './src/lib/queryClient';
 import { initSentry, Sentry } from './src/lib/sentry';
+import { saveCrash, getAndClearLastCrash } from './src/lib/crashLog';
 
 // Initialize Sentry as early as possible (before React renders)
 initSentry();
+
+// Global JS error handler — catches errors that escape React tree
+const originalHandler = ErrorUtils.getGlobalHandler();
+ErrorUtils.setGlobalHandler((error, isFatal) => {
+  saveCrash(error, isFatal ? 'GlobalHandler:fatal' : 'GlobalHandler:non-fatal');
+  originalHandler?.(error, isFatal);
+});
 
 function App() {
   useEffect(() => {
@@ -27,18 +35,31 @@ function App() {
         // Non-critical — continue even if cleanup fails
       }
     })();
+
+    // Log any crash from a previous session
+    getAndClearLastCrash().then((crash) => {
+      if (crash) {
+        console.warn('[CrashLog] Previous crash recovered:', JSON.stringify(crash, null, 2));
+      }
+    });
   }, []);
 
   useEffect(() => {
     if (__DEV__) return;
     (async () => {
       try {
+        console.log('[Updates] Checking for update...');
         const { isAvailable } = await Updates.checkForUpdateAsync();
         if (isAvailable) {
+          console.log('[Updates] Update available, downloading...');
           await Updates.fetchUpdateAsync();
+          console.log('[Updates] Downloaded, reloading app...');
+          await Updates.reloadAsync();
+        } else {
+          console.log('[Updates] App is up to date');
         }
-      } catch {
-        // Silent fail — update will be retried next launch
+      } catch (e) {
+        console.warn('[Updates] Check failed:', e);
       }
     })();
   }, []);
