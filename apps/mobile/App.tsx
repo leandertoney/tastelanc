@@ -9,8 +9,12 @@ import * as Updates from 'expo-updates';
 import Navigation from './src/navigation';
 import { ErrorBoundary } from './src/components';
 import { queryClient } from './src/lib/queryClient';
+import { initSentry, Sentry } from './src/lib/sentry';
 
-export default function App() {
+// Initialize Sentry as early as possible (before React renders)
+initSentry();
+
+function App() {
   useEffect(() => {
     // Clear old corrupted React Query cache keys from AsyncStorage
     (async () => {
@@ -51,6 +55,9 @@ export default function App() {
     </QueryClientProvider>
   );
 }
+
+// Wrap with Sentry for unhandled JS error capture (event handlers, async, etc.)
+export default Sentry.wrap(App);
 
 const styles = StyleSheet.create({
   container: {

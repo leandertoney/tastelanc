@@ -23,6 +23,7 @@ export { default as PhotosCarousel } from './PhotosCarousel';
 export { default as SearchBar } from './SearchBar';
 export { default as RecommendedSection } from './RecommendedSection';
 export { default as FeaturedCard } from './FeaturedCard';
+export { default as FeaturedAdCard } from './FeaturedAdCard';
 export { default as FeaturedSection } from './FeaturedSection';
 export { default as CompactRestaurantCard } from './CompactRestaurantCard';
 export { default as HappyHourBanner } from './HappyHourBanner';

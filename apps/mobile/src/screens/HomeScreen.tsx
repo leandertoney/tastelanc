@@ -35,6 +35,7 @@ import {
   PlanYourDayCard,
   BlogSection,
   RecommendedSection,
+  ErrorBoundary,
 } from '../components';
 import CuisinesSection from '../components/CuisinesSection';
 import { colors, radius, spacing } from '../constants/colors';
@@ -119,6 +120,7 @@ export default function HomeScreen() {
     queryClient.invalidateQueries({ queryKey: ['entertainmentEvents'] });
     queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
     queryClient.invalidateQueries({ queryKey: ['blog'] });
+    queryClient.invalidateQueries({ queryKey: ['featuredAds'] });
     refetch();
   }, [queryClient, refetch]);
 
@@ -152,41 +154,59 @@ export default function HomeScreen() {
       <Spacer size="sm" />
 
       {/* Social Proof Banner */}
-      <SocialProofBanner />
+      <ErrorBoundary level="section">
+        <SocialProofBanner />
+      </ErrorBoundary>
 
       <Spacer size="lg" />
 
       {/* Section 1: Happy Hour Specials (Banners) */}
-      <HappyHourSection />
+      <ErrorBoundary level="section">
+        <HappyHourSection />
+      </ErrorBoundary>
 
       <Spacer size="md" />
 
       {/* Section 2: Entertainment Tonight */}
-      <EntertainmentSection />
+      <ErrorBoundary level="section">
+        <EntertainmentSection />
+      </ErrorBoundary>
 
       {/* Section 3: Upcoming Events */}
-      <EventsSection />
+      <ErrorBoundary level="section">
+        <EventsSection />
+      </ErrorBoundary>
 
       {/* Plan Your Day CTA */}
-      <PlanYourDayCard />
+      <ErrorBoundary level="section">
+        <PlanYourDayCard />
+      </ErrorBoundary>
 
       {/* Section 4: Featured for You (PAID — always above Recommended) */}
-      <FeaturedSection onRestaurantPress={handleRestaurantPress} />
+      <ErrorBoundary level="section">
+        <FeaturedSection onRestaurantPress={handleRestaurantPress} />
+      </ErrorBoundary>
 
       <Spacer size="md" />
 
       {/* Section 5: Recommended for You (personalized, all restaurants) */}
-      <RecommendedSection onRestaurantPress={handleRestaurantPress} />
+      <ErrorBoundary level="section">
+        <RecommendedSection onRestaurantPress={handleRestaurantPress} />
+      </ErrorBoundary>
 
       <Spacer size="md" />
 
       {/* Section 5: Browse by Cuisine */}
-      <CuisinesSection />
+      <ErrorBoundary level="section">
+        <CuisinesSection />
+      </ErrorBoundary>
 
       <Spacer size="md" />
 
       {/* Section 6: From Rosie's Blog */}
-      <BlogSection />
+      <ErrorBoundary level="section">
+        <BlogSection />
+      </ErrorBoundary>
 
       {/* Section 7: Other Places Nearby */}
       <SectionHeader

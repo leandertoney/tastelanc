@@ -20,15 +20,19 @@ interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
+  retryCount: number;
 }
 
 export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  private autoRetryTimer: ReturnType<typeof setTimeout> | null = null;
+
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
       hasError: false,
       error: null,
       errorInfo: null,
+      retryCount: 0,
     };
   }
 
@@ -42,8 +46,38 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     // Log error for debugging
     console.error('ErrorBoundary caught an error:', error, errorInfo);
 
+    // Report to Sentry if available
+    try {
+      const { reportError } = require('../lib/sentry');
+      reportError(error, {
+        componentStack: errorInfo.componentStack,
+        boundaryLevel: this.props.level || 'screen',
+      });
+    } catch {
+      // Sentry not yet installed — will be wired up in native build
+    }
+
     // Call optional error handler
     this.props.onError?.(error, errorInfo);
+
+    // Auto-retry once for section/component level errors (handles transient render errors)
+    const { level = 'screen' } = this.props;
+    if (this.state.retryCount === 0 && level !== 'screen') {
+      this.autoRetryTimer = setTimeout(() => {
+        this.setState({
+          hasError: false,
+          error: null,
+          errorInfo: null,
+          retryCount: 1,
+        });
+      }, 2000);
+    }
+  }
+
+  componentWillUnmount(): void {
+    if (this.autoRetryTimer) {
+      clearTimeout(this.autoRetryTimer);
+    }
   }
 
   handleRetry = (): void => {
@@ -51,6 +85,7 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
       hasError: false,
       error: null,
       errorInfo: null,
+      retryCount: 0,
     });
   };
 
@@ -136,18 +171,18 @@ function ScreenErrorFallback({
 }) {
   const [showDetails, setShowDetails] = React.useState(false);
 
-  // Show friendly maintenance message in production
+  // Show honest error message in production
   if (!__DEV__) {
     return (
       <View style={styles.screenError}>
         <View style={styles.screenErrorContent}>
-          <View style={styles.maintenanceIconContainer}>
-            <Ionicons name="construct-outline" size={64} color={colors.accent} />
+          <View style={styles.errorIconContainer}>
+            <Ionicons name="sad-outline" size={64} color={colors.accent} />
           </View>
 
-          <Text style={styles.screenErrorTitle}>We'll Be Right Back</Text>
+          <Text style={styles.screenErrorTitle}>Something Went Wrong</Text>
           <Text style={styles.maintenanceMessage}>
-            We're making some improvements to give you a better experience. Please check back shortly!
+            We hit an unexpected error. Tap below to try again, or restart the app if it keeps happening.
           </Text>
 
           <TouchableOpacity style={styles.screenRetryButton} onPress={onRetry}>
@@ -156,7 +191,7 @@ function ScreenErrorFallback({
           </TouchableOpacity>
 
           <Text style={styles.maintenanceNote}>
-            If this persists, try closing and reopening the app.
+            This error has been reported to our team.
           </Text>
         </View>
       </View>
@@ -301,15 +336,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
   },
-  maintenanceIconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(212, 175, 55, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
   maintenanceMessage: {
     fontSize: 16,
     color: '#666',
@@ -396,7 +422,7 @@ const styles = StyleSheet.create({
 /**
  * HOC to wrap any screen component with a screen-level error boundary.
  * If the screen crashes, it shows an inline error with retry instead of
- * letting it bubble up to the root error boundary ("We'll Be Right Back").
+ * letting it bubble up to the root error boundary.
  */
 export function withScreenErrorBoundary<P extends object>(
   ScreenComponent: ComponentType<P>,
@@ -408,5 +434,18 @@ export function withScreenErrorBoundary<P extends object>(
     </ErrorBoundary>
   );
   Wrapped.displayName = `WithErrorBoundary(${displayName || ScreenComponent.displayName || ScreenComponent.name || 'Screen'})`;
+  return Wrapped;
+}
+
+export function withSectionErrorBoundary<P extends object>(
+  SectionComponent: ComponentType<P>,
+  sectionName?: string
+) {
+  const Wrapped = (props: P) => (
+    <ErrorBoundary level="section">
+      <SectionComponent {...props} />
+    </ErrorBoundary>
+  );
+  Wrapped.displayName = `WithSectionBoundary(${sectionName || SectionComponent.displayName || SectionComponent.name || 'Section'})`;
   return Wrapped;
 }

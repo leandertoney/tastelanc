@@ -97,6 +97,20 @@ export interface Restaurant {
   noise_level: string | null;
 }
 
+export interface FeaturedAd {
+  id: string;
+  business_name: string;
+  image_url: string;
+  click_url: string;
+  tagline: string | null;
+  is_active: boolean;
+  start_date: string | null;
+  end_date: string | null;
+  priority: number;
+  created_at: string;
+  updated_at: string;
+}
+
 // Restaurant with tier data joined
 export interface RestaurantWithTier extends Restaurant {
   tiers: Tier | null;

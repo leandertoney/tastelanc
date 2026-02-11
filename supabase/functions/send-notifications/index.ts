@@ -286,14 +286,13 @@ async function sendGeofenceAlert(
     .gte('end_time', currentTime)
     .single();
 
-  // Get user's push token
+  // Get user's push tokens (may have multiple devices)
   const { data: tokenData } = await supabase
     .from('push_tokens')
     .select('token')
-    .eq('user_id', userId)
-    .single();
+    .eq('user_id', userId);
 
-  if (!tokenData) {
+  if (!tokenData || tokenData.length === 0) {
     return { sent: false, reason: 'User has no push token' };
   }
 
@@ -303,8 +302,8 @@ async function sendGeofenceAlert(
     body = `${restaurant.name} has ${happyHour.description} right now!`;
   }
 
-  const messages: PushMessage[] = [{
-    to: tokenData.token,
+  const messages: PushMessage[] = tokenData.map(t => ({
+    to: t.token,
     sound: 'default',
     title: happyHour ? 'Happy Hour Nearby!' : 'Check This Out!',
     body,
@@ -312,10 +311,10 @@ async function sendGeofenceAlert(
       screen: 'RestaurantDetail',
       restaurantId,
     },
-  }];
+  }));
 
   const result = await sendPushNotifications(messages);
-  return { sent: result.data[0]?.status === 'ok' };
+  return { sent: result.data.some(r => r.status === 'ok') };
 }
 
 /**
@@ -329,14 +328,13 @@ async function sendAreaEntryNotification(
   areaName: string,
   restaurantCount: number
 ): Promise<{ sent: boolean; reason?: string }> {
-  // Get user's push token
+  // Get user's push tokens (may have multiple devices)
   const { data: tokenData } = await supabase
     .from('push_tokens')
     .select('token')
-    .eq('user_id', userId)
-    .single();
+    .eq('user_id', userId);
 
-  if (!tokenData) {
+  if (!tokenData || tokenData.length === 0) {
     return { sent: false, reason: 'User has no push token' };
   }
 
@@ -345,8 +343,8 @@ async function sendAreaEntryNotification(
     ? `Check out ${restaurantCount} restaurant${restaurantCount === 1 ? '' : 's'} on TasteLanc nearby`
     : 'Discover restaurants on TasteLanc nearby';
 
-  const messages: PushMessage[] = [{
-    to: tokenData.token,
+  const messages: PushMessage[] = tokenData.map(t => ({
+    to: t.token,
     sound: 'default',
     title: `You're in ${areaName}!`,
     body: countText,
@@ -355,10 +353,10 @@ async function sendAreaEntryNotification(
       areaId,
       areaName,
     },
-  }];
+  }));
 
   const result = await sendPushNotifications(messages);
-  return { sent: result.data[0]?.status === 'ok' };
+  return { sent: result.data.some(r => r.status === 'ok') };
 }
 
 // Main handler

@@ -148,15 +148,17 @@ export default function HappyHourSection() {
     setContactModalVisible(true);
   };
 
-  // Map real happy hours to display format
-  const mappedHappyHours: DisplayHappyHour[] = happyHours.map((hh) => ({
-    id: hh.id,
-    deals: formatDealTexts(hh),
-    restaurantName: hh.restaurant.name,
-    restaurantId: hh.restaurant.id,
-    timeWindow: formatTimeWindow(hh.start_time, hh.end_time),
-    imageUrl: hh.image_url || hh.restaurant.cover_image_url || undefined,
-  }));
+  // Map real happy hours to display format (filter out entries with missing restaurant data)
+  const mappedHappyHours: DisplayHappyHour[] = happyHours
+    .filter((hh) => hh.restaurant?.name)
+    .map((hh) => ({
+      id: hh.id,
+      deals: formatDealTexts(hh),
+      restaurantName: hh.restaurant.name,
+      restaurantId: hh.restaurant.id,
+      timeWindow: formatTimeWindow(hh.start_time, hh.end_time),
+      imageUrl: hh.image_url || hh.restaurant.cover_image_url || undefined,
+    }));
 
   // Use real data, or mock data if enabled and no real data
   const displayData: DisplayHappyHour[] =
