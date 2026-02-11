@@ -16,6 +16,7 @@ import {
   Crown,
   Lightbulb,
   Music,
+  Megaphone,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -33,6 +34,7 @@ const NAV_ITEMS: Array<{
   { href: '/admin/self-promoters', icon: Music, label: 'Self-Promoters', highlight: true },
   { href: '/admin/consumers', icon: Crown, label: 'TasteLanc+', highlight: true },
   { href: '/admin/sales', icon: Briefcase, label: 'Sales Pipeline', highlight: true },
+  { href: '/admin/sponsored-ads', icon: Megaphone, label: 'Sponsored Ads', highlight: true },
   // CONTENT - Restaurant management
   { href: '/admin/restaurants', icon: Store, label: 'All Restaurants', section: 'Content' },
   // MARKETING - Campaigns and outreach
