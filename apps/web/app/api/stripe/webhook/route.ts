@@ -495,10 +495,10 @@ async function handleMultiRestaurantCheckout(
       let linkedRestaurantId: string;
 
       if (item.restaurant_id && !item.is_new_restaurant) {
-        // Link existing restaurant to user
+        // Link existing restaurant to user and activate it
         const { error: linkError } = await supabaseAdmin
           .from('restaurants')
-          .update({ owner_id: userId })
+          .update({ owner_id: userId, is_active: true })
           .eq('id', item.restaurant_id);
 
         if (linkError) {
@@ -862,10 +862,10 @@ export async function POST(request: Request) {
           let restaurantLinkSucceeded = false;
 
           if (restaurantId) {
-            // Link existing restaurant to user
+            // Link existing restaurant to user and activate it
             const { error: linkError } = await supabaseAdmin
               .from('restaurants')
-              .update({ owner_id: userId })
+              .update({ owner_id: userId, is_active: true })
               .eq('id', restaurantId);
 
             if (linkError) {
