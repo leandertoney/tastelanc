@@ -62,16 +62,57 @@ const PLANS = [
 
 type BillingPeriod = '3mo' | '6mo' | 'yearly';
 
+// Map plan + billing period to Stripe price ID env var keys
+const PRICE_KEY_MAP: Record<string, Record<BillingPeriod, string>> = {
+  premium: {
+    '3mo': 'premium_3mo',
+    '6mo': 'premium_6mo',
+    yearly: 'premium_yearly',
+  },
+  elite: {
+    '3mo': 'elite_3mo',
+    '6mo': 'elite_6mo',
+    yearly: 'elite_yearly',
+  },
+};
+
 export default function SubscriptionPage() {
   const { tierName, restaurant, buildApiUrl } = useRestaurant();
   const currentPlan = tierName || 'basic';
   const hasActiveSubscription = !!restaurant?.stripe_subscription_id;
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('yearly');
   const [portalLoading, setPortalLoading] = useState(false);
+  const [upgradeLoading, setUpgradeLoading] = useState<string | null>(null);
 
-  const handleUpgrade = (planId: string) => {
-    // TODO: Implement Stripe checkout
-    alert(`Upgrading to ${planId} plan (${billingPeriod}) - Stripe integration coming soon!`);
+  const handleUpgrade = async (planId: string) => {
+    if (!restaurant?.id) return;
+
+    const priceKey = PRICE_KEY_MAP[planId]?.[billingPeriod];
+    if (!priceKey) return;
+
+    setUpgradeLoading(planId);
+    try {
+      // Both new subscribers and existing subscribers go through Stripe Checkout
+      // For upgrades, the backend calculates proration credit and cancels the old sub on success
+      const res = await fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          priceId: priceKey,
+          restaurantId: restaurant.id,
+        }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || 'Failed to start checkout. Please try again.');
+      }
+    } catch {
+      alert('Something went wrong. Please try again or contact support.');
+    } finally {
+      setUpgradeLoading(null);
+    }
   };
 
   const handleManageBilling = async () => {
@@ -188,12 +229,11 @@ export default function SubscriptionPage() {
             buttonLabel = currentPlan === 'basic' ? 'Current Plan' : 'Free Plan';
             buttonDisabled = true;
           } else if (isDowngrade) {
-            buttonLabel = 'Use Manage Billing';
+            buttonLabel = 'Downgrade via Manage Billing';
             buttonDisabled = true;
           } else if (isCurrentPlan && hasActiveSubscription) {
-            // Same plan but can change billing period via Manage Billing
-            buttonLabel = 'Manage Plan';
-            buttonDisabled = false;
+            buttonLabel = 'Current Plan';
+            buttonDisabled = true;
           } else if (isCurrentPlan && !hasActiveSubscription) {
             buttonLabel = 'Current Plan';
             buttonDisabled = true;
@@ -248,10 +288,15 @@ export default function SubscriptionPage() {
               <Button
                 className="w-full"
                 variant={isUpgrade ? 'primary' : plan.popular && !isCurrentPlan ? 'primary' : 'secondary'}
-                disabled={buttonDisabled}
-                onClick={() => isCurrentPlan && hasActiveSubscription ? handleManageBilling() : handleUpgrade(plan.id)}
+                disabled={buttonDisabled || upgradeLoading === plan.id}
+                onClick={() => handleUpgrade(plan.id)}
               >
-                {buttonLabel}
+                {upgradeLoading === plan.id ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Processing...
+                  </span>
+                ) : buttonLabel}
               </Button>
             </Card>
           );
