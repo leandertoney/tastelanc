@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Crown, Sparkles, Star, Zap } from 'lucide-react';
+import { Check, Crown, Sparkles, Star, Zap, ExternalLink, Loader2 } from 'lucide-react';
 import { Button, Card, Badge } from '@/components/ui';
+import { useRestaurant } from '@/contexts/RestaurantContext';
 
 const PLANS = [
   {
@@ -62,12 +63,34 @@ const PLANS = [
 type BillingPeriod = '3mo' | '6mo' | 'yearly';
 
 export default function SubscriptionPage() {
-  const [currentPlan] = useState('basic');
+  const { tierName, restaurant, buildApiUrl } = useRestaurant();
+  const currentPlan = tierName || 'basic';
+  const hasActiveSubscription = !!restaurant?.stripe_subscription_id;
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('yearly');
+  const [portalLoading, setPortalLoading] = useState(false);
 
   const handleUpgrade = (planId: string) => {
     // TODO: Implement Stripe checkout
     alert(`Upgrading to ${planId} plan (${billingPeriod}) - Stripe integration coming soon!`);
+  };
+
+  const handleManageBilling = async () => {
+    setPortalLoading(true);
+    try {
+      const res = await fetch(buildApiUrl('/api/stripe/create-portal-session'), {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || 'Unable to open billing portal. Please contact support.');
+      }
+    } catch {
+      alert('Something went wrong. Please try again or contact support.');
+    } finally {
+      setPortalLoading(false);
+    }
   };
 
   return (
@@ -86,11 +109,29 @@ export default function SubscriptionPage() {
           <div>
             <p className="text-gray-400 text-sm">Current Plan</p>
             <h3 className="text-2xl font-bold text-white capitalize">{currentPlan}</h3>
+            {hasActiveSubscription && (
+              <p className="text-gray-500 text-sm mt-1">Active subscription via Stripe</p>
+            )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Badge variant={currentPlan === 'basic' ? 'default' : 'gold'}>
               {currentPlan === 'basic' ? 'Free' : 'Active'}
             </Badge>
+            {hasActiveSubscription && (
+              <Button
+                variant="secondary"
+                onClick={handleManageBilling}
+                disabled={portalLoading}
+                className="flex items-center gap-2"
+              >
+                {portalLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ExternalLink className="w-4 h-4" />
+                )}
+                Manage Billing
+              </Button>
+            )}
           </div>
         </div>
       </Card>
@@ -134,7 +175,32 @@ export default function SubscriptionPage() {
       <div className="grid md:grid-cols-3 gap-6">
         {PLANS.map((plan) => {
           const isCurrentPlan = plan.id === currentPlan;
+          const tierOrder = { basic: 0, premium: 1, elite: 2 };
+          const isDowngrade = tierOrder[plan.id as keyof typeof tierOrder] < tierOrder[currentPlan as keyof typeof tierOrder];
+          const isUpgrade = tierOrder[plan.id as keyof typeof tierOrder] > tierOrder[currentPlan as keyof typeof tierOrder];
           const displayPrice = plan.prices[billingPeriod];
+
+          // Button label logic
+          let buttonLabel = plan.cta;
+          let buttonDisabled = false;
+
+          if (plan.id === 'basic') {
+            buttonLabel = currentPlan === 'basic' ? 'Current Plan' : 'Free Plan';
+            buttonDisabled = true;
+          } else if (isDowngrade) {
+            buttonLabel = 'Use Manage Billing';
+            buttonDisabled = true;
+          } else if (isCurrentPlan && hasActiveSubscription) {
+            // Same plan but can change billing period via Manage Billing
+            buttonLabel = 'Manage Plan';
+            buttonDisabled = false;
+          } else if (isCurrentPlan && !hasActiveSubscription) {
+            buttonLabel = 'Current Plan';
+            buttonDisabled = true;
+          } else if (isUpgrade) {
+            buttonLabel = `Upgrade to ${plan.name}`;
+            buttonDisabled = false;
+          }
 
           return (
             <Card
@@ -181,11 +247,11 @@ export default function SubscriptionPage() {
 
               <Button
                 className="w-full"
-                variant={plan.popular ? 'primary' : 'secondary'}
-                disabled={isCurrentPlan}
-                onClick={() => handleUpgrade(plan.id)}
+                variant={isUpgrade ? 'primary' : plan.popular && !isCurrentPlan ? 'primary' : 'secondary'}
+                disabled={buttonDisabled}
+                onClick={() => isCurrentPlan && hasActiveSubscription ? handleManageBilling() : handleUpgrade(plan.id)}
               >
-                {isCurrentPlan ? 'Current Plan' : plan.cta}
+                {buttonLabel}
               </Button>
             </Card>
           );
@@ -233,19 +299,25 @@ export default function SubscriptionPage() {
           <div>
             <h4 className="font-medium text-white mb-1">Can I cancel anytime?</h4>
             <p className="text-gray-400 text-sm">
-              Yes, you can cancel your subscription at any time. Your access will continue until the end of your billing period.
+              Yes, you can cancel your subscription at any time by clicking &quot;Manage Billing&quot; above. Your access will continue until the end of your billing period.
             </p>
           </div>
           <div>
             <h4 className="font-medium text-white mb-1">How does billing work?</h4>
             <p className="text-gray-400 text-sm">
-              You&apos;ll be charged at the beginning of each billing cycle. Choose monthly or save 20% with annual billing.
+              You&apos;ll be charged at the beginning of each billing cycle. Choose 3-month, 6-month, or annual billing.
             </p>
           </div>
           <div>
             <h4 className="font-medium text-white mb-1">Can I switch plans?</h4>
             <p className="text-gray-400 text-sm">
-              Yes, you can upgrade or downgrade your plan at any time. Changes take effect on your next billing date.
+              Yes, you can upgrade your plan at any time. To downgrade, use &quot;Manage Billing&quot; to adjust your subscription through Stripe.
+            </p>
+          </div>
+          <div>
+            <h4 className="font-medium text-white mb-1">How do I update my payment method?</h4>
+            <p className="text-gray-400 text-sm">
+              Click &quot;Manage Billing&quot; to securely update your payment method, view invoices, or change your billing details through Stripe.
             </p>
           </div>
         </div>
