@@ -101,7 +101,7 @@ export default function EntertainmentViewAllScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Filter events by selected type and search query
+  // Filter events by selected type and search query, then sort chronologically by start time
   const filteredEvents = useMemo(() => {
     let filtered = selectedType ? events.filter((e) => e.event_type === selectedType) : events;
 
@@ -113,6 +113,9 @@ export default function EntertainmentViewAllScreen() {
         (getEventVenueName(e) && getEventVenueName(e)!.toLowerCase().includes(query))
       );
     }
+
+    // Sort chronologically by start time (hard requirement)
+    filtered.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
 
     return filtered;
   }, [events, selectedType, searchQuery]);

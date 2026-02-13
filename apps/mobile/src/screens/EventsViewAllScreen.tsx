@@ -75,16 +75,17 @@ function groupEventsByDate(events: ApiEvent[]): DateSection[] {
     }
   });
 
-  // Sort dates chronologically
+  // Sort dates chronologically, and sort events within each date by start time
   const sortedDates = Object.keys(groups).sort();
   const sections: DateSection[] = sortedDates.map((date) => ({
     title: date,
     displayTitle: formatDateHeader(date),
-    data: groups[date],
+    data: groups[date].sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '')),
   }));
 
-  // Add recurring events at the end
+  // Add recurring events at the end, sorted by start time
   if (recurringEvents.length > 0) {
+    recurringEvents.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
     sections.push({
       title: 'recurring',
       displayTitle: 'Weekly Events',
