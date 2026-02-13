@@ -61,7 +61,7 @@ export default function RootNavigator() {
         headerTitleStyle: {
           fontWeight: '600',
         },
-        headerBackTitleVisible: false,
+        headerBackButtonDisplayMode: 'minimal',
       }}
     >
       <Stack.Screen
