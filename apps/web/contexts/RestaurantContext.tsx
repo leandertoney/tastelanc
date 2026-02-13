@@ -7,12 +7,14 @@ import type { Restaurant, SubscriptionTier, Tier } from '@/types/database';
 
 interface RestaurantContextType {
   restaurant: Restaurant | null;
+  restaurants: Restaurant[];
   restaurantId: string | null;
   isAdmin: boolean;
   isOwner: boolean;
   isLoading: boolean;
   error: string | null;
   refreshRestaurant: () => Promise<void>;
+  switchRestaurant: (id: string) => void;
   buildApiUrl: (path: string) => string;
   /** Current subscription tier name */
   tierName: SubscriptionTier | null;
@@ -22,12 +24,14 @@ interface RestaurantContextType {
 
 const RestaurantContext = createContext<RestaurantContextType>({
   restaurant: null,
+  restaurants: [],
   restaurantId: null,
   isAdmin: false,
   isOwner: false,
   isLoading: true,
   error: null,
   refreshRestaurant: async () => {},
+  switchRestaurant: () => {},
   buildApiUrl: (path: string) => path,
   tierName: null,
   tier: null,
@@ -48,6 +52,8 @@ interface RestaurantProviderProps {
 export function RestaurantProvider({ children }: RestaurantProviderProps) {
   const searchParams = useSearchParams();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [tierMap, setTierMap] = useState<Record<string, Tier>>({});
   const [tier, setTier] = useState<Tier | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
@@ -93,24 +99,21 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
 
         const { tiers: tierData, ...rest } = restaurantData;
         setRestaurant(rest as Restaurant);
+        setRestaurants([]);
         setTier(tierData as Tier || null);
         setIsOwner(false);
         setIsLoading(false);
         return;
       }
 
-      // Normal owner mode - find restaurant by owner_id
-      // Use limit(1) instead of single() to handle owners with multiple restaurants
-      const { data: restaurants, error: restaurantError } = await supabase
+      // Normal owner mode - fetch ALL restaurants for this owner
+      const { data: allRestaurants, error: restaurantError } = await supabase
         .from('restaurants')
         .select('*, tiers(*)')
         .eq('owner_id', user.id)
-        .limit(1);
+        .order('name');
 
-      const restaurantData = restaurants?.[0];
-
-      if (restaurantError || !restaurantData) {
-        // If admin is not in admin mode and has no restaurant, redirect to admin dashboard
+      if (restaurantError || !allRestaurants || allRestaurants.length === 0) {
         if (userIsAdmin && !adminMode) {
           window.location.href = '/admin';
           return;
@@ -120,9 +123,32 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
         return;
       }
 
-      const { tiers: tierData, ...rest } = restaurantData;
-      setRestaurant(rest as Restaurant);
-      setTier(tierData as Tier || null);
+      // Build tier lookup and clean restaurant objects
+      const tiers: Record<string, Tier> = {};
+      const cleanRestaurants: Restaurant[] = allRestaurants.map((r) => {
+        const { tiers: tierData, ...rest } = r;
+        if (tierData) {
+          tiers[rest.id] = tierData as Tier;
+        }
+        return rest as Restaurant;
+      });
+
+      // Determine which restaurant to select
+      let selectedId = cleanRestaurants[0].id;
+      try {
+        const storedId = localStorage.getItem('tastelanc_selected_restaurant');
+        if (storedId && cleanRestaurants.some((r) => r.id === storedId)) {
+          selectedId = storedId;
+        }
+      } catch {
+        // localStorage unavailable
+      }
+
+      const selected = cleanRestaurants.find((r) => r.id === selectedId)!;
+      setRestaurants(cleanRestaurants);
+      setTierMap(tiers);
+      setRestaurant(selected);
+      setTier(tiers[selected.id] || null);
       setIsOwner(true);
       setIsLoading(false);
     } catch (err) {
@@ -131,6 +157,18 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
       setIsLoading(false);
     }
   }, [adminMode, adminRestaurantId]);
+
+  const switchRestaurant = useCallback((id: string) => {
+    const target = restaurants.find((r) => r.id === id);
+    if (!target) return;
+    setRestaurant(target);
+    setTier(tierMap[target.id] || null);
+    try {
+      localStorage.setItem('tastelanc_selected_restaurant', id);
+    } catch {
+      // localStorage unavailable
+    }
+  }, [restaurants, tierMap]);
 
   useEffect(() => {
     fetchRestaurant();
@@ -158,12 +196,14 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
 
   const value: RestaurantContextType = {
     restaurant,
+    restaurants,
     restaurantId: restaurant?.id || null,
     isAdmin,
     isOwner,
     isLoading,
     error,
     refreshRestaurant: fetchRestaurant,
+    switchRestaurant,
     buildApiUrl,
     tierName: tier?.name || null,
     tier,
