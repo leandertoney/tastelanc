@@ -102,7 +102,7 @@ export default function HappyHoursViewAllScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Filter by selected day and search query
+  // Filter by selected day and search query, then sort chronologically by start time
   const filteredHappyHours = useMemo(() => {
     let filtered = happyHours.filter((hh) => hh.days_of_week.includes(selectedDay));
 
@@ -114,6 +114,9 @@ export default function HappyHoursViewAllScreen() {
         hh.items?.some(item => item.name.toLowerCase().includes(query))
       );
     }
+
+    // Sort chronologically by start time (hard requirement)
+    filtered.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
 
     return filtered;
   }, [happyHours, selectedDay, searchQuery]);

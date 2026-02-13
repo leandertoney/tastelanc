@@ -83,6 +83,9 @@ async function getActiveHappyHours(): Promise<HappyHourWithRestaurant[]> {
     (hh) => getTierName({ restaurant: hh.restaurant }),
   );
 
+  // Sort chronologically by start time (hard requirement)
+  paidRotated.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+
   return paidRotated.slice(0, 15);
 }
 
