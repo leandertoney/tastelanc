@@ -44,7 +44,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     position: 'right',
     action: {
       label: 'Set Hours',
-      href: '/dashboard/hours',
+      href: '/dashboard/profile',
     },
   },
   {
@@ -57,7 +57,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     position: 'right',
     action: {
       label: 'Upload Photos',
-      href: '/dashboard/photos',
+      href: '/dashboard/profile',
     },
   },
   {

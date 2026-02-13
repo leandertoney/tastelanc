@@ -437,7 +437,7 @@ export async function GET(request: Request) {
         yours: youMetrics.photoCount,
         topAvg: topTenAvg.photoCount,
         gapRatio: 0,
-        action: '/dashboard/photos',
+        action: '/dashboard/profile',
         actionLabel: 'Upload Photos',
         messageTemplate: (y, t) =>
           `Your photo count (${y}) is below the top performer average (${Math.round(t)}). More photos help your listing stand out.`,
