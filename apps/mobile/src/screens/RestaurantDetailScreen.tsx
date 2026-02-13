@@ -59,6 +59,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'RestaurantDetail'>;
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HERO_HEIGHT = 320;
+const ELITE_HERO_HEIGHT = 350;
 
 // No placeholder images - only show actual restaurant images
 
@@ -242,6 +243,9 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
     restaurant.zip_code ? ` ${restaurant.zip_code}` : ''
   }`;
 
+  const isElite = tierName === 'elite';
+  const heroHeight = isElite ? ELITE_HERO_HEIGHT : HERO_HEIGHT;
+
   // Check if we have featured content
   const hasHappyHours = happyHours.length > 0;
   const hasSpecials = specials.length > 0;
@@ -268,7 +272,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
         }
       >
         {/* Hero Section */}
-        <View style={styles.heroContainer}>
+        <View style={[styles.heroContainer, { height: heroHeight }]}>
           {restaurant.cover_image_url ? (
             <Image
               source={{ uri: restaurant.cover_image_url, cache: 'reload' }}
@@ -282,10 +286,16 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
           )}
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.4)', colors.primary]}
-            style={styles.heroGradient}
+            style={[styles.heroGradient, { height: heroHeight * 0.7 }]}
           >
             <View style={styles.heroContent}>
-              <Text style={styles.heroTitle}>{restaurant.name}</Text>
+              {isElite && (
+                <View style={styles.pickBadge}>
+                  <Ionicons name="star" size={10} color="#FFF" />
+                  <Text style={styles.pickBadgeText}>TasteLanc Pick</Text>
+                </View>
+              )}
+              <Text style={[styles.heroTitle, isElite && styles.heroTitleElite]}>{restaurant.name}</Text>
               {restaurant.categories && restaurant.categories.length > 0 && (
                 <View style={styles.tagsContainer}>
                   {restaurant.categories.map((category) => (
@@ -312,8 +322,11 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
           </TouchableOpacity>
         </View>
 
+        {/* Subtle gold divider for elite restaurants */}
+        {isElite && <View style={styles.eliteDivider} />}
+
         {/* Info Bar */}
-        <View style={styles.infoBar}>
+        <View style={[styles.infoBar, isElite && styles.infoBarElite]}>
           <View style={styles.infoRow}>
             <Ionicons name="location-outline" size={16} color={colors.textMuted} />
             <Text style={styles.infoText}>{restaurant.address}, {restaurant.city}</Text>
@@ -659,7 +672,6 @@ const styles = StyleSheet.create({
 
   // Hero styles
   heroContainer: {
-    height: HERO_HEIGHT,
     width: SCREEN_WIDTH,
   },
   heroImage: {
@@ -683,7 +695,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: HERO_HEIGHT * 0.7,
     justifyContent: 'flex-end',
     paddingHorizontal: 16,
     paddingBottom: 16,
@@ -704,6 +715,36 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
+  },
+  // Elite subtle refinements
+  pickBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderWidth: 1,
+    borderColor: colors.goldBorder,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: radius.sm,
+    marginBottom: 8,
+  },
+  pickBadgeText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  heroTitleElite: {
+    textShadowColor: 'rgba(255, 215, 0, 0.15)',
+  },
+  eliteDivider: {
+    height: 1,
+    backgroundColor: colors.goldBorder,
+    marginHorizontal: 16,
+  },
+  infoBarElite: {
+    paddingVertical: 16,
   },
 
   // Info Bar

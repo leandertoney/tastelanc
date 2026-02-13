@@ -235,6 +235,7 @@ export default function FeaturedSection({ onRestaurantPress }: FeaturedSectionPr
       }
 
       const restaurant = item.data as Restaurant;
+      const isElite = (restaurant as any).tiers?.name === 'elite';
       return (
         <FeaturedCard
           restaurant={restaurant}
@@ -242,10 +243,11 @@ export default function FeaturedSection({ onRestaurantPress }: FeaturedSectionPr
           isFavorite={favorites.includes(restaurant.id)}
           onFavoritePress={() => handleFavoritePress(restaurant.id)}
           reasonBadge={getRecommendationReason(restaurant, userPreferences)}
+          isElite={isElite}
         />
       );
     },
-    [favorites, handleFavoritePress, onRestaurantPress, userPreferences, displayItems.length]
+    [favorites, handleFavoritePress, onRestaurantPress, userPreferences, displayItems.length, restaurants]
   );
 
   const getItemLayout = useCallback(

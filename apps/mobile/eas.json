@@ -41,7 +41,8 @@
         "image": "latest"
       },
       "env": {
-        "EXPO_PUBLIC_ENV": "production"
+        "EXPO_PUBLIC_ENV": "production",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     }
   },

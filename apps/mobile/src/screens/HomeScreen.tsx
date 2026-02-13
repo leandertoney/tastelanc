@@ -224,6 +224,7 @@ export default function HomeScreen() {
     }
 
     const restaurant = item.data!;
+    const isElite = (restaurant as any).tiers?.name === 'elite';
     return (
       <CompactRestaurantCard
         restaurant={restaurant}
@@ -231,6 +232,7 @@ export default function HomeScreen() {
         isFavorite={favorites.includes(restaurant.id)}
         onFavoritePress={() => handleFavoritePress(restaurant.id)}
         trendingBadge={getTrendingBadge(restaurant.id)}
+        isElite={isElite}
       />
     );
   };

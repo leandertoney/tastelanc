@@ -15,6 +15,13 @@ import type { PremiumTier } from '../types/database';
 
 const DEFAULT_EPOCH_MINUTES = 30;
 
+// --- Tier weights for algorithmic ordering ---
+export const TIER_WEIGHTS: Record<PremiumTier, number> = {
+  elite: 2.3,
+  premium: 1.2,
+  basic: 1.0,
+};
+
 // --- Seeded PRNG (Mulberry32) ---
 
 function mulberry32(seed: number): () => number {
@@ -168,4 +175,37 @@ export function filterBasicOnly<T>(
   getTier: (item: T) => PremiumTier = getTierName,
 ): T[] {
   return items.filter((item) => getTier(item) === 'basic');
+}
+
+/**
+ * Stable sort that groups Elite first, Premium second, Basic third.
+ * Preserves the original order within each tier group (chronological, etc.).
+ */
+export function eliteFirstStableSort<T>(
+  items: T[],
+  getTier: (item: T) => PremiumTier = getTierName,
+): T[] {
+  const elite: T[] = [];
+  const premium: T[] = [];
+  const basic: T[] = [];
+
+  for (const item of items) {
+    const tier = getTier(item);
+    if (tier === 'elite') {
+      elite.push(item);
+    } else if (tier === 'premium') {
+      premium.push(item);
+    } else {
+      basic.push(item);
+    }
+  }
+
+  return [...elite, ...premium, ...basic];
+}
+
+/**
+ * Get the tier weight for algorithmic scoring.
+ */
+export function getTierWeight(tierName: PremiumTier | string): number {
+  return TIER_WEIGHTS[tierName as PremiumTier] ?? TIER_WEIGHTS.basic;
 }

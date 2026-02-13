@@ -11,6 +11,7 @@ interface CompactRestaurantCardProps {
   isFavorite?: boolean;
   onFavoritePress?: () => void;
   trendingBadge?: BadgeType | null;
+  isElite?: boolean;
 }
 
 export default function CompactRestaurantCard({
@@ -19,11 +20,12 @@ export default function CompactRestaurantCard({
   isFavorite = false,
   onFavoritePress,
   trendingBadge,
+  isElite = false,
 }: CompactRestaurantCardProps) {
   const primaryCategory = restaurant.categories?.[0];
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity style={[styles.card, isElite && styles.cardElite]} onPress={onPress} activeOpacity={0.8}>
       {/* Thumbnail image */}
       <View style={styles.imageContainer}>
         {restaurant.cover_image_url ? (
@@ -44,7 +46,7 @@ export default function CompactRestaurantCard({
       {/* Content */}
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.name} numberOfLines={1}>
+          <Text style={[styles.name, isElite && styles.nameElite]} numberOfLines={1}>
             {restaurant.name}
           </Text>
           {restaurant.is_verified && (
@@ -53,6 +55,15 @@ export default function CompactRestaurantCard({
         </View>
 
         <View style={styles.metaRow}>
+          {isElite && (
+            <>
+              <View style={styles.pickBadge}>
+                <Ionicons name="star" size={8} color={colors.gold} />
+                <Text style={styles.pickBadgeText}>TasteLanc Pick</Text>
+              </View>
+              <Text style={styles.dot}>•</Text>
+            </>
+          )}
           {primaryCategory && (
             <Text style={styles.category}>{formatCategoryName(primaryCategory)}</Text>
           )}
@@ -165,5 +176,25 @@ const styles = StyleSheet.create({
     height: 36,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  // Elite subtle refinements
+  cardElite: {
+    borderLeftWidth: 2,
+    borderLeftColor: colors.goldBorder,
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+  },
+  nameElite: {
+    fontWeight: '700',
+  },
+  pickBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  pickBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.gold,
   },
 });

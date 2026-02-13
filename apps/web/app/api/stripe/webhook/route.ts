@@ -9,6 +9,7 @@ import {
   EARLY_ACCESS_PRICE_IDS,
   ALL_CONSUMER_PRICE_IDS,
   RESTAURANT_PRICE_IDS,
+  ELITE_PRICE_IDS,
   SELF_PROMOTER_PRICE_IDS,
   DURATION_TO_INTERVAL,
 } from '@/lib/stripe';
@@ -279,7 +280,7 @@ function isSelfPromoterSubscription(priceId: string): boolean {
 
 // Helper to determine restaurant tier from price ID (Starter tier removed)
 function getRestaurantTier(priceId: string): string {
-  if (priceId.includes('elite') || priceId.includes('Elite')) return 'elite';
+  if ((ELITE_PRICE_IDS as readonly string[]).includes(priceId)) return 'elite';
   // Default to premium for any paid subscription (starter tier removed)
   return 'premium';
 }
