@@ -22,6 +22,8 @@ export type RestaurantCategory =
   | 'live_music' | 'sports_bar' | 'pet_friendly' | 'byob' | 'late_night' | 'family_friendly' | 'date_night';
 export type EventType = 'live_music' | 'trivia' | 'karaoke' | 'dj' | 'comedy' | 'sports' | 'bingo' | 'other';
 export type NotificationStatus = 'pending' | 'sent' | 'failed' | 'cancelled';
+export type TeamMemberRole = 'owner' | 'manager';
+export type TeamMemberStatus = 'pending' | 'active' | 'revoked';
 
 // Core Tables
 export interface Profile {
@@ -393,6 +395,21 @@ export interface TriviaResponse {
   points_earned: number;
   answered_at: string;
   created_at: string;
+}
+
+// Team Members
+export interface RestaurantMember {
+  id: string;
+  restaurant_id: string;
+  user_id: string | null;
+  email: string;
+  role: TeamMemberRole;
+  invited_by: string;
+  status: TeamMemberStatus;
+  invited_at: string;
+  accepted_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 // Admin types

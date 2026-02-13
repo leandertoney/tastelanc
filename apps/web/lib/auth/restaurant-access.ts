@@ -5,6 +5,8 @@ export interface RestaurantAccessResult {
   canAccess: boolean;
   isAdmin: boolean;
   isOwner: boolean;
+  isMember: boolean;
+  memberRole?: 'manager';
   restaurant: Restaurant | null;
   userId: string | null;
   error?: string;
@@ -32,6 +34,7 @@ export async function verifyRestaurantAccess(
       canAccess: false,
       isAdmin: false,
       isOwner: false,
+      isMember: false,
       restaurant: null,
       userId: null,
       error: 'Unauthorized - not logged in',
@@ -40,10 +43,10 @@ export async function verifyRestaurantAccess(
 
   const isAdmin = user.email === 'admin@tastelanc.com';
 
-  // Fetch the restaurant
+  // Fetch the restaurant with tier info
   const { data: restaurant, error: restaurantError } = await supabase
     .from('restaurants')
-    .select('*')
+    .select('*, tiers(name)')
     .eq('id', restaurantId)
     .single();
 
@@ -52,6 +55,7 @@ export async function verifyRestaurantAccess(
       canAccess: false,
       isAdmin,
       isOwner: false,
+      isMember: false,
       restaurant: null,
       userId: user.id,
       error: 'Restaurant not found',
@@ -59,24 +63,54 @@ export async function verifyRestaurantAccess(
   }
 
   const isOwner = restaurant.owner_id === user.id;
-  const canAccess = isAdmin || isOwner;
+
+  // Check team membership if not owner and not admin
+  let isMember = false;
+  let memberRole: 'manager' | undefined;
+
+  if (!isOwner && !isAdmin) {
+    const { data: membership } = await supabase
+      .from('restaurant_members')
+      .select('role')
+      .eq('restaurant_id', restaurantId)
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .single();
+
+    if (membership) {
+      // Only honor membership if restaurant is on Elite tier
+      const tierName = (restaurant as any).tiers?.name;
+      if (tierName === 'elite') {
+        isMember = true;
+        memberRole = membership.role as 'manager';
+      }
+    }
+  }
+
+  const canAccess = isAdmin || isOwner || isMember;
 
   if (!canAccess) {
     return {
       canAccess: false,
       isAdmin,
       isOwner,
+      isMember: false,
       restaurant: null,
       userId: user.id,
-      error: 'Access denied - not owner or admin',
+      error: 'Access denied - not owner, admin, or team member',
     };
   }
+
+  // Strip tiers join from the restaurant object before returning
+  const { tiers: _tiers, ...restaurantData } = restaurant as any;
 
   return {
     canAccess: true,
     isAdmin,
     isOwner,
-    restaurant: restaurant as Restaurant,
+    isMember,
+    memberRole,
+    restaurant: restaurantData as Restaurant,
     userId: user.id,
   };
 }
@@ -101,6 +135,7 @@ export async function getOwnedRestaurant(
       canAccess: false,
       isAdmin: false,
       isOwner: false,
+      isMember: false,
       restaurant: null,
       userId: null,
       error: 'Unauthorized - not logged in',
@@ -122,6 +157,7 @@ export async function getOwnedRestaurant(
         canAccess: false,
         isAdmin: true,
         isOwner: false,
+        isMember: false,
         restaurant: null,
         userId: user.id,
         error: 'Restaurant not found',
@@ -132,6 +168,7 @@ export async function getOwnedRestaurant(
       canAccess: true,
       isAdmin: true,
       isOwner: false,
+      isMember: false,
       restaurant: restaurant as Restaurant,
       userId: user.id,
     };
@@ -149,6 +186,7 @@ export async function getOwnedRestaurant(
       canAccess: false,
       isAdmin,
       isOwner: false,
+      isMember: false,
       restaurant: null,
       userId: user.id,
       error: 'No restaurant found for this owner',
@@ -159,6 +197,7 @@ export async function getOwnedRestaurant(
     canAccess: true,
     isAdmin,
     isOwner: true,
+    isMember: false,
     restaurant: restaurant as Restaurant,
     userId: user.id,
   };

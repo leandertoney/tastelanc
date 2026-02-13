@@ -72,6 +72,17 @@ export async function POST(request: Request) {
       .update({ used_at: new Date().toISOString() })
       .eq('id', tokenData.id);
 
+    // Activate any pending team memberships for this user's email
+    await supabaseAdmin
+      .from('restaurant_members')
+      .update({
+        user_id: tokenData.user_id,
+        status: 'active',
+        accepted_at: new Date().toISOString(),
+      })
+      .eq('email', tokenData.email.toLowerCase())
+      .eq('status', 'pending');
+
     return NextResponse.json({ success: true, email: tokenData.email });
   } catch (error) {
     console.error('Setup password error:', error);

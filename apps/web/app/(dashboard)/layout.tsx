@@ -16,6 +16,7 @@ import {
   ChevronDown,
   Check,
   User,
+  Users,
   ArrowLeft,
   Shield,
   Lightbulb,
@@ -34,6 +35,7 @@ const navItems = [
   { href: '/dashboard/specials', label: 'Specials', icon: Sparkles },
   { href: '/dashboard/events', label: 'Events', icon: Calendar },
   { href: '/dashboard/insights', label: 'Market Insights', icon: Lightbulb },
+  { href: '/dashboard/team', label: 'Team', icon: Users },
   { href: '/dashboard/subscription', label: 'Subscription', icon: CreditCard },
 ];
 
