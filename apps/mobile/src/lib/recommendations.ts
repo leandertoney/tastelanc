@@ -266,12 +266,13 @@ export async function getRecommendations(
       ? await getRecentVisitCounts(userId, SCORING.VISIT_DAYS_WINDOW)
       : { counts: {} };
 
-    // If no preferences, return active restaurants ordered by name
+    // If no preferences, return active restaurants with cover images ordered by name
     if (!preferences) {
       const { data, error } = await supabase
         .from('restaurants')
         .select('*, tiers(name)')
         .eq('is_active', true)
+        .not('cover_image_url', 'is', null)
         .order('name', { ascending: true })
         .limit(limit);
 
@@ -292,6 +293,7 @@ export async function getRecommendations(
         .from('restaurants')
         .select('*, tiers(name)')
         .eq('is_active', true)
+        .not('cover_image_url', 'is', null)
         .contains('categories', [category])
         .limit(30);
 
@@ -305,6 +307,7 @@ export async function getRecommendations(
       .from('restaurants')
       .select('*, tiers(name)')
       .eq('is_active', true)
+      .not('cover_image_url', 'is', null)
       .eq('is_verified', true)
       .limit(10);
 
@@ -413,11 +416,12 @@ export async function trackRestaurantView(restaurantId: string): Promise<void> {
  */
 export async function getFeaturedRestaurants(limit: number = 24): Promise<Restaurant[]> {
   try {
-    // Fetch ALL premium/elite restaurants only
+    // Fetch ALL premium/elite restaurants with cover images only
     const { data: paidRestaurants, error } = await supabase
       .from('restaurants')
       .select('*, tiers!inner(name)')
       .eq('is_active', true)
+      .not('cover_image_url', 'is', null)
       .in('tiers.name', ['premium', 'elite']);
 
     if (error) {
@@ -456,11 +460,12 @@ export async function getOtherRestaurants(
   pageSize: number = 10
 ): Promise<{ restaurants: Restaurant[]; hasMore: boolean }> {
   try {
-    // Fetch all active basic restaurants (no tier or basic tier)
+    // Fetch all active basic restaurants with cover images (no tier or basic tier)
     let query = supabase
       .from('restaurants')
       .select('*, tiers(name)', { count: 'exact' })
-      .eq('is_active', true);
+      .eq('is_active', true)
+      .not('cover_image_url', 'is', null);
 
     // Exclude featured restaurants if provided
     if (excludeIds.length > 0) {
