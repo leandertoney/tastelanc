@@ -546,7 +546,7 @@ async function handleMultiRestaurantCheckout(
         console.log(`Created new restaurant: ${linkedRestaurantId}`);
       }
 
-      // Create individual Stripe subscription with trial_end
+      // Create individual Stripe subscription with deferred billing
       const priceId = getPriceId(item.plan, item.duration);
       if (!priceId) {
         throw new Error(`Invalid plan/duration: ${item.plan}/${item.duration}`);
@@ -554,19 +554,21 @@ async function handleMultiRestaurantCheckout(
 
       const intervalInfo = DURATION_TO_INTERVAL[item.duration];
 
-      // Calculate trial_end to skip the first billing period (already paid)
+      // Calculate billing_cycle_anchor to defer the first charge (already paid via sales order)
+      // Using billing_cycle_anchor instead of trial_end avoids Stripe labeling it as a "trial"
       const now = new Date();
-      let trialEnd: Date;
+      let anchorDate: Date;
       if (intervalInfo.interval === 'year') {
-        trialEnd = new Date(now.getFullYear() + intervalInfo.interval_count, now.getMonth(), now.getDate());
+        anchorDate = new Date(now.getFullYear() + intervalInfo.interval_count, now.getMonth(), now.getDate());
       } else {
-        trialEnd = new Date(now.getFullYear(), now.getMonth() + intervalInfo.interval_count, now.getDate());
+        anchorDate = new Date(now.getFullYear(), now.getMonth() + intervalInfo.interval_count, now.getDate());
       }
 
       const subParams: Stripe.SubscriptionCreateParams = {
         customer: customerId,
         items: [{ price: priceId }],
-        trial_end: Math.floor(trialEnd.getTime() / 1000),
+        billing_cycle_anchor: Math.floor(anchorDate.getTime() / 1000),
+        proration_behavior: 'none',
         metadata: {
           sales_order_id: salesOrderId,
           sales_order_item_id: item.id,
@@ -1293,6 +1295,7 @@ export async function POST(request: Request) {
         } else {
           // Restaurant subscription - update tier directly on restaurant
           const tier = getRestaurantTier(priceId);
+          const metadataRestaurantId = session.metadata?.restaurant_id;
 
           // Get tier ID from database
           const { data: tierData } = await supabaseAdmin
@@ -1302,23 +1305,52 @@ export async function POST(request: Request) {
             .single();
 
           if (tierData) {
-            // Find restaurant owned by this user and update its tier
-            const { data: restaurant } = await supabaseAdmin
-              .from('restaurants')
-              .select('id')
-              .eq('owner_id', userId)
-              .single();
+            // Use restaurant_id from metadata if available, otherwise find by owner_id
+            let restaurantId: string | null = null;
 
-            if (restaurant) {
+            if (metadataRestaurantId) {
+              const { data: restaurant } = await supabaseAdmin
+                .from('restaurants')
+                .select('id')
+                .eq('id', metadataRestaurantId)
+                .single();
+              restaurantId = restaurant?.id || null;
+            }
+
+            if (!restaurantId) {
+              const { data: restaurant } = await supabaseAdmin
+                .from('restaurants')
+                .select('id')
+                .eq('owner_id', userId)
+                .limit(1)
+                .single();
+              restaurantId = restaurant?.id || null;
+            }
+
+            if (restaurantId) {
               await supabaseAdmin
                 .from('restaurants')
                 .update({
                   tier_id: tierData.id,
                   stripe_subscription_id: subscriptionId,
+                  stripe_customer_id: session.customer as string,
                 })
-                .eq('id', restaurant.id);
+                .eq('id', restaurantId);
 
-              console.log(`Restaurant ${restaurant.id} upgraded to ${tier} tier`);
+              console.log(`Restaurant ${restaurantId} upgraded to ${tier} tier`);
+
+              // If this was a plan upgrade, cancel the old subscription
+              const oldSubscriptionId = session.metadata?.old_subscription_id;
+              if (oldSubscriptionId && oldSubscriptionId !== subscriptionId) {
+                try {
+                  await getStripe().subscriptions.cancel(oldSubscriptionId, {
+                    prorate: false, // We already handled proration via coupon
+                  });
+                  console.log(`Canceled old subscription ${oldSubscriptionId} after upgrade`);
+                } catch (cancelErr) {
+                  console.error(`Failed to cancel old subscription ${oldSubscriptionId}:`, cancelErr);
+                }
+              }
             }
           }
         }

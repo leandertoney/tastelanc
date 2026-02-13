@@ -2,10 +2,10 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { getStripe } from '@/lib/stripe';
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -14,24 +14,94 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's Stripe customer ID
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('stripe_customer_id')
-      .eq('id', user.id)
-      .single();
+    // Use service role to bypass RLS for lookups (user is already authenticated above)
+    const serviceClient = createServiceRoleClient();
+    const { searchParams } = new URL(request.url);
+    const restaurantId = searchParams.get('restaurant_id');
+    const adminMode = searchParams.get('admin_mode') === 'true';
+    let customerId: string | null = null;
 
-    if (!profile?.stripe_customer_id) {
+    // If admin mode with a specific restaurant_id, look up that restaurant directly
+    if (adminMode && restaurantId && user.email === 'admin@tastelanc.com') {
+      const { data: restaurant } = await serviceClient
+        .from('restaurants')
+        .select('stripe_customer_id')
+        .eq('id', restaurantId)
+        .not('stripe_customer_id', 'is', null)
+        .single();
+
+      customerId = restaurant?.stripe_customer_id || null;
+    }
+
+    // Check if a restaurant_id was provided (restaurant owner dashboard)
+    if (!customerId && restaurantId) {
+      const { data: restaurant } = await serviceClient
+        .from('restaurants')
+        .select('stripe_customer_id')
+        .eq('id', restaurantId)
+        .eq('owner_id', user.id)
+        .not('stripe_customer_id', 'is', null)
+        .single();
+
+      customerId = restaurant?.stripe_customer_id || null;
+    }
+
+    // Fallback: check owner's restaurants by owner_id
+    if (!customerId) {
+      const { data: restaurant } = await serviceClient
+        .from('restaurants')
+        .select('stripe_customer_id')
+        .eq('owner_id', user.id)
+        .not('stripe_customer_id', 'is', null)
+        .limit(1)
+        .single();
+
+      customerId = restaurant?.stripe_customer_id || null;
+    }
+
+    // Check consumer_subscriptions
+    if (!customerId) {
+      const { data: consumerSub } = await serviceClient
+        .from('consumer_subscriptions')
+        .select('stripe_customer_id')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .limit(1)
+        .single();
+
+      customerId = consumerSub?.stripe_customer_id || null;
+    }
+
+    // Last resort: check self_promoters
+    if (!customerId) {
+      const { data: promoter } = await serviceClient
+        .from('self_promoters')
+        .select('stripe_customer_id')
+        .eq('user_id', user.id)
+        .not('stripe_customer_id', 'is', null)
+        .limit(1)
+        .single();
+
+      customerId = promoter?.stripe_customer_id || null;
+    }
+
+    if (!customerId) {
       return NextResponse.json(
         { error: 'No subscription found' },
         { status: 400 }
       );
     }
 
+    // Determine return URL based on context
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
+    const returnUrl = restaurantId
+      ? `${siteUrl}/dashboard/subscription`
+      : `${siteUrl}/account`;
+
     // Create billing portal session
     const session = await getStripe().billingPortal.sessions.create({
-      customer: profile.stripe_customer_id,
-      return_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/subscription`,
+      customer: customerId,
+      return_url: returnUrl,
     });
 
     return NextResponse.json({ url: session.url });
