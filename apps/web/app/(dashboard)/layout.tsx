@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -17,9 +17,11 @@ import {
   X,
   LogOut,
   ChevronDown,
+  Check,
   User,
   ArrowLeft,
   Shield,
+  Lightbulb,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { signOut } from '@/lib/supabase/auth';
@@ -37,6 +39,7 @@ const navItems = [
   { href: '/dashboard/events', label: 'Events', icon: Calendar },
   { href: '/dashboard/photos', label: 'Photos', icon: Image },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/dashboard/insights', label: 'Market Insights', icon: Lightbulb },
   { href: '/dashboard/subscription', label: 'Subscription', icon: CreditCard },
 ];
 
@@ -48,11 +51,25 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const [restaurantMenuOpen, setRestaurantMenuOpen] = useState(false);
   const [user, setUser] = useState<{ email?: string; user_metadata?: { full_name?: string } } | null>(null);
 
-  const { restaurant, isAdmin, isLoading, error } = useRestaurant();
+  const { restaurant, restaurants, isAdmin, isLoading, error, switchRestaurant } = useRestaurant();
+  const restaurantDropdownRef = useRef<HTMLDivElement>(null);
 
   // Check for admin mode from URL params
   const adminMode = searchParams.get('admin_mode') === 'true';
   const adminRestaurantId = searchParams.get('restaurant_id');
+
+  const showRestaurantSwitcher = !adminMode && restaurants.length > 1;
+
+  // Close restaurant dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (restaurantDropdownRef.current && !restaurantDropdownRef.current.contains(event.target as Node)) {
+        setRestaurantMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -152,10 +169,16 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Restaurant Selector */}
-          <div className="p-4 border-b border-tastelanc-surface-light">
+          <div className="p-4 border-b border-tastelanc-surface-light" ref={restaurantDropdownRef}>
             <button
-              onClick={() => setRestaurantMenuOpen(!restaurantMenuOpen)}
-              className="w-full flex items-center justify-between p-3 bg-tastelanc-bg rounded-lg hover:bg-tastelanc-surface-light transition-colors"
+              onClick={() => {
+                if (showRestaurantSwitcher) {
+                  setRestaurantMenuOpen(!restaurantMenuOpen);
+                }
+              }}
+              className={`w-full flex items-center justify-between p-3 bg-tastelanc-bg rounded-lg transition-colors ${
+                showRestaurantSwitcher ? 'hover:bg-tastelanc-surface-light cursor-pointer' : 'cursor-default'
+              }`}
               disabled={isLoading}
             >
               <div className="flex items-center gap-3">
@@ -172,7 +195,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                   {isLoading ? 'Loading...' : restaurantName}
                 </span>
               </div>
-              {!adminMode && (
+              {showRestaurantSwitcher && (
                 <ChevronDown
                   className={`w-4 h-4 text-gray-400 transition-transform ${
                     restaurantMenuOpen ? 'rotate-180' : ''
@@ -180,6 +203,42 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                 />
               )}
             </button>
+
+            {/* Restaurant Dropdown */}
+            {restaurantMenuOpen && showRestaurantSwitcher && (
+              <div className="mt-2 bg-tastelanc-surface-light rounded-lg border border-gray-700 overflow-hidden">
+                {restaurants.map((r) => {
+                  const isSelected = r.id === restaurant?.id;
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() => {
+                        switchRestaurant(r.id);
+                        setRestaurantMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${
+                        isSelected
+                          ? 'bg-tastelanc-accent/10 text-white'
+                          : 'text-gray-300 hover:bg-tastelanc-bg hover:text-white'
+                      }`}
+                    >
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        isSelected ? 'bg-tastelanc-accent' : 'bg-gray-600'
+                      }`}>
+                        <span className="text-white font-bold text-xs">
+                          {r.name.charAt(0)}
+                        </span>
+                      </div>
+                      <span className="text-sm truncate flex-1">{r.name}</span>
+                      {isSelected && (
+                        <Check className="w-4 h-4 text-tastelanc-accent flex-shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             {error && (
               <p className="text-xs text-red-400 mt-2 px-3">{error}</p>
             )}
