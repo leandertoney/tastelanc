@@ -11,9 +11,21 @@ import {
   Sparkles,
   ArrowRight,
   AlertCircle,
+  TrendingUp,
+  Phone,
+  Globe,
+  MapPin,
+  Share2,
+  ArrowUp,
+  ArrowDown,
+  Crown,
+  Award,
+  Layers,
+  Crosshair,
 } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
+import { useTierAccess } from '@/components/TierGate';
 
 interface DashboardStats {
   profileViews: number;
@@ -34,48 +46,104 @@ interface ProfileCompletion {
   items: { label: string; completed: boolean }[];
 }
 
+interface AnalyticsData {
+  stats: {
+    totalViews: number;
+    totalViewsPrevious: number;
+    viewsTrend: number;
+    uniqueVisitors: number;
+    favorites: number;
+    totalClicks: number;
+    lifetimeViews: number;
+    todayViews: number;
+    thisWeekViews: number;
+    upcomingEvents: number;
+    happyHourViews: number;
+    menuViews: number;
+    tierName: string;
+    impressionsThisWeek: number;
+    avgPosition: number | null;
+  };
+  weeklyViews: Array<{ day: string; views: number }>;
+  clicksByType: {
+    phone: number;
+    website: number;
+    directions: number;
+    menu: number;
+    share: number;
+    favorite: number;
+    happy_hour: number;
+    event: number;
+  };
+  recentActivity: Array<{ action: string; time: string; count: number }>;
+  dailyImpressions: Array<{ day: string; impressions: number }>;
+  impressionsBySection: Array<{ section: string; count: number }>;
+  conversionFunnel: {
+    impressions: number;
+    clicks: number;
+    detailViews: number;
+    clickRate: number;
+    viewRate: number;
+  };
+}
+
 export default function DashboardPage() {
   const { restaurant, restaurantId, isLoading: contextLoading, buildApiUrl } = useRestaurant();
   const searchParams = useSearchParams();
   const adminMode = searchParams.get('admin_mode') === 'true';
   const adminRestaurantId = searchParams.get('restaurant_id');
+  const hasPremium = useTierAccess('premium');
+  const hasElite = useTierAccess('elite');
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [profileCompletion, setProfileCompletion] = useState<ProfileCompletion | null>(null);
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
-  // Build nav href with admin params if in admin mode
   const buildNavHref = (href: string) => {
     if (adminMode && adminRestaurantId) {
       return `${href}?admin_mode=true&restaurant_id=${adminRestaurantId}`;
     }
     return href;
   };
-  const [profileCompletion, setProfileCompletion] = useState<ProfileCompletion | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!restaurantId || !restaurant) return;
 
     const fetchStats = async () => {
       setIsLoading(true);
-
       try {
         const response = await fetch(buildApiUrl('/api/dashboard/overview-stats'));
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch overview stats');
-        }
-
+        if (!response.ok) throw new Error('Failed to fetch overview stats');
         const data = await response.json();
         setStats(data.stats);
         setProfileCompletion(data.profileCompletion);
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
       }
-
       setIsLoading(false);
     };
 
+    const fetchAnalytics = async () => {
+      if (!hasPremium) {
+        setAnalyticsLoading(false);
+        return;
+      }
+      setAnalyticsLoading(true);
+      try {
+        const response = await fetch(buildApiUrl(`/api/dashboard/analytics?restaurant_id=${restaurant.id}`));
+        if (!response.ok) throw new Error('Failed to fetch analytics');
+        const data = await response.json();
+        setAnalyticsData(data);
+      } catch (error) {
+        console.error('Error fetching analytics:', error);
+      }
+      setAnalyticsLoading(false);
+    };
+
     fetchStats();
-  }, [restaurantId, restaurant, buildApiUrl]);
+    fetchAnalytics();
+  }, [restaurantId, restaurant, buildApiUrl, hasPremium]);
 
   const quickActions = [
     { label: 'Add Happy Hour', href: buildNavHref('/dashboard/happy-hours'), icon: Clock },
@@ -97,6 +165,17 @@ export default function DashboardPage() {
     { label: 'Happy Hour Views', value: stats?.happyHourViews.toLocaleString() || '0', change: stats?.happyHourChange || '0%', icon: Clock },
     { label: 'Menu Views', value: stats?.menuViews.toLocaleString() || '0', change: stats?.menuChange || '0%', icon: Sparkles },
   ];
+
+  // Analytics chart data
+  const weeklyViews = analyticsData?.weeklyViews || [];
+  const maxViews = Math.max(...weeklyViews.map((d) => d.views), 1);
+  const clickTypes = analyticsData ? [
+    { type: 'Phone Calls', count: analyticsData.clicksByType.phone, icon: Phone },
+    { type: 'Website Visits', count: analyticsData.clicksByType.website, icon: Globe },
+    { type: 'Get Directions', count: analyticsData.clicksByType.directions, icon: MapPin },
+    { type: 'Shares', count: analyticsData.clicksByType.share, icon: Share2 },
+  ] : [];
+  const totalClicksForPercentage = clickTypes.reduce((sum, c) => sum + c.count, 1);
 
   return (
     <div className="space-y-8">
@@ -132,6 +211,149 @@ export default function DashboardPage() {
           );
         })}
       </div>
+
+      {/* Analytics Section - Premium+ */}
+      {hasPremium && (
+        <>
+          {analyticsLoading ? (
+            <div className="grid lg:grid-cols-2 gap-8">
+              {[1, 2].map((i) => (
+                <Card key={i} className="p-6 animate-pulse">
+                  <div className="h-4 bg-tastelanc-surface rounded w-40 mb-6" />
+                  <div className="h-48 bg-tastelanc-surface rounded" />
+                </Card>
+              ))}
+            </div>
+          ) : analyticsData && (
+            <>
+              {/* Charts Row */}
+              <div className="grid lg:grid-cols-2 gap-8">
+                {/* Weekly Views Chart */}
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold text-white mb-6">Weekly Profile Views</h3>
+                  {weeklyViews.every(d => d.views === 0) ? (
+                    <div className="h-48 flex items-center justify-center text-gray-500">
+                      No views data yet. Views will appear as users interact with your profile.
+                    </div>
+                  ) : (
+                    <div className="flex items-end justify-between h-48 gap-2">
+                      {weeklyViews.map((dayData) => (
+                        <div key={dayData.day} className="flex flex-col items-center flex-1">
+                          <div
+                            className="w-full bg-tastelanc-accent rounded-t transition-all hover:bg-tastelanc-accent-hover"
+                            style={{ height: `${Math.max((dayData.views / maxViews) * 100, 4)}%` }}
+                            title={`${dayData.views} views`}
+                          />
+                          <span className="text-xs text-gray-400 mt-2">{dayData.day}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+
+                {/* Click Breakdown */}
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold text-white mb-6">User Interactions</h3>
+                  {analyticsData.stats.totalClicks === 0 ? (
+                    <div className="h-48 flex items-center justify-center text-gray-500">
+                      No interaction data yet. Clicks will appear as users engage with your listing.
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {clickTypes.map((click) => {
+                        const Icon = click.icon;
+                        const percentage = Math.round((click.count / totalClicksForPercentage) * 100);
+                        return (
+                          <div key={click.type}>
+                            <div className="flex justify-between text-sm mb-1">
+                              <span className="text-gray-300 flex items-center gap-2">
+                                <Icon className="w-4 h-4" />
+                                {click.type}
+                              </span>
+                              <span className="text-gray-400">{click.count.toLocaleString()}</span>
+                            </div>
+                            <div className="w-full bg-tastelanc-surface rounded-full h-2">
+                              <div
+                                className="bg-tastelanc-accent h-2 rounded-full"
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </Card>
+              </div>
+
+              {/* Conversion Funnel */}
+              {analyticsData.conversionFunnel && analyticsData.conversionFunnel.impressions > 0 && (
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold text-white mb-6">Conversion Funnel (30d)</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <p className="text-3xl font-bold text-white">{analyticsData.conversionFunnel.impressions.toLocaleString()}</p>
+                      <p className="text-gray-400 text-sm mt-1">Impressions</p>
+                    </div>
+                    <div className="text-center relative">
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-600 text-xs">
+                        {analyticsData.conversionFunnel.clickRate}%
+                      </div>
+                      <p className="text-3xl font-bold text-white">{analyticsData.conversionFunnel.clicks.toLocaleString()}</p>
+                      <p className="text-gray-400 text-sm mt-1">Clicks</p>
+                    </div>
+                    <div className="text-center relative">
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-600 text-xs">
+                        {analyticsData.conversionFunnel.viewRate}%
+                      </div>
+                      <p className="text-3xl font-bold text-white">{analyticsData.conversionFunnel.detailViews.toLocaleString()}</p>
+                      <p className="text-gray-400 text-sm mt-1">Detail Views</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex gap-1 h-3 rounded-full overflow-hidden">
+                    <div className="bg-blue-500 flex-1 rounded-l-full" />
+                    <div className="bg-tastelanc-accent" style={{ flex: Math.max(analyticsData.conversionFunnel.clickRate / 100, 0.05) }} />
+                    <div className="bg-green-500 rounded-r-full" style={{ flex: Math.max((analyticsData.conversionFunnel.viewRate * analyticsData.conversionFunnel.clickRate) / 10000, 0.02) }} />
+                  </div>
+                  <div className="flex justify-between mt-2 text-xs text-gray-500">
+                    <span>Seen in app</span>
+                    <span>Clicked</span>
+                    <span>Viewed profile</span>
+                  </div>
+                </Card>
+              )}
+
+              {/* Recent Activity */}
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Recent Activity</h3>
+                {analyticsData.recentActivity && analyticsData.recentActivity.length > 0 ? (
+                  <div className="space-y-4">
+                    {analyticsData.recentActivity.map((activity, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between py-3 border-b border-tastelanc-surface-light last:border-0"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-tastelanc-accent" />
+                          <span className="text-gray-300">{activity.action}</span>
+                          {activity.count > 1 && (
+                            <Badge variant="default">x{activity.count}</Badge>
+                          )}
+                        </div>
+                        <span className="text-gray-500 text-sm">{activity.time}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    No recent activity yet. Activity will appear as users interact with your listing.
+                  </div>
+                )}
+              </Card>
+            </>
+          )}
+        </>
+      )}
 
       {/* Quick Actions */}
       <div>

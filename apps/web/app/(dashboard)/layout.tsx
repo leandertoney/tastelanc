@@ -6,12 +6,9 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   LayoutDashboard,
   Store,
-  Clock,
   UtensilsCrossed,
   Sparkles,
   Calendar,
-  Image,
-  BarChart3,
   CreditCard,
   Menu,
   X,
@@ -32,13 +29,10 @@ import { Toaster } from 'sonner';
 const navItems = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { href: '/dashboard/profile', label: 'Profile', icon: Store },
-  { href: '/dashboard/hours', label: 'Hours', icon: Clock },
   { href: '/dashboard/menu', label: 'Menu', icon: UtensilsCrossed },
   { href: '/dashboard/happy-hours', label: 'Happy Hours', icon: Sparkles },
   { href: '/dashboard/specials', label: 'Specials', icon: Sparkles },
   { href: '/dashboard/events', label: 'Events', icon: Calendar },
-  { href: '/dashboard/photos', label: 'Photos', icon: Image },
-  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/dashboard/insights', label: 'Market Insights', icon: Lightbulb },
   { href: '/dashboard/subscription', label: 'Subscription', icon: CreditCard },
 ];
