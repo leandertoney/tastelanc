@@ -55,6 +55,13 @@ export const ALL_CONSUMER_PRICE_IDS = [
   EARLY_ACCESS_PRICE_IDS.yearly,
 ] as const;
 
+// All elite restaurant price IDs (for tier detection in webhooks)
+export const ELITE_PRICE_IDS = [
+  RESTAURANT_PRICE_IDS.elite_3mo,
+  RESTAURANT_PRICE_IDS.elite_6mo,
+  RESTAURANT_PRICE_IDS.elite_yearly,
+] as const;
+
 // Price info for display - Starter tier removed
 export const RESTAURANT_PRICES = {
   premium: { '3mo': 250, '6mo': 450, yearly: 800 },

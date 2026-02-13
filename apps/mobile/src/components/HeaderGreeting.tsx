@@ -30,10 +30,9 @@ export default function HeaderGreeting() {
 
 const styles = StyleSheet.create({
   greeting: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: colors.textMuted,
     marginLeft: 12,
-    maxWidth: 140,
   },
 });

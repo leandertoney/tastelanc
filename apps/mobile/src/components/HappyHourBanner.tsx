@@ -11,6 +11,7 @@ interface HappyHourBannerProps {
   onPress?: () => void;
   fullWidth?: boolean;
   dealOpacity?: Animated.Value; // Optional opacity for deal text rotation
+  isElite?: boolean;
 }
 
 export default function HappyHourBanner({
@@ -22,6 +23,7 @@ export default function HappyHourBanner({
   onPress,
   fullWidth = false,
   dealOpacity,
+  isElite = false,
 }: HappyHourBannerProps) {
   const DealText = dealOpacity ? (
     <Animated.View style={{ opacity: dealOpacity }}>
@@ -51,9 +53,18 @@ export default function HappyHourBanner({
     <View style={styles.content}>
       <View style={styles.leftSection}>
         {DealText}
-        <Text style={styles.restaurantName} numberOfLines={1}>
-          {restaurantName}
-        </Text>
+        <View style={styles.restaurantRow}>
+          {isElite && (
+            <>
+              <Ionicons name="star" size={9} color={colors.gold} />
+              <Text style={styles.pickLabel}>TasteLanc Pick</Text>
+              <Text style={styles.pickDot}>·</Text>
+            </>
+          )}
+          <Text style={styles.restaurantName} numberOfLines={1}>
+            {restaurantName}
+          </Text>
+        </View>
       </View>
       <View style={styles.rightSection}>
         <Ionicons name="time-outline" size={14} color={colors.text} />
@@ -65,6 +76,7 @@ export default function HappyHourBanner({
   const bannerStyle = [
     styles.banner,
     fullWidth && styles.bannerFullWidth,
+    isElite && styles.bannerElite,
   ];
 
   if (imageUrl) {
@@ -113,6 +125,10 @@ const styles = StyleSheet.create({
     marginRight: 0,
     height: 88,
   },
+  bannerElite: {
+    borderWidth: 1,
+    borderColor: colors.goldBorder,
+  },
   solidBanner: {
     backgroundColor: colors.cardBg,
     borderWidth: 1,
@@ -151,9 +167,24 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginBottom: 4,
   },
+  restaurantRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  pickLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.gold,
+  },
+  pickDot: {
+    fontSize: 11,
+    color: colors.textMuted,
+  },
   restaurantName: {
     fontSize: 13,
     color: colors.textMuted,
+    flexShrink: 1,
   },
   rightSection: {
     flexDirection: 'row',

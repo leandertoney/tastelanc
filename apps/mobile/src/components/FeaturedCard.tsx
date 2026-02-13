@@ -14,6 +14,7 @@ interface FeaturedCardProps {
   isFavorite?: boolean;
   onFavoritePress?: () => void;
   reasonBadge?: string | null;
+  isElite?: boolean;
 }
 
 export default function FeaturedCard({
@@ -22,11 +23,16 @@ export default function FeaturedCard({
   isFavorite = false,
   onFavoritePress,
   reasonBadge,
+  isElite = false,
 }: FeaturedCardProps) {
   const displayCategories = restaurant.categories?.slice(0, 2) || [];
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
+    <TouchableOpacity
+      style={[styles.card, isElite && styles.cardElite]}
+      onPress={onPress}
+      activeOpacity={0.9}
+    >
       {/* Full-height image background */}
       <View style={styles.imageContainer}>
         {restaurant.cover_image_url ? (
@@ -40,12 +46,17 @@ export default function FeaturedCard({
         {/* Gradient overlay for text readability */}
         <View style={styles.gradientOverlay} />
 
-        {/* Recommendation reason badge - top left */}
-        {reasonBadge && (
+        {/* TasteLanc Pick badge for elite - top left */}
+        {isElite ? (
+          <View style={styles.pickBadge}>
+            <Ionicons name="star" size={10} color="#FFF" />
+            <Text style={styles.pickBadgeText}>TasteLanc Pick</Text>
+          </View>
+        ) : reasonBadge ? (
           <View style={styles.reasonBadge}>
             <Text style={styles.reasonText}>{reasonBadge}</Text>
           </View>
-        )}
+        ) : null}
 
         {/* Favorite button - top right */}
         {onFavoritePress && (
@@ -66,9 +77,9 @@ export default function FeaturedCard({
         )}
 
         {/* Content overlay at bottom */}
-        <View style={styles.contentOverlay}>
+        <View style={[styles.contentOverlay, isElite && styles.contentOverlayElite]}>
           <View style={styles.header}>
-            <Text style={styles.name} numberOfLines={2}>
+            <Text style={[styles.name, isElite && styles.nameElite]} numberOfLines={2}>
               {restaurant.name}
             </Text>
             {restaurant.is_verified && (
@@ -112,6 +123,12 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 10,
   },
+  cardElite: {
+    shadowOpacity: 0,
+    elevation: 0,
+    borderWidth: 1.5,
+    borderColor: colors.goldBorder,
+  },
   imageContainer: {
     flex: 1,
     position: 'relative',
@@ -137,6 +154,26 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.3)',
     borderBottomLeftRadius: radius.lg,
     borderBottomRightRadius: radius.lg,
+  },
+  pickBadge: {
+    position: 'absolute',
+    top: spacing.sm,
+    left: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderWidth: 1,
+    borderColor: colors.goldBorder,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: radius.sm,
+  },
+  pickBadgeText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   reasonBadge: {
     position: 'absolute',
@@ -213,5 +250,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textMuted,
     flex: 1,
+  },
+  // Elite subtle refinements
+  contentOverlayElite: {
+    padding: spacing.md + 2,
+  },
+  nameElite: {
+    fontWeight: '800',
   },
 });

@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './supabase';
 import { getFavorites } from './favorites';
 import { getRecentVisitCounts } from './visits';
-import { getEpochSeed, seededShuffle, basicFairRotate } from './fairRotation';
+import { getEpochSeed, seededShuffle, basicFairRotate, getTierWeight } from './fairRotation';
 import type { Restaurant, RestaurantCategory, CuisineType, PremiumTier } from '../types/database';
 import { ONBOARDING_DATA_KEY, FOOD_PREFERENCE_TO_CUISINE, type OnboardingData } from '../types/onboarding';
 
@@ -270,7 +270,7 @@ export async function getRecommendations(
     if (!preferences) {
       const { data, error } = await supabase
         .from('restaurants')
-        .select('*')
+        .select('*, tiers(name)')
         .eq('is_active', true)
         .order('name', { ascending: true })
         .limit(limit);
@@ -286,11 +286,11 @@ export async function getRecommendations(
     // Using OR logic to get restaurants in ANY of the preferred categories
     let allRestaurants: Restaurant[] = [];
 
-    // Fetch restaurants matching each category
+    // Fetch restaurants matching each category (include tier data for weighting)
     for (const category of recommendedCategories) {
       const { data, error } = await supabase
         .from('restaurants')
-        .select('*')
+        .select('*, tiers(name)')
         .eq('is_active', true)
         .contains('categories', [category])
         .limit(30);
@@ -303,7 +303,7 @@ export async function getRecommendations(
     // Also fetch some general verified restaurants for variety
     const { data: verifiedData } = await supabase
       .from('restaurants')
-      .select('*')
+      .select('*, tiers(name)')
       .eq('is_active', true)
       .eq('is_verified', true)
       .limit(10);
@@ -317,11 +317,15 @@ export async function getRecommendations(
       new Map(allRestaurants.map((r) => [r.id, r])).values()
     );
 
-    // Score and sort restaurants (including visit-based personalization and distance)
-    const scoredRestaurants = uniqueRestaurants.map((restaurant) => ({
-      restaurant,
-      score: scoreRestaurant(restaurant, preferences, favorites, recentVisitCounts, userLocation),
-    }));
+    // Score and sort restaurants (including visit-based personalization, distance, and tier weight)
+    const scoredRestaurants = uniqueRestaurants.map((restaurant) => {
+      const baseScore = scoreRestaurant(restaurant, preferences, favorites, recentVisitCounts, userLocation);
+      const tierName = (restaurant as any).tiers?.name || 'basic';
+      return {
+        restaurant,
+        score: baseScore * getTierWeight(tierName),
+      };
+    });
 
     scoredRestaurants.sort((a, b) => b.score - a.score);
 

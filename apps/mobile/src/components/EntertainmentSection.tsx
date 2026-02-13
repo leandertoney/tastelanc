@@ -8,6 +8,7 @@ import PartnerCTACard from './PartnerCTACard';
 import SectionHeader from './SectionHeader';
 import Spacer from './Spacer';
 import { fetchEntertainmentEvents, ApiEvent, ENTERTAINMENT_TYPES, getEventVenueName } from '../lib/events';
+import { eliteFirstStableSort } from '../lib/fairRotation';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_ENTERTAINMENT, type MockEntertainment } from '../config/mockData';
@@ -59,9 +60,16 @@ async function getEntertainmentEvents(): Promise<EntertainmentResult> {
     return (a.start_time || '').localeCompare(b.start_time || '');
   });
 
-  // Today's events first, then future events, capped at 5
+  // Today's events first, then future events
   const sorted = [...todayEvents, ...futureEvents];
-  return { events: sorted.slice(0, 5), hasTodayEvents: todayEvents.length > 0 };
+
+  // Apply elite-first stable sort (preserves chronological within tier groups)
+  const tierSorted = eliteFirstStableSort(
+    sorted,
+    (event) => (event.restaurant?.tiers?.name as any) || 'basic',
+  );
+
+  return { events: tierSorted.slice(0, 5), hasTodayEvents: todayEvents.length > 0 };
 }
 
 function formatEventTime(startTime: string, endTime: string | null): string {

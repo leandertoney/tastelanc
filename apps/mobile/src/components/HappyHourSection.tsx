@@ -9,7 +9,7 @@ import HappyHourBanner from './HappyHourBanner';
 import PartnerContactModal from './PartnerContactModal';
 import Spacer from './Spacer';
 import { supabase } from '../lib/supabase';
-import { paidFairRotate, getTierName } from '../lib/fairRotation';
+import { paidFairRotate, getTierName, eliteFirstStableSort } from '../lib/fairRotation';
 import type { HappyHour, HappyHourItem, Restaurant, Tier } from '../types/database';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../constants/colors';
@@ -40,6 +40,7 @@ interface DisplayHappyHour {
   timeWindow: string;
   imageUrl?: string;
   restaurantId?: string;
+  isElite?: boolean;
 }
 
 // Convert centralized mock data to display format
@@ -83,10 +84,16 @@ async function getActiveHappyHours(): Promise<HappyHourWithRestaurant[]> {
     (hh) => getTierName({ restaurant: hh.restaurant }),
   );
 
-  // Sort chronologically by start time (hard requirement)
+  // Sort chronologically by start time
   paidRotated.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
 
-  return paidRotated.slice(0, 15);
+  // Re-establish elite-first priority (preserves chronological within tier groups)
+  const tierSorted = eliteFirstStableSort(
+    paidRotated,
+    (hh) => getTierName({ restaurant: hh.restaurant }),
+  );
+
+  return tierSorted.slice(0, 15);
 }
 
 function formatDealTexts(happyHour: HappyHourWithRestaurant): string[] {
@@ -161,6 +168,7 @@ export default function HappyHourSection() {
       restaurantId: hh.restaurant.id,
       timeWindow: formatTimeWindow(hh.start_time, hh.end_time),
       imageUrl: hh.image_url || hh.restaurant.cover_image_url || undefined,
+      isElite: hh.restaurant.tiers?.name === 'elite',
     }));
 
   // Use real data, or mock data if enabled and no real data
@@ -294,6 +302,7 @@ export default function HappyHourSection() {
           onPress={currentBanner.restaurantId ? () => handleBannerPress(currentBanner.restaurantId!) : undefined}
           fullWidth
           dealOpacity={pairCount > 1 ? dealFadeAnim : undefined}
+          isElite={currentBanner.isElite}
         />
       </Animated.View>
 
