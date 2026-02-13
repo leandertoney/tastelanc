@@ -11,6 +11,10 @@ interface RestaurantContextType {
   restaurantId: string | null;
   isAdmin: boolean;
   isOwner: boolean;
+  /** Whether current user is a team member (not owner) of the selected restaurant */
+  isMember: boolean;
+  /** Role of the team member ('manager') - only set when isMember is true */
+  memberRole?: 'manager';
   isLoading: boolean;
   error: string | null;
   refreshRestaurant: () => Promise<void>;
@@ -28,6 +32,7 @@ const RestaurantContext = createContext<RestaurantContextType>({
   restaurantId: null,
   isAdmin: false,
   isOwner: false,
+  isMember: false,
   isLoading: true,
   error: null,
   refreshRestaurant: async () => {},
@@ -57,6 +62,9 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
   const [tier, setTier] = useState<Tier | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const [isMember, setIsMember] = useState(false);
+  const [memberRole, setMemberRole] = useState<'manager' | undefined>(undefined);
+  const [ownershipMap, setOwnershipMap] = useState<Record<string, 'owner' | 'manager'>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -106,14 +114,43 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
         return;
       }
 
-      // Normal owner mode - fetch ALL restaurants for this owner
-      const { data: allRestaurants, error: restaurantError } = await supabase
+      // Normal mode - fetch ALL restaurants owned by this user
+      const { data: ownedRestaurants, error: restaurantError } = await supabase
         .from('restaurants')
         .select('*, tiers(*)')
         .eq('owner_id', user.id)
         .order('name');
 
-      if (restaurantError || !allRestaurants || allRestaurants.length === 0) {
+      // Also fetch restaurants where user is an active team member
+      const { data: memberships } = await supabase
+        .from('restaurant_members')
+        .select('restaurant_id, role')
+        .eq('user_id', user.id)
+        .eq('status', 'active');
+
+      let memberRestaurants: any[] = [];
+      if (memberships && memberships.length > 0) {
+        const memberRestaurantIds = memberships.map((m: any) => m.restaurant_id);
+        // Filter out any restaurants already owned (avoid duplicates)
+        const ownedIds = new Set((ownedRestaurants || []).map((r: any) => r.id));
+        const uniqueMemberIds = memberRestaurantIds.filter((id: string) => !ownedIds.has(id));
+
+        if (uniqueMemberIds.length > 0) {
+          const { data: memberRestData } = await supabase
+            .from('restaurants')
+            .select('*, tiers(*)')
+            .in('id', uniqueMemberIds)
+            .order('name');
+          // Only include member restaurants that are on Elite tier
+          memberRestaurants = (memberRestData || []).filter(
+            (r: any) => r.tiers?.name === 'elite'
+          );
+        }
+      }
+
+      const allRestaurants = [...(ownedRestaurants || []), ...memberRestaurants];
+
+      if (allRestaurants.length === 0) {
         if (userIsAdmin && !adminMode) {
           window.location.href = '/admin';
           return;
@@ -123,14 +160,21 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
         return;
       }
 
-      // Build tier lookup and clean restaurant objects
+      // Build tier lookup, ownership map, and clean restaurant objects
       const tiers: Record<string, Tier> = {};
-      const cleanRestaurants: Restaurant[] = allRestaurants.map((r) => {
+      const ownership: Record<string, 'owner' | 'manager'> = {};
+      const cleanRestaurants: Restaurant[] = allRestaurants.map((r: any) => {
         const { tiers: tierData, ...rest } = r;
         if (tierData) {
           tiers[rest.id] = tierData as Tier;
         }
         return rest as Restaurant;
+      });
+
+      // Mark ownership: owned restaurants are 'owner', member restaurants are 'manager'
+      const ownedIds = new Set((ownedRestaurants || []).map((r: any) => r.id));
+      cleanRestaurants.forEach((r) => {
+        ownership[r.id] = ownedIds.has(r.id) ? 'owner' : 'manager';
       });
 
       // Determine which restaurant to select
@@ -145,11 +189,15 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
       }
 
       const selected = cleanRestaurants.find((r) => r.id === selectedId)!;
+      const selectedOwnership = ownership[selected.id];
       setRestaurants(cleanRestaurants);
       setTierMap(tiers);
+      setOwnershipMap(ownership);
       setRestaurant(selected);
       setTier(tiers[selected.id] || null);
-      setIsOwner(true);
+      setIsOwner(selectedOwnership === 'owner');
+      setIsMember(selectedOwnership === 'manager');
+      setMemberRole(selectedOwnership === 'manager' ? 'manager' : undefined);
       setIsLoading(false);
     } catch (err) {
       console.error('Error fetching restaurant:', err);
@@ -163,12 +211,16 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
     if (!target) return;
     setRestaurant(target);
     setTier(tierMap[target.id] || null);
+    const selectedOwnership = ownershipMap[target.id];
+    setIsOwner(selectedOwnership === 'owner');
+    setIsMember(selectedOwnership === 'manager');
+    setMemberRole(selectedOwnership === 'manager' ? 'manager' : undefined);
     try {
       localStorage.setItem('tastelanc_selected_restaurant', id);
     } catch {
       // localStorage unavailable
     }
-  }, [restaurants, tierMap]);
+  }, [restaurants, tierMap, ownershipMap]);
 
   useEffect(() => {
     fetchRestaurant();
@@ -200,6 +252,8 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
     restaurantId: restaurant?.id || null,
     isAdmin,
     isOwner,
+    isMember,
+    memberRole,
     isLoading,
     error,
     refreshRestaurant: fetchRestaurant,
