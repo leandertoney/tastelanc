@@ -118,6 +118,8 @@ export async function POST(request: Request) {
       notes,
       tags,
       market_id,
+      restaurant_id,
+      google_place_id,
     } = body;
 
     if (!business_name || !email) {
@@ -141,6 +143,25 @@ export async function POST(request: Request) {
       );
     }
 
+    // If restaurant_id provided, verify it exists
+    if (restaurant_id) {
+      const { data: restaurant } = await serviceClient
+        .from('restaurants')
+        .select('id')
+        .eq('id', restaurant_id)
+        .single();
+
+      if (!restaurant) {
+        return NextResponse.json(
+          { error: 'Linked restaurant not found' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Determine source based on linking
+    const source = restaurant_id ? 'directory' : google_place_id ? 'google_places' : 'manual';
+
     // Create lead, auto-assign to the creating sales rep
     const { data: lead, error } = await serviceClient
       .from('business_leads')
@@ -155,12 +176,14 @@ export async function POST(request: Request) {
         state: state || 'PA',
         zip_code: zip_code || null,
         category: category || 'restaurant',
-        source: 'manual',
+        source,
         notes: notes || null,
         tags: tags || [],
         status: 'new',
         market_id: market_id || null,
         assigned_to: access.isSalesRep ? access.userId : null,
+        restaurant_id: restaurant_id || null,
+        google_place_id: google_place_id || null,
       })
       .select()
       .single();

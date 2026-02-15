@@ -19,6 +19,7 @@ import {
   CalendarCheck,
   CheckCircle,
   XCircle,
+  Store,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Card, Badge } from '@/components/ui';
@@ -41,6 +42,15 @@ interface Lead {
   notes: string | null;
   last_contacted_at: string | null;
   created_at: string;
+  restaurant_id: string | null;
+  google_place_id: string | null;
+  restaurants: {
+    id: string;
+    name: string;
+    is_active: boolean;
+    tier_id: string | null;
+    tiers: { name: string } | null;
+  } | null;
 }
 
 interface Activity {
@@ -397,6 +407,39 @@ export default function LeadDetailPage({
               ))}
             </div>
           </Card>
+
+          {/* Linked Business */}
+          {(lead.restaurant_id || lead.google_place_id) && (
+            <Card className="p-5">
+              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Linked Business</h2>
+              {lead.restaurants ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Store className="w-4 h-4 text-green-400" />
+                    <span className="text-white font-medium">{lead.restaurants.name}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge className="bg-green-500/20 text-green-400">In Directory</Badge>
+                    {lead.restaurants.tiers?.name && (
+                      <Badge className="bg-lancaster-gold/20 text-lancaster-gold">{lead.restaurants.tiers.name}</Badge>
+                    )}
+                    <Badge className={lead.restaurants.is_active ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}>
+                      {lead.restaurants.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
+                </div>
+              ) : lead.google_place_id ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-blue-400" />
+                    <span className="text-white font-medium">{lead.business_name}</span>
+                  </div>
+                  <Badge className="bg-blue-500/20 text-blue-400">Google Places</Badge>
+                  <p className="text-xs text-gray-500">Not yet in directory</p>
+                </div>
+              ) : null}
+            </Card>
+          )}
         </div>
 
         {/* Right Column: Activity Log */}
