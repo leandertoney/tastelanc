@@ -70,37 +70,37 @@ export async function POST(request: Request) {
 
     const serviceClient = createServiceRoleClient();
 
-    // Check if user already exists
-    const { data: existingProfile } = await serviceClient
-      .from('profiles')
-      .select('id')
-      .eq('email', email.toLowerCase())
-      .single();
-
     let userId: string;
     let needsPasswordSetup = false;
 
-    if (existingProfile) {
-      userId = existingProfile.id;
-      // Update role to sales_rep
-      await serviceClient.auth.admin.updateUserById(userId, {
-        user_metadata: { role: 'sales_rep', full_name: name },
-      });
-    } else {
-      // Create new auth user
-      const tempPassword = crypto.randomBytes(16).toString('hex');
-      const { data: newUser, error: createError } = await serviceClient.auth.admin.createUser({
-        email: email.toLowerCase(),
-        password: tempPassword,
-        email_confirm: true,
-        user_metadata: { role: 'sales_rep', full_name: name },
-      });
+    // Try to create new auth user
+    const tempPassword = crypto.randomBytes(16).toString('hex');
+    const { data: newUser, error: createError } = await serviceClient.auth.admin.createUser({
+      email: email.toLowerCase(),
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: { role: 'sales_rep', full_name: name },
+    });
 
-      if (createError) {
+    if (createError) {
+      if (createError.status === 422 || createError.message?.includes('already been registered')) {
+        // User already exists — find them and update their role
+        const { data: { users } } = await serviceClient.auth.admin.listUsers({ perPage: 1000 });
+        const existingUser = users.find((u: { email?: string }) => u.email?.toLowerCase() === email.toLowerCase());
+
+        if (!existingUser) {
+          return NextResponse.json({ error: 'User exists but could not be located' }, { status: 500 });
+        }
+
+        userId = existingUser.id;
+        await serviceClient.auth.admin.updateUserById(userId, {
+          user_metadata: { role: 'sales_rep', full_name: name },
+        });
+      } else {
         console.error('Error creating user:', createError);
         return NextResponse.json({ error: 'Failed to create user account' }, { status: 500 });
       }
-
+    } else {
       userId = newUser.user.id;
       needsPasswordSetup = true;
     }
