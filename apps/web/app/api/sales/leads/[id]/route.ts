@@ -1,0 +1,141 @@
+import { NextResponse } from 'next/server';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { verifySalesAccess } from '@/lib/auth/sales-access';
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const supabase = await createClient();
+    const access = await verifySalesAccess(supabase);
+
+    if (!access.canAccess) {
+      return NextResponse.json(
+        { error: access.error },
+        { status: access.userId ? 403 : 401 }
+      );
+    }
+
+    const serviceClient = createServiceRoleClient();
+
+    // Fetch lead
+    const { data: lead, error } = await serviceClient
+      .from('business_leads')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !lead) {
+      return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
+    }
+
+    // Fetch activities for this lead
+    const { data: activities } = await serviceClient
+      .from('lead_activities')
+      .select('*')
+      .eq('lead_id', id)
+      .order('created_at', { ascending: false });
+
+    return NextResponse.json({ lead, activities: activities || [] });
+  } catch (error) {
+    console.error('Error fetching lead:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const supabase = await createClient();
+    const access = await verifySalesAccess(supabase);
+
+    if (!access.canAccess) {
+      return NextResponse.json(
+        { error: access.error },
+        { status: access.userId ? 403 : 401 }
+      );
+    }
+
+    const serviceClient = createServiceRoleClient();
+    const body = await request.json();
+
+    const {
+      business_name,
+      contact_name,
+      email,
+      phone,
+      website,
+      address,
+      city,
+      state,
+      zip_code,
+      category,
+      status,
+      notes,
+      tags,
+      assigned_to,
+    } = body;
+
+    // Fetch current lead to detect status changes
+    const { data: currentLead } = await serviceClient
+      .from('business_leads')
+      .select('status')
+      .eq('id', id)
+      .single();
+
+    // Build update object
+    const updateData: Record<string, unknown> = {};
+    if (business_name !== undefined) updateData.business_name = business_name;
+    if (contact_name !== undefined) updateData.contact_name = contact_name;
+    if (email !== undefined) updateData.email = email;
+    if (phone !== undefined) updateData.phone = phone;
+    if (website !== undefined) updateData.website = website;
+    if (address !== undefined) updateData.address = address;
+    if (city !== undefined) updateData.city = city;
+    if (state !== undefined) updateData.state = state;
+    if (zip_code !== undefined) updateData.zip_code = zip_code;
+    if (category !== undefined) updateData.category = category;
+    if (status !== undefined) updateData.status = status;
+    if (notes !== undefined) updateData.notes = notes;
+    if (tags !== undefined) updateData.tags = tags;
+    if (assigned_to !== undefined) updateData.assigned_to = assigned_to;
+
+    // Update last_contacted_at on certain status changes
+    if (status && ['contacted', 'interested'].includes(status)) {
+      updateData.last_contacted_at = new Date().toISOString();
+    }
+
+    const { data: lead, error } = await serviceClient
+      .from('business_leads')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating lead:', error);
+      return NextResponse.json({ error: 'Failed to update lead' }, { status: 500 });
+    }
+
+    // Auto-log status change as an activity
+    if (status && currentLead && currentLead.status !== status) {
+      await serviceClient.from('lead_activities').insert({
+        lead_id: id,
+        user_id: access.userId,
+        activity_type: 'status_change',
+        description: `Status changed from "${currentLead.status}" to "${status}"`,
+        metadata: { old_status: currentLead.status, new_status: status },
+      });
+    }
+
+    return NextResponse.json({ lead });
+  } catch (error) {
+    console.error('Error in update lead API:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
