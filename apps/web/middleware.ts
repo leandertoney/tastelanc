@@ -37,6 +37,7 @@ export async function middleware(request: NextRequest) {
   const userRole = user?.user_metadata?.role;
   const isRestaurantOwner = userRole === 'restaurant_owner';
   const isSelfPromoter = userRole === 'self_promoter';
+  const isSalesRep = userRole === 'sales_rep';
 
   // Admin routes - redirect to login if not admin
   if (request.nextUrl.pathname.startsWith('/admin')) {
@@ -78,10 +79,11 @@ export async function middleware(request: NextRequest) {
       url.pathname = '/admin';
       return NextResponse.redirect(url);
     }
-    // Redirect non-restaurant-owners (consumers) to account page
+    // Redirect non-restaurant-owners to appropriate page
     if (!isRestaurantOwner) {
       const url = request.nextUrl.clone();
-      url.pathname = '/account';
+      if (isSalesRep) url.pathname = '/sales';
+      else url.pathname = '/account';
       return NextResponse.redirect(url);
     }
   }
@@ -124,6 +126,28 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Sales Rep Dashboard routes - only for sales reps (or admin)
+  if (request.nextUrl.pathname.startsWith('/sales')) {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      url.searchParams.set('redirect', request.nextUrl.pathname);
+      return NextResponse.redirect(url);
+    }
+    // Admin can always access sales dashboard
+    if (isAdmin) {
+      return supabaseResponse;
+    }
+    // Redirect non-sales-reps to appropriate dashboard
+    if (!isSalesRep) {
+      const url = request.nextUrl.clone();
+      if (isRestaurantOwner) url.pathname = '/dashboard';
+      else if (isSelfPromoter) url.pathname = '/promoter';
+      else url.pathname = '/account';
+      return NextResponse.redirect(url);
+    }
+  }
+
   // Consumer Account routes - only for consumers (non-restaurant-owners, non-self-promoters)
   if (request.nextUrl.pathname.startsWith('/account')) {
     if (!user) {
@@ -150,6 +174,12 @@ export async function middleware(request: NextRequest) {
       url.pathname = '/promoter';
       return NextResponse.redirect(url);
     }
+    // Redirect sales reps to their dashboard
+    if (isSalesRep) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/sales';
+      return NextResponse.redirect(url);
+    }
   }
 
   // Auth routes - redirect to appropriate dashboard if already authenticated
@@ -166,6 +196,8 @@ export async function middleware(request: NextRequest) {
         destination = '/dashboard';
       } else if (isSelfPromoter) {
         destination = '/promoter';
+      } else if (isSalesRep) {
+        destination = '/sales';
       }
 
       if (redirect) {

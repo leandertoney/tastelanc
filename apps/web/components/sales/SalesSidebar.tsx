@@ -4,20 +4,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
-  BarChart3,
   Store,
   LogOut,
-  Shield,
-  Sparkles,
+  TrendingUp,
+  Briefcase,
   CreditCard,
   Mail,
   X,
-  Briefcase,
-  Crown,
-  Lightbulb,
-  Music,
-  Megaphone,
-  Users,
+  Plus,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -29,30 +23,20 @@ const NAV_ITEMS: Array<{
   highlight?: boolean;
   section?: string;
 }> = [
-  // REVENUE - All subscription/payment related
-  { href: '/admin', icon: LayoutDashboard, label: 'Overview', section: 'Revenue' },
-  { href: '/admin/paid-members', icon: CreditCard, label: 'Restaurants', highlight: true },
-  { href: '/admin/self-promoters', icon: Music, label: 'Self-Promoters', highlight: true },
-  { href: '/admin/consumers', icon: Crown, label: 'TasteLanc+', highlight: true },
-  { href: '/admin/sales', icon: Briefcase, label: 'Sales Pipeline', highlight: true },
-  { href: '/admin/sponsored-ads', icon: Megaphone, label: 'Sponsored Ads', highlight: true },
-  { href: '/admin/sales-reps', icon: Users, label: 'Sales Reps', highlight: true },
-  // CONTENT - Restaurant management
-  { href: '/admin/restaurants', icon: Store, label: 'All Restaurants', section: 'Content' },
-  // MARKETING - Campaigns and outreach
-  { href: '/admin/email-campaigns', icon: Mail, label: 'Campaigns', highlight: true, section: 'Marketing' },
-  { href: '/admin/early-access', icon: Sparkles, label: 'Waitlist', highlight: true },
-  // INSIGHTS - Analytics and feedback
-  { href: '/admin/analytics', icon: BarChart3, label: 'Analytics', section: 'Insights' },
-  { href: '/admin/feature-requests', icon: Lightbulb, label: 'Feature Requests', highlight: true },
+  { href: '/sales', icon: LayoutDashboard, label: 'Overview', section: 'Pipeline' },
+  { href: '/sales/leads', icon: Briefcase, label: 'Business Leads', highlight: true },
+  { href: '/sales/leads/new', icon: Plus, label: 'Add Lead' },
+  { href: '/sales/contacts', icon: Mail, label: 'Inquiries', section: 'Outreach' },
+  { href: '/sales/checkout', icon: CreditCard, label: 'New Sale', highlight: true, section: 'Sales' },
+  { href: '/sales/restaurants', icon: Store, label: 'Restaurant Directory', section: 'Reference' },
 ];
 
-interface AdminSidebarProps {
+interface SalesSidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
 }
 
-export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
+export default function SalesSidebar({ isOpen, onClose }: SalesSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -64,13 +48,11 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       router.refresh();
     } catch (error) {
       console.error('Sign out error:', error);
-      // Force redirect even if sign out fails
       window.location.href = '/login';
     }
   };
 
   const handleNavClick = () => {
-    // Close sidebar on mobile when navigating
     if (onClose) {
       onClose();
     }
@@ -98,16 +80,15 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       >
         {/* Logo */}
         <div className="p-6 border-b border-tastelanc-surface-light flex items-center justify-between">
-          <Link href="/admin" className="flex items-center gap-2" onClick={handleNavClick}>
+          <Link href="/sales" className="flex items-center gap-2" onClick={handleNavClick}>
             <div className="w-10 h-10 bg-tastelanc-accent rounded-lg flex items-center justify-center">
-              <Shield className="w-6 h-6 text-white" />
+              <TrendingUp className="w-6 h-6 text-white" />
             </div>
             <div>
               <span className="text-xl font-bold text-white">TasteLanc</span>
-              <span className="block text-xs text-tastelanc-accent">Admin Panel</span>
+              <span className="block text-xs text-tastelanc-accent">Sales CRM</span>
             </div>
           </Link>
-          {/* Close button for mobile */}
           <button
             onClick={onClose}
             className="md:hidden text-gray-400 hover:text-white p-1"
@@ -122,7 +103,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           <ul className="space-y-1">
             {NAV_ITEMS.map((item, index) => {
               const isActive = pathname === item.href ||
-                (item.href !== '/admin' && pathname.startsWith(item.href));
+                (item.href !== '/sales' && pathname.startsWith(item.href) && item.href !== '/sales/leads/new');
 
               return (
                 <li key={item.href}>
