@@ -3,10 +3,10 @@ import { createClient } from '@/lib/supabase/server';
 import { verifyRestaurantAccess } from '@/lib/auth/restaurant-access';
 import { anthropic, CLAUDE_CONFIG } from '@/lib/anthropic';
 
-// Allow up to 60s for this route (fetch URL + Claude API parsing)
+// Allow up to 60s for this route
 export const maxDuration = 60;
 
-const MENU_IMAGE_VISION_PROMPT = `You are a menu parser. Extract menu data from this menu image.
+const MENU_IMAGE_VISION_PROMPT = `You are a menu parser. Extract menu data from these menu image(s).
 
 Return ONLY valid JSON in this exact format (no markdown, no explanation):
 {
@@ -34,6 +34,7 @@ Rules:
 - Use null for price if you see "Market Price" or similar text, and put that text in price_description
 - dietary_flags should only include: vegetarian, vegan, gluten-free, dairy-free, nut-free, spicy
 - Skip any non-menu content like logos, addresses, or decorative elements
+- If multiple images are provided, combine all menu items into a unified structure
 - If you cannot find any menu items, return {"sections": [], "error": "No menu items found"}`;
 
 const MENU_PARSE_PROMPT = `You are a menu parser. Extract menu data from the following webpage content.
@@ -85,38 +86,38 @@ interface ParsedMenu {
   error?: string;
 }
 
-// Extract potential menu images from HTML
+// Extract potential menu images from HTML — broadened detection
 function extractMenuImageUrls(html: string, baseUrl: string): string[] {
-  const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
   const images: string[] = [];
+  const imgRegex = /<img[^>]*>/gi;
   let match;
 
   while ((match = imgRegex.exec(html)) !== null) {
-    let src = match[1];
+    const tag = match[0];
+    const srcMatch = tag.match(/src=["']([^"']+)["']/i);
+    if (!srcMatch) continue;
+
+    let src = srcMatch[1];
     if (src.startsWith('data:')) continue;
 
-    // Convert relative URLs to absolute
-    if (src.startsWith('//')) {
-      src = 'https:' + src;
-    } else if (src.startsWith('/')) {
-      const url = new URL(baseUrl);
-      src = url.origin + src;
-    } else if (!src.startsWith('http')) {
-      const url = new URL(baseUrl);
-      src = url.origin + '/' + src;
-    }
+    src = resolveUrl(src, baseUrl);
 
+    const altMatch = tag.match(/alt=["']([^"']+)["']/i);
+    const alt = altMatch ? altMatch[1].toLowerCase() : '';
     const lowerSrc = src.toLowerCase();
-    if (
-      lowerSrc.includes('menu') ||
-      lowerSrc.includes('food') ||
-      lowerSrc.includes('drink') ||
-      lowerSrc.includes('lunch') ||
-      lowerSrc.includes('dinner') ||
-      lowerSrc.includes('breakfast') ||
-      lowerSrc.includes('appetizer') ||
-      lowerSrc.includes('entree')
-    ) {
+
+    const menuKeywords = [
+      'menu', 'food', 'drink', 'lunch', 'dinner', 'breakfast',
+      'appetizer', 'entree', 'cocktail', 'brunch', 'specials',
+      'dessert', 'wine', 'beer', 'beverage', 'dish', 'plate',
+      'cuisine', 'chef', 'kitchen', 'dine', 'dining'
+    ];
+
+    const isMenuRelated = menuKeywords.some(kw =>
+      lowerSrc.includes(kw) || alt.includes(kw)
+    );
+
+    if (isMenuRelated) {
       images.push(src);
     }
   }
@@ -124,13 +125,144 @@ function extractMenuImageUrls(html: string, baseUrl: string): string[] {
   return images;
 }
 
+// Extract ALL images as fallback (skip tiny icons/logos)
+function extractAllImageUrls(html: string, baseUrl: string): string[] {
+  const images: string[] = [];
+  const imgRegex = /<img[^>]*src=["']([^"']+)["'][^>]*>/gi;
+  let match;
+
+  while ((match = imgRegex.exec(html)) !== null) {
+    let src = match[1];
+    if (src.startsWith('data:')) continue;
+
+    src = resolveUrl(src, baseUrl);
+    const lowerSrc = src.toLowerCase();
+
+    const skipPatterns = [
+      'logo', 'icon', 'favicon', 'avatar', 'profile', 'social',
+      'facebook', 'twitter', 'instagram', 'pinterest', 'yelp',
+      'google', 'tripadvisor', 'sprite', 'pixel', 'tracking',
+      'badge', 'banner-ad', 'advertisement', '.svg', '1x1',
+      'spacer', 'arrow', 'button', 'check', 'close', 'search'
+    ];
+
+    if (skipPatterns.some(p => lowerSrc.includes(p))) continue;
+
+    if (/\.(jpg|jpeg|png|webp|gif)/i.test(lowerSrc) || lowerSrc.includes('image')) {
+      images.push(src);
+    }
+  }
+
+  return images;
+}
+
+// Extract PDF links that might be menus
+function extractMenuPdfUrls(html: string, baseUrl: string): string[] {
+  const pdfs: string[] = [];
+  const linkRegex = /<a[^>]*href=["']([^"']*\.pdf[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  let match;
+
+  while ((match = linkRegex.exec(html)) !== null) {
+    let href = match[1];
+    const linkText = match[2].replace(/<[^>]+>/g, '').toLowerCase();
+    const lowerHref = href.toLowerCase();
+
+    const menuKeywords = [
+      'menu', 'food', 'drink', 'lunch', 'dinner', 'breakfast',
+      'brunch', 'cocktail', 'wine', 'beer', 'beverage', 'dine'
+    ];
+
+    if (menuKeywords.some(kw => lowerHref.includes(kw) || linkText.includes(kw))) {
+      href = resolveUrl(href, baseUrl);
+      pdfs.push(href);
+    }
+  }
+
+  // Also look for direct PDF links not in <a> tags
+  const hrefRegex = /href=["']([^"']*menu[^"']*\.pdf[^"']*)["']/gi;
+  while ((match = hrefRegex.exec(html)) !== null) {
+    let href = match[1];
+    href = resolveUrl(href, baseUrl);
+    if (!pdfs.includes(href)) {
+      pdfs.push(href);
+    }
+  }
+
+  return pdfs;
+}
+
+// Extract iframe/embed sources that might contain menus
+function extractEmbedUrls(html: string, baseUrl: string): string[] {
+  const embeds: string[] = [];
+  const iframeRegex = /<iframe[^>]*src=["']([^"']+)["'][^>]*>/gi;
+  let match;
+
+  while ((match = iframeRegex.exec(html)) !== null) {
+    let src = match[1];
+    const lowerSrc = src.toLowerCase();
+
+    if (
+      lowerSrc.includes('menu') ||
+      lowerSrc.includes('popmenu') ||
+      lowerSrc.includes('bentobox') ||
+      lowerSrc.includes('chownow') ||
+      lowerSrc.includes('toast') ||
+      lowerSrc.includes('grubhub') ||
+      lowerSrc.includes('doordash') ||
+      lowerSrc.includes('square') ||
+      lowerSrc.includes('gloria') ||
+      lowerSrc.includes('zmenu')
+    ) {
+      src = resolveUrl(src, baseUrl);
+      embeds.push(src);
+    }
+  }
+
+  return embeds;
+}
+
+function resolveUrl(src: string, baseUrl: string): string {
+  if (src.startsWith('//')) {
+    return 'https:' + src;
+  } else if (src.startsWith('/')) {
+    const url = new URL(baseUrl);
+    return url.origin + src;
+  } else if (!src.startsWith('http')) {
+    const url = new URL(baseUrl);
+    return url.origin + '/' + src;
+  }
+  return src;
+}
+
+async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response | null> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch {
+    return null;
+  }
+}
+
 async function fetchImageAsBase64(imageUrl: string): Promise<{ data: string; mimeType: string } | null> {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
     const response = await fetch(imageUrl, {
+      signal: controller.signal,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
       },
     });
+    clearTimeout(timeoutId);
 
     if (!response.ok) return null;
 
@@ -138,9 +270,13 @@ async function fetchImageAsBase64(imageUrl: string): Promise<{ data: string; mim
     if (!contentType.startsWith('image/')) return null;
 
     const buffer = await response.arrayBuffer();
+    // Skip tiny images (< 5KB — likely icons)
+    if (buffer.byteLength < 5000) return null;
+    // Skip enormous images (> 5MB — too slow)
+    if (buffer.byteLength > 5_000_000) return null;
+
     const base64 = Buffer.from(buffer).toString('base64');
 
-    // Map content type to allowed types
     let mimeType = 'image/jpeg';
     if (contentType.includes('png')) mimeType = 'image/png';
     else if (contentType.includes('gif')) mimeType = 'image/gif';
@@ -152,40 +288,99 @@ async function fetchImageAsBase64(imageUrl: string): Promise<{ data: string; mim
   }
 }
 
-async function parseMenuFromImage(imageData: string, mimeType: string): Promise<ParsedMenu> {
+// Parse menu from multiple images in a SINGLE Claude Vision call
+async function parseMenuFromImages(
+  images: { data: string; mimeType: string }[]
+): Promise<ParsedMenu> {
+  const content: Array<
+    | { type: 'image'; source: { type: 'base64'; media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; data: string } }
+    | { type: 'text'; text: string }
+  > = [];
+
+  for (const img of images) {
+    content.push({
+      type: 'image',
+      source: {
+        type: 'base64',
+        media_type: img.mimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
+        data: img.data,
+      },
+    });
+  }
+
+  content.push({
+    type: 'text',
+    text: MENU_IMAGE_VISION_PROMPT,
+  });
+
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 4096,
-    messages: [
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: {
-              type: 'base64',
-              media_type: mimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-              data: imageData,
-            },
-          },
-          {
-            type: 'text',
-            text: MENU_IMAGE_VISION_PROMPT,
-          },
-        ],
-      },
-    ],
+    messages: [{ role: 'user', content }],
   });
 
   const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
   let jsonStr = responseText.trim();
-
   const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (jsonMatch) {
     jsonStr = jsonMatch[1].trim();
   }
-
   return JSON.parse(jsonStr);
+}
+
+function extractTextFromHtml(html: string): string {
+  return html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 50000);
+}
+
+function countItems(menu: ParsedMenu): number {
+  if (!menu.sections || !Array.isArray(menu.sections)) return 0;
+  return menu.sections.reduce((sum, s) => sum + (s.items?.length || 0), 0);
+}
+
+function isValidMenu(menu: ParsedMenu): boolean {
+  return !!(
+    menu.sections &&
+    Array.isArray(menu.sections) &&
+    menu.sections.length > 0 &&
+    !menu.error &&
+    countItems(menu) > 0
+  );
+}
+
+// Merge multiple parsed menus, deduplicating sections
+function mergeMenus(...menus: ParsedMenu[]): ParsedMenu {
+  const allSections: ParsedSection[] = [];
+  const seenSectionNames = new Set<string>();
+
+  for (const menu of menus) {
+    if (!menu.sections || !Array.isArray(menu.sections)) continue;
+    for (const section of menu.sections) {
+      const key = section.name.toLowerCase().trim();
+      if (seenSectionNames.has(key)) {
+        // Merge items into existing section
+        const existing = allSections.find(s => s.name.toLowerCase().trim() === key);
+        if (existing && section.items) {
+          const existingNames = new Set(existing.items.map(i => i.name.toLowerCase().trim()));
+          for (const item of section.items) {
+            if (!existingNames.has(item.name.toLowerCase().trim())) {
+              existing.items.push(item);
+            }
+          }
+        }
+      } else {
+        seenSectionNames.add(key);
+        allSections.push({ ...section });
+      }
+    }
+  }
+
+  return { sections: allSections };
 }
 
 export async function POST(request: Request) {
@@ -220,7 +415,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate URL
     let parsedUrl: URL;
     try {
       parsedUrl = new URL(url);
@@ -234,167 +428,244 @@ export async function POST(request: Request) {
       );
     }
 
-    // Helper to extract text from HTML
-    const extractTextFromHtml = (html: string): string => {
-      return html
-        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .slice(0, 50000);
-    };
-
-    // First, try simple fetch (faster)
-    let pageContent: string;
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-      const response = await fetch(parsedUrl.toString(), {
-        signal: controller.signal,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        },
-      });
-
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        pageContent = await response.text();
-      } else {
-        pageContent = '';
-      }
-    } catch {
-      pageContent = '';
+    // ---- STEP 1: Fetch the page ----
+    const response = await fetchWithTimeout(parsedUrl.toString(), 15000);
+    let pageContent = '';
+    if (response?.ok) {
+      pageContent = await response.text();
     }
 
-    // Check if simple fetch got meaningful content
     const textContent = extractTextFromHtml(pageContent);
-    const menuImageUrls: string[] = extractMenuImageUrls(pageContent, parsedUrl.toString());
+    const menuImageUrls = extractMenuImageUrls(pageContent, parsedUrl.toString());
+    const allImageUrls = extractAllImageUrls(pageContent, parsedUrl.toString());
+    const pdfUrls = extractMenuPdfUrls(pageContent, parsedUrl.toString());
+    const embedUrls = extractEmbedUrls(pageContent, parsedUrl.toString());
 
-    // If we got almost nothing, bail early with a helpful message
-    if (textContent.length < 100 && menuImageUrls.length === 0) {
+    console.log(
+      `URL import: ${textContent.length} chars text, ${menuImageUrls.length} menu images, ` +
+      `${allImageUrls.length} total images, ${pdfUrls.length} PDFs, ${embedUrls.length} embeds`
+    );
+
+    // If we got almost nothing from the page, bail early
+    if (textContent.length < 50 && menuImageUrls.length === 0 && allImageUrls.length === 0 && pdfUrls.length === 0 && embedUrls.length === 0) {
       return NextResponse.json(
-        { error: 'Could not extract meaningful content from the page. The menu may be loaded dynamically (JavaScript-rendered) or the site may be blocking access. Try using image or PDF import instead.' },
+        { error: 'Could not extract any content from the page. The site may be blocking access or requires JavaScript. Try using image or PDF import instead.' },
         { status: 400 }
       );
     }
 
-    console.log(`Extracted ${textContent.length} chars of text content, found ${menuImageUrls.length} potential menu images`)
+    // ---- STEP 2: Run ALL strategies in parallel ----
 
-    // First, try to parse menu from text content (if we have enough)
-    let parsedMenu: ParsedMenu = { sections: [] };
-    let textParsingFailed = false;
-
-    if (textContent.length >= 100) {
+    // Strategy A: Parse text content with Claude
+    const textStrategy = (async (): Promise<ParsedMenu> => {
+      if (textContent.length < 100) return { sections: [] };
       try {
         const message = await anthropic.messages.create({
           model: CLAUDE_CONFIG.model,
           max_tokens: 4096,
-          messages: [
-            {
-              role: 'user',
-              content: `${MENU_PARSE_PROMPT}\n\n${textContent}`,
-            },
-          ],
+          messages: [{
+            role: 'user',
+            content: `${MENU_PARSE_PROMPT}\n\n${textContent}`,
+          }],
         });
-
         const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
         let jsonStr = responseText.trim();
-
         const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-        if (jsonMatch) {
-          jsonStr = jsonMatch[1].trim();
+        if (jsonMatch) jsonStr = jsonMatch[1].trim();
+        return JSON.parse(jsonStr);
+      } catch (err) {
+        console.error('Text strategy failed:', err);
+        return { sections: [] };
+      }
+    })();
+
+    // Strategy B: Download menu-related images and parse via single Vision call
+    const imageStrategy = (async (): Promise<ParsedMenu> => {
+      // Prefer keyword-matched images, fall back to all images
+      const imagesToTry = menuImageUrls.length > 0
+        ? menuImageUrls.slice(0, 4)
+        : allImageUrls.slice(0, 6);
+
+      if (imagesToTry.length === 0) return { sections: [] };
+
+      try {
+        // Download images in parallel
+        const imageResults = await Promise.all(
+          imagesToTry.map(imgUrl => fetchImageAsBase64(imgUrl))
+        );
+        const validImages = imageResults.filter((img): img is { data: string; mimeType: string } => img !== null);
+
+        if (validImages.length === 0) return { sections: [] };
+
+        // Send up to 3 images in a SINGLE Claude Vision call
+        const imagesToParse = validImages.slice(0, 3);
+        console.log(`Image strategy: sending ${imagesToParse.length} images in single Vision call`);
+        return await parseMenuFromImages(imagesToParse);
+      } catch (err) {
+        console.error('Image strategy failed:', err);
+        return { sections: [] };
+      }
+    })();
+
+    // Strategy C: Fetch embedded menu pages (iframes from menu providers)
+    const embedStrategy = (async (): Promise<ParsedMenu> => {
+      if (embedUrls.length === 0) return { sections: [] };
+
+      try {
+        const embedUrl = embedUrls[0];
+        const embedResponse = await fetchWithTimeout(embedUrl, 10000);
+        if (!embedResponse?.ok) return { sections: [] };
+
+        const embedHtml = await embedResponse.text();
+        const embedText = extractTextFromHtml(embedHtml);
+
+        if (embedText.length < 100) return { sections: [] };
+
+        const message = await anthropic.messages.create({
+          model: CLAUDE_CONFIG.model,
+          max_tokens: 4096,
+          messages: [{
+            role: 'user',
+            content: `${MENU_PARSE_PROMPT}\n\n${embedText}`,
+          }],
+        });
+        const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+        let jsonStr = responseText.trim();
+        const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (jsonMatch) jsonStr = jsonMatch[1].trim();
+        return JSON.parse(jsonStr);
+      } catch (err) {
+        console.error('Embed strategy failed:', err);
+        return { sections: [] };
+      }
+    })();
+
+    // Strategy D: Fetch linked PDF menus
+    const pdfStrategy = (async (): Promise<ParsedMenu> => {
+      if (pdfUrls.length === 0) return { sections: [] };
+
+      try {
+        const pdfUrl = pdfUrls[0];
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const pdfResponse = await fetch(pdfUrl, {
+          signal: controller.signal,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+          },
+        });
+        clearTimeout(timeoutId);
+
+        if (!pdfResponse.ok) return { sections: [] };
+
+        const contentType = pdfResponse.headers.get('content-type') || '';
+
+        // If it's actually an image (some "PDF" links are images)
+        if (contentType.startsWith('image/')) {
+          const buffer = await pdfResponse.arrayBuffer();
+          if (buffer.byteLength > 5_000_000) return { sections: [] };
+          const base64 = Buffer.from(buffer).toString('base64');
+          let mimeType = 'image/jpeg';
+          if (contentType.includes('png')) mimeType = 'image/png';
+          else if (contentType.includes('webp')) mimeType = 'image/webp';
+          return await parseMenuFromImages([{ data: base64, mimeType }]);
         }
 
-        parsedMenu = JSON.parse(jsonStr);
-      } catch (error) {
-        console.error('Error processing text menu with Claude:', error);
-        textParsingFailed = true;
-      }
-    }
+        // Actual PDF — extract text and parse
+        if (contentType.includes('pdf') || pdfUrl.toLowerCase().endsWith('.pdf')) {
+          const buffer = await pdfResponse.arrayBuffer();
+          if (buffer.byteLength > 10_000_000) return { sections: [] };
 
-    // Check if text parsing found menu items
-    const textFoundItems = parsedMenu.sections &&
-      Array.isArray(parsedMenu.sections) &&
-      parsedMenu.sections.length > 0 &&
-      !parsedMenu.error;
+          try {
+            const { PDFParse } = await import('pdf-parse');
+            const parser = new PDFParse({ data: new Uint8Array(buffer) });
+            const textResult = await parser.getText();
+            const pdfText = textResult.text;
+            await parser.destroy();
 
-    // If text parsing didn't find items, try parsing menu images
-    if (!textFoundItems && menuImageUrls.length > 0) {
-      console.log(`Text parsing found no items, trying ${menuImageUrls.length} menu images...`);
+            if (!pdfText || pdfText.trim().length < 50) return { sections: [] };
 
-      const allSections: ParsedSection[] = [];
-
-      // Process up to 5 images to avoid excessive API calls
-      const imagesToProcess = menuImageUrls.slice(0, 5);
-
-      for (const imageUrl of imagesToProcess) {
-        try {
-          console.log(`Processing menu image: ${imageUrl}`);
-          const imageData = await fetchImageAsBase64(imageUrl);
-
-          if (!imageData) {
-            console.log(`Failed to fetch image: ${imageUrl}`);
-            continue;
+            const message = await anthropic.messages.create({
+              model: CLAUDE_CONFIG.model,
+              max_tokens: 4096,
+              messages: [{
+                role: 'user',
+                content: `${MENU_PARSE_PROMPT}\n\n${pdfText.slice(0, 50000)}`,
+              }],
+            });
+            const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+            let jsonStr = responseText.trim();
+            const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+            if (jsonMatch) jsonStr = jsonMatch[1].trim();
+            return JSON.parse(jsonStr);
+          } catch {
+            console.error('PDF parsing failed for linked PDF');
+            return { sections: [] };
           }
-
-          const imageParsedMenu = await parseMenuFromImage(imageData.data, imageData.mimeType);
-
-          if (imageParsedMenu.sections &&
-              Array.isArray(imageParsedMenu.sections) &&
-              imageParsedMenu.sections.length > 0 &&
-              !imageParsedMenu.error) {
-            allSections.push(...imageParsedMenu.sections);
-            console.log(`Found ${imageParsedMenu.sections.length} sections from image`);
-          }
-        } catch (imageError) {
-          console.error(`Error processing menu image ${imageUrl}:`, imageError);
         }
-      }
 
-      if (allSections.length > 0) {
-        parsedMenu = { sections: allSections };
+        return { sections: [] };
+      } catch (err) {
+        console.error('PDF strategy failed:', err);
+        return { sections: [] };
       }
-    }
+    })();
 
-    // Final validation
-    if (!parsedMenu.sections || !Array.isArray(parsedMenu.sections)) {
+    // ---- STEP 3: Wait for all strategies and pick the best result ----
+    const [textResult, imageResult, embedResult, pdfResult] = await Promise.all([
+      textStrategy,
+      imageStrategy,
+      embedStrategy,
+      pdfStrategy,
+    ]);
+
+    console.log(
+      `Results — text: ${countItems(textResult)} items, images: ${countItems(imageResult)} items, ` +
+      `embed: ${countItems(embedResult)} items, pdf: ${countItems(pdfResult)} items`
+    );
+
+    // Collect all valid results
+    const validResults = [
+      { menu: textResult, source: 'text' },
+      { menu: imageResult, source: 'images' },
+      { menu: embedResult, source: 'embed' },
+      { menu: pdfResult, source: 'pdf' },
+    ].filter(r => isValidMenu(r.menu));
+
+    let finalMenu: ParsedMenu;
+
+    if (validResults.length === 0) {
       return NextResponse.json(
-        { error: 'Failed to extract menu structure from the page.' },
+        {
+          error: 'No menu items found on this page. This can happen if the menu is loaded dynamically, is behind a login, or the URL points to a non-menu page. Try navigating directly to the menu page, or use the image or PDF import instead.'
+        },
         { status: 422 }
       );
-    }
+    } else if (validResults.length === 1) {
+      finalMenu = validResults[0].menu;
+    } else {
+      // Multiple strategies found items — use the best one or merge
+      validResults.sort((a, b) => countItems(b.menu) - countItems(a.menu));
+      const best = validResults[0];
+      const second = validResults[1];
 
-    if (parsedMenu.error || parsedMenu.sections.length === 0) {
-      // Give more specific error based on what we found
-      let errorMsg = 'No menu items found on this page.';
-      if (menuImageUrls.length > 0) {
-        errorMsg += ' We found images that might be menus but could not read them clearly. Try using the image import directly with a screenshot of the menu.';
-      } else if (textParsingFailed) {
-        errorMsg += ' The page content could not be processed. Try using image or PDF import instead.';
+      // If the best result has significantly more items, just use it
+      if (countItems(best.menu) >= countItems(second.menu) * 2) {
+        finalMenu = best.menu;
       } else {
-        errorMsg += ' This can happen if the URL points to the restaurant homepage instead of the menu page. Try navigating directly to the menu page, or use image/PDF import.';
+        // Merge the top 2 results for the most complete menu
+        finalMenu = mergeMenus(best.menu, second.menu);
       }
-
-      return NextResponse.json({ error: errorMsg }, { status: 422 });
     }
 
-    // Count total items
-    const totalItems = parsedMenu.sections.reduce(
-      (sum, section) => sum + (section.items?.length || 0),
-      0
-    );
+    const totalItems = countItems(finalMenu);
 
     return NextResponse.json({
       success: true,
       source_url: url,
-      sections: parsedMenu.sections,
+      sections: finalMenu.sections,
       stats: {
-        sections_count: parsedMenu.sections.length,
+        sections_count: finalMenu.sections.length,
         items_count: totalItems,
       },
     });

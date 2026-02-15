@@ -1281,6 +1281,17 @@ export default function MenuPage() {
                     Paste a link to your restaurant&apos;s online menu page
                   </p>
                 </div>
+                {importing && (
+                  <div className="p-3 bg-tastelanc-surface/50 rounded-lg">
+                    <div className="flex items-center gap-2 text-tastelanc-accent mb-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="text-sm font-medium">Scanning page for menus...</span>
+                    </div>
+                    <p className="text-gray-500 text-xs">
+                      Checking page text, images, embedded menus, and linked PDFs simultaneously. This may take up to 30 seconds.
+                    </p>
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <Button onClick={handleUrlImport} disabled={importing || !importUrl.trim()}>
                     {importing ? (
@@ -1295,7 +1306,7 @@ export default function MenuPage() {
                       </>
                     )}
                   </Button>
-                  <Button variant="secondary" onClick={cancelUrlImport}>
+                  <Button variant="secondary" onClick={cancelUrlImport} disabled={importing}>
                     Cancel
                   </Button>
                 </div>
