@@ -20,10 +20,10 @@ export async function GET(
 
     const serviceClient = createServiceRoleClient();
 
-    // Fetch lead
+    // Fetch lead with linked restaurant
     const { data: lead, error } = await serviceClient
       .from('business_leads')
-      .select('*')
+      .select('*, restaurants(id, name, is_active, tier_id, tiers(name))')
       .eq('id', id)
       .single();
 
