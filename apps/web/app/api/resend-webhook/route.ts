@@ -43,25 +43,6 @@ export async function POST(request: Request) {
 
     console.log('Resend webhook received:', type, data?.email_id);
 
-    // Send notification email to team when an email is opened
-    if (type === 'email.opened' && data?.to?.[0]) {
-      const recipient = data.to[0];
-      const subject = data?.subject || 'Unknown subject';
-      const openedAt = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
-
-      try {
-        const resend = new Resend(process.env.RESEND_API_KEY);
-        await resend.emails.send({
-          from: 'TasteLanc Notifications <noreply@tastelanc.com>',
-          to: ['leandertoney@gmail.com', 'jmtoney1987@gmail.com'],
-          subject: `Email Opened: ${recipient}`,
-          text: `Your email was opened.\n\nRecipient: ${recipient}\nSubject: ${subject}\nOpened at: ${openedAt} ET`,
-        });
-      } catch (notifyErr) {
-        console.error('Failed to send open notification:', notifyErr);
-      }
-    }
-
     // Find the email send record by Resend ID
     const resendId = data?.email_id;
     if (!resendId) {
@@ -108,6 +89,25 @@ export async function POST(request: Request) {
             await supabase.rpc('increment_campaign_opens', {
               campaign_id: sendRecord.campaign_id,
             });
+          }
+
+          // Send notification for campaign email opens only
+          if (data?.to?.[0]) {
+            const recipient = data.to[0];
+            const subject = data?.subject || 'Unknown subject';
+            const openedAt = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
+
+            try {
+              const resend = new Resend(process.env.RESEND_API_KEY);
+              await resend.emails.send({
+                from: 'TasteLanc Notifications <noreply@tastelanc.com>',
+                to: ['leandertoney@gmail.com', 'jmtoney1987@gmail.com'],
+                subject: `Email Opened: ${recipient}`,
+                text: `Your outreach email was opened.\n\nRecipient: ${recipient}\nSubject: ${subject}\nOpened at: ${openedAt} ET`,
+              });
+            } catch (notifyErr) {
+              console.error('Failed to send open notification:', notifyErr);
+            }
           }
         }
         break;
