@@ -68,7 +68,7 @@ export async function GET(request: Request) {
           website: r.website || '',
           category: r.categories?.[0] || 'restaurant',
           is_active: r.is_active,
-          tier_name: (r.tiers as { name: string } | null)?.name || undefined,
+          tier_name: Array.isArray(r.tiers) ? r.tiers[0]?.name : (r.tiers as unknown as { name?: string } | null)?.name || undefined,
         });
       }
     }
