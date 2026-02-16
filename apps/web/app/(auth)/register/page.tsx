@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, Eye, EyeOff, User } from 'lucide-react';
 import { signUpWithEmail, signInWithGoogle } from '@/lib/supabase/auth';
+import { BRAND } from '@/config/market';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -60,11 +61,11 @@ export default function RegisterPage() {
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center">
           <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Mail className="w-8 h-8 text-green-400" />
+            <Mail className="w-8 h-8 text-green-600" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-4">Check your email</h1>
-          <p className="text-gray-400 mb-8">
-            We&apos;ve sent a confirmation link to <strong className="text-white">{email}</strong>.
+          <h1 className="text-2xl font-bold text-tastelanc-header-text mb-4">Check your email</h1>
+          <p className="text-tastelanc-header-text/60 mb-8">
+            We&apos;ve sent a confirmation link to <strong className="text-tastelanc-header-text">{email}</strong>.
             Click the link to activate your account.
           </p>
           <Link
@@ -84,90 +85,90 @@ export default function RegisterPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="text-3xl font-bold text-tastelanc-accent">
-            TasteLanc
+            {BRAND.name}
           </Link>
-          <h1 className="text-2xl font-bold text-white mt-4">Create your account</h1>
-          <p className="text-gray-400 mt-2">Join Lancaster&apos;s dining community</p>
+          <h1 className="text-2xl font-bold text-tastelanc-header-text mt-4">Create your account</h1>
+          <p className="text-tastelanc-header-text/60 mt-2">Join {BRAND.countyShort}&apos;s dining community</p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="bg-red-900/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm">
+            <div className="bg-red-500/10 border border-red-500/30 text-red-600 px-4 py-3 rounded-lg text-sm">
               {error}
             </div>
           )}
 
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="name" className="block text-sm font-medium text-tastelanc-header-text/70 mb-2">
               Name (optional)
             </label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-tastelanc-header-text/40" />
               <input
                 id="name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your name"
-                className="w-full pl-10 pr-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full pl-10 pr-4 py-3 bg-tastelanc-header-text/5 border border-tastelanc-header-text/15 rounded-lg text-tastelanc-header-text placeholder-tastelanc-header-text/30 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="email" className="block text-sm font-medium text-tastelanc-header-text/70 mb-2">
               Email
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-tastelanc-header-text/40" />
               <input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full pl-10 pr-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full pl-10 pr-4 py-3 bg-tastelanc-header-text/5 border border-tastelanc-header-text/15 rounded-lg text-tastelanc-header-text placeholder-tastelanc-header-text/30 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 required
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="password" className="block text-sm font-medium text-tastelanc-header-text/70 mb-2">
               Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-tastelanc-header-text/40" />
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-10 pr-12 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full pl-10 pr-12 py-3 bg-tastelanc-header-text/5 border border-tastelanc-header-text/15 rounded-lg text-tastelanc-header-text placeholder-tastelanc-header-text/30 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 required
                 minLength={8}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-tastelanc-header-text/40 hover:text-tastelanc-header-text"
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Must be at least 8 characters</p>
+            <p className="text-xs text-tastelanc-header-text/40 mt-1">Must be at least 8 characters</p>
           </div>
 
           <div className="flex items-start">
             <input
               type="checkbox"
               id="terms"
-              className="w-4 h-4 mt-1 rounded border-tastelanc-surface-light bg-tastelanc-surface text-tastelanc-accent focus:ring-tastelanc-accent focus:ring-offset-tastelanc-bg"
+              className="w-4 h-4 mt-1 rounded border-tastelanc-header-text/15 bg-tastelanc-header-text/5 text-tastelanc-accent focus:ring-tastelanc-accent focus:ring-offset-tastelanc-header-bg"
               required
             />
-            <label htmlFor="terms" className="ml-2 text-sm text-gray-400">
+            <label htmlFor="terms" className="ml-2 text-sm text-tastelanc-header-text/60">
               I agree to the{' '}
               <Link href="/terms" className="text-tastelanc-accent hover:underline">
                 Terms of Service
@@ -191,10 +192,10 @@ export default function RegisterPage() {
         {/* Divider */}
         <div className="relative my-8">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-tastelanc-surface-light" />
+            <div className="w-full border-t border-tastelanc-header-text/15" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-tastelanc-bg text-gray-400">Or continue with</span>
+            <span className="px-2 bg-tastelanc-header-bg text-tastelanc-header-text/60">Or continue with</span>
           </div>
         </div>
 
@@ -203,7 +204,7 @@ export default function RegisterPage() {
           type="button"
           onClick={handleGoogleSignIn}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-3 bg-tastelanc-surface hover:bg-tastelanc-surface-light border border-tastelanc-surface-light text-white py-3 rounded-lg transition-colors disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-3 bg-tastelanc-header-text/5 hover:bg-tastelanc-header-text/10 border border-tastelanc-header-text/15 text-tastelanc-header-text py-3 rounded-lg transition-colors disabled:opacity-50"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path
@@ -227,7 +228,7 @@ export default function RegisterPage() {
         </button>
 
         {/* Sign In Link */}
-        <p className="text-center text-gray-400 mt-8">
+        <p className="text-center text-tastelanc-header-text/60 mt-8">
           Already have an account?{' '}
           <Link href="/login" className="text-tastelanc-accent hover:underline">
             Sign in
@@ -236,7 +237,7 @@ export default function RegisterPage() {
 
         {/* Back to Home */}
         <p className="text-center mt-4">
-          <Link href="/" className="text-gray-500 hover:text-gray-300 text-sm">
+          <Link href="/" className="text-tastelanc-header-text/40 hover:text-tastelanc-header-text/70 text-sm">
             &larr; Back to home
           </Link>
         </p>

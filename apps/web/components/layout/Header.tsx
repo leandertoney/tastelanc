@@ -93,7 +93,7 @@ export default function Header() {
   }, [authStatus.isLoggedIn, authStatus.isPremium]);
 
   return (
-    <header className="border-b border-tastelanc-surface-light sticky top-0 bg-tastelanc-header-bg/95 backdrop-blur-sm z-50">
+    <header className="border-b border-tastelanc-header-text/10 sticky top-0 bg-tastelanc-header-bg/95 backdrop-blur-sm z-50">
       <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center">
           <Image
@@ -115,7 +115,7 @@ export default function Header() {
               className={`transition-colors flex items-center gap-1 ${
                 link.highlight
                   ? 'text-lancaster-gold hover:text-yellow-400 font-medium'
-                  : 'text-gray-300 hover:text-white'
+                  : 'text-tastelanc-header-text/70 hover:text-tastelanc-header-text'
               }`}
             >
               {link.highlight && <Crown className="w-4 h-4" />}
@@ -127,7 +127,7 @@ export default function Header() {
         {/* Auth Section */}
         <div className="hidden md:flex items-center gap-4">
           {authStatus.isLoading ? (
-            <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+            <Loader2 className="w-5 h-5 text-tastelanc-header-text/50 animate-spin" />
           ) : authStatus.isLoggedIn ? (
             <>
               {/* Premium Badge */}
@@ -140,7 +140,7 @@ export default function Header() {
               {/* Account Link */}
               <Link
                 href="/account"
-                className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors"
+                className="flex items-center gap-2 text-tastelanc-header-text/70 hover:text-tastelanc-header-text transition-colors"
               >
                 <User className="w-4 h-4" />
                 <span className="hidden lg:inline">{authStatus.userName}</span>
@@ -148,7 +148,7 @@ export default function Header() {
             </>
           ) : (
             <>
-              <Link href="/login" className="text-gray-300 hover:text-white transition-colors">
+              <Link href="/login" className="text-tastelanc-header-text/70 hover:text-tastelanc-header-text transition-colors">
                 Sign In
               </Link>
               <Link
@@ -163,7 +163,7 @@ export default function Header() {
 
         {/* Mobile Menu Button */}
         <button
-          className="md:hidden text-white"
+          className="md:hidden text-tastelanc-header-text"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Toggle menu"
         >
@@ -173,7 +173,7 @@ export default function Header() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-tastelanc-surface-light">
+        <div className="md:hidden border-t border-tastelanc-header-text/10 bg-tastelanc-header-bg">
           <nav className="flex flex-col p-4 gap-4">
             {navLinks.map((link) => (
               <Link
@@ -182,7 +182,7 @@ export default function Header() {
                 className={`transition-colors py-2 flex items-center gap-1 ${
                   link.highlight
                     ? 'text-lancaster-gold font-medium'
-                    : 'text-gray-300 hover:text-white'
+                    : 'text-tastelanc-header-text/70 hover:text-tastelanc-header-text'
                 }`}
                 onClick={() => setMobileMenuOpen(false)}
               >
@@ -191,11 +191,11 @@ export default function Header() {
               </Link>
             ))}
 
-            <hr className="border-tastelanc-surface-light" />
+            <hr className="border-tastelanc-header-text/10" />
 
             {authStatus.isLoading ? (
               <div className="flex justify-center py-2">
-                <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+                <Loader2 className="w-5 h-5 text-tastelanc-header-text/50 animate-spin" />
               </div>
             ) : authStatus.isLoggedIn ? (
               <>
@@ -207,7 +207,7 @@ export default function Header() {
                 )}
                 <Link
                   href="/account"
-                  className="flex items-center justify-center gap-2 text-gray-300 hover:text-white transition-colors py-2"
+                  className="flex items-center justify-center gap-2 text-tastelanc-header-text/70 hover:text-tastelanc-header-text transition-colors py-2"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <User className="w-4 h-4" />
@@ -218,7 +218,7 @@ export default function Header() {
               <>
                 <Link
                   href="/login"
-                  className="text-gray-300 hover:text-white transition-colors py-2"
+                  className="text-tastelanc-header-text/70 hover:text-tastelanc-header-text transition-colors py-2"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sign In

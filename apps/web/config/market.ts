@@ -52,6 +52,7 @@ export interface MarketBrand {
     surface: string;
     surfaceLight: string;
     headerBg: string; // navbar background (defaults to bg if same)
+    headerText: string; // navbar text color (light on dark bg, dark on light bg)
   };
 
   // SEO defaults
@@ -105,6 +106,7 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
       surface: '#1E1E1E',
       surfaceLight: '#2A2A2A',
       headerBg: '#1A1A1A',
+      headerText: '#FFFFFF',
     },
 
     seo: {
@@ -130,8 +132,8 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
     premiumName: 'TasteCumberland+',
 
     aiName: 'Mollie',
-    aiAvatarVideo: '', // Mollie avatar coming soon
-    aiAvatarImage: '', // Mollie avatar coming soon
+    aiAvatarVideo: '/images/mollie_animated.mp4',
+    aiAvatarImage: '/images/mollie_avatar.png',
 
     domain: 'cumberland.tastelanc.com',
     socialHandle: '@tastecumberland',
@@ -152,7 +154,8 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
       card: '#252525',
       surface: '#1E1E1E',
       surfaceLight: '#2A2A2A',
-      headerBg: '#0F1E2E',
+      headerBg: '#F4EBDD',
+      headerText: '#0F1E2E',
     },
 
     seo: {
