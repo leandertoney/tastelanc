@@ -60,8 +60,8 @@ a {
   animation: logo-pulse 3s ease-in-out infinite;
 }
 
-/* Rosie bounce animation */
-@keyframes rosie-bounce {
+/* AI avatar bounce animation */
+@keyframes ai-bounce {
   0%, 100% {
     transform: translateY(0);
   }
@@ -70,8 +70,8 @@ a {
   }
 }
 
-.animate-rosie {
-  animation: rosie-bounce 2s ease-in-out infinite;
+.animate-ai-bounce {
+  animation: ai-bounce 2s ease-in-out infinite;
 }
 
 /* Swipe hint nudge animation */

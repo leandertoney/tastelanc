@@ -4,7 +4,7 @@ import { fetchBlogPosts } from '@/lib/seo/data';
 import { buildMeta } from '@/lib/seo/meta';
 import { itemListJsonLd } from '@/lib/seo/structured';
 import { BRAND } from '@/config/market';
-import { Clock, ArrowRight } from 'lucide-react';
+import { Clock, ArrowRight, Sparkles } from 'lucide-react';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
 export const revalidate = 900;
@@ -43,19 +43,25 @@ export default async function BlogPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      {/* Page Header with Rosie */}
+      {/* Page Header with AI */}
       <section className="border-b border-gray-800 py-12 md:py-20 px-4">
         <div className="max-w-6xl mx-auto">
-          {/* Rosie Intro - Clean and Simple */}
+          {/* AI Intro - Clean and Simple */}
           <div className="text-center mb-10">
             <div className="flex items-center justify-center gap-4 mb-4">
-              <Image
-                src="/images/rosie_dark_new.png"
-                alt="Rosie"
-                width={80}
-                height={80}
-                className="rounded-full border-2 border-amber-500/50 shadow-lg shadow-amber-500/20"
-              />
+              {BRAND.aiAvatarImage ? (
+                <Image
+                  src={BRAND.aiAvatarImage}
+                  alt={BRAND.aiName}
+                  width={80}
+                  height={80}
+                  className="rounded-full border-2 border-amber-500/50 shadow-lg shadow-amber-500/20"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-tastelanc-accent/20 border-2 border-tastelanc-accent/50 shadow-lg shadow-tastelanc-accent/20 flex items-center justify-center">
+                  <Sparkles className="w-10 h-10 text-tastelanc-accent" />
+                </div>
+              )}
               <h1 className="text-4xl md:text-6xl font-bold text-white">
                 Taste Lancaster
               </h1>
@@ -88,13 +94,17 @@ export default async function BlogPage() {
         {posts.length === 0 ? (
           <div className="text-center py-16">
             <div className="w-20 h-20 rounded-full bg-tastelanc-surface mx-auto mb-4 flex items-center justify-center">
-              <Image
-                src="/images/rosie_dark_new.png"
-                alt="Rosie"
-                width={60}
-                height={60}
-                className="rounded-full"
-              />
+              {BRAND.aiAvatarImage ? (
+                <Image
+                  src={BRAND.aiAvatarImage}
+                  alt={BRAND.aiName}
+                  width={60}
+                  height={60}
+                  className="rounded-full"
+                />
+              ) : (
+                <Sparkles className="w-8 h-8 text-tastelanc-accent" />
+              )}
             </div>
             <h2 className="text-xl font-semibold text-white mb-2">Coming Soon</h2>
             <p className="text-gray-400">

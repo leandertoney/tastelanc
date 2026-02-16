@@ -173,13 +173,19 @@ export default function DiscoverRestaurantPage({
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="bg-tastelanc-card rounded-xl p-8 max-w-md text-center">
-          <Image
-            src="/images/rosie_dark_new.png"
-            alt={BRAND.aiName}
-            width={80}
-            height={80}
-            className="mx-auto mb-6 rounded-full animate-rosie"
-          />
+          {BRAND.aiAvatarImage ? (
+            <Image
+              src={BRAND.aiAvatarImage}
+              alt={BRAND.aiName}
+              width={80}
+              height={80}
+              className="mx-auto mb-6 rounded-full animate-ai-bounce"
+            />
+          ) : (
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-tastelanc-accent/20 flex items-center justify-center animate-ai-bounce">
+              <Sparkles className="w-10 h-10 text-tastelanc-accent" />
+            </div>
+          )}
           <h1 className="text-2xl font-bold text-white mb-4">
             This page is exclusive to {BRAND.aiName}!
           </h1>
@@ -256,13 +262,17 @@ export default function DiscoverRestaurantPage({
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-3xl md:text-4xl font-bold text-white">{restaurant.name}</h1>
                 <Badge variant="accent" className="flex items-center gap-1">
-                  <Image
-                    src="/images/rosie_dark_new.png"
-                    alt=""
-                    width={16}
-                    height={16}
-                    className="rounded-full"
-                  />
+                  {BRAND.aiAvatarImage ? (
+                    <Image
+                      src={BRAND.aiAvatarImage}
+                      alt=""
+                      width={16}
+                      height={16}
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <Sparkles className="w-4 h-4 text-tastelanc-accent" />
+                  )}
                   {BRAND.aiName} Pick
                 </Badge>
               </div>
@@ -460,16 +470,22 @@ export default function DiscoverRestaurantPage({
               </div>
             )}
 
-            {/* Ask Rosie for more */}
+            {/* Ask AI for more */}
             <div className="bg-tastelanc-card rounded-xl p-6">
               <div className="flex items-center gap-3 mb-4">
-                <Image
-                  src="/images/rosie_dark_new.png"
-                  alt={BRAND.aiName}
-                  width={40}
-                  height={40}
-                  className="rounded-full animate-rosie"
-                />
+                {BRAND.aiAvatarImage ? (
+                  <Image
+                    src={BRAND.aiAvatarImage}
+                    alt={BRAND.aiName}
+                    width={40}
+                    height={40}
+                    className="rounded-full animate-ai-bounce"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-tastelanc-accent/20 flex items-center justify-center animate-ai-bounce">
+                    <Sparkles className="w-5 h-5 text-tastelanc-accent" />
+                  </div>
+                )}
                 <h2 className="text-lg font-bold text-white">Need more suggestions?</h2>
               </div>
               <p className="text-gray-400 text-sm mb-4">

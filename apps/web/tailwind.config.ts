@@ -20,6 +20,7 @@ const config: Config = {
           'accent-hover': 'rgb(var(--brand-accent-hover) / <alpha-value>)',
           surface: 'rgb(var(--brand-surface) / <alpha-value>)',
           'surface-light': 'rgb(var(--brand-surface-light) / <alpha-value>)',
+          'header-bg': 'rgb(var(--brand-header-bg) / <alpha-value>)',
           muted: 'rgba(255,255,255,0.7)',
         },
         lancaster: {

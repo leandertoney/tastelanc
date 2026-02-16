@@ -19,6 +19,7 @@ import {
 } from '../lib/recommendations';
 import { toggleFavorite, isFavorited } from '../lib/favorites';
 import { useAuth } from '../hooks/useAuth';
+import { useMarket } from '../context/MarketContext';
 import { trackVisibleItems } from '../lib/impressions';
 import { colors, radius } from '../constants/colors';
 
@@ -32,6 +33,7 @@ export default function RecommendedSection({
   onSeeAllPress,
 }: RecommendedSectionProps) {
   const { userId } = useAuth();
+  const { marketId } = useMarket();
   const [recommendations, setRecommendations] = useState<Restaurant[]>([]);
   const [preferences, setPreferences] = useState<OnboardingData | null>(null);
   const [greeting, setGreeting] = useState<string>('');
@@ -44,7 +46,7 @@ export default function RecommendedSection({
       setLoading(true);
       setError(false);
       const [recs, prefs] = await Promise.all([
-        getRecommendations(8, userId ?? undefined),
+        getRecommendations(8, userId ?? undefined, undefined, marketId),
         getUserPreferences(),
       ]);
 
@@ -66,7 +68,7 @@ export default function RecommendedSection({
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, marketId]);
 
   useEffect(() => {
     loadRecommendations();
