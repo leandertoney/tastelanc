@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as Location from 'expo-location';
+import { MARKET_CENTER } from '../config/market';
 
 interface LocationCoords {
   latitude: number;
@@ -15,11 +16,8 @@ interface UseUserLocationResult {
   refreshLocation: () => Promise<void>;
 }
 
-// Default to Lancaster, PA city center
-export const LANCASTER_CENTER: LocationCoords = {
-  latitude: 40.0379,
-  longitude: -76.3055,
-};
+// Re-export from market config so existing imports keep working
+export const LANCASTER_CENTER: LocationCoords = MARKET_CENTER;
 
 /**
  * Hook to get user's current location with permission handling
