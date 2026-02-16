@@ -282,15 +282,19 @@ export default function AccountPage() {
                 <p className="text-gray-400 mb-4">
                   Download the {BRAND.name} app to get started.
                 </p>
-                <a
-                  href="https://apps.apple.com/us/app/tastelanc/id6755852717"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button variant="primary" className="w-full">
-                    Download the App
-                  </Button>
-                </a>
+                {BRAND.appStoreUrls.ios ? (
+                  <a
+                    href={BRAND.appStoreUrls.ios}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button variant="primary" className="w-full">
+                      Download the App
+                    </Button>
+                  </a>
+                ) : (
+                  <p className="text-gray-500 text-sm">App coming soon</p>
+                )}
               </div>
             )}
           </Card>

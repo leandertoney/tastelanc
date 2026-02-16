@@ -312,26 +312,38 @@ export default function HomePage() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <a
-              href="https://apps.apple.com/us/app/tastelanc/id6755852717"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white font-semibold px-8 py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-lg shadow-lg shadow-tastelanc-accent/25"
-            >
-              <Smartphone className="w-5 h-5" />
-              Download for iOS
-            </a>
-            <a
-              href="https://play.google.com/store/apps/details?id=com.tastelanc.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-lg shadow-lg shadow-green-600/25"
-            >
-              <Smartphone className="w-5 h-5" />
-              Download for Android
-            </a>
+            {BRAND.appStoreUrls.ios ? (
+              <a
+                href={BRAND.appStoreUrls.ios}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white font-semibold px-8 py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-lg shadow-lg shadow-tastelanc-accent/25"
+              >
+                <Smartphone className="w-5 h-5" />
+                Download for iOS
+              </a>
+            ) : null}
+            {BRAND.appStoreUrls.android ? (
+              <a
+                href={BRAND.appStoreUrls.android}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-lg shadow-lg shadow-green-600/25"
+              >
+                <Smartphone className="w-5 h-5" />
+                Download for Android
+              </a>
+            ) : null}
+            {!BRAND.appStoreUrls.ios && !BRAND.appStoreUrls.android && (
+              <div className="bg-tastelanc-accent/10 border border-tastelanc-accent/30 text-white font-semibold px-8 py-4 rounded-xl flex items-center justify-center gap-2 text-lg">
+                <Smartphone className="w-5 h-5" />
+                App Coming Soon
+              </div>
+            )}
           </div>
-          <p className="text-gray-400 text-sm">Available on iOS and Android</p>
+          {(BRAND.appStoreUrls.ios || BRAND.appStoreUrls.android) && (
+            <p className="text-gray-400 text-sm">Available on iOS and Android</p>
+          )}
         </div>
       </section>
 
@@ -497,24 +509,30 @@ export default function HomePage() {
           {BRAND.countyShort}&apos;s first AI dining companion. The app gives you even more with real-time alerts, personalized picks,
           and exclusive insights.
         </p>
-        <div className="mt-4 flex flex-wrap gap-3 items-center">
-          <a
-            href="https://apps.apple.com/us/app/tastelanc/id6755852717"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-4 py-2 bg-tastelanc-accent text-white rounded-lg font-semibold"
-          >
-            Download for iOS
-          </a>
-          <a
-            href="https://play.google.com/store/apps/details?id=com.tastelanc.app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold"
-          >
-            Download for Android
-          </a>
-        </div>
+        {(BRAND.appStoreUrls.ios || BRAND.appStoreUrls.android) && (
+          <div className="mt-4 flex flex-wrap gap-3 items-center">
+            {BRAND.appStoreUrls.ios && (
+              <a
+                href={BRAND.appStoreUrls.ios}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-tastelanc-accent text-white rounded-lg font-semibold"
+              >
+                Download for iOS
+              </a>
+            )}
+            {BRAND.appStoreUrls.android && (
+              <a
+                href={BRAND.appStoreUrls.android}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold"
+              >
+                Download for Android
+              </a>
+            )}
+          </div>
+        )}
       </section>
 
       {/* Find What's Good Tonight Section */}
@@ -641,7 +659,7 @@ export default function HomePage() {
                 <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
                   <defs>
                     <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#D4AF37" strokeWidth="0.5" />
+                      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--brand-gold-hex)" strokeWidth="0.5" />
                     </pattern>
                   </defs>
                   <rect width="100%" height="100%" fill="url(#grid)" />
@@ -706,8 +724,8 @@ export default function HomePage() {
 
               {/* Decorative roads/paths */}
               <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20" xmlns="http://www.w3.org/2000/svg">
-                <path d="M 0 200 Q 200 180 400 200 T 800 180" fill="none" stroke="#D4AF37" strokeWidth="2" strokeDasharray="8 4" />
-                <path d="M 300 0 Q 320 150 280 300 T 320 400" fill="none" stroke="#D4AF37" strokeWidth="2" strokeDasharray="8 4" />
+                <path d="M 0 200 Q 200 180 400 200 T 800 180" fill="none" stroke="var(--brand-gold-hex)" strokeWidth="2" strokeDasharray="8 4" />
+                <path d="M 300 0 Q 320 150 280 300 T 320 400" fill="none" stroke="var(--brand-gold-hex)" strokeWidth="2" strokeDasharray="8 4" />
               </svg>
             </div>
 
@@ -756,26 +774,32 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="text-center mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="https://apps.apple.com/us/app/tastelanc/id6755852717"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white font-bold px-8 py-4 rounded-xl transition-all"
-            >
-              <Smartphone className="w-5 h-5" />
-              Download for iOS
-            </a>
-            <a
-              href="https://play.google.com/store/apps/details?id=com.tastelanc.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold px-8 py-4 rounded-xl transition-all"
-            >
-              <Smartphone className="w-5 h-5" />
-              Download for Android
-            </a>
-          </div>
+          {(BRAND.appStoreUrls.ios || BRAND.appStoreUrls.android) && (
+            <div className="text-center mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+              {BRAND.appStoreUrls.ios && (
+                <a
+                  href={BRAND.appStoreUrls.ios}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white font-bold px-8 py-4 rounded-xl transition-all"
+                >
+                  <Smartphone className="w-5 h-5" />
+                  Download for iOS
+                </a>
+              )}
+              {BRAND.appStoreUrls.android && (
+                <a
+                  href={BRAND.appStoreUrls.android}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold px-8 py-4 rounded-xl transition-all"
+                >
+                  <Smartphone className="w-5 h-5" />
+                  Download for Android
+                </a>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
@@ -973,24 +997,33 @@ export default function HomePage() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <a
-                  href="https://apps.apple.com/us/app/tastelanc/id6755852717"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-white text-tastelanc-accent font-semibold px-8 py-4 rounded-xl hover:bg-gray-100 transition-colors inline-flex items-center justify-center gap-2 text-lg"
-                >
-                  Download for iOS
-                  <ChevronRight className="w-5 h-5" />
-                </a>
-                <a
-                  href="https://play.google.com/store/apps/details?id=com.tastelanc.app"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-white text-green-600 font-semibold px-8 py-4 rounded-xl hover:bg-gray-100 transition-colors inline-flex items-center justify-center gap-2 text-lg"
-                >
-                  Download for Android
-                  <ChevronRight className="w-5 h-5" />
-                </a>
+                {BRAND.appStoreUrls.ios ? (
+                  <a
+                    href={BRAND.appStoreUrls.ios}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-white text-tastelanc-accent font-semibold px-8 py-4 rounded-xl hover:bg-gray-100 transition-colors inline-flex items-center justify-center gap-2 text-lg"
+                  >
+                    Download for iOS
+                    <ChevronRight className="w-5 h-5" />
+                  </a>
+                ) : null}
+                {BRAND.appStoreUrls.android ? (
+                  <a
+                    href={BRAND.appStoreUrls.android}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-white text-green-600 font-semibold px-8 py-4 rounded-xl hover:bg-gray-100 transition-colors inline-flex items-center justify-center gap-2 text-lg"
+                  >
+                    Download for Android
+                    <ChevronRight className="w-5 h-5" />
+                  </a>
+                ) : null}
+                {!BRAND.appStoreUrls.ios && !BRAND.appStoreUrls.android && (
+                  <div className="bg-white/10 text-white font-semibold px-8 py-4 rounded-xl inline-flex items-center justify-center gap-2 text-lg">
+                    App Coming Soon
+                  </div>
+                )}
               </div>
             </div>
           </div>

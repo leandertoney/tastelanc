@@ -62,7 +62,7 @@ function buildBlogEmailHtml(post: BlogPost): string {
               <!-- Rosie Badge -->
               <table cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
                 <tr>
-                  <td style="background-color: #D4AF37; color: #000; font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;">
+                  <td style="background-color: ${BRAND.colors.gold}; color: #000; font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;">
                     New from ${BRAND.aiName}
                   </td>
                 </tr>
@@ -81,7 +81,7 @@ function buildBlogEmailHtml(post: BlogPost): string {
               <!-- CTA Button -->
               <table cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="background-color: #D4AF37; border-radius: 8px;">
+                  <td style="background-color: ${BRAND.colors.gold}; border-radius: 8px;">
                     <a href="${postUrl}" style="display: inline-block; padding: 14px 28px; color: #000000; text-decoration: none; font-weight: bold; font-size: 16px;">
                       Read Now →
                     </a>

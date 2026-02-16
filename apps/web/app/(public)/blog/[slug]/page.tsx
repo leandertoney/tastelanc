@@ -5,6 +5,7 @@ import { fetchBlogPostBySlug, fetchBlogPosts } from '@/lib/seo/data';
 import { buildMeta } from '@/lib/seo/meta';
 import { articleJsonLd, breadcrumbJsonLd } from '@/lib/seo/structured';
 import { ROSIE_AUTHOR_BIO } from '@/lib/rosie/blog-system-prompt';
+import { BRAND } from '@/config/market';
 import { Clock, ArrowLeft, ArrowRight, Instagram } from 'lucide-react';
 
 // Editorial cover image data structure
@@ -77,7 +78,7 @@ function EditorialCover({ coverData, title }: { coverData: CoverImageData | null
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'linear-gradient(to bottom right, transparent 49%, #D4AF37 49%, #D4AF37 51%, transparent 51%)'
+            background: 'linear-gradient(to bottom right, transparent 49%, var(--brand-gold-hex) 49%, var(--brand-gold-hex) 51%, transparent 51%)'
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-tastelanc-bg via-transparent to-transparent" />
@@ -348,23 +349,25 @@ export default async function BlogPostPage({ params }: PageProps) {
                     {ROSIE_AUTHOR_BIO}
                   </p>
                   <div className="flex items-center gap-4 mt-3">
+                    {BRAND.appStoreUrls.ios && (
+                      <a
+                        href={BRAND.appStoreUrls.ios}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-lancaster-gold text-sm font-medium hover:gap-2 transition-all"
+                      >
+                        Get the App
+                        <ArrowRight className="w-4 h-4" />
+                      </a>
+                    )}
                     <a
-                      href="https://apps.apple.com/us/app/tastelanc/id6755852717"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-lancaster-gold text-sm font-medium hover:gap-2 transition-all"
-                    >
-                      Get the App
-                      <ArrowRight className="w-4 h-4" />
-                    </a>
-                    <a
-                      href="https://www.instagram.com/tastelanc/"
+                      href={BRAND.instagramUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-gray-400 hover:text-lancaster-gold text-sm transition-colors"
                     >
                       <Instagram className="w-4 h-4" />
-                      @tastelanc
+                      {BRAND.socialHandle}
                     </a>
                   </div>
                 </div>
@@ -378,27 +381,31 @@ export default async function BlogPostPage({ params }: PageProps) {
               {/* Newsletter/App CTA Box */}
               <div className="bg-tastelanc-surface p-6 mb-8">
                 <h3 className="text-xl font-bold text-white mb-3">
-                  Your Guide to Lancaster Dining
+                  Your Guide to {BRAND.countyShort} Dining
                 </h3>
                 <p className="text-gray-400 text-sm leading-relaxed mb-6">
-                  Get real-time happy hours, specials, and personalized recommendations from Rosie delivered to you.
+                  Get real-time happy hours, specials, and personalized recommendations from {BRAND.aiName} delivered to you.
                 </p>
-                <a
-                  href="https://apps.apple.com/us/app/tastelanc/id6755852717"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full bg-lancaster-gold text-black text-center font-semibold py-3 hover:bg-yellow-400 transition-colors"
-                >
-                  DOWNLOAD FOR iOS
-                </a>
-                <a
-                  href="https://play.google.com/store/apps/details?id=com.tastelanc.app"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full bg-green-600 text-white text-center font-semibold py-3 hover:bg-green-700 transition-colors mt-2"
-                >
-                  DOWNLOAD FOR ANDROID
-                </a>
+                {BRAND.appStoreUrls.ios && (
+                  <a
+                    href={BRAND.appStoreUrls.ios}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full bg-lancaster-gold text-black text-center font-semibold py-3 hover:bg-yellow-400 transition-colors"
+                  >
+                    DOWNLOAD FOR iOS
+                  </a>
+                )}
+                {BRAND.appStoreUrls.android && (
+                  <a
+                    href={BRAND.appStoreUrls.android}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full bg-green-600 text-white text-center font-semibold py-3 hover:bg-green-700 transition-colors mt-2"
+                  >
+                    DOWNLOAD FOR ANDROID
+                  </a>
+                )}
               </div>
 
               {/* Tags */}
