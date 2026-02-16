@@ -5,6 +5,26 @@ import { BRAND } from '@/config/market';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
 
+/** Convert hex color (#RRGGBB) to space-separated RGB for Tailwind opacity modifiers */
+function hexToRgb(hex: string): string {
+  const h = hex.replace('#', '');
+  return `${parseInt(h.slice(0, 2), 16)} ${parseInt(h.slice(2, 4), 16)} ${parseInt(h.slice(4, 6), 16)}`;
+}
+
+const brandCssVars = `
+:root {
+  --brand-accent: ${hexToRgb(BRAND.colors.accent)};
+  --brand-accent-hover: ${hexToRgb(BRAND.colors.accentHover)};
+  --brand-gold: ${hexToRgb(BRAND.colors.gold)};
+  --brand-bg: ${hexToRgb(BRAND.colors.bg)};
+  --brand-card: ${hexToRgb(BRAND.colors.card)};
+  --brand-surface: ${hexToRgb(BRAND.colors.surface)};
+  --brand-surface-light: ${hexToRgb(BRAND.colors.surfaceLight)};
+  --brand-accent-hex: ${BRAND.colors.accent};
+  --brand-gold-hex: ${BRAND.colors.gold};
+}
+`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: BRAND.seo.title,
@@ -47,6 +67,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <style dangerouslySetInnerHTML={{ __html: brandCssVars }} />
+      </head>
       <body className="min-h-screen font-sans">
         <Providers>{children}</Providers>
       </body>

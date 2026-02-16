@@ -21,7 +21,7 @@ function generateConfetti(count: number) {
     left: Math.random() * 100,
     delay: Math.random() * 0.5,
     duration: 2 + Math.random() * 1,
-    color: ['#D4AF37', '#FFD700', '#FFA500', '#FF6B6B', '#4ECDC4'][
+    color: ['var(--brand-gold-hex)', '#FFD700', '#FFA500', '#FF6B6B', '#4ECDC4'][
       Math.floor(Math.random() * 5)
     ],
     rotation: Math.random() * 360,

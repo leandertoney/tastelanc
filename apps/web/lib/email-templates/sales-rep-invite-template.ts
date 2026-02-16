@@ -36,7 +36,7 @@ export function generateSalesRepInviteEmail(
                   <img src="https://${BRAND.domain}${BRAND.logoPath}" alt="${BRAND.name}" height="36" style="margin-bottom: 24px;" />
 
                   <!-- Role Badge -->
-                  <div style="background-color: #A41E22; color: white; display: inline-block; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-bottom: 20px;">
+                  <div style="background-color: ${BRAND.colors.accent}; color: white; display: inline-block; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-bottom: 20px;">
                     Sales Team
                   </div>
 
@@ -51,7 +51,7 @@ export function generateSalesRepInviteEmail(
                   <!-- CTA Button -->
                   <table cellpadding="0" cellspacing="0" style="margin-bottom: 32px;">
                     <tr>
-                      <td style="background-color: #A41E22; border-radius: 10px;">
+                      <td style="background-color: ${BRAND.colors.accent}; border-radius: 10px;">
                         <a href="${actionLink}" style="display: inline-block; padding: 16px 40px; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px;">
                           ${buttonText}
                         </a>

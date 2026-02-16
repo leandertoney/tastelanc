@@ -1,4 +1,5 @@
 import type { Restaurant, Event, Special, HappyHour } from './types';
+import { BRAND } from '@/config/market';
 
 export function relatedRestaurants(base: Restaurant, all: Restaurant[], limit = 6) {
   const set = new Set((base.categories || []).map((c) => c.toLowerCase()));
@@ -8,24 +9,29 @@ export function relatedRestaurants(base: Restaurant, all: Restaurant[], limit = 
 }
 
 export function restaurantCTAButtons() {
+  if (!BRAND.appStoreUrls.ios && !BRAND.appStoreUrls.android) return null;
   return (
     <div className="mt-6 flex flex-wrap gap-3 items-center">
-      <a
-        href="https://apps.apple.com/us/app/tastelanc/id6755852717"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="px-4 py-2 rounded-lg bg-tastelanc-accent text-white font-semibold"
-      >
-        Download for iOS
-      </a>
-      <a
-        href="https://play.google.com/store/apps/details?id=com.tastelanc.app"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="px-4 py-2 rounded-lg bg-green-600 text-white font-semibold"
-      >
-        Download for Android
-      </a>
+      {BRAND.appStoreUrls.ios && (
+        <a
+          href={BRAND.appStoreUrls.ios}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-4 py-2 rounded-lg bg-tastelanc-accent text-white font-semibold"
+        >
+          Download for iOS
+        </a>
+      )}
+      {BRAND.appStoreUrls.android && (
+        <a
+          href={BRAND.appStoreUrls.android}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-4 py-2 rounded-lg bg-green-600 text-white font-semibold"
+        >
+          Download for Android
+        </a>
+      )}
     </div>
   );
 }

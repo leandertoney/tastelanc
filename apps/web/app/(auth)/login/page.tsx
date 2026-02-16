@@ -42,7 +42,7 @@ function LoginPageContent() {
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle at 2px 2px, #A41E22 1px, transparent 0)',
+            backgroundImage: `radial-gradient(circle at 2px 2px, var(--brand-accent-hex) 1px, transparent 0)`,
             backgroundSize: '40px 40px'
           }} />
         </div>

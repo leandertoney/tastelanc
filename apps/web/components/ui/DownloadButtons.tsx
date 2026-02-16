@@ -4,8 +4,9 @@ import { useState, useRef, useEffect } from 'react';
 import { BRAND } from '@/config/market';
 import { Smartphone, ChevronRight, X } from 'lucide-react';
 
-const IOS_URL = 'https://apps.apple.com/us/app/tastelanc/id6755852717';
-const ANDROID_URL = 'https://play.google.com/store/apps/details?id=com.tastelanc.app';
+const IOS_URL = BRAND.appStoreUrls.ios;
+const ANDROID_URL = BRAND.appStoreUrls.android;
+const HAS_APP = !!(IOS_URL || ANDROID_URL);
 
 interface DownloadButtonsProps {
   variant?: 'full' | 'compact' | 'single';
@@ -32,6 +33,14 @@ export function DownloadButtons({ variant = 'full', className = '', showIcon = t
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  if (!HAS_APP) {
+    return (
+      <div className={`text-gray-400 text-sm font-medium ${className}`}>
+        {BRAND.name} App — Coming Soon
+      </div>
+    );
+  }
 
   if (variant === 'full') {
     return (
@@ -170,6 +179,8 @@ export function NavDownloadLink({ className = '' }: { className?: string }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  if (!HAS_APP) return null;
+
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
       <button
@@ -182,24 +193,28 @@ export function NavDownloadLink({ className = '' }: { className?: string }) {
 
       {showDropdown && (
         <div className="absolute top-full mt-2 right-0 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg shadow-xl z-50 overflow-hidden min-w-[180px]">
-          <a
-            href={IOS_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block px-4 py-3 text-white hover:bg-tastelanc-accent transition-colors text-sm"
-            onClick={() => setShowDropdown(false)}
-          >
-            iOS (App Store)
-          </a>
-          <a
-            href={ANDROID_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block px-4 py-3 text-white hover:bg-green-600 transition-colors border-t border-tastelanc-surface-light text-sm"
-            onClick={() => setShowDropdown(false)}
-          >
-            Android (Google Play)
-          </a>
+          {IOS_URL && (
+            <a
+              href={IOS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block px-4 py-3 text-white hover:bg-tastelanc-accent transition-colors text-sm"
+              onClick={() => setShowDropdown(false)}
+            >
+              iOS (App Store)
+            </a>
+          )}
+          {ANDROID_URL && (
+            <a
+              href={ANDROID_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`block px-4 py-3 text-white hover:bg-green-600 transition-colors text-sm ${IOS_URL ? 'border-t border-tastelanc-surface-light' : ''}`}
+              onClick={() => setShowDropdown(false)}
+            >
+              Android (Google Play)
+            </a>
+          )}
         </div>
       )}
     </div>

@@ -3,9 +3,10 @@ import Link from 'next/link';
 import { fetchBlogPosts } from '@/lib/seo/data';
 import { buildMeta } from '@/lib/seo/meta';
 import { itemListJsonLd } from '@/lib/seo/structured';
+import { BRAND } from '@/config/market';
 import { Clock, ArrowRight } from 'lucide-react';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
 export const revalidate = 900;
 
 export async function generateMetadata() {
@@ -242,20 +243,24 @@ export default async function BlogPage() {
         {/* CTA Section */}
         <div className="mt-16 text-center bg-gradient-to-r from-tastelanc-surface to-tastelanc-surface-light p-8 md:p-10 rounded-lg border border-amber-500/10">
           <h2 className="text-2xl font-bold text-white mb-3">
-            Get Lancaster&apos;s Best Dining Intel
+            Get {BRAND.countyShort}&apos;s Best Dining Intel
           </h2>
           <p className="text-gray-400 mb-6 max-w-md mx-auto">
-            Join TasteLanc for real-time happy hours, specials, and personalized recommendations from Rosie.
+            Join {BRAND.name} for real-time happy hours, specials, and personalized recommendations from {BRAND.aiName}.
           </p>
-          <a
-            href="https://apps.apple.com/us/app/tastelanc/id6755852717"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-amber-500 text-black font-semibold px-6 py-3 hover:bg-amber-400 transition-colors rounded"
-          >
-            Download the App
-            <ArrowRight className="w-4 h-4" />
-          </a>
+          {BRAND.appStoreUrls.ios ? (
+            <a
+              href={BRAND.appStoreUrls.ios}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-amber-500 text-black font-semibold px-6 py-3 hover:bg-amber-400 transition-colors rounded"
+            >
+              Download the App
+              <ArrowRight className="w-4 h-4" />
+            </a>
+          ) : (
+            <span className="text-gray-400 font-medium">App Coming Soon</span>
+          )}
         </div>
       </main>
     </>

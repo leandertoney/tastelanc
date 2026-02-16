@@ -34,6 +34,12 @@ export interface MarketBrand {
   // Assets
   logoPath: string;
 
+  // App Store URLs (empty string = no app yet)
+  appStoreUrls: {
+    ios: string;
+    android: string;
+  };
+
   // Web theme colors (dark theme)
   colors: {
     accent: string;
@@ -80,6 +86,11 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
 
     logoPath: '/images/tastelanc_new_dark.png',
 
+    appStoreUrls: {
+      ios: 'https://apps.apple.com/us/app/tastelanc/id6755852717',
+      android: 'https://play.google.com/store/apps/details?id=com.tastelanc.app',
+    },
+
     colors: {
       accent: '#A41E22',
       accentHover: '#8B1A1D',
@@ -120,9 +131,14 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
 
     logoPath: '/images/tastecumberland_logo.png',
 
+    appStoreUrls: {
+      ios: '',
+      android: '',
+    },
+
     colors: {
-      accent: '#1E3A5F',
-      accentHover: '#162D4A',
+      accent: '#0F1E2E',
+      accentHover: '#1A2D40',
       gold: '#C9A227',
       bg: '#1A1A1A',
       card: '#252525',

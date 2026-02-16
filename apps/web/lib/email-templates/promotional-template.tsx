@@ -168,6 +168,6 @@ As one of our founding members, you've already earned early access perks. Downlo
 
 Android version coming soon — we'll let you know when it's ready!`,
     ctaText: "Download for iPhone",
-    ctaUrl: "https://apps.apple.com/us/app/tastelanc/id6755852717",
+    ctaUrl: BRAND.appStoreUrls.ios || `https://${BRAND.domain}`,
   },
 };
