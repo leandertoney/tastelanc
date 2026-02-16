@@ -85,7 +85,7 @@ function GridItem({
       >
         {isSelected && (
           <View style={styles.checkBadge}>
-            <Ionicons name="checkmark" size={14} color={colors.text} />
+            <Ionicons name="checkmark" size={14} color={colors.textOnAccent} />
           </View>
         )}
 
@@ -101,7 +101,7 @@ function GridItem({
             <Ionicons
               name={option.icon as any}
               size={28}
-              color={isSelected ? colors.text : colors.accent}
+              color={isSelected ? colors.textOnAccent : colors.accent}
             />
           )}
         </View>

@@ -107,7 +107,7 @@ export default function OnboardingDiningHabitsScreen({ navigation }: Props) {
                     <Ionicons
                       name={OPTION_ICONS[option] || 'restaurant'}
                       size={24}
-                      color={isSelected ? colors.text : colors.accent}
+                      color={isSelected ? colors.textOnAccent : colors.accent}
                     />
                   </View>
                   <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
@@ -115,7 +115,7 @@ export default function OnboardingDiningHabitsScreen({ navigation }: Props) {
                   </Text>
                   {isSelected && (
                     <View style={styles.checkmark}>
-                      <Ionicons name="checkmark" size={20} color={colors.text} />
+                      <Ionicons name="checkmark" size={20} color={colors.textOnAccent} />
                     </View>
                   )}
                 </TouchableOpacity>

@@ -109,7 +109,7 @@ export default function OnboardingBudgetScreen({ navigation }: Props) {
                 </View>
                 {isSelected && (
                   <View style={styles.checkmark}>
-                    <Ionicons name="checkmark" size={20} color={colors.text} />
+                    <Ionicons name="checkmark" size={20} color={colors.textOnAccent} />
                   </View>
                 )}
               </TouchableOpacity>

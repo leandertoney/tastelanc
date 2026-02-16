@@ -169,11 +169,11 @@ export default function OnboardingVotingScreen({ navigation }: Props) {
 
               {!showWinner ? (
                 <Animated.View style={[styles.checkCircle, checkAnimatedStyle]}>
-                  <Ionicons name="checkmark" size={24} color={colors.text} />
+                  <Ionicons name="checkmark" size={24} color={'#FFFFFF'} />
                 </Animated.View>
               ) : (
                 <Animated.View style={[styles.winnerBadge, winnerAnimatedStyle]}>
-                  <Ionicons name="trophy" size={14} color={colors.text} />
+                  <Ionicons name="trophy" size={14} color={'#FFFFFF'} />
                   <Text style={styles.winnerText}>TOP PICK</Text>
                 </Animated.View>
               )}

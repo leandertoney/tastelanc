@@ -429,7 +429,7 @@ export default function SearchScreen() {
           showsMyLocationButton={false}
           showsCompass={false}
           clusterColor={colors.accent}
-          clusterTextColor={colors.text}
+          clusterTextColor={colors.textOnAccent}
           renderCluster={renderCluster}
           animationEnabled={false}
           radius={50}

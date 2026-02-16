@@ -286,7 +286,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
             </View>
           )}
           <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.4)', colors.primary]}
+            colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.65)']}
             style={[styles.heroGradient, { height: heroHeight * 0.7 }]}
           >
             <View style={styles.heroContent}>
@@ -636,7 +636,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
         onPress={() => setCheckInModalVisible(true)}
         activeOpacity={0.9}
       >
-        <Ionicons name="gift" size={24} color={colors.text} />
+        <Ionicons name="gift" size={24} color={colors.textOnAccent} />
         <Text style={styles.checkInFabText}>Check In</Text>
       </TouchableOpacity>
 
@@ -712,10 +712,10 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 32,
     fontWeight: '700',
-    color: colors.text,
-    textShadowColor: 'rgba(0,0,0,0.5)',
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0,0,0,0.6)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    textShadowRadius: 4,
   },
   // Elite subtle refinements
   pickBadge: {
@@ -962,7 +962,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   checkInFabText: {
-    color: colors.text,
+    color: colors.textOnAccent,
     fontSize: 16,
     fontWeight: '600',
   },

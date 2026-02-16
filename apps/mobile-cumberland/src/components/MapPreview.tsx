@@ -134,7 +134,7 @@ export default function MapPreview({
           style={[styles.actionButton, styles.directionsButton]}
           onPress={handleGetDirections}
         >
-          <Ionicons name="navigate" size={18} color={colors.text} />
+          <Ionicons name="navigate" size={18} color={colors.textOnAccent} />
           <Text style={styles.directionsText}>Get Directions</Text>
         </TouchableOpacity>
       </View>
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   directionsText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.textOnAccent,
   },
   noMapContainer: {
     height: 120,
