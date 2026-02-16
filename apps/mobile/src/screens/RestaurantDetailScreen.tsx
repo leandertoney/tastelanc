@@ -9,6 +9,7 @@ import {
   Dimensions,
   RefreshControl,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -41,12 +42,15 @@ import {
   RatingSubmit,
   PersonalityDescription,
   TabBar,
+  OpenStatusBadge,
 } from '../components';
 import TierLockedEmptyState from '../components/TierLockedEmptyState';
 import type { Tab } from '../components';
 import { formatCategoryName, formatTime } from '../lib/formatters';
 import { colors, radius } from '../constants/colors';
 import { isTierGatingEnabled } from '../lib/feature-flags';
+import { useRecordVisit } from '../hooks/useRadarVisits';
+import { useUserLocation, calculateDistance } from '../hooks/useUserLocation';
 import {
   hasMenuAccess,
   hasSpecialsAccess,
@@ -102,6 +106,12 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [checkInModalVisible, setCheckInModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('happy_hours');
+  const [isRecordingVisit, setIsRecordingVisit] = useState(false);
+  const [visitRecorded, setVisitRecorded] = useState(false);
+
+  // "I'm Here" proximity-gated visit recording
+  const { recordVisit } = useRecordVisit();
+  const { location: userLocation, refreshLocation } = useUserLocation();
 
   // Feature flag for tier gating
   const tierGatingEnabled = isTierGatingEnabled();
@@ -222,6 +232,74 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
     toggleFavoriteMutation.mutate(id);
   }, [id, toggleFavoriteMutation]);
 
+  const PROXIMITY_THRESHOLD_MILES = 0.124; // ~200 meters
+
+  const handleImHere = useCallback(async () => {
+    if (!userId || isRecordingVisit || visitRecorded) return;
+
+    // Refresh location to get latest position
+    await refreshLocation();
+
+    // Check proximity to restaurant
+    if (!restaurant?.latitude || !restaurant?.longitude) {
+      Alert.alert('Location Unavailable', 'This restaurant does not have location data.');
+      return;
+    }
+
+    if (!userLocation) {
+      Alert.alert(
+        'Location Required',
+        'Please enable location services to confirm your visit.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    const distanceMiles = calculateDistance(
+      userLocation.latitude,
+      userLocation.longitude,
+      restaurant.latitude,
+      restaurant.longitude
+    );
+
+    if (distanceMiles > PROXIMITY_THRESHOLD_MILES) {
+      Alert.alert(
+        'Too Far Away',
+        `You need to be at or near ${restaurant.name} to record your visit.`,
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    // Within proximity — record the visit
+    setIsRecordingVisit(true);
+    try {
+      const result = await recordVisit(id);
+      if (!result.error) {
+        setVisitRecorded(true);
+        Alert.alert(
+          'Visit Recorded!',
+          `You can now vote for ${restaurant.name} in the Vote Center.`,
+          [{ text: 'OK' }]
+        );
+      } else if (result.alreadyRecorded) {
+        setVisitRecorded(true);
+        Alert.alert(
+          'Already Recorded',
+          "You've already recorded a visit here today.",
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert('Error', 'Failed to record visit. Please try again.', [{ text: 'OK' }]);
+      }
+    } catch (err) {
+      console.error('[RestaurantDetail] Error recording visit:', err);
+      Alert.alert('Error', 'Something went wrong. Please try again.', [{ text: 'OK' }]);
+    } finally {
+      setIsRecordingVisit(false);
+    }
+  }, [userId, id, restaurant, userLocation, recordVisit, isRecordingVisit, visitRecorded, refreshLocation]);
+
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -331,11 +409,14 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
             <Ionicons name="location-outline" size={16} color={colors.textMuted} />
             <Text style={styles.infoText}>{restaurant.address}, {restaurant.city}</Text>
           </View>
-          {todayHours && !todayHours.is_closed && (
-            <Text style={styles.infoOpen}>
-              Open {formatTime(todayHours.open_time)} - {formatTime(todayHours.close_time)}
-            </Text>
-          )}
+          <View style={styles.infoRow}>
+            <OpenStatusBadge restaurantId={restaurant.id} size="default" />
+            {todayHours && !todayHours.is_closed && todayHours.open_time && todayHours.close_time && (
+              <Text style={styles.infoOpen}>
+                {formatTime(todayHours.open_time)} - {formatTime(todayHours.close_time)}
+              </Text>
+            )}
+          </View>
         </View>
 
         {/* Description */}
@@ -628,6 +709,34 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
         {/* Bottom spacing */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      {/* Floating "I'm Here" Button */}
+      {userId && (
+        <TouchableOpacity
+          style={[
+            styles.imHereFab,
+            visitRecorded && styles.imHereFabRecorded,
+          ]}
+          onPress={handleImHere}
+          activeOpacity={0.9}
+          disabled={isRecordingVisit || visitRecorded}
+        >
+          {isRecordingVisit ? (
+            <ActivityIndicator size="small" color={colors.text} />
+          ) : (
+            <>
+              <Ionicons
+                name={visitRecorded ? 'checkmark-circle' : 'location'}
+                size={20}
+                color={colors.text}
+              />
+              <Text style={styles.imHereFabText}>
+                {visitRecorded ? 'Visited' : "I'm Here"}
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
+      )}
 
       {/* Floating Check-In Button */}
       <TouchableOpacity
@@ -963,6 +1072,34 @@ const styles = StyleSheet.create({
   checkInFabText: {
     color: colors.text,
     fontSize: 16,
+    fontWeight: '600',
+  },
+  imHereFab: {
+    position: 'absolute',
+    bottom: 24,
+    left: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.cardBgElevated,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+    gap: 6,
+  },
+  imHereFabRecorded: {
+    backgroundColor: `${colors.success}30`,
+    borderColor: colors.success,
+  },
+  imHereFabText: {
+    color: colors.text,
+    fontSize: 14,
     fontWeight: '600',
   },
 });

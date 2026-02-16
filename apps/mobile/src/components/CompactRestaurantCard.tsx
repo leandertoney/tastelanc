@@ -4,6 +4,7 @@ import type { Restaurant } from '../types/database';
 import { formatCategoryName } from '../lib/formatters';
 import { colors, radius, spacing } from '../constants/colors';
 import TrendingBadge, { type BadgeType } from './TrendingBadge';
+import OpenStatusBadge from './OpenStatusBadge';
 
 interface CompactRestaurantCardProps {
   restaurant: Restaurant;
@@ -55,6 +56,8 @@ export default function CompactRestaurantCard({
         </View>
 
         <View style={styles.metaRow}>
+          <OpenStatusBadge restaurantId={restaurant.id} size="small" />
+          <Text style={styles.dot}>•</Text>
           {isElite && (
             <>
               <View style={styles.pickBadge}>

@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { Restaurant } from '../types/database';
 import { formatCategoryName } from '../lib/formatters';
 import { colors, radius } from '../constants/colors';
+import OpenStatusBadge from './OpenStatusBadge';
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -64,6 +65,8 @@ export default function RestaurantCard({
             </View>
           ))}
         </View>
+
+        <OpenStatusBadge restaurantId={restaurant.id} size="small" style={{ marginBottom: 8 }} />
 
         <View style={styles.infoRow}>
           <Ionicons name="location-outline" size={14} color={colors.textMuted} />

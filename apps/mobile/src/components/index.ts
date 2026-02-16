@@ -59,3 +59,4 @@ export { default as ItineraryTimeSlotCard } from './ItineraryTimeSlotCard';
 export { default as PersonalityDescription } from './PersonalityDescription';
 export { default as BlogPostCard } from './BlogPostCard';
 export { default as BlogSection } from './BlogSection';
+export { default as OpenStatusBadge } from './OpenStatusBadge';
