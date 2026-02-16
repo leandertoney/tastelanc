@@ -1,8 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
 import { getStripe, ALL_CONSUMER_PRICE_IDS, SELF_PROMOTER_PRICE_IDS } from '@/lib/stripe';
+import { BRAND } from '@/config/market';
 import { Card, Badge } from '@/components/ui';
 import { Store, CheckCircle, CreditCard, Calendar, ExternalLink, Users, Clock, Gift, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { verifyAdminAccess } from '@/lib/auth/admin-access';
 
 interface PromotionalRestaurant {
   id: string;
@@ -40,7 +42,7 @@ function isSelfPromoterPrice(priceId: string): boolean {
 
 // Get plan name from price
 function getPlanFromPrice(priceId: string, amount: number): string {
-  if (isConsumerPrice(priceId)) return 'TasteLanc+';
+  if (isConsumerPrice(priceId)) return BRAND.premiumName;
   if (isSelfPromoterPrice(priceId)) return 'Self-Promoter';
   // Restaurant tiers based on price
   if (amount >= 1000) return 'Elite';
@@ -130,12 +132,12 @@ function formatInterval(interval: string, intervalCount: number): string {
 }
 
 // Get promotional restaurants (premium/elite tier but no subscription)
-async function getPromotionalRestaurants(): Promise<PromotionalRestaurant[]> {
+async function getPromotionalRestaurants(scopedMarketId: string | null): Promise<PromotionalRestaurant[]> {
   try {
     const supabase = await createClient();
 
     // Get restaurants with premium/elite tier but no stripe_subscription_id
-    const { data, error } = await supabase
+    let query = supabase
       .from('restaurants')
       .select(`
         id,
@@ -151,6 +153,12 @@ async function getPromotionalRestaurants(): Promise<PromotionalRestaurant[]> {
       ])
       .is('stripe_subscription_id', null)
       .order('name');
+
+    if (scopedMarketId) {
+      query = query.eq('market_id', scopedMarketId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching promotional restaurants:', error);
@@ -172,9 +180,12 @@ async function getPromotionalRestaurants(): Promise<PromotionalRestaurant[]> {
 }
 
 export default async function AdminPaidMembersPage() {
+  const supabase = await createClient();
+  const admin = await verifyAdminAccess(supabase);
+
   const [{ restaurants, consumers, selfPromoters }, promotionalRestaurants] = await Promise.all([
     getStripeSubscriptions(),
-    getPromotionalRestaurants(),
+    getPromotionalRestaurants(admin.scopedMarketId),
   ]);
 
   const restaurantMRR = restaurants.reduce((sum, r) => sum + r.mrr, 0);
@@ -215,7 +226,7 @@ export default async function AdminPaidMembersPage() {
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-2">
             <Users className="w-5 h-5 text-purple-500" />
-            <span className="text-gray-400">TasteLanc+</span>
+            <span className="text-gray-400">{BRAND.premiumName}</span>
           </div>
           <p className="text-3xl font-bold text-white">{consumers.length}</p>
           <p className="text-xs text-gray-500 mt-1">${consumerMRR.toFixed(0)}/mo</p>
@@ -378,7 +389,7 @@ export default async function AdminPaidMembersPage() {
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
           <Users className="w-5 h-5 text-purple-500" />
-          TasteLanc+ Subscribers
+          {BRAND.premiumName} Subscribers
         </h2>
         {consumers.length === 0 ? (
           <Card className="p-8 text-center">

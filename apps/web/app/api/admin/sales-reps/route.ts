@@ -1,17 +1,16 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { verifyAdminAccess } from '@/lib/auth/admin-access';
 import { sendEmail } from '@/lib/resend';
 import { generateSalesRepInviteEmail } from '@/lib/email-templates/sales-rep-invite-template';
 
 export async function GET() {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user || user.email !== 'admin@tastelanc.com') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
+    let admin;
+    try { admin = await verifyAdminAccess(supabase); }
+    catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
     const serviceClient = createServiceRoleClient();
 
@@ -52,11 +51,9 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user || user.email !== 'admin@tastelanc.com') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
+    let admin;
+    try { admin = await verifyAdminAccess(supabase); }
+    catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
     const body = await request.json();
     const { email, name, phone, market_ids } = body;

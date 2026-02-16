@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/market';
 import { fetchRestaurants } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -12,8 +13,8 @@ export const revalidate = 1800;
 export async function generateMetadata({ params }: { params: { category: string } }) {
   const titleCategory = params.category.replace(/-/g, ' ');
   return buildMeta({
-    title: `${titleCategory} in Lancaster, PA | TasteLanc`,
-    description: `Discover ${titleCategory} restaurants, specials, and events in Lancaster.`,
+    title: `${titleCategory} in ${BRAND.countyShort}, ${BRAND.state} | ${BRAND.name}`,
+    description: `Discover ${titleCategory} restaurants, specials, and events in ${BRAND.countyShort}.`,
     url: `${siteUrl}/categories/${params.category}`,
   });
 }
@@ -32,7 +33,7 @@ export default async function CategoryPage({ params }: { params: { category: str
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <main className="max-w-5xl mx-auto px-4 py-10 text-white">
         {leadershipLine(claim)}
-        <h1 className="text-3xl font-bold">{params.category.replace(/-/g, ' ')} in Lancaster</h1>
+        <h1 className="text-3xl font-bold">{params.category.replace(/-/g, ' ')} in {BRAND.countyShort}</h1>
         <p className="text-gray-400 mt-2">Restaurants, specials, and events in this category.</p>
         {restaurantCTAButtons()}
         <div className="grid md:grid-cols-2 gap-6 mt-6">

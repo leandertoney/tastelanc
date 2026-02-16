@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui';
 import { formatTime, getCurrentDayOfWeek, capitalizeWords } from '@/lib/utils';
 import type { Metadata } from 'next';
 import type { DayOfWeek } from '@/types/database';
+import { MARKET_SLUG } from '@/config/market';
 
 export const metadata: Metadata = {
   title: 'Happy Hours | TasteLanc',
@@ -32,9 +33,15 @@ async function getHappyHours(day?: string) {
   const supabase = await createClient();
   const targetDay = day || getCurrentDayOfWeek();
 
+  // Resolve market
+  const { data: marketRow } = await supabase
+    .from('markets').select('id').eq('slug', MARKET_SLUG).eq('is_active', true).single();
+  if (!marketRow) throw new Error(`Market "${MARKET_SLUG}" not found`);
+
   const { data } = await supabase
     .from('happy_hours')
-    .select('*, restaurant:restaurants(*), happy_hour_items(*)')
+    .select('*, restaurant:restaurants!inner(*), happy_hour_items(*)')
+    .eq('restaurant.market_id', marketRow.id)
     .eq('is_active', true)
     .contains('days_of_week', [targetDay])
     .order('start_time');

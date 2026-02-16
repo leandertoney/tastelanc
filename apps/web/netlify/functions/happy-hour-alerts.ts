@@ -70,6 +70,19 @@ export default async function handler(req: Request, context: Context) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
+    // Resolve market
+    const marketSlug = process.env.NEXT_PUBLIC_MARKET_SLUG || 'lancaster-pa';
+    const { data: marketRow } = await supabase
+      .from('markets').select('id').eq('slug', marketSlug).eq('is_active', true).single();
+    if (!marketRow) {
+      console.error(`[Happy Hour Alerts] Market "${marketSlug}" not found`);
+      return new Response(
+        JSON.stringify({ sent: 0, error: 'Market not found' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    const marketId = marketRow.id;
+
     const now = new Date();
     const dayOfWeek = now
       .toLocaleDateString('en-US', { weekday: 'long', timeZone: 'America/New_York' })
@@ -106,7 +119,7 @@ export default async function handler(req: Request, context: Context) {
       );
     }
 
-    // Find ALL happy hours for today for paid tier restaurants
+    // Find ALL happy hours for today for paid tier restaurants (scoped to market)
     const { data: happyHours, error: hhError } = await supabase
       .from('happy_hours')
       .select(
@@ -119,6 +132,7 @@ export default async function handler(req: Request, context: Context) {
         restaurant:restaurants!inner(id, name, tier_id)
       `
       )
+      .eq('restaurant.market_id', marketId)
       .eq('is_active', true)
       .contains('days_of_week', [dayOfWeek]);
 

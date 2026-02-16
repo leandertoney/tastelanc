@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { verifyAdminAccess } from '@/lib/auth/admin-access';
 
 export async function GET() {
   try {
     const supabase = await createClient();
 
     // Check admin auth
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user || user.email !== 'admin@tastelanc.com') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    let admin;
+    try { admin = await verifyAdminAccess(supabase); }
+    catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
     const { data: requests, error } = await supabase
       .from('feature_requests')

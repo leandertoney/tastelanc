@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { BRAND } from '@/config/market';
 import { Card, Badge } from '@/components/ui';
 import { Mail, Phone, Building2, Calendar, MessageSquare } from 'lucide-react';
 import MarkAsReadButton from './MarkAsReadButton';
@@ -139,7 +140,7 @@ export default async function AdminContactsPage() {
                     <MarkAsReadButton contactId={contact.id} />
                   )}
                   <a
-                    href={`mailto:${contact.email}?subject=RE: TasteLanc Partnership Inquiry`}
+                    href={`mailto:${contact.email}?subject=RE: ${BRAND.name} Partnership Inquiry`}
                     className="text-sm text-tastelanc-accent hover:underline"
                   >
                     Reply

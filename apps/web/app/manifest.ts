@@ -1,11 +1,11 @@
 import type { MetadataRoute } from 'next';
+import { BRAND } from '@/config/market';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'TasteLanc',
-    short_name: 'TasteLanc',
-    description:
-      "Discover Lancaster's best dining, happy hours, events, and nightlife.",
+    name: BRAND.name,
+    short_name: BRAND.name,
+    description: BRAND.seo.description,
     start_url: '/',
     display: 'standalone',
     background_color: '#121212',

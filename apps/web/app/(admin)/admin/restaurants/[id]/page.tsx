@@ -1,6 +1,8 @@
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { verifyAdminAccess } from '@/lib/auth/admin-access';
+import { MARKET_SLUG } from '@/config/market';
 import {
   ArrowLeft,
   Store,
@@ -25,12 +27,18 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
   const supabase = await createClient();
 
   // Verify user is admin
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user || user.email !== 'admin@tastelanc.com') {
-    redirect('/login');
+  let admin;
+  try { admin = await verifyAdminAccess(supabase); }
+  catch { redirect('/login'); }
+
+  // Resolve market
+  const { data: marketRow } = await supabase
+    .from('markets').select('id').eq('slug', MARKET_SLUG).eq('is_active', true).single();
+  if (!marketRow) {
+    notFound();
   }
 
-  // Fetch restaurant with related data
+  // Fetch restaurant with related data — scoped to this market
   const { data: restaurant, error } = await supabase
     .from('restaurants')
     .select(`
@@ -41,6 +49,7 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
       )
     `)
     .eq('id', id)
+    .eq('market_id', marketRow.id)
     .single();
 
   if (error || !restaurant) {

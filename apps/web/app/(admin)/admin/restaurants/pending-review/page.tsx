@@ -6,6 +6,7 @@ import { Card, Badge, Button } from '@/components/ui';
 import { Store, MapPin, Check, X, Loader2, ClipboardCheck } from 'lucide-react';
 import { CATEGORIES_BY_GROUP, CATEGORY_GROUPS, ALL_CATEGORIES } from '@/lib/constants/categories';
 import type { RestaurantCategory } from '@/types/database';
+import { useMarket } from '@/contexts/MarketContext';
 
 interface PendingVenue {
   id: string;
@@ -30,16 +31,18 @@ export default function PendingReviewPage() {
   const [rejecting, setRejecting] = useState<string | null>(null);
 
   const supabase = createClient();
+  const { marketId } = useMarket();
 
   useEffect(() => {
-    fetchPendingVenues();
-  }, []);
+    if (marketId) fetchPendingVenues();
+  }, [marketId]);
 
   async function fetchPendingVenues() {
     setLoading(true);
     const { data, error } = await supabase
       .from('restaurants')
       .select('*')
+      .eq('market_id', marketId!)
       .eq('is_active', false)
       .order('created_at', { ascending: false });
 

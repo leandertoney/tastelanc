@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/market';
 import { fetchSpecials, fetchRestaurants } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -9,8 +10,8 @@ export const revalidate = 1800;
 
 export async function generateMetadata() {
   return buildMeta({
-    title: 'Restaurant Specials in Lancaster, PA | TasteLanc',
-    description: 'Browse Lancaster food and drink specials by day and price.',
+    title: `Restaurant Specials in ${BRAND.countyShort}, ${BRAND.state} | ${BRAND.name}`,
+    description: `Browse ${BRAND.countyShort} food and drink specials by day and price.`,
     url: `${siteUrl}/specials`,
   });
 }
@@ -32,7 +33,7 @@ export default async function SpecialsPage() {
       <main className="max-w-5xl mx-auto px-4 py-10 text-white">
         {leadershipLine(claim)}
         <h1 className="text-3xl font-bold">Restaurant Specials</h1>
-        <p className="text-gray-400 mt-2">Lancaster food and drink deals by day and price.</p>
+        <p className="text-gray-400 mt-2">{BRAND.countyShort} food and drink deals by day and price.</p>
         {restaurantCTAButtons()}
         <div className="space-y-4 mt-6">
           {items.map(({ s, r }) => (

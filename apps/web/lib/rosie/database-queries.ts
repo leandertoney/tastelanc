@@ -6,6 +6,7 @@ import {
   EventInfo,
   SpecialInfo,
 } from './types';
+import { BRAND } from '@/config/market';
 
 // Types for Supabase query results
 interface RestaurantJoin {
@@ -72,11 +73,13 @@ function formatTime(time: string): string {
 
 // Fetch all active restaurants
 export async function getActiveRestaurants(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  marketId: string
 ): Promise<RestaurantInfo[]> {
   const { data: restaurants, error } = await supabase
     .from('restaurants')
     .select('name, slug, address, city, description, categories')
+    .eq('market_id', marketId)
     .eq('is_active', true);
 
   if (error) {
@@ -96,7 +99,8 @@ export async function getActiveRestaurants(
 
 // Fetch today's happy hours with items
 export async function getTodaysHappyHours(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  marketId: string
 ): Promise<HappyHourInfo[]> {
   const today = getCurrentDay();
 
@@ -113,6 +117,7 @@ export async function getTodaysHappyHours(
       happy_hour_items(name, original_price, discounted_price)
     `
     )
+    .eq('restaurant.market_id', marketId)
     .eq('is_active', true)
     .contains('days_of_week', [today]);
 
@@ -143,7 +148,8 @@ export async function getTodaysHappyHours(
 
 // Fetch today's events
 export async function getTodaysEvents(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  marketId: string
 ): Promise<EventInfo[]> {
   const today = getCurrentDay();
 
@@ -160,6 +166,7 @@ export async function getTodaysEvents(
       restaurant:restaurants!inner(name, slug, is_active)
     `
     )
+    .eq('restaurant.market_id', marketId)
     .eq('is_active', true)
     .contains('days_of_week', [today]);
 
@@ -186,7 +193,8 @@ export async function getTodaysEvents(
 
 // Fetch today's specials
 export async function getTodaysSpecials(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  marketId: string
 ): Promise<SpecialInfo[]> {
   const today = getCurrentDay();
 
@@ -202,6 +210,7 @@ export async function getTodaysSpecials(
       restaurant:restaurants!inner(name, slug, is_active)
     `
     )
+    .eq('restaurant.market_id', marketId)
     .eq('is_active', true)
     .contains('days_of_week', [today]);
 
@@ -227,13 +236,14 @@ export async function getTodaysSpecials(
 
 // Build complete restaurant context for Rosie
 export async function buildRestaurantContext(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  marketId: string
 ): Promise<RestaurantContext> {
   const [restaurants, happyHours, events, specials] = await Promise.all([
-    getActiveRestaurants(supabase),
-    getTodaysHappyHours(supabase),
-    getTodaysEvents(supabase),
-    getTodaysSpecials(supabase),
+    getActiveRestaurants(supabase, marketId),
+    getTodaysHappyHours(supabase, marketId),
+    getTodaysEvents(supabase, marketId),
+    getTodaysSpecials(supabase, marketId),
   ]);
 
   return {
@@ -254,7 +264,7 @@ export function formatContextForPrompt(context: RestaurantContext): string {
 
   // Restaurants - include slug for linking
   if (context.restaurants.length > 0) {
-    contextStr += `### Restaurants in Lancaster (${context.restaurants.length} active)\n`;
+    contextStr += `### Restaurants in ${BRAND.countyShort} (${context.restaurants.length} active)\n`;
     context.restaurants.forEach((r) => {
       const cats = r.categories.join(', ');
       // Format: name|slug so Rosie can use [[name|slug]] format

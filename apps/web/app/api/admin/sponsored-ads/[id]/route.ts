@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { verifyAdminAccess } from '@/lib/auth/admin-access';
 
 export async function PUT(
   request: NextRequest,
@@ -9,10 +10,9 @@ export async function PUT(
     const { id } = await params;
     const supabase = await createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user || user.email !== 'admin@tastelanc.com') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    let admin;
+    try { admin = await verifyAdminAccess(supabase); }
+    catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
     const body = await request.json();
     const { is_active, priority } = body;

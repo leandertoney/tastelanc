@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { BRAND } from '@/config/market';
 import {
   EventType,
   DayOfWeek,
@@ -23,8 +24,8 @@ interface UseSmartDefaultsReturn {
 }
 
 const SMART_MESSAGES: Record<EventType, string> = {
-  trivia: "Trivia nights are most popular on Wednesdays at 7pm. It's a Lancaster tradition!",
-  live_music: "Friday and Saturday nights at 8pm are prime time for live music in Lancaster.",
+  trivia: `Trivia nights are most popular on Wednesdays at 7pm. It's a ${BRAND.countyShort} tradition!`,
+  live_music: `Friday and Saturday nights at 8pm are prime time for live music in ${BRAND.countyShort}.`,
   karaoke: "Thursday and Friday at 9pm brings out the best karaoke crowds!",
   dj: "DJ nights peak on weekends starting at 10pm. Get ready to party!",
   comedy: "Comedy shows do best on Friday and Saturday at 8pm. Laughter guaranteed!",
@@ -38,7 +39,7 @@ const HAPPY_HOUR_MESSAGE = "Classic happy hour runs 4-6pm on weekdays. Perfect f
 const SPECIAL_MESSAGES: Record<string, string> = {
   default: "Mid-week specials (Tuesday-Wednesday) help drive traffic on slower days.",
   monday: "Monday specials help beat the start-of-week blues!",
-  tuesday: "Taco Tuesday is a Lancaster favorite!",
+  tuesday: `Taco Tuesday is a ${BRAND.countyShort} favorite!`,
   wednesday: "Wing Wednesday brings in the crowds.",
   thursday: "Thursday specials set up a great weekend vibe.",
   friday: "Friday specials kick off the weekend right!",

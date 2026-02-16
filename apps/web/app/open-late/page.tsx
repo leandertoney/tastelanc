@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/market';
 import { fetchRestaurants, fetchHappyHours, fetchSpecials } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -9,8 +10,8 @@ export const revalidate = 1800;
 
 export async function generateMetadata() {
   return buildMeta({
-    title: 'Open Late in Lancaster, PA | TasteLanc',
-    description: 'Find Lancaster restaurants and bars open late with specials and happy hours.',
+    title: `Open Late in ${BRAND.countyShort}, ${BRAND.state} | ${BRAND.name}`,
+    description: `Find ${BRAND.countyShort} restaurants and bars open late with specials and happy hours.`,
     url: `${siteUrl}/open-late`,
   });
 }
@@ -43,7 +44,7 @@ export default async function OpenLatePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <main className="max-w-5xl mx-auto px-4 py-10 text-white">
         {leadershipLine(claim)}
-        <h1 className="text-3xl font-bold">Open Late in Lancaster</h1>
+        <h1 className="text-3xl font-bold">Open Late in {BRAND.countyShort}</h1>
         <p className="text-gray-400 mt-2">Late-night spots with food, drinks, and vibes.</p>
         {restaurantCTAButtons()}
         <div className="grid md:grid-cols-2 gap-6 mt-6">

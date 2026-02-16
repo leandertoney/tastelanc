@@ -4,6 +4,8 @@ export const runtime = 'nodejs';
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { getStripe, RESTAURANT_PRICE_IDS } from '@/lib/stripe';
+import { isUserAdmin } from '@/lib/auth/admin-access';
+import { BRAND } from '@/config/market';
 import type Stripe from 'stripe';
 
 export async function POST(request: Request) {
@@ -40,7 +42,7 @@ export async function POST(request: Request) {
     }
 
     // Allow owner or admin
-    const isAdmin = user.email === 'admin@tastelanc.com';
+    const isAdmin = await isUserAdmin(supabase);
     if (restaurant.owner_id !== user.id && !isAdmin) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
@@ -68,7 +70,7 @@ export async function POST(request: Request) {
         .eq('id', restaurantId);
     }
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
 
     // Check if this is an upgrade (restaurant already has an active subscription)
     let oldSubscriptionId: string | null = null;

@@ -1,15 +1,16 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import Providers from '@/components/Providers';
+import { BRAND } from '@/config/market';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: 'TasteLanc - Discover Lancaster\'s Best Dining & Nightlife',
-  description: 'Find the best restaurants, happy hours, events, and nightlife in Lancaster, PA. TasteLanc is your guide to local dining and entertainment.',
-  keywords: 'Lancaster PA restaurants, Lancaster happy hours, Lancaster events, Lancaster nightlife, dining Lancaster PA',
-  authors: [{ name: 'TasteLanc' }],
+  title: BRAND.seo.title,
+  description: BRAND.seo.description,
+  keywords: BRAND.seo.keywords.join(', '),
+  authors: [{ name: BRAND.name }],
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '32x32' },
@@ -21,17 +22,17 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: 'TasteLanc - Discover Lancaster\'s Best Dining & Nightlife',
-    description: 'Find the best restaurants, happy hours, events, and nightlife in Lancaster, PA.',
+    title: BRAND.seo.title,
+    description: BRAND.seo.description,
     url: siteUrl,
-    siteName: 'TasteLanc',
+    siteName: BRAND.name,
     locale: 'en_US',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'TasteLanc - Discover Lancaster\'s Best Dining & Nightlife',
-    description: 'Find the best restaurants, happy hours, events, and nightlife in Lancaster, PA.',
+    title: BRAND.seo.title,
+    description: BRAND.seo.description,
   },
   robots: {
     index: true,

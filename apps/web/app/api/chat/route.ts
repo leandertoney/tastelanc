@@ -4,6 +4,7 @@ import { anthropic, CLAUDE_CONFIG } from '@/lib/anthropic';
 import { buildRestaurantContext } from '@/lib/rosie/database-queries';
 import { buildSystemPrompt } from '@/lib/rosie/system-prompt';
 import { ChatMessage, ROSIE_CONFIG } from '@/lib/rosie/types';
+import { MARKET_SLUG } from '@/config/market';
 
 // Create Supabase client for API route (without cookies)
 function getSupabaseClient() {
@@ -51,9 +52,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get Supabase client and fetch restaurant context
+    // Resolve market
     const supabase = getSupabaseClient();
-    const restaurantContext = await buildRestaurantContext(supabase);
+    const { data: marketRow, error: marketErr } = await supabase
+      .from('markets')
+      .select('id')
+      .eq('slug', MARKET_SLUG)
+      .eq('is_active', true)
+      .single();
+    if (marketErr || !marketRow) {
+      return NextResponse.json({ error: 'Market configuration error' }, { status: 500 });
+    }
+    const marketId = marketRow.id;
+
+    // Fetch restaurant context scoped to this market
+    const restaurantContext = await buildRestaurantContext(supabase, marketId);
 
     // Build system prompt with restaurant data
     const systemPrompt = buildSystemPrompt(restaurantContext);

@@ -1,4 +1,5 @@
 import type { Restaurant, Event, Special, HappyHour, BlogPost } from './types';
+import { BRAND } from '@/config/market';
 
 export const breadcrumbJsonLd = (items: Array<{ name: string; url: string }>) => ({
   '@context': 'https://schema.org',
@@ -22,7 +23,7 @@ export const restaurantJsonLd = (r: Restaurant) => ({
   '@type': 'Restaurant',
   name: r.name,
   description: r.description || undefined,
-  url: `https://tastelanc.com/restaurants/${r.slug}`,
+  url: `https://${BRAND.domain}/restaurants/${r.slug}`,
   image: r.cover_image_url || r.logo_url || undefined,
   telephone: r.phone || undefined,
   address: {
@@ -66,7 +67,7 @@ export const eventJsonLd = (e: Event, r?: Restaurant) => ({
     ? {
         '@type': 'Organization',
         name: r.name,
-        url: `https://tastelanc.com/restaurants/${r.slug}`,
+        url: `https://${BRAND.domain}/restaurants/${r.slug}`,
       }
     : undefined,
 });
@@ -77,7 +78,7 @@ export const offerJsonLd = (name: string, price: number | null, r: Restaurant) =
   price: price ?? undefined,
   priceCurrency: 'USD',
   itemOffered: name,
-  url: `https://tastelanc.com/restaurants/${r.slug}`,
+  url: `https://${BRAND.domain}/restaurants/${r.slug}`,
   seller: { '@type': 'Organization', name: r.name },
 });
 
@@ -88,6 +89,6 @@ export const articleJsonLd = (post: BlogPost) => ({
   description: post.summary,
   image: post.cover_image_url || undefined,
   datePublished: post.created_at,
-  url: `https://tastelanc.com/blog/${post.slug}`,
-  author: { '@type': 'Organization', name: 'TasteLanc' },
+  url: `https://${BRAND.domain}/blog/${post.slug}`,
+  author: { '@type': 'Organization', name: BRAND.name },
 });

@@ -1,5 +1,7 @@
-// TasteLanc Email Base Layout
+// Email Base Layout
 // Dark theme matching the brand
+
+import { BRAND } from '@/config/market';
 
 export interface BaseLayoutProps {
   children: string;
@@ -19,7 +21,7 @@ export function renderBaseLayout({
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>TasteLanc</title>
+  <title>${BRAND.name}</title>
   <style>
     body { margin:0; padding:0; width:100% !important; background:#0D0D0D; color:#FFFFFF; font-family: Arial, sans-serif; -webkit-font-smoothing: antialiased; }
     table { border-collapse: collapse; }
@@ -46,9 +48,9 @@ export function renderBaseLayout({
             <td align="center" bgcolor="#0D0D0D" style="background:#0D0D0D; background-color:#0D0D0D !important;">
               <div style="display:inline-block; background:#0D0D0D; border-radius:12px; padding:12px;">
                 <img
-                  src="https://tastelanc.com/images/tastelanc_new_dark.png"
+                  src="https://${BRAND.domain}${BRAND.logoPath}"
                   width="160"
-                  alt="TasteLanc"
+                  alt="${BRAND.name}"
                   style="display:block;"
                 />
               </div>
@@ -65,13 +67,13 @@ export function renderBaseLayout({
           </tr>
           <tr>
             <td style="padding-top:24px; border-top:1px solid #1F1F1F; color:#CCCCCC; font-size:12px; line-height:1.6; text-align:left; background:#0D0D0D;" bgcolor="#0D0D0D">
-              You're receiving this email because you signed up for TasteLanc.
+              You're receiving this email because you signed up for ${BRAND.name}.
               <br />
               <a href="${unsubscribeUrl}" style="color:#E63946; text-decoration: underline;">Unsubscribe</a>
               &nbsp;&bull;&nbsp;
-              <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com'}/privacy" style="color:#E63946; text-decoration: underline;">Privacy</a>
+              <a href="${process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`}/privacy" style="color:#E63946; text-decoration: underline;">Privacy</a>
               &nbsp;&bull;&nbsp;
-              <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com'}/terms" style="color:#E63946; text-decoration: underline;">Terms</a>
+              <a href="${process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`}/terms" style="color:#E63946; text-decoration: underline;">Terms</a>
             </td>
           </tr>
         </table>

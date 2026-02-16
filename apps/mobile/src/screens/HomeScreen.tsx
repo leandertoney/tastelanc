@@ -20,6 +20,7 @@ import type { Restaurant } from '../types/database';
 import type { RootStackParamList } from '../navigation/types';
 import { useFavorites, useToggleFavorite, useTrendingRestaurants, usePromoCard } from '../hooks';
 import { getOtherRestaurants, getFeaturedRestaurants } from '../lib/recommendations';
+import { useMarket } from '../context/MarketContext';
 import { injectPromoIntoList, type ListItem } from '../lib/listUtils';
 import {
   SectionHeader,
@@ -58,11 +59,12 @@ export default function HomeScreen() {
   const toggleFavoriteMutation = useToggleFavorite();
   const { data: trendingIds } = useTrendingRestaurants();
   const { isVisible: showPromo, dismiss: dismissPromo } = usePromoCard();
+  const { marketId } = useMarket();
 
   // Get featured restaurants from cache (prefetched during splash)
   const { data: featuredRestaurants = [] } = useQuery({
-    queryKey: ['featuredRestaurants'],
-    queryFn: () => getFeaturedRestaurants(16),
+    queryKey: ['featuredRestaurants', marketId],
+    queryFn: () => getFeaturedRestaurants(16, marketId),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -92,8 +94,8 @@ export default function HomeScreen() {
     refetch,
     isRefetching,
   } = useInfiniteQuery({
-    queryKey: ['otherRestaurants', featuredIds],
-    queryFn: ({ pageParam = 0 }) => getOtherRestaurants(featuredIds, pageParam, PAGE_SIZE),
+    queryKey: ['otherRestaurants', featuredIds, marketId],
+    queryFn: ({ pageParam = 0 }) => getOtherRestaurants(featuredIds, pageParam, PAGE_SIZE, marketId),
     getNextPageParam: (lastPage, pages) => (lastPage.hasMore ? pages.length : undefined),
     initialPageParam: 0,
     enabled: featuredIds.length > 0, // Wait until we have featured IDs
@@ -114,15 +116,15 @@ export default function HomeScreen() {
   };
 
   const onRefresh = useCallback(async () => {
-    queryClient.invalidateQueries({ queryKey: ['featuredRestaurants'] });
+    queryClient.invalidateQueries({ queryKey: ['featuredRestaurants', marketId] });
     queryClient.invalidateQueries({ queryKey: ['socialProof'] });
-    queryClient.invalidateQueries({ queryKey: ['activeHappyHours'] });
-    queryClient.invalidateQueries({ queryKey: ['entertainmentEvents'] });
-    queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
+    queryClient.invalidateQueries({ queryKey: ['activeHappyHours', marketId] });
+    queryClient.invalidateQueries({ queryKey: ['entertainmentEvents', marketId] });
+    queryClient.invalidateQueries({ queryKey: ['upcomingEvents', marketId] });
     queryClient.invalidateQueries({ queryKey: ['blog'] });
-    queryClient.invalidateQueries({ queryKey: ['featuredAds'] });
+    queryClient.invalidateQueries({ queryKey: ['featuredAds', marketId] });
     refetch();
-  }, [queryClient, refetch]);
+  }, [queryClient, refetch, marketId]);
 
   const handleLoadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {

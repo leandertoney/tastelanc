@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { Send, CheckCircle, Mail, Phone, User, Briefcase, MapPin, Clock, DollarSign, Users, Megaphone, Handshake, ChevronDown, ChevronUp, FileText, X } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
+import { BRAND } from '@/config/market';
 
 export default function CareersPage() {
   const [expandedRole, setExpandedRole] = useState<string | null>('rpm');
@@ -75,7 +76,7 @@ export default function CareersPage() {
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">Application Submitted!</h2>
           <p className="text-gray-400 mb-6">
-            Thank you for your interest in joining TasteLanc. We&apos;ll review your application and get back to you soon.
+            Thank you for your interest in joining {BRAND.name}. We&apos;ll review your application and get back to you soon.
           </p>
           <a
             href="/"
@@ -95,10 +96,10 @@ export default function CareersPage() {
         <div className="text-center mb-12">
           <Badge variant="accent" className="mb-4">We&apos;re Hiring</Badge>
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Join the TasteLanc Team
+            Join the {BRAND.name} Team
           </h1>
           <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Help us connect Lancaster&apos;s best restaurants with the community. We&apos;re looking for passionate, self-motivated people who love the local food scene.
+            Help us connect {BRAND.countyShort}&apos;s best restaurants with the community. We&apos;re looking for passionate, self-motivated people who love the local food scene.
           </p>
         </div>
 
@@ -116,7 +117,7 @@ export default function CareersPage() {
                 <h3 className="text-xl font-semibold text-white mb-1">Restaurant Partnership Manager</h3>
                 <div className="flex flex-wrap gap-3 text-sm text-gray-400">
                   <span className="flex items-center gap-1">
-                    <MapPin className="w-4 h-4" /> Lancaster, PA &mdash; In Person
+                    <MapPin className="w-4 h-4" /> {BRAND.countyShort}, {BRAND.state} &mdash; In Person
                   </span>
                   <span className="flex items-center gap-1">
                     <DollarSign className="w-4 h-4" /> Commission-Based
@@ -144,7 +145,7 @@ export default function CareersPage() {
                       We are seeking a dynamic and proactive Restaurant Partnership Manager to lead the development and management of strategic partnerships with restaurant clients. In this role, you will drive growth by fostering strong relationships, identifying new business opportunities, and ensuring seamless collaboration between our organization and partner restaurants.
                     </p>
                     <p className="text-gray-400 leading-relaxed mt-3">
-                      The Restaurant Partnership Manager is responsible for building relationships with local restaurants, onboarding them onto the TasteLanc platform, and helping them leverage the app to drive real foot traffic, visibility, and repeat customers. This is a relationship-first role, not traditional ad sales. You&apos;ll work directly with owners and managers to position TasteLanc as a long-term marketing partner.
+                      The Restaurant Partnership Manager is responsible for building relationships with local restaurants, onboarding them onto the {BRAND.name} platform, and helping them leverage the app to drive real foot traffic, visibility, and repeat customers. This is a relationship-first role, not traditional ad sales. You&apos;ll work directly with owners and managers to position {BRAND.name} as a long-term marketing partner.
                     </p>
                   </div>
 
@@ -161,7 +162,7 @@ export default function CareersPage() {
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-tastelanc-accent mt-1">&#10003;</span>
-                        Pitch TasteLanc&apos;s value proposition in person, by phone, and at community events
+                        Pitch {BRAND.name}&apos;s value proposition in person, by phone, and at community events
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-tastelanc-accent mt-1">&#10003;</span>
@@ -173,7 +174,7 @@ export default function CareersPage() {
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-tastelanc-accent mt-1">&#10003;</span>
-                        Represent TasteLanc at local events, festivals, and networking opportunities
+                        Represent {BRAND.name} at local events, festivals, and networking opportunities
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-tastelanc-accent mt-1">&#10003;</span>

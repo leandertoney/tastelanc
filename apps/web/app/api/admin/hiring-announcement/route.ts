@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { verifyAdminAccess } from '@/lib/auth/admin-access';
 import { resend, getRecipientsBySegment, EMAIL_CONFIG } from '@/lib/resend';
 import { renderPromotionalEmail } from '@/lib/email-templates/promotional-template';
 
@@ -36,12 +37,9 @@ export async function GET() {
   try {
     const supabase = await createClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user || user.email !== 'admin@tastelanc.com') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    let admin;
+    try { admin = await verifyAdminAccess(supabase); }
+    catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
     const emailRecipients = await getRecipientsBySegment(supabase, 'all');
 
@@ -72,12 +70,9 @@ export async function POST(request: Request) {
   try {
     const supabase = await createClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user || user.email !== 'admin@tastelanc.com') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    let admin;
+    try { admin = await verifyAdminAccess(supabase); }
+    catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
     const body = await request.json().catch(() => ({}));
     const { testEmail } = body;

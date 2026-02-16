@@ -6,16 +6,23 @@ import type { FeaturedAd } from '../types/database';
  * Fetch all currently active featured ads.
  * Filters by is_active, start_date/end_date, ordered by priority DESC.
  */
-export async function getActiveAds(): Promise<FeaturedAd[]> {
+export async function getActiveAds(marketId: string | null = null): Promise<FeaturedAd[]> {
   const today = new Date().toISOString().split('T')[0];
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('featured_ads')
     .select('*')
     .eq('is_active', true)
     .or(`start_date.is.null,start_date.lte.${today}`)
     .or(`end_date.is.null,end_date.gte.${today}`)
     .order('priority', { ascending: false });
+
+  // Filter by market — include ads for this market OR global ads (null market_id)
+  if (marketId) {
+    query = query.or(`market_id.eq.${marketId},market_id.is.null`);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.warn('[Ads] Failed to fetch active ads:', error.message);
@@ -63,9 +70,14 @@ async function flushAdEvents() {
   adBuffer = [];
 
   try {
+    // Use insert (not upsert) — client-side adSeen set already deduplicates,
+    // and the DB partial unique index on (ad_id, visitor_id, epoch_seed)
+    // WHERE event_type='impression' catches edge-case duplicates.
+    // The previous upsert silently failed because ON CONFLICT can't match
+    // a partial unique index without a WHERE clause.
     await supabase
       .from('ad_events')
-      .upsert(batch, { onConflict: 'ad_id,visitor_id,epoch_seed' });
+      .insert(batch);
   } catch {
     // Silently fail — don't break the app for analytics
   }
@@ -116,6 +128,9 @@ export function trackAdImpression(adId: string, positionIndex: number) {
 export function trackAdClick(adId: string, positionIndex: number) {
   (async () => {
     try {
+      // Flush any buffered impressions first so the impression
+      // exists in the DB before its corresponding click
+      await flushAdEvents();
       const visitorId = await getAdVisitorId();
       const epoch = getEpochSeed();
       await supabase.from('ad_events').insert({

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { BRAND } from '@/config/market';
 import { Smartphone, ChevronRight, X } from 'lucide-react';
 
 const IOS_URL = 'https://apps.apple.com/us/app/tastelanc/id6755852717';
@@ -119,7 +120,7 @@ export function DownloadButtons({ variant = 'full', className = '', showIcon = t
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-xl font-bold text-white mb-2 text-center">Download TasteLanc</h3>
+            <h3 className="text-xl font-bold text-white mb-2 text-center">Download {BRAND.name}</h3>
             <p className="text-gray-400 text-sm mb-6 text-center">Choose your platform</p>
 
             <div className="space-y-3">

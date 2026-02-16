@@ -4,6 +4,7 @@ export const runtime = 'nodejs';
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { getStripe, RESTAURANT_PRICE_IDS } from '@/lib/stripe';
+import { isUserAdmin } from '@/lib/auth/admin-access';
 
 export async function POST(request: Request) {
   try {
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 });
     }
 
-    const isAdmin = user.email === 'admin@tastelanc.com';
+    const isAdmin = await isUserAdmin(supabase);
     if (restaurant.owner_id !== user.id && !isAdmin) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }

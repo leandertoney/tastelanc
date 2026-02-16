@@ -4,14 +4,15 @@ import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
 import { buildMeta } from '@/lib/seo/meta';
 import { itemListJsonLd } from '@/lib/seo/structured';
 import { notFound } from 'next/navigation';
+import { BRAND } from '@/config/market';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
 export const revalidate = 3600;
 
 export async function generateMetadata({ params }: { params: { month: string } }) {
   return buildMeta({
-    title: `Rosie’s Trending for ${params.month} | TasteLanc`,
-    description: `Rosie’s trending picks for ${params.month} in Lancaster.`,
+    title: `${BRAND.aiName}'s Trending for ${params.month} | ${BRAND.name}`,
+    description: `${BRAND.aiName}'s trending picks for ${params.month} in ${BRAND.countyShort}.`,
     url: `${siteUrl}/rosie/trending/month/${params.month}`,
   });
 }
@@ -30,8 +31,8 @@ export default async function RosieTrendingMonth({ params }: { params: { month: 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <main className="max-w-5xl mx-auto px-4 py-10 text-white">
         {leadershipLine(claim)}
-        <h1 className="text-3xl font-bold">Rosie’s Trending Picks — {params.month}</h1>
-        <p className="text-gray-400 mt-2">Who’s hot this month in Lancaster.</p>
+        <h1 className="text-3xl font-bold">{BRAND.aiName}&apos;s Trending Picks — {params.month}</h1>
+        <p className="text-gray-400 mt-2">Who&apos;s hot this month in {BRAND.countyShort}.</p>
         {restaurantCTAButtons()}
         <div className="grid md:grid-cols-2 gap-6 mt-6">
           {list.map((r) => (

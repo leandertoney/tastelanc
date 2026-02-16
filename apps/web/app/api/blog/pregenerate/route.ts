@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient as createSupabaseAdmin } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import { Resend } from 'resend';
+import { MARKET_SLUG, BRAND } from '@/config/market';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
@@ -10,19 +11,19 @@ const openai = new OpenAI({
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const BLOG_TOPICS = [
-  { id: 'happy-hour-deep-dive', prompt: 'Write a deep dive into Lancaster\'s happy hour scene.' },
+  { id: 'happy-hour-deep-dive', prompt: `Write a deep dive into ${BRAND.countyShort}'s happy hour scene.` },
   { id: 'date-night-guide', prompt: 'Write a date night guide for different vibes.' },
   { id: 'family-dining', prompt: 'Write about family dining that doesn\'t suck.' },
-  { id: 'tourist-guide', prompt: 'Write for someone visiting Lancaster from NYC or Philly.' },
-  { id: 'contrarian-take', prompt: 'Write a hot take about Lancaster dining.' },
+  { id: 'tourist-guide', prompt: `Write for someone visiting ${BRAND.countyShort} from NYC or Philly.` },
+  { id: 'contrarian-take', prompt: `Write a hot take about ${BRAND.countyShort} dining.` },
   { id: 'seasonal-guide', prompt: 'Write about what to eat RIGHT NOW that\'s at peak seasonality.' },
   { id: 'late-night-eats', prompt: 'Write about late-night dining options.' },
-  { id: 'brunch-battles', prompt: 'Compare Lancaster\'s brunch scene.' },
-  { id: 'neighborhood-spotlight', prompt: 'Deep dive into a Lancaster neighborhood\'s food scene.' },
+  { id: 'brunch-battles', prompt: `Compare ${BRAND.countyShort}'s brunch scene.` },
+  { id: 'neighborhood-spotlight', prompt: `Deep dive into a ${BRAND.countyShort} neighborhood's food scene.` },
   { id: 'hidden-gems', prompt: 'Write about underrated spots that locals love.' },
   { id: 'best-of', prompt: 'Create an interesting "best of" ranking.' },
   { id: 'weekend-plans', prompt: 'Write a weekend dining itinerary.' },
-  { id: 'budget-eats', prompt: 'Write about eating well in Lancaster on a budget.' },
+  { id: 'budget-eats', prompt: `Write about eating well in ${BRAND.countyShort} on a budget.` },
 ] as const;
 
 function getSeason(): string {
@@ -36,7 +37,7 @@ function getSeason(): string {
 function buildSystemPrompt(restaurants: Array<{ name: string; slug: string; categories: string[] }>): string {
   const restaurantList = restaurants.map(r => `- ${r.name} (slug: ${r.slug})`).join('\n');
 
-  return `You are Rosie, TasteLanc's food intelligence for Lancaster, PA. Write engaging blog posts.
+  return `You are ${BRAND.aiName}, ${BRAND.name}'s food intelligence for ${BRAND.countyShort}, ${BRAND.state}. Write engaging blog posts.
 
 ## RESTAURANTS (${restaurants.length} total)
 ${restaurantList}
@@ -54,13 +55,13 @@ async function sendFailureNotification(error: string, scheduledFor: Date): Promi
   const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'admin@tastelanc.com';
   try {
     await resend.emails.send({
-      from: 'TasteLanc <alerts@tastelanc.com>',
+      from: `${BRAND.name} <alerts@${BRAND.domain}>`,
       to: adminEmail,
       subject: 'Blog Pre-Generation Failed - Action Required',
       html: `<h2>Blog Pre-Generation Failed</h2>
         <p><strong>Scheduled:</strong> ${scheduledFor.toLocaleString('en-US', { timeZone: 'America/New_York' })} EST</p>
         <p><strong>Error:</strong></p><pre>${error}</pre>
-        <p>Please manually generate at <a href="https://tastelanc.com/admin">admin panel</a></p>`,
+        <p>Please manually generate at <a href="https://${BRAND.domain}/admin">admin panel</a></p>`,
     });
   } catch (e) {
     console.error('Failed to send notification:', e);
@@ -86,6 +87,16 @@ export async function POST(request: Request) {
 
     const supabase = createSupabaseAdmin(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
+    // Resolve market
+    const { data: marketRow, error: marketErr } = await supabase
+      .from('markets')
+      .select('id')
+      .eq('slug', MARKET_SLUG)
+      .eq('is_active', true)
+      .single();
+    if (marketErr || !marketRow) throw new Error(`Market "${MARKET_SLUG}" not found or inactive`);
+    const marketId = marketRow.id;
+
     // Calculate publish time (6 AM EST = 11 AM UTC)
     const publishAt = new Date();
     publishAt.setUTCHours(11, 0, 0, 0);
@@ -95,6 +106,7 @@ export async function POST(request: Request) {
     const { data: existingDraft } = await supabase
       .from('blog_posts')
       .select('slug, title')
+      .eq('market_id', marketId)
       .eq('status', 'scheduled')
       .gte('scheduled_publish_at', new Date(publishAt.getTime() - 3600000).toISOString())
       .lte('scheduled_publish_at', new Date(publishAt.getTime() + 3600000).toISOString())
@@ -104,10 +116,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, skipped: true, existingDraft: existingDraft[0].slug });
     }
 
-    // Fetch restaurants
+    // Fetch restaurants for this market
     const { data: restaurants } = await supabase
       .from('restaurants')
       .select('name, slug, categories, cover_image_url')
+      .eq('market_id', marketId)
       .eq('is_active', true)
       .not('cover_image_url', 'is', null);
 
@@ -120,7 +133,7 @@ export async function POST(request: Request) {
     const topic = BLOG_TOPICS[dayOfYear % BLOG_TOPICS.length];
 
     const dateString = publishAt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-    const userPrompt = `Post for ${dateString}. It's ${getSeason()} in Lancaster.\n\n${topic.prompt}\n\nBe specific and opinionated.`;
+    const userPrompt = `Post for ${dateString}. It's ${getSeason()} in ${BRAND.countyShort}.\n\n${topic.prompt}\n\nBe specific and opinionated.`;
 
     // Generate
     const response = await openai.chat.completions.create({
@@ -162,9 +175,10 @@ export async function POST(request: Request) {
       title: parsed.title,
       summary: parsed.summary,
       body_html: parsed.body_html,
-      tags: parsed.tags || ['lancaster', 'tastelanc'],
+      tags: parsed.tags || [BRAND.countyShort.toLowerCase(), BRAND.name.toLowerCase()],
       cover_image_url: coverImageUrl,
       featured_restaurants: featuredRestaurants.length ? featuredRestaurants : null,
+      market_id: marketId,
       status: 'scheduled',
       scheduled_publish_at: publishAt.toISOString(),
     });

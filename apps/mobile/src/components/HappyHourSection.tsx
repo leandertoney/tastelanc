@@ -15,6 +15,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_HAPPY_HOURS } from '../config/mockData';
 import { usePlatformSocialProof, useEmailGate } from '../hooks';
+import { useMarket } from '../context/MarketContext';
 import { trackClick } from '../lib/analytics';
 import { trackImpression } from '../lib/impressions';
 
@@ -57,21 +58,27 @@ function getDayOfWeek(): string {
   return new Date().toLocaleDateString('en-US', { weekday: 'long' });
 }
 
-async function getActiveHappyHours(): Promise<HappyHourWithRestaurant[]> {
+async function getActiveHappyHours(marketId: string | null = null): Promise<HappyHourWithRestaurant[]> {
   const now = new Date();
   const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 
   // Fetch all today's happy hours with tier data (no limit - we filter client-side)
-  const { data, error } = await supabase
+  let query = supabase
     .from('happy_hours')
     .select(`
       *,
-      restaurant:restaurants!inner(id, name, cover_image_url, tier_id, tiers(name)),
+      restaurant:restaurants!inner(id, name, cover_image_url, tier_id, market_id, tiers(name)),
       items:happy_hour_items(*)
     `)
     .eq('is_active', true)
     .contains('days_of_week', [dayOfWeek])
     .order('display_order', { referencedTable: 'happy_hour_items', ascending: true });
+
+  if (marketId) {
+    query = query.eq('restaurant.market_id', marketId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.warn('getActiveHappyHours query failed:', error.message);
@@ -136,10 +143,11 @@ export default function HappyHourSection() {
   const bannerTimerRef = useRef<NodeJS.Timeout | null>(null);
   const dealTimerRef = useRef<NodeJS.Timeout | null>(null);
   const { data: socialProof } = usePlatformSocialProof();
+  const { marketId } = useMarket();
 
   const { data: happyHours = [], isLoading, isFetching } = useQuery({
-    queryKey: ['activeHappyHours'],
-    queryFn: getActiveHappyHours,
+    queryKey: ['activeHappyHours', marketId],
+    queryFn: () => getActiveHappyHours(marketId),
     staleTime: 5 * 60 * 1000,
   });
 

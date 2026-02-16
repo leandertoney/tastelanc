@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { MARKET_SLUG } from '@/config/market';
 import type {
   Restaurant,
   HappyHour,
@@ -16,9 +17,30 @@ const supabase = () =>
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
+// ── Market Resolution (cached per process) ──────────────
+let _cachedMarketId: string | null = null;
+
+async function resolveMarketId(): Promise<string> {
+  if (_cachedMarketId) return _cachedMarketId;
+  const { data, error } = await supabase()
+    .from('markets')
+    .select('id')
+    .eq('slug', MARKET_SLUG)
+    .eq('is_active', true)
+    .single();
+  if (error || !data) {
+    throw new Error(`[resolveMarketId] Market "${MARKET_SLUG}" not found or inactive`);
+  }
+  _cachedMarketId = data.id;
+  return data.id;
+}
+
+// ── Restaurants ─────────────────────────────────────────
+
 export async function fetchRestaurants(activeOnly = true) {
+  const marketId = await resolveMarketId();
   const client = supabase();
-  let q = client.from('restaurants').select('*');
+  let q = client.from('restaurants').select('*').eq('market_id', marketId);
   if (activeOnly) q = q.eq('is_active', true);
   const { data, error } = await q;
   if (error) throw error;
@@ -26,19 +48,25 @@ export async function fetchRestaurants(activeOnly = true) {
 }
 
 export async function fetchRestaurantBySlug(slug: string) {
+  const marketId = await resolveMarketId();
   const { data } = await supabase()
     .from('restaurants')
     .select('*')
     .eq('slug', slug)
+    .eq('market_id', marketId)
     .eq('is_active', true)
     .single();
   return (data || null) as Restaurant | null;
 }
 
+// ── Happy Hours ─────────────────────────────────────────
+
 export async function fetchHappyHours() {
+  const marketId = await resolveMarketId();
   const { data, error } = await supabase()
     .from('happy_hours')
-    .select('*')
+    .select('*, restaurant:restaurants!inner(id)')
+    .eq('restaurant.market_id', marketId)
     .eq('is_active', true);
   if (error) throw error;
   return (data || []) as HappyHour[];
@@ -54,19 +82,27 @@ export async function fetchHappyHourItems(ids: string[]) {
   return (data || []) as HappyHourItem[];
 }
 
+// ── Specials ────────────────────────────────────────────
+
 export async function fetchSpecials() {
+  const marketId = await resolveMarketId();
   const { data, error } = await supabase()
     .from('specials')
-    .select('*')
+    .select('*, restaurant:restaurants!inner(id)')
+    .eq('restaurant.market_id', marketId)
     .eq('is_active', true);
   if (error) throw error;
   return (data || []) as Special[];
 }
 
+// ── Events ──────────────────────────────────────────────
+
 export async function fetchEvents() {
+  const marketId = await resolveMarketId();
   const { data, error } = await supabase()
     .from('events')
-    .select('*')
+    .select('*, restaurant:restaurants!inner(id)')
+    .eq('restaurant.market_id', marketId)
     .eq('is_active', true);
   if (error) throw error;
   return (data || []) as Event[];
@@ -81,15 +117,19 @@ export async function fetchEventsWithRestaurants() {
   return events.map((e) => ({ event: e, restaurant: map.get(e.restaurant_id) || null }));
 }
 
+// ── Blog Posts ──────────────────────────────────────────
+
 function isMissingBlogTable(err: any) {
   return err?.code === 'PGRST205' || String(err?.message || '').includes('blog_posts');
 }
 
 export async function fetchBlogPosts() {
+  const marketId = await resolveMarketId();
   try {
     const { data, error } = await supabase()
       .from('blog_posts')
       .select('*')
+      .eq('market_id', marketId)
       .or('status.eq.published,status.is.null')
       .order('created_at', { ascending: false });
     if (error) throw error;
@@ -101,11 +141,13 @@ export async function fetchBlogPosts() {
 }
 
 export async function fetchBlogPostBySlug(slug: string) {
+  const marketId = await resolveMarketId();
   try {
     const { data, error } = await supabase()
       .from('blog_posts')
       .select('*')
       .eq('slug', slug)
+      .eq('market_id', marketId)
       .single();
     if (error) throw error;
     return (data || null) as BlogPost | null;
@@ -116,10 +158,12 @@ export async function fetchBlogPostBySlug(slug: string) {
 }
 
 export async function fetchBlogPostsByTag(tag: string) {
+  const marketId = await resolveMarketId();
   try {
     const { data, error } = await supabase()
       .from('blog_posts')
       .select('*')
+      .eq('market_id', marketId)
       .contains('tags', [tag])
       .or('status.eq.published,status.is.null')
       .order('created_at', { ascending: false });

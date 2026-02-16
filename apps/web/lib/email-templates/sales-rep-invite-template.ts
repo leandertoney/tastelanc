@@ -3,16 +3,18 @@
  * Two variants: new user (needs password setup) and existing user (already has account).
  */
 
+import { BRAND } from '@/config/market';
+
 export function generateSalesRepInviteEmail(
   actionLink: string,
   name: string,
   isNewUser: boolean,
 ): string {
-  const heading = 'Welcome to the TasteLanc Sales Team';
+  const heading = `Welcome to the ${BRAND.name} Sales Team`;
 
   const bodyText = isNewUser
-    ? `Hi <strong style="color: #ffffff;">${name}</strong>, you've been added as a Sales Representative for TasteLanc. Set up your account to access your sales CRM dashboard.`
-    : `Hi <strong style="color: #ffffff;">${name}</strong>, you've been added as a Sales Representative for TasteLanc. Sign in to access your sales CRM dashboard.`;
+    ? `Hi <strong style="color: #ffffff;">${name}</strong>, you've been added as a Sales Representative for ${BRAND.name}. Set up your account to access your sales CRM dashboard.`
+    : `Hi <strong style="color: #ffffff;">${name}</strong>, you've been added as a Sales Representative for ${BRAND.name}. Sign in to access your sales CRM dashboard.`;
 
   const buttonText = isNewUser ? 'Set Up Your Account →' : 'Open Sales Dashboard →';
 
@@ -31,7 +33,7 @@ export function generateSalesRepInviteEmail(
               <tr>
                 <td style="padding: 40px;">
                   <!-- Logo -->
-                  <img src="https://tastelanc.com/images/tastelanc_new_dark.png" alt="TasteLanc" height="36" style="margin-bottom: 24px;" />
+                  <img src="https://${BRAND.domain}${BRAND.logoPath}" alt="${BRAND.name}" height="36" style="margin-bottom: 24px;" />
 
                   <!-- Role Badge -->
                   <div style="background-color: #A41E22; color: white; display: inline-block; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-bottom: 20px;">
@@ -72,7 +74,7 @@ export function generateSalesRepInviteEmail(
                   <hr style="border: none; border-top: 1px solid #333333; margin: 24px 0;" />
 
                   <p style="color: #666666; font-size: 12px; margin: 0;">
-                    This email was sent by TasteLanc. If you didn't expect this invitation, you can safely ignore this email.
+                    This email was sent by ${BRAND.name}. If you didn't expect this invitation, you can safely ignore this email.
                   </p>
                 </td>
               </tr>

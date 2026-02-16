@@ -33,7 +33,28 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isAdmin = user?.email === 'admin@tastelanc.com';
+  // Resolve admin status from profiles table (database-driven roles)
+  let isAdmin = false;
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, admin_market_id')
+      .eq('id', user.id)
+      .single();
+
+    if (profile?.role === 'super_admin') {
+      isAdmin = true;
+    } else if (profile?.role === 'market_admin') {
+      // Resolve current market to check if this admin belongs here
+      const marketSlug = process.env.NEXT_PUBLIC_MARKET_SLUG || 'lancaster-pa';
+      const { data: marketRow } = await supabase
+        .from('markets').select('id')
+        .eq('slug', marketSlug).eq('is_active', true).single();
+      if (marketRow && profile.admin_market_id === marketRow.id) {
+        isAdmin = true;
+      }
+    }
+  }
   const userRole = user?.user_metadata?.role;
   const isRestaurantOwner = userRole === 'restaurant_owner';
   const isSelfPromoter = userRole === 'self_promoter';

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  ViewToken,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,16 +22,19 @@ import CompactRestaurantCard from '../components/CompactRestaurantCard';
 import { PromoCard } from '../components';
 import SearchBar from '../components/SearchBar';
 import { colors, spacing } from '../constants/colors';
+import { useMarket } from '../context/MarketContext';
+import { trackImpression } from '../lib/impressions';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function FeaturedViewAllScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const { marketId } = useMarket();
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: restaurants = [], isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ['allFeaturedRestaurants'],
-    queryFn: () => getFeaturedRestaurants(50), // Get more for the full list
+    queryKey: ['allFeaturedRestaurants', marketId],
+    queryFn: () => getFeaturedRestaurants(50, marketId), // Get more for the full list
     staleTime: 5 * 60 * 1000,
   });
 
@@ -69,6 +73,17 @@ export default function FeaturedViewAllScreen() {
     [toggleFavoriteMutation]
   );
 
+  // Track impressions when items become visible
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    for (const token of viewableItems) {
+      const item = token.item as ListItem<Restaurant>;
+      if (item?.type !== 'promo' && item?.data?.id) {
+        trackImpression(item.data.id, 'featured_view_all', token.index ?? 0);
+      }
+    }
+  }).current;
+
   const renderItem = ({ item }: { item: ListItem<Restaurant> }) => {
     if (item.type === 'promo') {
       return <PromoCard variant="compact" onDismiss={dismissPromo} />;
@@ -103,6 +118,8 @@ export default function FeaturedViewAllScreen() {
         keyExtractor={(item) => item.key}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}

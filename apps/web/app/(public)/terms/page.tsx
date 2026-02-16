@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
+import { BRAND } from '@/config/market';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service | TasteLanc',
-  description: 'TasteLanc Terms of Service - Read our terms and conditions for using the service.',
+  title: `Terms of Service | ${BRAND.name}`,
+  description: `${BRAND.name} Terms of Service - Read our terms and conditions for using the service.`,
   alternates: {
-    canonical: 'https://tastelanc.com/terms',
+    canonical: `https://${BRAND.domain}/terms`,
   },
 };
 
@@ -19,14 +20,14 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-bold text-white mb-4">1. Agreement to Terms</h2>
             <p className="text-gray-300 leading-relaxed">
-              By accessing or using TasteLanc&apos;s mobile application and website (the &quot;Service&quot;), you agree to be bound by these Terms of Service (&quot;Terms&quot;). If you disagree with any part of these terms, you do not have permission to access the Service.
+              By accessing or using {BRAND.name}&apos;s mobile application and website (the &quot;Service&quot;), you agree to be bound by these Terms of Service (&quot;Terms&quot;). If you disagree with any part of these terms, you do not have permission to access the Service.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-bold text-white mb-4">2. Description of Service</h2>
             <p className="text-gray-300 leading-relaxed">
-              TasteLanc is a local dining and nightlife discovery platform for Lancaster, Pennsylvania. Our Service provides information about restaurants, bars, happy hours, events, and entertainment venues in the Lancaster area. We aggregate publicly available information and user-contributed content to help you discover local dining and nightlife options.
+              {BRAND.name} is a local dining and nightlife discovery platform for {BRAND.countyShort}, {BRAND.state}. Our Service provides information about restaurants, bars, happy hours, events, and entertainment venues in the {BRAND.countyShort} area. We aggregate publicly available information and user-contributed content to help you discover local dining and nightlife options.
             </p>
           </section>
 
@@ -66,7 +67,7 @@ export default function TermsPage() {
 
             <h3 className="text-xl font-semibold text-white mb-3">5.1 Our Content</h3>
             <p className="text-gray-300 leading-relaxed mb-4">
-              The Service and its original content, features, and functionality are owned by TasteLanc and are protected by copyright, trademark, and other intellectual property laws. You may not copy, modify, distribute, or create derivative works without our express written permission.
+              The Service and its original content, features, and functionality are owned by {BRAND.name} and are protected by copyright, trademark, and other intellectual property laws. You may not copy, modify, distribute, or create derivative works without our express written permission.
             </p>
 
             <h3 className="text-xl font-semibold text-white mb-3">5.2 Third-Party Content</h3>
@@ -90,21 +91,21 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-bold text-white mb-4">7. Limitation of Liability</h2>
             <p className="text-gray-300 leading-relaxed">
-              TO THE MAXIMUM EXTENT PERMITTED BY LAW, TASTELANC SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING OUT OF OR RELATED TO YOUR USE OF THE SERVICE. OUR TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNT YOU PAID US IN THE PAST TWELVE MONTHS, IF ANY.
+              TO THE MAXIMUM EXTENT PERMITTED BY LAW, {BRAND.name.toUpperCase()} SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING OUT OF OR RELATED TO YOUR USE OF THE SERVICE. OUR TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNT YOU PAID US IN THE PAST TWELVE MONTHS, IF ANY.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-bold text-white mb-4">8. Indemnification</h2>
             <p className="text-gray-300 leading-relaxed">
-              You agree to indemnify and hold harmless TasteLanc and its officers, directors, employees, and agents from any claims, damages, losses, or expenses (including reasonable attorney fees) arising from your use of the Service or violation of these Terms.
+              You agree to indemnify and hold harmless {BRAND.name} and its officers, directors, employees, and agents from any claims, damages, losses, or expenses (including reasonable attorney fees) arising from your use of the Service or violation of these Terms.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-bold text-white mb-4">9. Third-Party Links</h2>
             <p className="text-gray-300 leading-relaxed">
-              The Service may contain links to third-party websites or services that are not owned or controlled by TasteLanc. We have no control over and assume no responsibility for the content, privacy policies, or practices of any third-party sites or services.
+              The Service may contain links to third-party websites or services that are not owned or controlled by {BRAND.name}. We have no control over and assume no responsibility for the content, privacy policies, or practices of any third-party sites or services.
             </p>
           </section>
 
@@ -125,7 +126,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-bold text-white mb-4">12. Governing Law</h2>
             <p className="text-gray-300 leading-relaxed">
-              These Terms shall be governed by and construed in accordance with the laws of the Commonwealth of Pennsylvania, without regard to its conflict of law provisions. Any disputes arising from these Terms or the Service shall be resolved in the courts located in Lancaster County, Pennsylvania.
+              These Terms shall be governed by and construed in accordance with the laws of the Commonwealth of Pennsylvania, without regard to its conflict of law provisions. Any disputes arising from these Terms or the Service shall be resolved in the courts located in {BRAND.county}, Pennsylvania.
             </p>
           </section>
 
@@ -142,8 +143,8 @@ export default function TermsPage() {
               If you have any questions about these Terms, please contact us:
             </p>
             <ul className="list-disc list-inside text-gray-300 space-y-2 ml-4 mt-4">
-              <li>Email: <a href="mailto:info@tastelanc.com" className="text-tastelanc-accent hover:underline">info@tastelanc.com</a></li>
-              <li>Website: <a href="https://tastelanc.com" className="text-tastelanc-accent hover:underline">https://tastelanc.com</a></li>
+              <li>Email: <a href={`mailto:info@${BRAND.domain}`} className="text-tastelanc-accent hover:underline">{`info@${BRAND.domain}`}</a></li>
+              <li>Website: <a href={`https://${BRAND.domain}`} className="text-tastelanc-accent hover:underline">{`https://${BRAND.domain}`}</a></li>
             </ul>
           </section>
         </div>

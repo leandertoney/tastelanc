@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useMemo } from 'react';
+import { BRAND } from '@/config/market';
 import {
   Store,
   Clock,
@@ -18,7 +19,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     id: 'welcome',
     title: 'Welcome to Your Dashboard!',
     description:
-      "Let's take a quick tour to help you get the most out of TasteLanc for your restaurant.",
+      `Let's take a quick tour to help you get the most out of ${BRAND.name} for your restaurant.`,
     icon: PartyPopper,
   },
   {

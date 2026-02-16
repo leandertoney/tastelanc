@@ -5,6 +5,7 @@
  */
 import { sendBatchEmails, getRecipientsBySegment, type BatchEmailParams } from '@/lib/resend';
 import { createClient } from '@supabase/supabase-js';
+import { BRAND } from '@/config/market';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,7 +19,7 @@ interface BlogPost {
   cover_image_url?: string;
 }
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
 
 function buildBlogEmailHtml(post: BlogPost): string {
   const postUrl = `${siteUrl}/blog/${post.slug}`;
@@ -30,7 +31,7 @@ function buildBlogEmailHtml(post: BlogPost): string {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New from Rosie</title>
+  <title>New from ${BRAND.aiName}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #0D0D0D; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0D0D0D;">
@@ -40,7 +41,7 @@ function buildBlogEmailHtml(post: BlogPost): string {
           <!-- Header -->
           <tr>
             <td align="center" style="padding-bottom: 30px;">
-              <img src="${siteUrl}/images/tastelanc_new_dark.png" alt="TasteLanc" width="180" style="display: block;">
+              <img src="${siteUrl}${BRAND.logoPath}" alt="${BRAND.name}" width="180" style="display: block;">
             </td>
           </tr>
 
@@ -62,7 +63,7 @@ function buildBlogEmailHtml(post: BlogPost): string {
               <table cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
                 <tr>
                   <td style="background-color: #D4AF37; color: #000; font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;">
-                    New from Rosie
+                    New from ${BRAND.aiName}
                   </td>
                 </tr>
               </table>
@@ -94,7 +95,7 @@ function buildBlogEmailHtml(post: BlogPost): string {
           <tr>
             <td style="padding-top: 32px; text-align: center;">
               <p style="color: #666; font-size: 13px; margin: 0 0 8px 0;">
-                You're receiving this because you joined the TasteLanc waitlist.
+                You're receiving this because you joined the ${BRAND.name} waitlist.
               </p>
               <p style="color: #666; font-size: 13px; margin: 0;">
                 <a href="${unsubscribeUrl}" style="color: #666; text-decoration: underline;">Unsubscribe</a>

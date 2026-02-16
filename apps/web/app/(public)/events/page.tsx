@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui';
 import { formatTime, capitalizeWords } from '@/lib/utils';
 import type { Metadata } from 'next';
 import type { EventType } from '@/types/database';
+import { MARKET_SLUG } from '@/config/market';
 
 export const metadata: Metadata = {
   title: 'Events | TasteLanc',
@@ -44,9 +45,15 @@ async function getEvents(type?: string) {
   const supabase = await createClient();
   const today = new Date().toISOString().split('T')[0];
 
+  // Resolve market
+  const { data: marketRow } = await supabase
+    .from('markets').select('id').eq('slug', MARKET_SLUG).eq('is_active', true).single();
+  if (!marketRow) throw new Error(`Market "${MARKET_SLUG}" not found`);
+
   let query = supabase
     .from('events')
-    .select('*, restaurant:restaurants(*)')
+    .select('*, restaurant:restaurants!inner(*)')
+    .eq('restaurant.market_id', marketRow.id)
     .eq('is_active', true)
     .or(`event_date.gte.${today},is_recurring.eq.true`)
     .order('event_date', { ascending: true, nullsFirst: false })

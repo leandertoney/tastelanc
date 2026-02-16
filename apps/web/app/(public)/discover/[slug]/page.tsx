@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui';
 import { formatTime, getCurrentDayOfWeek, capitalizeWords } from '@/lib/utils';
 import { ROSIE_STORAGE_KEYS } from '@/lib/rosie/types';
 import { useRosieChat } from '@/lib/contexts/RosieChatContext';
+import { useMarket } from '@/contexts/MarketContext';
+import { BRAND } from '@/config/market';
 
 interface Restaurant {
   id: string;
@@ -69,6 +71,7 @@ export default function DiscoverRestaurantPage({
 }) {
   const router = useRouter();
   const { openChat } = useRosieChat();
+  const { marketId } = useMarket();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
@@ -106,7 +109,7 @@ export default function DiscoverRestaurantPage({
 
   // Fetch restaurant data
   useEffect(() => {
-    if (!hasAccess || !slug) return;
+    if (!hasAccess || !slug || !marketId) return;
 
     async function fetchRestaurant() {
       const supabase = createClient();
@@ -115,6 +118,7 @@ export default function DiscoverRestaurantPage({
         .from('restaurants')
         .select('*')
         .eq('slug', slug)
+        .eq('market_id', marketId)
         .eq('is_active', true)
         .single();
 
@@ -153,7 +157,7 @@ export default function DiscoverRestaurantPage({
     }
 
     fetchRestaurant();
-  }, [hasAccess, slug, router]);
+  }, [hasAccess, slug, marketId, router]);
 
   // Show loading state
   if (loading) {
@@ -171,16 +175,16 @@ export default function DiscoverRestaurantPage({
         <div className="bg-tastelanc-card rounded-xl p-8 max-w-md text-center">
           <Image
             src="/images/rosie_dark_new.png"
-            alt="Rosie"
+            alt={BRAND.aiName}
             width={80}
             height={80}
             className="mx-auto mb-6 rounded-full animate-rosie"
           />
           <h1 className="text-2xl font-bold text-white mb-4">
-            This page is exclusive to Rosie!
+            This page is exclusive to {BRAND.aiName}!
           </h1>
           <p className="text-gray-400 mb-6">
-            Chat with Rosie to discover Lancaster&apos;s best restaurants, bars, and nightlife. She&apos;ll
+            Chat with {BRAND.aiName} to discover {BRAND.countyShort}&apos;s best restaurants, bars, and nightlife. She&apos;ll
             personally recommend spots and give you access to their details!
           </p>
           <button
@@ -191,7 +195,7 @@ export default function DiscoverRestaurantPage({
             }}
             className="bg-tastelanc-accent text-white px-6 py-3 rounded-lg font-medium hover:bg-tastelanc-accent/90 transition-colors"
           >
-            Chat with Rosie
+            Chat with {BRAND.aiName}
           </button>
         </div>
       </div>
@@ -240,7 +244,7 @@ export default function DiscoverRestaurantPage({
           className="absolute top-4 left-4 flex items-center gap-2 bg-tastelanc-bg/80 backdrop-blur-sm px-3 py-2 rounded-lg text-white hover:bg-tastelanc-bg transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Rosie
+          Back to {BRAND.aiName}
         </Link>
       </div>
 
@@ -259,7 +263,7 @@ export default function DiscoverRestaurantPage({
                     height={16}
                     className="rounded-full"
                   />
-                  Rosie Pick
+                  {BRAND.aiName} Pick
                 </Badge>
               </div>
 
@@ -461,7 +465,7 @@ export default function DiscoverRestaurantPage({
               <div className="flex items-center gap-3 mb-4">
                 <Image
                   src="/images/rosie_dark_new.png"
-                  alt="Rosie"
+                  alt={BRAND.aiName}
                   width={40}
                   height={40}
                   className="rounded-full animate-rosie"
@@ -469,7 +473,7 @@ export default function DiscoverRestaurantPage({
                 <h2 className="text-lg font-bold text-white">Need more suggestions?</h2>
               </div>
               <p className="text-gray-400 text-sm mb-4">
-                Ask Rosie for more recommendations based on your preferences!
+                Ask {BRAND.aiName} for more recommendations based on your preferences!
               </p>
               <button
                 onClick={() => {
@@ -478,7 +482,7 @@ export default function DiscoverRestaurantPage({
                 }}
                 className="w-full bg-tastelanc-accent text-white py-2 rounded-lg font-medium hover:bg-tastelanc-accent/90 transition-colors"
               >
-                Chat with Rosie
+                Chat with {BRAND.aiName}
               </button>
             </div>
           </div>

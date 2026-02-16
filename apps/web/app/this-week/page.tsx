@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/market';
 import { fetchEventsWithRestaurants } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -9,8 +10,8 @@ export const revalidate = 900;
 
 export async function generateMetadata() {
   return buildMeta({
-    title: 'This Week in Lancaster | TasteLanc',
-    description: 'Events and specials happening this week in Lancaster.',
+    title: `This Week in ${BRAND.countyShort} | ${BRAND.name}`,
+    description: `Events and specials happening this week in ${BRAND.countyShort}.`,
     url: `${siteUrl}/this-week`,
   });
 }
@@ -37,8 +38,8 @@ export default async function ThisWeekPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <main className="max-w-5xl mx-auto px-4 py-10 text-white">
         {leadershipLine(claim)}
-        <h1 className="text-3xl font-bold">This Week in Lancaster</h1>
-        <p className="text-gray-400 mt-2">What’s happening around Lancaster this week.</p>
+        <h1 className="text-3xl font-bold">This Week in {BRAND.countyShort}</h1>
+        <p className="text-gray-400 mt-2">What's happening around {BRAND.countyShort} this week.</p>
         {restaurantCTAButtons()}
         <div className="space-y-4 mt-6">
           {list.map(({ event, restaurant }) => (

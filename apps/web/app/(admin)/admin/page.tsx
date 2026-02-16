@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { getStripe, ALL_CONSUMER_PRICE_IDS, SELF_PROMOTER_PRICE_IDS } from '@/lib/stripe';
+import { verifyAdminAccess } from '@/lib/auth/admin-access';
+import { BRAND } from '@/config/market';
 import { Card, Badge } from '@/components/ui';
 import {
   Store,
@@ -92,19 +94,23 @@ async function getStripeRevenue() {
   }
 }
 
-async function getAdminStats() {
+async function getAdminStats(scopedMarketId: string | null) {
   const supabase = await createClient();
 
-  // Get total restaurants
-  const { count: totalRestaurants } = await supabase
+  // Get total restaurants — super_admin sees all, market_admin sees only their market
+  let restaurantCountQuery = supabase
     .from('restaurants')
     .select('*', { count: 'exact', head: true });
+  if (scopedMarketId) restaurantCountQuery = restaurantCountQuery.eq('market_id', scopedMarketId);
+  const { count: totalRestaurants } = await restaurantCountQuery;
 
   // Get active paid restaurants (those with Stripe subscriptions)
-  const { count: activeSubscriptions } = await supabase
+  let activeSubQuery = supabase
     .from('restaurants')
     .select('*', { count: 'exact', head: true })
     .not('stripe_subscription_id', 'is', null);
+  if (scopedMarketId) activeSubQuery = activeSubQuery.eq('market_id', scopedMarketId);
+  const { count: activeSubscriptions } = await activeSubQuery;
 
   // Get total page views (last 30 days)
   const thirtyDaysAgo = new Date();
@@ -133,10 +139,12 @@ async function getAdminStats() {
     .limit(5);
 
   // Get paid restaurants by tier
-  const { data: paidRestaurantsByTier } = await supabase
+  let paidTierQuery = supabase
     .from('restaurants')
     .select('tier_id, tiers(name)')
     .not('stripe_subscription_id', 'is', null);
+  if (scopedMarketId) paidTierQuery = paidTierQuery.eq('market_id', scopedMarketId);
+  const { data: paidRestaurantsByTier } = await paidTierQuery;
 
   const signupsByPlan = {
     starter: 0,
@@ -194,8 +202,11 @@ async function getAdminStats() {
 }
 
 export default async function AdminDashboardPage() {
+  const supabase = await createClient();
+  const admin = await verifyAdminAccess(supabase);
+
   const [stats, stripeRevenue] = await Promise.all([
-    getAdminStats(),
+    getAdminStats(admin.scopedMarketId),
     getStripeRevenue(),
   ]);
 
@@ -203,7 +214,7 @@ export default async function AdminDashboardPage() {
     <div>
       <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-white">Admin Dashboard</h1>
-        <p className="text-gray-400 mt-1 text-sm md:text-base">Overview of TasteLanc platform</p>
+        <p className="text-gray-400 mt-1 text-sm md:text-base">Overview of {BRAND.name} platform</p>
       </div>
 
       {/* Revenue Banner */}
@@ -225,7 +236,7 @@ export default async function AdminDashboardPage() {
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-white">{stripeRevenue.consumerCount}</p>
-              <p className="text-gray-400 text-xs">TasteLanc+</p>
+              <p className="text-gray-400 text-xs">{BRAND.premiumName}</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-white">${stripeRevenue.arr.toLocaleString()}</p>

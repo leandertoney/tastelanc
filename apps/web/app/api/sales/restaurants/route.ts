@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
+import { MARKET_SLUG } from '@/config/market';
 
 export async function GET(request: Request) {
   try {
@@ -15,12 +16,21 @@ export async function GET(request: Request) {
     }
 
     const serviceClient = createServiceRoleClient();
+
+    // Resolve market
+    const { data: marketRow } = await serviceClient
+      .from('markets').select('id').eq('slug', MARKET_SLUG).eq('is_active', true).single();
+    if (!marketRow) {
+      return NextResponse.json({ error: 'Market not found' }, { status: 500 });
+    }
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
 
     let query = serviceClient
       .from('restaurants')
       .select('id, name, city, state, phone, website, is_active, tier_id, tiers(name)')
+      .eq('market_id', marketRow.id)
       .order('name', { ascending: true });
 
     if (search) {

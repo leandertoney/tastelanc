@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { verifyAdminAccess } from '@/lib/auth/admin-access';
 
 export async function GET(
   request: Request,
@@ -10,20 +11,9 @@ export async function GET(
     const supabase = await createClient();
 
     // Verify user is admin
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const isAdmin = user.email === 'admin@tastelanc.com';
-    if (!isAdmin) {
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 403 }
-      );
-    }
+    let admin;
+    try { admin = await verifyAdminAccess(supabase); }
+    catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
     // Fetch lead
     const { data: lead, error } = await supabase
@@ -78,20 +68,9 @@ export async function PUT(
     const supabase = await createClient();
 
     // Verify user is admin
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const isAdmin = user.email === 'admin@tastelanc.com';
-    if (!isAdmin) {
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 403 }
-      );
-    }
+    let admin;
+    try { admin = await verifyAdminAccess(supabase); }
+    catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
     const body = await request.json();
     const {
@@ -165,20 +144,9 @@ export async function DELETE(
     const supabase = await createClient();
 
     // Verify user is admin
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const isAdmin = user.email === 'admin@tastelanc.com';
-    if (!isAdmin) {
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 403 }
-      );
-    }
+    let admin;
+    try { admin = await verifyAdminAccess(supabase); }
+    catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
     const { error } = await supabase
       .from('business_leads')

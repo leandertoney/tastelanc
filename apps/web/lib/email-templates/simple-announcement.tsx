@@ -1,6 +1,8 @@
 // Simple announcement email template - designed for inbox primary tab
 // Uses minimal HTML to avoid spam filters and promotions tab
 
+import { BRAND } from '@/config/market';
+
 export interface SimpleAnnouncementProps {
   recipientName?: string;
   body: string;
@@ -32,7 +34,7 @@ export function renderSimpleAnnouncement({
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TasteLanc</title>
+  <title>${BRAND.name}</title>
 </head>
 <body style="margin:0; padding:20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size:16px; line-height:1.6; color:#333333; background:#ffffff;">
   ${previewText ? `<div style="display:none; max-height:0; overflow:hidden;">${previewText}</div>` : ''}
@@ -52,7 +54,7 @@ export function renderSimpleAnnouncement({
 
     <p style="margin:24px 0 0 0;">
       Cheers,<br>
-      The TasteLanc Team
+      The ${BRAND.name} Team
     </p>
 
     <hr style="border:none; border-top:1px solid #eeeeee; margin:32px 0 16px 0;">
@@ -83,7 +85,7 @@ ${body}
 
 ${ctaText && ctaUrl ? `${ctaText}: ${ctaUrl}\n` : ''}
 Cheers,
-The TasteLanc Team
+The ${BRAND.name} Team
 
 ---
 Unsubscribe: ${unsubscribeUrl}
@@ -92,16 +94,16 @@ Unsubscribe: ${unsubscribeUrl}
 
 // Pre-built launch announcement
 export const LAUNCH_ANNOUNCEMENT = {
-  subject: "TasteLanc is Live! Download Now for iPhone",
-  previewText: "The wait is over - discover Lancaster's best dining & nightlife",
-  body: `Big news - TasteLanc is officially live on the App Store!
+  subject: `${BRAND.name} is Live! Download Now for iPhone`,
+  previewText: `The wait is over - discover ${BRAND.countyShort}'s best dining & nightlife`,
+  body: `Big news - ${BRAND.name} is officially live on the App Store!
 
-After months of building and your amazing support as an early member, we're thrilled to announce that you can now download TasteLanc and start discovering Lancaster's best restaurants, happy hours, and nightlife.
+After months of building and your amazing support as an early member, we're thrilled to announce that you can now download ${BRAND.name} and start discovering ${BRAND.countyShort}'s best restaurants, happy hours, and nightlife.
 
 What's waiting for you:
 - Real-time happy hours and specials
-- Live events across Lancaster
-- Rosie, your AI dining assistant
+- Live events across ${BRAND.countyShort}
+- ${BRAND.aiName}, your AI dining assistant
 - Rewards for checking in at your favorite spots
 
 As one of our founding members, you've already earned early access perks. Download the app and sign in with the email you used to join the waitlist to unlock them.

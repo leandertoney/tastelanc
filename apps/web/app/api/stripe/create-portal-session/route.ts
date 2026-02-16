@@ -4,6 +4,8 @@ export const runtime = 'nodejs';
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { getStripe } from '@/lib/stripe';
+import { isUserAdmin } from '@/lib/auth/admin-access';
+import { BRAND } from '@/config/market';
 
 export async function POST(request: Request) {
   try {
@@ -22,7 +24,8 @@ export async function POST(request: Request) {
     let customerId: string | null = null;
 
     // If admin mode with a specific restaurant_id, look up that restaurant directly
-    if (adminMode && restaurantId && user.email === 'admin@tastelanc.com') {
+    const isAdmin = await isUserAdmin(supabase);
+    if (adminMode && restaurantId && isAdmin) {
       const { data: restaurant } = await serviceClient
         .from('restaurants')
         .select('stripe_customer_id')
@@ -93,7 +96,7 @@ export async function POST(request: Request) {
     }
 
     // Determine return URL based on context
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
     const returnUrl = restaurantId
       ? `${siteUrl}/dashboard/subscription`
       : `${siteUrl}/account`;

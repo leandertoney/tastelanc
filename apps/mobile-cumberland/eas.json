@@ -1,0 +1,65 @@
+{
+  "cli": {
+    "version": ">= 10.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": false
+      },
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_ENV": "development"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": false
+      },
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_ENV": "staging"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "channel": "production",
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "gradleCommand": ":app:bundleRelease",
+        "image": "latest"
+      },
+      "env": {
+        "EXPO_PUBLIC_ENV": "production",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "leandertoney@gmail.com",
+        "appleTeamId": "SH7HKLXWMW",
+        "ascAppId": "6759233248",
+        "ascApiKeyPath": "/Users/leandertoney/Downloads/AuthKey_KNJL5W6X3H.p8",
+        "ascApiKeyId": "KNJL5W6X3H",
+        "ascApiKeyIssuerId": "84a11314-5e2f-4713-b454-1f9eeaf1458c"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-service-account.json",
+        "track": "internal"
+      }
+    }
+  }
+}

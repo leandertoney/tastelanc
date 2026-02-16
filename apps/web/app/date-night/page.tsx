@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/market';
 import { fetchRestaurants } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -10,8 +11,8 @@ export const revalidate = 1800;
 
 export async function generateMetadata() {
   return buildMeta({
-    title: 'Date Night in Lancaster, PA | TasteLanc',
-    description: 'Romantic restaurants and cocktail bars for date night in Lancaster.',
+    title: `Date Night in ${BRAND.countyShort}, ${BRAND.state} | ${BRAND.name}`,
+    description: `Romantic restaurants and cocktail bars for date night in ${BRAND.countyShort}.`,
     url: `${siteUrl}/date-night`,
   });
 }
@@ -31,7 +32,7 @@ export default async function DateNightPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <main className="max-w-5xl mx-auto px-4 py-10 text-white">
         {leadershipLine(claim)}
-        <h1 className="text-3xl font-bold">Date Night in Lancaster</h1>
+        <h1 className="text-3xl font-bold">Date Night in {BRAND.countyShort}</h1>
         <p className="text-gray-400 mt-2">Cozy, romantic spots with great food and drinks.</p>
         {restaurantCTAButtons()}
         <div className="grid md:grid-cols-2 gap-6 mt-6">

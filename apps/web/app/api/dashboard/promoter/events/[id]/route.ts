@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { isUserAdmin } from '@/lib/auth/admin-access';
 
 // Verify access to a specific event
 async function verifyEventAccess(eventId: string) {
@@ -10,7 +11,7 @@ async function verifyEventAccess(eventId: string) {
     return { error: 'Unauthorized', status: 401 };
   }
 
-  const isAdmin = user.email === 'admin@tastelanc.com';
+  const isAdmin = await isUserAdmin(supabase);
 
   // Fetch event with self-promoter info
   const { data: event, error } = await supabase

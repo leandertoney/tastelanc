@@ -24,6 +24,8 @@ import RosieChatBubble from '@/components/chat/RosieChatBubble';
 import { useRosieChat } from '@/lib/contexts/RosieChatContext';
 import { MessageCircle } from 'lucide-react';
 import { NavDownloadLink, HeaderDownloadButton } from '@/components/ui';
+import { BRAND } from '@/config/market';
+import { useMarket } from '@/contexts/MarketContext';
 
 
 // App preview screens
@@ -37,6 +39,7 @@ const APP_SCREENS = [
 
 export default function HomePage() {
   const { openChat } = useRosieChat();
+  const { marketId } = useMarket();
 
   // Carousel state
   const [activeScreen, setActiveScreen] = useState(0);
@@ -123,13 +126,16 @@ export default function HomePage() {
     return () => observer.disconnect();
   }, [hasInteracted]);
 
-  // Fetch restaurant hero images
+  // Fetch restaurant hero images (scoped to market)
   useEffect(() => {
+    if (!marketId) return;
+
     const fetchHeroImages = async () => {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('restaurants')
         .select('cover_image_url')
+        .eq('market_id', marketId)
         .not('cover_image_url', 'is', null)
         .eq('is_active', true)
         .limit(15);
@@ -150,7 +156,7 @@ export default function HomePage() {
     };
 
     fetchHeroImages();
-  }, []);
+  }, [marketId]);
 
   // Preload initial hero images
   useEffect(() => {
@@ -219,8 +225,8 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center">
             <Image
-              src="/images/tastelanc_new_dark.png"
-              alt="TasteLanc"
+              src={BRAND.logoPath}
+              alt={BRAND.name}
               width={220}
               height={80}
               className="h-12 md:h-16 w-auto"
@@ -286,8 +292,8 @@ export default function HomePage() {
             <div className="relative mx-auto h-[160px] w-[160px] md:h-[190px] md:w-[190px]">
               <div className="absolute inset-0 rounded-full bg-black/70 blur-3xl" />
               <Image
-                src="/images/tastelanc_new_dark.png"
-                alt="TasteLanc"
+                src={BRAND.logoPath}
+                alt={BRAND.name}
                 width={220}
                 height={220}
                 className="relative w-40 h-40 md:w-48 md:h-48 mx-auto object-contain animate-logo"
@@ -296,12 +302,12 @@ export default function HomePage() {
           </div>
 
           <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold text-white mb-6 leading-tight hero-text-glow">
-            Discover Lancaster&apos;s
+            Discover {BRAND.countyShort}&apos;s
             <span className="text-tastelanc-accent block hero-highlight-shadow">Dining & Nightlife</span>
           </h1>
 
           <p className="text-xl md:text-2xl text-white mb-8 max-w-3xl mx-auto hero-subtext-shadow">
-            The ultimate app for finding happy hours, live events, and the best deals at restaurants and bars in Lancaster, PA.
+            The ultimate app for finding happy hours, live events, and the best deals at restaurants and bars in {BRAND.countyShort}, {BRAND.state}.
           </p>
 
           {/* CTA Buttons */}
@@ -356,19 +362,19 @@ export default function HomePage() {
                   <span className="text-purple-400 font-medium text-xs">AI-Powered</span>
                 </div>
                 <h3 className="text-2xl font-bold text-white">
-                  Meet <span className="text-purple-400">Rosie</span>
+                  Meet <span className="text-purple-400">{BRAND.aiName}</span>
                 </h3>
               </div>
             </div>
             <p className="text-lg text-gray-300 mb-6">
-              Your personal Lancaster dining and nightlife expert. Ask Rosie anything about restaurants, happy hours, events, and the best places to eat and drink.
+              Your personal {BRAND.countyShort} dining and nightlife expert. Ask {BRAND.aiName} anything about restaurants, happy hours, events, and the best places to eat and drink.
             </p>
             <ul className="space-y-3 mb-8">
               {[
                 'Natural conversation - just ask like you would a friend',
                 'Personalized recommendations based on your mood',
                 'Real-time info on happy hours and events',
-                'Knows Lancaster\'s dining scene inside and out',
+                `Knows ${BRAND.countyShort}'s dining scene inside and out`,
               ].map((item, index) => (
                 <li key={index} className="flex items-start gap-3">
                   <div className="w-5 h-5 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -383,7 +389,7 @@ export default function HomePage() {
               className="w-full inline-flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white font-bold px-6 py-4 rounded-lg transition-all shadow-lg shadow-purple-500/25"
             >
               <MessageCircle className="w-5 h-5" />
-              Chat with Rosie Now
+              Chat with {BRAND.aiName} Now
               <ArrowRight className="w-5 h-5" />
             </button>
             <p className="text-gray-500 text-sm mt-3 text-center">Free to try - no sign up required</p>
@@ -395,7 +401,7 @@ export default function HomePage() {
                   'Helps you decide where to go — without endless scrolling',
                   'Suggests plans that actually fit your mood',
                   'Surfaces hidden gems locals love',
-                  'Makes exploring Lancaster feel effortless',
+                  `Makes exploring ${BRAND.countyShort} feel effortless`,
                 ].map((item, index) => (
                   <div key={index} className="flex items-start gap-2">
                     <Sparkles className="w-4 h-4 text-purple-400 flex-shrink-0 mt-0.5" />
@@ -432,17 +438,17 @@ export default function HomePage() {
                 <span className="text-purple-400 font-medium text-sm">AI-Powered Assistant</span>
               </div>
               <h3 className="text-4xl font-bold text-white mb-4">
-                Meet <span className="text-purple-400">Rosie</span>
+                Meet <span className="text-purple-400">{BRAND.aiName}</span>
               </h3>
               <p className="text-xl text-gray-300 mb-6">
-                Your personal Lancaster dining and nightlife expert. Ask Rosie anything about restaurants, happy hours, events, and the best places to eat and drink.
+                Your personal {BRAND.countyShort} dining and nightlife expert. Ask {BRAND.aiName} anything about restaurants, happy hours, events, and the best places to eat and drink.
               </p>
               <ul className="space-y-3 mb-8">
                 {[
                   'Natural conversation - just ask like you would a friend',
                   'Personalized recommendations based on your mood',
                   'Real-time info on happy hours and events',
-                  'Knows Lancaster\'s dining scene inside and out',
+                  `Knows ${BRAND.countyShort}'s dining scene inside and out`,
                 ].map((item, index) => (
                   <li key={index} className="flex items-start gap-3">
                     <div className="w-5 h-5 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -457,7 +463,7 @@ export default function HomePage() {
                 className="inline-flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white font-bold px-8 py-4 rounded-lg transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
               >
                 <MessageCircle className="w-5 h-5" />
-                Chat with Rosie Now
+                Chat with {BRAND.aiName} Now
                 <ArrowRight className="w-5 h-5" />
               </button>
               <p className="text-gray-500 text-sm mt-3">Free to try - no sign up required</p>
@@ -469,7 +475,7 @@ export default function HomePage() {
                     'Helps you decide where to go — without endless scrolling',
                     'Suggests plans that actually fit your mood',
                     'Surfaces hidden gems locals love',
-                    'Makes exploring Lancaster feel effortless',
+                    `Makes exploring ${BRAND.countyShort} feel effortless`,
                   ].map((item, index) => (
                     <div key={index} className="flex items-start gap-2">
                       <Sparkles className="w-4 h-4 text-purple-400 flex-shrink-0 mt-0.5" />
@@ -485,10 +491,10 @@ export default function HomePage() {
 
       {/* Authority Section - do not alter other homepage content */}
       <section className="max-w-5xl mx-auto px-4 py-12 text-white">
-        <h2 className="text-3xl font-bold mb-3">Lancaster’s #1 Food & Nightlife App.</h2>
+        <h2 className="text-3xl font-bold mb-3">{BRAND.countyShort}&apos;s #1 Food &amp; Nightlife App.</h2>
         <p className="text-gray-300">
-          TasteLanc is the most comprehensive guide for restaurants, events, specials, and nightlife — powered by Rosie,
-          Lancaster’s first AI dining companion. The app gives you even more with real-time alerts, personalized picks,
+          {BRAND.name} is the most comprehensive guide for restaurants, events, specials, and nightlife — powered by {BRAND.aiName},{' '}
+          {BRAND.countyShort}&apos;s first AI dining companion. The app gives you even more with real-time alerts, personalized picks,
           and exclusive insights.
         </p>
         <div className="mt-4 flex flex-wrap gap-3 items-center">
@@ -527,7 +533,7 @@ export default function HomePage() {
               Find What&apos;s Good Tonight
             </h2>
             <p className="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
-              A smarter way to explore Lancaster — from after-work drinks to late-night plans. Everything happening right now, in one place that actually feels alive.
+              A smarter way to explore {BRAND.countyShort} — from after-work drinks to late-night plans. Everything happening right now, in one place that actually feels alive.
             </p>
           </div>
 
@@ -620,10 +626,10 @@ export default function HomePage() {
               <span className="text-lancaster-gold font-medium text-sm">Location-Aware</span>
             </div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
-              Your Lancaster, Your Way
+              Your {BRAND.countyShort}, Your Way
             </h2>
             <p className="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
-              TasteLanc learns what you like and makes the city feel smaller, closer, and easier to enjoy. Tap a pin to see how we connect you to Lancaster.
+              {BRAND.name} learns what you like and makes the city feel smaller, closer, and easier to enjoy. Tap a pin to see how we connect you to {BRAND.countyShort}.
             </p>
           </div>
 
@@ -644,7 +650,7 @@ export default function HomePage() {
 
               {/* "Lancaster" label */}
               <div className="absolute top-4 left-4 text-lancaster-gold/40 text-sm font-medium tracking-wider uppercase">
-                Lancaster, PA
+                {BRAND.countyShort}, {BRAND.state}
               </div>
 
               {/* Feature Pins */}
@@ -653,7 +659,7 @@ export default function HomePage() {
                 { icon: Star, label: 'Favorites', desc: 'Your go-to spots, always one tap away', x: '75%', y: '25%' },
                 { icon: Zap, label: 'For You', desc: 'Picks that match your taste — instantly', x: '45%', y: '45%' },
                 { icon: Bell, label: 'Alerts', desc: 'Helpful nudges when something worth knowing pops up', x: '25%', y: '70%' },
-                { icon: Trophy, label: 'Vote', desc: "Vote for Lancaster's Best and influence the spotlight", x: '70%', y: '65%' },
+                { icon: Trophy, label: 'Vote', desc: `Vote for ${BRAND.countyShort}'s Best and influence the spotlight`, x: '70%', y: '65%' },
               ].map((pin, index) => (
                 <div
                   key={index}
@@ -715,7 +721,7 @@ export default function HomePage() {
               { icon: Star, label: 'Favorites', desc: 'Your go-to spots, always one tap away' },
               { icon: Zap, label: 'For You', desc: 'Picks that match your taste — instantly' },
               { icon: Bell, label: 'Alerts', desc: 'Helpful nudges when something worth knowing pops up' },
-              { icon: Trophy, label: 'Vote', desc: "Vote for Lancaster's Best and influence the spotlight" },
+              { icon: Trophy, label: 'Vote', desc: `Vote for ${BRAND.countyShort}'s Best and influence the spotlight` },
             ].map((item, index) => (
               <button
                 key={index}
@@ -781,7 +787,7 @@ export default function HomePage() {
               See the App in Action
             </h2>
             <p className="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
-              A quick look at what makes TasteLanc feel effortless — fast picks, live happenings, and an interface built for going out, not reading about going out.
+              A quick look at what makes {BRAND.name} feel effortless — fast picks, live happenings, and an interface built for going out, not reading about going out.
             </p>
           </div>
 
@@ -916,7 +922,7 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              How TasteLanc Works
+              How {BRAND.name} Works
             </h2>
           </div>
 
@@ -925,11 +931,11 @@ export default function HomePage() {
               {
                 step: '1',
                 title: 'Download the App',
-                description: 'Get TasteLanc from the App Store or Google Play.',
+                description: `Get ${BRAND.name} from the App Store or Google Play.`,
               },
               {
                 step: '2',
-                title: 'Explore Lancaster',
+                title: `Explore ${BRAND.countyShort}`,
                 description: 'Browse happy hours, events, and specials at local spots.',
               },
               {
@@ -960,10 +966,10 @@ export default function HomePage() {
             <div className="relative">
               <Zap className="w-12 h-12 text-white mx-auto mb-6" />
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4">
-                TasteLanc is<span className="block sm:inline"> Now Live!</span>
+                {BRAND.name} is<span className="block sm:inline"> Now Live!</span>
               </h2>
               <p className="text-white/80 text-lg mb-8 max-w-2xl mx-auto">
-                Download the app now and discover Lancaster&apos;s best dining and nightlife.
+                Download the app now and discover {BRAND.countyShort}&apos;s best dining and nightlife.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -998,10 +1004,10 @@ export default function HomePage() {
             Local Business Partners
           </span>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mt-2 mb-6">
-            Own a Restaurant or Bar<span className="block sm:inline"> in Lancaster?</span>
+            Own a Restaurant or Bar<span className="block sm:inline"> in {BRAND.countyShort}?</span>
           </h2>
           <p className="text-gray-400 text-lg mb-8 max-w-2xl mx-auto">
-            We&apos;re building something special for the Lancaster food and drink scene.
+            We&apos;re building something special for the {BRAND.countyShort} food and drink scene.
             If you&apos;re interested in being part of it, we&apos;d love to hear from you.
           </p>
 
@@ -1010,7 +1016,7 @@ export default function HomePage() {
               <Star className="w-8 h-8 text-tastelanc-accent" />
             </div>
             <h3 className="text-xl font-semibold text-white mb-3">
-              Partner With TasteLanc
+              Partner With {BRAND.name}
             </h3>
             <p className="text-gray-400 mb-6">
               Join a growing community of local establishments connecting with new customers every day.

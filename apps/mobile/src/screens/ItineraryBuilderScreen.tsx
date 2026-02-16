@@ -34,6 +34,7 @@ import { supabase } from '../lib/supabase';
 import { colors, radius, spacing, typography } from '../constants/colors';
 import ItineraryTimeline from '../components/ItineraryTimeline';
 import type { OnboardingData } from '../types/onboarding';
+import { useMarket } from '../context/MarketContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ItineraryBuilder'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -64,15 +65,19 @@ function getNextDays(count: number): { label: string; dateStr: string; isToday: 
 
 // ─── Data fetching hooks ────────────────────────────────────────
 
-function useAllRestaurants() {
+function useAllRestaurants(marketId: string | null) {
   return useQuery<Restaurant[]>({
-    queryKey: ['itinerary', 'allRestaurants'],
+    queryKey: ['itinerary', 'allRestaurants', marketId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('restaurants')
         .select('*')
         .eq('is_active', true)
         .limit(200);
+      if (marketId) {
+        query = query.eq('market_id', marketId);
+      }
+      const { data, error } = await query;
       if (error) {
         console.warn('useAllRestaurants query failed:', error.message);
         return [];
@@ -83,9 +88,9 @@ function useAllRestaurants() {
   });
 }
 
-function useAllRestaurantHours() {
+function useAllRestaurantHours(marketId: string | null) {
   return useQuery<Record<string, RestaurantHours[]>>({
-    queryKey: ['itinerary', 'allHours'],
+    queryKey: ['itinerary', 'allHours', marketId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('restaurant_hours')
@@ -109,9 +114,9 @@ function useAllRestaurantHours() {
   });
 }
 
-function useAllHappyHours() {
+function useAllHappyHours(marketId: string | null) {
   return useQuery<HappyHour[]>({
-    queryKey: ['itinerary', 'allHappyHours'],
+    queryKey: ['itinerary', 'allHappyHours', marketId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('happy_hours')
@@ -127,9 +132,9 @@ function useAllHappyHours() {
   });
 }
 
-function useAllEvents() {
+function useAllEvents(marketId: string | null) {
   return useQuery<ApiEvent[]>({
-    queryKey: ['itinerary', 'allEvents'],
+    queryKey: ['itinerary', 'allEvents', marketId],
     queryFn: () => fetchEvents({ paid_only: false, limit: 100 }),
     staleTime: 10 * 60 * 1000,
   });
@@ -152,11 +157,14 @@ export default function ItineraryBuilderScreen() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [preferences, setPreferences] = useState<OnboardingData | null>(null);
 
+  // Market context
+  const { marketId } = useMarket();
+
   // Data queries
-  const { data: restaurants = [], isLoading: loadingRestaurants } = useAllRestaurants();
-  const { data: allHours = {}, isLoading: loadingHours } = useAllRestaurantHours();
-  const { data: allHappyHours = [], isLoading: loadingHappyHours } = useAllHappyHours();
-  const { data: allEvents = [], isLoading: loadingEvents } = useAllEvents();
+  const { data: restaurants = [], isLoading: loadingRestaurants } = useAllRestaurants(marketId);
+  const { data: allHours = {}, isLoading: loadingHours } = useAllRestaurantHours(marketId);
+  const { data: allHappyHours = [], isLoading: loadingHappyHours } = useAllHappyHours(marketId);
+  const { data: allEvents = [], isLoading: loadingEvents } = useAllEvents(marketId);
   const { data: favorites = [] } = useFavorites();
   const { location: userLocation } = useUserLocation();
 

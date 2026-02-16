@@ -14,6 +14,7 @@ import { colors, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_EVENTS } from '../config/mockData';
 import type { DayOfWeek } from '../types/database';
 import { useEmailGate } from '../hooks';
+import { useMarket } from '../context/MarketContext';
 import { trackClick } from '../lib/analytics';
 import { trackImpression } from '../lib/impressions';
 
@@ -137,9 +138,10 @@ function formatEventTime(startTime: string, endTime: string | null): string {
 
 export default function EventsSection() {
   const navigation = useNavigation<NavigationProp>();
+  const { marketId } = useMarket();
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['upcomingEvents'],
+    queryKey: ['upcomingEvents', marketId],
     queryFn: getUpcomingEvents,
     staleTime: 10 * 60 * 1000, // 10 minutes
   });

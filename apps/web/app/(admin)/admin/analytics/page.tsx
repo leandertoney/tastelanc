@@ -1,9 +1,16 @@
 import { createClient } from '@/lib/supabase/server';
 import { Card } from '@/components/ui';
 import { Eye, MousePointer, TrendingUp, Calendar, Layers, AlertTriangle } from 'lucide-react';
+import { MARKET_SLUG } from '@/config/market';
 
 async function getAnalytics() {
   const supabase = await createClient();
+
+  // Resolve market
+  const { data: marketRow } = await supabase
+    .from('markets').select('id').eq('slug', MARKET_SLUG).eq('is_active', true).single();
+  if (!marketRow) throw new Error(`Market "${MARKET_SLUG}" not found`);
+  const marketId = marketRow.id;
 
   // Date ranges
   const now = new Date();
@@ -38,10 +45,11 @@ async function getAnalytics() {
     .select('*', { count: 'exact', head: true })
     .gte('clicked_at', thirtyDaysAgo.toISOString());
 
-  // Top restaurants by views
+  // Top restaurants by views — scoped to this market
   const { data: topRestaurants } = await supabase
     .from('analytics_page_views')
-    .select('restaurant_id, restaurants(name, slug)')
+    .select('restaurant_id, restaurants!inner(name, slug, market_id)')
+    .eq('restaurants.market_id', marketId)
     .gte('viewed_at', thirtyDaysAgo.toISOString());
 
   // Count views per restaurant

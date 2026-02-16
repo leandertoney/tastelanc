@@ -23,6 +23,7 @@ import {
   markSubscriptionMatched,
   type StripeCustomerInfo,
 } from '@/lib/subscription-matching';
+import { BRAND } from '@/config/market';
 
 // Generate a secure setup token for password setup with personalization
 interface SetupTokenOptions {
@@ -89,7 +90,7 @@ function generateBrandedWelcomeEmail(
                 <tr>
                   <td style="padding: 40px;">
                     <!-- Logo -->
-                    <img src="https://tastelanc.com/images/tastelanc_new_dark.png" alt="TasteLanc" height="36" style="margin-bottom: 24px;" />
+                    <img src="https://${BRAND.domain}${BRAND.logoPath}" alt="${BRAND.name}" height="36" style="margin-bottom: 24px;" />
 
                     <!-- Restaurant Name Badge -->
                     <div style="background-color: #2563eb; color: white; display: inline-block; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-bottom: 20px;">
@@ -101,7 +102,7 @@ function generateBrandedWelcomeEmail(
                     </h1>
 
                     <p style="color: #a3a3a3; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
-                      Welcome to TasteLanc! Your <strong style="color: #ffffff;">${restaurantName}</strong> dashboard is ready and waiting for you.
+                      Welcome to ${BRAND.name}! Your <strong style="color: #ffffff;">${restaurantName}</strong> dashboard is ready and waiting for you.
                     </p>
 
                     <p style="color: #a3a3a3; font-size: 16px; line-height: 1.6; margin: 0 0 32px 0;">
@@ -126,7 +127,7 @@ function generateBrandedWelcomeEmail(
                       <li>Update your restaurant profile & photos</li>
                       <li>Post specials and happy hours</li>
                       <li>See your analytics and engagement</li>
-                      <li>Connect with Lancaster foodies</li>
+                      <li>Connect with ${BRAND.countyShort} foodies</li>
                     </ul>
 
                     <p style="color: #737373; font-size: 14px; margin: 0;">
@@ -137,8 +138,8 @@ function generateBrandedWelcomeEmail(
                     <hr style="border: none; border-top: 1px solid #333; margin: 32px 0;" />
 
                     <p style="color: #525252; font-size: 12px; text-align: center; margin: 0;">
-                      TasteLanc — Lancaster's Local Food Guide<br/>
-                      <a href="https://tastelanc.com" style="color: #6b7280;">tastelanc.com</a>
+                      ${BRAND.name} — ${BRAND.countyShort}'s Local Food Guide<br/>
+                      <a href="https://${BRAND.domain}" style="color: #6b7280;">${BRAND.domain}</a>
                     </p>
                   </td>
                 </tr>
@@ -167,7 +168,7 @@ function generateBrandedWelcomeEmail(
               <tr>
                 <td style="padding: 40px;">
                   <!-- Logo -->
-                  <img src="https://tastelanc.com/images/tastelanc_new_dark.png" alt="TasteLanc" height="36" style="margin-bottom: 24px;" />
+                  <img src="https://${BRAND.domain}${BRAND.logoPath}" alt="${BRAND.name}" height="36" style="margin-bottom: 24px;" />
 
                   <!-- Restaurant Name Badge -->
                   <div style="background-color: #2563eb; color: white; display: inline-block; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-bottom: 20px;">
@@ -179,7 +180,7 @@ function generateBrandedWelcomeEmail(
                   </h1>
 
                   <p style="color: #a3a3a3; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
-                    Welcome to TasteLanc! Your <strong style="color: #ffffff;">${restaurantName}</strong> dashboard is ready and waiting for you.
+                    Welcome to ${BRAND.name}! Your <strong style="color: #ffffff;">${restaurantName}</strong> dashboard is ready and waiting for you.
                   </p>
 
                   <p style="color: #a3a3a3; font-size: 16px; line-height: 1.6; margin: 0 0 32px 0;">
@@ -204,7 +205,7 @@ function generateBrandedWelcomeEmail(
                     <li>Update your restaurant profile & photos</li>
                     <li>Post specials and happy hours</li>
                     <li>See your analytics and engagement</li>
-                    <li>Connect with Lancaster foodies</li>
+                    <li>Connect with ${BRAND.countyShort} foodies</li>
                   </ul>
 
                   <p style="color: #737373; font-size: 14px; margin: 0;">
@@ -215,8 +216,8 @@ function generateBrandedWelcomeEmail(
                   <hr style="border: none; border-top: 1px solid #333; margin: 32px 0;" />
 
                   <p style="color: #525252; font-size: 12px; text-align: center; margin: 0;">
-                    TasteLanc — Lancaster's Local Food Guide<br/>
-                    <a href="https://tastelanc.com" style="color: #6b7280;">tastelanc.com</a>
+                    ${BRAND.name} — ${BRAND.countyShort}'s Local Food Guide<br/>
+                    <a href="https://${BRAND.domain}" style="color: #6b7280;">${BRAND.domain}</a>
                   </p>
                 </td>
               </tr>
@@ -375,12 +376,12 @@ async function sendBrandedWelcomeEmailWithToken(
     restaurantName,
     coverImageUrl,
   });
-  const setupLink = `https://tastelanc.com/setup-account?token=${setupToken}`;
+  const setupLink = `https://${BRAND.domain}/setup-account?token=${setupToken}`;
 
   await resend.emails.send({
-    from: 'TasteLanc <hello@tastelanc.com>',
+    from: `${BRAND.name} <hello@${BRAND.domain}>`,
     to: email,
-    subject: `Welcome to TasteLanc! Set Up Your ${restaurantName} Account`,
+    subject: `Welcome to ${BRAND.name}! Set Up Your ${restaurantName} Account`,
     html: generateBrandedWelcomeEmail(setupLink, contactName, restaurantName, coverImageUrl),
   });
   console.log(`Branded welcome email sent to ${email}`);
@@ -534,8 +535,8 @@ async function handleMultiRestaurantCheckout(
             phone,
             is_active: true,
             is_verified: false,
-            city: 'Lancaster',
-            state: 'PA',
+            city: BRAND.countyShort,
+            state: BRAND.state,
           })
           .select('id')
           .single();
@@ -664,7 +665,7 @@ async function handleMultiRestaurantCheckout(
 
   try {
     await resend.emails.send({
-      from: 'TasteLanc <hello@tastelanc.com>',
+      from: `${BRAND.name} <hello@${BRAND.domain}>`,
       to: 'admin@tastelanc.com',
       subject: `Multi-Restaurant Payment: ${orderItems.length} restaurants - $${amountPaid}`,
       html: `
@@ -957,7 +958,7 @@ export async function POST(request: Request) {
           const amountPaid = session.amount_total ? (session.amount_total / 100).toFixed(2) : 'N/A';
           try {
             await resend.emails.send({
-              from: 'TasteLanc <hello@tastelanc.com>',
+              from: `${BRAND.name} <hello@${BRAND.domain}>`,
               to: 'admin@tastelanc.com',
               subject: `New Restaurant Payment: ${businessName} - $${amountPaid}`,
               html: `
@@ -1082,22 +1083,22 @@ export async function POST(request: Request) {
 
             // Generate password setup token and send welcome email
             const selfPromoterSetupToken = await generateSetupToken(supabaseAdmin, selfPromoterUserId, email);
-            const setupLink = `https://tastelanc.com/setup-account?token=${selfPromoterSetupToken}`;
+            const setupLink = `https://${BRAND.domain}/setup-account?token=${selfPromoterSetupToken}`;
 
             await resend.emails.send({
-              from: 'TasteLanc <hello@tastelanc.com>',
+              from: `${BRAND.name} <hello@${BRAND.domain}>`,
               to: email,
-              subject: `Welcome to TasteLanc! Set Up Your ${artistName} Account`,
+              subject: `Welcome to ${BRAND.name}! Set Up Your ${artistName} Account`,
               html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
                   <div style="text-align: center; margin-bottom: 30px;">
-                    <h1 style="color: #1a1a1a; font-size: 28px; margin: 0;">Welcome to TasteLanc!</h1>
+                    <h1 style="color: #1a1a1a; font-size: 28px; margin: 0;">Welcome to ${BRAND.name}!</h1>
                   </div>
 
                   <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi${contactName ? ` ${contactName.split(' ')[0]}` : ''},</p>
 
                   <p style="font-size: 16px; color: #333; line-height: 1.6;">
-                    Thank you for joining TasteLanc as a Self-Promoter! Your account for <strong>${artistName}</strong> is ready.
+                    Thank you for joining ${BRAND.name} as a Self-Promoter! Your account for <strong>${artistName}</strong> is ready.
                   </p>
 
                   <p style="font-size: 16px; color: #333; line-height: 1.6;">
@@ -1111,7 +1112,7 @@ export async function POST(request: Request) {
                   </div>
 
                   <p style="font-size: 16px; color: #333; line-height: 1.6;">
-                    Once you're set up, you can create events, upload flyers, and promote your performances to Lancaster's local audience.
+                    Once you're set up, you can create events, upload flyers, and promote your performances to ${BRAND.countyShort}'s local audience.
                   </p>
 
                   <p style="font-size: 16px; color: #333; line-height: 1.6;">
@@ -1120,14 +1121,14 @@ export async function POST(request: Request) {
 
                   <p style="font-size: 16px; color: #333; line-height: 1.6;">
                     Cheers,<br/>
-                    <strong>The TasteLanc Team</strong>
+                    <strong>The ${BRAND.name} Team</strong>
                   </p>
 
                   <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
 
                   <p style="font-size: 12px; color: #9ca3af; text-align: center;">
-                    TasteLanc - Lancaster's Local Food Guide<br/>
-                    <a href="https://tastelanc.com" style="color: #6b7280;">tastelanc.com</a>
+                    ${BRAND.name} - ${BRAND.countyShort}'s Local Food Guide<br/>
+                    <a href="https://${BRAND.domain}" style="color: #6b7280;">${BRAND.domain}</a>
                   </p>
                 </div>
               `,
@@ -1167,7 +1168,7 @@ export async function POST(request: Request) {
           const amountPaid = session.amount_total ? (session.amount_total / 100).toFixed(2) : 'N/A';
           try {
             await resend.emails.send({
-              from: 'TasteLanc <hello@tastelanc.com>',
+              from: `${BRAND.name} <hello@${BRAND.domain}>`,
               to: 'admin@tastelanc.com',
               subject: `New Self-Promoter: ${artistName} - $${amountPaid}/month`,
               html: `
@@ -1234,7 +1235,7 @@ export async function POST(request: Request) {
 
         // Check if this is a consumer subscription
         if (subscriptionType === 'consumer' || isConsumerSubscription(priceId)) {
-          // Consumer TasteLanc+ subscription
+          // Consumer premium subscription
           const billingPeriod = getConsumerBillingPeriod(priceId);
           const isFounder = isFounderSubscription(priceId) || session.metadata?.is_founder === 'true';
 
@@ -1573,7 +1574,7 @@ export async function POST(request: Request) {
               if (event.type === 'customer.subscription.created' && !isAdminCreated) {
                 try {
                   await resend.emails.send({
-                    from: 'TasteLanc <hello@tastelanc.com>',
+                    from: `${BRAND.name} <hello@${BRAND.domain}>`,
                     to: 'admin@tastelanc.com',
                     subject: `✅ Subscription Synced: ${matchResult.restaurantName}`,
                     html: `
@@ -1639,7 +1640,7 @@ export async function POST(request: Request) {
                 ).join('');
 
                 await resend.emails.send({
-                  from: 'TasteLanc <hello@tastelanc.com>',
+                  from: `${BRAND.name} <hello@${BRAND.domain}>`,
                   to: 'admin@tastelanc.com',
                   subject: `🚨 UNMATCHED Subscription: $${(amountCents / 100).toFixed(2)}/${billingInterval} - Needs Manual Review`,
                   html: `
@@ -1684,7 +1685,7 @@ export async function POST(request: Request) {
 
                       <div style="margin-top: 20px; display: flex; gap: 10px;">
                         <a href="https://dashboard.stripe.com/customers/${customerId}" style="background: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; display: inline-block;">View Customer in Stripe</a>
-                        <a href="https://tastelanc.com/admin/restaurants" style="background: #6b7280; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; display: inline-block;">View Restaurants</a>
+                        <a href="https://${BRAND.domain}/admin/restaurants" style="background: #6b7280; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; display: inline-block;">View Restaurants</a>
                       </div>
 
                       <p style="margin-top: 20px; color: #6b7280; font-size: 14px;">
@@ -1768,7 +1769,7 @@ export async function POST(request: Request) {
               // Send admin notification about cancellation
               try {
                 await resend.emails.send({
-                  from: 'TasteLanc <hello@tastelanc.com>',
+                  from: `${BRAND.name} <hello@${BRAND.domain}>`,
                   to: 'admin@tastelanc.com',
                   subject: `Subscription Canceled: ${restaurant.name}`,
                   html: `
@@ -1842,7 +1843,7 @@ export async function POST(request: Request) {
           if (restaurant) {
             try {
               await resend.emails.send({
-                from: 'TasteLanc <hello@tastelanc.com>',
+                from: `${BRAND.name} <hello@${BRAND.domain}>`,
                 to: 'admin@tastelanc.com',
                 subject: `Payment Failed: ${restaurant.name}`,
                 html: `

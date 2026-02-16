@@ -1,4 +1,5 @@
 import { renderBaseLayout } from './base-layout';
+import { BRAND } from '@/config/market';
 
 export interface B2BEmailProps {
   headline: string;
@@ -87,13 +88,13 @@ export function renderB2BEmail({
     <!-- Value Proposition Summary -->
     <div style="margin-top: 32px;">
       <p style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #FFFFFF;">
-        Why partner with TasteLanc?
+        Why partner with ${BRAND.name}?
       </p>
       <ul style="margin: 0; padding-left: 20px; color: #FFFFFF; font-size: 14px; line-height: 1.6;">
         <li style="margin-bottom: 6px;">Free marketing to local food lovers</li>
         <li style="margin-bottom: 6px;">Increase foot traffic during happy hours</li>
         <li style="margin-bottom: 6px;">Easy-to-use platform with no upfront costs</li>
-        <li style="margin-bottom: 0;">Join Lancaster's growing restaurant network</li>
+        <li style="margin-bottom: 0;">Join ${BRAND.countyShort}'s growing restaurant network</li>
       </ul>
     </div>
 
@@ -103,20 +104,20 @@ export function renderB2BEmail({
         Best regards,
       </p>
       <p style="margin: 0 0 4px 0; font-size: 15px; font-weight: 600; color: #FFFFFF;">
-        The TasteLanc Team
+        The ${BRAND.name} Team
       </p>
       <p style="margin: 0; font-size: 13px; color: #CCCCCC;">
-        Lancaster's Local Food & Drink Discovery Platform
+        ${BRAND.countyShort}'s Local Food & Drink Discovery Platform
       </p>
       <p style="margin: 8px 0 0 0; font-size: 13px; color: #CCCCCC;">
-        <a href="https://tastelanc.com/for-restaurants" style="color: #E63946; text-decoration: underline;">tastelanc.com/for-restaurants</a>
+        <a href="https://${BRAND.domain}/for-restaurants" style="color: #E63946; text-decoration: underline;">${BRAND.domain}/for-restaurants</a>
       </p>
     </div>
 
     <!-- Compliance Notice -->
     <div style="margin-top: 24px;">
       <p style="margin: 0; font-size: 12px; color: #CCCCCC;">
-        You're receiving this email because we believe ${businessName || 'your establishment'} would be a great fit for TasteLanc.
+        You're receiving this email because we believe ${businessName || 'your establishment'} would be a great fit for ${BRAND.name}.
         If you'd prefer not to receive these emails, you can <a href="${unsubscribeUrl}" style="color: #E63946; text-decoration: underline;">unsubscribe here</a>.
       </p>
     </div>
@@ -133,12 +134,12 @@ export function renderB2BEmail({
 export const B2B_TEMPLATES = {
   coldOutreach: {
     name: "Cold Outreach - Introduction",
-    subject: "Partner with TasteLanc - Free marketing for {business_name}",
+    subject: `Partner with ${BRAND.name} - Free marketing for {business_name}`,
     previewText: "Reach more local customers with zero upfront cost",
-    headline: "Grow Your Business with TasteLanc",
-    body: `I'm reaching out because {business_name} caught our attention as one of Lancaster's great local spots.
+    headline: `Grow Your Business with ${BRAND.name}`,
+    body: `I'm reaching out because {business_name} caught our attention as one of ${BRAND.countyShort}'s great local spots.
 
-TasteLanc is a new app launching this month that helps locals discover restaurants, happy hours, events, and daily specials in Lancaster, PA.
+${BRAND.name} is a new app launching this month that helps locals discover restaurants, happy hours, events, and daily specials in ${BRAND.countyShort}, ${BRAND.state}.
 
 Here's what we offer restaurant partners:
 
@@ -149,16 +150,16 @@ Here's what we offer restaurant partners:
 
 We're launching December 13th and building our founding restaurant network now. Early partners get priority placement and founding member perks.
 
-Would you be open to a quick 10-minute call to learn more? I'd love to show you how TasteLanc can help bring more customers through your doors.`,
+Would you be open to a quick 10-minute call to learn more? I'd love to show you how ${BRAND.name} can help bring more customers through your doors.`,
     ctaText: "Schedule a Call",
-    ctaUrl: "https://tastelanc.com/for-restaurants",
+    ctaUrl: `https://${BRAND.domain}/for-restaurants`,
   },
   followUp: {
     name: "Follow Up - Second Touch",
-    subject: "Quick follow-up: TasteLanc partnership for {business_name}",
+    subject: `Quick follow-up: ${BRAND.name} partnership for {business_name}`,
     previewText: "Just checking in - free marketing opportunity",
-    headline: "Following Up on TasteLanc Partnership",
-    body: `I wanted to follow up on my previous email about partnering with TasteLanc.
+    headline: `Following Up on ${BRAND.name} Partnership`,
+    body: `I wanted to follow up on my previous email about partnering with ${BRAND.name}.
 
 We're launching in just a few days, and I didn't want {business_name} to miss out on being part of our founding restaurant network.
 
@@ -167,11 +168,11 @@ Quick reminder of what you get:
 • Reach thousands of local food lovers
 • No contracts or commitments
 
-Several Lancaster restaurants have already joined, and I'd love to add {business_name} to the list.
+Several ${BRAND.countyShort} restaurants have already joined, and I'd love to add {business_name} to the list.
 
 Would it help if I sent over more details about how it works? Happy to answer any questions.`,
     ctaText: "Learn More",
-    ctaUrl: "https://tastelanc.com/for-restaurants",
+    ctaUrl: `https://${BRAND.domain}/for-restaurants`,
   },
   valueProposition: {
     name: "Value Focused - Benefits Heavy",
@@ -180,7 +181,7 @@ Would it help if I sent over more details about how it works? Happy to answer an
     headline: "Let's Help Fill Your Seats",
     body: `Running a restaurant is hard. Marketing it shouldn't be.
 
-TasteLanc is launching a free app that helps Lancaster locals discover where to eat, drink, and enjoy happy hours. And we want {business_name} to be part of it.
+${BRAND.name} is launching a free app that helps ${BRAND.countyShort} locals discover where to eat, drink, and enjoy happy hours. And we want {business_name} to be part of it.
 
 What's in it for you?
 
@@ -188,7 +189,7 @@ What's in it for you?
 
 **Happy Hour Promotion** - Showcase your specials exactly when people are deciding where to go.
 
-**Local Focus** - We're 100% focused on Lancaster. Your customers are our users.
+**Local Focus** - We're 100% focused on ${BRAND.countyShort}. Your customers are our users.
 
 **Easy Management** - Update your specials, hours, and events anytime through a simple dashboard.
 
@@ -196,6 +197,6 @@ No contracts. No fees. Just more customers discovering {business_name}.
 
 Ready to get started?`,
     ctaText: "Join Free",
-    ctaUrl: "https://tastelanc.com/for-restaurants",
+    ctaUrl: `https://${BRAND.domain}/for-restaurants`,
   },
-} as const;
+};
