@@ -6,7 +6,7 @@
     "packages/*"
   ],
   "scripts": {
-    "postinstall": "npx patch-package",
+    "postinstall": "npx patch-package || true",
     "dev:web": "npm run dev --workspace=@tastelanc/web",
     "dev:mobile": "npm run start --workspace=@tastelanc/mobile",
     "dev:mobile:lancaster": "npm run start --workspace=@tastelanc/mobile",
