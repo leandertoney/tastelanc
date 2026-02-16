@@ -2,7 +2,6 @@ import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-access';
-import { MARKET_SLUG } from '@/config/market';
 import {
   ArrowLeft,
   Store,
@@ -31,15 +30,8 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
   try { admin = await verifyAdminAccess(supabase); }
   catch { redirect('/login'); }
 
-  // Resolve market
-  const { data: marketRow } = await supabase
-    .from('markets').select('id').eq('slug', MARKET_SLUG).eq('is_active', true).single();
-  if (!marketRow) {
-    notFound();
-  }
-
-  // Fetch restaurant with related data — scoped to this market
-  const { data: restaurant, error } = await supabase
+  // Fetch restaurant with related data — scoped by admin role
+  let query = supabase
     .from('restaurants')
     .select(`
       *,
@@ -48,9 +40,15 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
         display_name
       )
     `)
-    .eq('id', id)
-    .eq('market_id', marketRow.id)
-    .single();
+    .eq('id', id);
+
+  // market_admin: filter to their scoped market
+  // super_admin: scopedMarketId is null, no filter (can see all markets)
+  if (admin.scopedMarketId) {
+    query = query.eq('market_id', admin.scopedMarketId);
+  }
+
+  const { data: restaurant, error } = await query.single();
 
   if (error || !restaurant) {
     notFound();

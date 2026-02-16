@@ -22,6 +22,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useMarket } from '../context/MarketContext';
 import { trackVisibleItems } from '../lib/impressions';
 import { colors, radius } from '../constants/colors';
+import OpenStatusBadge from './OpenStatusBadge';
 
 interface RecommendedSectionProps {
   onRestaurantPress: (restaurant: Restaurant) => void;
@@ -33,7 +34,7 @@ export default function RecommendedSection({
   onSeeAllPress,
 }: RecommendedSectionProps) {
   const { userId } = useAuth();
-  const { marketId } = useMarket();
+  const { marketId, isLoading: marketLoading } = useMarket();
   const [recommendations, setRecommendations] = useState<Restaurant[]>([]);
   const [preferences, setPreferences] = useState<OnboardingData | null>(null);
   const [greeting, setGreeting] = useState<string>('');
@@ -42,6 +43,9 @@ export default function RecommendedSection({
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
   const loadRecommendations = useCallback(async () => {
+    // Don't fetch until market has resolved — avoids unfiltered cross-market results
+    if (marketLoading) return;
+
     try {
       setLoading(true);
       setError(false);
@@ -68,7 +72,7 @@ export default function RecommendedSection({
     } finally {
       setLoading(false);
     }
-  }, [userId, marketId]);
+  }, [userId, marketId, marketLoading]);
 
   useEffect(() => {
     loadRecommendations();
@@ -177,6 +181,7 @@ export default function RecommendedSection({
                 <Text style={styles.name} numberOfLines={1}>
                   {restaurant.name}
                 </Text>
+                <OpenStatusBadge restaurantId={restaurant.id} size="small" style={{ marginBottom: 4 }} />
                 <View style={styles.infoRow}>
                   <Ionicons name="location-outline" size={12} color={colors.textMuted} />
                   <Text style={styles.address} numberOfLines={1}>

@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { Restaurant } from '../types/database';
 import { formatCategoryName } from '../lib/formatters';
 import { colors, radius, spacing } from '../constants/colors';
+import OpenStatusBadge from './OpenStatusBadge';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.7; // 70% viewport width
@@ -96,6 +97,8 @@ export default function FeaturedCard({
           </View>
 
           <View style={styles.infoRow}>
+            <OpenStatusBadge restaurantId={restaurant.id} size="small" />
+            <Text style={styles.dot}>•</Text>
             <Ionicons name="location-outline" size={14} color={colors.text} />
             <Text style={styles.address} numberOfLines={1}>
               {restaurant.address}
@@ -245,6 +248,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  dot: {
+    fontSize: 12,
+    color: colors.textSecondary,
   },
   address: {
     fontSize: 13,
