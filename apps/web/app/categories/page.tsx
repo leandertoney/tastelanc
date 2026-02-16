@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/market';
 import { fetchRestaurants } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -10,8 +11,8 @@ export const revalidate = 3600;
 
 export async function generateMetadata() {
   return buildMeta({
-    title: 'Lancaster Restaurant Categories | TasteLanc',
-    description: 'Browse Lancaster restaurants by category.',
+    title: `${BRAND.countyShort} Restaurant Categories | ${BRAND.name}`,
+    description: `Browse ${BRAND.countyShort} restaurants by category.`,
     url: `${siteUrl}/categories`,
   });
 }
@@ -32,7 +33,7 @@ export default async function CategoriesPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <main className="max-w-5xl mx-auto px-4 py-10 text-white">
         {leadershipLine(claim)}
-        <h1 className="text-3xl font-bold">Lancaster Restaurant Categories</h1>
+        <h1 className="text-3xl font-bold">{BRAND.countyShort} Restaurant Categories</h1>
         <p className="text-gray-400 mt-2">Explore restaurants by cuisine and style.</p>
         {restaurantCTAButtons()}
         <div className="grid md:grid-cols-2 gap-4 mt-6">

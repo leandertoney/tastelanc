@@ -414,15 +414,21 @@ export async function trackRestaurantView(restaurantId: string): Promise<void> {
  * Uses epoch-based seeded shuffle for consistent ordering within 30-minute windows.
  * @param limit - Number of restaurants to return (default 24)
  */
-export async function getFeaturedRestaurants(limit: number = 24): Promise<Restaurant[]> {
+export async function getFeaturedRestaurants(limit: number = 24, marketId: string | null = null): Promise<Restaurant[]> {
   try {
     // Fetch ALL premium/elite restaurants with cover images only
-    const { data: paidRestaurants, error } = await supabase
+    let featuredQuery = supabase
       .from('restaurants')
       .select('*, tiers!inner(name)')
       .eq('is_active', true)
       .not('cover_image_url', 'is', null)
       .in('tiers.name', ['premium', 'elite']);
+
+    if (marketId) {
+      featuredQuery = featuredQuery.eq('market_id', marketId);
+    }
+
+    const { data: paidRestaurants, error } = await featuredQuery;
 
     if (error) {
       console.error('Error fetching paid restaurants:', error);
@@ -457,7 +463,8 @@ export async function getFeaturedRestaurants(limit: number = 24): Promise<Restau
 export async function getOtherRestaurants(
   excludeIds: string[],
   page: number = 0,
-  pageSize: number = 10
+  pageSize: number = 10,
+  marketId: string | null = null
 ): Promise<{ restaurants: Restaurant[]; hasMore: boolean }> {
   try {
     // Fetch all active basic restaurants with cover images (no tier or basic tier)
@@ -466,6 +473,10 @@ export async function getOtherRestaurants(
       .select('*, tiers(name)', { count: 'exact' })
       .eq('is_active', true)
       .not('cover_image_url', 'is', null);
+
+    if (marketId) {
+      query = query.eq('market_id', marketId);
+    }
 
     // Exclude featured restaurants if provided
     if (excludeIds.length > 0) {

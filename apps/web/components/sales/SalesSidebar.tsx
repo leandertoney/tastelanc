@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { BRAND } from '@/config/market';
 import {
   LayoutDashboard,
   Store,
@@ -85,7 +86,7 @@ export default function SalesSidebar({ isOpen, onClose }: SalesSidebarProps) {
               <TrendingUp className="w-6 h-6 text-white" />
             </div>
             <div>
-              <span className="text-xl font-bold text-white">TasteLanc</span>
+              <span className="text-xl font-bold text-white">{BRAND.name}</span>
               <span className="block text-xs text-tastelanc-accent">Sales CRM</span>
             </div>
           </Link>

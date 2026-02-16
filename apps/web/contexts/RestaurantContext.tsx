@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { useMarket } from '@/contexts/MarketContext';
 import type { Restaurant, SubscriptionTier, Tier } from '@/types/database';
 
 interface RestaurantContextType {
@@ -68,6 +69,8 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { marketId } = useMarket();
+
   // Check for admin mode from URL params
   const adminMode = searchParams.get('admin_mode') === 'true';
   const adminRestaurantId = searchParams.get('restaurant_id');
@@ -88,16 +91,24 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
         return;
       }
 
-      const userIsAdmin = user.email === 'admin@tastelanc.com';
+      // Check admin role from profiles table
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, admin_market_id')
+        .eq('id', user.id)
+        .single();
+      const userIsAdmin = profile?.role === 'super_admin' ||
+        (profile?.role === 'market_admin' && profile?.admin_market_id === marketId);
       setIsAdmin(userIsAdmin);
 
       // If admin mode with specific restaurant ID
       if (adminMode && adminRestaurantId && userIsAdmin) {
-        const { data: restaurantData, error: restaurantError } = await supabase
+        let adminQuery = supabase
           .from('restaurants')
           .select('*, tiers(*)')
-          .eq('id', adminRestaurantId)
-          .single();
+          .eq('id', adminRestaurantId);
+        if (marketId) adminQuery = adminQuery.eq('market_id', marketId);
+        const { data: restaurantData, error: restaurantError } = await adminQuery.single();
 
         if (restaurantError || !restaurantData) {
           setError('Restaurant not found');
@@ -114,12 +125,13 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
         return;
       }
 
-      // Normal mode - fetch ALL restaurants owned by this user
-      const { data: ownedRestaurants, error: restaurantError } = await supabase
+      // Normal mode - fetch ALL restaurants owned by this user (scoped to market)
+      let ownedQuery = supabase
         .from('restaurants')
         .select('*, tiers(*)')
-        .eq('owner_id', user.id)
-        .order('name');
+        .eq('owner_id', user.id);
+      if (marketId) ownedQuery = ownedQuery.eq('market_id', marketId);
+      const { data: ownedRestaurants, error: restaurantError } = await ownedQuery.order('name');
 
       // Also fetch restaurants where user is an active team member
       const { data: memberships } = await supabase
@@ -136,11 +148,12 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
         const uniqueMemberIds = memberRestaurantIds.filter((id: string) => !ownedIds.has(id));
 
         if (uniqueMemberIds.length > 0) {
-          const { data: memberRestData } = await supabase
+          let memberQuery = supabase
             .from('restaurants')
             .select('*, tiers(*)')
-            .in('id', uniqueMemberIds)
-            .order('name');
+            .in('id', uniqueMemberIds);
+          if (marketId) memberQuery = memberQuery.eq('market_id', marketId);
+          const { data: memberRestData } = await memberQuery.order('name');
           // Only include member restaurants that are on Elite tier
           memberRestaurants = (memberRestData || []).filter(
             (r: any) => r.tiers?.name === 'elite'
@@ -204,7 +217,7 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
       setError('Failed to load restaurant');
       setIsLoading(false);
     }
-  }, [adminMode, adminRestaurantId]);
+  }, [adminMode, adminRestaurantId, marketId]);
 
   const switchRestaurant = useCallback((id: string) => {
     const target = restaurants.find((r) => r.id === id);

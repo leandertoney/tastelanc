@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { BRAND } from '@/config/market';
 import { ChatMessage as ChatMessageType, ROSIE_STORAGE_KEYS } from '@/lib/rosie/types';
 
 interface ChatMessageProps {
@@ -76,7 +77,7 @@ export default function ChatMessage({
       <div className="flex-shrink-0">
         <Image
           src="/images/rosie_dark_new.png"
-          alt="Rosie"
+          alt={BRAND.aiName}
           width={36}
           height={36}
           className="rounded-full animate-rosie"

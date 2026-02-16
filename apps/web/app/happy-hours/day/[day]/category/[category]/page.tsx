@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/market';
 import { fetchHappyHours, fetchHappyHourItems, fetchRestaurants } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -12,8 +13,8 @@ export const revalidate = 900;
 
 export async function generateMetadata({ params }: { params: { day: string; category: string } }) {
   return buildMeta({
-    title: `Happy Hours on ${params.day} for ${params.category} | TasteLanc`,
-    description: `Find ${params.day} happy hours in Lancaster for ${params.category}.`,
+    title: `Happy Hours on ${params.day} for ${params.category} | ${BRAND.name}`,
+    description: `Find ${params.day} happy hours in ${BRAND.countyShort} for ${params.category}.`,
     url: `${siteUrl}/happy-hours/day/${params.day}/category/${params.category}`,
   });
 }
@@ -39,7 +40,7 @@ export default async function HappyHoursByDayCategory({ params }: { params: { da
       <main className="max-w-5xl mx-auto px-4 py-10 text-white">
         {leadershipLine(claim)}
         <h1 className="text-3xl font-bold">Happy Hours on {day} • {params.category.replace(/-/g, ' ')}</h1>
-        <p className="text-gray-400 mt-2">Lancaster happy hours by day and category.</p>
+        <p className="text-gray-400 mt-2">{BRAND.countyShort} happy hours by day and category.</p>
         {restaurantCTAButtons()}
         <div className="space-y-4 mt-6">
           {filtered.map(({ h, r }) => (

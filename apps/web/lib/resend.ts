@@ -1,12 +1,13 @@
 import { Resend } from 'resend';
+import { BRAND } from '@/config/market';
 
 // Initialize Resend client
 export const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Email configuration
 export const EMAIL_CONFIG = {
-  from: 'TasteLanc <noreply@tastelanc.com>',
-  replyTo: 'info@tastelanc.com',
+  from: `${BRAND.name} <noreply@${BRAND.domain}>`,
+  replyTo: `info@${BRAND.domain}`,
   batchSize: 100, // Resend batch limit
 } as const;
 

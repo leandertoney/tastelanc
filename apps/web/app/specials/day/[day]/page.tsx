@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/market';
 import { fetchSpecials, fetchRestaurants } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -11,8 +12,8 @@ export const revalidate = 900;
 
 export async function generateMetadata({ params }: { params: { day: string } }) {
   return buildMeta({
-    title: `Specials on ${params.day} in Lancaster | TasteLanc`,
-    description: `Find ${params.day} restaurant specials in Lancaster, PA.`,
+    title: `Specials on ${params.day} in ${BRAND.countyShort} | ${BRAND.name}`,
+    description: `Find ${params.day} restaurant specials in ${BRAND.countyShort}, ${BRAND.state}.`,
     url: `${siteUrl}/specials/day/${params.day}`,
   });
 }
@@ -37,7 +38,7 @@ export default async function SpecialsByDay({ params }: { params: { day: string 
       <main className="max-w-5xl mx-auto px-4 py-10 text-white">
         {leadershipLine(claim)}
         <h1 className="text-3xl font-bold">Specials on {day}</h1>
-        <p className="text-gray-400 mt-2">Food and drink deals on {day} in Lancaster.</p>
+        <p className="text-gray-400 mt-2">Food and drink deals on {day} in {BRAND.countyShort}.</p>
         {restaurantCTAButtons()}
         <div className="space-y-4 mt-6">
           {filtered.map(({ s, r }) => (

@@ -4,6 +4,7 @@ import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
 import { buildMeta } from '@/lib/seo/meta';
 import { itemListJsonLd } from '@/lib/seo/structured';
 import { notFound } from 'next/navigation';
+import { BRAND } from '@/config/market';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
 const DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
@@ -11,8 +12,8 @@ export const revalidate = 1200;
 
 export async function generateMetadata({ params }: { params: { day: string } }) {
   return buildMeta({
-    title: `Rosie’s Top ${params.day} Picks | TasteLanc`,
-    description: `Rosie’s top restaurants and specials for ${params.day} in Lancaster.`,
+    title: `${BRAND.aiName}'s Top ${params.day} Picks | ${BRAND.name}`,
+    description: `${BRAND.aiName}'s top restaurants and specials for ${params.day} in ${BRAND.countyShort}.`,
     url: `${siteUrl}/rosie/top/${params.day}`,
   });
 }
@@ -42,7 +43,7 @@ export default async function RosieTopDay({ params }: { params: { day: string } 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <main className="max-w-5xl mx-auto px-4 py-10 text-white">
         {leadershipLine(claim)}
-        <h1 className="text-3xl font-bold">Rosie’s Top {day} Picks</h1>
+        <h1 className="text-3xl font-bold">{BRAND.aiName}&apos;s Top {day} Picks</h1>
         <p className="text-gray-400 mt-2">Restaurants with specials, events, or happy hours on {day}.</p>
         {restaurantCTAButtons()}
         <div className="grid md:grid-cols-2 gap-6 mt-6">

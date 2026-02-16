@@ -18,6 +18,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { Card, Button, Badge } from '@/components/ui';
+import { BRAND } from '@/config/market';
 
 interface ConsumerSubscription {
   id: string;
@@ -43,7 +44,7 @@ function getPlanDetails(subscription: ConsumerSubscription | null) {
 
   if (subscription.billing_period === 'lifetime') {
     return {
-      name: 'TasteLanc+ Lifetime',
+      name: `${BRAND.premiumName} Lifetime`,
       price: '$199',
       period: 'one-time',
       isActive: true,
@@ -52,7 +53,7 @@ function getPlanDetails(subscription: ConsumerSubscription | null) {
 
   if (subscription.billing_period === 'yearly') {
     return {
-      name: 'TasteLanc+ Annual',
+      name: `${BRAND.premiumName} Annual`,
       price: '$19.99',
       period: '/year',
       isActive: true,
@@ -60,7 +61,7 @@ function getPlanDetails(subscription: ConsumerSubscription | null) {
   }
 
   return {
-    name: 'TasteLanc+ Monthly',
+    name: `${BRAND.premiumName} Monthly`,
     price: '$1.99',
     period: '/month',
     isActive: true,
@@ -155,8 +156,8 @@ export default function AccountPage() {
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <Image
-              src="/images/tastelanc_new_dark.png"
-              alt="TasteLanc"
+              src={BRAND.logoPath}
+              alt={BRAND.name}
               width={120}
               height={40}
               className="h-8 w-auto"
@@ -181,7 +182,7 @@ export default function AccountPage() {
             Welcome{user?.user_metadata?.full_name ? `, ${user.user_metadata.full_name}` : ''}!
           </h1>
           <p className="text-gray-400">
-            Manage your TasteLanc+ subscription and account settings.
+            Manage your {BRAND.premiumName} subscription and account settings.
           </p>
         </div>
 
@@ -279,7 +280,7 @@ export default function AccountPage() {
               <div className="text-center py-4">
                 <AlertCircle className="w-8 h-8 text-gray-500 mx-auto mb-3" />
                 <p className="text-gray-400 mb-4">
-                  Download the TasteLanc app to get started.
+                  Download the {BRAND.name} app to get started.
                 </p>
                 <a
                   href="https://apps.apple.com/us/app/tastelanc/id6755852717"
@@ -308,10 +309,10 @@ export default function AccountPage() {
 
             <div className="bg-tastelanc-surface rounded-lg p-4 mb-4">
               <p className="text-sm text-gray-300 leading-relaxed">
-                This email and password will be your login for the <strong className="text-white">TasteLanc mobile app</strong> when it launches.
+                This email and password will be your login for the <strong className="text-white">{BRAND.name} mobile app</strong> when it launches.
               </p>
               <p className="text-sm text-gray-400 mt-3">
-                Your TasteLanc+ benefits, rewards, and saved favorites will sync automatically across all your devices.
+                Your {BRAND.premiumName} benefits, rewards, and saved favorites will sync automatically across all your devices.
               </p>
             </div>
 
@@ -329,7 +330,7 @@ export default function AccountPage() {
             className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to TasteLanc
+            Back to {BRAND.name}
           </Link>
         </div>
       </main>

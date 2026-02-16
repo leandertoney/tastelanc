@@ -1,5 +1,19 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import type { Restaurant } from '@/types/database';
+import { MARKET_SLUG } from '@/config/market';
+import { isUserAdmin as checkIsUserAdmin } from '@/lib/auth/admin-access';
+
+// Cached market ID — resolved once per process, reused across requests
+let _cachedMarketId: string | null = null;
+async function resolveMarketId(supabase: SupabaseClient): Promise<string> {
+  if (_cachedMarketId) return _cachedMarketId;
+  const { data, error } = await supabase
+    .from('markets').select('id')
+    .eq('slug', MARKET_SLUG).eq('is_active', true).single();
+  if (error || !data) throw new Error(`[resolveMarketId] Market "${MARKET_SLUG}" not found`);
+  _cachedMarketId = data.id;
+  return data.id;
+}
 
 export interface RestaurantAccessResult {
   canAccess: boolean;
@@ -15,7 +29,7 @@ export interface RestaurantAccessResult {
 /**
  * Verifies if the current user can access a specific restaurant.
  * Access is granted if:
- * 1. User is admin (admin@tastelanc.com)
+ * 1. User is admin (super_admin or market_admin for this market)
  * 2. User is the owner of the restaurant (restaurant.owner_id === user.id)
  *
  * @param supabase - Supabase client instance
@@ -41,13 +55,17 @@ export async function verifyRestaurantAccess(
     };
   }
 
-  const isAdmin = user.email === 'admin@tastelanc.com';
+  const isAdmin = await checkIsUserAdmin(supabase);
 
-  // Fetch the restaurant with tier info
+  // Resolve market for cross-market isolation
+  const marketId = await resolveMarketId(supabase);
+
+  // Fetch the restaurant with tier info — scoped to this market
   const { data: restaurant, error: restaurantError } = await supabase
     .from('restaurants')
     .select('*, tiers(name)')
     .eq('id', restaurantId)
+    .eq('market_id', marketId)
     .single();
 
   if (restaurantError || !restaurant) {
@@ -142,7 +160,10 @@ export async function getOwnedRestaurant(
     };
   }
 
-  const isAdmin = user.email === 'admin@tastelanc.com';
+  const isAdmin = await checkIsUserAdmin(supabase);
+
+  // Resolve market for cross-market isolation
+  const marketId = await resolveMarketId(supabase);
 
   // If admin mode with specific restaurant ID
   if (adminRestaurantId && isAdmin) {
@@ -150,6 +171,7 @@ export async function getOwnedRestaurant(
       .from('restaurants')
       .select('*')
       .eq('id', adminRestaurantId)
+      .eq('market_id', marketId)
       .single();
 
     if (restaurantError || !restaurant) {
@@ -174,11 +196,12 @@ export async function getOwnedRestaurant(
     };
   }
 
-  // Normal owner mode - find restaurant by owner_id
+  // Normal owner mode - find restaurant by owner_id — scoped to this market
   const { data: restaurant, error: restaurantError } = await supabase
     .from('restaurants')
     .select('*')
     .eq('owner_id', user.id)
+    .eq('market_id', marketId)
     .single();
 
   if (restaurantError || !restaurant) {
@@ -204,9 +227,6 @@ export async function getOwnedRestaurant(
 }
 
 /**
- * Checks if user is admin
+ * Checks if user is admin — re-exported from admin-access.ts for backwards compatibility
  */
-export async function isUserAdmin(supabase: SupabaseClient): Promise<boolean> {
-  const { data: { user } } = await supabase.auth.getUser();
-  return user?.email === 'admin@tastelanc.com';
-}
+export { isUserAdmin } from '@/lib/auth/admin-access';

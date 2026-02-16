@@ -1,0 +1,108 @@
+{
+  "expo": {
+    "name": "TasteCumberland",
+    "slug": "taste-cumberland",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "scheme": "tastecumberland",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F4EBDD"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/0e0abbe1-3518-4669-bb7a-46a1d0d63b68",
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      }
+    },
+    "runtimeVersion": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.tastelanc.cumberland",
+      "buildNumber": "1",
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": []
+      },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Taste Cumberland uses your location to find restaurants near you.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Taste Cumberland uses your location to find restaurants near you.",
+        "NSCameraUsageDescription": "Taste Cumberland uses the camera for check-in verification.",
+        "NSMotionUsageDescription": "Taste Cumberland uses motion data to improve location accuracy for check-ins and visit insights.",
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#F4EBDD"
+      },
+      "package": "com.tastelanc.cumberland",
+      "versionCode": 1,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCs5oTNGnEoBbyvsnOhv86MDwkokILqM2g"
+        }
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "notification": {
+      "icon": "./assets/icon.png",
+      "color": "#0F1E2E"
+    },
+    "plugins": [
+      "expo-notifications",
+      "expo-font",
+      "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Taste Cumberland uses your location to find restaurants near you."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "15.1"
+          },
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "minSdkVersion": 24
+          }
+        }
+      ],
+      "./plugins/withAndroidSdk35.js",
+      "expo-video",
+      "react-native-radar"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "0e0abbe1-3518-4669-bb7a-46a1d0d63b68"
+      }
+    },
+    "owner": "leandertoney"
+  }
+}

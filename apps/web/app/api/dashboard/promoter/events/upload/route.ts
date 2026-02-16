@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { isUserAdmin } from '@/lib/auth/admin-access';
 
 // Verify self-promoter access
 async function verifySelfPromoterAccess(selfPromoterId: string) {
@@ -10,7 +11,7 @@ async function verifySelfPromoterAccess(selfPromoterId: string) {
     return { error: 'Unauthorized', status: 401 };
   }
 
-  const isAdmin = user.email === 'admin@tastelanc.com';
+  const isAdmin = await isUserAdmin(supabase);
 
   // Fetch self-promoter
   const { data: selfPromoter, error } = await supabase

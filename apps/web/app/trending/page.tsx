@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/market';
 import { fetchRestaurants } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -9,8 +10,8 @@ export const revalidate = 900;
 
 export async function generateMetadata() {
   return buildMeta({
-    title: 'Trending Restaurants in Lancaster, PA | TasteLanc',
-    description: 'See trending Lancaster restaurants with specials, happy hours, and events.',
+    title: `Trending Restaurants in ${BRAND.countyShort}, ${BRAND.state} | ${BRAND.name}`,
+    description: `See trending ${BRAND.countyShort} restaurants with specials, happy hours, and events.`,
     url: `${siteUrl}/trending`,
   });
 }

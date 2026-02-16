@@ -6,6 +6,7 @@ import RootNavigator from './RootNavigator';
 import OnboardingNavigator from './OnboardingNavigator';
 import SplashVideoScreen from '../screens/SplashVideoScreen';
 import { AuthProvider } from '../context/AuthContext';
+import { MarketProvider } from '../context/MarketContext';
 import { OnboardingProvider } from '../context/OnboardingContext';
 import { SignUpModalProvider } from '../context/SignUpModalContext';
 import { EmailGateProvider } from '../context/EmailGateContext';
@@ -148,20 +149,22 @@ export default function Navigation() {
 
   return (
     <AuthProvider>
-      <EmailGateProvider>
-        <SignUpModalProvider>
-          <NavigationContext.Provider value={{ restartOnboarding, finishOnboarding }}>
-            <OnboardingProvider>
-              <ErrorBoundary
-                level="section"
-                fallback={<NavigationFallback hasCompletedOnboarding={hasCompletedOnboarding} />}
-              >
-                <NavigationInner hasCompletedOnboarding={hasCompletedOnboarding} />
-              </ErrorBoundary>
-            </OnboardingProvider>
-          </NavigationContext.Provider>
-        </SignUpModalProvider>
-      </EmailGateProvider>
+      <MarketProvider>
+        <EmailGateProvider>
+          <SignUpModalProvider>
+            <NavigationContext.Provider value={{ restartOnboarding, finishOnboarding }}>
+              <OnboardingProvider>
+                <ErrorBoundary
+                  level="section"
+                  fallback={<NavigationFallback hasCompletedOnboarding={hasCompletedOnboarding} />}
+                >
+                  <NavigationInner hasCompletedOnboarding={hasCompletedOnboarding} />
+                </ErrorBoundary>
+              </OnboardingProvider>
+            </NavigationContext.Provider>
+          </SignUpModalProvider>
+        </EmailGateProvider>
+      </MarketProvider>
     </AuthProvider>
   );
 }

@@ -4,6 +4,7 @@ import { Search, SlidersHorizontal } from 'lucide-react';
 import type { Restaurant } from '@/types/database';
 import type { Metadata } from 'next';
 import { CATEGORIES_BY_GROUP, CATEGORY_GROUPS, getCategoryLabel } from '@/lib/constants/categories';
+import { MARKET_SLUG } from '@/config/market';
 
 export const metadata: Metadata = {
   title: 'Restaurants | TasteLanc',
@@ -20,9 +21,19 @@ interface PageProps {
 async function getRestaurants(category?: string, query?: string) {
   const supabase = await createClient();
 
+  // Resolve market
+  const { data: marketRow } = await supabase
+    .from('markets')
+    .select('id')
+    .eq('slug', MARKET_SLUG)
+    .eq('is_active', true)
+    .single();
+  if (!marketRow) throw new Error(`Market "${MARKET_SLUG}" not found`);
+
   let queryBuilder = supabase
     .from('restaurants')
     .select('*')
+    .eq('market_id', marketRow.id)
     .eq('is_active', true)
     .order('name');
 

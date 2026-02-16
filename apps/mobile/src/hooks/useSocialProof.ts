@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { getLeaderboard } from '../lib/voting';
 import { useAuth } from './useAuth';
+import { useMarket } from '../context/MarketContext';
 
 // Types for social proof data
 export interface PlatformSocialProof {
@@ -119,10 +120,12 @@ function getRestaurantsCompetingText(count: number): string {
  * Hook to fetch platform-wide social proof stats
  */
 export function usePlatformSocialProof() {
+  const { marketId } = useMarket();
+
   const query = useQuery({
-    queryKey: ['socialProof', 'platform'],
+    queryKey: ['socialProof', 'platform', marketId],
     queryFn: async (): Promise<PlatformSocialProof> => {
-      // Try to fetch from Supabase
+      // Stub: pass p_market_id to RPC when it's updated in a future phase
       const { data, error } = await supabase.rpc('get_social_proof_stats');
 
       // Calculate days remaining for urgency
@@ -376,8 +379,10 @@ function formatCategory(category: string): string {
  * Returns string[] (not Set) so it survives JSON serialization in React Query cache
  */
 export function useTrendingRestaurants() {
+  const { marketId } = useMarket();
+
   return useQuery({
-    queryKey: ['socialProof', 'trending'],
+    queryKey: ['socialProof', 'trending', marketId],
     queryFn: async (): Promise<string[]> => {
       // Get from leaderboard - top picks and leading picks are "trending"
       const leaderboard = await getLeaderboard();

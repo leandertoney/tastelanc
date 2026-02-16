@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/market';
 import { fetchRestaurants } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -12,8 +13,8 @@ export const revalidate = 1200;
 
 export async function generateMetadata({ params }: { params: { category: string; day: string } }) {
   return buildMeta({
-    title: `${params.category.replace(/-/g, ' ')} on ${params.day} in Lancaster | TasteLanc`,
-    description: `Discover ${params.category.replace(/-/g, ' ')} options on ${params.day} in Lancaster.`,
+    title: `${params.category.replace(/-/g, ' ')} on ${params.day} in ${BRAND.countyShort} | ${BRAND.name}`,
+    description: `Discover ${params.category.replace(/-/g, ' ')} options on ${params.day} in ${BRAND.countyShort}.`,
     url: `${siteUrl}/categories/${params.category}/${params.day}`,
   });
 }
@@ -35,7 +36,7 @@ export default async function CategoryDayPage({ params }: { params: { category: 
       <main className="max-w-5xl mx-auto px-4 py-10 text-white">
         {leadershipLine(claim)}
         <h1 className="text-3xl font-bold">{params.category.replace(/-/g, ' ')} on {day}</h1>
-        <p className="text-gray-400 mt-2">Lancaster restaurants in this category for {day} outings.</p>
+        <p className="text-gray-400 mt-2">{BRAND.countyShort} restaurants in this category for {day} outings.</p>
         {restaurantCTAButtons()}
         <div className="grid md:grid-cols-2 gap-6 mt-6">
           {filtered.map((r) => (

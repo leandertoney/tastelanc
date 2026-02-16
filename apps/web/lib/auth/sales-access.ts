@@ -1,4 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { isUserAdmin } from '@/lib/auth/admin-access';
 
 export interface SalesAccessResult {
   canAccess: boolean;
@@ -28,7 +29,7 @@ export async function verifySalesAccess(
     };
   }
 
-  const isAdmin = user.email === 'admin@tastelanc.com';
+  const isAdmin = await isUserAdmin(supabase);
   const isSalesRep = user.user_metadata?.role === 'sales_rep';
   const canAccess = isAdmin || isSalesRep;
 

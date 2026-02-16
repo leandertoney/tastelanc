@@ -3,7 +3,8 @@
     "allow": [
       "Bash(PGPASSWORD='LTMackin!23' psql:*)",
       "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"\n-- Check unmatched_subscriptions\nSELECT * FROM unmatched_subscriptions ORDER BY created_at DESC LIMIT 10;\n\")",
-      "WebFetch(domain:www.newtownfoodandspirits.com)"
+      "WebFetch(domain:www.newtownfoodandspirits.com)",
+      "Bash(SUPABASE_DB_PASSWORD='LTMackin!23' npx supabase migration repair:*)"
     ]
   }
 }

@@ -5,14 +5,15 @@ import { buildMeta } from '@/lib/seo/meta';
 import { itemListJsonLd } from '@/lib/seo/structured';
 import { slugify } from '@/lib/seo/slug';
 import { notFound } from 'next/navigation';
+import { BRAND } from '@/config/market';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
 export const revalidate = 1800;
 
 export async function generateMetadata({ params }: { params: { category: string } }) {
   return buildMeta({
-    title: `Rosie’s Best ${params.category.replace(/-/g, ' ')} in Lancaster | TasteLanc`,
-    description: `Rosie’s top ${params.category.replace(/-/g, ' ')} picks in Lancaster.`,
+    title: `${BRAND.aiName}'s Best ${params.category.replace(/-/g, ' ')} in ${BRAND.countyShort} | ${BRAND.name}`,
+    description: `${BRAND.aiName}'s top ${params.category.replace(/-/g, ' ')} picks in ${BRAND.countyShort}.`,
     url: `${siteUrl}/rosie/best/${params.category}`,
   });
 }
@@ -31,8 +32,8 @@ export default async function RosieBestCategory({ params }: { params: { category
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <main className="max-w-5xl mx-auto px-4 py-10 text-white">
         {leadershipLine(claim)}
-        <h1 className="text-3xl font-bold">Rosie’s Best {params.category.replace(/-/g, ' ')} in Lancaster</h1>
-        <p className="text-gray-400 mt-2">Hand-picked from TasteLanc data.</p>
+        <h1 className="text-3xl font-bold">{BRAND.aiName}&apos;s Best {params.category.replace(/-/g, ' ')} in {BRAND.countyShort}</h1>
+        <p className="text-gray-400 mt-2">Hand-picked from {BRAND.name} data.</p>
         {restaurantCTAButtons()}
         <div className="grid md:grid-cols-2 gap-6 mt-6">
           {filtered.map((r) => (

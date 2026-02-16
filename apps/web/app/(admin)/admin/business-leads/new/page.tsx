@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { BRAND } from '@/config/market';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -35,7 +36,7 @@ export default function NewBusinessLeadPage() {
   const [phone, setPhone] = useState('');
   const [website, setWebsite] = useState('');
   const [address, setAddress] = useState('');
-  const [city, setCity] = useState('Lancaster');
+  const [city, setCity] = useState(BRAND.countyShort);
   const [state, setState] = useState('PA');
   const [zipCode, setZipCode] = useState('');
   const [category, setCategory] = useState('restaurant');

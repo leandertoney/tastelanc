@@ -15,7 +15,8 @@ export type SectionName =
   | 'search'
   | 'category'
   | 'specials_view_all'
-  | 'happy_hours_view_all';
+  | 'happy_hours_view_all'
+  | 'featured_view_all';
 
 interface PendingImpression {
   restaurant_id: string;
@@ -61,9 +62,13 @@ async function flush() {
   buffer = [];
 
   try {
+    // Use insert (not upsert) — client-side seen set already deduplicates,
+    // and the DB unique index on (restaurant_id, section_name, visitor_id, epoch_seed)
+    // catches edge-case duplicates. The previous upsert silently failed because
+    // the INSERT RLS policy doesn't cover the UPDATE part of upsert.
     await supabase
       .from('section_impressions')
-      .upsert(batch, { onConflict: 'restaurant_id,section_name,visitor_id,epoch_seed' });
+      .insert(batch);
   } catch {
     // Silently fail — don't break the app for analytics
   }

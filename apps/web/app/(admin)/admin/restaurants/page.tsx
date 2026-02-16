@@ -2,17 +2,24 @@ import { createClient } from '@/lib/supabase/server';
 import { Card } from '@/components/ui';
 import { Store, CheckCircle } from 'lucide-react';
 import RestaurantList from '@/components/admin/RestaurantList';
+import { verifyAdminAccess } from '@/lib/auth/admin-access';
 
-async function getRestaurants() {
+async function getRestaurants(scopedMarketId: string | null) {
   const supabase = await createClient();
 
-  const { data: restaurants, error } = await supabase
+  let query = supabase
     .from('restaurants')
     .select(`
       *,
       tiers(name, display_name)
     `)
     .order('name', { ascending: true });
+
+  if (scopedMarketId) {
+    query = query.eq('market_id', scopedMarketId);
+  }
+
+  const { data: restaurants, error } = await query;
 
   if (error) {
     console.error('Error fetching restaurants:', error);
@@ -23,7 +30,9 @@ async function getRestaurants() {
 }
 
 export default async function AdminRestaurantsPage() {
-  const restaurants = await getRestaurants();
+  const supabase = await createClient();
+  const admin = await verifyAdminAccess(supabase);
+  const restaurants = await getRestaurants(admin.scopedMarketId);
   const activeCount = restaurants.filter((r) => r.is_active).length;
   const verifiedCount = restaurants.filter((r) => r.is_verified).length;
   const paidCount = restaurants.filter((r) => r.stripe_subscription_id).length;

@@ -3,14 +3,15 @@ import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
 import { buildMeta } from '@/lib/seo/meta';
 import { itemListJsonLd } from '@/lib/seo/structured';
+import { BRAND } from '@/config/market';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
 export const revalidate = 600;
 
 export async function generateMetadata() {
   return buildMeta({
-    title: 'Rosie’s Happy Hours Tonight | TasteLanc',
-    description: 'Rosie’s picks for happy hours tonight in Lancaster.',
+    title: `${BRAND.aiName}'s Happy Hours Tonight | ${BRAND.name}`,
+    description: `${BRAND.aiName}'s picks for happy hours tonight in ${BRAND.countyShort}.`,
     url: `${siteUrl}/rosie/happy-hours-tonight`,
   });
 }
@@ -34,7 +35,7 @@ export default async function RosieHappyHoursTonight() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <main className="max-w-5xl mx-auto px-4 py-10 text-white">
         {leadershipLine(claim)}
-        <h1 className="text-3xl font-bold">Rosie’s Happy Hours Tonight</h1>
+        <h1 className="text-3xl font-bold">{BRAND.aiName}&apos;s Happy Hours Tonight</h1>
         <p className="text-gray-400 mt-2">Tonight’s drink and food deals.</p>
         {restaurantCTAButtons()}
         <div className="space-y-4 mt-6">

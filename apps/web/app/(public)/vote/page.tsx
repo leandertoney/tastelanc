@@ -2,13 +2,14 @@ import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { Trophy, Award, Star, Crown } from 'lucide-react';
 import { Badge } from '@/components/ui';
+import { MARKET_SLUG, BRAND } from '@/config/market';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Vote | TasteLanc',
-  description: 'Vote for your favorite Lancaster restaurants and bars. See the leaderboards and help crown the best of Lancaster!',
+  title: `Vote | ${BRAND.name}`,
+  description: `Vote for your favorite ${BRAND.countyShort} restaurants and bars. See the leaderboards and help crown the best of ${BRAND.countyShort}!`,
   alternates: {
-    canonical: 'https://tastelanc.com/vote',
+    canonical: `https://${BRAND.domain}/vote`,
   },
 };
 
@@ -26,10 +27,16 @@ const VOTE_CATEGORIES = [
 async function getLeaderboards() {
   const supabase = await createClient();
 
+  // Resolve market
+  const { data: marketRow } = await supabase
+    .from('markets').select('id').eq('slug', MARKET_SLUG).eq('is_active', true).single();
+  if (!marketRow) return [];
+
   // Get top restaurants by favorites count as a proxy for popularity
   const { data: restaurants } = await supabase
     .from('restaurants')
     .select('id, name, slug, cover_image_url, categories')
+    .eq('market_id', marketRow.id)
     .eq('is_active', true)
     .limit(10);
 
@@ -45,9 +52,9 @@ export default async function VotePage() {
         {/* Header */}
         <div className="text-center mb-12">
           <Trophy className="w-16 h-16 text-lancaster-gold mx-auto mb-4" />
-          <h1 className="text-4xl font-bold text-white mb-2">Vote for Lancaster&apos;s Best</h1>
+          <h1 className="text-4xl font-bold text-white mb-2">Vote for {BRAND.countyShort}&apos;s Best</h1>
           <p className="text-gray-400 max-w-2xl mx-auto">
-            Help crown the best restaurants and bars in Lancaster! Cast your votes each month to support your favorite local spots.
+            Help crown the best restaurants and bars in {BRAND.countyShort}! Cast your votes each month to support your favorite local spots.
           </p>
         </div>
 

@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
+import { BRAND } from '@/config/market';
 
 export const metadata: Metadata = {
-  title: 'Support | TasteLanc',
-  description: 'Get help and support for TasteLanc - Contact us, FAQs, and troubleshooting.',
+  title: `Support | ${BRAND.name}`,
+  description: `Get help and support for ${BRAND.name} - Contact us, FAQs, and troubleshooting.`,
   alternates: {
-    canonical: 'https://tastelanc.com/support',
+    canonical: `https://${BRAND.domain}/support`,
   },
 };
 
@@ -13,7 +14,7 @@ export default function SupportPage() {
     <div className="py-12 px-4">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl md:text-5xl font-bold text-white mb-8">Support</h1>
-        <p className="text-gray-400 mb-8">We&apos;re here to help you get the most out of TasteLanc.</p>
+        <p className="text-gray-400 mb-8">We&apos;re here to help you get the most out of {BRAND.name}.</p>
 
         <div className="prose prose-invert max-w-none space-y-8">
           <section>
@@ -22,8 +23,8 @@ export default function SupportPage() {
               Have a question, feedback, or need assistance? We&apos;d love to hear from you.
             </p>
             <ul className="list-disc list-inside text-gray-300 space-y-2 ml-4 mt-4">
-              <li>Email: <a href="mailto:info@tastelanc.com" className="text-tastelanc-accent hover:underline">info@tastelanc.com</a></li>
-              <li>Website: <a href="https://tastelanc.com" className="text-tastelanc-accent hover:underline">https://tastelanc.com</a></li>
+              <li>Email: <a href={`mailto:info@${BRAND.domain}`} className="text-tastelanc-accent hover:underline">{`info@${BRAND.domain}`}</a></li>
+              <li>Website: <a href={`https://${BRAND.domain}`} className="text-tastelanc-accent hover:underline">{`https://${BRAND.domain}`}</a></li>
             </ul>
           </section>
 
@@ -32,9 +33,9 @@ export default function SupportPage() {
 
             <div className="space-y-6">
               <div>
-                <h3 className="text-xl font-semibold text-white mb-2">What is TasteLanc?</h3>
+                <h3 className="text-xl font-semibold text-white mb-2">What is {BRAND.name}?</h3>
                 <p className="text-gray-300 leading-relaxed">
-                  TasteLanc is your guide to discovering the best restaurants, happy hours, events, and specials in Lancaster, PA. We help you find great dining experiences and stay updated on local food scene happenings.
+                  {BRAND.name} is your guide to discovering the best restaurants, happy hours, events, and specials in {BRAND.countyShort}, {BRAND.state}. We help you find great dining experiences and stay updated on local food scene happenings.
                 </p>
               </div>
 
@@ -53,16 +54,16 @@ export default function SupportPage() {
               </div>
 
               <div>
-                <h3 className="text-xl font-semibold text-white mb-2">Is TasteLanc free to use?</h3>
+                <h3 className="text-xl font-semibold text-white mb-2">Is {BRAND.name} free to use?</h3>
                 <p className="text-gray-300 leading-relaxed">
-                  Yes, TasteLanc is free to download and use. We offer a premium subscription with additional features for users who want an enhanced experience.
+                  Yes, {BRAND.name} is free to download and use. We offer a premium subscription with additional features for users who want an enhanced experience.
                 </p>
               </div>
 
               <div>
                 <h3 className="text-xl font-semibold text-white mb-2">How can I report incorrect information?</h3>
                 <p className="text-gray-300 leading-relaxed">
-                  If you notice any incorrect information about a restaurant, event, or special, please email us at <a href="mailto:info@tastelanc.com" className="text-tastelanc-accent hover:underline">info@tastelanc.com</a> with the details, and we&apos;ll review and update the information promptly.
+                  If you notice any incorrect information about a restaurant, event, or special, please email us at <a href={`mailto:info@${BRAND.domain}`} className="text-tastelanc-accent hover:underline">{`info@${BRAND.domain}`}</a> with the details, and we&apos;ll review and update the information promptly.
                 </p>
               </div>
             </div>
@@ -82,14 +83,14 @@ export default function SupportPage() {
               <div>
                 <h3 className="text-xl font-semibold text-white mb-2">Location services not working?</h3>
                 <p className="text-gray-300 leading-relaxed">
-                  Ensure location permissions are enabled for TasteLanc in your device settings. On iOS, go to Settings &gt; Privacy &gt; Location Services &gt; TasteLanc. On Android, go to Settings &gt; Apps &gt; TasteLanc &gt; Permissions &gt; Location.
+                  Ensure location permissions are enabled for {BRAND.name} in your device settings. On iOS, go to Settings &gt; Privacy &gt; Location Services &gt; {BRAND.name}. On Android, go to Settings &gt; Apps &gt; {BRAND.name} &gt; Permissions &gt; Location.
                 </p>
               </div>
 
               <div>
                 <h3 className="text-xl font-semibold text-white mb-2">Not receiving notifications?</h3>
                 <p className="text-gray-300 leading-relaxed">
-                  Check that notifications are enabled for TasteLanc in your device settings. Also verify that you have notifications enabled within the app settings.
+                  Check that notifications are enabled for {BRAND.name} in your device settings. Also verify that you have notifications enabled within the app settings.
                 </p>
               </div>
             </div>
@@ -98,7 +99,7 @@ export default function SupportPage() {
           <section>
             <h2 className="text-2xl font-bold text-white mb-4">For Restaurant Owners</h2>
             <p className="text-gray-300 leading-relaxed">
-              Want to list your restaurant on TasteLanc or update your business information? Contact us at <a href="mailto:info@tastelanc.com" className="text-tastelanc-accent hover:underline">info@tastelanc.com</a> and we&apos;ll help you get set up.
+              Want to list your restaurant on {BRAND.name} or update your business information? Contact us at <a href={`mailto:info@${BRAND.domain}`} className="text-tastelanc-accent hover:underline">{`info@${BRAND.domain}`}</a> and we&apos;ll help you get set up.
             </p>
           </section>
 

@@ -3,18 +3,20 @@
  * Two variants: new user (needs password setup) and existing user (already has account).
  */
 
+import { BRAND } from '@/config/market';
+
 export function generateTeamInviteEmail(
   actionLink: string,
   restaurantName: string,
   isNewUser: boolean,
 ): string {
   const heading = isNewUser
-    ? "You've been invited to manage a restaurant on TasteLanc"
-    : "You've been added to a restaurant on TasteLanc";
+    ? `You've been invited to manage a restaurant on ${BRAND.name}`
+    : `You've been added to a restaurant on ${BRAND.name}`;
 
   const bodyText = isNewUser
-    ? `You've been invited to help manage <strong style="color: #ffffff;">${restaurantName}</strong> on TasteLanc. Set up your account to get started.`
-    : `You've been added as a manager for <strong style="color: #ffffff;">${restaurantName}</strong> on TasteLanc. Sign in to access the dashboard.`;
+    ? `You've been invited to help manage <strong style="color: #ffffff;">${restaurantName}</strong> on ${BRAND.name}. Set up your account to get started.`
+    : `You've been added as a manager for <strong style="color: #ffffff;">${restaurantName}</strong> on ${BRAND.name}. Sign in to access the dashboard.`;
 
   const buttonText = isNewUser ? 'Set Up Your Account →' : 'Open Dashboard →';
 
@@ -33,7 +35,7 @@ export function generateTeamInviteEmail(
               <tr>
                 <td style="padding: 40px;">
                   <!-- Logo -->
-                  <img src="https://tastelanc.com/images/tastelanc_new_dark.png" alt="TasteLanc" height="36" style="margin-bottom: 24px;" />
+                  <img src="https://${BRAND.domain}${BRAND.logoPath}" alt="${BRAND.name}" height="36" style="margin-bottom: 24px;" />
 
                   <!-- Restaurant Name Badge -->
                   <div style="background-color: #2563eb; color: white; display: inline-block; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-bottom: 20px;">
@@ -76,8 +78,8 @@ export function generateTeamInviteEmail(
                   <hr style="border: none; border-top: 1px solid #333; margin: 32px 0;" />
 
                   <p style="color: #525252; font-size: 12px; text-align: center; margin: 0;">
-                    TasteLanc — Lancaster's Local Food Guide<br/>
-                    <a href="https://tastelanc.com" style="color: #6b7280;">tastelanc.com</a>
+                    ${BRAND.name} — ${BRAND.countyShort}'s Local Food Guide<br/>
+                    <a href="https://${BRAND.domain}" style="color: #6b7280;">${BRAND.domain}</a>
                   </p>
                 </td>
               </tr>

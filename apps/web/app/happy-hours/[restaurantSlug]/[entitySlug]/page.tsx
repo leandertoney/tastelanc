@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/market';
 import { fetchRestaurantBySlug, fetchHappyHours, fetchHappyHourItems } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -11,10 +12,10 @@ export const revalidate = 1800;
 
 export async function generateMetadata({ params }: { params: { restaurantSlug: string; entitySlug: string } }) {
   const r = await fetchRestaurantBySlug(params.restaurantSlug);
-  if (!r) return buildMeta({ title: 'Happy Hour | TasteLanc', description: 'Not found', url: `${siteUrl}/happy-hours/${params.restaurantSlug}/${params.entitySlug}` });
+  if (!r) return buildMeta({ title: `Happy Hour | ${BRAND.name}`, description: 'Not found', url: `${siteUrl}/happy-hours/${params.restaurantSlug}/${params.entitySlug}` });
   return buildMeta({
-    title: `${r.name} Happy Hour | TasteLanc`,
-    description: `Happy hour at ${r.name} in Lancaster.`,
+    title: `${r.name} Happy Hour | ${BRAND.name}`,
+    description: `Happy hour at ${r.name} in ${BRAND.countyShort}.`,
     url: `${siteUrl}/happy-hours/${r.slug}/${params.entitySlug}`,
     image: r.cover_image_url || r.logo_url || undefined,
   });

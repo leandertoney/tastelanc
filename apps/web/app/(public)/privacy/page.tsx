@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
+import { BRAND } from '@/config/market';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | TasteLanc',
-  description: 'TasteLanc Privacy Policy - Learn how we collect, use, and protect your personal information.',
+  title: `Privacy Policy | ${BRAND.name}`,
+  description: `${BRAND.name} Privacy Policy - Learn how we collect, use, and protect your personal information.`,
   alternates: {
-    canonical: 'https://tastelanc.com/privacy',
+    canonical: `https://${BRAND.domain}/privacy`,
   },
 };
 
@@ -19,7 +20,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-2xl font-bold text-white mb-4">1. Introduction</h2>
             <p className="text-gray-300 leading-relaxed">
-              TasteLanc (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application and website (collectively, the &quot;Service&quot;).
+              {BRAND.name} (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application and website (collectively, the &quot;Service&quot;).
             </p>
             <p className="text-gray-300 leading-relaxed mt-4">
               Please read this Privacy Policy carefully. By using the Service, you agree to the collection and use of information in accordance with this policy.
@@ -122,8 +123,8 @@ export default function PrivacyPage() {
               If you have any questions about this Privacy Policy, please contact us:
             </p>
             <ul className="list-disc list-inside text-gray-300 space-y-2 ml-4 mt-4">
-              <li>Email: <a href="mailto:info@tastelanc.com" className="text-tastelanc-accent hover:underline">info@tastelanc.com</a></li>
-              <li>Website: <a href="https://tastelanc.com" className="text-tastelanc-accent hover:underline">https://tastelanc.com</a></li>
+              <li>Email: <a href={`mailto:info@${BRAND.domain}`} className="text-tastelanc-accent hover:underline">{`info@${BRAND.domain}`}</a></li>
+              <li>Website: <a href={`https://${BRAND.domain}`} className="text-tastelanc-accent hover:underline">{`https://${BRAND.domain}`}</a></li>
             </ul>
           </section>
         </div>

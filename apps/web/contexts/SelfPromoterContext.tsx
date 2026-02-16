@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { useMarket } from '@/contexts/MarketContext';
 
 export interface SelfPromoter {
   id: string;
@@ -68,6 +69,8 @@ export function SelfPromoterProvider({ children }: SelfPromoterProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { marketId } = useMarket();
+
   // Check for admin mode from URL params
   const adminMode = searchParams.get('admin_mode') === 'true';
   const adminPromoterId = searchParams.get('promoter_id');
@@ -88,7 +91,14 @@ export function SelfPromoterProvider({ children }: SelfPromoterProviderProps) {
         return;
       }
 
-      const userIsAdmin = user.email === 'admin@tastelanc.com';
+      // Check admin role from profiles table
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, admin_market_id')
+        .eq('id', user.id)
+        .single();
+      const userIsAdmin = profile?.role === 'super_admin' ||
+        (profile?.role === 'market_admin' && profile?.admin_market_id === marketId);
       setIsAdmin(userIsAdmin);
 
       // If admin mode with specific promoter ID
@@ -132,7 +142,7 @@ export function SelfPromoterProvider({ children }: SelfPromoterProviderProps) {
       setError('Failed to load profile');
       setIsLoading(false);
     }
-  }, [adminMode, adminPromoterId]);
+  }, [adminMode, adminPromoterId, marketId]);
 
   useEffect(() => {
     fetchSelfPromoter();

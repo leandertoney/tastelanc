@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { BRAND } from '@/config/market';
 
 export default function TypingIndicator() {
   return (
@@ -9,7 +10,7 @@ export default function TypingIndicator() {
       <div className="flex-shrink-0">
         <Image
           src="/images/rosie_dark_new.png"
-          alt="Rosie"
+          alt={BRAND.aiName}
           width={36}
           height={36}
           className="rounded-full"

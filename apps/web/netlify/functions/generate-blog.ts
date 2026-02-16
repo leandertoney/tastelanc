@@ -3,6 +3,13 @@ import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 
+const MARKET_SLUG = process.env.NEXT_PUBLIC_MARKET_SLUG || 'lancaster-pa';
+const BRAND_CONFIG: Record<string, { name: string; countyShort: string; county: string; state: string; aiName: string; domain: string; logoPath: string }> = {
+  'lancaster-pa': { name: 'TasteLanc', countyShort: 'Lancaster', county: 'Lancaster County', state: 'PA', aiName: 'Rosie', domain: 'tastelanc.com', logoPath: '/images/tastelanc_new_dark.png' },
+  'cumberland-pa': { name: 'TasteCumberland', countyShort: 'Cumberland', county: 'Cumberland County', state: 'PA', aiName: 'Mollie', domain: 'cumberland.tastelanc.com', logoPath: '/images/tastecumberland_logo.png' },
+};
+const BRAND = BRAND_CONFIG[MARKET_SLUG] || BRAND_CONFIG['lancaster-pa'];
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
@@ -13,49 +20,49 @@ const supabase = createClient(
 );
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
 
-// Rosie's Author Bio
-const ROSIE_AUTHOR_BIO = `Rosie knows Lancaster's food scene like a local who never misses a grand opening. She's got the inside scoop on every happy hour worth your time, the best-kept secrets your foodie friends haven't discovered yet, and strong opinions about where you should actually eat tonight. Think of her as that friend who always knows the spot.`;
+// AI Author Bio
+const ROSIE_AUTHOR_BIO = `${BRAND.aiName} knows ${BRAND.countyShort}'s food scene like a local who never misses a grand opening. She's got the inside scoop on every happy hour worth your time, the best-kept secrets your foodie friends haven't discovered yet, and strong opinions about where you should actually eat tonight. Think of her as that friend who always knows the spot.`;
 
 // Blog topics that rotate - 31 diverse topics for variety
 const BLOG_TOPICS = [
   // Core dining guides
-  { id: 'happy-hour-deep-dive', prompt: 'Write a deep dive into Lancaster\'s happy hour scene. Analyze which deals are actually worth it. Include specific prices and times.' },
+  { id: 'happy-hour-deep-dive', prompt: `Write a deep dive into ${BRAND.countyShort}'s happy hour scene. Analyze which deals are actually worth it. Include specific prices and times.` },
   { id: 'date-night-guide', prompt: 'Write a date night guide for different vibes - first date vs anniversary, casual vs upscale. Be specific about what to order.' },
   { id: 'family-dining', prompt: 'Write about family dining that doesn\'t suck. Spots where kids are welcome but food isn\'t dumbed down.' },
-  { id: 'tourist-guide', prompt: 'Write for someone visiting Lancaster from NYC or Philly. What should they NOT miss? What tourist traps should they skip?' },
-  { id: 'contrarian-take', prompt: 'Write a hot take about Lancaster dining. Challenge something locals accept as gospel. Be bold but back it up.' },
+  { id: 'tourist-guide', prompt: `Write for someone visiting ${BRAND.countyShort} from NYC or Philly. What should they NOT miss? What tourist traps should they skip?` },
+  { id: 'contrarian-take', prompt: `Write a hot take about ${BRAND.countyShort} dining. Challenge something locals accept as gospel. Be bold but back it up.` },
   { id: 'seasonal-guide', prompt: 'Write about what to eat RIGHT NOW that\'s at peak seasonality. Make it feel timely and urgent.' },
   { id: 'late-night-eats', prompt: 'Write about late-night dining options. Be honest about what\'s available for different scenarios.' },
-  { id: 'brunch-battles', prompt: 'Compare Lancaster\'s brunch scene with a framework. Best bloody mary? Best pancakes? Best for groups?' },
-  { id: 'neighborhood-spotlight', prompt: 'Deep dive into a Lancaster neighborhood\'s food scene. What\'s the vibe? The best-kept secrets?' },
+  { id: 'brunch-battles', prompt: `Compare ${BRAND.countyShort}'s brunch scene with a framework. Best bloody mary? Best pancakes? Best for groups?` },
+  { id: 'neighborhood-spotlight', prompt: `Deep dive into a ${BRAND.countyShort} neighborhood's food scene. What's the vibe? The best-kept secrets?` },
   { id: 'hidden-gems', prompt: 'Write about underrated spots that locals love but don\'t get enough attention. Explain WHY they\'re overlooked.' },
-  { id: 'new-openings', prompt: 'Write about what\'s new or coming soon to Lancaster\'s dining scene. Position yourself as the insider.' },
+  { id: 'new-openings', prompt: `Write about what's new or coming soon to ${BRAND.countyShort}'s dining scene. Position yourself as the insider.` },
   { id: 'best-of', prompt: 'Create an interesting "best of" ranking. Not generic - add personality to the rankings.' },
   { id: 'weekend-plans', prompt: 'Write a weekend dining itinerary. Friday dinner → Saturday brunch → Saturday dinner → Sunday brunch.' },
-  { id: 'budget-eats', prompt: 'Write about eating well in Lancaster on a budget. Focus on VALUE, not just cheap. Include specific prices.' },
-  { id: 'app-feature', prompt: 'Write about how TasteLanc helps solve a real dining problem. Make it practical without being too salesy.' },
+  { id: 'budget-eats', prompt: `Write about eating well in ${BRAND.countyShort} on a budget. Focus on VALUE, not just cheap. Include specific prices.` },
+  { id: 'app-feature', prompt: `Write about how ${BRAND.name} helps solve a real dining problem. Make it practical without being too salesy.` },
   // Cuisine-specific
-  { id: 'italian-guide', prompt: 'Write a guide to Italian food in Lancaster. From red sauce joints to upscale Italian. Best pasta? Best pizza? Be specific about dishes.' },
-  { id: 'mexican-guide', prompt: 'Write about Mexican and Latin food in Lancaster. Tacos, burritos, margaritas. What\'s authentic vs fusion? Include specific dish recs.' },
-  { id: 'asian-cuisine', prompt: 'Write a guide to Asian cuisine in Lancaster. Sushi, ramen, pho, Thai, Chinese, Korean. What are the standouts in each category?' },
-  { id: 'american-comfort', prompt: 'Write about American comfort food in Lancaster. Burgers, steaks, BBQ, mac and cheese. Best versions of the classics?' },
+  { id: 'italian-guide', prompt: `Write a guide to Italian food in ${BRAND.countyShort}. From red sauce joints to upscale Italian. Best pasta? Best pizza? Be specific about dishes.` },
+  { id: 'mexican-guide', prompt: `Write about Mexican and Latin food in ${BRAND.countyShort}. Tacos, burritos, margaritas. What's authentic vs fusion? Include specific dish recs.` },
+  { id: 'asian-cuisine', prompt: `Write a guide to Asian cuisine in ${BRAND.countyShort}. Sushi, ramen, pho, Thai, Chinese, Korean. What are the standouts in each category?` },
+  { id: 'american-comfort', prompt: `Write about American comfort food in ${BRAND.countyShort}. Burgers, steaks, BBQ, mac and cheese. Best versions of the classics?` },
   // Drink-focused
-  { id: 'cocktail-bars', prompt: 'Write about Lancaster\'s cocktail bar scene. Where are the real craft cocktails? Best bartenders? Best atmospheres?' },
-  { id: 'coffee-culture', prompt: 'Write about Lancaster\'s coffee scene. Independent roasters, best lattes, where to work remotely, best vibes.' },
-  { id: 'beer-scene', prompt: 'Write about Lancaster\'s craft beer scene. Breweries, taprooms, beer bars. What styles does Lancaster do well?' },
-  { id: 'wine-spots', prompt: 'Write about wine in Lancaster. Wine bars, restaurants with great wine programs. Where do you go for a nice glass?' },
+  { id: 'cocktail-bars', prompt: `Write about ${BRAND.countyShort}'s cocktail bar scene. Where are the real craft cocktails? Best bartenders? Best atmospheres?` },
+  { id: 'coffee-culture', prompt: `Write about ${BRAND.countyShort}'s coffee scene. Independent roasters, best lattes, where to work remotely, best vibes.` },
+  { id: 'beer-scene', prompt: `Write about ${BRAND.countyShort}'s craft beer scene. Breweries, taprooms, beer bars. What styles does ${BRAND.countyShort} do well?` },
+  { id: 'wine-spots', prompt: `Write about wine in ${BRAND.countyShort}. Wine bars, restaurants with great wine programs. Where do you go for a nice glass?` },
   // Meal-specific
-  { id: 'lunch-spots', prompt: 'Write about lunch in Lancaster. Quick bites, long lunches, business meals. Where\'s fast but good? Best sandwiches?' },
-  { id: 'breakfast-guide', prompt: 'Write about breakfast spots in Lancaster. Best eggs? Best pastries? Best coffee pairings? Not just brunch - actual breakfast.' },
-  { id: 'dessert-destinations', prompt: 'Write about desserts in Lancaster. Bakeries, ice cream, chocolate, pastry. Best cake? Best cookies? Worth the calories.' },
+  { id: 'lunch-spots', prompt: `Write about lunch in ${BRAND.countyShort}. Quick bites, long lunches, business meals. Where's fast but good? Best sandwiches?` },
+  { id: 'breakfast-guide', prompt: `Write about breakfast spots in ${BRAND.countyShort}. Best eggs? Best pastries? Best coffee pairings? Not just brunch - actual breakfast.` },
+  { id: 'dessert-destinations', prompt: `Write about desserts in ${BRAND.countyShort}. Bakeries, ice cream, chocolate, pastry. Best cake? Best cookies? Worth the calories.` },
   // Lifestyle & events
-  { id: 'first-friday', prompt: 'Write about First Friday dining in Lancaster. Where to eat before, during, and after gallery hopping. Strategic crowd suggestions.' },
-  { id: 'outdoor-dining', prompt: 'Write about outdoor dining in Lancaster. Best patios, rooftops, sidewalk spots. Rank by vibe, view, food quality.' },
-  { id: 'group-dining', prompt: 'Write about where to bring a group in Lancaster. Big parties, family gatherings. Where handles groups well? Private rooms?' },
-  { id: 'solo-dining', prompt: 'Write about solo dining in Lancaster. Bar seats, cozy corners, comfortable spots. Best for reading? People-watching?' },
-  { id: 'food-trends', prompt: 'Write about food trends in Lancaster. What\'s hot? What\'s overdone? What\'s coming next? Be opinionated.' },
+  { id: 'first-friday', prompt: `Write about First Friday dining in ${BRAND.countyShort}. Where to eat before, during, and after gallery hopping. Strategic crowd suggestions.` },
+  { id: 'outdoor-dining', prompt: `Write about outdoor dining in ${BRAND.countyShort}. Best patios, rooftops, sidewalk spots. Rank by vibe, view, food quality.` },
+  { id: 'group-dining', prompt: `Write about where to bring a group in ${BRAND.countyShort}. Big parties, family gatherings. Where handles groups well? Private rooms?` },
+  { id: 'solo-dining', prompt: `Write about solo dining in ${BRAND.countyShort}. Bar seats, cozy corners, comfortable spots. Best for reading? People-watching?` },
+  { id: 'food-trends', prompt: `Write about food trends in ${BRAND.countyShort}. What's hot? What's overdone? What's coming next? Be opinionated.` },
 ] as const;
 
 interface BlogContext {
@@ -102,12 +109,23 @@ interface BlogContext {
   }>;
 }
 
+async function resolveMarketId(): Promise<string> {
+  const slug = process.env.NEXT_PUBLIC_MARKET_SLUG || 'lancaster-pa';
+  const { data, error } = await supabase
+    .from('markets').select('id').eq('slug', slug).eq('is_active', true).single();
+  if (error || !data) throw new Error(`Market "${slug}" not found or inactive`);
+  return data.id;
+}
+
 async function fetchFullContext(): Promise<BlogContext> {
+  const marketId = await resolveMarketId();
+
   // Fetch restaurants (all active) with enrichment fields + cover image for inline blog images
   // ONLY include restaurants WITH cover images - we need beautiful visuals
   const { data: restaurants } = await supabase
     .from('restaurants')
     .select('name, slug, categories, description, address, city, neighborhood, price_range, signature_dishes, vibe_tags, best_for, parking_info, noise_level, average_rating, cover_image_url')
+    .eq('market_id', marketId)
     .eq('is_active', true)
     .not('cover_image_url', 'is', null)
     .order('name');
@@ -120,9 +138,10 @@ async function fetchFullContext(): Promise<BlogContext> {
       days_of_week,
       start_time,
       end_time,
-      restaurant:restaurants(name, slug),
+      restaurant:restaurants!inner(name, slug),
       happy_hour_items(name, discounted_price)
     `)
+    .eq('restaurant.market_id', marketId)
     .eq('is_active', true);
 
   // Fetch upcoming events
@@ -133,8 +152,9 @@ async function fetchFullContext(): Promise<BlogContext> {
       event_type,
       performer_name,
       start_date,
-      restaurant:restaurants(name, slug)
+      restaurant:restaurants!inner(name, slug)
     `)
+    .eq('restaurant.market_id', marketId)
     .eq('is_active', true)
     .gte('start_date', new Date().toISOString())
     .order('start_date')
@@ -147,8 +167,9 @@ async function fetchFullContext(): Promise<BlogContext> {
       name,
       description,
       discount_description,
-      restaurant:restaurants(name, slug)
+      restaurant:restaurants!inner(name, slug)
     `)
+    .eq('restaurant.market_id', marketId)
     .eq('is_active', true);
 
   return {
@@ -228,11 +249,11 @@ function buildSystemPrompt(context: BlogContext, recentlyFeaturedSlugs: Set<stri
     .map(s => `- ${s.restaurantName}: "${s.name}"${s.discountDescription ? ` - ${s.discountDescription}` : ''}`)
     .join('\n');
 
-  return `You are Rosie, TasteLanc's food intelligence and Lancaster, Pennsylvania's definitive dining authority. You write original, engaging blog posts that make readers feel like they have an insider connection to the city's food scene.
+  return `You are ${BRAND.aiName}, ${BRAND.name}'s food intelligence and ${BRAND.county}, ${BRAND.state}'s definitive dining authority. You write original, engaging blog posts that make readers feel like they have an insider connection to the city's food scene.
 
 ## YOUR IDENTITY
 
-You're not a generic food blogger. You're THE source for Lancaster dining intel. You have opinions. You have takes. You know things others don't. You speak with confidence because you have the data to back it up.
+You're not a generic food blogger. You're THE source for ${BRAND.countyShort} dining intel. You have opinions. You have takes. You know things others don't. You speak with confidence because you have the data to back it up.
 
 ### Your Voice
 - **Confident**: You state opinions as an authority, not tentatively
@@ -243,15 +264,15 @@ You're not a generic food blogger. You're THE source for Lancaster dining intel.
 - **Actionable**: Every post gives readers something to DO
 
 ### What You're NOT
-- Generic ("Best restaurants in Lancaster!" - boring)
+- Generic ("Best restaurants in ${BRAND.countyShort}!" - boring)
 - Wishy-washy ("You might want to try..." - be definitive)
 - Clickbait without substance (deliver on your promises)
 - A robot (you have personality and opinions)
 
-## LANCASTER KNOWLEDGE
+## ${BRAND.countyShort.toUpperCase()} KNOWLEDGE
 
 ### Neighborhoods
-- **Downtown Lancaster**: The heart - walkable, trendy, always evolving
+- **Downtown ${BRAND.countyShort}**: The heart - walkable, trendy, always evolving
 - **Lititz**: Charming small-town vibes with surprising culinary depth
 - **Manheim**: More casual, local favorites
 - **Columbia**: Riverside town with growing food scene
@@ -369,7 +390,7 @@ function getHolidayContext(): { name: string; prompt: string } | null {
   if (month === 11 && day === 31) {
     return {
       name: "New Year's Eve",
-      prompt: `🎉 It's New Year's Eve! Consider how Lancaster restaurants celebrate tonight - special prix fixe menus, champagne toasts, countdown parties, late-night dining options. Where should people ring in the new year? What are the best spots for a celebratory dinner?`
+      prompt: `🎉 It's New Year's Eve! Consider how ${BRAND.countyShort} restaurants celebrate tonight - special prix fixe menus, champagne toasts, countdown parties, late-night dining options. Where should people ring in the new year? What are the best spots for a celebratory dinner?`
     };
   }
 
@@ -385,7 +406,7 @@ function getHolidayContext(): { name: string; prompt: string } | null {
   if (month === 1 && (day === 13 || day === 14)) {
     return {
       name: day === 14 ? "Valentine's Day" : "Valentine's Day Eve",
-      prompt: `💕 It's ${day === 14 ? "Valentine's Day" : "almost Valentine's Day"}! Focus on romantic dining - intimate spots, special tasting menus, best date night restaurants. Where to impress? Where to propose? Where to celebrate love?`
+      prompt: `💕 It's ${day === 14 ? "Valentine's Day" : "almost Valentine's Day"}! Focus on romantic dining in ${BRAND.countyShort} - intimate spots, special tasting menus, best date night restaurants. Where to impress? Where to propose? Where to celebrate love?`
     };
   }
 
@@ -393,7 +414,7 @@ function getHolidayContext(): { name: string; prompt: string } | null {
   if (month === 2 && day === 17) {
     return {
       name: "St. Patrick's Day",
-      prompt: `☘️ Happy St. Patrick's Day! Where to find the best Irish fare, green beer, corned beef and cabbage, and festive celebrations in Lancaster.`
+      prompt: `☘️ Happy St. Patrick's Day! Where to find the best Irish fare, green beer, corned beef and cabbage, and festive celebrations in ${BRAND.countyShort}.`
     };
   }
 
@@ -401,7 +422,7 @@ function getHolidayContext(): { name: string; prompt: string } | null {
   if (month === 4 && day === 5) {
     return {
       name: "Cinco de Mayo",
-      prompt: `🎊 It's Cinco de Mayo! Highlight the best Mexican restaurants, margarita specials, taco deals, and authentic Mexican celebrations in Lancaster.`
+      prompt: `🎊 It's Cinco de Mayo! Highlight the best Mexican restaurants, margarita specials, taco deals, and authentic Mexican celebrations in ${BRAND.countyShort}.`
     };
   }
 
@@ -417,7 +438,7 @@ function getHolidayContext(): { name: string; prompt: string } | null {
   if (month === 4 && dayOfWeek === 1 && day >= 25) {
     return {
       name: "Memorial Day",
-      prompt: `🇺🇸 Happy Memorial Day! Kick off summer with outdoor dining, BBQ spots, patios opening for the season, and places to grab food before/after parades.`
+      prompt: `🇺🇸 Happy Memorial Day! Kick off summer in ${BRAND.countyShort} with outdoor dining, BBQ spots, patios opening for the season, and places to grab food before/after parades.`
     };
   }
 
@@ -433,7 +454,7 @@ function getHolidayContext(): { name: string; prompt: string } | null {
   if (month === 6 && day === 4) {
     return {
       name: "Independence Day",
-      prompt: `🎆 Happy 4th of July! BBQ, outdoor dining, rooftop spots for fireworks viewing, patriotic specials, and all-American fare in Lancaster.`
+      prompt: `🎆 Happy 4th of July! BBQ, outdoor dining, rooftop spots for fireworks viewing, patriotic specials, and all-American fare in ${BRAND.countyShort}.`
     };
   }
 
@@ -696,7 +717,7 @@ async function sendBlogNotificationEmails(post: BlogEmailParams): Promise<number
         <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
           <tr>
             <td align="center" style="padding-bottom: 30px;">
-              <img src="${siteUrl}/images/tastelanc_new_dark.png" alt="TasteLanc" width="180" style="display: block;">
+              <img src="${siteUrl}${BRAND.logoPath}" alt="${BRAND.name}" width="180" style="display: block;">
             </td>
           </tr>
           ${post.coverImageUrl ? `
@@ -713,7 +734,7 @@ async function sendBlogNotificationEmails(post: BlogEmailParams): Promise<number
               <table cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
                 <tr>
                   <td style="background-color: #D4AF37; color: #000; font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;">
-                    New from Rosie
+                    New from ${BRAND.aiName}
                   </td>
                 </tr>
               </table>
@@ -737,7 +758,7 @@ async function sendBlogNotificationEmails(post: BlogEmailParams): Promise<number
           <tr>
             <td style="padding-top: 32px; text-align: center;">
               <p style="color: #666; font-size: 13px; margin: 0 0 8px 0;">
-                You're receiving this because you joined the TasteLanc waitlist.
+                You're receiving this because you joined the ${BRAND.name} waitlist.
               </p>
               <p style="color: #666; font-size: 13px; margin: 0;">
                 <a href="${siteUrl}/unsubscribe" style="color: #666; text-decoration: underline;">Unsubscribe</a>
@@ -761,7 +782,7 @@ async function sendBlogNotificationEmails(post: BlogEmailParams): Promise<number
     try {
       await resend.batch.send(
         batch.map((r) => ({
-          from: 'TasteLanc <noreply@tastelanc.com>',
+          from: `${BRAND.name} <noreply@${BRAND.domain}>`,
           to: r.email,
           subject: `🍽️ ${post.title}`,
           html,
@@ -786,12 +807,16 @@ export default async function handler(req: Request, context: Context) {
       throw new Error('Supabase credentials not configured');
     }
 
+    // Resolve market for scoping
+    const guardMarketId = await resolveMarketId();
+
     // GUARD: Check if we already published a post today (prevent duplicate runs)
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const { data: todayPosts } = await supabase
       .from('blog_posts')
       .select('slug, title')
+      .eq('market_id', guardMarketId)
       .gte('created_at', todayStart.toISOString())
       .limit(1);
 
@@ -851,7 +876,7 @@ export default async function handler(req: Request, context: Context) {
     // Build the prompt - if it's a holiday, prioritize holiday content
     let userPrompt: string;
     if (holidayContext) {
-      userPrompt = `Today is ${today}. It's ${getSeason()} in Lancaster.
+      userPrompt = `Today is ${today}. It's ${getSeason()} in ${BRAND.countyShort}.
 
 ${holidayContext.prompt}
 
@@ -860,7 +885,7 @@ While keeping the holiday theme central, you can also incorporate elements from 
 Use the restaurants, happy hours, events, and specials from your database. Be specific, be opinionated, and make it valuable.`;
       console.log(`Holiday detected: ${holidayContext.name} - generating holiday-themed content`);
     } else {
-      userPrompt = `Today is ${today}. It's ${getSeason()} in Lancaster.
+      userPrompt = `Today is ${today}. It's ${getSeason()} in ${BRAND.countyShort}.
 
 ${topic.prompt}
 
@@ -920,18 +945,22 @@ Use the restaurants, happy hours, events, and specials from your database. Be sp
     console.log(`Cover image data: ${coverData.type} layout with ${coverData.images.length} images`);
     console.log(`Featured restaurants: ${featuredRestaurants.length} restaurants`);
 
+    // Resolve market for blog insert
+    const marketId = await resolveMarketId();
+
     // Publish to Supabase
     const { error: upsertErr } = await supabase.from('blog_posts').upsert({
       slug,
       title: parsed.title,
       summary: parsed.summary,
       body_html: parsed.body_html,
-      tags: parsed.tags || ['lancaster', 'tastelanc', 'rosie'],
+      tags: parsed.tags || [BRAND.countyShort.toLowerCase(), BRAND.name.toLowerCase(), BRAND.aiName.toLowerCase()],
       cover_image_url: coverImageUrl,
       // Store full cover data as JSON for editorial layouts
       cover_image_data: coverData.images.length > 0 ? JSON.stringify(coverData) : null,
       // Track which restaurants were featured for diversity
       featured_restaurants: featuredRestaurants.length > 0 ? featuredRestaurants : null,
+      market_id: marketId,
       created_at: new Date().toISOString(),
     });
 

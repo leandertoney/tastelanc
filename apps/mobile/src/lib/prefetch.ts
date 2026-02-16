@@ -20,22 +20,28 @@ interface HappyHourWithRestaurant extends HappyHour {
   items?: HappyHourItem[];
 }
 
-async function getActiveHappyHours(): Promise<HappyHourWithRestaurant[]> {
+async function getActiveHappyHours(marketId: string | null): Promise<HappyHourWithRestaurant[]> {
   const now = new Date();
   const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 
-  // Get all happy hours for today (no time filter - show all day)
-  const { data, error } = await supabase
+  // Happy hours inherit market from their restaurant via inner join
+  let query = supabase
     .from('happy_hours')
     .select(`
       *,
-      restaurant:restaurants!inner(id, name, cover_image_url, tier_id),
+      restaurant:restaurants!inner(id, name, cover_image_url, tier_id, market_id),
       items:happy_hour_items(*)
     `)
     .eq('is_active', true)
     .contains('days_of_week', [dayOfWeek])
     .order('display_order', { referencedTable: 'happy_hour_items', ascending: true })
     .limit(10);
+
+  if (marketId) {
+    query = query.eq('restaurant.market_id', marketId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.warn('[Prefetch] getActiveHappyHours query failed:', error.message);
@@ -133,6 +139,7 @@ function getRestaurantsCompetingText(count: number): string {
 }
 
 async function getPlatformSocialProof() {
+  // Stub: pass p_market_id when RPC is updated in a future phase
   const { data, error } = await supabase.rpc('get_social_proof_stats');
   const daysRemaining = getDaysRemainingInMonth();
   const urgencyText = daysRemaining <= 1
@@ -204,14 +211,14 @@ async function getTrendingRestaurants(): Promise<string[]> {
 
 // ========== Main Prefetch Function ==========
 
-export async function prefetchHomeScreenData(userId: string | null): Promise<void> {
-  console.log('[Prefetch] Starting prefetch for userId:', userId);
+export async function prefetchHomeScreenData(userId: string | null, marketId: string | null = null): Promise<void> {
+  console.log('[Prefetch] Starting prefetch for userId:', userId, 'marketId:', marketId);
 
   try {
     // First, prefetch featured restaurants to get IDs for otherRestaurants query
     const featuredRestaurants = await queryClient.fetchQuery({
-      queryKey: ['featuredRestaurants'],
-      queryFn: () => getFeaturedRestaurants(16),
+      queryKey: ['featuredRestaurants', marketId],
+      queryFn: () => getFeaturedRestaurants(16, marketId),
       staleTime: 5 * 60 * 1000,
     });
 
@@ -230,57 +237,57 @@ export async function prefetchHomeScreenData(userId: string | null): Promise<voi
 
       // Trending restaurants
       queryClient.prefetchQuery({
-        queryKey: ['socialProof', 'trending'],
+        queryKey: ['socialProof', 'trending', marketId],
         queryFn: getTrendingRestaurants,
         staleTime: 5 * 60 * 1000,
       }),
 
       // Active happy hours
       queryClient.prefetchQuery({
-        queryKey: ['activeHappyHours'],
-        queryFn: getActiveHappyHours,
+        queryKey: ['activeHappyHours', marketId],
+        queryFn: () => getActiveHappyHours(marketId),
         staleTime: 5 * 60 * 1000,
       }),
 
       // Platform social proof
       queryClient.prefetchQuery({
-        queryKey: ['socialProof', 'platform'],
+        queryKey: ['socialProof', 'platform', marketId],
         queryFn: getPlatformSocialProof,
         staleTime: 5 * 60 * 1000,
       }),
 
       // Entertainment events (today's or upcoming)
       queryClient.prefetchQuery({
-        queryKey: ['entertainmentEvents'],
+        queryKey: ['entertainmentEvents', marketId],
         queryFn: getEntertainmentEvents,
         staleTime: 5 * 60 * 1000,
       }),
 
       // Upcoming events
       queryClient.prefetchQuery({
-        queryKey: ['upcomingEvents'],
+        queryKey: ['upcomingEvents', marketId],
         queryFn: getUpcomingEvents,
         staleTime: 10 * 60 * 1000,
       }),
 
       // Cuisine featured restaurants
       queryClient.prefetchQuery({
-        queryKey: ['cuisineFeaturedRestaurants'],
+        queryKey: ['cuisineFeaturedRestaurants', marketId],
         queryFn: getCuisineFeaturedRestaurants,
         staleTime: 10 * 60 * 1000,
       }),
 
       // Other restaurants (just prefetch first page data)
       queryClient.prefetchQuery({
-        queryKey: ['otherRestaurantsPage0', featuredIds],
-        queryFn: () => getOtherRestaurants(featuredIds, 0, 10),
+        queryKey: ['otherRestaurantsPage0', featuredIds, marketId],
+        queryFn: () => getOtherRestaurants(featuredIds, 0, 10, marketId),
         staleTime: 5 * 60 * 1000,
       }),
 
       // Featured ads (for carousel ad slots)
       queryClient.prefetchQuery({
-        queryKey: ['featuredAds'],
-        queryFn: getActiveAds,
+        queryKey: ['featuredAds', marketId],
+        queryFn: () => getActiveAds(marketId),
         staleTime: 5 * 60 * 1000,
       }),
     ];

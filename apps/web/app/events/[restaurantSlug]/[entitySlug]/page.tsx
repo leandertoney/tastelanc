@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/market';
 import { fetchRestaurantBySlug, fetchEvents } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -11,10 +12,10 @@ export const revalidate = 900;
 
 export async function generateMetadata({ params }: { params: { restaurantSlug: string; entitySlug: string } }) {
   const r = await fetchRestaurantBySlug(params.restaurantSlug);
-  if (!r) return buildMeta({ title: 'Event | TasteLanc', description: 'Not found', url: `${siteUrl}/events/${params.restaurantSlug}/${params.entitySlug}` });
+  if (!r) return buildMeta({ title: `Event | ${BRAND.name}`, description: 'Not found', url: `${siteUrl}/events/${params.restaurantSlug}/${params.entitySlug}` });
   return buildMeta({
-    title: `${r.name} Event | TasteLanc`,
-    description: `Events at ${r.name} in Lancaster.`,
+    title: `${r.name} Event | ${BRAND.name}`,
+    description: `Events at ${r.name} in ${BRAND.countyShort}.`,
     url: `${siteUrl}/events/${r.slug}/${params.entitySlug}`,
     image: r.cover_image_url || r.logo_url || undefined,
   });

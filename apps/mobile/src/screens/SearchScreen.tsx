@@ -22,6 +22,7 @@ import { supabase } from '../lib/supabase';
 import { getFavorites, toggleFavorite } from '../lib/favorites';
 import { tieredFairRotate, getTierName } from '../lib/fairRotation';
 import { useAuth } from '../hooks/useAuth';
+import { useMarket } from '../context/MarketContext';
 import {
   useUserLocation,
   LANCASTER_CENTER,
@@ -51,11 +52,7 @@ const CATEGORIES: { key: RestaurantCategory | 'all'; label: string }[] = [
   { key: 'outdoor_dining', label: 'Outdoor' },
 ];
 
-const INITIAL_REGION: Region = {
-  ...LANCASTER_CENTER,
-  latitudeDelta: 0.05,
-  longitudeDelta: 0.05,
-};
+// INITIAL_REGION is now computed inside the component from market context
 
 // Dark map style for Google Maps
 const darkMapStyle = [
@@ -81,7 +78,20 @@ const darkMapStyle = [
 export default function SearchScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { userId } = useAuth();
+  const { market, marketId } = useMarket();
   const { location, permissionStatus, requestPermission } = useUserLocation();
+
+  // Derive map center from selected market, falling back to Lancaster
+  const mapCenter = useMemo(() => ({
+    latitude: market?.center_latitude ?? LANCASTER_CENTER.latitude,
+    longitude: market?.center_longitude ?? LANCASTER_CENTER.longitude,
+  }), [market]);
+
+  const initialRegion: Region = useMemo(() => ({
+    ...mapCenter,
+    latitudeDelta: 0.05,
+    longitudeDelta: 0.05,
+  }), [mapCenter]);
 
   // Search & filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -128,7 +138,7 @@ export default function SearchScreen() {
     }
   }, [location, mapReady]);
 
-  // Load favorites and initial restaurants on mount
+  // Load favorites and initial restaurants on mount and when market changes
   useEffect(() => {
     const loadInitialData = async () => {
       if (userId) {
@@ -138,14 +148,20 @@ export default function SearchScreen() {
       loadAllRestaurants();
     };
     loadInitialData();
-  }, [userId]);
+  }, [userId, marketId]);
 
   const loadAllRestaurants = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('restaurants')
         .select('*, tiers(name)');
+
+      if (marketId) {
+        query = query.eq('market_id', marketId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Load error:', error);
@@ -184,6 +200,10 @@ export default function SearchScreen() {
     try {
       let query = supabase.from('restaurants').select('*, tiers(name)');
 
+      if (marketId) {
+        query = query.eq('market_id', marketId);
+      }
+
       if (searchQuery.trim().length >= 2) {
         query = query.ilike('name', `%${searchQuery.trim()}%`);
       }
@@ -207,12 +227,12 @@ export default function SearchScreen() {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery, selectedCategory, marketId]);
 
   // Filter restaurants by distance and add distance field
   const filteredRestaurants = useMemo(() => {
-    const userLat = location?.latitude ?? LANCASTER_CENTER.latitude;
-    const userLng = location?.longitude ?? LANCASTER_CENTER.longitude;
+    const userLat = location?.latitude ?? mapCenter.latitude;
+    const userLng = location?.longitude ?? mapCenter.longitude;
 
     return restaurants
       .filter((r) => r.latitude && r.longitude)
@@ -402,7 +422,7 @@ export default function SearchScreen() {
           ref={mapRef}
           style={StyleSheet.absoluteFillObject}
           provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-          initialRegion={INITIAL_REGION}
+          initialRegion={initialRegion}
           onMapReady={() => setMapReady(true)}
           onPress={handleMapPress}
           showsUserLocation={permissionStatus === 'granted'}

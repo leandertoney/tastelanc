@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { BRAND } from '@/config/market';
 import { Card, Badge } from '@/components/ui';
 import { Crown, DollarSign, TrendingUp, Users, Sparkles, RefreshCw } from 'lucide-react';
 
@@ -69,7 +70,7 @@ export default function AdminConsumersPage() {
     <div>
       <div className="mb-6 md:mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white">TasteLanc+ Subscribers</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-white">{BRAND.premiumName} Subscribers</h1>
           <p className="text-gray-400 mt-1 text-sm md:text-base">Consumer premium subscription tracking</p>
         </div>
         <button
@@ -188,7 +189,7 @@ export default function AdminConsumersPage() {
             <Users className="w-10 h-10 md:w-12 md:h-12 text-gray-600 mx-auto mb-4" />
             <h3 className="text-base md:text-lg font-medium text-white mb-2">No consumer subscriptions yet</h3>
             <p className="text-gray-400 text-sm md:text-base">
-              TasteLanc+ subscriptions will appear here after purchase.
+              {BRAND.premiumName} subscriptions will appear here after purchase.
             </p>
           </div>
         ) : (

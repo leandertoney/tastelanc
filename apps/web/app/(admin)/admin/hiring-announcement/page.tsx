@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { BRAND } from '@/config/market';
 import { Send, Mail, Bell, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 interface PreviewData {
@@ -151,8 +152,8 @@ export default function HiringAnnouncementPage() {
           </h2>
           <div className="text-gray-300 text-sm leading-relaxed space-y-3">
             <p>
-              We&apos;re growing! TasteLanc is looking for passionate,
-              self-motivated people who love Lancaster&apos;s local food scene to
+              We&apos;re growing! {BRAND.name} is looking for passionate,
+              self-motivated people who love {BRAND.countyShort}&apos;s local food scene to
               join our team.
             </p>
             <p>We&apos;re currently hiring for:</p>
@@ -161,12 +162,12 @@ export default function HiringAnnouncementPage() {
             </p>
             <ul className="list-disc list-inside space-y-1 text-gray-400">
               <li>Commission-based role with uncapped earnings</li>
-              <li>Flexible schedule, in-person in Lancaster, PA</li>
+              <li>Flexible schedule, in-person in {BRAND.countyShort}, {BRAND.state}</li>
               <li>
                 Build relationships with local restaurants and help them grow
               </li>
               <li>
-                Be part of a fast-moving startup shaping how Lancaster discovers
+                Be part of a fast-moving startup shaping how {BRAND.countyShort} discovers
                 food
               </li>
             </ul>

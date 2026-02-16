@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/market';
 import { fetchEventsWithRestaurants } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -10,8 +11,8 @@ export const revalidate = 1200;
 
 export async function generateMetadata({ params }: { params: { eventType: string } }) {
   return buildMeta({
-    title: `${params.eventType.replace(/-/g, ' ')} in Lancaster | TasteLanc`,
-    description: `Find ${params.eventType.replace(/-/g, ' ')} events in Lancaster restaurants.`,
+    title: `${params.eventType.replace(/-/g, ' ')} in ${BRAND.countyShort} | ${BRAND.name}`,
+    description: `Find ${params.eventType.replace(/-/g, ' ')} events in ${BRAND.countyShort} restaurants.`,
     url: `${siteUrl}/events/type/${params.eventType}`,
   });
 }
@@ -33,8 +34,8 @@ export default async function EventsByType({ params }: { params: { eventType: st
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <main className="max-w-5xl mx-auto px-4 py-10 text-white">
         {leadershipLine(claim)}
-        <h1 className="text-3xl font-bold">{type} in Lancaster</h1>
-        <p className="text-gray-400 mt-2">Events by type across Lancaster.</p>
+        <h1 className="text-3xl font-bold">{type} in {BRAND.countyShort}</h1>
+        <p className="text-gray-400 mt-2">Events by type across {BRAND.countyShort}.</p>
         {restaurantCTAButtons()}
         <div className="space-y-4 mt-6">
           {filtered.map(({ event, restaurant }) => (

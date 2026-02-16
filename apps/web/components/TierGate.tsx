@@ -2,6 +2,7 @@
 
 import { ReactNode } from 'react';
 import Link from 'next/link';
+import { BRAND } from '@/config/market';
 import { Lock, Crown, Sparkles } from 'lucide-react';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import type { SubscriptionTier } from '@/types/database';
@@ -98,7 +99,7 @@ export default function TierGate({
         {/* Description */}
         <p className="text-gray-400 mb-6">
           {description ||
-            `Upgrade to ${requiredTier === 'elite' ? 'Elite' : 'Premium'} to unlock ${feature.toLowerCase()} and grow your restaurant's presence on TasteLanc.`}
+            `Upgrade to ${requiredTier === 'elite' ? 'Elite' : 'Premium'} to unlock ${feature.toLowerCase()} and grow your restaurant's presence on ${BRAND.name}.`}
         </p>
 
         {/* Tier comparison */}

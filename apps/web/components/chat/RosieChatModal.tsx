@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { BRAND } from '@/config/market';
 import { X, Send, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import ChatMessage from './ChatMessage';
@@ -253,10 +254,10 @@ export default function RosieChatModal({ isOpen, onClose }: RosieChatModalProps)
 
           <div className="flex-1">
             <h2 id="chat-title" className="text-white font-semibold">
-              Chat with Rosie
+              {`Chat with ${BRAND.aiName}`}
             </h2>
             <p className="text-tastelanc-muted text-xs">
-              Your Lancaster dining expert
+              {`Your ${BRAND.countyShort} dining expert`}
             </p>
           </div>
 
@@ -299,7 +300,7 @@ export default function RosieChatModal({ isOpen, onClose }: RosieChatModalProps)
                 Loving our chat?
               </p>
               <p className="text-gray-300 text-sm mb-4">
-                Get unlimited Rosie + real-time happy hours, specials, and personalized recommendations in the TasteLanc app!
+                {`Get unlimited ${BRAND.aiName} + real-time happy hours, specials, and personalized recommendations in the ${BRAND.name} app!`}
               </p>
               <Link
                 href={ROSIE_CONFIG.redirectUrl}
@@ -325,7 +326,7 @@ export default function RosieChatModal({ isOpen, onClose }: RosieChatModalProps)
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyPress}
-                placeholder="Ask Rosie anything..."
+                placeholder={`Ask ${BRAND.aiName} anything...`}
                 disabled={isLoading}
                 className="flex-1 bg-tastelanc-card border border-tastelanc-surface-light rounded-xl px-4 py-3 text-white text-sm placeholder:text-tastelanc-muted focus:outline-none focus:ring-2 focus:ring-tastelanc-accent/50 disabled:opacity-50"
               />
@@ -340,7 +341,7 @@ export default function RosieChatModal({ isOpen, onClose }: RosieChatModalProps)
             </form>
           ) : (
             <p className="text-center text-tastelanc-muted text-sm">
-              Download the app to continue chatting with Rosie
+              {`Download the app to continue chatting with ${BRAND.aiName}`}
             </p>
           )}
 

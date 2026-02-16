@@ -9,6 +9,8 @@
     "postinstall": "patch-package",
     "dev:web": "npm run dev --workspace=@tastelanc/web",
     "dev:mobile": "npm run start --workspace=@tastelanc/mobile",
+    "dev:mobile:lancaster": "npm run start --workspace=@tastelanc/mobile",
+    "dev:mobile:cumberland": "npm run start --workspace=@tastelanc/mobile-cumberland",
     "build:web": "npm run build --workspace=@tastelanc/web",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"

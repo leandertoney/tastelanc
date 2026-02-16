@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { verifyAdminAccess } from '@/lib/auth/admin-access';
 import { getStripe, RESTAURANT_PRICE_IDS, RESTAURANT_PRICES } from '@/lib/stripe';
 
 // Map plan and duration to price ID
@@ -12,17 +13,9 @@ export async function POST(request: Request) {
   try {
     // Verify admin is making this request
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check admin by email (consistent with middleware)
-    const isAdmin = user.email === 'admin@tastelanc.com';
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
+    let admin;
+    try { admin = await verifyAdminAccess(supabase); }
+    catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
     const body = await request.json();
     const {
@@ -74,7 +67,7 @@ export async function POST(request: Request) {
         metadata: {
           business_name: businessName,
           contact_name: contactName || '',
-          created_by_admin: user.id,
+          created_by_admin: admin.userId,
         },
       });
       customerId = customer.id;
@@ -104,7 +97,7 @@ export async function POST(request: Request) {
         restaurant_id: restaurantId || '',
         plan,
         duration,
-        created_by_admin: user.id,
+        created_by_admin: admin.userId,
         admin_sale: 'true',
       },
       // Allow promotion codes

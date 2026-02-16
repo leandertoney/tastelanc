@@ -7,6 +7,7 @@ import { formatTime, getCurrentDayOfWeek, capitalizeWords } from '@/lib/utils';
 import type { Metadata } from 'next';
 import PageViewTracker from '@/components/PageViewTracker';
 import FavoriteButton from '@/components/FavoriteButton';
+import { MARKET_SLUG, BRAND } from '@/config/market';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -15,29 +16,38 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const supabase = await createClient();
-  const { data: restaurant } = await supabase
+  const { data: marketRow } = await supabase
+    .from('markets').select('id').eq('slug', MARKET_SLUG).eq('is_active', true).single();
+  let metaQuery = supabase
     .from('restaurants')
     .select('name, description')
-    .eq('slug', slug)
-    .single();
+    .eq('slug', slug);
+  if (marketRow) metaQuery = metaQuery.eq('market_id', marketRow.id);
+  const { data: restaurant } = await metaQuery.single();
 
   if (!restaurant) {
-    return { title: 'Restaurant Not Found | TasteLanc' };
+    return { title: `Restaurant Not Found | ${BRAND.name}` };
   }
 
   return {
-    title: `${restaurant.name} | TasteLanc`,
-    description: restaurant.description || `Discover ${restaurant.name} in Lancaster, PA. View menu, hours, happy hours, and upcoming events.`,
+    title: `${restaurant.name} | ${BRAND.name}`,
+    description: restaurant.description || `Discover ${restaurant.name} in ${BRAND.countyShort}, ${BRAND.state}. View menu, hours, happy hours, and upcoming events.`,
   };
 }
 
 async function getRestaurant(slug: string) {
   const supabase = await createClient();
 
+  // Resolve market
+  const { data: marketRow } = await supabase
+    .from('markets').select('id').eq('slug', MARKET_SLUG).eq('is_active', true).single();
+  if (!marketRow) throw new Error(`Market "${MARKET_SLUG}" not found`);
+
   const { data: restaurant } = await supabase
     .from('restaurants')
     .select('*')
     .eq('slug', slug)
+    .eq('market_id', marketRow.id)
     .eq('is_active', true)
     .single();
 

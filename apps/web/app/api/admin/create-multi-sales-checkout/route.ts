@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { verifyAdminAccess } from '@/lib/auth/admin-access';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import {
   getStripe,
@@ -27,16 +28,9 @@ export async function POST(request: Request) {
   try {
     // Verify admin is making this request
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const isAdmin = user.email === 'admin@tastelanc.com';
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
+    let admin;
+    try { admin = await verifyAdminAccess(supabase); }
+    catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
     const body = await request.json();
     const { email, contactName, phone, items } = body as {
@@ -102,7 +96,7 @@ export async function POST(request: Request) {
         metadata: {
           ...existingCustomers.data[0].metadata,
           contact_name: contactName || existingCustomers.data[0].metadata?.contact_name || '',
-          updated_by_admin: user.id,
+          updated_by_admin: admin.userId,
         },
       });
     } else {
@@ -112,7 +106,7 @@ export async function POST(request: Request) {
         phone: phone || undefined,
         metadata: {
           contact_name: contactName || '',
-          created_by_admin: user.id,
+          created_by_admin: admin.userId,
         },
       });
       customerId = customer.id;
@@ -131,7 +125,7 @@ export async function POST(request: Request) {
         subtotal_cents: subtotalCents,
         discount_amount_cents: discountAmountCents,
         total_cents: totalCents,
-        created_by_admin: user.id,
+        created_by_admin: admin.userId,
         status: 'pending',
       })
       .select('id')
@@ -206,7 +200,7 @@ export async function POST(request: Request) {
         contact_name: contactName || '',
         email,
         phone: phone || '',
-        created_by_admin: user.id,
+        created_by_admin: admin.userId,
         restaurant_count: String(items.length),
         discount_percent: String(discountPercent),
       },

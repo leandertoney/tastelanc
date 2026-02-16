@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { BRAND } from '@/config/market';
 import {
   LayoutDashboard,
   BarChart3,
@@ -33,7 +34,7 @@ const NAV_ITEMS: Array<{
   { href: '/admin', icon: LayoutDashboard, label: 'Overview', section: 'Revenue' },
   { href: '/admin/paid-members', icon: CreditCard, label: 'Restaurants', highlight: true },
   { href: '/admin/self-promoters', icon: Music, label: 'Self-Promoters', highlight: true },
-  { href: '/admin/consumers', icon: Crown, label: 'TasteLanc+', highlight: true },
+  { href: '/admin/consumers', icon: Crown, label: BRAND.premiumName, highlight: true },
   { href: '/admin/sales', icon: Briefcase, label: 'Sales Pipeline', highlight: true },
   { href: '/admin/sponsored-ads', icon: Megaphone, label: 'Sponsored Ads', highlight: true },
   { href: '/admin/sales-reps', icon: Users, label: 'Sales Reps', highlight: true },
@@ -103,7 +104,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               <Shield className="w-6 h-6 text-white" />
             </div>
             <div>
-              <span className="text-xl font-bold text-white">TasteLanc</span>
+              <span className="text-xl font-bold text-white">{BRAND.name}</span>
               <span className="block text-xs text-tastelanc-accent">Admin Panel</span>
             </div>
           </Link>

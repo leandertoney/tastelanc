@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient as createSupabaseAdmin } from '@supabase/supabase-js';
 import { Resend } from 'resend';
+import { MARKET_SLUG } from '@/config/market';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -82,12 +83,23 @@ export async function POST(request: Request) {
 
     const supabase = createSupabaseAdmin(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
+    // Resolve market
+    const { data: marketRow, error: marketErr } = await supabase
+      .from('markets')
+      .select('id')
+      .eq('slug', MARKET_SLUG)
+      .eq('is_active', true)
+      .single();
+    if (marketErr || !marketRow) throw new Error(`Market "${MARKET_SLUG}" not found or inactive`);
+    const marketId = marketRow.id;
+
     const now = new Date();
 
     // Find scheduled posts ready to publish (within 30 min window)
     const { data: scheduledPosts } = await supabase
       .from('blog_posts')
       .select('*')
+      .eq('market_id', marketId)
       .eq('status', 'scheduled')
       .lte('scheduled_publish_at', new Date(now.getTime() + 30 * 60000).toISOString())
       .order('scheduled_publish_at', { ascending: true });
@@ -100,6 +112,7 @@ export async function POST(request: Request) {
       const { data: todayPosts } = await supabase
         .from('blog_posts')
         .select('slug')
+        .eq('market_id', marketId)
         .eq('status', 'published')
         .gte('published_at', todayStart.toISOString())
         .limit(1);
@@ -137,6 +150,7 @@ export async function POST(request: Request) {
           const { data: newPosts } = await supabase
             .from('blog_posts')
             .select('*')
+            .eq('market_id', marketId)
             .eq('status', 'scheduled')
             .order('created_at', { ascending: false })
             .limit(1);

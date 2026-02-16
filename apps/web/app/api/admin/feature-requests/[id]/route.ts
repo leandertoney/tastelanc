@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { verifyAdminAccess } from '@/lib/auth/admin-access';
 
 export async function GET(
   request: NextRequest,
@@ -10,10 +11,9 @@ export async function GET(
     const supabase = await createClient();
 
     // Check admin auth
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user || user.email !== 'admin@tastelanc.com') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    let admin;
+    try { admin = await verifyAdminAccess(supabase); }
+    catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
     const { data: request_data, error } = await supabase
       .from('feature_requests')
@@ -48,10 +48,9 @@ export async function PUT(
     const supabase = await createClient();
 
     // Check admin auth
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user || user.email !== 'admin@tastelanc.com') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    let admin;
+    try { admin = await verifyAdminAccess(supabase); }
+    catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
     const body = await request.json();
     const { status, priority, admin_notes, read_at } = body;
@@ -104,10 +103,9 @@ export async function DELETE(
     const supabase = await createClient();
 
     // Check admin auth
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user || user.email !== 'admin@tastelanc.com') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    let admin;
+    try { admin = await verifyAdminAccess(supabase); }
+    catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
     const { error } = await supabase
       .from('feature_requests')

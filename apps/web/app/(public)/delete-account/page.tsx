@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import { Trash2, Mail, Clock, AlertCircle } from 'lucide-react';
+import { BRAND } from '@/config/market';
 
 export const metadata: Metadata = {
-  title: 'Delete Your Account | TasteLanc',
-  description: 'Request deletion of your TasteLanc account and all associated data.',
+  title: `Delete Your Account | ${BRAND.name}`,
+  description: `Request deletion of your ${BRAND.name} account and all associated data.`,
   alternates: {
-    canonical: 'https://tastelanc.com/delete-account',
+    canonical: `https://${BRAND.domain}/delete-account`,
   },
 };
 
@@ -17,11 +18,11 @@ export default function DeleteAccountPage() {
           <div className="w-12 h-12 bg-tastelanc-accent/20 rounded-xl flex items-center justify-center">
             <Trash2 className="w-6 h-6 text-tastelanc-accent" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white">Delete Your TasteLanc Account</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-white">Delete Your {BRAND.name} Account</h1>
         </div>
 
         <p className="text-gray-400 text-lg mb-8">
-          To delete your TasteLanc account and all associated data, please follow the steps below.
+          To delete your {BRAND.name} account and all associated data, please follow the steps below.
         </p>
 
         <div className="bg-tastelanc-surface rounded-xl p-6 mb-8">
@@ -30,7 +31,7 @@ export default function DeleteAccountPage() {
             <li className="flex items-start gap-3">
               <span className="flex-shrink-0 w-6 h-6 bg-tastelanc-accent rounded-full flex items-center justify-center text-white text-sm font-bold">1</span>
               <div>
-                <p className="text-white font-medium">Email us at info@tastelanc.com</p>
+                <p className="text-white font-medium">Email us at info@{BRAND.domain}</p>
                 <p className="text-gray-400 text-sm">Use the subject line: &quot;Delete My Account&quot;</p>
               </div>
             </li>
@@ -38,7 +39,7 @@ export default function DeleteAccountPage() {
               <span className="flex-shrink-0 w-6 h-6 bg-tastelanc-accent rounded-full flex items-center justify-center text-white text-sm font-bold">2</span>
               <div>
                 <p className="text-white font-medium">Include your account email</p>
-                <p className="text-gray-400 text-sm">Provide the email address associated with your TasteLanc account</p>
+                <p className="text-gray-400 text-sm">Provide the email address associated with your {BRAND.name} account</p>
               </div>
             </li>
             <li className="flex items-start gap-3">
@@ -83,7 +84,7 @@ export default function DeleteAccountPage() {
             <div>
               <p className="text-white font-medium">This action is permanent</p>
               <p className="text-gray-400 text-sm mt-1">
-                Once your account is deleted, this cannot be undone. You will need to create a new account if you wish to use TasteLanc again.
+                Once your account is deleted, this cannot be undone. You will need to create a new account if you wish to use {BRAND.name} again.
               </p>
             </div>
           </div>
@@ -92,11 +93,11 @@ export default function DeleteAccountPage() {
         <div className="text-center">
           <p className="text-gray-400 mb-4">Questions? Contact us at</p>
           <a
-            href="mailto:info@tastelanc.com"
+            href={`mailto:info@${BRAND.domain}`}
             className="inline-flex items-center gap-2 text-tastelanc-accent hover:underline text-lg"
           >
             <Mail className="w-5 h-5" />
-            info@tastelanc.com
+            {`info@${BRAND.domain}`}
           </a>
         </div>
       </div>

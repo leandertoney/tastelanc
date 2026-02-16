@@ -3,28 +3,28 @@ export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { verifyAdminAccess } from '@/lib/auth/admin-access';
 
 export async function GET() {
   try {
     const supabase = await createClient();
 
     // Verify user is admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    let admin;
+    try { admin = await verifyAdminAccess(supabase); }
+    catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
-    // Check admin by email (consistent with middleware)
-    const isAdmin = user.email === 'admin@tastelanc.com';
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
-
-    // Fetch all restaurants
-    const { data: restaurants, error } = await supabase
+    // Fetch restaurants — super_admin sees all, market_admin sees only their market
+    let query = supabase
       .from('restaurants')
       .select('id, name, city, state, owner_id')
       .order('name', { ascending: true });
+
+    if (admin.scopedMarketId) {
+      query = query.eq('market_id', admin.scopedMarketId);
+    }
+
+    const { data: restaurants, error } = await query;
 
     if (error) {
       console.error('Error fetching restaurants:', error);

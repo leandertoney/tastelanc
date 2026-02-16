@@ -1,22 +1,24 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { verifyAdminAccess } from '@/lib/auth/admin-access';
 import OpenAI from 'openai';
 import { createClient as createSupabaseAdmin } from '@supabase/supabase-js';
+import { MARKET_SLUG, BRAND } from '@/config/market';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 
-// Rosie's system prompt (simplified version for manual trigger)
+// AI system prompt (simplified version for manual trigger)
 function buildSystemPrompt(restaurants: Array<{ name: string; slug: string; categories: string[]; coverImageUrl?: string }>): string {
   const restaurantList = restaurants
     .map(r => `- ${r.name} (slug: ${r.slug}) [${r.categories?.join(', ') || 'uncategorized'}]${r.coverImageUrl ? ` | Image: ${r.coverImageUrl}` : ''}`)
     .join('\n');
 
-  return `You are Rosie, TasteLanc's food intelligence and Lancaster, Pennsylvania's definitive dining authority. You write original, engaging blog posts that make readers feel like they have an insider connection to the city's food scene.
+  return `You are ${BRAND.aiName}, ${BRAND.name}'s food intelligence and ${BRAND.county}, ${BRAND.state}'s definitive dining authority. You write original, engaging blog posts that make readers feel like they have an insider connection to the city's food scene.
 
 ## YOUR IDENTITY
-You're THE source for Lancaster dining intel. You have opinions. You have takes. You know things others don't.
+You're THE source for ${BRAND.countyShort} dining intel. You have opinions. You have takes. You know things others don't.
 
 ### Your Voice
 - **Confident**: You state opinions as an authority
@@ -25,7 +27,7 @@ You're THE source for Lancaster dining intel. You have opinions. You have takes.
 - **Hook-driven**: Your opening lines grab attention
 - **Actionable**: Every post gives readers something to DO
 
-## LANCASTER RESTAURANTS (${restaurants.length} total)
+## ${BRAND.countyShort.toUpperCase()} RESTAURANTS (${restaurants.length} total)
 ${restaurantList || 'No restaurants loaded'}
 
 ## CONTENT GUIDELINES
@@ -64,17 +66,9 @@ export async function POST(request: Request) {
     const supabase = await createClient();
 
     // Verify user is admin
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const isAdmin = user.email === 'admin@tastelanc.com';
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
+    let admin;
+    try { admin = await verifyAdminAccess(supabase); }
+    catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
     // Check for OpenAI key
     if (!process.env.OPENAI_API_KEY) {
@@ -90,10 +84,19 @@ export async function POST(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Fetch restaurants with cover images
+    // Resolve market
+    const { data: marketRow } = await supabaseAdmin
+      .from('markets').select('id').eq('slug', MARKET_SLUG).eq('is_active', true).single();
+    if (!marketRow) {
+      return NextResponse.json({ error: 'Market not found' }, { status: 500 });
+    }
+    const marketId = marketRow.id;
+
+    // Fetch restaurants with cover images — scoped to this market
     const { data: restaurants } = await supabaseAdmin
       .from('restaurants')
       .select('name, slug, categories, cover_image_url')
+      .eq('market_id', marketId)
       .eq('is_active', true)
       .not('cover_image_url', 'is', null)
       .order('name');
@@ -119,11 +122,11 @@ export async function POST(request: Request) {
 
     let themePrompt: string;
     if (theme === 'new-years-eve' || (!theme && new Date().getMonth() === 11 && new Date().getDate() === 31)) {
-      themePrompt = `🎉 It's New Year's Eve! Write about how Lancaster restaurants celebrate tonight - special prix fixe menus, champagne toasts, countdown parties, late-night dining options. Where should people ring in the new year? What are the best spots for a celebratory dinner?`;
+      themePrompt = `🎉 It's New Year's Eve! Write about how ${BRAND.countyShort} restaurants celebrate tonight - special prix fixe menus, champagne toasts, countdown parties, late-night dining options. Where should people ring in the new year? What are the best spots for a celebratory dinner?`;
     } else if (theme) {
-      themePrompt = `Write a blog post themed around: ${theme}. Make it relevant to Lancaster's dining scene.`;
+      themePrompt = `Write a blog post themed around: ${theme}. Make it relevant to ${BRAND.countyShort}'s dining scene.`;
     } else {
-      themePrompt = `Write about what's great about Lancaster dining right now. Be timely, specific, and give readers actionable recommendations.`;
+      themePrompt = `Write about what's great about ${BRAND.countyShort} dining right now. Be timely, specific, and give readers actionable recommendations.`;
     }
 
     const systemPrompt = buildSystemPrompt(restaurantData);
@@ -191,15 +194,16 @@ Use the restaurants from your database. Be specific, be opinionated, and make it
     );
     const featuredRestaurants = Array.from(new Set(allLinks.map((m: RegExpMatchArray) => m[1])));
 
-    // Publish to Supabase
+    // Publish to Supabase — scoped to this market
     const { error: upsertErr } = await supabaseAdmin.from('blog_posts').upsert({
       slug,
       title: parsed.title,
       summary: parsed.summary,
       body_html: parsed.body_html,
-      tags: parsed.tags || ['lancaster', 'tastelanc', 'rosie'],
+      tags: parsed.tags || [BRAND.countyShort.toLowerCase(), BRAND.name.toLowerCase(), BRAND.aiName.toLowerCase()],
       cover_image_url: coverImageUrl,
       featured_restaurants: featuredRestaurants.length > 0 ? featuredRestaurants : null,
+      market_id: marketId,
       created_at: new Date().toISOString(),
     });
 

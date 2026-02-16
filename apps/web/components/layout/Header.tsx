@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useState, useEffect, useMemo } from 'react';
 import { Menu, X, Crown, User, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { BRAND } from '@/config/market';
 
 interface AuthStatus {
   isLoggedIn: boolean;
@@ -96,8 +97,8 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center">
           <Image
-            src="/images/tastelanc_new_dark.png"
-            alt="TasteLanc"
+            src={BRAND.logoPath}
+            alt={BRAND.name}
             width={180}
             height={60}
             className="h-12 md:h-14 w-auto"

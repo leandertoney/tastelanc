@@ -1,4 +1,5 @@
 import { renderBaseLayout } from './base-layout';
+import { BRAND } from '@/config/market';
 
 export interface PromotionalEmailProps {
   headline: string;
@@ -62,7 +63,7 @@ export function renderPromotionalEmail({
     <!-- Signature -->
     <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #1F1F1F;">
       <p style="margin: 0; font-size: 14px; color: #CCCCCC;">
-        You're receiving this email because you signed up for TasteLanc early access.
+        You're receiving this email because you signed up for ${BRAND.name} early access.
       </p>
     </div>
   `;
@@ -78,22 +79,22 @@ export function renderPromotionalEmail({
 export const PRE_BUILT_TEMPLATES = {
   anticipation: {
     name: "We're Almost Ready!",
-    subject: "TasteLanc is launching soon - here's what's coming",
-    previewText: "Get ready to discover Lancaster like never before",
-    headline: "Get Ready to Discover Lancaster Like Never Before",
-    body: `We've been working hard behind the scenes, and TasteLanc is almost ready to launch!
+    subject: `${BRAND.name} is launching soon - here's what's coming`,
+    previewText: `Get ready to discover ${BRAND.countyShort} like never before`,
+    headline: `Get Ready to Discover ${BRAND.countyShort} Like Never Before`,
+    body: `We've been working hard behind the scenes, and ${BRAND.name} is almost ready to launch!
 
-As an early access member, you'll be among the first to experience Lancaster's ultimate food and drink discovery platform.
+As an early access member, you'll be among the first to experience ${BRAND.countyShort}'s ultimate food and drink discovery platform.
 
 Here's what's coming:
-• Discover the best happy hours, specials, and events in Lancaster
-• Get personalized recommendations from Rosie, our AI concierge
+• Discover the best happy hours, specials, and events in ${BRAND.countyShort}
+• Get personalized recommendations from ${BRAND.aiName}, our AI concierge
 • Earn rewards just for exploring local spots
-• Access exclusive deals only for TasteLanc members
+• Access exclusive deals only for ${BRAND.name} members
 
 We can't wait to show you what we've built. Stay tuned for launch day!`,
     ctaText: "Learn More",
-    ctaUrl: "https://tastelanc.com",
+    ctaUrl: `https://${BRAND.domain}`,
   },
   benefits: {
     name: "Your Exclusive Early Access Perks",
@@ -108,11 +109,11 @@ Your Early Access Benefits:
 • Priority access to new features before anyone else
 • Exclusive founding member rewards and bonuses
 
-These perks are our way of saying thank you for believing in TasteLanc from the beginning.
+These perks are our way of saying thank you for believing in ${BRAND.name} from the beginning.
 
 When we launch, you'll receive an email with instructions to claim your benefits. Make sure to whitelist our emails so you don't miss it!`,
     ctaText: "See All Benefits",
-    ctaUrl: "https://tastelanc.com",
+    ctaUrl: `https://${BRAND.domain}`,
   },
   urgency: {
     name: "Don't Miss Out",
@@ -126,41 +127,41 @@ Once early access ends:
 • Founding Member badges will no longer be available
 • Regular pricing kicks in
 
-You're already signed up, which is great! But if you have friends or family who'd love to discover Lancaster's best food and drink spots, now's the time to let them know.
+You're already signed up, which is great! But if you have friends or family who'd love to discover ${BRAND.countyShort}'s best food and drink spots, now's the time to let them know.
 
 Share the love and help them lock in their perks before it's too late.`,
     ctaText: "Share with Friends",
-    ctaUrl: "https://tastelanc.com",
+    ctaUrl: `https://${BRAND.domain}`,
   },
   feedbackRoast: {
     name: "Beta Feedback - Roast Us",
-    subject: "Roast TasteLanc — help us ship a better app",
+    subject: `Roast ${BRAND.name} — help us ship a better app`,
     previewText: "Tell us your device so we send the right TestFlight or Play link.",
     headline: "Roast Our App and Help Shape Launch",
     body: `We just pushed a fresh build and need candid testers to roast it. Jump in, explore, and tell us what feels great and what needs work.
 
 Here's how to help:
-• Try the flows you care about: finding specials, saving favorites, chatting with Rosie.
+• Try the flows you care about: finding specials, saving favorites, chatting with ${BRAND.aiName}.
 • Send quick notes on what feels confusing, broken, or surprisingly good (screenshots welcome).
 • Reply with your phone type (iPhone or Android) and OS version so we send the right TestFlight or Play Store link.
 
 Thanks for being early and honest—your feedback directly shapes launch week.`,
     ctaText: "I can test it",
-    ctaUrl: "https://tastelanc.com/testers",
+    ctaUrl: `https://${BRAND.domain}/testers`,
   },
   iosLaunch: {
     name: "iOS App Launch Announcement",
-    subject: "TasteLanc is Live! Download Now for iPhone",
-    previewText: "The wait is over - discover Lancaster's best dining & nightlife",
-    headline: "TasteLanc is Officially Live!",
-    body: `Big news — TasteLanc is now available on the App Store!
+    subject: `${BRAND.name} is Live! Download Now for iPhone`,
+    previewText: `The wait is over - discover ${BRAND.countyShort}'s best dining & nightlife`,
+    headline: `${BRAND.name} is Officially Live!`,
+    body: `Big news — ${BRAND.name} is now available on the App Store!
 
-After months of building and your amazing support as an early member, we're thrilled to announce that you can download TasteLanc today and start discovering Lancaster's best restaurants, happy hours, and nightlife.
+After months of building and your amazing support as an early member, we're thrilled to announce that you can download ${BRAND.name} today and start discovering ${BRAND.countyShort}'s best restaurants, happy hours, and nightlife.
 
 What's waiting for you:
 • Real-time happy hours and specials
-• Live events across Lancaster
-• Rosie, your AI dining assistant
+• Live events across ${BRAND.countyShort}
+• ${BRAND.aiName}, your AI dining assistant
 • Rewards for checking in at your favorite spots
 
 As one of our founding members, you've already earned early access perks. Download the app and sign in with the email you used to join the waitlist to unlock them.
@@ -169,4 +170,4 @@ Android version coming soon — we'll let you know when it's ready!`,
     ctaText: "Download for iPhone",
     ctaUrl: "https://apps.apple.com/us/app/tastelanc/id6755852717",
   },
-} as const;
+};

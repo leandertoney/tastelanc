@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/market';
 import { fetchRestaurants } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -9,8 +10,8 @@ export const revalidate = 3600;
 
 export async function generateMetadata() {
   return buildMeta({
-    title: 'Best of Lancaster | Restaurants, Specials & Events | TasteLanc',
-    description: 'Top Lancaster restaurants, specials, happy hours, and events curated by TasteLanc.',
+    title: `Best of ${BRAND.countyShort} | Restaurants, Specials & Events | ${BRAND.name}`,
+    description: `Top ${BRAND.countyShort} restaurants, specials, happy hours, and events curated by ${BRAND.name}.`,
     url: `${siteUrl}/best-of-lancaster`,
   });
 }
@@ -29,7 +30,7 @@ export default async function BestOfLancasterPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <main className="max-w-5xl mx-auto px-4 py-10 text-white">
         {leadershipLine(claim)}
-        <h1 className="text-3xl font-bold">Best of Lancaster</h1>
+        <h1 className="text-3xl font-bold">Best of {BRAND.countyShort}</h1>
         <p className="text-gray-400 mt-2">Top picks for restaurants, specials, and nightlife.</p>
         {restaurantCTAButtons()}
         <div className="grid md:grid-cols-2 gap-6 mt-6">

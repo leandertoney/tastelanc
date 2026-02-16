@@ -22,6 +22,7 @@ import Spacer from './Spacer';
 import { getFeaturedRestaurants, getUserPreferences, getRecommendationReason } from '../lib/recommendations';
 import type { OnboardingData } from '../types/onboarding';
 import { useFavorites, useToggleFavorite, useEmailGate, useActiveAds } from '../hooks';
+import { useMarket } from '../context/MarketContext';
 import type { Restaurant, FeaturedAd } from '../types/database';
 import { colors, radius, spacing } from '../constants/colors';
 import { ENABLE_MOCK_DATA, MOCK_FEATURED_RESTAURANTS } from '../config/mockData';
@@ -58,6 +59,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export default function FeaturedSection({ onRestaurantPress }: FeaturedSectionProps) {
   const navigation = useNavigation<NavigationProp>();
   const { requireEmailGate } = useEmailGate();
+  const { marketId } = useMarket();
   const flatListRef = useRef<FlatList<CarouselItem>>(null);
   const [extendedData, setExtendedData] = useState<CarouselItem[]>([]);
 
@@ -71,8 +73,8 @@ export default function FeaturedSection({ onRestaurantPress }: FeaturedSectionPr
     data: restaurants = [],
     isError,
   } = useQuery({
-    queryKey: ['featuredRestaurants'],
-    queryFn: () => getFeaturedRestaurants(16),
+    queryKey: ['featuredRestaurants', marketId],
+    queryFn: () => getFeaturedRestaurants(16, marketId),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -192,6 +194,7 @@ export default function FeaturedSection({ onRestaurantPress }: FeaturedSectionPr
             shownAdIds.current.add(ad.id);
             // Small delay so carousel finishes settling before popup appears
             setTimeout(() => {
+              trackAdImpression(ad.id, 0);
               setOverlayAd(ad);
               setOverlayVisible(true);
             }, 400);

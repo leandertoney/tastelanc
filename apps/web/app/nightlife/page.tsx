@@ -1,3 +1,4 @@
+import { BRAND } from '@/config/market';
 import { fetchRestaurants } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -10,8 +11,8 @@ export const revalidate = 1800;
 
 export async function generateMetadata() {
   return buildMeta({
-    title: 'Nightlife in Lancaster, PA | Bars & Breweries | TasteLanc',
-    description: 'Explore Lancaster bars, breweries, and nightlife venues with happy hours and events.',
+    title: `Nightlife in ${BRAND.countyShort}, ${BRAND.state} | Bars & Breweries | ${BRAND.name}`,
+    description: `Explore ${BRAND.countyShort} bars, breweries, and nightlife venues with happy hours and events.`,
     url: `${siteUrl}/nightlife`,
   });
 }
@@ -32,7 +33,7 @@ export default async function NightlifePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <main className="max-w-5xl mx-auto px-4 py-10 text-white">
         {leadershipLine(claim)}
-        <h1 className="text-3xl font-bold">Lancaster Nightlife: Bars & Breweries</h1>
+        <h1 className="text-3xl font-bold">{BRAND.countyShort} Nightlife: Bars & Breweries</h1>
         <p className="text-gray-400 mt-2">Find bars, breweries, and nightlife spots.</p>
         {restaurantCTAButtons()}
         <div className="grid md:grid-cols-2 gap-6 mt-6">
