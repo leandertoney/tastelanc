@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { Sparkles } from 'lucide-react';
 import { BRAND } from '@/config/market';
 import { ChatMessage as ChatMessageType, ROSIE_STORAGE_KEYS } from '@/lib/rosie/types';
 
@@ -73,15 +74,21 @@ export default function ChatMessage({
 
   return (
     <div className="flex items-start gap-3">
-      {/* Rosie Avatar */}
+      {/* AI Avatar */}
       <div className="flex-shrink-0">
-        <Image
-          src="/images/rosie_dark_new.png"
-          alt={BRAND.aiName}
-          width={36}
-          height={36}
-          className="rounded-full animate-rosie"
-        />
+        {BRAND.aiAvatarImage ? (
+          <Image
+            src={BRAND.aiAvatarImage}
+            alt={BRAND.aiName}
+            width={36}
+            height={36}
+            className="rounded-full animate-ai-bounce"
+          />
+        ) : (
+          <div className="w-9 h-9 rounded-full bg-tastelanc-accent/20 flex items-center justify-center animate-ai-bounce">
+            <Sparkles className="w-4 h-4 text-tastelanc-accent" />
+          </div>
+        )}
       </div>
 
       {/* Message Bubble */}

@@ -25,6 +25,8 @@ export interface MarketBrand {
 
   // AI Assistant
   aiName: string;
+  aiAvatarVideo: string; // animated avatar video path (empty = show icon fallback)
+  aiAvatarImage: string; // static avatar image path (empty = show icon fallback)
 
   // Domain & Social
   domain: string;
@@ -49,6 +51,7 @@ export interface MarketBrand {
     card: string;
     surface: string;
     surfaceLight: string;
+    headerBg: string; // navbar background (defaults to bg if same)
   };
 
   // SEO defaults
@@ -79,6 +82,8 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
     premiumName: 'TasteLanc+',
 
     aiName: 'Rosie',
+    aiAvatarVideo: '/images/rosie_dark_animated.mp4',
+    aiAvatarImage: '/images/rosie_dark_new.png',
 
     domain: 'tastelanc.com',
     socialHandle: '@tastelanc',
@@ -99,6 +104,7 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
       card: '#252525',
       surface: '#1E1E1E',
       surfaceLight: '#2A2A2A',
+      headerBg: '#1A1A1A',
     },
 
     seo: {
@@ -124,6 +130,8 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
     premiumName: 'TasteCumberland+',
 
     aiName: 'Mollie',
+    aiAvatarVideo: '', // Mollie avatar coming soon
+    aiAvatarImage: '', // Mollie avatar coming soon
 
     domain: 'cumberland.tastelanc.com',
     socialHandle: '@tastecumberland',
@@ -137,13 +145,14 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
     },
 
     colors: {
-      accent: '#0F1E2E',
-      accentHover: '#1A2D40',
+      accent: '#3B7A57',
+      accentHover: '#2D6043',
       gold: '#C9A227',
       bg: '#1A1A1A',
       card: '#252525',
       surface: '#1E1E1E',
       surfaceLight: '#2A2A2A',
+      headerBg: '#0F1E2E',
     },
 
     seo: {

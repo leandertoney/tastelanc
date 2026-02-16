@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { BRAND } from '@/config/market';
-import { X, Send, ArrowRight } from 'lucide-react';
+import { X, Send, ArrowRight, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import ChatMessage from './ChatMessage';
 import TypingIndicator from './TypingIndicator';
@@ -240,16 +240,22 @@ export default function RosieChatModal({ isOpen, onClose }: RosieChatModalProps)
       <div className="relative w-full sm:w-[400px] h-[85vh] sm:h-[600px] sm:max-h-[80vh] bg-tastelanc-surface border border-tastelanc-surface-light rounded-t-2xl sm:rounded-2xl flex flex-col overflow-hidden sm:mr-4 sm:mb-4">
         {/* Header */}
         <div className="flex items-center gap-3 p-4 border-b border-tastelanc-surface-light bg-tastelanc-bg">
-          {/* Rosie Video */}
+          {/* AI Avatar */}
           <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
-            <video
-              src="/images/rosie_dark_animated.mp4"
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-full h-full object-cover"
-            />
+            {BRAND.aiAvatarVideo ? (
+              <video
+                src={BRAND.aiAvatarVideo}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-tastelanc-accent/20 flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-tastelanc-accent" />
+              </div>
+            )}
           </div>
 
           <div className="flex-1">

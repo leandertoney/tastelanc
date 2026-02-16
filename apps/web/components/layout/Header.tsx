@@ -93,7 +93,7 @@ export default function Header() {
   }, [authStatus.isLoggedIn, authStatus.isPremium]);
 
   return (
-    <header className="border-b border-tastelanc-surface-light sticky top-0 bg-tastelanc-bg/95 backdrop-blur-sm z-50">
+    <header className="border-b border-tastelanc-surface-light sticky top-0 bg-tastelanc-header-bg/95 backdrop-blur-sm z-50">
       <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center">
           <Image

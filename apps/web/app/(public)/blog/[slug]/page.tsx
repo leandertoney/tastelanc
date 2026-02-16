@@ -6,7 +6,7 @@ import { buildMeta } from '@/lib/seo/meta';
 import { articleJsonLd, breadcrumbJsonLd } from '@/lib/seo/structured';
 import { ROSIE_AUTHOR_BIO } from '@/lib/rosie/blog-system-prompt';
 import { BRAND } from '@/config/market';
-import { Clock, ArrowLeft, ArrowRight, Instagram } from 'lucide-react';
+import { Clock, ArrowLeft, ArrowRight, Instagram, Sparkles } from 'lucide-react';
 
 // Editorial cover image data structure
 interface CoverImageData {
@@ -335,13 +335,19 @@ export default async function BlogPostPage({ params }: PageProps) {
             <div className="mt-12 p-6 bg-tastelanc-surface">
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-shrink-0">
-                  <Image
-                    src="/images/rosie_dark_new.png"
-                    alt="Rosie"
-                    width={80}
-                    height={80}
-                    className="rounded-full border-4 border-lancaster-gold"
-                  />
+                  {BRAND.aiAvatarImage ? (
+                    <Image
+                      src={BRAND.aiAvatarImage}
+                      alt={BRAND.aiName}
+                      width={80}
+                      height={80}
+                      className="rounded-full border-4 border-lancaster-gold"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-tastelanc-accent/20 border-4 border-lancaster-gold flex items-center justify-center">
+                      <Sparkles className="w-10 h-10 text-tastelanc-accent" />
+                    </div>
+                  )}
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-white mb-1">About Rosie</h3>
@@ -432,7 +438,7 @@ export default async function BlogPostPage({ params }: PageProps) {
               {relatedPosts.length > 0 && (
                 <div>
                   <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">
-                    More from Rosie
+                    More from {BRAND.aiName}
                   </h4>
                   <div className="space-y-4">
                     {relatedPosts.slice(0, 3).map((relatedPost) => (

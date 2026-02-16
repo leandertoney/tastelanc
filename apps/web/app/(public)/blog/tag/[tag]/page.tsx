@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { fetchBlogPostsByTag } from '@/lib/seo/data';
 import { buildMeta } from '@/lib/seo/meta';
-import { Clock, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Clock, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
+import { BRAND } from '@/config/market';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
 export const revalidate = 900;
@@ -95,19 +96,25 @@ export default async function TagPage({ params }: PageProps) {
           </Link>
 
           <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-center md:text-left">
-            <Image
-              src="/images/rosie_dark_new.png"
-              alt="Rosie"
-              width={80}
-              height={80}
-              className="rounded-full border-2 border-amber-500/50 shadow-lg shadow-amber-500/10"
-            />
+            {BRAND.aiAvatarImage ? (
+              <Image
+                src={BRAND.aiAvatarImage}
+                alt={BRAND.aiName}
+                width={80}
+                height={80}
+                className="rounded-full border-2 border-amber-500/50 shadow-lg shadow-amber-500/10"
+              />
+            ) : (
+              <div className="w-20 h-20 rounded-full bg-tastelanc-accent/20 border-2 border-tastelanc-accent/50 shadow-lg shadow-tastelanc-accent/10 flex items-center justify-center">
+                <Sparkles className="w-10 h-10 text-tastelanc-accent" />
+              </div>
+            )}
             <div>
               <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
                 {tagInfo.display}
               </h1>
               <p className="text-gray-400 text-base md:text-lg">
-                {posts.length} {posts.length === 1 ? 'post' : 'posts'} from Rosie
+                {posts.length} {posts.length === 1 ? 'post' : 'posts'} from {BRAND.aiName}
               </p>
             </div>
           </div>
@@ -135,13 +142,17 @@ export default async function TagPage({ params }: PageProps) {
         {posts.length === 0 ? (
           <div className="text-center py-16">
             <div className="w-20 h-20 rounded-full bg-tastelanc-surface mx-auto mb-4 flex items-center justify-center">
-              <Image
-                src="/images/rosie_dark_new.png"
-                alt="Rosie"
-                width={60}
-                height={60}
-                className="rounded-full"
-              />
+              {BRAND.aiAvatarImage ? (
+                <Image
+                  src={BRAND.aiAvatarImage}
+                  alt={BRAND.aiName}
+                  width={60}
+                  height={60}
+                  className="rounded-full"
+                />
+              ) : (
+                <Sparkles className="w-8 h-8 text-tastelanc-accent" />
+              )}
             </div>
             <h2 className="text-xl font-semibold text-white mb-2">No Posts Yet</h2>
             <p className="text-gray-400 mb-6">

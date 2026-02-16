@@ -248,11 +248,13 @@ export function scoreRestaurant(
  * @param limit - Number of recommendations to return
  * @param userId - Optional user ID for favorites-based scoring
  * @param userLocation - Optional user location for distance-based scoring
+ * @param marketId - Optional market ID to scope results to a specific market
  */
 export async function getRecommendations(
   limit: number = 10,
   userId?: string,
-  userLocation?: { latitude: number; longitude: number }
+  userLocation?: { latitude: number; longitude: number },
+  marketId?: string | null
 ): Promise<Restaurant[]> {
   try {
     // Get user preferences
@@ -268,11 +270,17 @@ export async function getRecommendations(
 
     // If no preferences, return active restaurants with cover images ordered by name
     if (!preferences) {
-      const { data, error } = await supabase
+      let fallbackQuery = supabase
         .from('restaurants')
         .select('*, tiers(name)')
         .eq('is_active', true)
-        .not('cover_image_url', 'is', null)
+        .not('cover_image_url', 'is', null);
+
+      if (marketId) {
+        fallbackQuery = fallbackQuery.eq('market_id', marketId);
+      }
+
+      const { data, error } = await fallbackQuery
         .order('name', { ascending: true })
         .limit(limit);
 
@@ -289,13 +297,18 @@ export async function getRecommendations(
 
     // Fetch restaurants matching each category (include tier data for weighting)
     for (const category of recommendedCategories) {
-      const { data, error } = await supabase
+      let catQuery = supabase
         .from('restaurants')
         .select('*, tiers(name)')
         .eq('is_active', true)
         .not('cover_image_url', 'is', null)
-        .contains('categories', [category])
-        .limit(30);
+        .contains('categories', [category]);
+
+      if (marketId) {
+        catQuery = catQuery.eq('market_id', marketId);
+      }
+
+      const { data, error } = await catQuery.limit(30);
 
       if (!error && data) {
         allRestaurants = [...allRestaurants, ...data];
@@ -303,13 +316,18 @@ export async function getRecommendations(
     }
 
     // Also fetch some general verified restaurants for variety
-    const { data: verifiedData } = await supabase
+    let verifiedQuery = supabase
       .from('restaurants')
       .select('*, tiers(name)')
       .eq('is_active', true)
       .not('cover_image_url', 'is', null)
-      .eq('is_verified', true)
-      .limit(10);
+      .eq('is_verified', true);
+
+    if (marketId) {
+      verifiedQuery = verifiedQuery.eq('market_id', marketId);
+    }
+
+    const { data: verifiedData } = await verifiedQuery.limit(10);
 
     if (verifiedData) {
       allRestaurants = [...allRestaurants, ...verifiedData];

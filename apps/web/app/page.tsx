@@ -221,7 +221,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-tastelanc-bg">
       {/* Header */}
-      <header className="border-b border-tastelanc-surface-light sticky top-0 bg-tastelanc-bg/95 backdrop-blur-sm z-50">
+      <header className="border-b border-tastelanc-surface-light sticky top-0 bg-tastelanc-header-bg/95 backdrop-blur-sm z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center">
             <Image
@@ -290,13 +290,12 @@ export default function HomePage() {
           {/* Animated Logo */}
           <div className="mb-8">
             <div className="relative mx-auto h-[160px] w-[160px] md:h-[190px] md:w-[190px]">
-              <div className="absolute inset-0 rounded-full bg-black/70 blur-3xl" />
               <Image
                 src={BRAND.logoPath}
                 alt={BRAND.name}
                 width={220}
                 height={220}
-                className="relative w-40 h-40 md:w-48 md:h-48 mx-auto object-contain animate-logo"
+                className="relative w-40 h-40 md:w-48 md:h-48 mx-auto object-contain animate-logo drop-shadow-[0_0_30px_rgba(0,0,0,0.6)]"
               />
             </div>
           </div>
@@ -347,34 +346,40 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Rosie AI Section - First and Featured */}
-      <section id="rosie" className="py-20 px-4 bg-gradient-to-b from-tastelanc-surface to-purple-950/20">
+      {/* AI Assistant Section - First and Featured */}
+      <section id="ai-assistant" className="py-20 px-4 bg-gradient-to-b from-tastelanc-surface to-tastelanc-accent/10">
         <div className="max-w-7xl mx-auto">
           {/* Mobile Layout - Side by Side */}
           <div className="md:hidden">
             <div className="flex items-start gap-4 mb-6">
-              {/* Rosie Avatar - Mobile */}
+              {/* AI Avatar - Mobile */}
               <div className="relative flex-shrink-0">
-                <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-2xl scale-150" />
-                <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-purple-500/30 shadow-xl shadow-purple-500/20">
-                  <video
-                    src="/images/rosie_dark_animated.mp4"
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="w-full h-full object-cover"
-                  />
+                <div className="absolute inset-0 bg-tastelanc-accent/20 rounded-full blur-2xl scale-150" />
+                <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-tastelanc-accent/30 shadow-xl shadow-tastelanc-accent/20">
+                  {BRAND.aiAvatarVideo ? (
+                    <video
+                      src={BRAND.aiAvatarVideo}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-tastelanc-accent/20 flex items-center justify-center">
+                      <Sparkles className="w-10 h-10 text-tastelanc-accent" />
+                    </div>
+                  )}
                 </div>
               </div>
               {/* Header - Mobile */}
               <div className="flex-1 pt-2">
-                <div className="inline-flex items-center gap-2 bg-purple-500/20 border border-purple-500/30 rounded-full px-3 py-1 mb-2">
-                  <Sparkles className="w-3 h-3 text-purple-400" />
-                  <span className="text-purple-400 font-medium text-xs">AI-Powered</span>
+                <div className="inline-flex items-center gap-2 bg-tastelanc-accent/20 border border-tastelanc-accent/30 rounded-full px-3 py-1 mb-2">
+                  <Sparkles className="w-3 h-3 text-tastelanc-accent" />
+                  <span className="text-tastelanc-accent font-medium text-xs">AI-Powered</span>
                 </div>
                 <h3 className="text-2xl font-bold text-white">
-                  Meet <span className="text-purple-400">{BRAND.aiName}</span>
+                  Meet <span className="text-tastelanc-accent">{BRAND.aiName}</span>
                 </h3>
               </div>
             </div>
@@ -389,8 +394,8 @@ export default function HomePage() {
                 `Knows ${BRAND.countyShort}'s dining scene inside and out`,
               ].map((item, index) => (
                 <li key={index} className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Check className="w-3 h-3 text-purple-400" />
+                  <div className="w-5 h-5 rounded-full bg-tastelanc-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Check className="w-3 h-3 text-tastelanc-accent" />
                   </div>
                   <span className="text-gray-400 text-sm">{item}</span>
                 </li>
@@ -398,7 +403,7 @@ export default function HomePage() {
             </ul>
             <button
               onClick={openChat}
-              className="w-full inline-flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white font-bold px-6 py-4 rounded-lg transition-all shadow-lg shadow-purple-500/25"
+              className="w-full inline-flex items-center justify-center gap-2 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white font-bold px-6 py-4 rounded-lg transition-all shadow-lg shadow-tastelanc-accent/25"
             >
               <MessageCircle className="w-5 h-5" />
               Chat with {BRAND.aiName} Now
@@ -406,8 +411,8 @@ export default function HomePage() {
             </button>
             <p className="text-gray-500 text-sm mt-3 text-center">Free to try - no sign up required</p>
 
-            {/* Additional Rosie benefits - Mobile */}
-            <div className="mt-6 pt-6 border-t border-purple-500/20">
+            {/* Additional AI benefits - Mobile */}
+            <div className="mt-6 pt-6 border-t border-tastelanc-accent/20">
               <div className="grid grid-cols-1 gap-3">
                 {[
                   'Helps you decide where to go — without endless scrolling',
@@ -416,7 +421,7 @@ export default function HomePage() {
                   `Makes exploring ${BRAND.countyShort} feel effortless`,
                 ].map((item, index) => (
                   <div key={index} className="flex items-start gap-2">
-                    <Sparkles className="w-4 h-4 text-purple-400 flex-shrink-0 mt-0.5" />
+                    <Sparkles className="w-4 h-4 text-tastelanc-accent flex-shrink-0 mt-0.5" />
                     <span className="text-gray-400 text-sm">{item}</span>
                   </div>
                 ))}
@@ -426,31 +431,37 @@ export default function HomePage() {
 
           {/* Desktop Layout - Original */}
           <div className="hidden md:grid md:grid-cols-2 gap-12 items-center">
-            {/* Rosie Visual */}
+            {/* AI Visual */}
             <div className="relative flex justify-center">
               <div className="relative">
-                <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-3xl scale-150" />
-                <div className="relative w-80 h-80 rounded-full overflow-hidden border-4 border-purple-500/30 shadow-2xl shadow-purple-500/20">
-                  <video
-                    src="/images/rosie_dark_animated.mp4"
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="w-full h-full object-cover"
-                  />
+                <div className="absolute inset-0 bg-tastelanc-accent/20 rounded-full blur-3xl scale-150" />
+                <div className="relative w-80 h-80 rounded-full overflow-hidden border-4 border-tastelanc-accent/30 shadow-2xl shadow-tastelanc-accent/20">
+                  {BRAND.aiAvatarVideo ? (
+                    <video
+                      src={BRAND.aiAvatarVideo}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-tastelanc-accent/10 flex items-center justify-center">
+                      <Sparkles className="w-24 h-24 text-tastelanc-accent" />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Rosie Content */}
+            {/* AI Content */}
             <div>
-              <div className="inline-flex items-center gap-2 bg-purple-500/20 border border-purple-500/30 rounded-full px-4 py-2 mb-6">
-                <Sparkles className="w-4 h-4 text-purple-400" />
-                <span className="text-purple-400 font-medium text-sm">AI-Powered Assistant</span>
+              <div className="inline-flex items-center gap-2 bg-tastelanc-accent/20 border border-tastelanc-accent/30 rounded-full px-4 py-2 mb-6">
+                <Sparkles className="w-4 h-4 text-tastelanc-accent" />
+                <span className="text-tastelanc-accent font-medium text-sm">AI-Powered Assistant</span>
               </div>
               <h3 className="text-4xl font-bold text-white mb-4">
-                Meet <span className="text-purple-400">{BRAND.aiName}</span>
+                Meet <span className="text-tastelanc-accent">{BRAND.aiName}</span>
               </h3>
               <p className="text-xl text-gray-300 mb-6">
                 Your personal {BRAND.countyShort} dining and nightlife expert. Ask {BRAND.aiName} anything about restaurants, happy hours, events, and the best places to eat and drink.
@@ -463,8 +474,8 @@ export default function HomePage() {
                   `Knows ${BRAND.countyShort}'s dining scene inside and out`,
                 ].map((item, index) => (
                   <li key={index} className="flex items-start gap-3">
-                    <div className="w-5 h-5 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="w-3 h-3 text-purple-400" />
+                    <div className="w-5 h-5 rounded-full bg-tastelanc-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Check className="w-3 h-3 text-tastelanc-accent" />
                     </div>
                     <span className="text-gray-400">{item}</span>
                   </li>
@@ -472,7 +483,7 @@ export default function HomePage() {
               </ul>
               <button
                 onClick={openChat}
-                className="inline-flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white font-bold px-8 py-4 rounded-lg transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
+                className="inline-flex items-center gap-2 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white font-bold px-8 py-4 rounded-lg transition-all shadow-lg shadow-tastelanc-accent/25 hover:shadow-tastelanc-accent/40"
               >
                 <MessageCircle className="w-5 h-5" />
                 Chat with {BRAND.aiName} Now
@@ -480,8 +491,8 @@ export default function HomePage() {
               </button>
               <p className="text-gray-500 text-sm mt-3">Free to try - no sign up required</p>
 
-              {/* Additional Rosie benefits */}
-              <div className="mt-8 pt-8 border-t border-purple-500/20">
+              {/* Additional AI benefits */}
+              <div className="mt-8 pt-8 border-t border-tastelanc-accent/20">
                 <div className="grid grid-cols-2 gap-4">
                   {[
                     'Helps you decide where to go — without endless scrolling',
@@ -490,7 +501,7 @@ export default function HomePage() {
                     `Makes exploring ${BRAND.countyShort} feel effortless`,
                   ].map((item, index) => (
                     <div key={index} className="flex items-start gap-2">
-                      <Sparkles className="w-4 h-4 text-purple-400 flex-shrink-0 mt-0.5" />
+                      <Sparkles className="w-4 h-4 text-tastelanc-accent flex-shrink-0 mt-0.5" />
                       <span className="text-gray-400 text-sm">{item}</span>
                     </div>
                   ))}
@@ -877,7 +888,7 @@ export default function HomePage() {
                                   : index === 2
                                   ? '/images/demo_rewards_screen.png'
                                   : index === 3
-                                  ? '/images/demo_rosie_screen.png'
+                                  ? '/images/demo_discover_screen.png'
                                   : '/images/demo_vote_screen.png'
                               }
                               alt={screen.title}
@@ -1068,7 +1079,7 @@ export default function HomePage() {
       {/* Footer */}
       <Footer />
 
-      {/* Rosie Chat Widget */}
+      {/* AI Chat Widget */}
       <RosieChatBubble />
     </main>
   );
