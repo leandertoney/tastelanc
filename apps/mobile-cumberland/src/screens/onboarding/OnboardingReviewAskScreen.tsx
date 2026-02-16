@@ -120,7 +120,7 @@ export default function OnboardingReviewAskScreen({ navigation }: Props) {
             </Text>
             {selectedOption === 'positive' && (
               <View style={styles.checkmark}>
-                <Ionicons name="checkmark" size={20} color={colors.text} />
+                <Ionicons name="checkmark" size={20} color={colors.textOnAccent} />
               </View>
             )}
           </AnimatedTouchable>
@@ -143,7 +143,7 @@ export default function OnboardingReviewAskScreen({ navigation }: Props) {
             </Text>
             {selectedOption === 'neutral' && (
               <View style={styles.checkmark}>
-                <Ionicons name="checkmark" size={20} color={colors.text} />
+                <Ionicons name="checkmark" size={20} color={colors.textOnAccent} />
               </View>
             )}
           </AnimatedTouchable>

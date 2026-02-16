@@ -36,6 +36,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   labelSelected: {
-    color: colors.text,
+    color: colors.textOnAccent,
   },
 });
