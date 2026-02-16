@@ -459,12 +459,23 @@ export default function SearchScreen() {
           {/* Neighborhood boundary polygons (no tappable/onPress — handled via map onPress) */}
           {showNeighborhoods &&
             NEIGHBORHOOD_BOUNDARIES.map((hood) => {
+              // Skip polygons with invalid coordinates to prevent native crash
+              const validCoords = hood.coordinates?.filter(
+                (c) =>
+                  c != null &&
+                  typeof c.latitude === 'number' &&
+                  typeof c.longitude === 'number' &&
+                  !isNaN(c.latitude) &&
+                  !isNaN(c.longitude)
+              );
+              if (!validCoords || validCoords.length < 3) return null;
+
               const isSelected = selectedNeighborhood === hood.slug;
               const isDimmed = selectedNeighborhood != null && !isSelected;
               return (
                 <Polygon
                   key={hood.slug}
-                  coordinates={hood.coordinates}
+                  coordinates={validCoords}
                   fillColor={
                     isSelected
                       ? hood.fillColor.replace('0.12)', '0.25)')

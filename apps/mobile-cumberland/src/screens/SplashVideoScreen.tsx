@@ -86,7 +86,7 @@ export default function SplashVideoScreen({ onComplete }: SplashVideoScreenProps
       <VideoView
         player={player}
         style={styles.video}
-        contentFit="cover"
+        contentFit="contain"
         nativeControls={false}
       />
     </Animated.View>
