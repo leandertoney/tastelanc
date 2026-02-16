@@ -13,7 +13,7 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-tastelanc-bg">
+    <div className="min-h-screen bg-tastelanc-header-bg">
       {children}
     </div>
   );

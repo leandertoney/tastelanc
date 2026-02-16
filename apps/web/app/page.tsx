@@ -221,7 +221,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-tastelanc-bg">
       {/* Header */}
-      <header className="border-b border-tastelanc-surface-light sticky top-0 bg-tastelanc-header-bg/95 backdrop-blur-sm z-50">
+      <header className="border-b border-tastelanc-header-text/10 sticky top-0 bg-tastelanc-header-bg/95 backdrop-blur-sm z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center">
             <Image
@@ -234,13 +234,13 @@ export default function HomePage() {
             />
           </Link>
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/blog" className="text-gray-300 hover:text-white transition-colors">
+            <Link href="/blog" className="text-tastelanc-header-text/70 hover:text-tastelanc-header-text transition-colors">
               Blog
             </Link>
-            <a href="#tonight" className="text-gray-300 hover:text-white transition-colors">
+            <a href="#tonight" className="text-tastelanc-header-text/70 hover:text-tastelanc-header-text transition-colors">
               Features
             </a>
-            <a href="#app-preview" className="text-gray-300 hover:text-white transition-colors">
+            <a href="#app-preview" className="text-tastelanc-header-text/70 hover:text-tastelanc-header-text transition-colors">
               App Preview
             </a>
             <NavDownloadLink />
@@ -248,7 +248,7 @@ export default function HomePage() {
           <div className="flex items-center gap-4">
             <Link
               href="/login"
-              className="hidden md:inline-block text-gray-300 hover:text-white transition-colors"
+              className="hidden md:inline-block text-tastelanc-header-text/70 hover:text-tastelanc-header-text transition-colors"
             >
               Sign In
             </Link>
@@ -287,19 +287,6 @@ export default function HomePage() {
         </div>
 
         <div className="max-w-5xl mx-auto text-center relative z-10">
-          {/* Animated Logo */}
-          <div className="mb-8">
-            <div className="relative mx-auto h-[160px] w-[160px] md:h-[190px] md:w-[190px]">
-              <Image
-                src={BRAND.logoPath}
-                alt={BRAND.name}
-                width={220}
-                height={220}
-                className="relative w-40 h-40 md:w-48 md:h-48 mx-auto object-contain animate-logo drop-shadow-[0_0_30px_rgba(0,0,0,0.6)]"
-              />
-            </div>
-          </div>
-
           <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold text-white mb-6 leading-tight hero-text-glow">
             Discover {BRAND.countyShort}&apos;s
             <span className="text-tastelanc-accent block hero-highlight-shadow">Dining & Nightlife</span>

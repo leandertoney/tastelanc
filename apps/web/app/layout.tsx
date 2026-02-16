@@ -21,6 +21,7 @@ const brandCssVars = `
   --brand-surface: ${hexToRgb(BRAND.colors.surface)};
   --brand-surface-light: ${hexToRgb(BRAND.colors.surfaceLight)};
   --brand-header-bg: ${hexToRgb(BRAND.colors.headerBg)};
+  --brand-header-text: ${hexToRgb(BRAND.colors.headerText)};
   --brand-accent-hex: ${BRAND.colors.accent};
   --brand-gold-hex: ${BRAND.colors.gold};
 }

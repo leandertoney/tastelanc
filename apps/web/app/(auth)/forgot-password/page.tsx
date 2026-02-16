@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import { resetPassword } from '@/lib/supabase/auth';
+import { BRAND } from '@/config/market';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -35,8 +36,8 @@ export default function ForgotPasswordPage() {
         <div className="text-center mb-8">
           <Link href="/">
             <Image
-              src="/images/tastelanc_new_dark.png"
-              alt="TasteLanc"
+              src={BRAND.logoPath}
+              alt={BRAND.name}
               width={180}
               height={54}
               className="h-12 w-auto mx-auto mb-8"
@@ -48,11 +49,11 @@ export default function ForgotPasswordPage() {
               <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-8 h-8 text-green-500" />
               </div>
-              <h2 className="text-2xl font-bold text-white">Check your email</h2>
-              <p className="text-gray-400 mt-2">
-                We sent a password reset link to <strong className="text-white">{email}</strong>
+              <h2 className="text-2xl font-bold text-tastelanc-header-text">Check your email</h2>
+              <p className="text-tastelanc-header-text/60 mt-2">
+                We sent a password reset link to <strong className="text-tastelanc-header-text">{email}</strong>
               </p>
-              <p className="text-gray-500 text-sm mt-4">
+              <p className="text-tastelanc-header-text/40 text-sm mt-4">
                 Didn&apos;t receive the email? Check your spam folder or{' '}
                 <button
                   onClick={() => setSuccess(false)}
@@ -64,8 +65,8 @@ export default function ForgotPasswordPage() {
             </>
           ) : (
             <>
-              <h2 className="text-2xl font-bold text-white">Forgot your password?</h2>
-              <p className="text-gray-400 mt-2">
+              <h2 className="text-2xl font-bold text-tastelanc-header-text">Forgot your password?</h2>
+              <p className="text-tastelanc-header-text/60 mt-2">
                 Enter your email and we&apos;ll send you a link to reset your password.
               </p>
             </>
@@ -75,24 +76,24 @@ export default function ForgotPasswordPage() {
         {!success && (
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="bg-red-900/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-red-500/10 border border-red-500/30 text-red-600 px-4 py-3 rounded-lg text-sm">
                 {error}
               </div>
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-tastelanc-header-text/70 mb-2">
                 Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-tastelanc-header-text/40" />
                 <input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full pl-10 pr-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  className="w-full pl-10 pr-4 py-3 bg-tastelanc-header-text/5 border border-tastelanc-header-text/15 rounded-lg text-tastelanc-header-text placeholder-tastelanc-header-text/30 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                   required
                 />
               </div>
@@ -109,7 +110,7 @@ export default function ForgotPasswordPage() {
         )}
 
         <div className="text-center mt-8">
-          <Link href="/login" className="text-gray-400 hover:text-white text-sm inline-flex items-center gap-2">
+          <Link href="/login" className="text-tastelanc-header-text/60 hover:text-tastelanc-header-text text-sm inline-flex items-center gap-2">
             <ArrowLeft className="w-4 h-4" />
             Back to login
           </Link>
