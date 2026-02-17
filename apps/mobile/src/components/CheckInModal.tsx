@@ -13,8 +13,10 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useQueryClient } from '@tanstack/react-query';
 import { colors, radius } from '../constants/colors';
 import { recordCheckIn, canCheckIn } from '../lib/checkins';
+import { recordPassiveVisit } from '../lib/visits';
 import { useAuth } from '../hooks/useAuth';
 import { useRecordCheckinForSocialProof } from '../hooks/useSocialProof';
 
@@ -36,6 +38,7 @@ export default function CheckInModal({
   restaurantPin = '1234', // Default PIN for demo
 }: CheckInModalProps) {
   const { userId } = useAuth();
+  const queryClient = useQueryClient();
   const recordCheckinForSocialProof = useRecordCheckinForSocialProof();
   const [pin, setPin] = useState(['', '', '', '']);
   const [state, setState] = useState<CheckInState>('input');
@@ -127,6 +130,18 @@ export default function CheckInModal({
       if (result.success) {
         // Also record to Supabase for social proof aggregation
         recordCheckinForSocialProof(restaurantId, restaurantName);
+
+        // Bridge to voting system: record visit so user can vote for this restaurant
+        recordPassiveVisit(userId, restaurantId, 'checkin')
+          .then((visitResult) => {
+            if (!visitResult.error) {
+              queryClient.invalidateQueries({ queryKey: ['voting', 'eligibility'] });
+              queryClient.invalidateQueries({ queryKey: ['visits', userId] });
+            }
+          })
+          .catch((err) => {
+            console.warn('[CheckInModal] Failed to record visit for voting:', err);
+          });
 
         setState('success');
         setPointsEarned(10);
