@@ -1,5 +1,5 @@
-import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react';
+import { View, Animated, ActivityIndicator, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RootNavigator from './RootNavigator';
@@ -68,6 +68,8 @@ export default function Navigation() {
   const [isLoading, setIsLoading] = useState(true);
   const [splashDone, setSplashDone] = useState(false);
   const [navReady, setNavReady] = useState(false);
+  const [overlayRemoved, setOverlayRemoved] = useState(false);
+  const overlayOpacity = useRef(new Animated.Value(1)).current;
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
   // Initialize SDKs once on mount (all wrapped in try/catch for production resilience)
@@ -108,7 +110,20 @@ export default function Navigation() {
     setNavReady(true);
   }, []);
 
-  // Safety net: if navigation takes too long to report ready, remove overlay anyway
+  // When navigation is ready, fade out the overlay to force native repaint
+  useEffect(() => {
+    if (navReady && !overlayRemoved) {
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        setOverlayRemoved(true);
+      });
+    }
+  }, [navReady, overlayRemoved, overlayOpacity]);
+
+  // Safety net: if navigation takes too long to report ready, force it
   useEffect(() => {
     if (splashDone && !navReady) {
       const timeout = setTimeout(() => {
@@ -183,9 +198,9 @@ export default function Navigation() {
         </AuthProvider>
       )}
 
-      {/* Overlay: splash video OR dark bridge until navigation is painted */}
-      {!navReady && (
-        <View style={[StyleSheet.absoluteFill, styles.splashOverlay]}>
+      {/* Overlay: splash video → dark bridge → fade out to reveal navigation */}
+      {!overlayRemoved && (
+        <Animated.View style={[StyleSheet.absoluteFill, styles.splashOverlay, { opacity: overlayOpacity }]}>
           {!splashDone ? (
             <ErrorBoundary
               level="section"
@@ -196,7 +211,7 @@ export default function Navigation() {
           ) : (
             <View style={styles.splashFallback} />
           )}
-        </View>
+        </Animated.View>
       )}
     </>
   );

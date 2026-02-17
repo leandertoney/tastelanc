@@ -10,7 +10,6 @@ import {
   Image,
   ViewToken,
 } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useInfiniteQuery, useQueryClient, useQuery } from '@tanstack/react-query';
@@ -277,7 +276,6 @@ export default function HomeScreen() {
   }
 
   return (
-    <GestureHandlerRootView style={styles.gestureRoot}>
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <FlatList
           data={listData}
@@ -322,14 +320,10 @@ export default function HomeScreen() {
           }}
         />
       </SafeAreaView>
-    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
-  gestureRoot: {
-    flex: 1,
-  },
   container: {
     flex: 1,
     backgroundColor: colors.primary,
