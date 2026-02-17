@@ -1,5 +1,5 @@
-// Quick script to generate a blog post immediately
-// Run with: npx tsx scripts/generate-blog-now.ts
+// Quick script to generate a blog post immediately for any market
+// Run with: npx tsx scripts/generate-blog-now.ts [--market cumberland-pa]
 
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
@@ -15,8 +15,19 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Parse --market arg
+const marketArg = process.argv.find((a, i) => process.argv[i - 1] === '--market') || 'lancaster-pa';
+
+// Market configs (inline to avoid Next.js import issues)
+const MARKET_BRANDS: Record<string, { name: string; aiName: string; countyShort: string; domain: string }> = {
+  'lancaster-pa': { name: 'TasteLanc', aiName: 'Rosie', countyShort: 'Lancaster', domain: 'tastelanc.com' },
+  'cumberland-pa': { name: 'TasteCumberland', aiName: 'Mollie', countyShort: 'Cumberland', domain: 'cumberland.tastelanc.com' },
+};
+
+const brand = MARKET_BRANDS[marketArg] || MARKET_BRANDS['lancaster-pa'];
+
 const TOPICS = [
-  { id: 'friday-vibes', prompt: 'Write about the best Friday night dining options in Lancaster. Where to start the weekend right - happy hours transitioning to dinner, lively atmospheres, group-friendly spots.' },
+  { id: 'friday-vibes', prompt: `Write about the best Friday night dining options in ${brand.countyShort}. Where to start the weekend right - happy hours transitioning to dinner, lively atmospheres, group-friendly spots.` },
 ];
 
 /**
@@ -73,12 +84,27 @@ function extractCoverImage(
 }
 
 async function main() {
-  console.log('Generating blog post...');
+  console.log(`Generating blog post for ${brand.name} (${brand.aiName})...`);
 
-  // Fetch restaurants
+  // Resolve market ID
+  const { data: marketRow, error: marketErr } = await supabase
+    .from('markets')
+    .select('id')
+    .eq('slug', marketArg)
+    .eq('is_active', true)
+    .single();
+
+  if (marketErr || !marketRow) {
+    console.error(`Market "${marketArg}" not found or inactive`);
+    process.exit(1);
+  }
+  const marketId = marketRow.id;
+
+  // Fetch restaurants for this market
   const { data: restaurants } = await supabase
     .from('restaurants')
     .select('name, slug, categories, cover_image_url')
+    .eq('market_id', marketId)
     .eq('is_active', true)
     .not('cover_image_url', 'is', null)
     .order('name');
@@ -98,7 +124,7 @@ async function main() {
     .map(r => `- ${r.name} (slug: ${r.slug}) [${r.categories?.join(', ') || ''}]`)
     .join('\n');
 
-  const systemPrompt = `You are Rosie, TasteLanc's food authority for Lancaster, PA. Write engaging blog posts.
+  const systemPrompt = `You are ${brand.aiName}, ${brand.name}'s food authority for ${brand.countyShort}, PA. Write engaging blog posts.
 
 ## RESTAURANTS (${restaurants.length} total)
 ${restaurantList}
@@ -118,7 +144,7 @@ ${restaurantList}
     year: 'numeric',
   });
 
-  const userPrompt = `Today is ${today}. It's winter in Lancaster.
+  const userPrompt = `Today is ${today}.
 
 ${TOPICS[0].prompt}
 
@@ -180,9 +206,10 @@ Be specific, be opinionated, and make it valuable.`;
     title: parsed.title,
     summary: parsed.summary,
     body_html: parsed.body_html,
-    tags: parsed.tags || ['lancaster', 'tastelanc'],
+    tags: parsed.tags || [brand.countyShort.toLowerCase(), brand.name.toLowerCase()],
     cover_image_url: coverImageUrl,
     featured_restaurants: featuredRestaurants.length ? featuredRestaurants : null,
+    market_id: marketId,
     status: 'published',
     published_at: now,
     created_at: now,
@@ -194,7 +221,7 @@ Be specific, be opinionated, and make it valuable.`;
   }
 
   console.log(`\nPublished: ${parsed.title}`);
-  console.log(`URL: https://tastelanc.com/blog/${slug}`);
+  console.log(`URL: https://${brand.domain}/blog/${slug}`);
   console.log(`Cover image: ${coverImageUrl ? 'yes' : 'none (no unique image available)'}`);
 
   // Send push notifications

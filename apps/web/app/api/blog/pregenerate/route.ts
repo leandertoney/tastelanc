@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { createClient as createSupabaseAdmin } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import { Resend } from 'resend';
-import { MARKET_SLUG, BRAND } from '@/config/market';
+import { MARKET_SLUG, BRAND, getMarketConfig, type MarketBrand } from '@/config/market';
+import { getMarketKnowledge } from '@/config/market-knowledge';
 import {
   buildBlogSystemPrompt,
   getBlogTopicPrompt,
@@ -20,13 +21,13 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 // HOLIDAY CONTEXT
 // ─────────────────────────────────────────────────────────
 
-function getHolidayContext(): { name: string; prompt: string } | null {
+function getHolidayContext(brand: MarketBrand): { name: string; prompt: string } | null {
   const now = new Date();
   const month = now.getMonth();
   const day = now.getDate();
   const dayOfWeek = now.getDay();
 
-  if (month === 11 && day === 31) return { name: "New Year's Eve", prompt: `It's New Year's Eve! Consider how ${BRAND.countyShort} restaurants celebrate tonight - special prix fixe menus, champagne toasts, countdown parties, late-night dining.` };
+  if (month === 11 && day === 31) return { name: "New Year's Eve", prompt: `It's New Year's Eve! Consider how ${brand.countyShort} restaurants celebrate tonight - special prix fixe menus, champagne toasts, countdown parties, late-night dining.` };
   if (month === 0 && day === 1) return { name: "New Year's Day", prompt: `Happy New Year! Consider recovery brunch spots, comfort food for the first day of the year.` };
   if (month === 1 && (day === 13 || day === 14)) return { name: day === 14 ? "Valentine's Day" : "Valentine's Day Eve", prompt: `It's ${day === 14 ? "Valentine's Day" : "almost Valentine's Day"}! Focus on romantic dining - intimate spots, special tasting menus, best date night restaurants.` };
   if (month === 2 && day === 17) return { name: "St. Patrick's Day", prompt: `Happy St. Patrick's Day! Where to find the best Irish fare, green beer, corned beef and celebrations.` };
@@ -321,17 +322,18 @@ async function fetchBlogContext(
 // FAILURE NOTIFICATION
 // ─────────────────────────────────────────────────────────
 
-async function sendFailureNotification(error: string, scheduledFor: Date): Promise<void> {
+async function sendFailureNotification(error: string, scheduledFor: Date, brand: MarketBrand): Promise<void> {
   const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'admin@tastelanc.com';
   try {
     await resend.emails.send({
-      from: `${BRAND.name} <alerts@${BRAND.domain}>`,
+      from: `${brand.name} <alerts@${brand.domain}>`,
       to: adminEmail,
-      subject: 'Blog Pre-Generation Failed - Action Required',
-      html: `<h2>Blog Pre-Generation Failed</h2>
+      subject: `[${brand.name}] Blog Pre-Generation Failed - Action Required`,
+      html: `<h2>${brand.name} Blog Pre-Generation Failed</h2>
+        <p><strong>Market:</strong> ${brand.county}</p>
         <p><strong>Scheduled:</strong> ${scheduledFor.toLocaleString('en-US', { timeZone: 'America/New_York' })} EST</p>
         <p><strong>Error:</strong></p><pre>${error}</pre>
-        <p>Please manually generate at <a href="https://${BRAND.domain}/admin">admin panel</a></p>`,
+        <p>Please manually generate at <a href="https://${brand.domain}/admin">admin panel</a></p>`,
     });
   } catch (e) {
     console.error('Failed to send notification:', e);
@@ -359,17 +361,24 @@ export async function POST(request: Request) {
       throw new Error('Missing required environment variables');
     }
 
+    // Resolve market from body param or env var
+    const marketSlug = (body as { market_slug?: string }).market_slug || MARKET_SLUG;
+    const brand = getMarketConfig(marketSlug) || BRAND;
+    const knowledge = getMarketKnowledge(marketSlug);
+
     const supabase = createSupabaseAdmin(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
-    // Resolve market
+    // Resolve market ID from database
     const { data: marketRow, error: marketErr } = await supabase
       .from('markets')
       .select('id')
-      .eq('slug', MARKET_SLUG)
+      .eq('slug', marketSlug)
       .eq('is_active', true)
       .single();
-    if (marketErr || !marketRow) throw new Error(`Market "${MARKET_SLUG}" not found or inactive`);
+    if (marketErr || !marketRow) throw new Error(`Market "${marketSlug}" not found or inactive`);
     const marketId = marketRow.id;
+
+    console.log(`Generating for market: ${brand.name} (${marketSlug})`);
 
     // Calculate publish time (6 AM EST = 11 AM UTC)
     const publishAt = new Date();
@@ -404,8 +413,8 @@ export async function POST(request: Request) {
     const recentlyFeatured = await fetchRecentlyFeaturedRestaurants(supabase, 10);
     console.log(`${recentlyFeatured.size} recently featured restaurants`);
 
-    // Build system prompt with recently featured exclusion
-    const systemPrompt = buildBlogSystemPrompt(context, recentlyFeatured);
+    // Build system prompt with recently featured exclusion + market overrides
+    const systemPrompt = buildBlogSystemPrompt(context, recentlyFeatured, brand, knowledge);
 
     // Pick topic
     const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
@@ -413,15 +422,15 @@ export async function POST(request: Request) {
     const topic = BLOG_TOPICS[topicIndex];
 
     // Build user prompt — holiday-aware
-    const holidayContext = getHolidayContext();
+    const holidayContext = getHolidayContext(brand);
     let userPrompt: string;
 
     if (holidayContext) {
       const dateStr = publishAt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-      userPrompt = `Post for ${dateStr}.\n\n${holidayContext.prompt}\n\nWhile keeping the holiday theme central, you can also incorporate elements from this topic if relevant: ${getBlogTopicPrompt(topic.id, context)}\n\nBe specific and opinionated.`;
+      userPrompt = `Post for ${dateStr}.\n\n${holidayContext.prompt}\n\nWhile keeping the holiday theme central, you can also incorporate elements from this topic if relevant: ${getBlogTopicPrompt(topic.id, context, brand)}\n\nBe specific and opinionated.`;
       console.log(`Holiday detected: ${holidayContext.name}`);
     } else {
-      userPrompt = getBlogTopicPrompt(topic.id, context);
+      userPrompt = getBlogTopicPrompt(topic.id, context, brand);
     }
 
     console.log(`Generating blog for topic: ${topic.id}`);
@@ -479,7 +488,7 @@ export async function POST(request: Request) {
       title: parsed.title,
       summary: parsed.summary,
       body_html: parsed.body_html,
-      tags: parsed.tags || [BRAND.countyShort.toLowerCase(), BRAND.name.toLowerCase()],
+      tags: parsed.tags || [brand.countyShort.toLowerCase(), brand.name.toLowerCase()],
       cover_image_url: coverImageUrl,
       cover_image_data: coverData.images.length > 0 ? JSON.stringify(coverData) : null,
       featured_restaurants: featuredRestaurants.length ? featuredRestaurants : null,
@@ -513,7 +522,7 @@ export async function POST(request: Request) {
       if (publishAt.getTime() <= Date.now()) publishAt.setDate(publishAt.getDate() + 1);
 
       await supabase.from('blog_generation_failures').insert({ scheduled_for: publishAt.toISOString(), error_message: errorMessage });
-      await sendFailureNotification(errorMessage, publishAt);
+      await sendFailureNotification(errorMessage, publishAt, BRAND);
     } catch (e) {
       console.error('Failed to record failure:', e);
     }
