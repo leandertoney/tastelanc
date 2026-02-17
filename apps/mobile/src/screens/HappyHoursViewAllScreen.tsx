@@ -158,7 +158,7 @@ export default function HappyHoursViewAllScreen() {
         imageUrl={item.restaurant.cover_image_url}
         title={item.restaurant.name}
         accentText={dealText}
-        subtitle={`${formatTimeWindow(item.start_time, item.end_time)} \u00B7 ${formatDays(item.days_of_week)}`}
+        subtitle={`${item.description || item.name} · ${formatTimeWindow(item.start_time, item.end_time)} · ${formatDays(item.days_of_week)}`}
         onPress={() => handlePress(item.restaurant.id)}
         fallbackIcon="beer"
       />
