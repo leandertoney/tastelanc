@@ -157,6 +157,8 @@ export function useRecordVisit() {
       // Invalidate caches
       queryClient.invalidateQueries({ queryKey: queryKeys.restaurants.recommendations });
       queryClient.invalidateQueries({ queryKey: ['visits', userId] });
+      // Invalidate voting eligibility so VoteRestaurantScreen reflects the new visit
+      queryClient.invalidateQueries({ queryKey: ['voting', 'eligibility'] });
     }
 
     return result;

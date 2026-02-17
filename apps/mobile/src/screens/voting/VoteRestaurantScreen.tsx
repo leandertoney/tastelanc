@@ -3,7 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
+  SectionList,
   TouchableOpacity,
   ActivityIndicator,
   Alert,
@@ -217,6 +217,33 @@ export default function VoteRestaurantScreen() {
     );
   });
 
+  // Split into eligible (can vote) and ineligible (need to visit) sections
+  const { eligibleRestaurants, ineligibleRestaurants } = useMemo(() => {
+    const eligible: Restaurant[] = [];
+    const ineligible: Restaurant[] = [];
+
+    filteredRestaurants.forEach((restaurant) => {
+      if (eligibilityMap[restaurant.id]) {
+        eligible.push(restaurant);
+      } else {
+        ineligible.push(restaurant);
+      }
+    });
+
+    return { eligibleRestaurants: eligible, ineligibleRestaurants: ineligible };
+  }, [filteredRestaurants, eligibilityMap]);
+
+  const sections = useMemo(() => {
+    const result: { title: string; data: Restaurant[]; eligible: boolean }[] = [];
+    if (eligibleRestaurants.length > 0) {
+      result.push({ title: 'Places You Can Vote For', data: eligibleRestaurants, eligible: true });
+    }
+    if (ineligibleRestaurants.length > 0) {
+      result.push({ title: 'Visit to Unlock', data: ineligibleRestaurants, eligible: false });
+    }
+    return result;
+  }, [eligibleRestaurants, ineligibleRestaurants]);
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       {/* Header */}
@@ -275,19 +302,44 @@ export default function VoteRestaurantScreen() {
             )}
           </View>
 
-          <FlatList
-            data={filteredRestaurants}
+          <SectionList
+            sections={sections}
             keyExtractor={(item) => item.id}
             renderItem={renderItem}
+            renderSectionHeader={({ section }) => (
+              <View style={styles.sectionHeader}>
+                <Ionicons
+                  name={section.eligible ? 'checkmark-circle' : 'lock-closed'}
+                  size={18}
+                  color={section.eligible ? colors.success : colors.textMuted}
+                />
+                <Text style={[
+                  styles.sectionHeaderText,
+                  !section.eligible && styles.sectionHeaderTextMuted,
+                ]}>
+                  {section.title}
+                </Text>
+              </View>
+            )}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
+            stickySectionHeadersEnabled={false}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <Text style={styles.emptyTitle}>No Restaurants</Text>
+                <Ionicons name="location-outline" size={48} color={colors.textMuted} />
+                <Text style={styles.emptyTitle}>
+                  {isCheckingEligibility
+                    ? 'Checking eligibility...'
+                    : searchQuery.trim()
+                      ? 'No matches found'
+                      : 'No Visits Yet'}
+                </Text>
                 <Text style={styles.emptySubtitle}>
-                  {searchQuery.trim()
-                    ? 'No matches found. Try a different name.'
-                    : 'No restaurants available for voting'}
+                  {isCheckingEligibility
+                    ? 'Please wait...'
+                    : searchQuery.trim()
+                      ? 'Try a different name.'
+                      : 'Tap "I\'m Here" at restaurants you visit to unlock voting!'}
                 </Text>
               </View>
             }
@@ -459,5 +511,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textMuted,
     textAlign: 'center',
+    paddingHorizontal: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    marginTop: 8,
+  },
+  sectionHeaderText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  sectionHeaderTextMuted: {
+    color: colors.textMuted,
+    fontWeight: '600',
   },
 });
