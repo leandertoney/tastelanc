@@ -48,6 +48,12 @@ export function useOpenStatuses() {
   });
 }
 
+/** Parse "HH:MM" or "HH:MM:SS" into minutes since midnight */
+function toMinutes(time: string): number {
+  const parts = time.split(':');
+  return parseInt(parts[0], 10) * 60 + parseInt(parts[1] || '0', 10);
+}
+
 /**
  * Returns whether a specific restaurant is currently open.
  * - `true` = open now
@@ -63,7 +69,14 @@ export function useIsOpen(restaurantId: string): boolean | null {
   if (h.is_closed || !h.open_time || !h.close_time) return false;
 
   const now = new Date();
-  const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+  const currentMin = now.getHours() * 60 + now.getMinutes();
+  const openMin = toMinutes(h.open_time);
+  const closeMin = toMinutes(h.close_time);
 
-  return currentTime >= h.open_time && currentTime <= h.close_time;
+  // Handle midnight-crossing (e.g. bar open 22:00–02:00)
+  if (closeMin <= openMin) {
+    return currentMin >= openMin || currentMin <= closeMin;
+  }
+
+  return currentMin >= openMin && currentMin <= closeMin;
 }
