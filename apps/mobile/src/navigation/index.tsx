@@ -45,14 +45,18 @@ function NotificationHandler({ children }: { children: React.ReactNode }) {
 }
 
 // Inner component that uses hooks requiring AuthProvider
-function NavigationInner({ hasCompletedOnboarding }: { hasCompletedOnboarding: boolean }) {
+function NavigationInner({
+  hasCompletedOnboarding,
+  onReady,
+}: {
+  hasCompletedOnboarding: boolean;
+  onReady?: () => void;
+}) {
   // Initialize Radar visit tracking (listens for geofence events)
   useRadarVisits();
 
-  console.log('[NavigationInner] Rendering with hasCompletedOnboarding:', hasCompletedOnboarding);
-
   return (
-    <NavigationContainer>
+    <NavigationContainer onReady={onReady}>
       <NotificationHandler>
         {hasCompletedOnboarding ? <RootNavigator /> : <OnboardingNavigator />}
       </NotificationHandler>
@@ -62,7 +66,8 @@ function NavigationInner({ hasCompletedOnboarding }: { hasCompletedOnboarding: b
 
 export default function Navigation() {
   const [isLoading, setIsLoading] = useState(true);
-  const [showSplash, setShowSplash] = useState(true);
+  const [splashDone, setSplashDone] = useState(false);
+  const [navReady, setNavReady] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
   // Initialize SDKs once on mount (all wrapped in try/catch for production resilience)
@@ -93,10 +98,26 @@ export default function Navigation() {
     checkOnboardingStatus();
   }, []);
 
-  // Handle splash video completion
+  // Handle splash video completion — start mounting navigation tree
   const handleSplashComplete = useCallback(() => {
-    setShowSplash(false);
+    setSplashDone(true);
   }, []);
+
+  // Handle navigation ready — content is painted, safe to remove overlay
+  const handleNavReady = useCallback(() => {
+    setNavReady(true);
+  }, []);
+
+  // Safety net: if navigation takes too long to report ready, remove overlay anyway
+  useEffect(() => {
+    if (splashDone && !navReady) {
+      const timeout = setTimeout(() => {
+        console.warn('[Navigation] Nav onReady timeout — forcing overlay removal');
+        setNavReady(true);
+      }, 3000);
+      return () => clearTimeout(timeout);
+    }
+  }, [splashDone, navReady]);
 
   const checkOnboardingStatus = async () => {
     try {
@@ -137,35 +158,44 @@ export default function Navigation() {
 
   return (
     <>
-      {/* Render navigation tree immediately so it mounts and paints behind the splash */}
-      <AuthProvider>
-        <MarketProvider>
-          <EmailGateProvider>
-            <SignUpModalProvider>
-              <NavigationContext.Provider value={{ restartOnboarding, finishOnboarding }}>
-                <OnboardingProvider>
-                  <ErrorBoundary
-                    level="section"
-                    fallback={<NavigationFallback hasCompletedOnboarding={hasCompletedOnboarding} />}
-                  >
-                    <NavigationInner hasCompletedOnboarding={hasCompletedOnboarding} />
-                  </ErrorBoundary>
-                </OnboardingProvider>
-              </NavigationContext.Provider>
-            </SignUpModalProvider>
-          </EmailGateProvider>
-        </MarketProvider>
-      </AuthProvider>
+      {/* Mount navigation tree once splash video finishes */}
+      {splashDone && (
+        <AuthProvider>
+          <MarketProvider>
+            <EmailGateProvider>
+              <SignUpModalProvider>
+                <NavigationContext.Provider value={{ restartOnboarding, finishOnboarding }}>
+                  <OnboardingProvider>
+                    <ErrorBoundary
+                      level="section"
+                      fallback={<NavigationFallback hasCompletedOnboarding={hasCompletedOnboarding} />}
+                    >
+                      <NavigationInner
+                        hasCompletedOnboarding={hasCompletedOnboarding}
+                        onReady={handleNavReady}
+                      />
+                    </ErrorBoundary>
+                  </OnboardingProvider>
+                </NavigationContext.Provider>
+              </SignUpModalProvider>
+            </EmailGateProvider>
+          </MarketProvider>
+        </AuthProvider>
+      )}
 
-      {/* Splash overlay on top — content renders behind it, no blank frame on dismiss */}
-      {showSplash && (
-        <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <ErrorBoundary
-            level="section"
-            fallback={<SplashFallback onComplete={handleSplashComplete} />}
-          >
-            <SplashVideoScreen onComplete={handleSplashComplete} />
-          </ErrorBoundary>
+      {/* Overlay: splash video OR dark bridge until navigation is painted */}
+      {!navReady && (
+        <View style={[StyleSheet.absoluteFill, styles.splashOverlay]}>
+          {!splashDone ? (
+            <ErrorBoundary
+              level="section"
+              fallback={<SplashFallback onComplete={handleSplashComplete} />}
+            >
+              <SplashVideoScreen onComplete={handleSplashComplete} />
+            </ErrorBoundary>
+          ) : (
+            <View style={styles.splashFallback} />
+          )}
         </View>
       )}
     </>
@@ -197,6 +227,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#FFF',
+  },
+  splashOverlay: {
+    zIndex: 10,
   },
   splashFallback: {
     flex: 1,
