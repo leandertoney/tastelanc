@@ -319,6 +319,157 @@ async function fetchBlogContext(
 }
 
 // ─────────────────────────────────────────────────────────
+// AUTOMATED REVIEW AGENT
+// ─────────────────────────────────────────────────────────
+
+interface ReviewResult {
+  passed: boolean;
+  score: number; // 1-10
+  issues: string[];
+  aiVerdict?: string;
+}
+
+/**
+ * Programmatic quality gates — fast checks with zero API cost.
+ */
+function runProgrammaticChecks(
+  parsed: { title: string; summary: string; body_html: string; tags?: string[] },
+  brand: MarketBrand,
+  restaurantSlugs: Set<string>,
+): { passed: boolean; issues: string[] } {
+  const issues: string[] = [];
+
+  // Word count (strip HTML tags)
+  const textOnly = parsed.body_html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const wordCount = textOnly.split(/\s+/).length;
+  if (wordCount < 400) issues.push(`Too short: ${wordCount} words (minimum 400)`);
+  if (wordCount > 1500) issues.push(`Too long: ${wordCount} words (maximum 1500)`);
+
+  // Restaurant links
+  const linkRegex = /href="\/restaurants\/([^"]+)"/g;
+  const links = Array.from(parsed.body_html.matchAll(linkRegex));
+  const uniqueLinkedSlugs = new Set(links.map(m => m[1]));
+  if (uniqueLinkedSlugs.size < 2) issues.push(`Only ${uniqueLinkedSlugs.size} restaurant links (minimum 2)`);
+
+  // Verify linked restaurants actually exist in this market
+  const invalidSlugs = Array.from(uniqueLinkedSlugs).filter(s => !restaurantSlugs.has(s));
+  if (invalidSlugs.length > 0) issues.push(`Links to non-existent restaurants: ${invalidSlugs.join(', ')}`);
+
+  // Valid HTML structure
+  if (!parsed.body_html.includes('<h2')) issues.push('Missing <h2> section headers');
+  if (!parsed.body_html.includes('<p')) issues.push('Missing <p> paragraph tags');
+
+  // Summary length
+  if (!parsed.summary || parsed.summary.length < 50) issues.push(`Summary too short: ${parsed.summary?.length || 0} chars`);
+  if (parsed.summary && parsed.summary.length > 250) issues.push(`Summary too long: ${parsed.summary.length} chars`);
+
+  // Title check
+  if (!parsed.title || parsed.title.length < 10) issues.push('Title too short');
+  if (parsed.title && parsed.title.length > 120) issues.push('Title too long');
+
+  // Cross-market contamination: check the other market's name doesn't appear
+  const otherMarkets = brand.name === 'TasteLanc'
+    ? ['TasteCumberland', 'Mollie', 'Cumberland County']
+    : ['TasteLanc', 'Rosie', 'Lancaster County'];
+  for (const term of otherMarkets) {
+    if (parsed.body_html.includes(term) || parsed.title.includes(term)) {
+      issues.push(`Cross-market contamination: mentions "${term}"`);
+    }
+  }
+
+  // Must include tags
+  if (!parsed.tags || parsed.tags.length === 0) issues.push('No tags provided');
+
+  return { passed: issues.length === 0, issues };
+}
+
+/**
+ * AI quality review — uses gpt-4o-mini for cost-effective evaluation.
+ * Checks voice, quality, market accuracy, and actionability.
+ */
+async function runAIReview(
+  parsed: { title: string; summary: string; body_html: string },
+  brand: MarketBrand,
+): Promise<{ score: number; verdict: string; issues: string[] }> {
+  try {
+    const reviewPrompt = `You are a blog editor reviewing a post written by ${brand.aiName}, the AI food personality for ${brand.name} (${brand.county}, ${brand.state}).
+
+Review this blog post and rate it 1-10 on these criteria:
+
+1. **Voice** (Is it ${brand.aiName}'s voice? Confident, warm, opinionated, not generic?)
+2. **Market accuracy** (Does it reference ${brand.countyShort} restaurants, neighborhoods, and culture correctly? No mentions of wrong markets?)
+3. **Engagement** (Does it have a strong hook? Is it interesting to read, not boring listicle filler?)
+4. **Actionability** (Does it give readers specific things to DO — places to go, dishes to order, times to visit?)
+5. **Quality** (Good writing? Proper structure? No repetitive filler? Reads like a real food blogger, not AI slop?)
+
+TITLE: ${parsed.title}
+SUMMARY: ${parsed.summary}
+BODY:
+${parsed.body_html.substring(0, 4000)}
+
+Respond with JSON only:
+{"score": <1-10>, "verdict": "<1 sentence overall assessment>", "issues": ["<issue 1>", "<issue 2>"]}
+
+A score of 7+ means publish-ready. Below 7 means it needs revision.`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      max_tokens: 500,
+      temperature: 0.2,
+      messages: [{ role: 'user', content: reviewPrompt }],
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) return { score: 7, verdict: 'Review unavailable', issues: [] };
+
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return { score: 7, verdict: 'Could not parse review', issues: [] };
+
+    const result = JSON.parse(jsonMatch[0]);
+    return {
+      score: Math.min(10, Math.max(1, Number(result.score) || 7)),
+      verdict: result.verdict || 'No verdict',
+      issues: Array.isArray(result.issues) ? result.issues : [],
+    };
+  } catch (error) {
+    console.error('AI review failed:', error);
+    // If review fails, don't block publishing — assume it's fine
+    return { score: 7, verdict: 'Review failed, defaulting to pass', issues: [] };
+  }
+}
+
+/**
+ * Full review pipeline: programmatic checks + AI quality review.
+ * Returns whether the post should be auto-scheduled or held for manual review.
+ */
+async function reviewBlogPost(
+  parsed: { title: string; summary: string; body_html: string; tags?: string[] },
+  brand: MarketBrand,
+  restaurantSlugs: Set<string>,
+): Promise<ReviewResult> {
+  // Step 1: Programmatic checks (fast, free)
+  const programmatic = runProgrammaticChecks(parsed, brand, restaurantSlugs);
+
+  // Step 2: AI quality review (cheap — gpt-4o-mini)
+  const ai = await runAIReview(parsed, brand);
+
+  const allIssues = [...programmatic.issues, ...ai.issues];
+  const passed = programmatic.passed && ai.score >= 7;
+
+  console.log(`Review: score=${ai.score}/10, programmatic=${programmatic.passed ? 'PASS' : 'FAIL'}, verdict="${ai.verdict}"`);
+  if (allIssues.length > 0) {
+    console.log(`Issues: ${allIssues.join(' | ')}`);
+  }
+
+  return {
+    passed,
+    score: ai.score,
+    issues: allIssues,
+    aiVerdict: ai.verdict,
+  };
+}
+
+// ─────────────────────────────────────────────────────────
 // FAILURE NOTIFICATION
 // ─────────────────────────────────────────────────────────
 
@@ -435,28 +586,58 @@ export async function POST(request: Request) {
 
     console.log(`Generating blog for topic: ${topic.id}`);
 
-    // Generate
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      max_tokens: 3000,
-      temperature: 0.8,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-    });
+    // Build set of valid restaurant slugs for this market
+    const validSlugs = new Set(context.restaurantData.map(r => r.slug));
 
-    const content = response.choices[0]?.message?.content;
-    if (!content) throw new Error('No response from OpenAI');
+    // Generate with review loop (max 2 attempts)
+    let parsed: { title: string; summary: string; body_html: string; tags?: string[] } | null = null;
+    let review: ReviewResult | null = null;
+    const MAX_ATTEMPTS = 2;
 
-    if (response.usage) {
-      console.log(`Token usage: ${response.usage.total_tokens} total`);
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      console.log(`Generation attempt ${attempt}/${MAX_ATTEMPTS}...`);
+
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 3000,
+        temperature: attempt === 1 ? 0.8 : 0.7, // Lower temp on retry for more focus
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: attempt === 1
+            ? userPrompt
+            : `${userPrompt}\n\nIMPORTANT: A previous draft was rejected for these reasons:\n${review?.issues.map(i => `- ${i}`).join('\n')}\n\nFix these issues in your new draft.`
+          },
+        ],
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) throw new Error('No response from OpenAI');
+
+      if (response.usage) {
+        console.log(`Token usage: ${response.usage.total_tokens} total`);
+      }
+
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('Could not parse JSON');
+
+      parsed = JSON.parse(jsonMatch[0]);
+
+      // Run automated review
+      review = await reviewBlogPost(parsed!, brand, validSlugs);
+
+      if (review.passed) {
+        console.log(`Review PASSED (score: ${review.score}/10) on attempt ${attempt}`);
+        break;
+      }
+
+      if (attempt < MAX_ATTEMPTS) {
+        console.log(`Review FAILED (score: ${review.score}/10), regenerating...`);
+      } else {
+        console.log(`Review FAILED after ${MAX_ATTEMPTS} attempts (score: ${review.score}/10), saving as draft`);
+      }
     }
 
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('Could not parse JSON');
-
-    const parsed = JSON.parse(jsonMatch[0]);
+    if (!parsed) throw new Error('No valid blog post generated');
 
     let slug = parsed.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').substring(0, 80);
     const { data: existing } = await supabase.from('blog_posts').select('slug').eq('slug', slug).single();
@@ -482,7 +663,10 @@ export async function POST(request: Request) {
     console.log(`Cover: ${coverData.type} layout, ${coverData.images.length} images`);
     console.log(`Featured: ${featuredRestaurants.length} restaurants`);
 
-    // Save as scheduled draft
+    // Determine status based on review result
+    const postStatus = review?.passed ? 'scheduled' : 'draft';
+
+    // Save blog post
     const { error: insertErr } = await supabase.from('blog_posts').insert({
       slug,
       title: parsed.title,
@@ -493,22 +677,43 @@ export async function POST(request: Request) {
       cover_image_data: coverData.images.length > 0 ? JSON.stringify(coverData) : null,
       featured_restaurants: featuredRestaurants.length ? featuredRestaurants : null,
       market_id: marketId,
-      status: 'scheduled',
-      scheduled_publish_at: publishAt.toISOString(),
+      status: postStatus,
+      scheduled_publish_at: postStatus === 'scheduled' ? publishAt.toISOString() : null,
+      generation_error: review && !review.passed
+        ? `Review failed (${review.score}/10): ${review.issues.join('; ')}`
+        : null,
     });
 
     if (insertErr) throw new Error(insertErr.message);
 
-    console.log(`Draft created: "${parsed.title}" for ${publishAt.toISOString()}`);
+    // If review failed, notify admin
+    if (!review?.passed) {
+      console.log(`Saved as DRAFT (needs manual review): "${parsed.title}"`);
+      await sendFailureNotification(
+        `Blog review failed for ${brand.name} (score: ${review?.score}/10).\n\nIssues:\n${review?.issues.map(i => `- ${i}`).join('\n')}\n\nPost saved as draft: "${parsed.title}" (slug: ${slug}).\n\nReview and manually publish at the admin panel.`,
+        publishAt,
+        brand,
+      );
+    } else {
+      console.log(`Scheduled: "${parsed.title}" for ${publishAt.toISOString()}`);
+    }
+
     return NextResponse.json({
       success: true,
       draft: {
         slug,
         title: parsed.title,
-        scheduledFor: publishAt.toISOString(),
+        status: postStatus,
+        scheduledFor: postStatus === 'scheduled' ? publishAt.toISOString() : null,
         coverLayout: coverData.type,
         imageCount: coverData.images.length,
         featuredRestaurantCount: featuredRestaurants.length,
+        review: review ? {
+          passed: review.passed,
+          score: review.score,
+          issues: review.issues,
+          verdict: review.aiVerdict,
+        } : null,
       },
     });
   } catch (error) {
