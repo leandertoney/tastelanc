@@ -1039,8 +1039,8 @@ Use the restaurants, happy hours, events, and specials from your database. Be sp
   }
 }
 
-// Run daily at 6am ET (11:00 UTC)
-export const config: Config = {
-  // Monday, Wednesday, Friday at 11 AM UTC
-  schedule: '0 11 * * 1,3,5',
-};
+// DISABLED: Blog generation is now handled by pg_cron (pregenerate + publish-scheduled).
+// Keeping this function for reference but removing the schedule to prevent conflicts.
+// See: apps/web/app/api/blog/pregenerate/route.ts
+// See: apps/web/app/api/blog/publish-scheduled/route.ts
+export const config: Config = {};

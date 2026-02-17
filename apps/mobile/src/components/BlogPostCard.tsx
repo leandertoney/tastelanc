@@ -53,7 +53,7 @@ export default function BlogPostCard({ post, onPress }: BlogPostCardProps) {
           <View style={styles.metaRow}>
             <Text style={styles.metaText}>By Rosie</Text>
             <Text style={styles.metaDot}>&middot;</Text>
-            <Text style={styles.metaText}>{formatDate(post.created_at)}</Text>
+            <Text style={styles.metaText}>{formatDate(post.published_at || post.created_at)}</Text>
           </View>
         </View>
       </View>
