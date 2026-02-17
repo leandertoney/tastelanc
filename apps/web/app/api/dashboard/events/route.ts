@@ -111,6 +111,7 @@ export async function POST(request: Request) {
       .from('events')
       .insert({
         restaurant_id: restaurantId,
+        market_id: accessResult.restaurant!.market_id,
         name,
         description,
         event_type: eventType,

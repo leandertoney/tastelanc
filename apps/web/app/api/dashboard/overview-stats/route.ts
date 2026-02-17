@@ -29,6 +29,9 @@ export async function GET(request: Request) {
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
     const [
       totalViewsResult,
       weeklyViewsResult,
@@ -41,6 +44,11 @@ export async function GET(request: Request) {
       menuViewsResult,
       lastWeekMenuViewsResult,
       hoursCountResult,
+      impressionsThisWeekResult,
+      impressionsLastWeekResult,
+      impressions30dResult,
+      profileViews30dResult,
+      profileViewsPrev30dResult,
     ] = await Promise.all([
       // Total profile views (all time)
       serviceClient
@@ -123,6 +131,43 @@ export async function GET(request: Request) {
         .from('restaurant_hours')
         .select('*', { count: 'exact', head: true })
         .eq('restaurant_id', restaurantId),
+
+      // Impressions this week
+      serviceClient
+        .from('section_impressions')
+        .select('*', { count: 'exact', head: true })
+        .eq('restaurant_id', restaurantId)
+        .gte('impressed_at', weekAgo.toISOString()),
+
+      // Impressions last week
+      serviceClient
+        .from('section_impressions')
+        .select('*', { count: 'exact', head: true })
+        .eq('restaurant_id', restaurantId)
+        .gte('impressed_at', twoWeeksAgo.toISOString())
+        .lt('impressed_at', weekAgo.toISOString()),
+
+      // Impressions last 30 days
+      serviceClient
+        .from('section_impressions')
+        .select('*', { count: 'exact', head: true })
+        .eq('restaurant_id', restaurantId)
+        .gte('impressed_at', thirtyDaysAgo.toISOString()),
+
+      // Profile views last 30 days
+      serviceClient
+        .from('analytics_page_views')
+        .select('*', { count: 'exact', head: true })
+        .eq('restaurant_id', restaurantId)
+        .gte('viewed_at', thirtyDaysAgo.toISOString()),
+
+      // Profile views previous 30 days (days 31-60)
+      serviceClient
+        .from('analytics_page_views')
+        .select('*', { count: 'exact', head: true })
+        .eq('restaurant_id', restaurantId)
+        .gte('viewed_at', sixtyDaysAgo.toISOString())
+        .lt('viewed_at', thirtyDaysAgo.toISOString()),
     ]);
 
     // Calculate percentage changes
@@ -134,6 +179,10 @@ export async function GET(request: Request) {
     const lastWeekMenuViews = lastWeekMenuViewsResult.count || 0;
     const thisWeekFavorites = thisWeekFavoritesResult.count || 0;
     const lastWeekFavorites = lastWeekFavoritesResult.count || 0;
+
+    const impressionsThisWeek = impressionsThisWeekResult.count || 0;
+    const impressionsLastWeek = impressionsLastWeekResult.count || 0;
+    const impressions30d = impressions30dResult.count || 0;
 
     const calcChange = (current: number, previous: number) => {
       const change = Math.round(((current - previous) / Math.max(previous, 1)) * 100);
@@ -153,10 +202,24 @@ export async function GET(request: Request) {
     const completedCount = completionItems.filter(item => item.completed).length;
     const completionPercentage = Math.round((completedCount / completionItems.length) * 100);
 
+    // 30-day profile views
+    const profileViews30d = profileViews30dResult.count || 0;
+    const profileViewsPrev30d = profileViewsPrev30dResult.count || 0;
+
+    // Conversion rate: 30d profile views / 30d impressions
+    const conversionRate = impressions30d > 0
+      ? Math.round((profileViews30d / impressions30d) * 1000) / 10
+      : 0;
+
     return NextResponse.json({
       stats: {
+        impressions30d,
+        impressionsChange: calcChange(impressionsThisWeek, impressionsLastWeek),
         profileViews: totalViewsResult.count || 0,
+        profileViews30d,
+        profileViewsChange: calcChange(profileViews30d, profileViewsPrev30d),
         viewsChange: calcChange(weeklyViews, lastWeekViews),
+        conversionRate,
         favorites: favoritesResult.count || 0,
         favoritesChange: calcChange(thisWeekFavorites, lastWeekFavorites),
         weeklyViews,

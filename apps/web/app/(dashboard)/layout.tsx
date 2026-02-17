@@ -235,7 +235,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
               </div>
             )}
 
-            {error && (
+            {error && !restaurant && (
               <p className="text-xs text-red-400 mt-2 px-3">{error}</p>
             )}
           </div>

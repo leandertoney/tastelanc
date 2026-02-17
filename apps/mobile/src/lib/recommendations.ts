@@ -465,6 +465,26 @@ export async function getFeaturedRestaurants(limit: number = 24, marketId: strin
       ...seededShuffle(premium, seed + 1),
     ].slice(0, limit);
 
+    // If no paid restaurants found for this market, fall back to basic restaurants
+    // so the Featured section still shows content for markets without paying partners
+    if (result.length === 0 && marketId) {
+      let fallbackQuery = supabase
+        .from('restaurants')
+        .select('*, tiers(name)')
+        .eq('is_active', true)
+        .not('cover_image_url', 'is', null)
+        .eq('market_id', marketId)
+        .limit(limit * 2); // fetch extra for shuffle
+
+      const { data: fallbackData, error: fallbackError } = await fallbackQuery;
+
+      if (fallbackError || !fallbackData || fallbackData.length === 0) {
+        return [];
+      }
+
+      return seededShuffle(fallbackData, seed).slice(0, limit) as Restaurant[];
+    }
+
     return result;
   } catch (error) {
     console.error('Error getting featured restaurants:', error);
