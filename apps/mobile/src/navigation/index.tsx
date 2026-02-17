@@ -135,37 +135,40 @@ export default function Navigation() {
     );
   }
 
-  // Show splash video first (wrapped in ErrorBoundary so video player crash doesn't kill app)
-  if (showSplash) {
-    return (
-      <ErrorBoundary
-        level="section"
-        fallback={<SplashFallback onComplete={handleSplashComplete} />}
-      >
-        <SplashVideoScreen onComplete={handleSplashComplete} />
-      </ErrorBoundary>
-    );
-  }
-
   return (
-    <AuthProvider>
-      <MarketProvider>
-        <EmailGateProvider>
-          <SignUpModalProvider>
-            <NavigationContext.Provider value={{ restartOnboarding, finishOnboarding }}>
-              <OnboardingProvider>
-                <ErrorBoundary
-                  level="section"
-                  fallback={<NavigationFallback hasCompletedOnboarding={hasCompletedOnboarding} />}
-                >
-                  <NavigationInner hasCompletedOnboarding={hasCompletedOnboarding} />
-                </ErrorBoundary>
-              </OnboardingProvider>
-            </NavigationContext.Provider>
-          </SignUpModalProvider>
-        </EmailGateProvider>
-      </MarketProvider>
-    </AuthProvider>
+    <>
+      {/* Render navigation tree immediately so it mounts and paints behind the splash */}
+      <AuthProvider>
+        <MarketProvider>
+          <EmailGateProvider>
+            <SignUpModalProvider>
+              <NavigationContext.Provider value={{ restartOnboarding, finishOnboarding }}>
+                <OnboardingProvider>
+                  <ErrorBoundary
+                    level="section"
+                    fallback={<NavigationFallback hasCompletedOnboarding={hasCompletedOnboarding} />}
+                  >
+                    <NavigationInner hasCompletedOnboarding={hasCompletedOnboarding} />
+                  </ErrorBoundary>
+                </OnboardingProvider>
+              </NavigationContext.Provider>
+            </SignUpModalProvider>
+          </EmailGateProvider>
+        </MarketProvider>
+      </AuthProvider>
+
+      {/* Splash overlay on top — content renders behind it, no blank frame on dismiss */}
+      {showSplash && (
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <ErrorBoundary
+            level="section"
+            fallback={<SplashFallback onComplete={handleSplashComplete} />}
+          >
+            <SplashVideoScreen onComplete={handleSplashComplete} />
+          </ErrorBoundary>
+        </View>
+      )}
+    </>
   );
 }
 
