@@ -665,7 +665,7 @@ export async function POST(request: Request) {
 
       const response = await openai.chat.completions.create({
         model: 'gpt-4o',
-        max_tokens: 3000,
+        max_tokens: 4000,
         temperature: attempt === 1 ? 0.8 : 0.7, // Lower temp on retry for more focus
         messages: [
           { role: 'system', content: systemPrompt },
