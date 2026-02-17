@@ -23,7 +23,7 @@ import {
   markSubscriptionMatched,
   type StripeCustomerInfo,
 } from '@/lib/subscription-matching';
-import { BRAND } from '@/config/market';
+import { BRAND, MARKET_SLUG } from '@/config/market';
 
 // Generate a secure setup token for password setup with personalization
 interface SetupTokenOptions {
@@ -1142,6 +1142,14 @@ export async function POST(request: Request) {
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-|-$/g, '');
 
+          // Resolve market_id for this deployment
+          const { data: marketRow } = await supabaseAdmin
+            .from('markets')
+            .select('id')
+            .eq('slug', MARKET_SLUG)
+            .eq('is_active', true)
+            .single();
+
           const { data: newSelfPromoter, error: selfPromoterError } = await supabaseAdmin
             .from('self_promoters')
             .insert({
@@ -1154,6 +1162,7 @@ export async function POST(request: Request) {
               stripe_subscription_id: subscriptionId,
               stripe_customer_id: session.customer as string,
               is_active: true,
+              market_id: marketRow!.id,
             })
             .select('id')
             .single();

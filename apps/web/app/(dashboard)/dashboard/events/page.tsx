@@ -106,6 +106,28 @@ export default function EventsPage() {
     await fetchEvents();
   };
 
+  const toggleActive = async (id: string, currentActive: boolean) => {
+    try {
+      const response = await fetch(buildApiUrl(`/api/dashboard/events/${id}`), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: !currentActive }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update event');
+      }
+
+      setEvents((prev) =>
+        prev.map((e) => (e.id === id ? { ...e, is_active: !currentActive } : e))
+      );
+    } catch (err) {
+      console.error('Error toggling event:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update event');
+    }
+  };
+
   const deleteEvent = async (id: string) => {
     if (!confirm('Are you sure you want to delete this event?')) return;
 
@@ -424,18 +446,26 @@ export default function EventsPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col items-end gap-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setEditingEvent(event)}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => deleteEvent(event.id)}
+                    className="text-gray-400 hover:text-red-400"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
                 <button
-                  onClick={() => setEditingEvent(event)}
-                  className="text-gray-400 hover:text-white"
+                  onClick={() => toggleActive(event.id, event.is_active)}
+                  className="text-gray-400 hover:text-white text-sm"
                 >
-                  <Pencil className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => deleteEvent(event.id)}
-                  className="text-gray-400 hover:text-red-400"
-                >
-                  <Trash2 className="w-4 h-4" />
+                  {event.is_active ? 'Deactivate' : 'Activate'}
                 </button>
               </div>
             </div>

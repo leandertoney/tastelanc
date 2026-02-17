@@ -16,7 +16,7 @@ async function verifySelfPromoterAccess(selfPromoterId: string) {
   // Fetch self-promoter
   const { data: selfPromoter, error } = await supabase
     .from('self_promoters')
-    .select('id, owner_id')
+    .select('id, owner_id, market_id')
     .eq('id', selfPromoterId)
     .single();
 
@@ -30,7 +30,7 @@ async function verifySelfPromoterAccess(selfPromoterId: string) {
     return { error: 'Access denied', status: 403 };
   }
 
-  return { selfPromoter, user, isAdmin, isOwner };
+  return { selfPromoter: selfPromoter as { id: string; owner_id: string; market_id: string }, user, isAdmin, isOwner };
 }
 
 // GET - Fetch events for a self-promoter
@@ -126,6 +126,7 @@ export async function POST(request: Request) {
       .insert({
         self_promoter_id: selfPromoterId,
         restaurant_id: null, // Self-promoter events don't have a restaurant
+        market_id: access.selfPromoter.market_id,
         name,
         description,
         event_type,

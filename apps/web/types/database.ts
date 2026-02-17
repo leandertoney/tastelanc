@@ -94,6 +94,7 @@ export interface Restaurant {
   reservation_links: string | null;
   stripe_subscription_id: string | null;
   checkin_pin: string | null;
+  market_id: string;
 }
 
 export interface RestaurantHours {
@@ -206,7 +207,9 @@ export interface Special {
 
 export interface Event {
   id: string;
-  restaurant_id: string;
+  restaurant_id: string | null;
+  self_promoter_id: string | null;
+  market_id: string;
   name: string;
   description: string | null;
   event_type: EventType;

@@ -59,8 +59,13 @@ export default function HomePage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [firstImageReady, setFirstImageReady] = useState(false);
 
-  // Your Lancaster map pins
+  // Interactive map pins
   const [activePin, setActivePin] = useState<number | null>(null);
+
+  // Featured restaurants and sponsored ads
+  const [featuredRestaurants, setFeaturedRestaurants] = useState<any[]>([]);
+  const [otherRestaurants, setOtherRestaurants] = useState<any[]>([]);
+  const [sponsoredAds, setSponsoredAds] = useState<any[]>([]);
 
   // Navigate to a specific screen
   const goToScreen = useCallback((index: number) => {
@@ -191,6 +196,46 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, [heroImages]);
 
+  // Fetch featured restaurants and sponsored ads
+  useEffect(() => {
+    if (!marketId) return;
+
+    const fetchFeaturedData = async () => {
+      const supabase = createClient();
+
+      const { data: restaurants } = await supabase
+        .from('restaurants')
+        .select('id, name, slug, cover_image_url, logo_url, categories, city, state, average_rating')
+        .eq('market_id', marketId)
+        .eq('is_active', true)
+        .not('cover_image_url', 'is', null)
+        .limit(30);
+
+      if (restaurants && restaurants.length > 0) {
+        const shuffled = [...restaurants];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        setFeaturedRestaurants(shuffled.slice(0, 8));
+        setOtherRestaurants(shuffled.slice(8, 20));
+      }
+
+      // Fetch Universole AI Studios ads (cross-market — our own company ads)
+      const { data: ads } = await supabase
+        .from('featured_ads')
+        .select('id, business_name, image_url, click_url, tagline')
+        .eq('is_active', true)
+        .order('priority', { ascending: false });
+
+      if (ads) {
+        setSponsoredAds(ads.filter((a) => a.business_name.toLowerCase().includes('universole')));
+      }
+    };
+
+    fetchFeaturedData();
+  }, [marketId]);
+
   // Tonight section feature rotation (2.5s interval)
   useEffect(() => {
     if (featurePaused) return;
@@ -217,6 +262,27 @@ export default function HomePage() {
       setFeaturePaused(false);
     }, 5000);
   }, []);
+
+  // Build interleaved featured items (restaurants + ads, 1 ad per 3 restaurants)
+  type FeaturedItem = { type: 'restaurant'; data: any; isElite: boolean } | { type: 'ad'; data: any };
+  const featuredItems: FeaturedItem[] = [];
+  let adIdx = 0;
+  featuredRestaurants.forEach((restaurant, index) => {
+    featuredItems.push({ type: 'restaurant', data: restaurant, isElite: index === 0 || index === 3 });
+    if ((index + 1) % 3 === 0 && sponsoredAds[adIdx]) {
+      featuredItems.push({ type: 'ad', data: sponsoredAds[adIdx++] });
+    }
+  });
+
+  // Build other restaurants items with one ad in the middle
+  type OtherItem = { type: 'restaurant'; data: any } | { type: 'ad'; data: any };
+  const otherItems: OtherItem[] = [];
+  otherRestaurants.forEach((restaurant, index) => {
+    otherItems.push({ type: 'restaurant', data: restaurant });
+    if (index === 3 && sponsoredAds[adIdx]) {
+      otherItems.push({ type: 'ad', data: sponsoredAds[adIdx] });
+    }
+  });
 
   return (
     <main className="min-h-screen bg-tastelanc-bg">
@@ -532,6 +598,224 @@ export default function HomePage() {
           </div>
         )}
       </section>
+
+      {/* Featured for You Section */}
+      {featuredItems.length > 0 && (
+        <section className="py-16 px-4 bg-tastelanc-bg">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 bg-lancaster-gold/20 border border-lancaster-gold/30 rounded-full px-4 py-2 mb-4">
+                <Star className="w-4 h-4 text-lancaster-gold" />
+                <span className="text-lancaster-gold font-medium text-sm">Curated Picks</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">
+                Featured for You
+              </h2>
+              <p className="text-gray-400 max-w-xl mx-auto">
+                Handpicked restaurants and bars across {BRAND.countyShort} — here&apos;s what&apos;s worth checking out.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {featuredItems.map((item) =>
+                item.type === 'restaurant' ? (
+                  <Link
+                    key={`feat-${item.data.id}`}
+                    href={`/restaurants/${item.data.slug}`}
+                    className={`group block rounded-xl overflow-hidden transition-all ${
+                      item.isElite
+                        ? 'bg-tastelanc-card ring-2 ring-lancaster-gold/50 hover:ring-lancaster-gold shadow-lg shadow-lancaster-gold/10'
+                        : 'bg-tastelanc-card hover:ring-2 hover:ring-tastelanc-accent'
+                    }`}
+                  >
+                    <div className="aspect-[4/3] bg-tastelanc-surface relative">
+                      {item.data.cover_image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={item.data.cover_image_url}
+                          alt={item.data.name}
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <span className="text-4xl font-bold text-gray-600">
+                            {item.data.name.charAt(0)}
+                          </span>
+                        </div>
+                      )}
+                      {item.isElite && (
+                        <div className="absolute top-2 left-2">
+                          <span className="inline-flex items-center gap-1 bg-lancaster-gold text-black px-2.5 py-1 rounded-full text-xs font-bold shadow-md">
+                            <Star className="w-3 h-3" />
+                            {BRAND.name} Pick
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <h3 className={`font-semibold transition-colors ${
+                        item.isElite
+                          ? 'text-lancaster-gold group-hover:text-yellow-400'
+                          : 'text-white group-hover:text-tastelanc-accent'
+                      }`}>
+                        {item.data.name}
+                      </h3>
+                      <p className="text-sm text-gray-400 flex items-center gap-1 mt-1">
+                        <MapPin className="w-3 h-3" />
+                        {item.data.city}, {item.data.state}
+                      </p>
+                      {item.data.categories?.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {item.data.categories.slice(0, 2).map((cat: string) => (
+                            <span
+                              key={cat}
+                              className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-tastelanc-surface text-gray-400"
+                            >
+                              {cat.replace(/_/g, ' ')}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                ) : (
+                  <a
+                    key={`feat-ad-${item.data.id}`}
+                    href={item.data.click_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group block bg-tastelanc-card rounded-xl overflow-hidden hover:ring-2 hover:ring-tastelanc-accent/50 transition-all"
+                  >
+                    <div className="aspect-[4/3] bg-tastelanc-surface relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.data.image_url}
+                        alt={item.data.business_name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-2 right-2">
+                        <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-black/60 text-gray-300 backdrop-blur-sm">
+                          Sponsored
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold text-white group-hover:text-tastelanc-accent transition-colors">
+                        {item.data.business_name}
+                      </h3>
+                      {item.data.tagline && (
+                        <p className="text-sm text-gray-400 mt-1">{item.data.tagline}</p>
+                      )}
+                    </div>
+                  </a>
+                )
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* More Places to Explore Section */}
+      {otherItems.length > 0 && (
+        <section className="py-16 px-4 bg-tastelanc-surface">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold text-white">
+                More Places to Explore
+              </h2>
+              <Link
+                href="/restaurants"
+                className="text-tastelanc-accent hover:text-tastelanc-accent-hover transition-colors text-sm font-medium flex items-center gap-1"
+              >
+                View All
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {otherItems.map((item, idx) =>
+                item.type === 'restaurant' ? (
+                  <Link
+                    key={`other-${item.data.id}`}
+                    href={`/restaurants/${item.data.slug}`}
+                    className="group block bg-tastelanc-card rounded-xl overflow-hidden hover:ring-2 hover:ring-tastelanc-accent transition-all"
+                  >
+                    <div className="aspect-[4/3] bg-tastelanc-surface relative">
+                      {item.data.cover_image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={item.data.cover_image_url}
+                          alt={item.data.name}
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <span className="text-4xl font-bold text-gray-600">
+                            {item.data.name.charAt(0)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold text-white group-hover:text-tastelanc-accent transition-colors">
+                        {item.data.name}
+                      </h3>
+                      <p className="text-sm text-gray-400 flex items-center gap-1 mt-1">
+                        <MapPin className="w-3 h-3" />
+                        {item.data.city}, {item.data.state}
+                      </p>
+                      {item.data.categories?.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {item.data.categories.slice(0, 2).map((cat: string) => (
+                            <span
+                              key={cat}
+                              className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-tastelanc-bg text-gray-400"
+                            >
+                              {cat.replace(/_/g, ' ')}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                ) : (
+                  <a
+                    key={`other-ad-${item.data.id}-${idx}`}
+                    href={item.data.click_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group block bg-tastelanc-card rounded-xl overflow-hidden hover:ring-2 hover:ring-tastelanc-accent/50 transition-all"
+                  >
+                    <div className="aspect-[4/3] bg-tastelanc-surface relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.data.image_url}
+                        alt={item.data.business_name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-2 right-2">
+                        <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-black/60 text-gray-300 backdrop-blur-sm">
+                          Sponsored
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold text-white group-hover:text-tastelanc-accent transition-colors">
+                        {item.data.business_name}
+                      </h3>
+                      {item.data.tagline && (
+                        <p className="text-sm text-gray-400 mt-1">{item.data.tagline}</p>
+                      )}
+                    </div>
+                  </a>
+                )
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Find What's Good Tonight Section */}
       <section id="tonight" className="py-20 px-4 bg-gradient-to-b from-tastelanc-bg to-tastelanc-surface relative overflow-hidden">

@@ -11,25 +11,26 @@ import {
   Sparkles,
   ArrowRight,
   AlertCircle,
-  TrendingUp,
   Phone,
   Globe,
   MapPin,
   Share2,
-  ArrowUp,
-  ArrowDown,
-  Crown,
-  Award,
   Layers,
-  Crosshair,
+  Crown,
+  Lightbulb,
 } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import { useTierAccess } from '@/components/TierGate';
 
 interface DashboardStats {
+  impressions30d: number;
+  impressionsChange: string;
   profileViews: number;
+  profileViews30d: number;
+  profileViewsChange: string;
   viewsChange: string;
+  conversionRate: number;
   favorites: number;
   favoritesChange: string;
   upcomingEvents: number;
@@ -131,7 +132,7 @@ export default function DashboardPage() {
       }
       setAnalyticsLoading(true);
       try {
-        const response = await fetch(buildApiUrl(`/api/dashboard/analytics?restaurant_id=${restaurant.id}`));
+        const response = await fetch(buildApiUrl('/api/dashboard/analytics'));
         if (!response.ok) throw new Error('Failed to fetch analytics');
         const data = await response.json();
         setAnalyticsData(data);
@@ -145,12 +146,6 @@ export default function DashboardPage() {
     fetchAnalytics();
   }, [restaurantId, restaurant, buildApiUrl, hasPremium]);
 
-  const quickActions = [
-    { label: 'Add Happy Hour', href: buildNavHref('/dashboard/happy-hours'), icon: Clock },
-    { label: 'Create Event', href: buildNavHref('/dashboard/events'), icon: Calendar },
-    { label: 'Add Special', href: buildNavHref('/dashboard/specials'), icon: Sparkles },
-  ];
-
   if (contextLoading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -160,15 +155,43 @@ export default function DashboardPage() {
   }
 
   const statsDisplay = [
-    { label: 'Profile Views', value: stats?.profileViews.toLocaleString() || '0', change: stats?.viewsChange || '0%', icon: Eye },
-    { label: 'Favorites', value: stats?.favorites.toLocaleString() || '0', change: stats?.favoritesChange || '0%', icon: Heart },
-    { label: 'Happy Hour Views', value: stats?.happyHourViews.toLocaleString() || '0', change: stats?.happyHourChange || '0%', icon: Clock },
-    { label: 'Menu Views', value: stats?.menuViews.toLocaleString() || '0', change: stats?.menuChange || '0%', icon: Sparkles },
+    {
+      label: 'Impressions',
+      value: (stats?.impressions30d ?? 0).toLocaleString(),
+      change: stats?.impressionsChange || '+0%',
+      changePeriod: 'from last week',
+      subtitle: 'Last 30 days',
+      icon: Layers,
+    },
+    {
+      label: 'Profile Views',
+      value: (stats?.profileViews30d ?? 0).toLocaleString(),
+      change: stats?.profileViewsChange || '+0%',
+      changePeriod: 'vs prev 30 days',
+      subtitle: stats?.conversionRate ? `${stats.conversionRate}% from impressions` : undefined,
+      icon: Eye,
+    },
+    {
+      label: 'Happy Hour Views',
+      value: (stats?.happyHourViews ?? 0).toLocaleString(),
+      change: stats?.happyHourChange || '+0%',
+      changePeriod: 'from last week',
+      subtitle: undefined,
+      icon: Clock,
+    },
+    {
+      label: 'Favorites',
+      value: (stats?.favorites ?? 0).toLocaleString(),
+      change: stats?.favoritesChange || '+0%',
+      changePeriod: 'from last week',
+      subtitle: undefined,
+      icon: Heart,
+    },
   ];
 
   // Analytics chart data
-  const weeklyViews = analyticsData?.weeklyViews || [];
-  const maxViews = Math.max(...weeklyViews.map((d) => d.views), 1);
+  const dailyImpressions = analyticsData?.dailyImpressions || [];
+  const maxImpressions = Math.max(...dailyImpressions.map((d) => d.impressions), 1);
   const clickTypes = analyticsData ? [
     { type: 'Phone Calls', count: analyticsData.clicksByType.phone, icon: Phone },
     { type: 'Website Visits', count: analyticsData.clicksByType.website, icon: Globe },
@@ -179,14 +202,6 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Welcome Banner */}
-      <Card className="bg-gradient-to-r from-tastelanc-accent to-tastelanc-accent-hover p-6">
-        <h2 className="text-2xl font-bold text-white mb-2">Welcome back!</h2>
-        <p className="text-white/80">
-          Here&apos;s what&apos;s happening with {restaurant?.name || 'your restaurant'} today.
-        </p>
-      </Card>
-
       {/* Stats Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statsDisplay.map((stat) => {
@@ -204,13 +219,88 @@ export default function DashboardPage() {
               </div>
               {stat.change && (
                 <p className={`text-sm mt-2 ${stat.change.startsWith('+') && stat.change !== '+0%' ? 'text-green-400' : 'text-gray-500'}`}>
-                  {stat.change} from last week
+                  {stat.change} {stat.changePeriod}
                 </p>
+              )}
+              {stat.subtitle && (
+                <p className="text-sm text-tastelanc-accent">{stat.subtitle}</p>
               )}
             </Card>
           );
         })}
       </div>
+
+      {/* Market Insights Teaser */}
+      {!hasElite ? (
+        <Card className="relative" style={{ minHeight: '280px' }}>
+          <div className="blur-md pointer-events-none select-none p-6" aria-hidden="true">
+            <div className="flex items-center gap-6">
+              <div className="w-20 h-20 rounded-full border-4 border-tastelanc-surface-light flex items-center justify-center flex-shrink-0">
+                <span className="text-2xl font-bold text-white">73</span>
+              </div>
+              <div className="flex-1 space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-300">Menu Items</span>
+                  <div className="flex gap-4">
+                    <span className="text-white font-medium">5</span>
+                    <span className="text-gray-500">28 avg</span>
+                  </div>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-300">Happy Hours</span>
+                  <div className="flex gap-4">
+                    <span className="text-white font-medium">1</span>
+                    <span className="text-gray-500">4 avg</span>
+                  </div>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-300">Events</span>
+                  <div className="flex gap-4">
+                    <span className="text-white font-medium">0</span>
+                    <span className="text-gray-500">3 avg</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center bg-tastelanc-bg/60 backdrop-blur-sm rounded-lg">
+            <div className="text-center px-6 py-6">
+              <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full flex items-center justify-center">
+                <Crown className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-1">Market Insights</h3>
+              <p className="text-gray-400 text-sm mb-4 max-w-xs mx-auto">
+                See how you compare to competitors and get AI-powered growth recommendations.
+              </p>
+              <Link
+                href={buildNavHref('/dashboard/subscription')}
+                className="inline-flex items-center gap-2 px-6 py-2 rounded-lg font-semibold text-sm transition-colors bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-black"
+              >
+                <Crown className="w-4 h-4" />
+                Upgrade to Elite
+              </Link>
+            </div>
+          </div>
+        </Card>
+      ) : (
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Lightbulb className="w-5 h-5 text-tastelanc-accent" />
+              Market Insights
+            </h3>
+            <Link
+              href={buildNavHref('/dashboard/insights')}
+              className="text-tastelanc-accent hover:underline text-sm flex items-center gap-1"
+            >
+              View Full Insights <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <p className="text-gray-400 text-sm mt-2">
+            Check your visibility score, see how you compare to top performers, and get growth recommendations.
+          </p>
+        </Card>
+      )}
 
       {/* Analytics Section - Premium+ */}
       {hasPremium && (
@@ -226,25 +316,70 @@ export default function DashboardPage() {
             </div>
           ) : analyticsData && (
             <>
+              {/* Conversion Funnel - Top of Analytics */}
+              {analyticsData.conversionFunnel && (
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold text-white mb-6">Conversion Funnel (30d)</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <p className="text-3xl font-bold text-white">{analyticsData.conversionFunnel.impressions.toLocaleString()}</p>
+                      <p className="text-gray-400 text-sm mt-1">Seen in App</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-3xl font-bold text-white">{analyticsData.conversionFunnel.detailViews.toLocaleString()}</p>
+                      <p className="text-gray-400 text-sm mt-1">Viewed Profile</p>
+                      <p className="text-tastelanc-accent text-xs mt-0.5">
+                        {analyticsData.conversionFunnel.impressions > 0
+                          ? `${Math.round((analyticsData.conversionFunnel.detailViews / analyticsData.conversionFunnel.impressions) * 1000) / 10}%`
+                          : '0%'} of impressions
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-3xl font-bold text-white">{analyticsData.conversionFunnel.clicks.toLocaleString()}</p>
+                      <p className="text-gray-400 text-sm mt-1">Took Action</p>
+                      <p className="text-green-400 text-xs mt-0.5">
+                        {analyticsData.conversionFunnel.detailViews > 0
+                          ? `${Math.round((analyticsData.conversionFunnel.clicks / analyticsData.conversionFunnel.detailViews) * 1000) / 10}%`
+                          : '0%'} of views
+                      </p>
+                    </div>
+                  </div>
+                  {analyticsData.conversionFunnel.impressions > 0 && (
+                    <>
+                      <div className="mt-4 flex gap-1 h-3 rounded-full overflow-hidden">
+                        <div className="bg-blue-500 flex-1 rounded-l-full" />
+                        <div className="bg-tastelanc-accent" style={{ flex: Math.max(analyticsData.conversionFunnel.clickRate / 100, 0.05) }} />
+                        <div className="bg-green-500 rounded-r-full" style={{ flex: Math.max((analyticsData.conversionFunnel.viewRate * analyticsData.conversionFunnel.clickRate) / 10000, 0.02) }} />
+                      </div>
+                      <div className="flex justify-between mt-2 text-xs text-gray-500">
+                        <span>Impressions</span>
+                        <span>Profile Views</span>
+                        <span>Actions</span>
+                      </div>
+                    </>
+                  )}
+                </Card>
+              )}
+
               {/* Charts Row */}
               <div className="grid lg:grid-cols-2 gap-8">
-                {/* Weekly Views Chart */}
+                {/* Weekly Impressions Chart */}
                 <Card className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-6">Weekly Profile Views</h3>
-                  {weeklyViews.every(d => d.views === 0) ? (
+                  <h3 className="text-lg font-semibold text-white mb-6">Weekly Impressions</h3>
+                  {dailyImpressions.every(d => d.impressions === 0) ? (
                     <div className="h-48 flex items-center justify-center text-gray-500">
-                      No views data yet. Views will appear as users interact with your profile.
+                      No impressions data yet. Impressions will appear as your restaurant shows up in the app.
                     </div>
                   ) : (
-                    <div className="flex items-end justify-between h-48 gap-2">
-                      {weeklyViews.map((dayData) => (
-                        <div key={dayData.day} className="flex flex-col items-center flex-1">
+                    <div className="flex items-stretch justify-between h-48 gap-2">
+                      {dailyImpressions.map((dayData) => (
+                        <div key={dayData.day} className="flex flex-col items-center flex-1 justify-end">
                           <div
                             className="w-full bg-tastelanc-accent rounded-t transition-all hover:bg-tastelanc-accent-hover"
-                            style={{ height: `${Math.max((dayData.views / maxViews) * 100, 4)}%` }}
-                            title={`${dayData.views} views`}
+                            style={{ height: `${Math.max((dayData.impressions / maxImpressions) * 100, 4)}%` }}
+                            title={`${dayData.impressions} impressions`}
                           />
-                          <span className="text-xs text-gray-400 mt-2">{dayData.day}</span>
+                          <span className="text-xs text-gray-400 mt-2 flex-shrink-0">{dayData.day}</span>
                         </div>
                       ))}
                     </div>
@@ -285,98 +420,10 @@ export default function DashboardPage() {
                   )}
                 </Card>
               </div>
-
-              {/* Conversion Funnel */}
-              {analyticsData.conversionFunnel && analyticsData.conversionFunnel.impressions > 0 && (
-                <Card className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-6">Conversion Funnel (30d)</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <p className="text-3xl font-bold text-white">{analyticsData.conversionFunnel.impressions.toLocaleString()}</p>
-                      <p className="text-gray-400 text-sm mt-1">Impressions</p>
-                    </div>
-                    <div className="text-center relative">
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-600 text-xs">
-                        {analyticsData.conversionFunnel.clickRate}%
-                      </div>
-                      <p className="text-3xl font-bold text-white">{analyticsData.conversionFunnel.clicks.toLocaleString()}</p>
-                      <p className="text-gray-400 text-sm mt-1">Clicks</p>
-                    </div>
-                    <div className="text-center relative">
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-600 text-xs">
-                        {analyticsData.conversionFunnel.viewRate}%
-                      </div>
-                      <p className="text-3xl font-bold text-white">{analyticsData.conversionFunnel.detailViews.toLocaleString()}</p>
-                      <p className="text-gray-400 text-sm mt-1">Detail Views</p>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex gap-1 h-3 rounded-full overflow-hidden">
-                    <div className="bg-blue-500 flex-1 rounded-l-full" />
-                    <div className="bg-tastelanc-accent" style={{ flex: Math.max(analyticsData.conversionFunnel.clickRate / 100, 0.05) }} />
-                    <div className="bg-green-500 rounded-r-full" style={{ flex: Math.max((analyticsData.conversionFunnel.viewRate * analyticsData.conversionFunnel.clickRate) / 10000, 0.02) }} />
-                  </div>
-                  <div className="flex justify-between mt-2 text-xs text-gray-500">
-                    <span>Seen in app</span>
-                    <span>Clicked</span>
-                    <span>Viewed profile</span>
-                  </div>
-                </Card>
-              )}
-
-              {/* Recent Activity */}
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">Recent Activity</h3>
-                {analyticsData.recentActivity && analyticsData.recentActivity.length > 0 ? (
-                  <div className="space-y-4">
-                    {analyticsData.recentActivity.map((activity, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between py-3 border-b border-tastelanc-surface-light last:border-0"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-2 h-2 rounded-full bg-tastelanc-accent" />
-                          <span className="text-gray-300">{activity.action}</span>
-                          {activity.count > 1 && (
-                            <Badge variant="default">x{activity.count}</Badge>
-                          )}
-                        </div>
-                        <span className="text-gray-500 text-sm">{activity.time}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    No recent activity yet. Activity will appear as users interact with your listing.
-                  </div>
-                )}
-              </Card>
             </>
           )}
         </>
       )}
-
-      {/* Quick Actions */}
-      <div>
-        <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
-        <div className="grid sm:grid-cols-3 gap-4">
-          {quickActions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <Link
-                key={action.label}
-                href={action.href}
-                className="flex items-center gap-3 p-4 bg-tastelanc-card rounded-lg hover:bg-tastelanc-surface-light transition-colors group"
-              >
-                <div className="p-2 bg-tastelanc-surface rounded-lg">
-                  <Icon className="w-5 h-5 text-tastelanc-accent" />
-                </div>
-                <span className="text-white">{action.label}</span>
-                <ArrowRight className="w-4 h-4 text-gray-400 ml-auto group-hover:text-white transition-colors" />
-              </Link>
-            );
-          })}
-        </div>
-      </div>
 
       {/* Two Column Layout */}
       <div className="grid lg:grid-cols-2 gap-8">

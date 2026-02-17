@@ -1,45 +1,27 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
-
-// Service role client to bypass RLS for analytics queries
-function getSupabaseAdmin() {
-  return createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { verifyRestaurantAccess } from '@/lib/auth/restaurant-access';
 
 export async function GET(request: Request) {
   try {
-    const supabase = await createClient();
-    const supabaseAdmin = getSupabaseAdmin();
     const { searchParams } = new URL(request.url);
     const restaurantId = searchParams.get('restaurant_id');
-    const adminMode = searchParams.get('admin_mode') === 'true';
-
-    // Verify user is authenticated
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // If not admin mode, verify user owns this restaurant
-    if (!adminMode && restaurantId) {
-      const { data: restaurant } = await supabaseAdmin
-        .from('restaurants')
-        .select('owner_id')
-        .eq('id', restaurantId)
-        .single();
-
-      if (!restaurant || restaurant.owner_id !== user.id) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
 
     if (!restaurantId) {
       return NextResponse.json({ error: 'restaurant_id required' }, { status: 400 });
     }
+
+    const supabase = await createClient();
+    const accessResult = await verifyRestaurantAccess(supabase, restaurantId);
+
+    if (!accessResult.canAccess) {
+      return NextResponse.json(
+        { error: accessResult.error || 'Access denied' },
+        { status: accessResult.userId ? 403 : 401 }
+      );
+    }
+
+    const supabaseAdmin = createServiceRoleClient();
 
     // Calculate date ranges
     const now = new Date();
