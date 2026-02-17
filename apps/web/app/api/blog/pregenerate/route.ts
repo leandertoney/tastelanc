@@ -319,6 +319,72 @@ async function fetchBlogContext(
 }
 
 // ─────────────────────────────────────────────────────────
+// SLUG AUTO-CORRECTION
+// ─────────────────────────────────────────────────────────
+
+/**
+ * Auto-correct restaurant slugs in generated HTML.
+ * AI often hallucinates slightly wrong slugs (apostrophes, extra hyphens, etc).
+ * This fixes near-misses by matching to the closest valid slug.
+ */
+function autoCorrectSlugs(bodyHtml: string, validSlugs: Set<string>): string {
+  const linkRegex = /href="\/restaurants\/([^"]+)"/g;
+
+  return bodyHtml.replace(linkRegex, (fullMatch, slug) => {
+    if (validSlugs.has(slug)) return fullMatch; // Already correct
+
+    // Normalize: strip apostrophes, collapse hyphens, lowercase
+    const normalize = (s: string) => s.toLowerCase().replace(/['']/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    const normalizedSlug = normalize(slug);
+
+    // Try exact normalized match
+    const validArray = Array.from(validSlugs);
+    for (const valid of validArray) {
+      if (normalize(valid) === normalizedSlug) {
+        console.log(`Slug auto-corrected: "${slug}" → "${valid}"`);
+        return `href="/restaurants/${valid}"`;
+      }
+    }
+
+    // Try Levenshtein-like fuzzy match (max 2 char difference)
+    let bestMatch: string | null = null;
+    let bestDist = 3; // max allowed distance
+    for (const valid of validArray) {
+      const dist = simpleEditDistance(normalizedSlug, normalize(valid));
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestMatch = valid;
+      }
+    }
+
+    if (bestMatch) {
+      console.log(`Slug fuzzy-corrected: "${slug}" → "${bestMatch}" (distance: ${bestDist})`);
+      return `href="/restaurants/${bestMatch}"`;
+    }
+
+    return fullMatch; // Leave as-is if no match found
+  });
+}
+
+/** Simple edit distance (Levenshtein) — only computed for short strings (slugs). */
+function simpleEditDistance(a: string, b: string): number {
+  if (Math.abs(a.length - b.length) > 3) return 999; // Quick bail for very different lengths
+  const matrix: number[][] = [];
+  for (let i = 0; i <= a.length; i++) {
+    matrix[i] = [i];
+    for (let j = 1; j <= b.length; j++) {
+      if (i === 0) { matrix[i][j] = j; continue; }
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+    }
+  }
+  return matrix[a.length][b.length];
+}
+
+// ─────────────────────────────────────────────────────────
 // AUTOMATED REVIEW AGENT
 // ─────────────────────────────────────────────────────────
 
@@ -621,6 +687,9 @@ export async function POST(request: Request) {
       if (!jsonMatch) throw new Error('Could not parse JSON');
 
       parsed = JSON.parse(jsonMatch[0]);
+
+      // Auto-correct hallucinated slugs before review
+      parsed!.body_html = autoCorrectSlugs(parsed!.body_html, validSlugs);
 
       // Run automated review
       review = await reviewBlogPost(parsed!, brand, validSlugs);
