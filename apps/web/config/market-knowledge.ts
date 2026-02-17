@@ -115,3 +115,8 @@ const MARKET_KNOWLEDGE_CONFIG: Record<string, MarketKnowledge> = {
 
 export const LOCAL_KNOWLEDGE: MarketKnowledge =
   MARKET_KNOWLEDGE_CONFIG[MARKET_SLUG] || MARKET_KNOWLEDGE_CONFIG['lancaster-pa'];
+
+/** Get knowledge for a specific market slug (falls back to Lancaster) */
+export function getMarketKnowledge(slug: string): MarketKnowledge {
+  return MARKET_KNOWLEDGE_CONFIG[slug] || MARKET_KNOWLEDGE_CONFIG['lancaster-pa'];
+}

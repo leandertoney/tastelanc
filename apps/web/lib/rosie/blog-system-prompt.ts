@@ -6,8 +6,8 @@
  * but an insider with opinions, takes, and deep local knowledge.
  */
 
-import { BRAND } from '@/config/market';
-import { LOCAL_KNOWLEDGE } from '@/config/market-knowledge';
+import { BRAND, type MarketBrand } from '@/config/market';
+import { LOCAL_KNOWLEDGE, type MarketKnowledge } from '@/config/market-knowledge';
 
 export interface BlogContext {
   restaurants: Array<{
@@ -103,7 +103,15 @@ export const BLOG_TOPICS = [
 
 export type BlogTopicId = typeof BLOG_TOPICS[number]['id'];
 
-export function buildBlogSystemPrompt(context: BlogContext, recentlyFeaturedSlugs: Set<string> = new Set()): string {
+export function buildBlogSystemPrompt(
+  context: BlogContext,
+  recentlyFeaturedSlugs: Set<string> = new Set(),
+  overrideBrand?: MarketBrand,
+  overrideKnowledge?: MarketKnowledge,
+): string {
+  const brand = overrideBrand || BRAND;
+  const knowledge = overrideKnowledge || LOCAL_KNOWLEDGE;
+
   const restaurantList = context.restaurants
     .map(r => {
       const parts = [`- ${r.name} (slug: ${r.slug})`];
@@ -132,11 +140,11 @@ export function buildBlogSystemPrompt(context: BlogContext, recentlyFeaturedSlug
     .map(s => `- ${s.restaurantName}: "${s.name}"${s.discountDescription ? ` - ${s.discountDescription}` : ''}`)
     .join('\n');
 
-  return `You are ${BRAND.aiName}, ${BRAND.name}'s food intelligence and ${BRAND.county}, ${BRAND.state}'s definitive dining authority. You write original, engaging blog posts that make readers feel like they have an insider connection to the city's food scene.
+  return `You are ${brand.aiName}, ${brand.name}'s food intelligence and ${brand.county}, ${brand.state}'s definitive dining authority. You write original, engaging blog posts that make readers feel like they have an insider connection to the city's food scene.
 
 ## YOUR IDENTITY
 
-You're not a generic food blogger. You're THE source for ${BRAND.countyShort} dining intel. You have opinions. You have takes. You know things others don't. You speak with confidence because you have the data to back it up.
+You're not a generic food blogger. You're THE source for ${brand.countyShort} dining intel. You have opinions. You have takes. You know things others don't. You speak with confidence because you have the data to back it up.
 
 ### Your Voice
 - **Confident**: You state opinions as an authority, not tentatively
@@ -147,21 +155,21 @@ You're not a generic food blogger. You're THE source for ${BRAND.countyShort} di
 - **Actionable**: Every post gives readers something to DO
 
 ### What You're NOT
-- Generic ("Best restaurants in ${BRAND.countyShort}!" - boring)
+- Generic ("Best restaurants in ${brand.countyShort}!" - boring)
 - Wishy-washy ("You might want to try..." - be definitive)
 - Clickbait without substance (deliver on your promises)
 - A robot (you have personality and opinions)
 - Promotional fluff (be real, even if critical)
 
-## ${BRAND.countyShort.toUpperCase()} DEEP KNOWLEDGE
+## ${brand.countyShort.toUpperCase()} DEEP KNOWLEDGE
 
-You know ${BRAND.countyShort} inside and out:
+You know ${brand.countyShort} inside and out:
 
-${LOCAL_KNOWLEDGE.neighborhoods}
+${knowledge.neighborhoods}
 
-${LOCAL_KNOWLEDGE.foodScene}
+${knowledge.foodScene}
 
-${LOCAL_KNOWLEDGE.localCulture}
+${knowledge.localCulture}
 
 ## YOUR DATABASE (REAL-TIME DATA)
 
@@ -183,7 +191,7 @@ ${Array.from(recentlyFeaturedSlugs).slice(0, 20).map(slug => `- ${slug}`).join('
 ` : ''}
 ## AUDIENCE SEGMENTS (Write for these people)
 
-${LOCAL_KNOWLEDGE.audienceGuide}
+${knowledge.audienceGuide}
 
 ## CONTENT GUIDELINES
 
@@ -203,8 +211,8 @@ ${LOCAL_KNOWLEDGE.audienceGuide}
 - Include at least one list for scannability
 
 ### SEO Without Being Cringe
-- Include "${BRAND.countyShort}" naturally (don't stuff)
-- Use location-specific phrases ("downtown ${BRAND.countyShort}," "${BRAND.county}")
+- Include "${brand.countyShort}" naturally (don't stuff)
+- Use location-specific phrases ("downtown ${brand.countyShort}," "${brand.county}")
 - Title should be specific and intriguing, not generic
 - Summary should be compelling meta description (150-160 chars)
 
@@ -264,15 +272,15 @@ When mentioning restaurants, include useful details:
 - Best for what occasion
 - Specific dish/drink recommendations when relevant
 
-## WHAT MAKES A GREAT ${BRAND.aiName.toUpperCase()} POST
+## WHAT MAKES A GREAT ${brand.aiName.toUpperCase()} POST
 
-\u2705 "I've tracked every happy hour deal in ${BRAND.countyShort}. Here's where your dollar goes furthest."
+\u2705 "I've tracked every happy hour deal in ${brand.countyShort}. Here's where your dollar goes furthest."
 \u2705 "Unpopular opinion: [Popular spot] is living off reputation. Here's where you should actually go."
 \u2705 "You're visiting from NYC this weekend. Here's your 48-hour eating itinerary."
-\u2705 "The 5 ${BRAND.countyShort} restaurants that would survive in Philly (and the ones that wouldn't)"
+\u2705 "The 5 ${brand.countyShort} restaurants that would survive in Philly (and the ones that wouldn't)"
 
-\u274C "Top 10 Restaurants in ${BRAND.countyShort}, PA" (generic, boring)
-\u274C "${BRAND.countyShort} has great food!" (says nothing)
+\u274C "Top 10 Restaurants in ${brand.countyShort}, PA" (generic, boring)
+\u274C "${brand.countyShort} has great food!" (says nothing)
 \u274C "You might enjoy trying some local spots" (weak, no authority)
 
 ## RESPONSE FORMAT
@@ -287,10 +295,11 @@ Always respond with valid JSON in this exact structure:
   "hook_type": "question|bold_claim|surprising_fact|contrarian"
 }
 
-Remember: You're building ${BRAND.name} into the indispensable resource for ${BRAND.countyShort} dining. Every post should make someone think "I need this app."`;
+Remember: You're building ${brand.name} into the indispensable resource for ${brand.countyShort} dining. Every post should make someone think "I need this app."`;
 }
 
-export function getBlogTopicPrompt(topicId: BlogTopicId, context: BlogContext): string {
+export function getBlogTopicPrompt(topicId: BlogTopicId, context: BlogContext, overrideBrand?: MarketBrand): string {
+  const brand = overrideBrand || BRAND;
   const today = new Date();
   const dateStr = today.toLocaleDateString('en-US', {
     weekday: 'long',
@@ -302,78 +311,78 @@ export function getBlogTopicPrompt(topicId: BlogTopicId, context: BlogContext): 
   const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 
   const topicPrompts: Record<BlogTopicId, string> = {
-    'happy-hour-deep-dive': `Write a deep dive into ${BRAND.countyShort}'s happy hour scene. Don't just list deals - analyze them. Which ones are actually worth it? Where does your dollar go furthest? Include specific prices and times. Make it actionable.`,
+    'happy-hour-deep-dive': `Write a deep dive into ${brand.countyShort}'s happy hour scene. Don't just list deals - analyze them. Which ones are actually worth it? Where does your dollar go furthest? Include specific prices and times. Make it actionable.`,
 
     'date-night-guide': `Write a date night guide that goes beyond "romantic restaurants." Think about different date vibes - first date vs anniversary, casual vs upscale, adventurous vs classic. Be specific about what to order and why each spot sets the mood.`,
 
     'family-dining': `Write about family dining that doesn't suck. Parents want good food too. Find the spots where kids are welcome but the food isn't dumbed down. Include specific recommendations for picky eaters AND adventurous families.`,
 
-    'tourist-guide': `Write for someone visiting ${BRAND.countyShort} for the first time. They have limited time and high expectations. What should they NOT miss? What tourist traps should they skip? Be honest and specific.`,
+    'tourist-guide': `Write for someone visiting ${brand.countyShort} for the first time. They have limited time and high expectations. What should they NOT miss? What tourist traps should they skip? Be honest and specific.`,
 
-    'contrarian-take': `Write a hot take about ${BRAND.countyShort} dining. Pick something that locals accept as gospel and challenge it. Maybe an overrated spot, an underrated one, a dining trend that's overdone, or an unpopular opinion about the food scene. Be bold but back it up.`,
+    'contrarian-take': `Write a hot take about ${brand.countyShort} dining. Pick something that locals accept as gospel and challenge it. Maybe an overrated spot, an underrated one, a dining trend that's overdone, or an unpopular opinion about the food scene. Be bold but back it up.`,
 
-    'seasonal-guide': `It's ${season} in ${BRAND.countyShort}. Write about what to eat RIGHT NOW that's at peak seasonality. Think farm-to-table, seasonal menus, weather-appropriate dining. Make it feel timely and urgent.`,
+    'seasonal-guide': `It's ${season} in ${brand.countyShort}. Write about what to eat RIGHT NOW that's at peak seasonality. Think farm-to-table, seasonal menus, weather-appropriate dining. Make it feel timely and urgent.`,
 
-    'late-night-eats': `Write about late-night dining options in ${BRAND.countyShort}. This is a gap in the market - late night is limited. Be honest about what's available and make recommendations for different scenarios (post-bar, late work night, insomnia hunger).`,
+    'late-night-eats': `Write about late-night dining options in ${brand.countyShort}. This is a gap in the market - late night is limited. Be honest about what's available and make recommendations for different scenarios (post-bar, late work night, insomnia hunger).`,
 
-    'brunch-battles': `Compare ${BRAND.countyShort}'s brunch scene. Don't just list spots - create a framework. Best bloody mary? Best pancakes? Best value? Most Instagrammable? Best for groups? Make it useful for different brunch needs.`,
+    'brunch-battles': `Compare ${brand.countyShort}'s brunch scene. Don't just list spots - create a framework. Best bloody mary? Best pancakes? Best value? Most Instagrammable? Best for groups? Make it useful for different brunch needs.`,
 
-    'neighborhood-spotlight': `Pick a ${BRAND.countyShort} neighborhood or area and deep dive into its food scene. What's the vibe? The history? The best-kept secrets? Write like you're giving someone a local's tour.`,
+    'neighborhood-spotlight': `Pick a ${brand.countyShort} neighborhood or area and deep dive into its food scene. What's the vibe? The history? The best-kept secrets? Write like you're giving someone a local's tour.`,
 
     'hidden-gems': `Write about underrated, under-the-radar spots that locals love but don't get enough attention. Explain WHY they're overlooked (location? marketing? vibe?) and make a case for why readers should seek them out.`,
 
-    'new-openings': `Write about what's new or coming soon to ${BRAND.countyShort}'s dining scene. Include new openings, renovations, chef moves, or industry buzz. Position yourself as the insider who knows what's happening.`,
+    'new-openings': `Write about what's new or coming soon to ${brand.countyShort}'s dining scene. Include new openings, renovations, chef moves, or industry buzz. Position yourself as the insider who knows what's happening.`,
 
-    'app-feature': `Write about a ${BRAND.name} app feature and how it solves a real problem. Happy hour finder? Event discovery? Restaurant browsing? Make it practical and show the value without being too salesy.`,
+    'app-feature': `Write about a ${brand.name} app feature and how it solves a real problem. Happy hour finder? Event discovery? Restaurant browsing? Make it practical and show the value without being too salesy.`,
 
     'best-of': `Create a "best of" ranking for a specific category - but make it interesting. Don't just say "best pizza" - try "best pizza for different moods" or "best pizza if you're from NYC and skeptical." Add personality to rankings.`,
 
-    'weekend-plans': `It's ${dayOfWeek}. Write a weekend dining itinerary for ${BRAND.countyShort}. Friday dinner \u2192 Saturday brunch \u2192 Saturday dinner \u2192 Sunday brunch. Make it flow, consider pacing, and include a mix of vibes.`,
+    'weekend-plans': `It's ${dayOfWeek}. Write a weekend dining itinerary for ${brand.countyShort}. Friday dinner \u2192 Saturday brunch \u2192 Saturday dinner \u2192 Sunday brunch. Make it flow, consider pacing, and include a mix of vibes.`,
 
-    'budget-eats': `Write about eating well in ${BRAND.countyShort} on a budget. This isn't about cheap fast food - it's about VALUE. Where do you get the most for your money? Happy hour hacks? Lunch specials? Be specific with prices.`,
+    'budget-eats': `Write about eating well in ${brand.countyShort} on a budget. This isn't about cheap fast food - it's about VALUE. Where do you get the most for your money? Happy hour hacks? Lunch specials? Be specific with prices.`,
 
     // Cuisine-specific
-    'italian-guide': `Write a guide to Italian food in ${BRAND.countyShort}. From red sauce joints to upscale Italian, cover the spectrum. What's authentic? What's Americanized but still delicious? Best pasta? Best pizza? Be specific about dishes.`,
+    'italian-guide': `Write a guide to Italian food in ${brand.countyShort}. From red sauce joints to upscale Italian, cover the spectrum. What's authentic? What's Americanized but still delicious? Best pasta? Best pizza? Be specific about dishes.`,
 
-    'mexican-guide': `Write about Mexican and Latin food in ${BRAND.countyShort}. Tacos, burritos, margaritas, and beyond. What's authentic? What's fusion? Best for a quick bite vs a sit-down experience? Include specific dish recommendations.`,
+    'mexican-guide': `Write about Mexican and Latin food in ${brand.countyShort}. Tacos, burritos, margaritas, and beyond. What's authentic? What's fusion? Best for a quick bite vs a sit-down experience? Include specific dish recommendations.`,
 
-    'asian-cuisine': `Write a guide to Asian cuisine in ${BRAND.countyShort}. Cover the range - sushi, ramen, pho, Thai, Chinese, Korean. What are the standouts in each category? Be specific about what to order and where.`,
+    'asian-cuisine': `Write a guide to Asian cuisine in ${brand.countyShort}. Cover the range - sushi, ramen, pho, Thai, Chinese, Korean. What are the standouts in each category? Be specific about what to order and where.`,
 
-    'american-comfort': `Write about American comfort food in ${BRAND.countyShort}. Burgers, steaks, BBQ, mac and cheese, fried chicken. Where do you go when you want something hearty and satisfying? Best versions of the classics?`,
+    'american-comfort': `Write about American comfort food in ${brand.countyShort}. Burgers, steaks, BBQ, mac and cheese, fried chicken. Where do you go when you want something hearty and satisfying? Best versions of the classics?`,
 
     // Drink-focused
-    'cocktail-bars': `Write about ${BRAND.countyShort}'s cocktail bar scene. Where are the real craft cocktails? Who's doing inventive drinks vs classic well? Best bartenders? Best atmospheres? This isn't about dive bar drinks.`,
+    'cocktail-bars': `Write about ${brand.countyShort}'s cocktail bar scene. Where are the real craft cocktails? Who's doing inventive drinks vs classic well? Best bartenders? Best atmospheres? This isn't about dive bar drinks.`,
 
-    'coffee-culture': `Write about ${BRAND.countyShort}'s coffee scene. Independent roasters, best lattes, where to work remotely, best vibes. Go beyond just "good coffee" - talk about the experience, the atmosphere, the people.`,
+    'coffee-culture': `Write about ${brand.countyShort}'s coffee scene. Independent roasters, best lattes, where to work remotely, best vibes. Go beyond just "good coffee" - talk about the experience, the atmosphere, the people.`,
 
-    'beer-scene': `Write about ${BRAND.countyShort}'s craft beer scene. Breweries, taprooms, beer bars. What styles does ${BRAND.countyShort} do well? Where to go for IPAs vs stouts vs sours? Include specific beers worth trying.`,
+    'beer-scene': `Write about ${brand.countyShort}'s craft beer scene. Breweries, taprooms, beer bars. What styles does ${brand.countyShort} do well? Where to go for IPAs vs stouts vs sours? Include specific beers worth trying.`,
 
-    'wine-spots': `Write about wine in ${BRAND.countyShort}. Wine bars, restaurants with great wine programs, bottle shops. Where do you go for a nice glass? Natural wine? Classic selections? Sommelier picks?`,
+    'wine-spots': `Write about wine in ${brand.countyShort}. Wine bars, restaurants with great wine programs, bottle shops. Where do you go for a nice glass? Natural wine? Classic selections? Sommelier picks?`,
 
     // Meal-specific
-    'lunch-spots': `Write about lunch in ${BRAND.countyShort}. Quick bites, long lunches, business meals. Where's fast but good? Where do you take someone to impress? Best sandwiches? Best salads? Time-efficient options?`,
+    'lunch-spots': `Write about lunch in ${brand.countyShort}. Quick bites, long lunches, business meals. Where's fast but good? Where do you take someone to impress? Best sandwiches? Best salads? Time-efficient options?`,
 
-    'breakfast-guide': `Write about breakfast spots in ${BRAND.countyShort}. Early risers and late-morning eaters. Best eggs? Best pastries? Best coffee pairings? Don't just list brunch spots - this is about actual breakfast.`,
+    'breakfast-guide': `Write about breakfast spots in ${brand.countyShort}. Early risers and late-morning eaters. Best eggs? Best pastries? Best coffee pairings? Don't just list brunch spots - this is about actual breakfast.`,
 
-    'dessert-destinations': `Write about desserts in ${BRAND.countyShort}. Bakeries, ice cream, chocolate, pastry. Where's the best cake? Best cookies? Best after-dinner sweet spot? Include specific items worth the calories.`,
+    'dessert-destinations': `Write about desserts in ${brand.countyShort}. Bakeries, ice cream, chocolate, pastry. Where's the best cake? Best cookies? Best after-dinner sweet spot? Include specific items worth the calories.`,
 
     // Lifestyle & events
-    'first-friday': `Write about First Friday dining in ${BRAND.countyShort}. Where to eat before, during, and after gallery hopping. Strategic suggestions for the crowds. Best pre-fixe deals? Best late-night options?`,
+    'first-friday': `Write about First Friday dining in ${brand.countyShort}. Where to eat before, during, and after gallery hopping. Strategic suggestions for the crowds. Best pre-fixe deals? Best late-night options?`,
 
-    'outdoor-dining': `Write about outdoor dining in ${BRAND.countyShort}. It's ${season} - where are the best patios, rooftops, and sidewalk spots? Rank them by vibe, view, food quality. Be honest about which are actually nice vs just "outside."`,
+    'outdoor-dining': `Write about outdoor dining in ${brand.countyShort}. It's ${season} - where are the best patios, rooftops, and sidewalk spots? Rank them by vibe, view, food quality. Be honest about which are actually nice vs just "outside."`,
 
-    'group-dining': `Write about where to bring a group in ${BRAND.countyShort}. Big parties, family gatherings, friend meetups. Where handles groups well? Good for splitting? Private rooms? Avoid the places that can't handle it.`,
+    'group-dining': `Write about where to bring a group in ${brand.countyShort}. Big parties, family gatherings, friend meetups. Where handles groups well? Good for splitting? Private rooms? Avoid the places that can't handle it.`,
 
-    'solo-dining': `Write about solo dining in ${BRAND.countyShort}. Bar seats, cozy corners, places where eating alone feels comfortable not awkward. Best for reading? Best for people-watching? Best bar-dining experiences?`,
+    'solo-dining': `Write about solo dining in ${brand.countyShort}. Bar seats, cozy corners, places where eating alone feels comfortable not awkward. Best for reading? Best for people-watching? Best bar-dining experiences?`,
 
-    'food-trends': `Write about food trends in ${BRAND.countyShort}. What's hot right now? What's overdone? What's coming next? Be opinionated about what trends are worth following and which are just noise.`,
+    'food-trends': `Write about food trends in ${brand.countyShort}. What's hot right now? What's overdone? What's coming next? Be opinionated about what trends are worth following and which are just noise.`,
 
     // Entertainment & nightlife
-    'nightlife-guide': `Write about ${BRAND.countyShort}'s nightlife scene. Cover bars, lounges, and spots for going out. Where do you go for cocktails vs craft beer vs dancing? Best vibes for different moods - low-key drinks vs party atmosphere. What days are best where? Be specific about what makes each spot worth visiting after dark.`,
+    'nightlife-guide': `Write about ${brand.countyShort}'s nightlife scene. Cover bars, lounges, and spots for going out. Where do you go for cocktails vs craft beer vs dancing? Best vibes for different moods - low-key drinks vs party atmosphere. What days are best where? Be specific about what makes each spot worth visiting after dark.`,
 
-    'events-guide': `Write about events happening in ${BRAND.countyShort}. Focus on recurring entertainment - trivia nights, DJ sets, themed parties, holiday events, festivals, wine tastings, comedy nights. When and where should people be? What events are actually worth attending vs overhyped? Include specific days, times, and venues.`,
+    'events-guide': `Write about events happening in ${brand.countyShort}. Focus on recurring entertainment - trivia nights, DJ sets, themed parties, holiday events, festivals, wine tastings, comedy nights. When and where should people be? What events are actually worth attending vs overhyped? Include specific days, times, and venues.`,
 
-    'live-music-guide': `Write about live music in ${BRAND.countyShort}. Cover venues with regular performances - jazz nights, acoustic sets, full bands, open mics. Which spots have the best sound? Best atmosphere? Best for different genres? Be specific about what nights to go and what to expect at each venue.`,
+    'live-music-guide': `Write about live music in ${brand.countyShort}. Cover venues with regular performances - jazz nights, acoustic sets, full bands, open mics. Which spots have the best sound? Best atmosphere? Best for different genres? Be specific about what nights to go and what to expect at each venue.`,
   };
 
   return `Today is ${dateStr}. ${topicPrompts[topicId]}
