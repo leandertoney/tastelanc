@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import type { Restaurant } from '../types/database';
 import type { OnboardingData } from '../types/onboarding';
@@ -17,8 +18,8 @@ import {
   getPersonalizedGreeting,
   getRecommendationReason,
 } from '../lib/recommendations';
-import { toggleFavorite, isFavorited } from '../lib/favorites';
 import { useAuth } from '../hooks/useAuth';
+import { useFavorites, useToggleFavorite } from '../hooks';
 import { useMarket } from '../context/MarketContext';
 import { trackVisibleItems } from '../lib/impressions';
 import { colors, radius } from '../constants/colors';
@@ -35,50 +36,29 @@ export default function RecommendedSection({
 }: RecommendedSectionProps) {
   const { userId } = useAuth();
   const { marketId, isLoading: marketLoading } = useMarket();
-  const [recommendations, setRecommendations] = useState<Restaurant[]>([]);
-  const [preferences, setPreferences] = useState<OnboardingData | null>(null);
-  const [greeting, setGreeting] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<boolean>(false);
-  const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+  const { data: favorites = [] } = useFavorites();
+  const toggleFavoriteMutation = useToggleFavorite();
 
-  const loadRecommendations = useCallback(async () => {
-    // Don't fetch until market has resolved — avoids unfiltered cross-market results
-    if (marketLoading) return;
+  // React Query — reads from splash prefetch cache instantly
+  const { data: recommendations = [], isLoading: recsLoading, isError: recsError } = useQuery({
+    queryKey: ['recommendations', userId ?? 'anon', marketId],
+    queryFn: () => getRecommendations(8, userId ?? undefined, undefined, marketId),
+    staleTime: 5 * 60 * 1000,
+    enabled: !marketLoading,
+  });
 
-    try {
-      setLoading(true);
-      setError(false);
-      const [recs, prefs] = await Promise.all([
-        getRecommendations(8, userId ?? undefined, undefined, marketId),
-        getUserPreferences(),
-      ]);
+  const { data: preferences = null } = useQuery<OnboardingData | null>({
+    queryKey: ['userPreferences'],
+    queryFn: getUserPreferences,
+    staleTime: 10 * 60 * 1000,
+  });
 
-      setRecommendations(recs);
-      setPreferences(prefs);
-      setGreeting(getPersonalizedGreeting(prefs));
+  const greeting = useMemo(
+    () => getPersonalizedGreeting(preferences),
+    [preferences]
+  );
 
-      // Check favorites for each recommendation
-      if (userId) {
-        const favMap: Record<string, boolean> = {};
-        for (const r of recs) {
-          favMap[r.id] = await isFavorited(userId, r.id);
-        }
-        setFavorites(favMap);
-      }
-    } catch (err) {
-      console.error('Error loading recommendations:', err);
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [userId, marketId, marketLoading]);
-
-  useEffect(() => {
-    loadRecommendations();
-  }, [loadRecommendations]);
-
-  // Track impressions for all recommended restaurants when they load
+  // Track impressions when recommendations load
   useEffect(() => {
     if (recommendations.length > 0) {
       trackVisibleItems(
@@ -88,13 +68,14 @@ export default function RecommendedSection({
     }
   }, [recommendations]);
 
-  const handleFavoritePress = async (restaurantId: string) => {
-    if (!userId) return;
-    const newState = await toggleFavorite(userId, restaurantId);
-    setFavorites((prev) => ({ ...prev, [restaurantId]: newState }));
-  };
+  const handleFavoritePress = useCallback(
+    (restaurantId: string) => {
+      toggleFavoriteMutation.mutate(restaurantId);
+    },
+    [toggleFavoriteMutation]
+  );
 
-  if (loading) {
+  if (recsLoading) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -111,7 +92,7 @@ export default function RecommendedSection({
   }
 
   // Don't show section on error or if no recommendations
-  if (error || recommendations.length === 0) {
+  if (recsError || recommendations.length === 0) {
     return null;
   }
 
@@ -165,9 +146,9 @@ export default function RecommendedSection({
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <Ionicons
-                    name={favorites[restaurant.id] ? 'heart' : 'heart-outline'}
+                    name={favorites.includes(restaurant.id) ? 'heart' : 'heart-outline'}
                     size={18}
-                    color={favorites[restaurant.id] ? colors.accent : colors.text}
+                    color={favorites.includes(restaurant.id) ? colors.accent : colors.text}
                   />
                 </TouchableOpacity>
                 {reason && (

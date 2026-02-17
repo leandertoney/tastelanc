@@ -3,13 +3,14 @@
  * Loads all data during splash screen for instant HomeScreen rendering
  */
 
-import { queryClient } from './queryClient';
+import { queryClient, queryKeys } from './queryClient';
 import { supabase } from './supabase';
-import { getFeaturedRestaurants, getOtherRestaurants } from './recommendations';
+import { getFeaturedRestaurants, getOtherRestaurants, getRecommendations, getUserPreferences } from './recommendations';
 import { getActiveAds } from './ads';
 import { fetchEntertainmentEvents, fetchEvents, ENTERTAINMENT_TYPES, ApiEvent } from './events';
 import { getFavorites } from './favorites';
 import { getLeaderboard } from './voting';
+import { getCurrentDay } from '../hooks/useOpenStatus';
 import type { HappyHour, HappyHourItem, Restaurant, DayOfWeek } from '../types/database';
 import { ALL_CUISINES, CuisineType } from '../types/database';
 
@@ -215,17 +216,15 @@ export async function prefetchHomeScreenData(userId: string | null, marketId: st
   console.log('[Prefetch] Starting prefetch for userId:', userId, 'marketId:', marketId);
 
   try {
-    // First, prefetch featured restaurants to get IDs for otherRestaurants query
-    const featuredRestaurants = await queryClient.fetchQuery({
-      queryKey: ['featuredRestaurants', marketId],
-      queryFn: () => getFeaturedRestaurants(16, marketId),
-      staleTime: 5 * 60 * 1000,
-    });
+    // Launch ALL independent queries in parallel — don't wait for featured first
+    const independentQueries = [
+      // Featured restaurants (needed for otherRestaurants, but runs in parallel with everything else)
+      queryClient.fetchQuery({
+        queryKey: ['featuredRestaurants', marketId],
+        queryFn: () => getFeaturedRestaurants(16, marketId),
+        staleTime: 5 * 60 * 1000,
+      }),
 
-    const featuredIds = featuredRestaurants.map(r => r.id);
-
-    // Now prefetch all other queries in parallel
-    const prefetchPromises = [
       // Favorites (requires userId)
       userId
         ? queryClient.prefetchQuery({
@@ -277,22 +276,57 @@ export async function prefetchHomeScreenData(userId: string | null, marketId: st
         staleTime: 10 * 60 * 1000,
       }),
 
-      // Other restaurants (just prefetch first page data)
-      queryClient.prefetchQuery({
-        queryKey: ['otherRestaurantsPage0', featuredIds, marketId],
-        queryFn: () => getOtherRestaurants(featuredIds, 0, 10, marketId),
-        staleTime: 5 * 60 * 1000,
-      }),
-
       // Featured ads (for carousel ad slots)
       queryClient.prefetchQuery({
         queryKey: ['featuredAds', marketId],
         queryFn: () => getActiveAds(marketId),
         staleTime: 5 * 60 * 1000,
       }),
+
+      // Open status (today's hours for all restaurants — powers Open/Closed badges)
+      queryClient.prefetchQuery({
+        queryKey: queryKeys.openStatus.today(getCurrentDay()),
+        queryFn: async () => {
+          const today = getCurrentDay();
+          const { data, error } = await supabase
+            .from('restaurant_hours')
+            .select('restaurant_id, open_time, close_time, is_closed')
+            .eq('day_of_week', today);
+          if (error) return {};
+          const map: Record<string, { open_time: string | null; close_time: string | null; is_closed: boolean }> = {};
+          for (const row of data || []) {
+            map[row.restaurant_id] = { open_time: row.open_time, close_time: row.close_time, is_closed: row.is_closed };
+          }
+          return map;
+        },
+        staleTime: 5 * 60 * 1000,
+      }),
+
+      // Recommendations + user preferences (powers "Recommended for You" section)
+      queryClient.prefetchQuery({
+        queryKey: ['recommendations', userId ?? 'anon', marketId],
+        queryFn: () => getRecommendations(8, userId ?? undefined, undefined, marketId),
+        staleTime: 5 * 60 * 1000,
+      }),
+      queryClient.prefetchQuery({
+        queryKey: ['userPreferences'],
+        queryFn: getUserPreferences,
+        staleTime: 10 * 60 * 1000,
+      }),
     ];
 
-    await Promise.all(prefetchPromises);
+    // Wait for all independent queries — featured result is at index 0
+    const results = await Promise.all(independentQueries);
+    const featuredRestaurants = results[0] as Restaurant[];
+    const featuredIds = featuredRestaurants?.map(r => r.id) || [];
+
+    // Now prefetch otherRestaurants which depends on featuredIds
+    await queryClient.prefetchQuery({
+      queryKey: ['otherRestaurantsPage0', featuredIds, marketId],
+      queryFn: () => getOtherRestaurants(featuredIds, 0, 10, marketId),
+      staleTime: 5 * 60 * 1000,
+    });
+
     console.log('[Prefetch] All queries prefetched successfully');
   } catch (error) {
     console.error('[Prefetch] Error during prefetch:', error);

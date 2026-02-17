@@ -9,7 +9,7 @@ interface TodayHours {
   is_closed: boolean;
 }
 
-function getCurrentDay(): DayOfWeek {
+export function getCurrentDay(): DayOfWeek {
   const days: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   return days[new Date().getDay()];
 }
