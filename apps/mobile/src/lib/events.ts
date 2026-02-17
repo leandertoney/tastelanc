@@ -72,6 +72,7 @@ export interface FetchEventsParams {
   restaurant_id?: string;
   paid_only?: boolean;
   limit?: number;
+  market_id?: string | null;
 }
 
 /**
@@ -92,6 +93,9 @@ export async function fetchEvents(params?: FetchEventsParams): Promise<ApiEvent[
   if (params?.restaurant_id) {
     url.searchParams.set('restaurant_id', params.restaurant_id);
   }
+  if (params?.market_id) {
+    url.searchParams.set('market_id', params.market_id);
+  }
 
   const response = await fetch(url.toString());
 
@@ -107,8 +111,8 @@ export async function fetchEvents(params?: FetchEventsParams): Promise<ApiEvent[
  * Fetch events for multiple types (e.g., all entertainment types)
  * Since the API only supports one type at a time, we fetch all and filter client-side
  */
-export async function fetchEventsByTypes(types: EventType[]): Promise<ApiEvent[]> {
-  const allEvents = await fetchEvents();
+export async function fetchEventsByTypes(types: EventType[], marketId?: string | null): Promise<ApiEvent[]> {
+  const allEvents = await fetchEvents({ market_id: marketId });
   return allEvents.filter(event => types.includes(event.event_type));
 }
 
@@ -127,15 +131,15 @@ export const ENTERTAINMENT_TYPES: EventType[] = [
 /**
  * Fetch only entertainment events
  */
-export async function fetchEntertainmentEvents(): Promise<ApiEvent[]> {
-  return fetchEventsByTypes(ENTERTAINMENT_TYPES);
+export async function fetchEntertainmentEvents(marketId?: string | null): Promise<ApiEvent[]> {
+  return fetchEventsByTypes(ENTERTAINMENT_TYPES, marketId);
 }
 
 /**
  * Fetch only non-entertainment events (e.g., promotions)
  * Used by Upcoming Events section to avoid overlap with Entertainment section
  */
-export async function fetchNonEntertainmentEvents(): Promise<ApiEvent[]> {
-  const allEvents = await fetchEvents();
+export async function fetchNonEntertainmentEvents(marketId?: string | null): Promise<ApiEvent[]> {
+  const allEvents = await fetchEvents({ market_id: marketId });
   return allEvents.filter(event => !ENTERTAINMENT_TYPES.includes(event.event_type));
 }

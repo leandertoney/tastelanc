@@ -54,8 +54,8 @@ interface EventsResult {
   hasTodayEvents: boolean;
 }
 
-async function getUpcomingEvents(): Promise<EventsResult> {
-  const allEvents = await fetchEvents();
+async function getUpcomingEvents(marketId?: string | null): Promise<EventsResult> {
+  const allEvents = await fetchEvents({ market_id: marketId });
   const nonEntertainment = allEvents.filter(
     event => !ENTERTAINMENT_TYPES.includes(event.event_type)
   );
@@ -142,7 +142,7 @@ export default function EventsSection() {
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['upcomingEvents', marketId],
-    queryFn: getUpcomingEvents,
+    queryFn: () => getUpcomingEvents(marketId),
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
 

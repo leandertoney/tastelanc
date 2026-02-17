@@ -4,6 +4,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { useIsRestoring } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { prefetchHomeScreenData } from '../lib/prefetch';
+import { MARKET_SLUG } from '../config/market';
 
 interface SplashVideoScreenProps {
   onComplete: () => void;
@@ -26,13 +27,26 @@ export default function SplashVideoScreen({ onComplete }: SplashVideoScreenProps
     player.play();
   });
 
-  // Start prefetching immediately
+  // Start prefetching immediately — resolve market ID first so cache is scoped
   useEffect(() => {
     const runPrefetch = async () => {
       try {
-        // Get userId from existing session (if any)
-        const { data: { session } } = await supabase.auth.getSession();
-        await prefetchHomeScreenData(session?.user?.id ?? null);
+        // Resolve market ID and user session in parallel
+        const [sessionResult, marketResult] = await Promise.all([
+          supabase.auth.getSession(),
+          supabase
+            .from('markets')
+            .select('id')
+            .eq('slug', MARKET_SLUG)
+            .eq('is_active', true)
+            .limit(1)
+            .single(),
+        ]);
+
+        const userId = sessionResult.data?.session?.user?.id ?? null;
+        const marketId = marketResult.data?.id ?? null;
+
+        await prefetchHomeScreenData(userId, marketId);
       } catch (error) {
         console.error('[Splash] Prefetch error:', error);
         // Continue anyway - components will fetch data themselves

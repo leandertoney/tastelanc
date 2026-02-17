@@ -34,9 +34,9 @@ interface DateSection {
   data: ApiEvent[];
 }
 
-async function getAllEvents(): Promise<ApiEvent[]> {
+async function getAllEvents(marketId?: string | null): Promise<ApiEvent[]> {
   // Fetch all events and filter out entertainment types inline
-  const allEvents = await fetchEvents();
+  const allEvents = await fetchEvents({ market_id: marketId });
   const nonEntertainment = allEvents.filter(
     event => !ENTERTAINMENT_TYPES.includes(event.event_type)
   );
@@ -202,7 +202,7 @@ export default function EventsViewAllScreen() {
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ['allEvents', marketId],
-    queryFn: getAllEvents,
+    queryFn: () => getAllEvents(marketId),
     staleTime: 5 * 60 * 1000,
   });
 
