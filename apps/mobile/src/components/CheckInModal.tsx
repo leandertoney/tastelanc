@@ -35,7 +35,7 @@ export default function CheckInModal({
   onClose,
   restaurantId,
   restaurantName,
-  restaurantPin = '1234', // Default PIN for demo
+  restaurantPin = '1987', // Default PIN
 }: CheckInModalProps) {
   const { userId } = useAuth();
   const queryClient = useQueryClient();
