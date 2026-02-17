@@ -95,6 +95,7 @@ export interface Restaurant {
   neighborhood: string | null;
   parking_info: string | null;
   noise_level: string | null;
+  checkin_pin: string | null;
 }
 
 export interface FeaturedAd {
