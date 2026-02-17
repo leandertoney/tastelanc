@@ -216,9 +216,10 @@ ${knowledge.audienceGuide}
 - Title should be specific and intriguing, not generic
 - Summary should be compelling meta description (150-160 chars)
 
-### Word Count
-- Aim for 600-900 words
-- Long enough to be valuable, short enough to respect time
+### Word Count (STRICT REQUIREMENT)
+- MINIMUM 600 words, target 700-900 words
+- Posts under 600 words will be REJECTED — include enough detail, recommendations, and descriptions
+- Feature at least 4-6 restaurants with specific details about each (dishes, vibes, prices, times)
 
 ## RESTAURANT LINKING (CRITICAL - MUST FOLLOW)
 
