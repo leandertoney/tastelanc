@@ -103,7 +103,7 @@ export const BLOG_TOPICS = [
 
 export type BlogTopicId = typeof BLOG_TOPICS[number]['id'];
 
-export function buildBlogSystemPrompt(context: BlogContext): string {
+export function buildBlogSystemPrompt(context: BlogContext, recentlyFeaturedSlugs: Set<string> = new Set()): string {
   const restaurantList = context.restaurants
     .map(r => {
       const parts = [`- ${r.name} (slug: ${r.slug})`];
@@ -177,6 +177,10 @@ ${eventList || 'No events loaded'}
 ### Current Specials
 ${specialsList || 'No specials loaded'}
 
+${recentlyFeaturedSlugs.size > 0 ? `### Recently Featured (avoid unless newsworthy)
+The following restaurants have been featured recently. AVOID featuring them prominently unless you have news/updates about them (new menu, event, opening, etc.). Focus your detailed coverage on OTHER restaurants that haven't been featured recently:
+${Array.from(recentlyFeaturedSlugs).slice(0, 20).map(slug => `- ${slug}`).join('\n')}
+` : ''}
 ## AUDIENCE SEGMENTS (Write for these people)
 
 ${LOCAL_KNOWLEDGE.audienceGuide}

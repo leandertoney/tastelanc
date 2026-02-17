@@ -282,6 +282,7 @@ export interface BlogPost {
   cover_image_url: string | null;
   cover_image_data: string | null;
   featured_restaurants: string[] | null;
+  published_at: string | null;
   created_at: string;
   updated_at: string;
 }
