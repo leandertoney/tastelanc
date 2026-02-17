@@ -179,9 +179,14 @@ export default function HappyHourSection() {
       isElite: hh.restaurant.tiers?.name === 'elite',
     }));
 
+  // Elite first, then remaining — cap at 5 banners for the home screen rotation
+  const prioritized = [...mappedHappyHours]
+    .sort((a, b) => (a.isElite === b.isElite ? 0 : a.isElite ? -1 : 1))
+    .slice(0, 5);
+
   // Use real data, or mock data if enabled and no real data
   const displayData: DisplayHappyHour[] =
-    mappedHappyHours.length > 0 ? mappedHappyHours : ENABLE_MOCK_DATA ? MOCK_DISPLAY_HAPPY_HOURS : [];
+    prioritized.length > 0 ? prioritized : ENABLE_MOCK_DATA ? MOCK_DISPLAY_HAPPY_HOURS : [];
 
   // Ensure currentIndex is valid when displayData changes
   const safeIndex = displayData.length > 0 ? currentIndex % displayData.length : 0;
