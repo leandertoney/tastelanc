@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Save, Upload, MapPin, Phone, Globe, Mail, AlertCircle, Loader2, Clock, Image as ImageIcon, Star, Trash2, Check } from 'lucide-react';
+import { Save, Upload, MapPin, Phone, Globe, Mail, AlertCircle, Loader2, Clock, Image as ImageIcon, Star, Trash2, Check, KeyRound } from 'lucide-react';
 import { Button, Card, Badge } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import { toast } from 'sonner';
@@ -32,6 +32,7 @@ interface FormData {
   email: string;
   website: string;
   categories: RestaurantCategory[];
+  checkin_pin: string;
 }
 
 interface HoursEntry {
@@ -61,7 +62,7 @@ export default function ProfilePage() {
 
   // Profile form state
   const [formData, setFormData] = useState<FormData>({
-    name: '', description: '', address: '', city: '', state: '', zip_code: '', phone: '', email: '', website: '', categories: [],
+    name: '', description: '', address: '', city: '', state: '', zip_code: '', phone: '', email: '', website: '', categories: [], checkin_pin: '1987',
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -97,6 +98,7 @@ export default function ProfilePage() {
         email: '',
         website: restaurant.website || '',
         categories: restaurant.categories || [],
+        checkin_pin: restaurant.checkin_pin || '1987',
       });
     }
   }, [restaurant]);
@@ -164,6 +166,7 @@ export default function ProfilePage() {
           name: formData.name, description: formData.description, address: formData.address,
           city: formData.city, state: formData.state, zip_code: formData.zip_code,
           phone: formData.phone, website: formData.website, categories: formData.categories,
+          checkin_pin: formData.checkin_pin,
         }),
       });
       if (!response.ok) {
@@ -561,6 +564,44 @@ export default function ProfilePage() {
               />
             </div>
           </div>
+        </Card>
+
+        {/* Check-In PIN */}
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <KeyRound className="w-5 h-5" />
+            Check-In PIN
+          </h3>
+          <p className="text-gray-400 text-sm mb-4">
+            This is the 4-digit PIN guests enter to check in at your restaurant and earn rewards points. Share it with your staff so they can provide it to customers.
+          </p>
+          <div className="flex items-center gap-4">
+            <div className="flex-1 max-w-[200px]">
+              <label className="block text-sm font-medium text-gray-300 mb-2">PIN Code</label>
+              <input
+                type="text"
+                value={formData.checkin_pin}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                  setFormData({ ...formData, checkin_pin: value });
+                }}
+                maxLength={4}
+                inputMode="numeric"
+                pattern="[0-9]{4}"
+                placeholder="1234"
+                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white text-2xl font-mono tracking-[0.5em] text-center placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              />
+            </div>
+            <div className="bg-tastelanc-surface rounded-lg px-4 py-3 border border-tastelanc-surface-light">
+              <p className="text-xs text-gray-400 mb-1">Current PIN</p>
+              <p className="text-2xl font-mono font-bold text-tastelanc-accent tracking-[0.3em]">
+                {restaurant?.checkin_pin || '1987'}
+              </p>
+            </div>
+          </div>
+          {formData.checkin_pin.length > 0 && formData.checkin_pin.length < 4 && (
+            <p className="text-amber-400 text-xs mt-2">PIN must be exactly 4 digits</p>
+          )}
         </Card>
 
         {/* Submit Profile */}

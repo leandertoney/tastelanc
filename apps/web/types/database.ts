@@ -93,6 +93,7 @@ export interface Restaurant {
   tastelancrating_count: number;
   reservation_links: string | null;
   stripe_subscription_id: string | null;
+  checkin_pin: string | null;
 }
 
 export interface RestaurantHours {

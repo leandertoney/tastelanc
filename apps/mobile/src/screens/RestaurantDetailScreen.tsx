@@ -754,6 +754,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
         onClose={() => setCheckInModalVisible(false)}
         restaurantId={id}
         restaurantName={restaurant.name}
+        restaurantPin={restaurant.checkin_pin ?? undefined}
       />
     </View>
   );
