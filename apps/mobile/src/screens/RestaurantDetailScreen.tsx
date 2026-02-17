@@ -474,6 +474,9 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                       <Text style={styles.contentDays}>
                         {hh.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
                       </Text>
+                      {hh.description && (
+                        <Text style={styles.contentDescription}>{hh.description}</Text>
+                      )}
                       {hh.items && hh.items.length > 0 && (
                         <View style={styles.itemsList}>
                           {hh.items.map((item) => (

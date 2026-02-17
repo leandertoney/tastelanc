@@ -279,6 +279,7 @@ export default function HomeScreen() {
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <FlatList
           data={listData}
+          extraData={marketId}
           renderItem={renderListItem}
           keyExtractor={(item) => item.key}
           ListHeaderComponent={renderHeader}
