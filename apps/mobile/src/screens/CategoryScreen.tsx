@@ -14,6 +14,7 @@ import { supabase } from '../lib/supabase';
 import { getFavorites, toggleFavorite } from '../lib/favorites';
 import { tieredFairRotate, getTierName } from '../lib/fairRotation';
 import { useAuth, usePromoCard } from '../hooks';
+import { useMarket } from '../context/MarketContext';
 import { injectPromoIntoList, type ListItem } from '../lib/listUtils';
 import type { Restaurant, RestaurantCategory } from '../types/database';
 import type { RootStackParamList } from '../navigation/types';
@@ -65,6 +66,7 @@ const CATEGORY_INFO: Record<RestaurantCategory, { title: string; icon: string; d
 export default function CategoryScreen({ route, navigation }: Props) {
   const { category } = route.params;
   const { userId } = useAuth();
+  const { marketId, isLoading: marketLoading } = useMarket();
   const categoryInfo = CATEGORY_INFO[category];
 
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -94,19 +96,26 @@ export default function CategoryScreen({ route, navigation }: Props) {
     loadFavorites();
   }, [userId]);
 
-  // Fetch restaurants for this category
+  // Fetch restaurants for this category (wait for market to resolve)
   useEffect(() => {
+    if (marketLoading) return;
     fetchRestaurants();
-  }, [category]);
+  }, [category, marketId, marketLoading]);
 
   const fetchRestaurants = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('restaurants')
         .select('*, tiers(name)')
         .eq('is_active', true)
         .contains('categories', [category]);
+
+      if (marketId) {
+        query = query.eq('market_id', marketId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching category restaurants:', error);

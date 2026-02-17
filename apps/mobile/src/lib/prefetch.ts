@@ -57,8 +57,8 @@ interface EntertainmentResult {
   isUpcoming: boolean;
 }
 
-async function getEntertainmentEvents(): Promise<EntertainmentResult> {
-  const events = await fetchEntertainmentEvents();
+async function getEntertainmentEvents(marketId?: string | null): Promise<EntertainmentResult> {
+  const events = await fetchEntertainmentEvents(marketId);
   const now = new Date();
   const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as DayOfWeek;
   const todayDate = now.toISOString().split('T')[0];
@@ -84,10 +84,10 @@ async function getEntertainmentEvents(): Promise<EntertainmentResult> {
 
 // ========== Upcoming Events Query Function ==========
 
-async function getUpcomingEvents(): Promise<ApiEvent[]> {
+async function getUpcomingEvents(marketId?: string | null): Promise<ApiEvent[]> {
   // Fetch all events and filter out entertainment types inline
   // (avoiding separate function to prevent potential bundling issues)
-  const allEvents = await fetchEvents();
+  const allEvents = await fetchEvents({ market_id: marketId });
   const nonEntertainment = allEvents.filter(
     (event: ApiEvent) => !ENTERTAINMENT_TYPES.includes(event.event_type)
   );
@@ -259,14 +259,14 @@ export async function prefetchHomeScreenData(userId: string | null, marketId: st
       // Entertainment events (today's or upcoming)
       queryClient.prefetchQuery({
         queryKey: ['entertainmentEvents', marketId],
-        queryFn: getEntertainmentEvents,
+        queryFn: () => getEntertainmentEvents(marketId),
         staleTime: 5 * 60 * 1000,
       }),
 
       // Upcoming events
       queryClient.prefetchQuery({
         queryKey: ['upcomingEvents', marketId],
-        queryFn: getUpcomingEvents,
+        queryFn: () => getUpcomingEvents(marketId),
         staleTime: 10 * 60 * 1000,
       }),
 

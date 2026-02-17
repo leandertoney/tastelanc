@@ -27,8 +27,8 @@ interface EntertainmentResult {
   hasTodayEvents: boolean;
 }
 
-async function getEntertainmentEvents(): Promise<EntertainmentResult> {
-  const events = await fetchEntertainmentEvents();
+async function getEntertainmentEvents(marketId?: string | null): Promise<EntertainmentResult> {
+  const events = await fetchEntertainmentEvents(marketId);
   const now = new Date();
   const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as DayOfWeek;
   const todayDate = now.toISOString().split('T')[0];
@@ -94,7 +94,7 @@ export default function EntertainmentSection() {
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['entertainmentEvents', marketId],
-    queryFn: getEntertainmentEvents,
+    queryFn: () => getEntertainmentEvents(marketId),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
