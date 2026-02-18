@@ -1,14 +1,25 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { queryKeys } from '../lib/queryClient';
-import { useMarket } from '../context/MarketContext';
 import type { BlogPost } from '../types/database';
+
+// Safe market ID getter — avoids crash if MarketProvider hasn't mounted
+function useMarketIdSafe(): string | null {
+  try {
+    // Dynamic require to avoid crash if context isn't available
+    const { useMarket } = require('../context/MarketContext');
+    const { marketId } = useMarket();
+    return marketId;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Fetch list of published blog posts for the current market
  */
 export function useBlogPosts(limit = 20) {
-  const { marketId } = useMarket();
+  const marketId = useMarketIdSafe();
 
   return useQuery({
     queryKey: [...queryKeys.blog.list, marketId],
@@ -40,7 +51,7 @@ export function useBlogPosts(limit = 20) {
  * Fetch latest published blog posts with cover images for HomeScreen section
  */
 export function useLatestBlogPosts(limit = 5) {
-  const { marketId } = useMarket();
+  const marketId = useMarketIdSafe();
 
   return useQuery({
     queryKey: [...queryKeys.blog.list, 'latest', marketId, limit],
