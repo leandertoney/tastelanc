@@ -48,10 +48,7 @@ export default function FeaturedCard({
           </View>
         )}
 
-        {/* Gradient overlay for text readability */}
-        <View style={styles.gradientOverlay} />
-
-        {/* TasteLanc Pick badge for elite - top left */}
+        {/* Pick badge for elite - top left */}
         {isElite ? (
           <View style={styles.pickBadge}>
             <Ionicons name="star" size={10} color="#FFF" />
@@ -76,12 +73,12 @@ export default function FeaturedCard({
             <Ionicons
               name={isFavorite ? 'heart' : 'heart-outline'}
               size={22}
-              color={isFavorite ? colors.accent : colors.text}
+              color={isFavorite ? colors.accent : '#FFFFFF'}
             />
           </TouchableOpacity>
         )}
 
-        {/* Content overlay at bottom */}
+        {/* Content overlay at bottom — single layer, no stacking */}
         <View style={[styles.contentOverlay, isElite && styles.contentOverlayElite]}>
           <View style={styles.header}>
             <Text style={[styles.name, isElite && styles.nameElite]} numberOfLines={2}>
@@ -103,7 +100,7 @@ export default function FeaturedCard({
           <View style={styles.infoRow}>
             <OpenStatusBadge restaurantId={restaurant.id} size="small" />
             <Text style={styles.dot}>•</Text>
-            <Ionicons name="location-outline" size={14} color={colors.text} />
+            <Ionicons name="location-outline" size={14} color="#FFFFFF" />
             <Text style={styles.address} numberOfLines={1}>
               {restaurant.address}
             </Text>
@@ -151,17 +148,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.cardBgElevated,
   },
-  gradientOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '50%',
-    // Simulated gradient with semi-transparent overlay
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    borderBottomLeftRadius: radius.lg,
-    borderBottomRightRadius: radius.lg,
-  },
   pickBadge: {
     position: 'absolute',
     top: spacing.sm,
@@ -169,7 +155,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
     borderWidth: 1,
     borderColor: colors.goldBorder,
     paddingHorizontal: 10,
@@ -192,7 +178,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
   },
   reasonText: {
-    color: colors.text,
+    color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '600',
   },
@@ -203,7 +189,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -213,7 +199,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: spacing.md,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: 'rgba(0,0,0,0.55)',
     borderBottomLeftRadius: radius.lg,
     borderBottomRightRadius: radius.lg,
   },
@@ -226,8 +212,11 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.text,
+    color: '#FFFFFF',
     flex: 1,
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   categoriesRow: {
     flexDirection: 'row',
@@ -236,7 +225,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   categoryBadge: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(255,255,255,0.25)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: radius.xs,
@@ -245,8 +234,8 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 11,
-    color: colors.text,
-    fontWeight: '500',
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   infoRow: {
     flexDirection: 'row',
@@ -255,12 +244,15 @@ const styles = StyleSheet.create({
   },
   dot: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: 'rgba(255,255,255,0.6)',
   },
   address: {
     fontSize: 13,
-    color: colors.textMuted,
+    color: 'rgba(255,255,255,0.85)',
     flex: 1,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   // Elite subtle refinements
   contentOverlayElite: {
