@@ -6,7 +6,8 @@ import { buildMeta } from '@/lib/seo/meta';
 import { Clock, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
 import { BRAND } from '@/config/market';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
+const authorName = BRAND.aiName;
 export const revalidate = 900;
 
 // Map URL slugs to display names and search tags
@@ -15,7 +16,7 @@ const TAG_MAP: Record<string, { display: string; searchTags: string[] }> = {
   'date-night': { display: 'Date Night', searchTags: ['date night', 'date-night', 'romantic', 'romantic spots', 'anniversary', 'couples'] },
   'family': { display: 'Family', searchTags: ['family', 'family-friendly', 'kids', 'kid-friendly', 'family dining', 'Family Dining', 'Kid-Friendly', 'children'] },
   'happy-hours': { display: 'Happy Hours', searchTags: ['happy hour', 'happy-hour', 'happy hours', 'deals', 'specials'] },
-  'nightlife': { display: 'Nightlife', searchTags: ['nightlife', 'Lancaster nightlife', 'bars', 'clubs', 'dancing', 'dance clubs', 'cocktails'] },
+  'nightlife': { display: 'Nightlife', searchTags: ['nightlife', `${BRAND.countyShort} nightlife`, 'bars', 'clubs', 'dancing', 'dance clubs', 'cocktails'] },
   'events': { display: 'Events', searchTags: ['events', 'trivia', 'trivia night', 'Friday night', 'entertainment', 'festival', 'wine tasting', 'comedy'] },
   'live-music': { display: 'Live Music', searchTags: ['live music', 'live-music', 'jazz', 'acoustic', 'open mic', 'concert', 'band'] },
   'brunch': { display: 'Brunch', searchTags: ['brunch', 'weekend brunch', 'sunday brunch', 'breakfast'] },
@@ -34,15 +35,15 @@ export async function generateMetadata({ params }: PageProps) {
 
   if (!tagInfo) {
     return buildMeta({
-      title: 'Tag Not Found | TasteLanc Blog',
+      title: `Tag Not Found | ${BRAND.name} Blog`,
       description: 'This tag does not exist.',
       url: `${siteUrl}/blog/tag/${tag}`,
     });
   }
 
   return buildMeta({
-    title: `${tagInfo.display} | TasteLanc Blog`,
-    description: `Lancaster ${tagInfo.display.toLowerCase()} - Rosie's picks and honest reviews. No fluff, just what's actually good.`,
+    title: `${tagInfo.display} | ${BRAND.name} Blog`,
+    description: `${BRAND.countyShort} ${tagInfo.display.toLowerCase()} - ${authorName}'s picks and honest reviews. No fluff, just what's actually good.`,
     url: `${siteUrl}/blog/tag/${tag}`,
   });
 }
@@ -156,7 +157,7 @@ export default async function TagPage({ params }: PageProps) {
             </div>
             <h2 className="text-xl font-semibold text-white mb-2">No Posts Yet</h2>
             <p className="text-gray-400 mb-6">
-              Rosie hasn&apos;t written about {tagInfo.display.toLowerCase()} yet. Check back soon!
+              {authorName} hasn&apos;t written about {tagInfo.display.toLowerCase()} yet. Check back soon!
             </p>
             <Link
               href="/blog"
@@ -217,7 +218,7 @@ export default async function TagPage({ params }: PageProps) {
                     {/* Author & Meta */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <span>Rosie</span>
+                        <span>{authorName}</span>
                         <span>•</span>
                         <span>{formatDate(post.created_at)}</span>
                         <span>•</span>
