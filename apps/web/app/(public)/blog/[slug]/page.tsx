@@ -8,6 +8,8 @@ import { ROSIE_AUTHOR_BIO } from '@/lib/rosie/blog-system-prompt';
 import { BRAND } from '@/config/market';
 import { Clock, ArrowLeft, ArrowRight, Instagram, Sparkles } from 'lucide-react';
 
+const authorBio = ROSIE_AUTHOR_BIO; // Uses BRAND.aiName dynamically
+
 // Editorial cover image data structure
 interface CoverImageData {
   type: 'single' | 'dual' | 'triple' | 'quad' | 'none';
@@ -151,7 +153,7 @@ function EditorialCover({ coverData, title }: { coverData: CoverImageData | null
   return null;
 }
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
 export const revalidate = 1800;
 
 interface PageProps {
@@ -161,9 +163,9 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
   const post = await fetchBlogPostBySlug(slug);
-  if (!post) return buildMeta({ title: 'Blog | TasteLanc', description: 'Not found', url: `${siteUrl}/blog/${slug}` });
+  if (!post) return buildMeta({ title: `Blog | ${BRAND.name}`, description: 'Not found', url: `${siteUrl}/blog/${slug}` });
   return buildMeta({
-    title: `${post.title} | TasteLanc Blog`,
+    title: `${post.title} | ${BRAND.name} Blog`,
     description: post.summary,
     url: `${siteUrl}/blog/${post.slug}`,
     image: post.cover_image_url || undefined,
@@ -269,7 +271,7 @@ export default async function BlogPostPage({ params }: PageProps) {
 
               {/* Author & Meta - Clean like FIG */}
               <div className="flex items-center gap-4 text-sm text-gray-400">
-                <span className="font-medium text-white">By Rosie</span>
+                <span className="font-medium text-white">By {BRAND.aiName}</span>
                 <span>•</span>
                 <span>{formatDate(post.created_at)}</span>
                 <span>•</span>
@@ -350,9 +352,9 @@ export default async function BlogPostPage({ params }: PageProps) {
                   )}
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white mb-1">About Rosie</h3>
+                  <h3 className="text-lg font-bold text-white mb-1">About {BRAND.aiName}</h3>
                   <p className="text-gray-300 text-sm leading-relaxed">
-                    {ROSIE_AUTHOR_BIO}
+                    {authorBio}
                   </p>
                   <div className="flex items-center gap-4 mt-3">
                     {BRAND.appStoreUrls.ios && (

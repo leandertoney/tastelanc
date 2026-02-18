@@ -7,12 +7,13 @@ import { BRAND } from '@/config/market';
 import { Clock, ArrowRight, Sparkles } from 'lucide-react';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
+const authorName = BRAND.aiName;
 export const revalidate = 900;
 
 export async function generateMetadata() {
   return buildMeta({
-    title: 'TasteLanc Blog | Lancaster Food, Specials & Events',
-    description: 'Lancaster food and nightlife guides, specials, and Rosie picks. Your insider guide to eating and drinking in Lancaster, PA.',
+    title: `${BRAND.name} Blog | ${BRAND.countyShort} Food, Specials & Events`,
+    description: `${BRAND.countyShort} food and nightlife guides, specials, and ${BRAND.aiName} picks. Your insider guide to eating and drinking in ${BRAND.county}, ${BRAND.state}.`,
     url: `${siteUrl}/blog`,
   });
 }
@@ -63,11 +64,11 @@ export default async function BlogPage() {
                 </div>
               )}
               <h1 className="text-4xl md:text-6xl font-bold text-white">
-                Taste Lancaster
+                Taste {BRAND.countyShort}
               </h1>
             </div>
             <p className="text-gray-400 text-lg md:text-xl max-w-3xl mx-auto">
-              Lancaster&apos;s food scene, unfiltered. No fluff, no paid promos—just Rosie&apos;s honest take on what&apos;s actually good.
+              {BRAND.countyShort}&apos;s food scene, unfiltered. No fluff, no paid promos—just {BRAND.aiName}&apos;s honest take on what&apos;s actually good.
             </p>
           </div>
 
@@ -108,7 +109,7 @@ export default async function BlogPage() {
             </div>
             <h2 className="text-xl font-semibold text-white mb-2">Coming Soon</h2>
             <p className="text-gray-400">
-              Rosie is cooking up some content. Check back soon for guides, reviews, and insider tips.
+              {authorName} is cooking up some content. Check back soon for guides, reviews, and insider tips.
             </p>
           </div>
         ) : (
@@ -162,7 +163,7 @@ export default async function BlogPage() {
                     {/* Author & Meta */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <span>Rosie</span>
+                        <span>{authorName}</span>
                         <span>•</span>
                         <span>{formatDate(posts[0].created_at)}</span>
                         <span>•</span>
@@ -230,7 +231,7 @@ export default async function BlogPage() {
                         {/* Author & Meta */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 text-xs text-gray-400">
-                            <span>Rosie</span>
+                            <span>{authorName}</span>
                             <span>•</span>
                             <span>{formatDate(post.created_at)}</span>
                             <span>•</span>
