@@ -482,7 +482,16 @@ export async function getFeaturedRestaurants(limit: number = 24, marketId: strin
         return [];
       }
 
-      return seededShuffle(fallbackData, seed).slice(0, limit) as Restaurant[];
+      const shuffled = seededShuffle(fallbackData, seed).slice(0, limit);
+
+      // Inject demo tier data so the carousel shows what paying tiers look like:
+      // First 2 get elite spotlight (gold badge), rest show as premium featured cards
+      const withDemoTiers = shuffled.map((r: any, i: number) => ({
+        ...r,
+        tiers: { name: i < 2 ? 'elite' : 'premium' },
+      }));
+
+      return withDemoTiers as Restaurant[];
     }
 
     return result;

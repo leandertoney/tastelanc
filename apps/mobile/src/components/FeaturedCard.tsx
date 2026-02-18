@@ -4,6 +4,8 @@ import type { Restaurant } from '../types/database';
 import { formatCategoryName } from '../lib/formatters';
 import { colors, radius, spacing } from '../constants/colors';
 import OpenStatusBadge from './OpenStatusBadge';
+import { useMarket } from '../context/MarketContext';
+import { getAppName } from '../config/market';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.7; // 70% viewport width
@@ -26,6 +28,8 @@ export default function FeaturedCard({
   reasonBadge,
   isElite = false,
 }: FeaturedCardProps) {
+  const { market } = useMarket();
+  const appName = getAppName(market?.slug ?? '');
   const displayCategories = restaurant.categories?.slice(0, 2) || [];
 
   return (
@@ -51,7 +55,7 @@ export default function FeaturedCard({
         {isElite ? (
           <View style={styles.pickBadge}>
             <Ionicons name="star" size={10} color="#FFF" />
-            <Text style={styles.pickBadgeText}>TasteLanc Pick</Text>
+            <Text style={styles.pickBadgeText}>{appName} Pick</Text>
           </View>
         ) : reasonBadge ? (
           <View style={styles.reasonBadge}>

@@ -8,6 +8,9 @@ import Spacer from './Spacer';
 import { useLatestBlogPosts } from '../hooks';
 import type { BlogPost } from '../types/database';
 import { spacing } from '../constants/colors';
+import { MARKET_SLUG, getAiName } from '../config/market';
+
+const AI_NAME = getAiName(MARKET_SLUG);
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SIDE_PADDING = (SCREEN_WIDTH - BLOG_CARD_WIDTH) / 2;
@@ -30,7 +33,7 @@ export default function BlogSection() {
   return (
     <View style={styles.container}>
       <SectionHeader
-        title="From Rosie's Blog"
+        title={`From ${AI_NAME}'s Blog`}
         actionText="View All"
         onActionPress={() => navigation.navigate('BlogViewAll')}
       />

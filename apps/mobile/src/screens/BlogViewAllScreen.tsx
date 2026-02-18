@@ -17,6 +17,9 @@ import type { RootStackParamList } from '../navigation/types';
 import type { BlogPost } from '../types/database';
 import { useBlogPosts } from '../hooks';
 import { colors, radius, spacing } from '../constants/colors';
+import { MARKET_SLUG, getAiName } from '../config/market';
+
+const AI_NAME = getAiName(MARKET_SLUG);
 import SearchBar from '../components/SearchBar';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -48,7 +51,7 @@ function BlogListItem({ post, onPress }: { post: BlogPost; onPress: () => void }
         <Text style={styles.itemSummary} numberOfLines={2}>
           {post.summary}
         </Text>
-        <Text style={styles.itemDate}>By Rosie &middot; {formatDate(post.published_at || post.created_at)}</Text>
+        <Text style={styles.itemDate}>By {AI_NAME} &middot; {formatDate(post.published_at || post.created_at)}</Text>
       </View>
     </TouchableOpacity>
   );
