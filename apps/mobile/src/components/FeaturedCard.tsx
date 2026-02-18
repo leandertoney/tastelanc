@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   categoryBadge: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(255,255,255,0.35)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: radius.xs,
@@ -235,7 +235,10 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 11,
     color: '#FFFFFF',
-    fontWeight: '600',
+    fontWeight: '700',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   infoRow: {
     flexDirection: 'row',
