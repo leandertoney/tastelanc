@@ -2,6 +2,9 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import type { BlogPost } from '../types/database';
 import { colors, radius, spacing } from '../constants/colors';
+import { MARKET_SLUG, getAiName } from '../config/market';
+
+const AI_NAME = getAiName(MARKET_SLUG);
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export const BLOG_CARD_WIDTH = SCREEN_WIDTH * 0.7;
@@ -51,7 +54,7 @@ export default function BlogPostCard({ post, onPress }: BlogPostCardProps) {
           </Text>
 
           <View style={styles.metaRow}>
-            <Text style={styles.metaText}>By Rosie</Text>
+            <Text style={styles.metaText}>By {AI_NAME}</Text>
             <Text style={styles.metaDot}>&middot;</Text>
             <Text style={styles.metaText}>{formatDate(post.published_at || post.created_at)}</Text>
           </View>

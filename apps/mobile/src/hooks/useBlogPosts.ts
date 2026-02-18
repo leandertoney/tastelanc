@@ -1,21 +1,30 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { queryKeys } from '../lib/queryClient';
+import { useMarket } from '../context/MarketContext';
 import type { BlogPost } from '../types/database';
 
 /**
- * Fetch list of published blog posts
+ * Fetch list of published blog posts for the current market
  */
 export function useBlogPosts(limit = 20) {
+  const { marketId } = useMarket();
+
   return useQuery({
-    queryKey: queryKeys.blog.list,
+    queryKey: [...queryKeys.blog.list, marketId],
     queryFn: async (): Promise<BlogPost[]> => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('blog_posts')
         .select('id, slug, title, summary, tags, cover_image_url, published_at, created_at')
         .eq('status', 'published')
         .order('published_at', { ascending: false, nullsFirst: false })
         .limit(limit);
+
+      if (marketId) {
+        query = query.eq('market_id', marketId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.warn('useBlogPosts query failed:', error.message);
@@ -31,16 +40,24 @@ export function useBlogPosts(limit = 20) {
  * Fetch latest published blog posts with cover images for HomeScreen section
  */
 export function useLatestBlogPosts(limit = 5) {
+  const { marketId } = useMarket();
+
   return useQuery({
-    queryKey: [...queryKeys.blog.list, 'latest', limit],
+    queryKey: [...queryKeys.blog.list, 'latest', marketId, limit],
     queryFn: async (): Promise<BlogPost[]> => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('blog_posts')
         .select('id, slug, title, summary, tags, cover_image_url, published_at, created_at')
         .eq('status', 'published')
         .not('cover_image_url', 'is', null)
         .order('published_at', { ascending: false, nullsFirst: false })
         .limit(limit);
+
+      if (marketId) {
+        query = query.eq('market_id', marketId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.warn('useBlogPosts query failed:', error.message);

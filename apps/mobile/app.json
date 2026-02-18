@@ -100,6 +100,7 @@
       "react-native-radar"
     ],
     "extra": {
+      "marketSlug": "lancaster-pa",
       "eas": {
         "projectId": "18a9e6d1-1240-4875-b38f-67edc5b50bdd"
       }

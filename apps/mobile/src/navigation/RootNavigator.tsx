@@ -1,5 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { RootStackParamList } from './types';
+import { MARKET_SLUG, getAiName } from '../config/market';
 import { withScreenErrorBoundary } from '../components/ErrorBoundary';
 import BottomTabNavigator from './BottomTabNavigator';
 import RestaurantDetailScreen from '../screens/RestaurantDetailScreen';
@@ -166,7 +167,7 @@ export default function RootNavigator() {
       <Stack.Screen
         name="BlogViewAll"
         component={SafeBlogViewAll}
-        options={{ title: "Rosie's Blog" }}
+        options={{ title: `${getAiName(MARKET_SLUG)}'s Blog` }}
       />
       <Stack.Screen
         name="BlogDetail"
