@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { BlogPost } from '../types/database';
 import { colors, radius, spacing } from '../constants/colors';
@@ -34,8 +35,12 @@ export default function BlogPostCard({ post, onPress }: BlogPostCardProps) {
           </View>
         )}
 
-        {/* Gradient overlay */}
-        <View style={styles.gradientOverlay} />
+        {/* Smooth gradient from transparent to dark at bottom */}
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.85)']}
+          locations={[0.2, 1]}
+          style={styles.gradientOverlay}
+        />
 
         {/* Content overlay at bottom */}
         <View style={styles.contentOverlay}>
@@ -98,8 +103,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: '60%',
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    height: '70%',
   },
   contentOverlay: {
     position: 'absolute',
@@ -107,9 +111,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: spacing.md,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    borderBottomLeftRadius: radius.lg,
-    borderBottomRightRadius: radius.lg,
   },
   tagsRow: {
     flexDirection: 'row',
@@ -117,7 +118,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   tagBadge: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: radius.xs,
@@ -126,16 +127,19 @@ const styles = StyleSheet.create({
   },
   tagText: {
     fontSize: 10,
-    color: colors.text,
-    fontWeight: '600',
+    color: '#FFFFFF',
+    fontWeight: '700',
     textTransform: 'capitalize',
   },
   title: {
     fontSize: 16,
     fontWeight: '700',
-    color: colors.text,
+    color: '#FFFFFF',
     lineHeight: 21,
     marginBottom: spacing.xs,
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   metaRow: {
     flexDirection: 'row',
@@ -144,10 +148,10 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 12,
-    color: colors.textMuted,
+    color: 'rgba(255,255,255,0.85)',
   },
   metaDot: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: 'rgba(255,255,255,0.6)',
   },
 });
