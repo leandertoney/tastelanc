@@ -9,6 +9,9 @@
 [functions]
   directory = "netlify/functions"
 
+[functions."*"]
+  timeout = 26
+
 [build.environment]
   NODE_VERSION = "20"
   NEXT_TELEMETRY_DISABLED = "1"
