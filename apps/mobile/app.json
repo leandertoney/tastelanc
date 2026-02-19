@@ -2,7 +2,7 @@
   "expo": {
     "name": "TasteLanc",
     "slug": "tastelanc",
-    "version": "1.0.7",
+    "version": "1.0.5",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -20,7 +20,7 @@
         "expo-channel-name": "production"
       }
     },
-    "runtimeVersion": "1.0.7",
+    "runtimeVersion": "1.0.5",
     "assetBundlePatterns": [
       "**/*"
     ],

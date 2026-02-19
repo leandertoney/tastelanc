@@ -32,10 +32,7 @@ export default function BlogPostCard({ post, onPress }: BlogPostCardProps) {
           </View>
         )}
 
-        {/* Gradient overlay */}
-        <View style={styles.gradientOverlay} />
-
-        {/* Content overlay at bottom */}
+        {/* Content at bottom */}
         <View style={styles.contentOverlay}>
           {displayTags.length > 0 && (
             <View style={styles.tagsRow}>
@@ -91,23 +88,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.cardBgElevated,
   },
-  gradientOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '60%',
-    backgroundColor: 'rgba(0,0,0,0.35)',
-  },
   contentOverlay: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     padding: spacing.md,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    borderBottomLeftRadius: radius.lg,
-    borderBottomRightRadius: radius.lg,
+    backgroundColor: 'rgba(0,0,0,0.55)',
   },
   tagsRow: {
     flexDirection: 'row',
@@ -115,7 +102,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   tagBadge: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(255,255,255,0.25)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: radius.xs,
@@ -124,16 +111,19 @@ const styles = StyleSheet.create({
   },
   tagText: {
     fontSize: 10,
-    color: colors.text,
-    fontWeight: '600',
+    color: '#FFFFFF',
+    fontWeight: '700',
     textTransform: 'capitalize',
   },
   title: {
     fontSize: 16,
     fontWeight: '700',
-    color: colors.text,
+    color: '#FFFFFF',
     lineHeight: 21,
     marginBottom: spacing.xs,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   metaRow: {
     flexDirection: 'row',
@@ -142,10 +132,13 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 12,
-    color: colors.textMuted,
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   metaDot: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: 'rgba(255,255,255,0.7)',
   },
 });

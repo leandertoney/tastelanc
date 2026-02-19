@@ -26,21 +26,40 @@ npx supabase link --project-ref kufcxxynjvyharhtfptd
 
 ## Project Structure
 
-- `apps/web/` - Next.js web application
-- `apps/mobile/` - React Native mobile application
+- `apps/web/` - Next.js web application (shared, multi-market)
+- `apps/mobile/` - **TasteLanc** React Native mobile app (Lancaster, PA)
+- `apps/mobile-cumberland/` - **TasteCumberland** React Native mobile app (Cumberland County, PA)
 - `packages/shared/` - Shared types and constants
 - `supabase/` - Supabase migrations and config
+
+## CRITICAL: Two Separate Mobile Apps
+
+**These are COMPLETELY SEPARATE apps with separate EAS projects, bundle IDs, and TestFlight listings. NEVER confuse them.**
+
+| | TasteLanc | TasteCumberland |
+|---|---|---|
+| **Directory** | `apps/mobile/` | `apps/mobile-cumberland/` |
+| **EAS Slug** | `tastelanc` | `taste-cumberland` |
+| **EAS Project ID** | `18a9e6d1-1240-4875-b38f-67edc5b50bdd` | `0e0abbe1-3518-4669-bb7a-46a1d0d63b68` |
+| **Bundle ID** | `com.tastelanc.app` | `com.tastelanc.cumberland` |
+| **ASC App ID** | `6755852717` | `6759233248` |
+| **Market** | Lancaster, PA | Cumberland County, PA |
+
+**When the user says "TasteCumberland" or "the Cumberland app", work ONLY in `apps/mobile-cumberland/`.**
+**When the user says "TasteLanc", work ONLY in `apps/mobile/`.**
+**NEVER push OTA updates or builds to one app when working on the other.**
 
 ## Deployment
 
 **IMPORTANT: This project uses Netlify for web application deployment, NOT Vercel.**
 
 - **Web App (apps/web):** Deployed on Netlify
-- **Mobile App (apps/mobile):** Uses Expo EAS for OTA updates and app store builds
+- **TasteLanc Mobile (apps/mobile):** EAS project `tastelanc` — OTA: `cd apps/mobile && eas update --branch production`
+- **TasteCumberland Mobile (apps/mobile-cumberland):** EAS project `taste-cumberland` — OTA: `cd apps/mobile-cumberland && eas update --branch production`
 
 When discussing deployment or making deployment-related changes:
 - Web changes are deployed via Netlify's automatic Git integration
-- Mobile changes can be pushed via OTA updates using `eas update --branch production`
+- Mobile changes must target the CORRECT app directory — always confirm which app before deploying
 - Never assume or mention Vercel - it has never been used for this project
 
 ## Common Scripts
