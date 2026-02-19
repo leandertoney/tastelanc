@@ -7,6 +7,93 @@ import { useRestaurant } from '@/contexts/RestaurantContext';
 import { toast } from 'sonner';
 import type { RestaurantCategory, DayOfWeek } from '@/types/database';
 
+/** Compress an image client-side before uploading to avoid server timeouts */
+function compressImage(file: File, maxWidth = 1920, quality = 0.85): Promise<File> {
+  return new Promise((resolve) => {
+    // Skip non-image files or already-small files (under 500KB)
+    if (!file.type.startsWith('image/') || file.size < 500 * 1024) {
+      resolve(file);
+      return;
+    }
+
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+
+      // Only resize if the image is wider than maxWidth
+      let { width, height } = img;
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { resolve(file); return; }
+
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob || blob.size >= file.size) {
+            // Compression didn't help, use original
+            resolve(file);
+            return;
+          }
+          resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }));
+        },
+        'image/jpeg',
+        quality,
+      );
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file); // Fall back to original on error
+    };
+
+    img.src = url;
+  });
+}
+
+/** Safely parse an API response, returning a user-friendly error message on failure */
+async function parseApiResponse(response: Response, fallbackAction: string) {
+  if (response.ok) {
+    return { data: await response.json(), error: null };
+  }
+
+  // Try to extract the JSON error message from the API
+  try {
+    const data = await response.json();
+    if (data?.error) {
+      return { data: null, error: data.error };
+    }
+  } catch {
+    // Response wasn't JSON (e.g. HTML error page from Netlify/Next.js)
+  }
+
+  // Map status codes to plain-English messages
+  switch (response.status) {
+    case 401:
+      return { data: null, error: 'You need to be logged in to do that. Please refresh the page and try again.' };
+    case 403:
+      return { data: null, error: "You don't have permission to manage this restaurant's photos." };
+    case 408:
+    case 504:
+      return { data: null, error: `The server took too long to respond. Try uploading a smaller image or check your internet connection.` };
+    case 413:
+      return { data: null, error: 'That file is too large. Please use a smaller image (under 5MB).' };
+    case 500:
+    case 502:
+    case 503:
+    default:
+      return { data: null, error: `Something went wrong while trying to ${fallbackAction}. This is usually temporary — please wait a moment and try again.` };
+  }
+}
+
 const CATEGORY_OPTIONS: { value: RestaurantCategory; label: string }[] = [
   { value: 'bars', label: 'Bar' },
   { value: 'nightlife', label: 'Nightlife' },
@@ -199,20 +286,19 @@ export default function ProfilePage() {
     setUploadingCover(true);
     setError(null);
     try {
+      const compressed = await compressImage(file);
       const uploadFormData = new FormData();
-      uploadFormData.append('file', file);
+      uploadFormData.append('file', compressed);
       const uploadRes = await fetch(buildApiUrl('/api/dashboard/photos/upload'), { method: 'POST', body: uploadFormData });
-      const uploadData = await uploadRes.json();
-      if (!uploadRes.ok) throw new Error(uploadData.error || 'Failed to upload image');
+      const { data: uploadData, error: uploadError } = await parseApiResponse(uploadRes, 'upload your cover image');
+      if (uploadError) throw new Error(uploadError);
       const coverRes = await fetch(buildApiUrl(`/api/dashboard/photos/${uploadData.id}/cover`), { method: 'POST' });
-      if (!coverRes.ok) {
-        const coverData = await coverRes.json();
-        throw new Error(coverData.error || 'Failed to set cover photo');
-      }
+      const { error: coverError } = await parseApiResponse(coverRes, 'set your cover photo');
+      if (coverError) throw new Error(coverError);
       await refreshRestaurant();
       await fetchPhotos();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload cover image');
+      setError(err instanceof Error ? err.message : 'Failed to upload cover image. Please try again.');
     } finally {
       setUploadingCover(false);
     }
@@ -264,16 +350,17 @@ export default function ProfilePage() {
     }
     setUploading(true);
     try {
+      const compressed = await compressImage(file);
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', compressed);
       const response = await fetch(buildApiUrl('/api/dashboard/photos/upload'), { method: 'POST', body: formData });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Upload failed');
+      const { error } = await parseApiResponse(response, 'upload your photo');
+      if (error) throw new Error(error);
       toast.success('Photo uploaded successfully!');
       await fetchPhotos();
     } catch (err) {
       console.error('Error uploading photo:', err);
-      toast.error(err instanceof Error ? err.message : 'Failed to upload photo');
+      toast.error(err instanceof Error ? err.message : 'Failed to upload photo. Please try again.');
     } finally {
       setUploading(false);
     }
@@ -304,14 +391,14 @@ export default function ProfilePage() {
   const setCoverPhoto = async (id: string) => {
     try {
       const response = await fetch(buildApiUrl(`/api/dashboard/photos/${id}/cover`), { method: 'POST' });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to set cover photo');
+      const { error } = await parseApiResponse(response, 'set your cover photo');
+      if (error) throw new Error(error);
       toast.success('Cover photo updated!');
       await fetchPhotos();
       await refreshRestaurant();
     } catch (err) {
       console.error('Error setting cover photo:', err);
-      toast.error(err instanceof Error ? err.message : 'Failed to set cover photo');
+      toast.error(err instanceof Error ? err.message : 'Failed to set cover photo. Please try again.');
     }
   };
 
@@ -319,13 +406,13 @@ export default function ProfilePage() {
     if (!confirm('Are you sure you want to delete this photo?')) return;
     try {
       const response = await fetch(buildApiUrl(`/api/dashboard/photos/${id}`), { method: 'DELETE' });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to delete photo');
+      const { error } = await parseApiResponse(response, 'delete your photo');
+      if (error) throw new Error(error);
       toast.success('Photo deleted!');
       await fetchPhotos();
     } catch (err) {
       console.error('Error deleting photo:', err);
-      toast.error(err instanceof Error ? err.message : 'Failed to delete photo');
+      toast.error(err instanceof Error ? err.message : 'Failed to delete photo. Please try again.');
     }
   };
 
