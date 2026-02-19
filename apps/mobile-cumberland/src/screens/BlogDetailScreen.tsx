@@ -10,7 +10,7 @@ import { supabase } from '../lib/supabase';
 type BlogDetailRouteProp = RouteProp<RootStackParamList, 'BlogDetail'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-const SITE_URL = 'https://tastelanc.com';
+const SITE_URL = 'https://cumberland.tastelanc.com';
 
 // JS injected into the WebView to hide web chrome for in-app experience
 const INJECTED_JS = `
@@ -63,7 +63,7 @@ export default function BlogDetailScreen() {
         injectedJavaScript={INJECTED_JS}
         onShouldStartLoadWithRequest={(request) => {
           // Intercept restaurant links to navigate natively
-          const match = request.url.match(/tastelanc\.com\/restaurants\/([^/?#]+)/);
+          const match = request.url.match(/tastelanc\.com\/restaurants\/([^/?#]+)/i);
           if (match) {
             navigateToRestaurant(match[1]);
             return false;
