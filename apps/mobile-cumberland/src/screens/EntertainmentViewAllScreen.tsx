@@ -47,8 +47,8 @@ const EVENT_TYPE_ICONS: Record<EventType, keyof typeof Ionicons.glyphMap> = {
   promotion: 'megaphone',
 };
 
-async function getAllEntertainmentEvents(): Promise<ApiEvent[]> {
-  const events = await fetchEntertainmentEvents();
+async function getAllEntertainmentEvents(marketId?: string | null): Promise<ApiEvent[]> {
+  const events = await fetchEntertainmentEvents(marketId);
   const todayDate = new Date().toISOString().split('T')[0];
 
   // Filter to upcoming/recurring events
@@ -99,7 +99,7 @@ export default function EntertainmentViewAllScreen() {
 
   const { data: events = [], isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['allEntertainmentEvents', marketId],
-    queryFn: getAllEntertainmentEvents,
+    queryFn: () => getAllEntertainmentEvents(marketId),
     staleTime: 5 * 60 * 1000,
   });
 
