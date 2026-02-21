@@ -132,10 +132,17 @@ interface EventWizardProps {
   onClose: () => void;
   onSubmit: (data: EventFormData) => Promise<void>;
   restaurantId: string;
+  allowedTypes?: string[];
 }
 
-export default function EventWizard({ onClose, onSubmit, restaurantId }: EventWizardProps) {
-  const [step, setStep] = useState(0);
+export default function EventWizard({ onClose, onSubmit, restaurantId, allowedTypes }: EventWizardProps) {
+  // Filter templates if allowedTypes is specified
+  const templates = allowedTypes
+    ? EVENT_TEMPLATES.filter((t) => allowedTypes.includes(t.defaults.event_type || ''))
+    : EVENT_TEMPLATES;
+
+  // Skip template step when no templates match
+  const [step, setStep] = useState(templates.length === 0 ? 1 : 0);
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
   const [formData, setFormData] = useState<EventFormData>(INITIAL_FORM_DATA);
   const [showSuggestion, setShowSuggestion] = useState(false);
@@ -251,7 +258,7 @@ export default function EventWizard({ onClose, onSubmit, restaurantId }: EventWi
       {/* Step 0: Template Selection */}
       <WizardStep isActive={step === 0} direction={direction}>
         <TemplateSelector
-          templates={EVENT_TEMPLATES}
+          templates={templates}
           onSelect={handleTemplateSelect}
           onSkip={handleSkipTemplate}
         />
