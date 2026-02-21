@@ -57,16 +57,30 @@ export async function verifyRestaurantAccess(
 
   const isAdmin = await checkIsUserAdmin(supabase);
 
+  // Check if user is super_admin (can access all markets)
+  let isSuperAdmin = false;
+  if (isAdmin) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+    isSuperAdmin = profile?.role === 'super_admin';
+  }
+
   // Resolve market for cross-market isolation
   const marketId = await resolveMarketId(supabase);
 
-  // Fetch the restaurant with tier info — scoped to this market
-  const { data: restaurant, error: restaurantError } = await supabase
+  // Fetch the restaurant with tier info
+  // super_admin can access restaurants across ALL markets
+  let restaurantQuery = supabase
     .from('restaurants')
     .select('*, tiers(name)')
-    .eq('id', restaurantId)
-    .eq('market_id', marketId)
-    .single();
+    .eq('id', restaurantId);
+  if (!isSuperAdmin) {
+    restaurantQuery = restaurantQuery.eq('market_id', marketId);
+  }
+  const { data: restaurant, error: restaurantError } = await restaurantQuery.single();
 
   if (restaurantError || !restaurant) {
     return {
@@ -167,12 +181,22 @@ export async function getOwnedRestaurant(
 
   // If admin mode with specific restaurant ID
   if (adminRestaurantId && isAdmin) {
-    const { data: restaurant, error: restaurantError } = await supabase
+    // Check if user is super_admin (can access all markets)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+    const isSuperAdmin = profile?.role === 'super_admin';
+
+    let adminQuery = supabase
       .from('restaurants')
       .select('*')
-      .eq('id', adminRestaurantId)
-      .eq('market_id', marketId)
-      .single();
+      .eq('id', adminRestaurantId);
+    if (!isSuperAdmin) {
+      adminQuery = adminQuery.eq('market_id', marketId);
+    }
+    const { data: restaurant, error: restaurantError } = await adminQuery.single();
 
     if (restaurantError || !restaurant) {
       return {
