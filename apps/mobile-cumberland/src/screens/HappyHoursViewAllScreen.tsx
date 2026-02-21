@@ -158,7 +158,8 @@ export default function HappyHoursViewAllScreen() {
         imageUrl={item.restaurant.cover_image_url}
         title={item.restaurant.name}
         accentText={dealText}
-        subtitle={`${formatTimeWindow(item.start_time, item.end_time)} \u00B7 ${formatDays(item.days_of_week)}`}
+        subtitle={formatDays(item.days_of_week)}
+        timeBadge={formatTimeWindow(item.start_time, item.end_time)}
         onPress={() => handlePress(item.restaurant.id)}
         fallbackIcon="beer"
       />
@@ -294,7 +295,7 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   tabTextSelected: {
-    color: colors.text,
+    color: '#FFFFFF',
   },
   todayDot: {
     position: 'absolute',

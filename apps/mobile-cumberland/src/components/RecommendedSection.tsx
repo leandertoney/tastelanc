@@ -164,7 +164,7 @@ export default function RecommendedSection({
                   <Ionicons
                     name={favorites[restaurant.id] ? 'heart' : 'heart-outline'}
                     size={18}
-                    color={favorites[restaurant.id] ? colors.accent : colors.text}
+                    color={favorites[restaurant.id] ? colors.accent : '#FFFFFF'}
                   />
                 </TouchableOpacity>
                 {reason && (

@@ -57,29 +57,17 @@ export async function verifyRestaurantAccess(
 
   const isAdmin = await checkIsUserAdmin(supabase);
 
-  // Check if user is super_admin (can access all markets)
-  let isSuperAdmin = false;
-  if (isAdmin) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-    isSuperAdmin = profile?.role === 'super_admin';
-  }
-
-  // Resolve market for cross-market isolation
-  const marketId = await resolveMarketId(supabase);
-
-  // Fetch the restaurant with tier info
-  // super_admin can access restaurants across ALL markets
+  // Resolve market for cross-market isolation (skip for admins — they manage all markets)
   let restaurantQuery = supabase
     .from('restaurants')
     .select('*, tiers(name)')
     .eq('id', restaurantId);
-  if (!isSuperAdmin) {
+
+  if (!isAdmin) {
+    const marketId = await resolveMarketId(supabase);
     restaurantQuery = restaurantQuery.eq('market_id', marketId);
   }
+
   const { data: restaurant, error: restaurantError } = await restaurantQuery.single();
 
   if (restaurantError || !restaurant) {
@@ -176,27 +164,13 @@ export async function getOwnedRestaurant(
 
   const isAdmin = await checkIsUserAdmin(supabase);
 
-  // Resolve market for cross-market isolation
-  const marketId = await resolveMarketId(supabase);
-
-  // If admin mode with specific restaurant ID
+  // If admin mode with specific restaurant ID (admins can access any market)
   if (adminRestaurantId && isAdmin) {
-    // Check if user is super_admin (can access all markets)
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-    const isSuperAdmin = profile?.role === 'super_admin';
-
-    let adminQuery = supabase
+    const { data: restaurant, error: restaurantError } = await supabase
       .from('restaurants')
       .select('*')
-      .eq('id', adminRestaurantId);
-    if (!isSuperAdmin) {
-      adminQuery = adminQuery.eq('market_id', marketId);
-    }
-    const { data: restaurant, error: restaurantError } = await adminQuery.single();
+      .eq('id', adminRestaurantId)
+      .single();
 
     if (restaurantError || !restaurant) {
       return {
@@ -221,6 +195,7 @@ export async function getOwnedRestaurant(
   }
 
   // Normal owner mode - find restaurant by owner_id — scoped to this market
+  const marketId = await resolveMarketId(supabase);
   const { data: restaurant, error: restaurantError } = await supabase
     .from('restaurants')
     .select('*')

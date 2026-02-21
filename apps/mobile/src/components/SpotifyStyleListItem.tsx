@@ -10,6 +10,7 @@ interface SpotifyStyleListItemProps {
   onPress: () => void;
   fallbackIcon?: keyof typeof Ionicons.glyphMap;
   accentText?: string;
+  timeBadge?: string;
 }
 
 export default function SpotifyStyleListItem({
@@ -20,6 +21,7 @@ export default function SpotifyStyleListItem({
   onPress,
   fallbackIcon = 'restaurant',
   accentText,
+  timeBadge,
 }: SpotifyStyleListItemProps) {
   return (
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
@@ -36,9 +38,16 @@ export default function SpotifyStyleListItem({
 
       {/* Content */}
       <View style={styles.content}>
-        <Text style={styles.title} numberOfLines={1}>
-          {title}
-        </Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title} numberOfLines={1}>
+            {title}
+          </Text>
+          {timeBadge && (
+            <View style={styles.timeBadge}>
+              <Text style={styles.timeBadgeText}>{timeBadge}</Text>
+            </View>
+          )}
+        </View>
         {accentText && (
           <Text style={styles.accentText} numberOfLines={1}>
             {accentText}
@@ -91,10 +100,27 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   title: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.text,
+    flex: 1,
+  },
+  timeBadge: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+  },
+  timeBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   accentText: {
     fontSize: 14,

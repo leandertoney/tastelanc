@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   dateBadgeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.text,
+    color: '#FFFFFF',
   },
   bottomContainer: {
     backgroundColor: 'rgba(0,0,0,0.7)',
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.text,
+    color: '#FFFFFF',
     lineHeight: 22,
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 0, height: 1 },

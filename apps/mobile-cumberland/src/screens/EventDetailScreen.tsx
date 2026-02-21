@@ -134,7 +134,7 @@ export default function EventDetailScreen({ route, navigation }: Props) {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
+            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
 
           {/* Share Button */}
@@ -142,7 +142,7 @@ export default function EventDetailScreen({ route, navigation }: Props) {
             style={styles.shareButton}
             onPress={handleShare}
           >
-            <Ionicons name="share-outline" size={22} color={colors.text} />
+            <Ionicons name="share-outline" size={22} color="#FFFFFF" />
           </TouchableOpacity>
 
           {/* Event Type Badge */}
