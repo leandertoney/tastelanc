@@ -316,7 +316,7 @@ export default function ProfileScreen() {
         {/* Profile Header */}
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
-            <Ionicons name="person" size={40} color={colors.text} />
+            <Ionicons name="person" size={40} color={colors.textOnAccent} />
           </View>
           <Text style={styles.headerTitle}>{BRAND.userTitle}</Text>
           <Text style={styles.headerSubtitle}>{BRAND.userSubtitle}</Text>

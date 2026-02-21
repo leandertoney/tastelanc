@@ -41,7 +41,7 @@ export default function RestaurantCard({
             <Ionicons
               name={isFavorite ? 'heart' : 'heart-outline'}
               size={22}
-              color={isFavorite ? colors.accent : colors.text}
+              color={isFavorite ? colors.accent : '#FFFFFF'}
             />
           </TouchableOpacity>
         )}

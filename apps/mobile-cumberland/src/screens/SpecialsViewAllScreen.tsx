@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   tabTextSelected: {
-    color: colors.text,
+    color: '#FFFFFF',
   },
   todayDot: {
     position: 'absolute',
