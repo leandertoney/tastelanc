@@ -10,8 +10,9 @@ export async function PUT(
     const { id } = await params;
     const supabase = await createClient();
 
-    // First, get the event to find its restaurant_id
-    const { data: existingEvent, error: fetchError } = await supabase
+    // Use service role client to fetch the event (RLS may block admin reads)
+    const serviceClient = createServiceRoleClient();
+    const { data: existingEvent, error: fetchError } = await serviceClient
       .from('events')
       .select('restaurant_id')
       .eq('id', id)
@@ -51,16 +52,16 @@ export async function PUT(
 
     const updateData: Record<string, unknown> = {};
     if (name !== undefined) updateData.name = name;
-    if (description !== undefined) updateData.description = description;
+    if (description !== undefined) updateData.description = description || null;
     if (event_type !== undefined) updateData.event_type = event_type;
     if (is_recurring !== undefined) updateData.is_recurring = is_recurring;
     if (days_of_week !== undefined) updateData.days_of_week = days_of_week;
-    if (event_date !== undefined) updateData.event_date = event_date;
+    if (event_date !== undefined) updateData.event_date = event_date || null;
     if (start_time !== undefined) updateData.start_time = start_time;
-    if (end_time !== undefined) updateData.end_time = end_time;
-    if (performer_name !== undefined) updateData.performer_name = performer_name;
-    if (cover_charge !== undefined) updateData.cover_charge = cover_charge;
-    if (image_url !== undefined) updateData.image_url = image_url;
+    if (end_time !== undefined) updateData.end_time = end_time || null;
+    if (performer_name !== undefined) updateData.performer_name = performer_name || null;
+    if (cover_charge !== undefined) updateData.cover_charge = cover_charge || null;
+    if (image_url !== undefined) updateData.image_url = image_url || null;
     if (is_active !== undefined) updateData.is_active = is_active;
     updateData.updated_at = new Date().toISOString();
 
@@ -77,7 +78,7 @@ export async function PUT(
     if (error) {
       console.error('Error updating event:', error);
       return NextResponse.json(
-        { error: 'Failed to update event' },
+        { error: `Failed to update event: ${error.message}` },
         { status: 500 }
       );
     }
@@ -100,8 +101,9 @@ export async function DELETE(
     const { id } = await params;
     const supabase = await createClient();
 
-    // First, get the event to find its restaurant_id
-    const { data: existingEvent, error: fetchError } = await supabase
+    // Use service role client to fetch the event (RLS may block admin reads)
+    const serviceClient = createServiceRoleClient();
+    const { data: existingEvent, error: fetchError } = await serviceClient
       .from('events')
       .select('restaurant_id')
       .eq('id', id)

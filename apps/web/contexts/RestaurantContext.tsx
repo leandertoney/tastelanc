@@ -103,11 +103,13 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
 
       // If admin mode with specific restaurant ID
       if (adminMode && adminRestaurantId && userIsAdmin) {
+        // super_admin can access restaurants across all markets
+        const isSuperAdmin = profile?.role === 'super_admin';
         let adminQuery = supabase
           .from('restaurants')
           .select('*, tiers(*)')
           .eq('id', adminRestaurantId);
-        if (marketId) adminQuery = adminQuery.eq('market_id', marketId);
+        if (marketId && !isSuperAdmin) adminQuery = adminQuery.eq('market_id', marketId);
         const { data: restaurantData, error: restaurantError } = await adminQuery.single();
 
         if (restaurantError || !restaurantData) {

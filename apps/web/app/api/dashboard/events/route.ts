@@ -38,7 +38,9 @@ export async function GET(request: Request) {
       );
     }
 
-    const { data: events, error } = await supabase
+    // Use service role client for admin reads to bypass RLS
+    const readClient = accessResult.isAdmin ? createServiceRoleClient() : supabase;
+    const { data: events, error } = await readClient
       .from('events')
       .select('*')
       .eq('restaurant_id', restaurantId)
@@ -103,25 +105,35 @@ export async function POST(request: Request) {
     // Use service role client for admin operations to bypass RLS
     const dbClient = accessResult.isAdmin ? createServiceRoleClient() : supabase;
 
+    // Validate required fields
+    if (!name || !start_time) {
+      return NextResponse.json(
+        { error: 'Event name and start time are required' },
+        { status: 400 }
+      );
+    }
+
     // Use default image based on event type if no custom image provided
     const eventType = event_type || 'other';
     const finalImageUrl = image_url || DEFAULT_EVENT_IMAGES[eventType] || DEFAULT_EVENT_IMAGES.other;
 
+    // Sanitize optional fields — convert empty strings to null to avoid
+    // PostgREST type-validation errors on DATE / TIME columns
     const { data: event, error } = await dbClient
       .from('events')
       .insert({
         restaurant_id: restaurantId,
         market_id: accessResult.restaurant!.market_id,
         name,
-        description,
+        description: description || null,
         event_type: eventType,
         is_recurring: is_recurring ?? true,
         days_of_week: days_of_week || [],
-        event_date,
+        event_date: event_date || null,
         start_time,
-        end_time,
-        performer_name,
-        cover_charge,
+        end_time: end_time || null,
+        performer_name: performer_name || null,
+        cover_charge: cover_charge || null,
         image_url: finalImageUrl,
         is_active: is_active ?? true,
       })
