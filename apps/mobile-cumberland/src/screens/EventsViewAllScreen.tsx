@@ -9,6 +9,7 @@ import {
   Dimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,9 +35,9 @@ interface DateSection {
   data: ApiEvent[];
 }
 
-async function getAllEvents(): Promise<ApiEvent[]> {
+async function getAllEvents(marketId?: string | null): Promise<ApiEvent[]> {
   // Fetch all events and filter out entertainment types inline
-  const allEvents = await fetchEvents();
+  const allEvents = await fetchEvents({ market_id: marketId });
   const nonEntertainment = allEvents.filter(
     event => !ENTERTAINMENT_TYPES.includes(event.event_type)
   );
@@ -200,9 +201,9 @@ export default function EventsViewAllScreen() {
   const { marketId } = useMarket();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const { data: events = [], isLoading } = useQuery({
+  const { data: events = [], isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['allEvents', marketId],
-    queryFn: getAllEvents,
+    queryFn: () => getAllEvents(marketId),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -287,6 +288,13 @@ export default function EventsViewAllScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={true}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor={colors.accent}
+          />
+        }
       >
         {sections.length === 0 && searchQuery.trim() ? (
           <View style={styles.noResultsContainer}>
