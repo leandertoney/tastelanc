@@ -20,6 +20,7 @@ import {
   ArrowLeft,
   Shield,
   Lightbulb,
+  Music,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { signOut } from '@/lib/supabase/auth';
@@ -30,10 +31,11 @@ import { Toaster } from 'sonner';
 const navItems = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { href: '/dashboard/profile', label: 'Profile', icon: Store },
-  { href: '/dashboard/menu', label: 'Menu', icon: UtensilsCrossed },
   { href: '/dashboard/happy-hours', label: 'Happy Hours', icon: Sparkles },
-  { href: '/dashboard/specials', label: 'Specials', icon: Sparkles },
+  { href: '/dashboard/entertainment', label: 'Entertainment', icon: Music },
   { href: '/dashboard/events', label: 'Events', icon: Calendar },
+  { href: '/dashboard/specials', label: 'Specials', icon: Sparkles },
+  { href: '/dashboard/menu', label: 'Menu', icon: UtensilsCrossed },
   { href: '/dashboard/insights', label: 'Market Insights', icon: Lightbulb },
   { href: '/dashboard/team', label: 'Team', icon: Users },
   { href: '/dashboard/subscription', label: 'Subscription', icon: CreditCard },
