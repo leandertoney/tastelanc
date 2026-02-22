@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
+  Animated,
   Image,
   Keyboard,
 } from 'react-native';
@@ -112,6 +112,47 @@ async function getUserPreferences(): Promise<OnboardingData | null> {
   return null;
 }
 
+function TypingDots() {
+  const dot1 = useRef(new Animated.Value(0)).current;
+  const dot2 = useRef(new Animated.Value(0)).current;
+  const dot3 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const createDotAnimation = (dot: Animated.Value, delay: number) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(dot, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.timing(dot, { toValue: 0, duration: 300, useNativeDriver: true }),
+          Animated.delay(600 - delay),
+        ])
+      );
+
+    const anim1 = createDotAnimation(dot1, 0);
+    const anim2 = createDotAnimation(dot2, 200);
+    const anim3 = createDotAnimation(dot3, 400);
+
+    anim1.start();
+    anim2.start();
+    anim3.start();
+
+    return () => { anim1.stop(); anim2.stop(); anim3.stop(); };
+  }, [dot1, dot2, dot3]);
+
+  const getDotStyle = (anim: Animated.Value) => ({
+    opacity: anim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }),
+    transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [0, -4] }) }],
+  });
+
+  return (
+    <View style={styles.dotsContainer}>
+      <Animated.View style={[styles.dot, getDotStyle(dot1)]} />
+      <Animated.View style={[styles.dot, getDotStyle(dot2)]} />
+      <Animated.View style={[styles.dot, getDotStyle(dot3)]} />
+    </View>
+  );
+}
+
 export default function MollieChat({ visible, onClose, onNavigateToRestaurant }: MollieChatProps) {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const flatListRef = useRef<any>(null);
@@ -190,7 +231,7 @@ export default function MollieChat({ visible, onClose, onNavigateToRestaurant }:
       // Fetch user preferences and call Mollie AI edge function
       const preferences = await getUserPreferences();
       const { data, error } = await supabase.functions.invoke('rosie-chat', {
-        body: { message: messageText, preferences },
+        body: { message: messageText, preferences, marketSlug: BRAND.marketSlug },
       });
 
       if (error) throw error;
@@ -324,7 +365,7 @@ export default function MollieChat({ visible, onClose, onNavigateToRestaurant }:
       // Fetch user preferences and call Mollie AI edge function
       const preferences = await getUserPreferences();
       const { data, error } = await supabase.functions.invoke('rosie-chat', {
-        body: { message: text.trim(), preferences },
+        body: { message: text.trim(), preferences, marketSlug: BRAND.marketSlug },
       });
 
       if (error) throw error;
@@ -411,8 +452,7 @@ export default function MollieChat({ visible, onClose, onNavigateToRestaurant }:
                   <Image source={mollieImage} style={styles.mollieAvatar} />
                 </View>
                 <View style={styles.typingBubble}>
-                  <ActivityIndicator size="small" color={colors.accent} />
-                  <Text style={styles.typingText}>Mollie is typing...</Text>
+                  <TypingDots />
                 </View>
               </View>
             ) : null
@@ -584,19 +624,22 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   typingBubble: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: colors.cardBgElevated,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderRadius: 20,
     borderBottomLeftRadius: 4,
-    gap: 8,
   },
-  typingText: {
-    fontSize: 14,
-    color: colors.textMuted,
-    fontStyle: 'italic',
+  dotsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.textMuted,
   },
   quickActionsContainer: {
     paddingHorizontal: 16,
