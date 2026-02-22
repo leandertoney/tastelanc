@@ -33,6 +33,7 @@ import {
   SocialProofBanner,
   PromoCard,
   PlanYourDayCard,
+  SquadPickerCard,
   BlogSection,
   RecommendedSection,
   ErrorBoundary,
@@ -178,9 +179,12 @@ export default function HomeScreen() {
         <EventsSection />
       </ErrorBoundary>
 
-      {/* Plan Your Day CTA */}
+      {/* Plan Your Day + Squad Picker CTAs */}
       <ErrorBoundary level="section">
-        <PlanYourDayCard />
+        <View style={styles.ctaRow}>
+          <PlanYourDayCard />
+          <SquadPickerCard />
+        </View>
       </ErrorBoundary>
 
       {/* Section 4: Featured for You (PAID — always above Recommended) */}
@@ -350,6 +354,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: colors.textMuted,
+  },
+  ctaRow: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    gap: spacing.sm,
   },
   footerLoader: {
     paddingVertical: 20,

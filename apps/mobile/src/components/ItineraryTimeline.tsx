@@ -1,46 +1,33 @@
 /**
  * Vertical timeline component for itinerary display
- * Renders a sequence of ItineraryTimeSlotCards with visual connectors
+ * Renders a sequence of ItineraryTimeSlotCards with walk-time connectors
  */
 
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../constants/colors';
-import ItineraryTimeSlotCard, { EmptyTimeSlotCard } from './ItineraryTimeSlotCard';
-import { ALL_TIME_SLOTS, TIME_SLOT_CONFIG } from '../types/itinerary';
+import ItineraryTimeSlotCard from './ItineraryTimeSlotCard';
 import type { TimeSlot, ItineraryItemWithReason } from '../types/itinerary';
 
 interface ItineraryTimelineProps {
   items: ItineraryItemWithReason[];
   skippedSlots: TimeSlot[];
+  /** Walk minutes between consecutive items (parallel array to items) */
+  walkMinutes?: (number | null)[];
   onItemPress?: (item: ItineraryItemWithReason) => void;
   onSwapItem?: (item: ItineraryItemWithReason) => void;
   onRemoveItem?: (item: ItineraryItemWithReason) => void;
-  onAddToSlot?: (slot: TimeSlot) => void;
   showEmptySlots?: boolean;
 }
 
 export default function ItineraryTimeline({
   items,
-  skippedSlots,
   onItemPress,
   onSwapItem,
   onRemoveItem,
-  onAddToSlot,
-  showEmptySlots = true,
+  walkMinutes = [],
 }: ItineraryTimelineProps) {
-  // Build a map of slot -> item for quick lookup
-  const itemsBySlot = new Map<TimeSlot, ItineraryItemWithReason>();
-  for (const item of items) {
-    itemsBySlot.set(item.time_slot as TimeSlot, item);
-  }
-
-  // Determine which slots to display
-  const slotsToShow = showEmptySlots
-    ? ALL_TIME_SLOTS
-    : ALL_TIME_SLOTS.filter(s => itemsBySlot.has(s));
-
-  if (slotsToShow.length === 0) {
+  if (items.length === 0) {
     return (
       <View style={styles.emptyState}>
         <Ionicons name="calendar-outline" size={48} color={colors.textSecondary} />
@@ -52,40 +39,35 @@ export default function ItineraryTimeline({
     );
   }
 
-  let isFirstRendered = true;
-
   return (
     <View style={styles.container}>
-      {slotsToShow.map(slot => {
-        const item = itemsBySlot.get(slot);
-        const isFirst = isFirstRendered;
-        if (isFirst) isFirstRendered = false;
+      {items.map((item, index) => (
+        <View key={item.id}>
+          <ItineraryTimeSlotCard
+            item={item}
+            isFirst={index === 0}
+            isLast={index === items.length - 1}
+            stopNumber={index + 1}
+            onPress={onItemPress ? () => onItemPress(item) : undefined}
+            onSwap={onSwapItem ? () => onSwapItem(item) : undefined}
+            onRemove={onRemoveItem ? () => onRemoveItem(item) : undefined}
+          />
 
-        if (item) {
-          return (
-            <ItineraryTimeSlotCard
-              key={slot}
-              item={item}
-              isFirst={isFirst}
-              onPress={onItemPress ? () => onItemPress(item) : undefined}
-              onSwap={onSwapItem ? () => onSwapItem(item) : undefined}
-              onRemove={onRemoveItem ? () => onRemoveItem(item) : undefined}
-            />
-          );
-        }
-
-        if (showEmptySlots && skippedSlots.includes(slot)) {
-          return (
-            <EmptyTimeSlotCard
-              key={slot}
-              slot={slot}
-              onAdd={onAddToSlot ? () => onAddToSlot(slot) : undefined}
-            />
-          );
-        }
-
-        return null;
-      })}
+          {/* Walk-time connector between stops */}
+          {index < items.length - 1 && (
+            <View style={styles.walkConnector}>
+              <View style={styles.walkLine} />
+              {walkMinutes[index] != null && (
+                <View style={styles.walkBadge}>
+                  <Ionicons name="walk-outline" size={12} color={colors.textSecondary} />
+                  <Text style={styles.walkText}>{walkMinutes[index]} min walk</Text>
+                </View>
+              )}
+              <View style={styles.walkLine} />
+            </View>
+          )}
+        </View>
+      ))}
     </View>
   );
 }
@@ -109,5 +91,35 @@ const styles = StyleSheet.create({
   emptyStateSubtext: {
     fontSize: typography.subhead,
     color: colors.textSecondary,
+  },
+  // Walk connector
+  walkConnector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md + 20, // indent to align with timeline dot
+    paddingVertical: 2,
+    gap: spacing.xs,
+  },
+  walkLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+    opacity: 0.5,
+  },
+  walkBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: 99,
+    backgroundColor: colors.cardBg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  walkText: {
+    fontSize: typography.caption2,
+    color: colors.textSecondary,
+    fontWeight: '500',
   },
 });
