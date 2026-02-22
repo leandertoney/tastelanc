@@ -12,6 +12,7 @@
  * - POST /broadcast - Send notification to all users (admin only)
  * - POST /new-blog-post - Send notification to all users about a new blog post
  * - POST /todays-pick - Send daily 4pm ET "Today's Pick" curated restaurant notification
+ * - POST /weekly-recap - Send Sunday 2pm ET personalized weekly recap (or FOMO stats for inactive users)
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -634,6 +635,134 @@ async function sendTodaysPick(supabase: ReturnType<typeof createClient>): Promis
 }
 
 // Main handler
+// ─── Weekly Recap ─────────────────────────────────────────────────────────────
+
+/**
+ * Send personalized weekly recap push notifications every Sunday at 2pm ET.
+ *
+ * Strategy:
+ * - Users WITH activity this week  → personalized message ("You visited X restaurants…")
+ * - Users with NO activity          → FOMO community stats ("312 check-ins in Lancaster this week")
+ */
+async function sendWeeklyRecap(supabase: ReturnType<typeof createClient>): Promise<{
+  sent: number;
+  personalized: number;
+  fomo: number;
+}> {
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  // ── Community stats (used for FOMO messages) ──────────────────────────────
+  const [checkinCountRes, newSpecialsRes, topMoverRes] = await Promise.all([
+    supabase
+      .from('checkins')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', weekAgo),
+    supabase
+      .from('specials')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true)
+      .gte('created_at', weekAgo),
+    supabase
+      .from('restaurants')
+      .select('id, name')
+      .eq('is_active', true)
+      .eq('is_verified', true)
+      .order('name')
+      .limit(30),
+  ]);
+
+  const communityCheckins = checkinCountRes.count || 0;
+  const newSpecials = newSpecialsRes.count || 0;
+  const restaurants: Array<{ id: string; name: string }> = topMoverRes.data || [];
+
+  // Pick a featured restaurant for FOMO messaging (rotate by week-of-year)
+  const weekOfYear = Math.floor(now.getTime() / (7 * 24 * 60 * 60 * 1000));
+  const fomoRestaurant = restaurants.length > 0
+    ? restaurants[weekOfYear % restaurants.length]
+    : null;
+
+  // FOMO messages (for inactive / new users)
+  const fomoMessages = [
+    communityCheckins > 10
+      ? `🔥 ${communityCheckins} check-ins in Lancaster this week. Are you keeping up?`
+      : `🔥 Lancaster locals are eating well this week — don't miss out.`,
+    newSpecials > 0
+      ? `⚡ ${newSpecials} new special${newSpecials > 1 ? 's' : ''} added this week. Check what's new.`
+      : null,
+    fomoRestaurant
+      ? `📈 ${fomoRestaurant.name} is one of this week's hottest spots. Have you been?`
+      : null,
+  ].filter(Boolean) as string[];
+
+  const fomoBody = fomoMessages[0] || 'Lancaster\'s dining scene is buzzing. Open TasteLanc to see what you\'re missing.';
+
+  // ── Get all push tokens with user IDs ─────────────────────────────────────
+  const { data: tokenRows } = await supabase
+    .from('push_tokens')
+    .select('token, user_id')
+    .not('token', 'is', null);
+
+  if (!tokenRows?.length) return { sent: 0, personalized: 0, fomo: 0 };
+
+  // ── Fetch this week's check-ins grouped by user ───────────────────────────
+  const { data: recentCheckins } = await supabase
+    .from('checkins')
+    .select('user_id, restaurant_name, created_at')
+    .gte('created_at', weekAgo)
+    .order('created_at', { ascending: false });
+
+  // Map: userId → checkins this week
+  const userCheckins = new Map<string, Array<{ restaurant_name: string }>>();
+  (recentCheckins || []).forEach((c: { user_id: string; restaurant_name: string }) => {
+    const existing = userCheckins.get(c.user_id) || [];
+    existing.push({ restaurant_name: c.restaurant_name });
+    userCheckins.set(c.user_id, existing);
+  });
+
+  // ── Build messages per user ───────────────────────────────────────────────
+  const messages: PushMessage[] = [];
+  let personalizedCount = 0;
+  let fomoCount = 0;
+
+  for (const row of tokenRows as Array<{ token: string; user_id: string }>) {
+    const { token, user_id } = row;
+    if (!token) continue;
+
+    const userActivity = userCheckins.get(user_id) || [];
+    const checkinCount = userActivity.length;
+
+    let title: string;
+    let body: string;
+
+    if (checkinCount > 0) {
+      // Personalized message
+      const uniqueNames = [...new Set(userActivity.map(c => c.restaurant_name))];
+      if (checkinCount === 1) {
+        body = `This week: you visited ${uniqueNames[0]} 🍽️ Keep exploring Lancaster — so much more to discover.`;
+      } else {
+        body = `Your week in Lancaster: ${checkinCount} check-in${checkinCount > 1 ? 's' : ''} at ${uniqueNames.slice(0, 2).join(', ')}${uniqueNames.length > 2 ? ' & more' : ''}. You're a local 🔥`;
+      }
+      title = '🗓️ Your Week in Lancaster';
+      personalizedCount++;
+    } else {
+      // FOMO message for inactive users
+      title = '📍 This Week in Lancaster';
+      body = fomoBody;
+      fomoCount++;
+    }
+
+    messages.push({ to: token, sound: 'default', title, body, data: { screen: 'Home' } });
+  }
+
+  const result = await sendPushNotifications(messages);
+  const successCount = result.data.filter(r => r.status === 'ok').length;
+
+  return { sent: successCount, personalized: personalizedCount, fomo: fomoCount };
+}
+
+// ─── HTTP Router ─────────────────────────────────────────────────────────────
+
 Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
@@ -729,6 +858,13 @@ Deno.serve(async (req) => {
 
       case 'todays-pick': {
         const result = await sendTodaysPick(supabase);
+        return new Response(JSON.stringify(result), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'weekly-recap': {
+        const result = await sendWeeklyRecap(supabase);
         return new Response(JSON.stringify(result), {
           headers: { 'Content-Type': 'application/json' },
         });

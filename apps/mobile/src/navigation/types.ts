@@ -83,6 +83,9 @@ export type RootStackParamList = {
   // Squad Picker
   SquadBuilder: undefined;
   SquadVote: { pollId: string };
+  // Personal history
+  MyRestaurants: undefined;
+  Wishlist: undefined;
 };
 
 // Type helpers for useNavigation hook

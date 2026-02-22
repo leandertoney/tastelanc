@@ -10,7 +10,8 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { colors, spacing, radius, typography } from '../constants/colors';
-import { usePlatformSocialProof } from '../hooks';
+import { usePlatformSocialProof, usePersonalStats } from '../hooks';
+import { useAuth } from '../hooks/useAuth';
 import type { RootStackParamList } from '../navigation/types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -34,71 +35,130 @@ const FALLBACK_MESSAGE: BannerMessage = {
 };
 
 /**
- * SocialProofBanner - Displays platform activity with animated cycling text
+ * SocialProofBanner — Smart banner that adapts based on user history
  *
- * Each message has its own CTA button and navigation target.
- * Text cycles through different messages with smooth fade animation.
+ * FOR USERS WITH ACTIVITY: Personalized messages ("You've visited 5 restaurants this month")
+ * FOR USERS WITHOUT HISTORY / LOGGED OUT: FOMO messages using real live community data
+ *   ("47 people checked in today", "[Restaurant] just jumped to #2")
  */
 export default function SocialProofBanner() {
   const navigation = useNavigation<NavigationProp>();
-  const { data, isLoading } = usePlatformSocialProof();
+  const { userId, isAnonymous } = useAuth();
+  const { data: platformData, isLoading: platformLoading } = usePlatformSocialProof();
+  const { data: personal } = usePersonalStats();
   const [messageIndex, setMessageIndex] = useState(0);
   const textOpacity = useSharedValue(1);
 
-  // Build messages array from live data, each with its own CTA + nav target
-  const messages: BannerMessage[] = data ? [
-    {
-      text: data.checkinBannerText,
-      subtext: data.checkinsThisWeek > 0 ? `${data.checkinsThisWeek} this week` : null,
-      cta: 'Check In',
-      target: { tab: 'Rewards' },
-    },
-    // Only show if we have live counts
-    data.happyHoursBannerText ? {
-      text: data.happyHoursBannerText,
-      subtext: null,
-      cta: 'View',
-      target: { screen: 'HappyHoursViewAll' },
-    } : null,
-    data.specialsBannerText ? {
-      text: data.specialsBannerText,
-      subtext: null,
-      cta: 'View',
-      target: { screen: 'SpecialsViewAll' },
-    } : null,
-    // Static voting CTA (no countdown)
-    FALLBACK_MESSAGE,
-  ].filter((m): m is BannerMessage => m !== null && !!m.text) : [FALLBACK_MESSAGE];
+  const hasPersonalHistory = !isAnonymous && userId && (
+    (personal?.checkinsThisMonth ?? 0) > 0 ||
+    personal?.lastVisitedName != null
+  );
+
+  // Build personalized messages if user has activity
+  const personalMessages: BannerMessage[] = (() => {
+    if (!hasPersonalHistory || !personal) return [];
+    const msgs: BannerMessage[] = [];
+    if (personal.checkinsThisMonth > 0) {
+      msgs.push({
+        text: `🔥 You've visited ${personal.checkinsThisMonth} restaurant${personal.checkinsThisMonth !== 1 ? 's' : ''} this month`,
+        subtext: 'Keep exploring Lancaster',
+        cta: 'My Visits',
+        target: { screen: 'MyRestaurants' },
+      });
+    }
+    if (personal.votesRemainingThisMonth > 0) {
+      msgs.push({
+        text: `🗳️ ${personal.votesRemainingThisMonth} vote${personal.votesRemainingThisMonth !== 1 ? 's' : ''} left this month`,
+        subtext: "Shape Lancaster's rankings",
+        cta: 'Vote',
+        target: { screen: 'VoteCenter' },
+      });
+    }
+    if (personal.lastVisitedName && personal.lastVisitedDaysAgo != null) {
+      const daysAgo = personal.lastVisitedDaysAgo;
+      msgs.push({
+        text: daysAgo === 0
+          ? `📍 You checked in at ${personal.lastVisitedName} today`
+          : daysAgo === 1
+          ? `📍 Last visited ${personal.lastVisitedName} yesterday`
+          : `📍 Last at ${personal.lastVisitedName} ${daysAgo}d ago`,
+        subtext: 'Explore something new today',
+        cta: 'Explore',
+        target: { tab: 'Explore' },
+      });
+    }
+    return msgs;
+  })();
+
+  // Community / FOMO messages from live platform data
+  const communityMessages: BannerMessage[] = (() => {
+    if (!platformData) return [FALLBACK_MESSAGE];
+    const msgs: BannerMessage[] = [];
+    if (platformData.checkinBannerText) {
+      msgs.push({
+        text: platformData.checkinBannerText,
+        subtext: platformData.checkinsThisWeek > 0 ? `${platformData.checkinsThisWeek} this week` : null,
+        cta: 'Check In',
+        target: { tab: 'Rewards' },
+      });
+    }
+    if (platformData.happyHoursBannerText) {
+      msgs.push({
+        text: platformData.happyHoursBannerText,
+        subtext: null,
+        cta: 'View',
+        target: { screen: 'HappyHoursViewAll' },
+      });
+    }
+    if (platformData.specialsBannerText) {
+      msgs.push({
+        text: platformData.specialsBannerText,
+        subtext: null,
+        cta: 'View',
+        target: { screen: 'SpecialsViewAll' },
+      });
+    }
+    msgs.push(FALLBACK_MESSAGE);
+    return msgs;
+  })();
+
+  // Personalized users get personal messages first, then community
+  // New / anonymous users get community FOMO messages only
+  const messages: BannerMessage[] = hasPersonalHistory
+    ? [...personalMessages, ...communityMessages]
+    : communityMessages;
+
+  const finalMessages = messages.length > 0 ? messages : [FALLBACK_MESSAGE];
+
+  // Reset index when messages change
+  useEffect(() => {
+    setMessageIndex(0);
+  }, [hasPersonalHistory]);
 
   // Cycle through messages
   useEffect(() => {
-    if (messages.length <= 1) return;
+    if (finalMessages.length <= 1) return;
 
     const interval = setInterval(() => {
-      // Fade out
       textOpacity.value = withSequence(
         withTiming(0, { duration: 300, easing: Easing.out(Easing.ease) }),
         withTiming(1, { duration: 300, easing: Easing.in(Easing.ease) })
       );
-
-      // Change message slightly after fade out starts
       setTimeout(() => {
-        setMessageIndex((prev) => (prev + 1) % messages.length);
+        setMessageIndex((prev) => (prev + 1) % finalMessages.length);
       }, 300);
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [messages.length]);
+  }, [finalMessages.length]);
 
   const animatedTextStyle = useAnimatedStyle(() => ({
     opacity: textOpacity.value,
   }));
 
-  if (isLoading && !messages.length) {
-    return null;
-  }
+  if (platformLoading && !finalMessages.length) return null;
 
-  const currentMessage = messages[messageIndex] || messages[0];
+  const currentMessage = finalMessages[messageIndex] || finalMessages[0];
 
   const handlePress = () => {
     try {
@@ -109,7 +169,6 @@ export default function SocialProofBanner() {
         navigation.navigate(target.screen as any);
       }
     } catch {
-      // Fallback — navigate to VoteCenter if anything goes wrong
       navigation.navigate('VoteCenter');
     }
   };

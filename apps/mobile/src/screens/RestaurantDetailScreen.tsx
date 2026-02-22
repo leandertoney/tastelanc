@@ -30,6 +30,7 @@ import { fetchEvents } from '../lib/events';
 import { trackScreenView } from '../lib/analytics';
 import { useAuth } from '../hooks/useAuth';
 import { useFavorites, useToggleFavorite } from '../hooks';
+import { useIsWishlisted, useToggleWishlist } from '../hooks/useWishlist';
 import {
   TagChip,
   RatingStars,
@@ -92,6 +93,8 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const { data: favorites = [] } = useFavorites();
   const toggleFavoriteMutation = useToggleFavorite();
   const isFavorite = favorites.includes(id);
+  const isWishlisted = useIsWishlisted(id);
+  const { mutate: toggleWishlist } = useToggleWishlist();
 
   const [restaurant, setRestaurant] = useState<RestaurantWithTier | null>(null);
   const [tierName, setTierName] = useState<SubscriptionTier | null>(null);
@@ -397,6 +400,18 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
             onPress={() => navigation.goBack()}
           >
             <Ionicons name="arrow-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+
+          {/* Bookmark / Bucket List Button */}
+          <TouchableOpacity
+            style={styles.bookmarkButton}
+            onPress={() => toggleWishlist(id)}
+          >
+            <Ionicons
+              name={isWishlisted ? 'bookmark' : 'bookmark-outline'}
+              size={22}
+              color={isWishlisted ? colors.accent : colors.text}
+            />
           </TouchableOpacity>
         </View>
 
@@ -795,6 +810,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 50,
     left: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  bookmarkButton: {
+    position: 'absolute',
+    top: 50,
+    right: 16,
     width: 40,
     height: 40,
     borderRadius: 20,
