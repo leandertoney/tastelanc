@@ -1,7 +1,7 @@
 /**
- * Home screen entry point card for the "Plan Your Day" feature
- * Vertical layout to match SquadPickerCard height; orange/red accent
- * clearly differentiates it from the indigo Squad Vote card.
+ * Home screen entry point card for "Squad Vote"
+ * Visually distinct from PlanYourDayCard — indigo accent, flash icon,
+ * live dot badge to reinforce the social/voting energy.
  */
 
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
@@ -13,24 +13,27 @@ import type { RootStackParamList } from '../navigation/types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-export default function PlanYourDayCard() {
+const SQUAD_INDIGO = '#6C63FF';
+
+export default function SquadPickerCard() {
   const navigation = useNavigation<NavigationProp>();
 
   return (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate('ItineraryBuilder', {})}
+      onPress={() => navigation.navigate('SquadBuilder')}
       activeOpacity={0.85}
     >
-      {/* Top row: icon (no live dot — this is a solo planner) */}
+      {/* Top row: icon + live dot */}
       <View style={styles.topRow}>
         <View style={styles.iconCircle}>
-          <Ionicons name="calendar" size={20} color={colors.text} />
+          <Ionicons name="flash" size={20} color={colors.text} />
         </View>
+        <View style={styles.liveDot} />
       </View>
 
-      <Text style={styles.title}>Plan Your Day</Text>
-      <Text style={styles.subtitle}>Smart stops for you.</Text>
+      <Text style={styles.title}>Squad Vote</Text>
+      <Text style={styles.subtitle}>Let Lancaster decide.</Text>
     </TouchableOpacity>
   );
 }
@@ -42,12 +45,13 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.md,
     borderWidth: 1.5,
-    borderColor: colors.accent,
+    borderColor: SQUAD_INDIGO,
     minHeight: 110,
     justifyContent: 'space-between',
   },
   topRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.sm,
   },
@@ -55,9 +59,15 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.accent,
+    backgroundColor: SQUAD_INDIGO,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.success,
   },
   title: {
     fontSize: typography.callout,

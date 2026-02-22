@@ -11,6 +11,8 @@
  * - POST /event-reminder - Send reminder for upcoming events (premium/elite only)
  * - POST /broadcast - Send notification to all users (admin only)
  * - POST /new-blog-post - Send notification to all users about a new blog post
+ * - POST /todays-pick - Send daily 4pm ET "Today's Pick" curated restaurant notification
+ * - POST /weekly-recap - Send Sunday 2pm ET personalized weekly recap (or FOMO stats for inactive users)
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -359,7 +361,408 @@ async function sendAreaEntryNotification(
   return { sent: result.data.some(r => r.status === 'ok') };
 }
 
+// ─── Pick strategy config ────────────────────────────────────────────────────
+
+interface PickStrategy {
+  type: string;
+  title: string;
+  emoji: string;
+}
+
+const PICK_STRATEGIES_BY_DAY: Record<string, PickStrategy> = {
+  monday:    { type: 'most_loved',      title: "Today's Most Loved",    emoji: '❤️' },
+  tuesday:   { type: 'happy_hour',      title: 'Happy Hour Pick',       emoji: '🍺' },
+  wednesday: { type: 'hidden_gem',      title: 'Hidden Gem of the Day', emoji: '💎' },
+  thursday:  { type: 'event_tonight',   title: 'Event Tonight',         emoji: '🎵' },
+  friday:    { type: 'weekend_kickoff', title: 'Weekend Kickoff',       emoji: '🔥' },
+  saturday:  { type: 'date_night',      title: "Tonight's Date Night Pick", emoji: '🌆' },
+  sunday:    { type: 'brunch',          title: 'Brunch of the Day',     emoji: '☀️' },
+};
+
+/**
+ * Send the daily "Today's Pick" push notification at 4pm ET.
+ * Rotates pick categories by day of week. Uses day-of-month as a
+ * deterministic seed so everyone gets the same pick, but it varies day-to-day.
+ */
+async function sendTodaysPick(supabase: ReturnType<typeof createClient>): Promise<{
+  sent: number;
+  restaurant?: string;
+  strategy?: string;
+  reason?: string;
+}> {
+  const now = new Date();
+  const etLocale = { timeZone: 'America/New_York' };
+
+  const dayName = now.toLocaleDateString('en-US', { ...etLocale, weekday: 'long' }).toLowerCase();
+  const dayOfMonth = parseInt(now.toLocaleDateString('en-US', { ...etLocale, day: 'numeric' }), 10);
+  const etDayOfWeek = dayName; // e.g. 'tuesday'
+
+  const strategy = PICK_STRATEGIES_BY_DAY[dayName];
+  if (!strategy) {
+    return { sent: 0, reason: `Unknown day: ${dayName}` };
+  }
+
+  let restaurantId: string | null = null;
+  let restaurantName = '';
+  let notifBody = '';
+
+  // ── Pick by strategy type ──────────────────────────────────────────────────
+
+  if (strategy.type === 'most_loved') {
+    // Try to find the most-voted restaurant this month from the votes table
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    const { data: voteData } = await supabase
+      .from('votes')
+      .select('restaurant_id')
+      .eq('month', currentMonth);
+
+    let topRestaurantId: string | null = null;
+    if (voteData?.length) {
+      // Tally votes client-side (edge function doesn't have RPC access easily)
+      const tally = new Map<string, number>();
+      for (const v of voteData) {
+        tally.set(v.restaurant_id, (tally.get(v.restaurant_id) || 0) + 1);
+      }
+      const sorted = [...tally.entries()].sort((a, b) => b[1] - a[1]);
+      // Rotate among top 5 so we don't spam the same #1 every Monday
+      const topN = sorted.slice(0, Math.min(5, sorted.length));
+      topRestaurantId = topN[dayOfMonth % topN.length][0];
+    }
+
+    if (topRestaurantId) {
+      const { data: r } = await supabase
+        .from('restaurants')
+        .select('id, name, description, best_for')
+        .eq('id', topRestaurantId)
+        .single();
+
+      if (r) {
+        restaurantId = r.id;
+        restaurantName = r.name;
+        notifBody = `Lancaster is voting ${r.name} #1 this month. Have you tried it yet?`;
+      }
+    }
+
+    // Fallback: no votes yet — pick from verified restaurants deterministically
+    if (!restaurantId) {
+      const { data } = await supabase
+        .from('restaurants')
+        .select('id, name, description, best_for')
+        .eq('is_active', true)
+        .eq('is_verified', true)
+        .order('name')
+        .limit(40);
+
+      if (!data?.length) return { sent: 0, reason: 'No restaurants for most_loved' };
+      const r = data[dayOfMonth % data.length];
+      restaurantId = r.id;
+      restaurantName = r.name;
+      const extra = r.best_for?.length ? ` Known for ${(r.best_for as string[]).slice(0, 1)[0].toLowerCase()}.` : '';
+      notifBody = `The community is loving ${r.name} right now.${extra} Have you been?`;
+    }
+
+  } else if (strategy.type === 'happy_hour') {
+    const { data } = await supabase
+      .from('happy_hours')
+      .select(`
+        restaurant_id, description, start_time,
+        restaurants!inner(id, name, is_active, is_verified)
+      `)
+      .eq('is_active', true)
+      .contains('days_of_week', [etDayOfWeek])
+      .limit(30);
+
+    if (!data?.length) return { sent: 0, reason: 'No happy hours today for happy_hour pick' };
+    const hh = data[dayOfMonth % data.length] as any;
+    const r = hh.restaurants;
+    restaurantId = r.id;
+    restaurantName = r.name;
+
+    const [h] = hh.start_time.split(':').map(Number);
+    const suffix = h >= 12 ? 'PM' : 'AM';
+    const dh = h > 12 ? h - 12 : h === 0 ? 12 : h;
+    notifBody = hh.description
+      ? `${r.name}: ${hh.description} starting at ${dh} ${suffix}`
+      : `${r.name} kicks off happy hour at ${dh} ${suffix} — grab a seat before it fills up`;
+
+  } else if (strategy.type === 'hidden_gem') {
+    // Verified restaurants that are NOT premium/elite — the underdogs
+    const { data } = await supabase
+      .from('restaurants')
+      .select('id, name, description, best_for, cuisine')
+      .eq('is_active', true)
+      .eq('is_verified', true)
+      .not('tier_id', 'in', `(${PAID_TIER_IDS.join(',')})`)
+      .order('name')
+      .limit(40);
+
+    if (!data?.length) return { sent: 0, reason: 'No hidden gems found' };
+    const r = data[dayOfMonth % data.length];
+    restaurantId = r.id;
+    restaurantName = r.name;
+    notifBody = `Most people walk right past ${r.name}. Today's your sign to finally try it.`;
+
+  } else if (strategy.type === 'event_tonight') {
+    // Fetch events happening today or tonight
+    const etToday = now.toLocaleDateString('en-US', { ...etLocale, year: 'numeric', month: '2-digit', day: '2-digit' })
+      .split('/').reverse().join('-').replace(/(\d{4})-(\d{2})-(\d{2})/, '$1-$2-$3');
+    // Simple YYYY-MM-DD in ET
+    const year = now.toLocaleDateString('en-US', { ...etLocale, year: 'numeric' });
+    const month = now.toLocaleDateString('en-US', { ...etLocale, month: '2-digit' });
+    const day = now.toLocaleDateString('en-US', { ...etLocale, day: '2-digit' });
+    const todayStr = `${year}-${month}-${day}`;
+
+    const { data } = await supabase
+      .from('events')
+      .select(`
+        id, name, description, event_type, start_time,
+        restaurant:restaurants!inner(id, name, is_active)
+      `)
+      .eq('is_active', true)
+      .or(`event_date.eq.${todayStr},is_recurring.eq.true`)
+      .limit(30);
+
+    // Filter recurring events to those on today's day
+    const todaysEvents = (data || []).filter((e: any) => {
+      if (!e.is_recurring) return true;
+      return e.days_of_week?.includes(etDayOfWeek);
+    });
+
+    if (!todaysEvents.length) return { sent: 0, reason: 'No events tonight' };
+    const ev = todaysEvents[dayOfMonth % todaysEvents.length] as any;
+    const r = ev.restaurant;
+    restaurantId = r.id;
+    restaurantName = r.name;
+    const timeStr = ev.start_time
+      ? (() => {
+          const [h] = ev.start_time.split(':').map(Number);
+          const s = h >= 12 ? 'PM' : 'AM';
+          const dh = h > 12 ? h - 12 : h === 0 ? 12 : h;
+          return ` at ${dh} ${s}`;
+        })()
+      : ' tonight';
+    notifBody = `${ev.name} at ${r.name}${timeStr}. Live entertainment in Lancaster tonight 🎶`;
+
+  } else if (strategy.type === 'weekend_kickoff') {
+    // Top verified restaurant with a happy hour or event on Friday
+    const { data } = await supabase
+      .from('restaurants')
+      .select('id, name, description, best_for, categories')
+      .eq('is_active', true)
+      .eq('is_verified', true)
+      .order('name')
+      .limit(50);
+
+    if (!data?.length) return { sent: 0, reason: 'No restaurants for weekend_kickoff' };
+    // Prefer bars/nightlife for Friday kickoff
+    const preferred = (data as any[]).filter((r: any) =>
+      r.categories?.some((c: string) => ['bars', 'nightlife', 'rooftops'].includes(c))
+    );
+    const pool = preferred.length ? preferred : data;
+    const r = pool[dayOfMonth % pool.length] as any;
+    restaurantId = r.id;
+    restaurantName = r.name;
+    notifBody = `Weekend starts NOW. ${r.name} is the place to be tonight in Lancaster 🔥`;
+
+  } else if (strategy.type === 'date_night') {
+    // Upscale dinner pick for Saturday
+    const { data } = await supabase
+      .from('restaurants')
+      .select('id, name, description, best_for, categories')
+      .eq('is_active', true)
+      .eq('is_verified', true)
+      .order('name')
+      .limit(50);
+
+    if (!data?.length) return { sent: 0, reason: 'No restaurants for date_night' };
+    const preferred = (data as any[]).filter((r: any) =>
+      r.categories?.some((c: string) => ['dinner', 'rooftops'].includes(c))
+    );
+    const pool = preferred.length ? preferred : data;
+    const r = pool[dayOfMonth % pool.length] as any;
+    restaurantId = r.id;
+    restaurantName = r.name;
+    const tagline = r.best_for?.length
+      ? r.best_for.slice(0, 1)[0]
+      : 'a perfect Saturday evening';
+    notifBody = `Make tonight special. ${r.name} is tonight's date night pick — perfect for ${tagline.toLowerCase()}.`;
+
+  } else if (strategy.type === 'brunch') {
+    const { data } = await supabase
+      .from('restaurants')
+      .select('id, name, description, best_for, categories')
+      .eq('is_active', true)
+      .eq('is_verified', true)
+      .contains('categories', ['brunch'])
+      .order('name')
+      .limit(30);
+
+    if (!data?.length) return { sent: 0, reason: 'No brunch spots found' };
+    const r = (data as any[])[dayOfMonth % data.length];
+    restaurantId = r.id;
+    restaurantName = r.name;
+    notifBody = `Sunday brunch sorted. ${r.name} is today's top pick — treat yourself ☀️`;
+  }
+
+  if (!restaurantId) return { sent: 0, reason: 'No restaurant selected' };
+
+  // ── Send to all tokens ─────────────────────────────────────────────────────
+
+  const tokens = await getAllPushTokens(supabase);
+  if (!tokens.length) return { sent: 0, reason: 'No push tokens registered' };
+
+  const title = `${strategy.emoji} ${strategy.title}`;
+  const messages: PushMessage[] = tokens.map(token => ({
+    to: token,
+    sound: 'default',
+    title,
+    body: notifBody,
+    data: {
+      screen: 'RestaurantDetail',
+      restaurantId,
+    },
+  }));
+
+  const result = await sendPushNotifications(messages);
+  const successCount = result.data.filter(r => r.status === 'ok').length;
+
+  return {
+    sent: successCount,
+    restaurant: restaurantName,
+    strategy: strategy.type,
+  };
+}
+
 // Main handler
+// ─── Weekly Recap ─────────────────────────────────────────────────────────────
+
+/**
+ * Send personalized weekly recap push notifications every Sunday at 2pm ET.
+ *
+ * Strategy:
+ * - Users WITH activity this week  → personalized message ("You visited X restaurants…")
+ * - Users with NO activity          → FOMO community stats ("312 check-ins in Lancaster this week")
+ */
+async function sendWeeklyRecap(supabase: ReturnType<typeof createClient>): Promise<{
+  sent: number;
+  personalized: number;
+  fomo: number;
+}> {
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  // ── Community stats (used for FOMO messages) ──────────────────────────────
+  const [checkinCountRes, newSpecialsRes, topMoverRes] = await Promise.all([
+    supabase
+      .from('checkins')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', weekAgo),
+    supabase
+      .from('specials')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true)
+      .gte('created_at', weekAgo),
+    supabase
+      .from('restaurants')
+      .select('id, name')
+      .eq('is_active', true)
+      .eq('is_verified', true)
+      .order('name')
+      .limit(30),
+  ]);
+
+  const communityCheckins = checkinCountRes.count || 0;
+  const newSpecials = newSpecialsRes.count || 0;
+  const restaurants: Array<{ id: string; name: string }> = topMoverRes.data || [];
+
+  // Pick a featured restaurant for FOMO messaging (rotate by week-of-year)
+  const weekOfYear = Math.floor(now.getTime() / (7 * 24 * 60 * 60 * 1000));
+  const fomoRestaurant = restaurants.length > 0
+    ? restaurants[weekOfYear % restaurants.length]
+    : null;
+
+  // FOMO messages (for inactive / new users)
+  const fomoMessages = [
+    communityCheckins > 10
+      ? `🔥 ${communityCheckins} check-ins in Lancaster this week. Are you keeping up?`
+      : `🔥 Lancaster locals are eating well this week — don't miss out.`,
+    newSpecials > 0
+      ? `⚡ ${newSpecials} new special${newSpecials > 1 ? 's' : ''} added this week. Check what's new.`
+      : null,
+    fomoRestaurant
+      ? `📈 ${fomoRestaurant.name} is one of this week's hottest spots. Have you been?`
+      : null,
+  ].filter(Boolean) as string[];
+
+  const fomoBody = fomoMessages[0] || 'Lancaster\'s dining scene is buzzing. Open TasteLanc to see what you\'re missing.';
+
+  // ── Get all push tokens with user IDs ─────────────────────────────────────
+  const { data: tokenRows } = await supabase
+    .from('push_tokens')
+    .select('token, user_id')
+    .not('token', 'is', null);
+
+  if (!tokenRows?.length) return { sent: 0, personalized: 0, fomo: 0 };
+
+  // ── Fetch this week's check-ins grouped by user ───────────────────────────
+  const { data: recentCheckins } = await supabase
+    .from('checkins')
+    .select('user_id, restaurant_name, created_at')
+    .gte('created_at', weekAgo)
+    .order('created_at', { ascending: false });
+
+  // Map: userId → checkins this week
+  const userCheckins = new Map<string, Array<{ restaurant_name: string }>>();
+  (recentCheckins || []).forEach((c: { user_id: string; restaurant_name: string }) => {
+    const existing = userCheckins.get(c.user_id) || [];
+    existing.push({ restaurant_name: c.restaurant_name });
+    userCheckins.set(c.user_id, existing);
+  });
+
+  // ── Build messages per user ───────────────────────────────────────────────
+  const messages: PushMessage[] = [];
+  let personalizedCount = 0;
+  let fomoCount = 0;
+
+  for (const row of tokenRows as Array<{ token: string; user_id: string }>) {
+    const { token, user_id } = row;
+    if (!token) continue;
+
+    const userActivity = userCheckins.get(user_id) || [];
+    const checkinCount = userActivity.length;
+
+    let title: string;
+    let body: string;
+
+    if (checkinCount > 0) {
+      // Personalized message
+      const uniqueNames = [...new Set(userActivity.map(c => c.restaurant_name))];
+      if (checkinCount === 1) {
+        body = `This week: you visited ${uniqueNames[0]} 🍽️ Keep exploring Lancaster — so much more to discover.`;
+      } else {
+        body = `Your week in Lancaster: ${checkinCount} check-in${checkinCount > 1 ? 's' : ''} at ${uniqueNames.slice(0, 2).join(', ')}${uniqueNames.length > 2 ? ' & more' : ''}. You're a local 🔥`;
+      }
+      title = '🗓️ Your Week in Lancaster';
+      personalizedCount++;
+    } else {
+      // FOMO message for inactive users
+      title = '📍 This Week in Lancaster';
+      body = fomoBody;
+      fomoCount++;
+    }
+
+    messages.push({ to: token, sound: 'default', title, body, data: { screen: 'Home' } });
+  }
+
+  const result = await sendPushNotifications(messages);
+  const successCount = result.data.filter(r => r.status === 'ok').length;
+
+  return { sent: successCount, personalized: personalizedCount, fomo: fomoCount };
+}
+
+// ─── HTTP Router ─────────────────────────────────────────────────────────────
+
 Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
@@ -449,6 +852,20 @@ Deno.serve(async (req) => {
         const successCount = result.data.filter(r => r.status === 'ok').length;
 
         return new Response(JSON.stringify({ sent: successCount, total: tokens.length }), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'todays-pick': {
+        const result = await sendTodaysPick(supabase);
+        return new Response(JSON.stringify(result), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'weekly-recap': {
+        const result = await sendWeeklyRecap(supabase);
+        return new Response(JSON.stringify(result), {
           headers: { 'Content-Type': 'application/json' },
         });
       }

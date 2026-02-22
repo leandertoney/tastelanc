@@ -15,6 +15,10 @@ import CuisineDetailScreen from '../screens/CuisineDetailScreen';
 import EventDetailScreen from '../screens/EventDetailScreen';
 import FeatureRequestScreen from '../screens/FeatureRequestScreen';
 import ItineraryBuilderScreen from '../screens/ItineraryBuilderScreen';
+import SquadBuilderScreen from '../screens/SquadBuilderScreen';
+import SquadVoteScreen from '../screens/SquadVoteScreen';
+import MyRestaurantsScreen from '../screens/MyRestaurantsScreen';
+import WishlistScreen from '../screens/WishlistScreen';
 import BlogViewAllScreen from '../screens/BlogViewAllScreen';
 import BlogDetailScreen from '../screens/BlogDetailScreen';
 import ArtistDetailScreen from '../screens/ArtistDetailScreen';
@@ -40,6 +44,10 @@ const SafeCuisineDetail = withScreenErrorBoundary(CuisineDetailScreen, 'CuisineD
 const SafeEventDetail = withScreenErrorBoundary(EventDetailScreen, 'EventDetail');
 const SafeFeatureRequest = withScreenErrorBoundary(FeatureRequestScreen, 'FeatureRequest');
 const SafeItineraryBuilder = withScreenErrorBoundary(ItineraryBuilderScreen, 'ItineraryBuilder');
+const SafeSquadBuilder = withScreenErrorBoundary(SquadBuilderScreen, 'SquadBuilder');
+const SafeSquadVote = withScreenErrorBoundary(SquadVoteScreen, 'SquadVote');
+const SafeMyRestaurants = withScreenErrorBoundary(MyRestaurantsScreen, 'MyRestaurants');
+const SafeWishlist = withScreenErrorBoundary(WishlistScreen, 'Wishlist');
 const SafeBlogViewAll = withScreenErrorBoundary(BlogViewAllScreen, 'BlogViewAll');
 const SafeBlogDetail = withScreenErrorBoundary(BlogDetailScreen, 'BlogDetail');
 const SafeArtistDetail = withScreenErrorBoundary(ArtistDetailScreen, 'ArtistDetail');
@@ -163,6 +171,17 @@ export default function RootNavigator() {
         component={SafeItineraryBuilder}
         options={{ title: 'Plan Your Day' }}
       />
+      {/* Squad Picker */}
+      <Stack.Screen
+        name="SquadBuilder"
+        component={SafeSquadBuilder}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="SquadVote"
+        component={SafeSquadVote}
+        options={{ headerShown: false }}
+      />
       {/* Blog */}
       <Stack.Screen
         name="BlogViewAll"
@@ -181,6 +200,17 @@ export default function RootNavigator() {
         options={({ route }) => ({
           title: route.params.artistName,
         })}
+      />
+      {/* Personal History */}
+      <Stack.Screen
+        name="MyRestaurants"
+        component={SafeMyRestaurants}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Wishlist"
+        component={SafeWishlist}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );

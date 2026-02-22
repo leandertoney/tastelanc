@@ -15,6 +15,8 @@ interface ItineraryTimeSlotCardProps {
   onSwap?: () => void;
   onRemove?: () => void;
   isFirst?: boolean;
+  isLast?: boolean;
+  stopNumber?: number;
 }
 
 export default function ItineraryTimeSlotCard({
@@ -23,22 +25,22 @@ export default function ItineraryTimeSlotCard({
   onSwap,
   onRemove,
   isFirst = false,
+  isLast = false,
+  stopNumber,
 }: ItineraryTimeSlotCardProps) {
   const config = TIME_SLOT_CONFIG[item.time_slot as TimeSlot];
 
   return (
     <View style={styles.container}>
-      {/* Timeline connector */}
+      {/* Timeline column with stop number */}
       <View style={styles.timelineColumn}>
-        {!isFirst && <View style={styles.connectorLine} />}
         <View style={styles.timelineDot}>
-          <Ionicons
-            name={config.icon as any}
-            size={16}
-            color={colors.text}
-          />
+          {stopNumber != null ? (
+            <Text style={styles.stopNumber}>{stopNumber}</Text>
+          ) : (
+            <Ionicons name={config.icon as any} size={16} color={colors.text} />
+          )}
         </View>
-        <View style={[styles.connectorLine, styles.connectorLineBottom]} />
       </View>
 
       {/* Card content */}
@@ -110,50 +112,6 @@ export default function ItineraryTimeSlotCard({
   );
 }
 
-/**
- * Empty slot card shown when a time slot has no restaurant
- */
-export function EmptyTimeSlotCard({
-  slot,
-  onAdd,
-}: {
-  slot: TimeSlot;
-  onAdd?: () => void;
-}) {
-  const config = TIME_SLOT_CONFIG[slot];
-
-  return (
-    <View style={styles.container}>
-      <View style={styles.timelineColumn}>
-        <View style={styles.connectorLine} />
-        <View style={[styles.timelineDot, styles.timelineDotEmpty]}>
-          <Ionicons
-            name={config.icon as any}
-            size={16}
-            color={colors.textMuted}
-          />
-        </View>
-        <View style={[styles.connectorLine, styles.connectorLineBottom]} />
-      </View>
-
-      <TouchableOpacity
-        style={[styles.card, styles.emptyCard]}
-        onPress={onAdd}
-        activeOpacity={0.7}
-        disabled={!onAdd}
-      >
-        <View style={styles.slotHeader}>
-          <Text style={[styles.slotLabel, { color: colors.textMuted }]}>{config.label}</Text>
-          <Text style={styles.slotTime}>{config.defaultTimeRange}</Text>
-        </View>
-        <View style={styles.emptyContent}>
-          <Ionicons name="add-circle-outline" size={24} color={colors.textSecondary} />
-          <Text style={styles.emptyText}>Free time</Text>
-        </View>
-      </TouchableOpacity>
-    </View>
-  );
-}
 
 const styles = StyleSheet.create({
   container: {
@@ -164,15 +122,7 @@ const styles = StyleSheet.create({
   timelineColumn: {
     width: 40,
     alignItems: 'center',
-  },
-  connectorLine: {
-    width: 2,
-    flex: 1,
-    backgroundColor: colors.accent,
-    opacity: 0.3,
-  },
-  connectorLineBottom: {
-    flex: 1,
+    paddingTop: 2,
   },
   timelineDot: {
     width: 32,
@@ -182,10 +132,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  timelineDotEmpty: {
-    backgroundColor: colors.cardBg,
-    borderWidth: 2,
-    borderColor: colors.border,
+  stopNumber: {
+    fontSize: typography.subhead,
+    fontWeight: '700',
+    color: colors.text,
   },
   // Card
   card: {
@@ -270,16 +220,5 @@ const styles = StyleSheet.create({
     fontSize: typography.caption1,
     color: colors.accent,
     fontWeight: '500',
-  },
-  // Empty state
-  emptyContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.sm,
-  },
-  emptyText: {
-    fontSize: typography.caption1,
-    color: colors.textSecondary,
   },
 });

@@ -116,6 +116,84 @@ function getRestaurantsCompetingText(count: number): string {
   return 'Many restaurants competing';
 }
 
+// ─── Personal Stats for logged-in users ───────────────────────────────────────
+
+export interface PersonalStats {
+  checkinsThisMonth: number;
+  lastVisitedName: string | null;
+  lastVisitedDaysAgo: number | null;
+  votesRemainingThisMonth: number;
+  topRankingRestaurantName: string | null; // restaurant the user voted for that is ranked
+}
+
+/**
+ * Hook to fetch personal stats for the current user
+ * Used to show personalized messages in the SocialProofBanner
+ */
+export function usePersonalStats() {
+  const { userId } = useAuth();
+
+  return useQuery({
+    queryKey: ['personalStats', userId],
+    queryFn: async (): Promise<PersonalStats> => {
+      if (!userId) return {
+        checkinsThisMonth: 0,
+        lastVisitedName: null,
+        lastVisitedDaysAgo: null,
+        votesRemainingThisMonth: 8,
+        topRankingRestaurantName: null,
+      };
+
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+      const [checkinRes, lastVisitRes, voteRes] = await Promise.all([
+        supabase
+          .from('checkins')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .gte('created_at', monthStart),
+        supabase
+          .from('checkins')
+          .select('restaurant_name, created_at')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1),
+        supabase
+          .from('votes')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('month', month),
+      ]);
+
+      const checkinsThisMonth = checkinRes.count || 0;
+      const votesUsed = voteRes.count || 0;
+      const votesRemaining = Math.max(0, 8 - votesUsed);
+
+      let lastVisitedName: string | null = null;
+      let lastVisitedDaysAgo: number | null = null;
+      if (lastVisitRes.data && lastVisitRes.data.length > 0) {
+        const last = lastVisitRes.data[0] as { restaurant_name: string; created_at: string };
+        lastVisitedName = last.restaurant_name;
+        lastVisitedDaysAgo = Math.floor(
+          (Date.now() - new Date(last.created_at).getTime()) / 86400000
+        );
+      }
+
+      return {
+        checkinsThisMonth,
+        lastVisitedName,
+        lastVisitedDaysAgo,
+        votesRemainingThisMonth: votesRemaining,
+        topRankingRestaurantName: null,
+      };
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 /**
  * Hook to fetch platform-wide social proof stats
  */
