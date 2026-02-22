@@ -199,6 +199,106 @@ export async function clearTestVisits(userId: string): Promise<number> {
   }
 }
 
+export interface SeedDemoResult {
+  checkins: number;
+  votes: number;
+  wishlist: number;
+}
+
+/**
+ * Seed demo data for testing engagement features
+ *
+ * DEV-ONLY: Inserts realistic check-ins, votes, and wishlist entries so
+ * that Profile, My Restaurants, Bucket List, and Smart Banner all show
+ * populated states in Expo Go without needing real activity.
+ *
+ * @param userId - The user ID to seed data for
+ * @returns Counts of records inserted
+ */
+export async function seedDemoData(userId: string): Promise<SeedDemoResult> {
+  if (!IS_DEV) {
+    console.warn('[RadarTest] seedDemoData is only available in development mode');
+    return { checkins: 0, votes: 0, wishlist: 0 };
+  }
+
+  console.log('[RadarTest] Seeding demo data for user:', userId);
+
+  const restaurants = await getTestRestaurants(10);
+  if (restaurants.length === 0) {
+    console.error('[RadarTest] No restaurants found — cannot seed demo data');
+    return { checkins: 0, votes: 0, wishlist: 0 };
+  }
+
+  const now = new Date();
+  const daysAgoISO = (days: number): string => {
+    const d = new Date(now);
+    d.setDate(d.getDate() - days);
+    return d.toISOString();
+  };
+
+  // ── 7 check-ins spread over 3 weeks ────────────────────────────────────
+  const checkinOffsets = [0, 2, 5, 8, 12, 16, 21];
+  const checkinRecords = checkinOffsets.map((days, i) => ({
+    user_id: userId,
+    restaurant_id: restaurants[i % restaurants.length].id,
+    restaurant_name: restaurants[i % restaurants.length].name,
+    points_earned: 10,
+    created_at: daysAgoISO(days),
+  }));
+
+  const { data: checkinData, error: checkinError } = await supabase
+    .from('checkins')
+    .insert(checkinRecords)
+    .select('id');
+
+  if (checkinError) {
+    console.error('[RadarTest] Failed to insert checkins:', checkinError);
+  }
+
+  // ── 3 votes for current month (different categories to avoid UNIQUE conflict) ──
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const voteCategories = ['best_happy_hour', 'best_brunch', 'best_cocktails'] as const;
+  const voteRecords = voteCategories.map((category, i) => ({
+    user_id: userId,
+    restaurant_id: restaurants[(i + 3) % restaurants.length].id,
+    category,
+    month: currentMonth,
+  }));
+
+  const { data: voteData, error: voteError } = await supabase
+    .from('votes')
+    .upsert(voteRecords, { ignoreDuplicates: true })
+    .select('id');
+
+  if (voteError) {
+    console.error('[RadarTest] Failed to insert votes:', voteError);
+  }
+
+  // ── 3 wishlist entries ──────────────────────────────────────────────────
+  const wishlistRecords = [6, 7, 8].map((i) => ({
+    user_id: userId,
+    restaurant_id: restaurants[i % restaurants.length].id,
+  }));
+
+  const { data: wishlistData, error: wishlistError } = await supabase
+    .from('wishlist')
+    .upsert(wishlistRecords, { ignoreDuplicates: true })
+    .select('id');
+
+  if (wishlistError) {
+    console.error('[RadarTest] Failed to insert wishlist:', wishlistError);
+  }
+
+  const result: SeedDemoResult = {
+    checkins: checkinData?.length || 0,
+    votes: voteData?.length || 0,
+    wishlist: wishlistData?.length || 0,
+  };
+
+  console.log('[RadarTest] Demo data seeded:', result);
+  return result;
+}
+
 /**
  * Log recent Radar events (for debugging)
  *

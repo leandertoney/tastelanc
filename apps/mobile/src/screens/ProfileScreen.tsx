@@ -29,6 +29,7 @@ import {
   getTestRestaurants,
   clearTestVisits,
   logRecentVisits,
+  seedDemoData,
 } from '../lib/radarTestUtils';
 import {
   registerForPushNotifications,
@@ -142,6 +143,7 @@ export default function ProfileScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [locationEnabled, setLocationEnabled] = useState(true);
   const [isTestingVisit, setIsTestingVisit] = useState(false);
+  const [isSeedingData, setIsSeedingData] = useState(false);
 
   useEffect(() => {
     loadPreferences();
@@ -185,6 +187,25 @@ export default function ProfileScreen() {
         Alert.alert('Cleared', `Removed ${count} test visits`);
       }},
     ]);
+  };
+
+  const handleSeedDemoData = async () => {
+    if (!__DEV__ || !userId) {
+      Alert.alert('Error', 'Dev tools require authentication');
+      return;
+    }
+    setIsSeedingData(true);
+    try {
+      const result = await seedDemoData(userId);
+      Alert.alert(
+        'Demo Data Seeded! ✅',
+        `${result.checkins} check-ins, ${result.votes} votes, ${result.wishlist} wishlist items\n\nPull to refresh screens to see the data.`
+      );
+    } catch {
+      Alert.alert('Error', 'Failed to seed demo data');
+    } finally {
+      setIsSeedingData(false);
+    }
   };
 
   const handleTestPushNotification = async () => {
@@ -366,6 +387,18 @@ export default function ProfileScreen() {
               <SettingItem icon="list-outline" label="Log Recent Visits" subtitle="Print visits to console" onPress={handleViewVisits} />
               <SettingItem icon="close-circle-outline" label="Clear Test Visits" subtitle="Remove manually recorded visits" onPress={handleClearTestVisits} danger />
               <SettingItem icon="notifications-outline" label="Test Push Notification" subtitle="Register token & send local notification" onPress={handleTestPushNotification} />
+              <TouchableOpacity style={styles.settingItem} onPress={handleSeedDemoData} disabled={isSeedingData}>
+                <View style={styles.settingLeft}>
+                  <View style={[styles.iconContainer, styles.iconContainerDev]}>
+                    <Ionicons name="flask-outline" size={20} color="#10B981" />
+                  </View>
+                  <View style={styles.settingTextContainer}>
+                    <Text style={styles.settingLabel}>Seed Demo Data</Text>
+                    <Text style={styles.settingSubtitle}>Populate visits, votes & wishlist for testing</Text>
+                  </View>
+                </View>
+                {isSeedingData ? <ActivityIndicator size="small" color={colors.accent} /> : <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />}
+              </TouchableOpacity>
             </View>
             <View style={styles.devNote}>
               <Text style={styles.devNoteText}>User ID: {userId ? `${userId.slice(0, 8)}...` : 'Not authenticated'}</Text>
