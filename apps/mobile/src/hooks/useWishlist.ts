@@ -5,6 +5,7 @@
  * Bookmark = wishlist (want to go)
  */
 import { useCallback } from 'react';
+import { Alert } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './useAuth';
@@ -96,6 +97,7 @@ export function useToggleWishlist() {
     onError: (_err, _id, context) => {
       if (!userId || !context?.previous) return;
       queryClient.setQueryData([WISHLIST_KEY, userId], context.previous);
+      Alert.alert('Error', "Could not update bucket list. Make sure you're signed in.");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [WISHLIST_KEY, userId] });

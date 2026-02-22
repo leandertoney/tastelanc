@@ -1,6 +1,7 @@
 /**
- * Home screen entry point card for the "Squad Picker" feature
- * Lets a group vote on where to eat — appears next to Plan Your Day card
+ * Home screen entry point card for "Squad Vote"
+ * Visually distinct from PlanYourDayCard — indigo accent, flash icon,
+ * live dot badge to reinforce the social/voting energy.
  */
 
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
@@ -12,6 +13,8 @@ import type { RootStackParamList } from '../navigation/types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
+const SQUAD_INDIGO = '#6C63FF';
+
 export default function SquadPickerCard() {
   const navigation = useNavigation<NavigationProp>();
 
@@ -21,18 +24,16 @@ export default function SquadPickerCard() {
       onPress={() => navigation.navigate('SquadBuilder')}
       activeOpacity={0.85}
     >
-      <View style={styles.iconCircle}>
-        <Ionicons name="people" size={18} color={colors.text} />
+      {/* Top row: icon + live dot */}
+      <View style={styles.topRow}>
+        <View style={styles.iconCircle}>
+          <Ionicons name="flash" size={20} color={colors.text} />
+        </View>
+        <View style={styles.liveDot} />
       </View>
 
-      <View style={styles.textColumn}>
-        <Text style={styles.title}>Squad Picker</Text>
-        <Text style={styles.subtitle}>
-          Let the group vote on where to eat.
-        </Text>
-      </View>
-
-      <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+      <Text style={styles.title}>Squad Vote</Text>
+      <Text style={styles.subtitle}>Let Lancaster decide.</Text>
     </TouchableOpacity>
   );
 }
@@ -43,32 +44,39 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardBg,
     borderRadius: radius.lg,
     padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 1.5,
+    borderColor: SQUAD_INDIGO,
+    minHeight: 110,
+    justifyContent: 'space-between',
+  },
+  topRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   iconCircle: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.surface,
+    backgroundColor: SQUAD_INDIGO,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  textColumn: {
-    flex: 1,
-    gap: 2,
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.success,
   },
   title: {
-    fontSize: typography.subhead,
+    fontSize: typography.callout,
     fontWeight: '700',
     color: colors.text,
+    marginBottom: 2,
   },
   subtitle: {
     fontSize: typography.caption1,
     color: colors.textMuted,
-    lineHeight: 16,
   },
 });

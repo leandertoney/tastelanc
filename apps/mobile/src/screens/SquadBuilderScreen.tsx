@@ -1,18 +1,19 @@
 /**
- * Squad Builder Screen
+ * Squad Vote Screen
  *
- * Pick 2–5 restaurants, create a poll, share the code with your group.
- * Friends open the app → SquadVoteScreen → vote → see the winner.
+ * The app picks 5 great spots for your crew — no typing required.
+ * Suggestions are based on what's trending, has happy hour, and
+ * what the community loves. Tap ↻ to swap any spot, then share
+ * the poll and let your squad vote.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   Image,
   ActivityIndicator,
   Alert,
@@ -21,11 +22,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import type { RootStackParamList } from '../navigation/types';
-import type { Restaurant } from '../types/database';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { useMarket } from '../context/MarketContext';
@@ -33,66 +32,231 @@ import { colors, radius, spacing, typography } from '../constants/colors';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-const MIN_CHOICES = 2;
-const MAX_CHOICES = 5;
+const SQUAD_INDIGO = '#6C63FF';
+const SUGGESTION_COUNT = 5;
 
-// ─── Restaurant search hook ───────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-function useRestaurantSearch(query: string, marketId: string | null) {
-  return useQuery({
-    queryKey: ['squad', 'search', query, marketId],
-    queryFn: async (): Promise<Restaurant[]> => {
-      if (query.trim().length < 2) return [];
-      let q = supabase
-        .from('restaurants')
-        .select('id, name, address, cover_image_url, logo_url, cuisine, categories')
-        .eq('is_active', true)
-        .ilike('name', `%${query.trim()}%`)
-        .limit(20);
-      if (marketId) q = q.eq('market_id', marketId);
-      const { data } = await q;
-      return (data || []) as unknown as Restaurant[];
-    },
-    enabled: query.trim().length >= 2,
-    staleTime: 30 * 1000,
-  });
+interface SuggestedRestaurant {
+  id: string;
+  name: string;
+  neighborhood: string | null;
+  cover_image_url: string | null;
+  logo_url: string | null;
+  categories: string[] | null;
+  tag: string;
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── Suggestion algorithm ─────────────────────────────────────────────────────
+
+async function loadSuggestions(
+  marketId: string | null
+): Promise<{ suggestions: SuggestedRestaurant[]; pool: SuggestedRestaurant[] }> {
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+  // 1. Fetch up to 100 active restaurants
+  let q = supabase
+    .from('restaurants')
+    .select('id, name, neighborhood, cover_image_url, logo_url, categories')
+    .eq('is_active', true);
+  if (marketId) q = q.eq('market_id', marketId);
+  const { data: restaurants } = await q.limit(100);
+  const all = (restaurants || []) as Array<SuggestedRestaurant & { score?: number }>;
+
+  // 2. Get active happy-hour restaurant IDs
+  const { data: happyHours } = await supabase
+    .from('happy_hours')
+    .select('restaurant_id')
+    .eq('is_active', true);
+  const happyHourIds = new Set(
+    (happyHours || []).map((h: { restaurant_id: string }) => h.restaurant_id)
+  );
+
+  // 3. Get this month's community vote counts per restaurant
+  const { data: votes } = await supabase
+    .from('votes')
+    .select('restaurant_id')
+    .eq('month', currentMonth);
+  const voteCounts: Record<string, number> = {};
+  (votes || []).forEach((v: { restaurant_id: string }) => {
+    voteCounts[v.restaurant_id] = (voteCounts[v.restaurant_id] || 0) + 1;
+  });
+
+  // 4. Score + tag each restaurant
+  const scored = all.map((r) => {
+    let tag = '🗺️ Lancaster Pick';
+    let score = Math.random() * 2; // base randomness for variety
+
+    if (happyHourIds.has(r.id)) {
+      tag = '🍺 Happy Hour';
+      score += 8;
+    }
+    const voteScore = voteCounts[r.id] || 0;
+    if (voteScore > 0) {
+      score += voteScore * 3;
+      if (!happyHourIds.has(r.id)) tag = '🔥 Trending';
+    }
+
+    return { ...r, tag, score };
+  });
+
+  // 5. Sort by score, enforce category variety (max 2 per primary category)
+  scored.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+
+  const picked: typeof scored = [];
+  for (const c of scored) {
+    if (picked.length >= SUGGESTION_COUNT) break;
+    const primary = c.categories?.[0] || 'other';
+    const count = picked.filter((p) => (p.categories?.[0] || 'other') === primary).length;
+    if (count < 2) picked.push(c);
+  }
+
+  // Backfill to 5 if variety filter left gaps
+  if (picked.length < SUGGESTION_COUNT) {
+    for (const c of scored) {
+      if (picked.length >= SUGGESTION_COUNT) break;
+      if (!picked.some((p) => p.id === c.id)) picked.push(c);
+    }
+  }
+
+  const pickedIds = new Set(picked.map((r) => r.id));
+  const pool = scored.filter((r) => !pickedIds.has(r.id));
+
+  const toSuggestion = (r: typeof scored[number]): SuggestedRestaurant => ({
+    id: r.id,
+    name: r.name,
+    neighborhood: r.neighborhood,
+    cover_image_url: r.cover_image_url,
+    logo_url: r.logo_url,
+    categories: r.categories,
+    tag: r.tag,
+  });
+
+  return {
+    suggestions: picked.map(toSuggestion),
+    pool: pool.map(toSuggestion),
+  };
+}
+
+// ─── SuggestionCard ───────────────────────────────────────────────────────────
+
+function SuggestionCard({
+  restaurant: r,
+  index,
+  onSwap,
+}: {
+  restaurant: SuggestedRestaurant;
+  index: number;
+  onSwap: () => void;
+}) {
+  const imageUri = r.cover_image_url || r.logo_url;
+
+  return (
+    <View style={styles.card}>
+      {imageUri ? (
+        <Image source={{ uri: imageUri }} style={styles.cardImage} />
+      ) : (
+        <View style={[styles.cardImage, styles.cardImageFallback]}>
+          <Ionicons name="restaurant" size={24} color={colors.textMuted} />
+        </View>
+      )}
+      <View style={styles.cardInfo}>
+        <View style={styles.cardBadge}>
+          <Text style={styles.cardBadgeText}>{index + 1}</Text>
+        </View>
+        <View style={styles.cardTextBlock}>
+          <Text style={styles.cardName} numberOfLines={1}>{r.name}</Text>
+          {r.neighborhood ? (
+            <Text style={styles.cardNeighborhood} numberOfLines={1}>{r.neighborhood}</Text>
+          ) : null}
+          <View style={styles.tagChip}>
+            <Text style={styles.tagText}>{r.tag}</Text>
+          </View>
+        </View>
+        <TouchableOpacity
+          style={styles.swapButton}
+          onPress={onSwap}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="shuffle" size={18} color={SQUAD_INDIGO} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function SquadBuilderScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { userId } = useAuth();
   const { marketId } = useMarket();
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selected, setSelected] = useState<Restaurant[]>([]);
+  const [suggestions, setSuggestions] = useState<SuggestedRestaurant[]>([]);
+  const [pool, setPool] = useState<SuggestedRestaurant[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
 
-  const { data: searchResults = [], isFetching } = useRestaurantSearch(searchQuery, marketId);
-
-  // ── Handlers ──────────────────────────────────────────────────────────────
-
-  const handleToggle = useCallback((restaurant: Restaurant) => {
-    setSelected(prev => {
-      if (prev.some(r => r.id === restaurant.id)) {
-        return prev.filter(r => r.id !== restaurant.id);
-      }
-      if (prev.length >= MAX_CHOICES) {
-        Alert.alert('Max reached', `You can pick up to ${MAX_CHOICES} options.`);
-        return prev;
-      }
-      return [...prev, restaurant];
-    });
-  }, []);
-
-  const handleCreate = useCallback(async () => {
-    if (selected.length < MIN_CHOICES) {
-      Alert.alert('Pick more', `Add at least ${MIN_CHOICES} spots to start a poll.`);
-      return;
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await loadSuggestions(marketId);
+      setSuggestions(result.suggestions);
+      setPool(result.pool);
+    } catch {
+      Alert.alert('Error', 'Could not load suggestions. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
+  }, [marketId]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleSwap = useCallback(
+    (index: number) => {
+      const current = suggestions[index];
+      const currentPrimary = current.categories?.[0];
+
+      // Prefer same-category alternatives, fall back to any pool item
+      const sameCat = pool.filter((r) => r.categories?.[0] === currentPrimary);
+      const alternatives = sameCat.length >= 3 ? sameCat.slice(0, 3) : pool.slice(0, 3);
+
+      if (alternatives.length === 0) {
+        Alert.alert('No more options', 'Tap the refresh button for a whole new set.');
+        return;
+      }
+
+      Alert.alert(
+        'Swap for…',
+        '',
+        [
+          ...alternatives.map((a) => ({
+            text: a.name,
+            onPress: () => {
+              const updated = [...suggestions];
+              updated[index] = { ...a };
+              setSuggestions(updated);
+              // Return swapped-out restaurant to pool, remove replacement
+              setPool((prev) => [current, ...prev.filter((r) => r.id !== a.id)]);
+            },
+          })),
+          { text: 'Cancel', style: 'cancel' },
+        ]
+      );
+    },
+    [suggestions, pool]
+  );
+
+  const handleSendToSquad = useCallback(async () => {
     if (!userId) {
       Alert.alert('Sign in required', 'Create an account to start a squad poll.');
+      return;
+    }
+    if (suggestions.length === 0) {
+      Alert.alert('No spots yet', 'Tap the refresh button to load suggestions.');
       return;
     }
 
@@ -103,7 +267,7 @@ export default function SquadBuilderScreen() {
         .insert({
           creator_id: userId,
           title: 'Where should we go?',
-          restaurant_ids: selected.map(r => r.id),
+          restaurant_ids: suggestions.map((r) => r.id),
         })
         .select('id')
         .single();
@@ -113,161 +277,101 @@ export default function SquadBuilderScreen() {
       const pollId = data.id;
       const shortCode = pollId.slice(0, 8).toUpperCase();
 
-      // Share the poll
       const shareMsg =
-        `🍴 Squad Poll — Where should we go tonight?\n\n` +
-        selected.map((r, i) => `${i + 1}. ${r.name}`).join('\n') +
+        `🗳️ Squad Vote — Where should we eat tonight?\n\n` +
+        suggestions.map((r, i) => `${i + 1}. ${r.name}`).join('\n') +
         `\n\nVote on TasteLanc! Code: ${shortCode}\n` +
         `https://apps.apple.com/app/tastelanc/id6755852717`;
 
       try {
         await Share.share({ message: shareMsg });
       } catch {
-        // User dismissed — that's fine, still navigate
+        // User dismissed share sheet — still navigate to results
       }
 
-      // Navigate to the vote screen so the creator can see live results
       navigation.replace('SquadVote', { pollId });
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'Failed to create the poll. Please try again.');
     } finally {
       setIsCreating(false);
     }
-  }, [selected, userId, navigation]);
-
-  // ── Render ────────────────────────────────────────────────────────────────
-
-  const isSelected = (id: string) => selected.some(r => r.id === id);
+  }, [suggestions, userId, navigation]);
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Squad Picker</Text>
-          <Text style={styles.headerSubtitle}>Pick spots, let your crew vote</Text>
+          <Text style={styles.headerTitle}>Squad Vote</Text>
+          <Text style={styles.headerSubtitle}>We picked these for your crew</Text>
         </View>
-        <View style={{ width: 24 }} />
+        <TouchableOpacity
+          onPress={load}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          disabled={isLoading}
+        >
+          <Ionicons
+            name="refresh"
+            size={22}
+            color={isLoading ? colors.textSecondary : SQUAD_INDIGO}
+          />
+        </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        {/* Selected chips */}
-        {selected.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>
-              Your picks ({selected.length}/{MAX_CHOICES})
-            </Text>
-            <View style={styles.selectedList}>
-              {selected.map((r, i) => (
-                <View key={r.id} style={styles.selectedChip}>
-                  <Text style={styles.selectedChipNumber}>{i + 1}</Text>
-                  {r.cover_image_url || r.logo_url ? (
-                    <Image source={{ uri: r.cover_image_url || r.logo_url || undefined }} style={styles.chipThumb} />
-                  ) : (
-                    <View style={[styles.chipThumb, styles.chipThumbFallback]}>
-                      <Ionicons name="restaurant" size={14} color={colors.textMuted} />
-                    </View>
-                  )}
-                  <Text style={styles.selectedChipName} numberOfLines={1}>{r.name}</Text>
-                  <TouchableOpacity onPress={() => handleToggle(r)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                    <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* Search */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Search restaurants</Text>
-          <View style={styles.searchBox}>
-            <Ionicons name="search" size={18} color={colors.textMuted} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Type a restaurant name..."
-              placeholderTextColor={colors.textMuted}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoCorrect={false}
-              returnKeyType="search"
+      {/* Content */}
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={SQUAD_INDIGO} />
+          <Text style={styles.loadingText}>Finding the best spots…</Text>
+        </View>
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {suggestions.map((r, index) => (
+            <SuggestionCard
+              key={r.id}
+              restaurant={r}
+              index={index}
+              onSwap={() => handleSwap(index)}
             />
-            {isFetching && <ActivityIndicator size="small" color={colors.textMuted} />}
+          ))}
+
+          <View style={styles.hint}>
+            <Ionicons name="information-circle-outline" size={16} color={colors.textSecondary} />
+            <Text style={styles.hintText}>
+              Tap ↻ to swap any spot. Hit refresh for a whole new set. Everyone in your squad gets
+              one vote — the winner is revealed live.
+            </Text>
           </View>
+        </ScrollView>
+      )}
 
-          {/* Results */}
-          {searchResults.length > 0 && (
-            <View style={styles.resultsList}>
-              {searchResults.map(r => {
-                const sel = isSelected(r.id);
-                return (
-                  <TouchableOpacity
-                    key={r.id}
-                    style={[styles.resultRow, sel && styles.resultRowSelected]}
-                    onPress={() => handleToggle(r)}
-                    activeOpacity={0.7}
-                  >
-                    {r.cover_image_url || r.logo_url ? (
-                      <Image source={{ uri: r.cover_image_url || r.logo_url || undefined }} style={styles.resultThumb} />
-                    ) : (
-                      <View style={[styles.resultThumb, styles.resultThumbFallback]}>
-                        <Ionicons name="restaurant" size={16} color={colors.textMuted} />
-                      </View>
-                    )}
-                    <View style={styles.resultInfo}>
-                      <Text style={styles.resultName} numberOfLines={1}>{r.name}</Text>
-                      {r.address && (
-                        <Text style={styles.resultAddress} numberOfLines={1}>{r.address}</Text>
-                      )}
-                    </View>
-                    <View style={[styles.checkCircle, sel && styles.checkCircleSelected]}>
-                      {sel && <Ionicons name="checkmark" size={14} color={colors.text} />}
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          )}
-
-          {searchQuery.length >= 2 && searchResults.length === 0 && !isFetching && (
-            <Text style={styles.noResults}>No restaurants found for "{searchQuery}"</Text>
-          )}
-        </View>
-
-        {/* Hint */}
-        <View style={styles.hint}>
-          <Ionicons name="information-circle-outline" size={16} color={colors.textSecondary} />
-          <Text style={styles.hintText}>
-            Pick {MIN_CHOICES}–{MAX_CHOICES} spots, then share the poll link with your group. Everyone votes, you all see the winner.
-          </Text>
-        </View>
-      </ScrollView>
-
-      {/* Create poll CTA */}
+      {/* Footer CTA */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={[
-            styles.createButton,
-            (selected.length < MIN_CHOICES || isCreating) && styles.createButtonDisabled,
+            styles.sendButton,
+            (isCreating || isLoading || suggestions.length === 0) && styles.sendButtonDisabled,
           ]}
-          onPress={handleCreate}
-          activeOpacity={0.8}
-          disabled={selected.length < MIN_CHOICES || isCreating}
+          onPress={handleSendToSquad}
+          activeOpacity={0.85}
+          disabled={isCreating || isLoading || suggestions.length === 0}
         >
           {isCreating ? (
             <ActivityIndicator size="small" color={colors.text} />
           ) : (
             <Ionicons name="share-social" size={20} color={colors.text} />
           )}
-          <Text style={styles.createButtonText}>
-            {isCreating
-              ? 'Creating Poll...'
-              : selected.length < MIN_CHOICES
-              ? `Pick at least ${MIN_CHOICES} spots`
-              : `Send Poll to Squad (${selected.length} spots)`}
+          <Text style={styles.sendButtonText}>
+            {isCreating ? 'Creating Poll…' : 'Send to Squad →'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -278,162 +382,109 @@ export default function SquadBuilderScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.primary,
-  },
+  container: { flex: 1, backgroundColor: colors.primary },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
   },
-  headerCenter: {
+  headerCenter: { flex: 1, alignItems: 'center' },
+  headerTitle: { fontSize: typography.headline, fontWeight: '700', color: colors.text },
+  headerSubtitle: { fontSize: typography.caption1, color: colors.textMuted, marginTop: 2 },
+
+  loadingContainer: {
     flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+    gap: spacing.md,
   },
-  headerTitle: {
-    fontSize: typography.headline,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  headerSubtitle: {
-    fontSize: typography.caption1,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  section: {
+  loadingText: { fontSize: typography.subhead, color: colors.textMuted },
+
+  scrollContent: {
     paddingHorizontal: spacing.md,
-    marginBottom: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xxl,
   },
-  sectionLabel: {
-    fontSize: typography.subhead,
-    fontWeight: '600',
-    color: colors.textSecondary,
+
+  // Restaurant suggestion card
+  card: {
+    backgroundColor: colors.cardBg,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
     marginBottom: spacing.sm,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  // Selected chips
-  selectedList: {
-    gap: spacing.sm,
-  },
-  selectedChip: {
+    overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.cardBg,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.accent,
   },
-  selectedChipNumber: {
-    fontSize: typography.subhead,
-    fontWeight: '700',
-    color: colors.accent,
-    width: 18,
-    textAlign: 'center',
+  cardImage: {
+    width: 80,
+    height: 80,
   },
-  chipThumb: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.sm,
-  },
-  chipThumbFallback: {
+  cardImageFallback: {
     backgroundColor: colors.cardBgElevated,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  selectedChipName: {
+  cardInfo: {
     flex: 1,
-    fontSize: typography.callout,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  // Search
-  searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.cardBg,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
     gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.sm,
   },
-  searchInput: {
-    flex: 1,
-    fontSize: typography.body,
-    color: colors.text,
-    paddingVertical: 4,
-  },
-  resultsList: {
-    gap: spacing.xs,
-  },
-  resultRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    padding: spacing.sm,
-    borderRadius: radius.md,
-    backgroundColor: colors.cardBg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  resultRowSelected: {
-    borderColor: colors.accent,
-    backgroundColor: 'rgba(164, 30, 34, 0.08)',
-  },
-  resultThumb: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.sm,
-  },
-  resultThumbFallback: {
-    backgroundColor: colors.cardBgElevated,
+  cardBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: SQUAD_INDIGO,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  resultInfo: {
-    flex: 1,
-    gap: 2,
+  cardBadgeText: {
+    fontSize: typography.caption1,
+    fontWeight: '700',
+    color: colors.text,
   },
-  resultName: {
+  cardTextBlock: { flex: 1, gap: 2 },
+  cardName: {
     fontSize: typography.callout,
     fontWeight: '600',
     color: colors.text,
   },
-  resultAddress: {
+  cardNeighborhood: {
     fontSize: typography.caption1,
     color: colors.textSecondary,
   },
-  checkCircle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+  tagChip: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(108, 99, 255, 0.15)',
+    borderRadius: radius.xs,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginTop: 4,
+  },
+  tagText: {
+    fontSize: typography.caption2,
+    color: SQUAD_INDIGO,
+    fontWeight: '600',
+  },
+  swapButton: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.sm,
+    backgroundColor: 'rgba(108, 99, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkCircleSelected: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
-  },
-  noResults: {
-    fontSize: typography.subhead,
-    color: colors.textMuted,
-    textAlign: 'center',
-    paddingVertical: spacing.lg,
-  },
-  // Hint
+
   hint: {
     flexDirection: 'row',
     gap: spacing.sm,
-    paddingHorizontal: spacing.md,
+    marginTop: spacing.md,
     marginBottom: spacing.lg,
     alignItems: 'flex-start',
   },
@@ -443,31 +494,29 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     lineHeight: 18,
   },
-  // Footer
+
   footer: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
-  createButton: {
+  sendButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.accent,
+    backgroundColor: SQUAD_INDIGO,
     paddingVertical: 16,
     borderRadius: radius.md,
-    shadowColor: colors.accent,
+    shadowColor: SQUAD_INDIGO,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
   },
-  createButtonDisabled: {
-    opacity: 0.55,
-  },
-  createButtonText: {
+  sendButtonDisabled: { opacity: 0.55 },
+  sendButtonText: {
     fontSize: typography.headline,
     fontWeight: '600',
     color: colors.text,

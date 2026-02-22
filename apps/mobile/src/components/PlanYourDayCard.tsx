@@ -1,6 +1,7 @@
 /**
  * Home screen entry point card for the "Plan Your Day" feature
- * Appears between Events and Featured sections on the Home screen
+ * Vertical layout to match SquadPickerCard height; orange/red accent
+ * clearly differentiates it from the indigo Squad Vote card.
  */
 
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
@@ -21,18 +22,15 @@ export default function PlanYourDayCard() {
       onPress={() => navigation.navigate('ItineraryBuilder', {})}
       activeOpacity={0.85}
     >
-      <View style={styles.iconCircle}>
-        <Ionicons name="map" size={18} color={colors.text} />
+      {/* Top row: icon (no live dot — this is a solo planner) */}
+      <View style={styles.topRow}>
+        <View style={styles.iconCircle}>
+          <Ionicons name="calendar" size={20} color={colors.text} />
+        </View>
       </View>
 
-      <View style={styles.textColumn}>
-        <Text style={styles.title}>Plan Your Day</Text>
-        <Text style={styles.subtitle}>
-          Smart stops planned just for you.
-        </Text>
-      </View>
-
-      <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+      <Text style={styles.title}>Plan Your Day</Text>
+      <Text style={styles.subtitle}>Smart stops for you.</Text>
     </TouchableOpacity>
   );
 }
@@ -43,11 +41,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardBg,
     borderRadius: radius.lg,
     padding: spacing.md,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.accent,
+    minHeight: 110,
+    justifyContent: 'space-between',
+  },
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   iconCircle: {
     width: 36,
@@ -57,18 +59,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  textColumn: {
-    flex: 1,
-    gap: 2,
-  },
   title: {
-    fontSize: typography.subhead,
+    fontSize: typography.callout,
     fontWeight: '700',
     color: colors.text,
+    marginBottom: 2,
   },
   subtitle: {
     fontSize: typography.caption1,
     color: colors.textMuted,
-    lineHeight: 16,
   },
 });
