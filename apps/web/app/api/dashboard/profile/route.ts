@@ -60,6 +60,7 @@ export async function PUT(request: Request) {
     const {
       name,
       description,
+      custom_description,
       address,
       city,
       state,
@@ -95,6 +96,7 @@ export async function PUT(request: Request) {
     const updateData: Record<string, unknown> = {};
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
+    if (custom_description !== undefined) updateData.custom_description = custom_description;
     if (address !== undefined) updateData.address = address;
     if (city !== undefined) updateData.city = city;
     if (state !== undefined) updateData.state = state;

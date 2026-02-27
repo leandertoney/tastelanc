@@ -228,7 +228,7 @@ export async function GET(request: Request) {
         r.active_specials_count > 0,
         r.upcoming_events_count > 0,
         r.photo_count > 0,
-        !!(r.description && r.description.length > 10),
+        !!((r.custom_description || r.description) && (r.custom_description || r.description)!.length > 10),
       ];
       const contentCompleteness = contentFactors.filter(Boolean).length / contentFactors.length;
 
@@ -335,7 +335,7 @@ export async function GET(request: Request) {
       activeSpecialsCount: avg(top10Restaurants.map(r => r.active_specials_count)),
       upcomingEventsCount: avg(top10Restaurants.map(r => r.upcoming_events_count)),
       photoCount: avg(top10Restaurants.map(r => r.photo_count)),
-      descriptionRate: top10Restaurants.filter(r => r.description && r.description.length > 10).length / Math.max(top10Restaurants.length, 1),
+      descriptionRate: top10Restaurants.filter(r => (r.custom_description || r.description) && (r.custom_description || r.description)!.length > 10).length / Math.max(top10Restaurants.length, 1),
       rating: avg(top10Restaurants.map(r => r.average_rating).filter(Boolean)),
     };
 
@@ -533,7 +533,7 @@ function buildContentMetrics(r: any): ContentMetrics {
     activeSpecialsCount: r.active_specials_count || 0,
     upcomingEventsCount: r.upcoming_events_count || 0,
     photoCount: r.photo_count || 0,
-    hasDescription: !!(r.description && r.description.length > 10),
+    hasDescription: !!((r.custom_description || r.description) && (r.custom_description || r.description)!.length > 10),
     rating: r.average_rating || null,
   };
 }

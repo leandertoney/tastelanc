@@ -239,10 +239,10 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
         </div>
 
         {/* Description */}
-        {restaurant.description && (
+        {(restaurant.custom_description || restaurant.description) && (
           <div className="md:col-span-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-6">
             <h2 className="text-lg font-semibold text-white mb-4">Description</h2>
-            <p className="text-gray-300">{restaurant.description}</p>
+            <p className="text-gray-300">{restaurant.custom_description || restaurant.description}</p>
           </div>
         )}
 

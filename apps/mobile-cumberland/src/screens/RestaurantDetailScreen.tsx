@@ -341,7 +341,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
 
         {/* Description */}
         <PersonalityDescription
-          description={restaurant.description}
+          description={restaurant.custom_description || restaurant.description}
           name={restaurant.name}
         />
 

@@ -23,6 +23,7 @@ interface Restaurant {
   phone: string | null;
   website: string | null;
   description: string | null;
+  custom_description: string | null;
   categories: string[];
   cover_image_url: string | null;
   latitude: number | null;
@@ -315,8 +316,8 @@ export default function DiscoverRestaurantPage({
             </div>
           </div>
 
-          {restaurant.description && (
-            <p className="text-gray-300 mt-4">{restaurant.description}</p>
+          {(restaurant.custom_description || restaurant.description) && (
+            <p className="text-gray-300 mt-4">{restaurant.custom_description || restaurant.description}</p>
           )}
         </div>
 

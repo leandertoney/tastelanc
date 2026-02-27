@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .from('markets').select('id').eq('slug', MARKET_SLUG).eq('is_active', true).single();
   let metaQuery = supabase
     .from('restaurants')
-    .select('name, description')
+    .select('name, description, custom_description')
     .eq('slug', slug);
   if (marketRow) metaQuery = metaQuery.eq('market_id', marketRow.id);
   const { data: restaurant } = await metaQuery.single();
@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     title: `${restaurant.name} | ${BRAND.name}`,
-    description: restaurant.description || `Discover ${restaurant.name} in ${BRAND.countyShort}, ${BRAND.state}. View menu, hours, happy hours, and upcoming events.`,
+    description: restaurant.custom_description || restaurant.description || `Discover ${restaurant.name} in ${BRAND.countyShort}, ${BRAND.state}. View menu, hours, happy hours, and upcoming events.`,
   };
 }
 
@@ -176,8 +176,8 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
             </div>
           </div>
 
-          {restaurant.description && (
-            <p className="text-gray-300 mt-4">{restaurant.description}</p>
+          {(restaurant.custom_description || restaurant.description) && (
+            <p className="text-gray-300 mt-4">{restaurant.custom_description || restaurant.description}</p>
           )}
         </div>
 
