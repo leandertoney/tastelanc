@@ -16,6 +16,11 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import BottomSheet, { BottomSheetFlatList } from '@gorhom/bottom-sheet';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
 import MapView, { Marker, Polygon, Region, PROVIDER_GOOGLE } from 'react-native-maps';
 import ClusteredMapView from 'react-native-map-clustering';
 import { supabase } from '../lib/supabase';
@@ -112,6 +117,11 @@ export default function SearchScreen() {
   // Neighborhood state
   const [showNeighborhoods, setShowNeighborhoods] = useState(true);
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string | null>(null);
+  const controlsOpacity = useSharedValue(1);
+
+  const mapControlsStyle = useAnimatedStyle(() => ({
+    opacity: controlsOpacity.value,
+  }));
 
   const snapPoints = useMemo(() => ['12%', '50%', '90%'], []);
 
@@ -359,6 +369,10 @@ export default function SearchScreen() {
     [selectedRestaurant, showNeighborhoods]
   );
 
+  const handleAnimate = useCallback((_fromIndex: number, toIndex: number) => {
+    controlsOpacity.value = withTiming(toIndex > 0 ? 0 : 1, { duration: 150 });
+  }, []);
+
   const handleSheetChange = useCallback(
     (index: number) => {
       if (index > 0 && selectedRestaurant) {
@@ -530,26 +544,27 @@ export default function SearchScreen() {
           </View>
         )}
 
-        {/* Neighborhoods toggle button */}
-        <TouchableOpacity
-          style={[styles.neighborhoodToggle, !showNeighborhoods && styles.neighborhoodToggleOff]}
-          onPress={() => setShowNeighborhoods((prev) => !prev)}
-        >
-          <Ionicons
-            name="map-outline"
-            size={20}
-            color={showNeighborhoods ? colors.text : colors.textSecondary}
-          />
-        </TouchableOpacity>
+        {/* Neighborhoods toggle + location button — fade out as bottom sheet expands */}
+        <Animated.View style={[styles.mapControlsContainer, mapControlsStyle]} pointerEvents="box-none">
+          <TouchableOpacity
+            style={[styles.neighborhoodToggle, !showNeighborhoods && styles.neighborhoodToggleOff]}
+            onPress={() => setShowNeighborhoods((prev) => !prev)}
+          >
+            <Ionicons
+              name="map-outline"
+              size={20}
+              color={showNeighborhoods ? colors.text : colors.textSecondary}
+            />
+          </TouchableOpacity>
 
-        {/* Location button */}
-        <TouchableOpacity style={styles.locationButton} onPress={centerOnUser}>
-          <Ionicons
-            name={permissionStatus === 'granted' ? 'locate' : 'locate-outline'}
-            size={22}
-            color={colors.text}
-          />
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.locationButton} onPress={centerOnUser}>
+            <Ionicons
+              name={permissionStatus === 'granted' ? 'locate' : 'locate-outline'}
+              size={22}
+              color={colors.text}
+            />
+          </TouchableOpacity>
+        </Animated.View>
 
         {/* Map restaurant card overlay */}
         {selectedRestaurant && (
@@ -562,9 +577,9 @@ export default function SearchScreen() {
           />
         )}
 
-        {/* Neighborhood legend */}
+        {/* Neighborhood legend — fades out as bottom sheet expands */}
         {showNeighborhoods && (
-          <View style={styles.neighborhoodLegend}>
+          <Animated.View style={[styles.neighborhoodLegend, mapControlsStyle]} pointerEvents="box-none">
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.legendContent}>
               {NEIGHBORHOOD_BOUNDARIES.map((hood) => {
                 const isSelected = selectedNeighborhood === hood.slug;
@@ -582,7 +597,7 @@ export default function SearchScreen() {
                 );
               })}
             </ScrollView>
-          </View>
+          </Animated.View>
         )}
 
         {/* Bottom sheet restaurant list */}
@@ -590,6 +605,7 @@ export default function SearchScreen() {
           ref={bottomSheetRef}
           index={0}
           snapPoints={snapPoints}
+          onAnimate={handleAnimate}
           onChange={handleSheetChange}
           backgroundStyle={styles.sheetBackground}
           handleIndicatorStyle={styles.handleIndicator}
@@ -690,6 +706,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+  },
+
+  // Map controls wrapper (animated fade)
+  mapControlsContainer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 5,
   },
 
   // Neighborhoods toggle
