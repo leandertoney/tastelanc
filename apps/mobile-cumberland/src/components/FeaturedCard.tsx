@@ -4,6 +4,7 @@ import type { Restaurant } from '../types/database';
 import { formatCategoryName } from '../lib/formatters';
 import { colors, radius, spacing } from '../constants/colors';
 import { BRAND } from '../config/brand';
+import OpenStatusBadge from './OpenStatusBadge';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.7; // 70% viewport width
@@ -94,6 +95,8 @@ export default function FeaturedCard({
           </View>
 
           <View style={styles.infoRow}>
+            <OpenStatusBadge restaurantId={restaurant.id} size="small" />
+            <Text style={styles.dot}>&bull;</Text>
             <Ionicons name="location-outline" size={14} color="#FFFFFF" />
             <Text style={styles.address} numberOfLines={1}>
               {restaurant.address}
@@ -125,7 +128,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
     elevation: 0,
     borderWidth: 1.5,
-    borderColor: colors.goldBorder,
+    borderColor: BRAND.palette.green,
   },
   imageContainer: {
     flex: 1,
@@ -151,7 +154,7 @@ const styles = StyleSheet.create({
     gap: 4,
     backgroundColor: 'rgba(0,0,0,0.45)',
     borderWidth: 1,
-    borderColor: colors.goldBorder,
+    borderColor: BRAND.palette.green,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: radius.sm,
@@ -238,6 +241,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  dot: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.6)',
   },
   address: {
     fontSize: 13,

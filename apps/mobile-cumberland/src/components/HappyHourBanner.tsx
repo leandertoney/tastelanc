@@ -26,24 +26,30 @@ export default function HappyHourBanner({
   dealOpacity,
   isElite = false,
 }: HappyHourBannerProps) {
+  const hasImage = !!imageUrl;
+
+  // On dark overlay, text must be white; on solid bg, use theme colors
+  const textColor = hasImage ? '#FFFFFF' : colors.text;
+  const mutedColor = hasImage ? 'rgba(255,255,255,0.7)' : colors.textMuted;
+
   const DealText = dealOpacity ? (
     <Animated.View style={{ opacity: dealOpacity }}>
-      <Text style={[styles.deal, fullWidth && styles.dealLarge]} numberOfLines={1}>
+      <Text style={[styles.deal, fullWidth && styles.dealLarge, { color: textColor }]} numberOfLines={1}>
         {deal}
       </Text>
       {deal2 && (
-        <Text style={[styles.deal, fullWidth && styles.dealLarge]} numberOfLines={1}>
+        <Text style={[styles.deal, fullWidth && styles.dealLarge, { color: textColor }]} numberOfLines={1}>
           {deal2}
         </Text>
       )}
     </Animated.View>
   ) : (
     <View>
-      <Text style={[styles.deal, fullWidth && styles.dealLarge]} numberOfLines={1}>
+      <Text style={[styles.deal, fullWidth && styles.dealLarge, { color: textColor }]} numberOfLines={1}>
         {deal}
       </Text>
       {deal2 && (
-        <Text style={[styles.deal, fullWidth && styles.dealLarge]} numberOfLines={1}>
+        <Text style={[styles.deal, fullWidth && styles.dealLarge, { color: textColor }]} numberOfLines={1}>
           {deal2}
         </Text>
       )}
@@ -59,17 +65,17 @@ export default function HappyHourBanner({
             <>
               <Ionicons name="star" size={9} color={colors.gold} />
               <Text style={styles.pickLabel}>{BRAND.pickBadgeLabel}</Text>
-              <Text style={styles.pickDot}>·</Text>
+              <Text style={[styles.pickDot, { color: mutedColor }]}>·</Text>
             </>
           )}
-          <Text style={styles.restaurantName} numberOfLines={1}>
+          <Text style={[styles.restaurantName, { color: mutedColor }]} numberOfLines={1}>
             {restaurantName}
           </Text>
         </View>
       </View>
-      <View style={styles.rightSection}>
-        <Ionicons name="time-outline" size={14} color={colors.text} />
-        <Text style={styles.timeWindow}>{timeWindow}</Text>
+      <View style={[styles.rightSection, hasImage && styles.rightSectionOverlay]}>
+        <Ionicons name="time-outline" size={14} color={hasImage ? '#FFFFFF' : colors.textOnAccent} />
+        <Text style={[styles.timeWindow, { color: hasImage ? '#FFFFFF' : colors.textOnAccent }]}>{timeWindow}</Text>
       </View>
     </View>
   );
@@ -144,7 +150,7 @@ const styles = StyleSheet.create({
   },
   imageOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'center',
   },
   content: {
@@ -161,7 +167,6 @@ const styles = StyleSheet.create({
   deal: {
     fontSize: 16,
     fontWeight: '700',
-    color: colors.text,
     marginBottom: 2,
   },
   dealLarge: {
@@ -180,11 +185,9 @@ const styles = StyleSheet.create({
   },
   pickDot: {
     fontSize: 11,
-    color: colors.textMuted,
   },
   restaurantName: {
     fontSize: 13,
-    color: colors.textMuted,
     flexShrink: 1,
   },
   rightSection: {
@@ -196,9 +199,11 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: radius.sm,
   },
+  rightSectionOverlay: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
   timeWindow: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.text,
   },
 });

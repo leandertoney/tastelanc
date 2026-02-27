@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { anthropic, CLAUDE_CONFIG } from '@/lib/anthropic';
+import OpenAI from 'openai';
 import { buildRestaurantContext } from '@/lib/rosie/database-queries';
 import { buildSystemPrompt } from '@/lib/rosie/system-prompt';
 import { ChatMessage, ROSIE_CONFIG } from '@/lib/rosie/types';
 import { MARKET_SLUG } from '@/config/market';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY!,
+});
 
 // Create Supabase client for API route (without cookies)
 function getSupabaseClient() {
@@ -71,17 +75,31 @@ export async function POST(request: Request) {
     // Build system prompt with restaurant data
     const systemPrompt = buildSystemPrompt(restaurantContext);
 
-    // Format messages for Anthropic API
-    const formattedMessages = messages.map((m) => ({
-      role: m.role as 'user' | 'assistant',
-      content: m.content,
-    }));
+    // Add current time context to the system prompt so the AI knows exactly what day/time it is
+    const currentTime = new Date().toLocaleString('en-US', {
+      timeZone: 'America/New_York',
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+    const systemPromptWithTime = `${systemPrompt}\n\n## Current Time\n${currentTime}`;
+
+    // Format messages for OpenAI API (system prompt + conversation)
+    const formattedMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      { role: 'system', content: systemPromptWithTime },
+      ...messages.map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      })),
+    ];
 
     // Create streaming response
-    const stream = await anthropic.messages.create({
-      model: CLAUDE_CONFIG.model,
-      max_tokens: CLAUDE_CONFIG.maxTokens,
-      system: systemPrompt,
+    const stream = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      max_tokens: 1024,
       messages: formattedMessages,
       stream: true,
     });
@@ -93,13 +111,11 @@ export async function POST(request: Request) {
     const readableStream = new ReadableStream({
       async start(controller) {
         try {
-          for await (const event of stream) {
-            if (
-              event.type === 'content_block_delta' &&
-              event.delta.type === 'text_delta'
-            ) {
-              const chunk = JSON.stringify({ text: event.delta.text });
-              controller.enqueue(encoder.encode(`data: ${chunk}\n\n`));
+          for await (const chunk of stream) {
+            const text = chunk.choices[0]?.delta?.content;
+            if (text) {
+              const data = JSON.stringify({ text });
+              controller.enqueue(encoder.encode(`data: ${data}\n\n`));
             }
           }
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));

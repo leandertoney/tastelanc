@@ -9,7 +9,7 @@ import HappyHourBanner from './HappyHourBanner';
 import PartnerContactModal from './PartnerContactModal';
 import Spacer from './Spacer';
 import { supabase } from '../lib/supabase';
-import { paidFairRotate, getTierName, eliteFirstStableSort } from '../lib/fairRotation';
+import { tieredFairRotate, getTierName, eliteFirstStableSort } from '../lib/fairRotation';
 import type { HappyHour, HappyHourItem, Restaurant, Tier } from '../types/database';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../constants/colors';
@@ -85,8 +85,8 @@ async function getActiveHappyHours(marketId: string | null = null): Promise<Happ
     return [];
   }
 
-  // Filter to paid restaurants only and apply fair rotation (Elite first, Premium shuffled)
-  const paidRotated = paidFairRotate(
+  // Apply tiered fair rotation (Elite first, Premium second, Basic third — all shown)
+  const paidRotated = tieredFairRotate(
     data || [],
     (hh) => getTierName({ restaurant: hh.restaurant }),
   );

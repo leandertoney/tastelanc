@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
 import { supabase } from '../lib/supabase';
+import { env } from '../lib/env';
 import { requestReviewIfEligible } from '../lib/reviewPrompts';
 import { ONBOARDING_DATA_KEY, OnboardingData } from '../types/onboarding';
 import { MARKET_SLUG } from '../config/market';
@@ -240,6 +241,7 @@ export default function RosieChat({ visible, onClose, onNavigateToRestaurant }: 
       const preferences = await getUserPreferences();
       const { data, error } = await supabase.functions.invoke('rosie-chat', {
         body: { message: messageText, preferences, marketSlug: MARKET_SLUG },
+        headers: { Authorization: `Bearer ${env.SUPABASE_ANON_KEY}` },
       });
 
       if (error) throw error;
@@ -255,8 +257,22 @@ export default function RosieChat({ visible, onClose, onNavigateToRestaurant }: 
 
       // Trigger review prompt on first successful Rosie interaction
       requestReviewIfEligible('rosie_interaction');
-    } catch (error) {
-      console.error('Rosie chat error:', error);
+    } catch (error: any) {
+      // Extract the actual error body from FunctionsHttpError
+      let errorDetail = String(error);
+      if (error?.context) {
+        try {
+          const body = await error.context.json();
+          errorDetail = JSON.stringify(body);
+        } catch {
+          try {
+            errorDetail = await error.context.text();
+          } catch {
+            // fallback
+          }
+        }
+      }
+      console.error('Rosie chat error detail:', errorDetail);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: "I'm having a little trouble connecting right now. Please try again in a moment!",
@@ -374,6 +390,7 @@ export default function RosieChat({ visible, onClose, onNavigateToRestaurant }: 
       const preferences = await getUserPreferences();
       const { data, error } = await supabase.functions.invoke('rosie-chat', {
         body: { message: text.trim(), preferences, marketSlug: MARKET_SLUG },
+        headers: { Authorization: `Bearer ${env.SUPABASE_ANON_KEY}` },
       });
 
       if (error) throw error;

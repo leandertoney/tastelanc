@@ -1,6 +1,6 @@
 /**
- * Home screen entry point card for the "Plan Your Day" feature
- * Appears between Events and Featured sections on the Home screen
+ * Home screen entry point card for the "Squad Picker" feature
+ * Lets a group vote on where to eat — appears next to Plan Your Day card
  */
 
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
@@ -12,23 +12,23 @@ import type { RootStackParamList } from '../navigation/types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-export default function PlanYourDayCard() {
+export default function SquadPickerCard() {
   const navigation = useNavigation<NavigationProp>();
 
   return (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate('ItineraryBuilder', {})}
+      onPress={() => navigation.navigate('SquadBuilder')}
       activeOpacity={0.85}
     >
       <View style={styles.iconCircle}>
-        <Ionicons name="map" size={18} color={colors.text} />
+        <Ionicons name="people" size={18} color={colors.text} />
       </View>
 
       <View style={styles.textColumn}>
-        <Text style={styles.title}>Plan Your Day</Text>
+        <Text style={styles.title}>Squad Picker</Text>
         <Text style={styles.subtitle}>
-          Smart stops planned just for you.
+          Let the group vote on where to eat.
         </Text>
       </View>
 
@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: colors.accent,
+    borderColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },

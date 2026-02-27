@@ -80,6 +80,9 @@ export type RootStackParamList = {
   BlogDetail: { slug: string };
   // Artist
   ArtistDetail: { artistId: string; artistName: string };
+  // Squad Picker
+  SquadBuilder: undefined;
+  SquadVote: { pollId: string };
 };
 
 // Type helpers for useNavigation hook

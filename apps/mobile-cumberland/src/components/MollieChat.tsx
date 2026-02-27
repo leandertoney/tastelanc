@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
 import { supabase } from '../lib/supabase';
+import { env } from '../lib/env';
 import { requestReviewIfEligible } from '../lib/reviewPrompts';
 import { ONBOARDING_DATA_KEY, OnboardingData } from '../types/onboarding';
 import { BRAND } from '../config/brand';
@@ -232,6 +233,7 @@ export default function MollieChat({ visible, onClose, onNavigateToRestaurant }:
       const preferences = await getUserPreferences();
       const { data, error } = await supabase.functions.invoke('rosie-chat', {
         body: { message: messageText, preferences, marketSlug: BRAND.marketSlug },
+        headers: { Authorization: `Bearer ${env.SUPABASE_ANON_KEY}` },
       });
 
       if (error) throw error;
@@ -366,6 +368,7 @@ export default function MollieChat({ visible, onClose, onNavigateToRestaurant }:
       const preferences = await getUserPreferences();
       const { data, error } = await supabase.functions.invoke('rosie-chat', {
         body: { message: text.trim(), preferences, marketSlug: BRAND.marketSlug },
+        headers: { Authorization: `Bearer ${env.SUPABASE_ANON_KEY}` },
       });
 
       if (error) throw error;
