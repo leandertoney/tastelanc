@@ -11,6 +11,7 @@ interface SuccessCelebrationProps {
   onAddAnother?: () => void;
   continueLabel?: string;
   addAnotherLabel?: string;
+  emphasizeAddAnother?: boolean;
   className?: string;
 }
 
@@ -36,6 +37,7 @@ export default function SuccessCelebration({
   onAddAnother,
   continueLabel = 'Done',
   addAnotherLabel = 'Add Another',
+  emphasizeAddAnother = false,
   className,
 }: SuccessCelebrationProps) {
   const [confetti, setConfetti] = useState<ReturnType<typeof generateConfetti>>([]);
@@ -118,10 +120,10 @@ export default function SuccessCelebration({
             type="button"
             onClick={onAddAnother}
             className={cn(
-              'flex items-center gap-2 px-5 py-2.5 rounded-lg',
-              'bg-tastelanc-surface text-white',
-              'hover:bg-tastelanc-surface-light',
-              'transition-colors'
+              'flex items-center gap-2 px-5 py-2.5 rounded-lg transition-colors',
+              emphasizeAddAnother
+                ? 'bg-lancaster-gold text-black font-medium hover:bg-lancaster-gold/90'
+                : 'bg-tastelanc-surface text-white hover:bg-tastelanc-surface-light'
             )}
           >
             <Plus className="w-4 h-4" />
@@ -132,10 +134,10 @@ export default function SuccessCelebration({
           type="button"
           onClick={onContinue}
           className={cn(
-            'flex items-center gap-2 px-5 py-2.5 rounded-lg',
-            'bg-lancaster-gold text-black font-medium',
-            'hover:bg-lancaster-gold/90',
-            'transition-colors'
+            'flex items-center gap-2 px-5 py-2.5 rounded-lg transition-colors',
+            emphasizeAddAnother
+              ? 'bg-tastelanc-surface text-white hover:bg-tastelanc-surface-light'
+              : 'bg-lancaster-gold text-black font-medium hover:bg-lancaster-gold/90'
           )}
         >
           {continueLabel}

@@ -79,12 +79,13 @@ interface HappyHourWizardProps {
   restaurantId: string;
   onClose: () => void;
   onSubmit: (data: HappyHourFormData) => Promise<void>;
+  initialData?: HappyHourFormData;
 }
 
-export default function HappyHourWizard({ restaurantId, onClose, onSubmit }: HappyHourWizardProps) {
-  const [step, setStep] = useState(0);
+export default function HappyHourWizard({ restaurantId, onClose, onSubmit, initialData }: HappyHourWizardProps) {
+  const [step, setStep] = useState(initialData ? 1 : 0);
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
-  const [formData, setFormData] = useState<HappyHourFormData>(INITIAL_FORM_DATA);
+  const [formData, setFormData] = useState<HappyHourFormData>(initialData || INITIAL_FORM_DATA);
   const [showSuggestion, setShowSuggestion] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -131,7 +132,7 @@ export default function HappyHourWizard({ restaurantId, onClose, onSubmit }: Hap
     setError(null);
     try {
       await onSubmit(formData);
-      onClose(); // Close modal after successful creation
+      setIsSuccess(true);
     } catch (err) {
       console.error('Failed to create happy hour:', err);
       setError(err instanceof Error ? err.message : 'Failed to create happy hour. Please try again.');
@@ -158,11 +159,14 @@ export default function HappyHourWizard({ restaurantId, onClose, onSubmit }: Hap
           title="Happy Hour Created!"
           subtitle={`${formData.name} is now live`}
           onContinue={onClose}
+          continueLabel="Done"
           onAddAnother={() => {
             setFormData(INITIAL_FORM_DATA);
             setStep(0);
             setIsSuccess(false);
           }}
+          addAnotherLabel="Add Another Time Slot"
+          emphasizeAddAnother
         />
       </StepWizard>
     );
@@ -179,7 +183,7 @@ export default function HappyHourWizard({ restaurantId, onClose, onSubmit }: Hap
             ? 'Set up your happy hour'
             : 'Review'
       }
-      subtitle={step === 0 ? 'Pick a template or customize' : undefined}
+      subtitle={step === 0 ? 'Each entry = one time window. Create multiple for different schedules.' : undefined}
       onClose={onClose}
     >
       {/* Step 0: Template Selection */}

@@ -70,10 +70,18 @@ export {
 // Social proof hooks
 export {
   usePlatformSocialProof,
+  usePersonalStats,
   useRestaurantSocialProof,
   useTrendingRestaurants,
   useRecordCheckinForSocialProof,
 } from './useSocialProof';
+
+// Wishlist / bucket list
+export {
+  useWishlist,
+  useIsWishlisted,
+  useToggleWishlist,
+} from './useWishlist';
 
 // Rewards hooks
 export {

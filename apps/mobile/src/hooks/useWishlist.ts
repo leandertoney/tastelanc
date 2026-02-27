@@ -1,9 +1,8 @@
 /**
- * Favorites hook — cloud-backed via Supabase `favorites` table
- *
- * Heart (❤️) = favorited (been there, loved it)
- * This replaces the original AsyncStorage implementation so favorites
- * persist across devices and Expo Go sessions.
+ * Bucket List / Wishlist hook
+ * Lets users save restaurants they want to visit (separate from favorites)
+ * Heart = favorited (been there, loved it)
+ * Bookmark = wishlist (want to go)
  */
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
@@ -11,46 +10,44 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './useAuth';
 import { useSignUpModal } from '../context/SignUpModalContext';
-import { trackClick } from '../lib/analytics';
-import { requestReviewIfEligible } from '../lib/reviewPrompts';
 
-const FAVORITES_KEY = 'favorites';
+const WISHLIST_KEY = 'wishlist';
 
 /**
- * Get all favorited restaurant IDs for the current user
+ * Get all wishlisted restaurant IDs for the current user
  */
-export function useFavorites() {
+export function useWishlist() {
   const { userId } = useAuth();
 
   return useQuery({
-    queryKey: [FAVORITES_KEY, userId],
+    queryKey: [WISHLIST_KEY, userId],
     queryFn: async (): Promise<string[]> => {
       if (!userId) return [];
       const { data, error } = await supabase
-        .from('favorites')
+        .from('wishlist')
         .select('restaurant_id')
         .eq('user_id', userId);
       if (error) throw error;
       return (data || []).map((r: { restaurant_id: string }) => r.restaurant_id);
     },
     enabled: !!userId,
-    staleTime: 30 * 1000,
+    staleTime: 60 * 1000,
   });
 }
 
 /**
- * Check if a specific restaurant is favorited
+ * Check if a specific restaurant is on the wishlist
  */
-export function useIsFavorite(restaurantId: string) {
-  const { data: favorites = [] } = useFavorites();
-  return favorites.includes(restaurantId);
+export function useIsWishlisted(restaurantId: string) {
+  const { data: wishlist = [] } = useWishlist();
+  return wishlist.includes(restaurantId);
 }
 
 /**
- * Toggle favorite status for a restaurant
- * Prompts signup if the user is anonymous
+ * Toggle a restaurant on/off the wishlist
+ * Prompts signup if anonymous
  */
-export function useToggleFavorite() {
+export function useToggleWishlist() {
   const { userId, isAnonymous } = useAuth();
   const queryClient = useQueryClient();
   const { showSignUpModal } = useSignUpModal();
@@ -59,56 +56,51 @@ export function useToggleFavorite() {
     mutationFn: async (restaurantId: string) => {
       if (!userId) throw new Error('Not authenticated');
 
-      // Check if already favorited
+      // Check current state
       const { data: existing } = await supabase
-        .from('favorites')
+        .from('wishlist')
         .select('id')
         .eq('user_id', userId)
         .eq('restaurant_id', restaurantId)
         .single();
 
       if (existing) {
-        // Remove
-        const { error } = await supabase
-          .from('favorites')
+        // Remove from wishlist
+        await supabase
+          .from('wishlist')
           .delete()
           .eq('user_id', userId)
           .eq('restaurant_id', restaurantId);
-        if (error) throw error;
         return { added: false };
       } else {
-        // Add
-        const { error } = await supabase
-          .from('favorites')
+        // Add to wishlist
+        await supabase
+          .from('wishlist')
           .insert({ user_id: userId, restaurant_id: restaurantId });
-        if (error) throw error;
-        trackClick('favorite', restaurantId);
-        requestReviewIfEligible('first_save');
         return { added: true };
       }
     },
     onMutate: async (restaurantId) => {
       if (!userId) return;
-      const queryKey = [FAVORITES_KEY, userId];
+      const queryKey = [WISHLIST_KEY, userId];
       await queryClient.cancelQueries({ queryKey });
       const previous = queryClient.getQueryData<string[]>(queryKey) || [];
-      const isFav = previous.includes(restaurantId);
+      const isWishlisted = previous.includes(restaurantId);
       queryClient.setQueryData<string[]>(
         queryKey,
-        isFav
+        isWishlisted
           ? previous.filter((id) => id !== restaurantId)
           : [...previous, restaurantId]
       );
       return { previous };
     },
-    onError: (_err, _restaurantId, context) => {
+    onError: (_err, _id, context) => {
       if (!userId || !context?.previous) return;
-      // Roll back the optimistic update
-      queryClient.setQueryData([FAVORITES_KEY, userId], context.previous);
-      Alert.alert('Error', "Could not save favorite. Make sure you're signed in.");
+      queryClient.setQueryData([WISHLIST_KEY, userId], context.previous);
+      Alert.alert('Error', "Could not update bucket list. Make sure you're signed in.");
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [FAVORITES_KEY, userId] });
+      queryClient.invalidateQueries({ queryKey: [WISHLIST_KEY, userId] });
     },
   });
 
@@ -116,10 +108,8 @@ export function useToggleFavorite() {
     (restaurantId: string) => {
       if (!userId || isAnonymous) {
         showSignUpModal({
-          action: 'save this restaurant',
-          onSuccess: () => {
-            // User must re-tap after signing up (userId in closure is stale)
-          },
+          action: 'add to your bucket list',
+          onSuccess: () => {},
         });
         return;
       }

@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
   },
   rightSectionOverlay: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: colors.accent,
   },
   timeWindow: {
     fontSize: 12,

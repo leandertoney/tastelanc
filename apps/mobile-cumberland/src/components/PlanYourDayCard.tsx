@@ -28,9 +28,9 @@ export default function PlanYourDayCard() {
         </View>
 
         <View style={styles.textColumn}>
-          <Text style={styles.title}>Plan Your Day in {BRAND.cityName}</Text>
+          <Text style={styles.title}>Plan Your Perfect Day</Text>
           <Text style={styles.subtitle}>
-            Dining, happy hours & entertainment — planned for you.
+            Pick a day, set the vibe.
           </Text>
         </View>
 

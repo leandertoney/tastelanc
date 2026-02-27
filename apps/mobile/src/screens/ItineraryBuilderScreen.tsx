@@ -1,7 +1,8 @@
 /**
  * Itinerary Builder Screen
- * Main screen for the "Plan Your Day" feature
- * Users pick a date, select mood preferences, and generate a time-sequenced itinerary
+ * Branded builder for the "What's the Move?" feature.
+ * Matches the ItineraryCardScreen's visual language — card container
+ * with accent border, logo, and cohesive form sections.
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
@@ -13,7 +14,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  Share,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -25,25 +26,25 @@ import type { RootStackParamList } from '../navigation/types';
 import type { Restaurant, RestaurantHours, HappyHour } from '../types/database';
 import type { ApiEvent } from '../lib/events';
 import type { TimeSlot, ItineraryItemWithReason, ItineraryMood } from '../types/itinerary';
-import { ITINERARY_MOODS, TIME_SLOT_CONFIG } from '../types/itinerary';
-import { generateItinerary, getAlternativesForSlot, type GenerateItineraryParams } from '../lib/itineraryGenerator';
-import { useSaveItinerary } from '../hooks/useItineraries';
+import { ITINERARY_MOODS } from '../types/itinerary';
+import { generateItinerary, type GenerateItineraryParams } from '../lib/itineraryGenerator';
 import { useFavorites, useUserLocation } from '../hooks';
 import { getUserPreferences } from '../lib/recommendations';
 import { fetchEvents } from '../lib/events';
 import { supabase } from '../lib/supabase';
 import { colors, radius, spacing, typography } from '../constants/colors';
-import ItineraryTimeline from '../components/ItineraryTimeline';
 import type { OnboardingData } from '../types/onboarding';
 import { useMarket } from '../context/MarketContext';
+
+const logo = require('../../assets/tastelanc_1a1a1a.png');
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ItineraryBuilder'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 // ─── Date helpers ───────────────────────────────────────────────
 
-function getNextDays(count: number): { label: string; dateStr: string; isToday: boolean }[] {
-  const days: { label: string; dateStr: string; isToday: boolean }[] = [];
+function getNextDays(count: number): { label: string; dateStr: string }[] {
+  const days: { label: string; dateStr: string }[] = [];
   const now = new Date();
 
   for (let i = 0; i < count; i++) {
@@ -57,7 +58,6 @@ function getNextDays(count: number): { label: string; dateStr: string; isToday: 
     days.push({
       label: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : `${dayName} ${month} ${dayNum}`,
       dateStr: d.toISOString().split('T')[0],
-      isToday: i === 0,
     });
   }
 
@@ -101,7 +101,6 @@ function useAllRestaurantHours(marketId: string | null) {
         return {};
       }
 
-      // Group by restaurant_id
       const grouped: Record<string, RestaurantHours[]> = {};
       for (const row of data || []) {
         if (!grouped[row.restaurant_id]) {
@@ -147,22 +146,16 @@ export default function ItineraryBuilderScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<Props['route']>();
 
-  // State
   const [selectedDate, setSelectedDate] = useState(
     route.params?.date || new Date().toISOString().split('T')[0]
   );
   const [selectedMood, setSelectedMood] = useState<ItineraryMood | null>(null);
-  const [items, setItems] = useState<ItineraryItemWithReason[]>([]);
-  const [skippedSlots, setSkippedSlots] = useState<TimeSlot[]>([]);
-  const [walkMinutes, setWalkMinutes] = useState<(number | null)[]>([]);
-  const [hasGenerated, setHasGenerated] = useState(false);
+  const [stopCount, setStopCount] = useState<2 | 3>(3);
   const [isGenerating, setIsGenerating] = useState(false);
   const [preferences, setPreferences] = useState<OnboardingData | null>(null);
 
-  // Market context
   const { marketId } = useMarket();
 
-  // Data queries
   const { data: restaurants = [], isLoading: loadingRestaurants } = useAllRestaurants(marketId);
   const { data: allHours = {}, isLoading: loadingHours } = useAllRestaurantHours(marketId);
   const { data: allHappyHours = [], isLoading: loadingHappyHours } = useAllHappyHours(marketId);
@@ -170,11 +163,10 @@ export default function ItineraryBuilderScreen() {
   const { data: favorites = [] } = useFavorites();
   const { location: userLocation } = useUserLocation();
 
-  // Fetch community vote counts for this month — used to boost popular restaurants in scoring
   const { data: voteCountsRaw } = useQuery<Map<string, number>>({
     queryKey: ['itinerary', 'voteCounts'],
     queryFn: async () => {
-      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+      const currentMonth = new Date().toISOString().slice(0, 7);
       const { data, error } = await supabase
         .from('votes')
         .select('restaurant_id')
@@ -190,17 +182,12 @@ export default function ItineraryBuilderScreen() {
   });
 
   const isLoadingData = loadingRestaurants || loadingHours || loadingHappyHours || loadingEvents;
-
-  const saveItineraryMutation = useSaveItinerary();
-
   const datePills = useMemo(() => getNextDays(7), []);
 
-  // Load user preferences on mount
   useEffect(() => {
     getUserPreferences().then(setPreferences);
   }, []);
 
-  // Build generator params
   const generatorParams = useMemo((): GenerateItineraryParams => ({
     date: selectedDate,
     mood: selectedMood,
@@ -212,171 +199,56 @@ export default function ItineraryBuilderScreen() {
     allHappyHours,
     allEvents,
     restaurantVoteCounts: voteCountsRaw,
-  }), [selectedDate, selectedMood, preferences, userLocation, favorites, restaurants, allHours, allHappyHours, allEvents, voteCountsRaw]);
-
-  // ─── Handlers ───────────────────────────────────────────────
+    stopCount,
+  }), [selectedDate, selectedMood, preferences, userLocation, favorites, restaurants, allHours, allHappyHours, allEvents, voteCountsRaw, stopCount]);
 
   const handleGenerate = useCallback(() => {
     setIsGenerating(true);
     setTimeout(() => {
       const result = generateItinerary(generatorParams);
-      setItems(result.items);
-      setSkippedSlots(result.skippedSlots);
-      setWalkMinutes(result.walkMinutes);
-      setHasGenerated(true);
       setIsGenerating(false);
-    }, 300);
-  }, [generatorParams]);
 
-  // ── Emoji map for share text ─────────────────────────────────────────────
-  const SLOT_EMOJI: Record<TimeSlot, string> = {
-    breakfast:  '☀️',
-    morning:    '☕',
-    lunch:      '🍽',
-    afternoon:  '🌤',
-    happy_hour: '🍺',
-    dinner:     '🍷',
-    evening:    '🎵',
-  };
-
-  const handleShare = useCallback(async () => {
-    if (items.length === 0) return;
-
-    const dateObj = new Date(selectedDate + 'T12:00:00');
-    const dateLabel = dateObj.toLocaleDateString('en-US', {
-      weekday: 'long', month: 'long', day: 'numeric',
-    });
-    const moodLabel = selectedMood ? ITINERARY_MOODS[selectedMood].label : 'Night Out';
-
-    let msg = `${ITINERARY_MOODS[selectedMood ?? 'foodie_tour']?.icon ? '' : '🗓'} ${moodLabel} in Lancaster — ${dateLabel}\n\n`;
-
-    items.forEach((item, i) => {
-      const config = TIME_SLOT_CONFIG[item.time_slot as TimeSlot];
-      const emoji = SLOT_EMOJI[item.time_slot as TimeSlot] ?? '📍';
-      msg += `${emoji} ${config.label} · ${config.defaultTimeRange}\n`;
-      msg += `   ${item.display_name}\n`;
-      if (item.reason) msg += `   ${item.reason}\n`;
-      if (i < items.length - 1) {
-        const wm = walkMinutes[i];
-        msg += wm ? `\n   ↓ ${wm} min walk\n\n` : '\n';
-      }
-    });
-
-    msg += `\nPlanned on TasteLanc 🍴\nhttps://apps.apple.com/app/tastelanc/id6755852717`;
-
-    try {
-      await Share.share({ message: msg });
-    } catch (e) {
-      // User dismissed share sheet — no action needed
-    }
-  }, [items, selectedDate, selectedMood, walkMinutes]);
-
-  const handleItemPress = useCallback((item: ItineraryItemWithReason) => {
-    if (item.restaurant_id) {
-      navigation.navigate('RestaurantDetail', { id: item.restaurant_id });
-    }
-  }, [navigation]);
-
-  const handleSwapItem = useCallback((item: ItineraryItemWithReason) => {
-    const usedIds = new Set(items.map(i => i.restaurant_id).filter(Boolean) as string[]);
-    const alternatives = getAlternativesForSlot(
-      generatorParams,
-      item.time_slot as TimeSlot,
-      usedIds,
-      3,
-    );
-
-    if (alternatives.length === 0) {
-      Alert.alert('No alternatives', 'No other restaurants are available for this time slot.');
-      return;
-    }
-
-    // Show picker with alternatives
-    Alert.alert(
-      'How about trying...',
-      alternatives.map((alt, i) => `${i + 1}. ${alt.restaurant.name} — ${alt.reason}`).join('\n'),
-      [
-        ...alternatives.map((alt, i) => ({
-          text: alt.restaurant.name,
-          onPress: () => {
-            setItems(prev => prev.map(prevItem => {
-              if (prevItem.id !== item.id) return prevItem;
-              return {
-                ...prevItem,
-                restaurant_id: alt.restaurant.id,
-                display_name: alt.restaurant.name,
-                display_address: alt.restaurant.address,
-                display_latitude: alt.restaurant.latitude,
-                display_longitude: alt.restaurant.longitude,
-                display_image_url: alt.restaurant.cover_image_url || alt.restaurant.logo_url,
-                reason: alt.reason,
-              };
-            }));
-          },
-        })),
-        { text: 'Keep current', style: 'cancel' },
-      ],
-    );
-  }, [items, generatorParams]);
-
-  const handleRemoveItem = useCallback((item: ItineraryItemWithReason) => {
-    setItems(prev => prev.filter(i => i.id !== item.id));
-    setSkippedSlots(prev => [...prev, item.time_slot as TimeSlot]);
-  }, []);
-
-  const handleSave = useCallback(async () => {
-    if (items.length === 0) return;
-
-    const dateObj = new Date(selectedDate + 'T12:00:00');
-    const dateLabel = dateObj.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-    });
-
-    try {
-      await saveItineraryMutation.mutateAsync({
-        itinerary: {
-          title: `Lancaster ${selectedMood ? ITINERARY_MOODS[selectedMood].label : 'Day'} — ${dateLabel}`,
+      if (result.items.length > 0) {
+        navigation.navigate('ItineraryCard', {
+          items: result.items,
+          walkMinutes: result.walkMinutes,
+          mood: selectedMood,
           date: selectedDate,
-          is_generated: true,
-        },
-        items,
-      });
-
-      Alert.alert(
-        'Itinerary Saved!',
-        'Your day plan has been saved. Have a great time in Lancaster!',
-        [{ text: 'OK', onPress: () => navigation.goBack() }],
-      );
-    } catch (error) {
-      Alert.alert('Error', 'Failed to save itinerary. Please try again.');
-    }
-  }, [items, selectedDate, selectedMood, saveItineraryMutation, navigation]);
+          stopCount,
+        });
+      } else {
+        Alert.alert(
+          'No Results',
+          'We couldn\'t find enough restaurants for your selections. Try a different vibe or date.',
+        );
+      }
+    }, 300);
+  }, [generatorParams, navigation, selectedMood, selectedDate, stopCount]);
 
   // ─── Render ─────────────────────────────────────────────────
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* Card — fills the screen */}
+      <View style={styles.card}>
+        {/* Logo */}
+        <Image source={logo} style={styles.logo} resizeMode="contain" />
+
         {/* Header */}
-        <View style={styles.header}>
-          <Ionicons name="map" size={28} color={colors.accent} />
-          <Text style={styles.headerTitle}>Plan Your Day</Text>
-          <Text style={styles.headerSubtitle}>
-            What are you in the mood for today?
-          </Text>
+        <Text style={styles.title}>Plan Your Perfect Day</Text>
+        <Text style={styles.subtitle}>Pick a day, set the vibe.</Text>
+
+        {/* ── When ─────────────────────────────────────────── */}
+        <View style={styles.sectionDivider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.sectionLabel}>When</Text>
+          <View style={styles.dividerLine} />
         </View>
 
-        {/* Date picker */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.datePickerContent}
-          style={styles.datePicker}
+          contentContainerStyle={styles.dateRow}
         >
           {datePills.map(day => (
             <TouchableOpacity
@@ -385,15 +257,7 @@ export default function ItineraryBuilderScreen() {
                 styles.datePill,
                 selectedDate === day.dateStr && styles.datePillSelected,
               ]}
-              onPress={() => {
-                setSelectedDate(day.dateStr);
-                if (hasGenerated) {
-                  setHasGenerated(false);
-                  setItems([]);
-                  setSkippedSlots([]);
-                  setWalkMinutes([]);
-                }
-              }}
+              onPress={() => setSelectedDate(day.dateStr)}
               activeOpacity={0.7}
             >
               <Text
@@ -408,140 +272,92 @@ export default function ItineraryBuilderScreen() {
           ))}
         </ScrollView>
 
-        {/* Mood chips */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>I'm looking for...</Text>
-          <View style={styles.moodGrid}>
-            {(Object.entries(ITINERARY_MOODS) as [ItineraryMood, typeof ITINERARY_MOODS[ItineraryMood]][]).map(
-              ([key, mood]) => (
+        {/* ── What's the vibe? ─────────────────────────────── */}
+        <View style={styles.sectionDivider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.sectionLabel}>Vibe</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <View style={styles.moodGrid}>
+          {(Object.entries(ITINERARY_MOODS) as [ItineraryMood, typeof ITINERARY_MOODS[ItineraryMood]][]).map(
+            ([key, mood]) => {
+              const isSelected = selectedMood === key;
+              return (
                 <TouchableOpacity
                   key={key}
-                  style={[
-                    styles.moodChip,
-                    selectedMood === key && styles.moodChipSelected,
-                  ]}
-                  onPress={() => {
-                    setSelectedMood(prev => prev === key ? null : key);
-                    if (hasGenerated) {
-                      setHasGenerated(false);
-                      setItems([]);
-                      setSkippedSlots([]);
-                      setWalkMinutes([]);
-                    }
-                  }}
+                  style={[styles.moodChip, isSelected && styles.moodChipSelected]}
+                  onPress={() => setSelectedMood(prev => prev === key ? null : key)}
                   activeOpacity={0.7}
                 >
                   <Ionicons
                     name={mood.icon as any}
-                    size={18}
-                    color={selectedMood === key ? colors.text : colors.textMuted}
+                    size={15}
+                    color={isSelected ? colors.text : colors.textMuted}
                   />
-                  <View>
-                    <Text
-                      style={[
-                        styles.moodLabel,
-                        selectedMood === key && styles.moodLabelSelected,
-                      ]}
-                    >
-                      {mood.label}
-                    </Text>
-                    <Text style={styles.moodDesc}>{mood.description}</Text>
-                  </View>
-                </TouchableOpacity>
-              ),
-            )}
-          </View>
-        </View>
-
-        {/* Generate button */}
-        {!hasGenerated && (
-          <View style={styles.generateSection}>
-            <TouchableOpacity
-              style={[
-                styles.generateButton,
-                (isLoadingData || isGenerating) && styles.generateButtonDisabled,
-              ]}
-              onPress={handleGenerate}
-              activeOpacity={0.8}
-              disabled={isLoadingData || isGenerating}
-            >
-              {isGenerating || isLoadingData ? (
-                <ActivityIndicator size="small" color={colors.text} />
-              ) : (
-                <Ionicons name="sparkles" size={20} color={colors.text} />
-              )}
-              <Text style={styles.generateButtonText}>
-                {isLoadingData
-                  ? 'Loading restaurant data...'
-                  : isGenerating
-                  ? 'Building your perfect day...'
-                  : 'Generate My Day'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Timeline */}
-        {hasGenerated && (
-          <>
-            <View style={styles.timelineHeader}>
-              <Text style={styles.timelineTitle}>
-                Your {items.length} Stops in Lancaster
-              </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setHasGenerated(false);
-                  setItems([]);
-                  setSkippedSlots([]);
-                  setWalkMinutes([]);
-                }}
-              >
-                <Text style={styles.regenerateText}>Regenerate</Text>
-              </TouchableOpacity>
-            </View>
-
-            <ItineraryTimeline
-              items={items}
-              skippedSlots={skippedSlots}
-              walkMinutes={walkMinutes}
-              onItemPress={handleItemPress}
-              onSwapItem={handleSwapItem}
-              onRemoveItem={handleRemoveItem}
-              showEmptySlots={false}
-            />
-
-            {/* Share + Save buttons */}
-            {items.length > 0 && (
-              <View style={styles.actionRow}>
-                <TouchableOpacity
-                  style={styles.shareButton}
-                  onPress={handleShare}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="share-outline" size={18} color={colors.accent} />
-                  <Text style={styles.shareButtonText}>Share</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.saveButton}
-                  onPress={handleSave}
-                  activeOpacity={0.8}
-                  disabled={saveItineraryMutation.isPending}
-                >
-                  {saveItineraryMutation.isPending ? (
-                    <ActivityIndicator size="small" color={colors.text} />
-                  ) : (
-                    <Ionicons name="bookmark" size={18} color={colors.text} />
-                  )}
-                  <Text style={styles.saveButtonText}>
-                    {saveItineraryMutation.isPending ? 'Saving...' : 'Save'}
+                  <Text style={[styles.moodText, isSelected && styles.moodTextSelected]}>
+                    {mood.label}
                   </Text>
                 </TouchableOpacity>
-              </View>
-            )}
-          </>
-        )}
-      </ScrollView>
+              );
+            },
+          )}
+        </View>
+
+        {/* ── How many stops? ──────────────────────────────── */}
+        <View style={styles.sectionDivider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.sectionLabel}>Stops</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <View style={styles.stopRow}>
+          <TouchableOpacity
+            style={[styles.stopPill, stopCount === 2 && styles.stopPillSelected]}
+            onPress={() => setStopCount(2)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.stopText, stopCount === 2 && styles.stopTextSelected]}>
+              2 — Quick outing
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.stopPill, stopCount === 3 && styles.stopPillSelected]}
+            onPress={() => setStopCount(3)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.stopText, stopCount === 3 && styles.stopTextSelected]}>
+              3 — Full experience
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* CTA Button — below the card */}
+      <View style={styles.buttonWrapper}>
+        <TouchableOpacity
+          style={[
+            styles.generateButton,
+            (isLoadingData || isGenerating) && styles.generateButtonDisabled,
+          ]}
+          onPress={handleGenerate}
+          activeOpacity={0.8}
+          disabled={isLoadingData || isGenerating}
+        >
+          {isGenerating || isLoadingData ? (
+            <ActivityIndicator size="small" color={colors.text} />
+          ) : (
+            <Ionicons name="sparkles" size={20} color={colors.text} />
+          )}
+          <Text style={styles.generateButtonText}>
+            {isLoadingData
+              ? 'Loading...'
+              : isGenerating
+              ? 'Building your plan...'
+              : 'Build My Plan'}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -551,105 +367,164 @@ export default function ItineraryBuilderScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.primaryDark,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+
+  // ─── Card Container (matches ItineraryCardScreen) ─────────
+  card: {
+    flex: 1,
+    marginHorizontal: spacing.md,
     backgroundColor: colors.primary,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-  // Header
-  header: {
+    borderRadius: radius.xl,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-    gap: spacing.xs,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.lg,
+    // Depth
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 10,
+    // Accent border
+    borderWidth: 1,
+    borderColor: 'rgba(164, 30, 34, 0.3)',
   },
-  headerTitle: {
+
+  // ─── Logo ──────────────────────────────────────────────────
+  logo: {
+    width: 120,
+    height: 40,
+    alignSelf: 'center',
+    marginBottom: spacing.md,
+  },
+
+  // ─── Header ────────────────────────────────────────────────
+  title: {
     fontSize: typography.title1,
-    fontWeight: '700',
+    fontWeight: '800',
     color: colors.text,
+    textAlign: 'center',
+    letterSpacing: 1,
+    marginBottom: spacing.xs,
   },
-  headerSubtitle: {
-    fontSize: typography.body,
+  subtitle: {
+    fontSize: typography.callout,
+    fontWeight: '500',
     color: colors.textMuted,
-  },
-  // Date picker
-  datePicker: {
+    textAlign: 'center',
     marginBottom: spacing.lg,
   },
-  datePickerContent: {
-    paddingHorizontal: spacing.md,
-    gap: spacing.sm,
+
+  // ─── Section Dividers ──────────────────────────────────────
+  sectionDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm + 4,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  sectionLabel: {
+    fontSize: typography.caption1,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    marginHorizontal: spacing.sm + 4,
+  },
+
+  // ─── Date Pills ────────────────────────────────────────────
+  dateRow: {
+    alignItems: 'center',
+    marginBottom: spacing.lg,
   },
   datePill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: radius.full,
     backgroundColor: colors.cardBg,
-    borderWidth: 1,
-    borderColor: colors.border,
+    marginRight: 8,
+    alignSelf: 'center',
   },
   datePillSelected: {
     backgroundColor: colors.accent,
-    borderColor: colors.accent,
   },
   datePillText: {
-    fontSize: typography.subhead,
+    fontSize: 13,
     fontWeight: '500',
     color: colors.textMuted,
   },
   datePillTextSelected: {
     color: colors.text,
-    fontWeight: '600',
   },
-  // Section
-  section: {
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  sectionLabel: {
-    fontSize: typography.headline,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  // Mood chips
+
+  // ─── Mood Grid ─────────────────────────────────────────────
   moodGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
+    marginBottom: spacing.lg,
   },
   moodChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    gap: 6,
+    width: '48%' as any,
+    paddingHorizontal: spacing.sm + 4,
+    paddingVertical: spacing.sm + 2,
     borderRadius: radius.md,
     backgroundColor: colors.cardBg,
     borderWidth: 1,
     borderColor: colors.border,
-    width: '48%' as any,
   },
   moodChipSelected: {
     borderColor: colors.accent,
     backgroundColor: 'rgba(164, 30, 34, 0.15)',
   },
-  moodLabel: {
+  moodText: {
     fontSize: typography.subhead,
     fontWeight: '600',
     color: colors.textMuted,
   },
-  moodLabelSelected: {
+  moodTextSelected: {
     color: colors.text,
   },
-  moodDesc: {
-    fontSize: typography.caption2,
-    color: colors.textSecondary,
+
+  // ─── Stop Count ────────────────────────────────────────────
+  stopRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
   },
-  // Generate button
-  generateSection: {
+  stopPill: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radius.md,
+    backgroundColor: colors.cardBg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  stopPillSelected: {
+    borderColor: colors.accent,
+    backgroundColor: 'rgba(164, 30, 34, 0.15)',
+  },
+  stopText: {
+    fontSize: typography.subhead,
+    fontWeight: '600',
+    color: colors.textMuted,
+  },
+  stopTextSelected: {
+    color: colors.text,
+  },
+
+  // ─── Generate Button ──────────────────────────────────────
+  buttonWrapper: {
     paddingHorizontal: spacing.md,
-    marginBottom: spacing.lg,
+    paddingTop: spacing.md,
   },
   generateButton: {
     flexDirection: 'row',
@@ -669,63 +544,6 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   generateButtonText: {
-    fontSize: typography.headline,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  // Timeline header
-  timelineHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  timelineTitle: {
-    fontSize: typography.title3,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  regenerateText: {
-    fontSize: typography.subhead,
-    fontWeight: '600',
-    color: colors.accent,
-  },
-  // Action row (Share + Save)
-  actionRow: {
-    flexDirection: 'row',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    gap: spacing.sm,
-  },
-  shareButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.cardBg,
-    paddingVertical: 16,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: colors.accent,
-  },
-  shareButtonText: {
-    fontSize: typography.headline,
-    fontWeight: '600',
-    color: colors.accent,
-  },
-  saveButton: {
-    flex: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.accent,
-    paddingVertical: 16,
-    borderRadius: radius.md,
-  },
-  saveButtonText: {
     fontSize: typography.headline,
     fontWeight: '600',
     color: colors.text,

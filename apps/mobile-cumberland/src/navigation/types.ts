@@ -2,6 +2,7 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { RestaurantCategory, CuisineType } from '../types/database';
 import type { VoteCategory } from '../types/voting';
 import type { ApiEvent } from '../lib/events';
+import type { ItineraryItemWithReason, ItineraryMood } from '../types/itinerary';
 
 // Onboarding Stack param list
 export type OnboardingStackParamList = {
@@ -74,6 +75,13 @@ export type RootStackParamList = {
   FeatureRequest: undefined;
   // Itinerary
   ItineraryBuilder: { date?: string };
+  ItineraryCard: {
+    items: ItineraryItemWithReason[];
+    walkMinutes: (number | null)[];
+    mood: ItineraryMood | null;
+    date: string;
+    stopCount?: 2 | 3;
+  };
   ItineraryDetail: { id: string };
   // Blog
   BlogViewAll: undefined;

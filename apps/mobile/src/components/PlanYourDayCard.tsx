@@ -1,6 +1,6 @@
 /**
- * Home screen entry point card for the "Plan Your Day" feature
- * Appears between Events and Featured sections on the Home screen
+ * Home screen entry point card for the "What's the Move?" feature
+ * Full-width horizontal layout: icon → text → chevron
  */
 
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
@@ -22,32 +22,28 @@ export default function PlanYourDayCard() {
       activeOpacity={0.85}
     >
       <View style={styles.iconCircle}>
-        <Ionicons name="map" size={18} color={colors.text} />
+        <Ionicons name="calendar" size={20} color={colors.text} />
       </View>
 
-      <View style={styles.textColumn}>
-        <Text style={styles.title}>Plan Your Day</Text>
-        <Text style={styles.subtitle}>
-          Smart stops planned just for you.
-        </Text>
+      <View style={styles.textBlock}>
+        <Text style={styles.title}>Plan Your Perfect Day</Text>
+        <Text style={styles.subtitle}>Pick a day, set the vibe.</Text>
       </View>
 
-      <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+      <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.cardBg,
     borderRadius: radius.lg,
     padding: spacing.md,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.accent,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
   },
   iconCircle: {
     width: 36,
@@ -56,19 +52,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: spacing.sm,
   },
-  textColumn: {
+  textBlock: {
     flex: 1,
-    gap: 2,
   },
   title: {
-    fontSize: typography.subhead,
+    fontSize: typography.callout,
     fontWeight: '700',
     color: colors.text,
+    marginBottom: 2,
   },
   subtitle: {
     fontSize: typography.caption1,
     color: colors.textMuted,
-    lineHeight: 16,
   },
 });

@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { MARKET_SLUG } from '../config/market';
 import { colors } from '../constants/colors';
@@ -37,47 +38,40 @@ interface MarketProviderProps {
 }
 
 export function MarketProvider({ children }: MarketProviderProps) {
-  const [market, setMarket] = useState<Market | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Uses the same cache key ['market', MARKET_SLUG] that SplashVideoScreen seeds.
+  // If splash already ran, this returns the cached market instantly (no async gap).
+  const { data: market = null, isLoading, isError, error } = useQuery({
+    queryKey: ['market', MARKET_SLUG],
+    queryFn: async () => {
+      const { data, error: fetchError } = await supabase
+        .from('markets')
+        .select('*')
+        .eq('slug', MARKET_SLUG)
+        .eq('is_active', true)
+        .limit(1)
+        .single();
+
+      if (fetchError || !data) {
+        throw new Error(
+          `Market "${MARKET_SLUG}" not found or inactive: ${fetchError?.message}`
+        );
+      }
+      return data as Market;
+    },
+    staleTime: 60 * 60 * 1000, // Market config rarely changes
+  });
 
   const marketId = market?.id ?? null;
 
-  // Fetch the single locked market by slug on mount
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data, error: fetchError } = await supabase
-          .from('markets')
-          .select('*')
-          .eq('slug', MARKET_SLUG)
-          .eq('is_active', true)
-          .limit(1)
-          .single();
-
-        if (fetchError || !data) {
-          console.error(
-            `[MarketContext] Market "${MARKET_SLUG}" not found or inactive:`,
-            fetchError?.message,
-          );
-          setError(`Market "${MARKET_SLUG}" not found. Please contact support.`);
-        } else {
-          setMarket(data);
-        }
-      } catch (e) {
-        console.error('[MarketContext] Exception fetching market:', e);
-        setError('Failed to load market configuration.');
-      } finally {
-        setIsLoading(false);
-      }
-    })();
-  }, []);
-
   // If market lookup failed, show a minimal fallback
-  if (error && !isLoading) {
+  if (isError && !isLoading) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{error}</Text>
+        <Text style={styles.errorText}>
+          {error instanceof Error
+            ? error.message
+            : `Market "${MARKET_SLUG}" not found. Please contact support.`}
+        </Text>
       </View>
     );
   }
