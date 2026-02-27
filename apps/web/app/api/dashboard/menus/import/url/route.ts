@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { verifyRestaurantAccess } from '@/lib/auth/restaurant-access';
-import { anthropic, CLAUDE_CONFIG } from '@/lib/anthropic';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const AI_MODEL = 'gpt-4o-mini';
 
 // Allow up to 60s for this route
 export const maxDuration = 60;
@@ -288,38 +291,28 @@ async function fetchImageAsBase64(imageUrl: string): Promise<{ data: string; mim
   }
 }
 
-// Parse menu from multiple images in a SINGLE Claude Vision call
+// Parse menu from multiple images in a single OpenAI Vision call
 async function parseMenuFromImages(
   images: { data: string; mimeType: string }[]
 ): Promise<ParsedMenu> {
-  const content: Array<
-    | { type: 'image'; source: { type: 'base64'; media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; data: string } }
-    | { type: 'text'; text: string }
-  > = [];
+  const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [];
 
   for (const img of images) {
     content.push({
-      type: 'image',
-      source: {
-        type: 'base64',
-        media_type: img.mimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-        data: img.data,
-      },
+      type: 'image_url',
+      image_url: { url: `data:${img.mimeType};base64,${img.data}` },
     });
   }
 
-  content.push({
-    type: 'text',
-    text: MENU_IMAGE_VISION_PROMPT,
-  });
+  content.push({ type: 'text', text: MENU_IMAGE_VISION_PROMPT });
 
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+  const completion = await openai.chat.completions.create({
+    model: AI_MODEL,
     max_tokens: 4096,
     messages: [{ role: 'user', content }],
   });
 
-  const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+  const responseText = completion.choices[0]?.message?.content || '';
   let jsonStr = responseText.trim();
   const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (jsonMatch) {
@@ -330,8 +323,19 @@ async function parseMenuFromImages(
 
 function extractTextFromHtml(html: string): string {
   return html
+    // Remove non-content blocks (scripts, styles, nav, footer, etc.)
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+    .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
+    .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+    .replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, '')
+    .replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '')
+    .replace(/<svg[^>]*>[\s\S]*?<\/svg>/gi, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<link[^>]*>/gi, '')
+    .replace(/<meta[^>]*>/gi, '')
+    // Strip remaining tags and clean up whitespace
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -460,22 +464,23 @@ export async function POST(request: Request) {
     const textStrategy = (async (): Promise<ParsedMenu> => {
       if (textContent.length < 100) return { sections: [] };
       try {
-        const message = await anthropic.messages.create({
-          model: CLAUDE_CONFIG.model,
+        const completion = await openai.chat.completions.create({
+          model: AI_MODEL,
           max_tokens: 4096,
           messages: [{
             role: 'user',
             content: `${MENU_PARSE_PROMPT}\n\n${textContent}`,
           }],
         });
-        const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+        const responseText = completion.choices[0]?.message?.content || '';
         let jsonStr = responseText.trim();
         const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
         if (jsonMatch) jsonStr = jsonMatch[1].trim();
         return JSON.parse(jsonStr);
-      } catch (err) {
-        console.error('Text strategy failed:', err);
-        return { sections: [] };
+      } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        console.error('Text strategy failed:', errMsg);
+        return { sections: [], error: `Text strategy error: ${errMsg}` };
       }
     })();
 
@@ -521,15 +526,15 @@ export async function POST(request: Request) {
 
         if (embedText.length < 100) return { sections: [] };
 
-        const message = await anthropic.messages.create({
-          model: CLAUDE_CONFIG.model,
+        const completion = await openai.chat.completions.create({
+          model: AI_MODEL,
           max_tokens: 4096,
           messages: [{
             role: 'user',
             content: `${MENU_PARSE_PROMPT}\n\n${embedText}`,
           }],
         });
-        const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+        const responseText = completion.choices[0]?.message?.content || '';
         let jsonStr = responseText.trim();
         const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
         if (jsonMatch) jsonStr = jsonMatch[1].trim();
@@ -585,15 +590,15 @@ export async function POST(request: Request) {
 
             if (!pdfText || pdfText.trim().length < 50) return { sections: [] };
 
-            const message = await anthropic.messages.create({
-              model: CLAUDE_CONFIG.model,
+            const completion = await openai.chat.completions.create({
+              model: AI_MODEL,
               max_tokens: 4096,
               messages: [{
                 role: 'user',
                 content: `${MENU_PARSE_PROMPT}\n\n${pdfText.slice(0, 50000)}`,
               }],
             });
-            const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+            const responseText = completion.choices[0]?.message?.content || '';
             let jsonStr = responseText.trim();
             const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
             if (jsonMatch) jsonStr = jsonMatch[1].trim();
@@ -620,8 +625,10 @@ export async function POST(request: Request) {
     ]);
 
     console.log(
-      `Results — text: ${countItems(textResult)} items, images: ${countItems(imageResult)} items, ` +
-      `embed: ${countItems(embedResult)} items, pdf: ${countItems(pdfResult)} items`
+      `Results — text: ${countItems(textResult)} items (error: ${textResult.error || 'none'}), ` +
+      `images: ${countItems(imageResult)} items (error: ${imageResult.error || 'none'}), ` +
+      `embed: ${countItems(embedResult)} items (error: ${embedResult.error || 'none'}), ` +
+      `pdf: ${countItems(pdfResult)} items (error: ${pdfResult.error || 'none'})`
     );
 
     // Collect all valid results
@@ -635,9 +642,14 @@ export async function POST(request: Request) {
     let finalMenu: ParsedMenu;
 
     if (validResults.length === 0) {
+      const errors = [textResult, imageResult, embedResult, pdfResult]
+        .map(r => r.error)
+        .filter(Boolean);
+      console.error('All strategies failed. Errors:', errors);
       return NextResponse.json(
         {
-          error: 'No menu items found on this page. This can happen if the menu is loaded dynamically, is behind a login, or the URL points to a non-menu page. Try navigating directly to the menu page, or use the image or PDF import instead.'
+          error: 'No menu items found on this page. This can happen if the menu is loaded dynamically, is behind a login, or the URL points to a non-menu page. Try navigating directly to the menu page, or use the image or PDF import instead.',
+          debug_errors: errors,
         },
         { status: 422 }
       );
