@@ -120,8 +120,33 @@ export default function MenuPage() {
   const [showUrlImport, setShowUrlImport] = useState(false);
   const [importUrl, setImportUrl] = useState('');
   const [importing, setImporting] = useState(false);
+  const [importStep, setImportStep] = useState(0);
   const [parsedMenu, setParsedMenu] = useState<ParsedMenuData | null>(null);
   const [importMenuName, setImportMenuName] = useState('Imported Menu');
+
+  const importSteps = [
+    { label: 'Connecting to website', icon: '🌐' },
+    { label: 'Downloading page content', icon: '📄' },
+    { label: 'Extracting text & images', icon: '🔍' },
+    { label: 'AI reading your menu', icon: '🤖' },
+    { label: 'Organizing items & prices', icon: '✨' },
+  ];
+
+  // Animated step progression while importing
+  useEffect(() => {
+    if (!importing) {
+      setImportStep(0);
+      return;
+    }
+    // Steps advance on a schedule: 1.5s, 3s, 6s, 15s
+    const timers = [
+      setTimeout(() => setImportStep(1), 1500),
+      setTimeout(() => setImportStep(2), 3000),
+      setTimeout(() => setImportStep(3), 6000),
+      setTimeout(() => setImportStep(4), 15000),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, [importing]);
 
   // Image Import states
   const [showImageImport, setShowImageImport] = useState(false);
@@ -1282,13 +1307,43 @@ export default function MenuPage() {
                   </p>
                 </div>
                 {importing && (
-                  <div className="p-3 bg-tastelanc-surface/50 rounded-lg">
-                    <div className="flex items-center gap-2 text-tastelanc-accent mb-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span className="text-sm font-medium">Scanning page for menus...</span>
+                  <div className="p-4 bg-tastelanc-surface/50 rounded-lg space-y-3">
+                    {importSteps.map((step, i) => {
+                      const isComplete = i < importStep;
+                      const isActive = i === importStep;
+                      const isPending = i > importStep;
+                      return (
+                        <div
+                          key={i}
+                          className={`flex items-center gap-3 transition-all duration-500 ${
+                            isPending ? 'opacity-30' : 'opacity-100'
+                          }`}
+                        >
+                          <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
+                            {isComplete ? (
+                              <Check className="w-4 h-4 text-green-400" />
+                            ) : isActive ? (
+                              <Loader2 className="w-4 h-4 text-tastelanc-accent animate-spin" />
+                            ) : (
+                              <div className="w-2 h-2 rounded-full bg-gray-600" />
+                            )}
+                          </div>
+                          <span className={`text-sm ${
+                            isActive ? 'text-white font-medium' : isComplete ? 'text-gray-400' : 'text-gray-600'
+                          }`}>
+                            {step.label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                    <div className="mt-3 w-full bg-tastelanc-surface rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className="h-full bg-tastelanc-accent rounded-full transition-all duration-1000 ease-out"
+                        style={{ width: `${Math.min(((importStep + 1) / importSteps.length) * 100, 95)}%` }}
+                      />
                     </div>
-                    <p className="text-gray-500 text-xs">
-                      Checking page text, images, embedded menus, and linked PDFs simultaneously. This may take up to 30 seconds.
+                    <p className="text-gray-500 text-xs text-center">
+                      This usually takes 15–30 seconds
                     </p>
                   </div>
                 )}
@@ -1297,7 +1352,7 @@ export default function MenuPage() {
                     {importing ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Analyzing Menu...
+                        {importSteps[importStep]?.label || 'Analyzing...'}
                       </>
                     ) : (
                       <>
