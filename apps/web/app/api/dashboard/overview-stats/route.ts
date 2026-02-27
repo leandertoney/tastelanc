@@ -192,7 +192,7 @@ export async function GET(request: Request) {
     // Profile completion
     const completionItems = [
       { label: 'Basic info added', completed: !!(restaurant.name && restaurant.address) },
-      { label: 'Description written', completed: !!restaurant.description },
+      { label: 'Description written', completed: !!(restaurant.custom_description || restaurant.description) },
       { label: 'Phone number added', completed: !!restaurant.phone },
       { label: 'Website linked', completed: !!restaurant.website },
       { label: 'Categories selected', completed: restaurant.categories && restaurant.categories.length > 0 },

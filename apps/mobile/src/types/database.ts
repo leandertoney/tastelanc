@@ -72,6 +72,7 @@ export interface Restaurant {
   cover_image_url: string | null;
   photos: string[] | null;
   description: string | null;
+  custom_description: string | null;
   categories: RestaurantCategory[];
   cuisine: CuisineType | null;
   is_active: boolean;

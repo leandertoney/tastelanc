@@ -39,7 +39,7 @@ export default async function DateNightPage() {
           {list.map((r) => (
             <a key={r.id} href={`/restaurants/${r.slug}`} className="p-4 bg-tastelanc-surface rounded-lg block">
               <h2 className="text-xl font-semibold text-white">{r.name}</h2>
-              {r.description && <p className="text-sm text-gray-300 mt-1 line-clamp-2">{r.description}</p>}
+              {(r.custom_description || r.description) && <p className="text-sm text-gray-300 mt-1 line-clamp-2">{r.custom_description || r.description}</p>}
               <p className="text-xs text-gray-500 mt-1">{r.categories?.join(', ')}</p>
             </a>
           ))}

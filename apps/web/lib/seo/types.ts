@@ -24,6 +24,7 @@ export interface Restaurant {
   logo_url: string | null;
   cover_image_url: string | null;
   description: string | null;
+  custom_description: string | null;
   primary_color: string;
   secondary_color: string;
   categories: string[];

@@ -49,6 +49,7 @@ export interface BaseRestaurant {
   logo_url: string | null;
   cover_image_url: string | null;
   description: string | null;
+  custom_description: string | null;
   categories: RestaurantCategory[];
   is_active: boolean;
   created_at: string;

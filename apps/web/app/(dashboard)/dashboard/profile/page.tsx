@@ -176,7 +176,7 @@ export default function ProfilePage() {
     if (restaurant) {
       setFormData({
         name: restaurant.name || '',
-        description: restaurant.description || '',
+        description: (restaurant as any).custom_description || restaurant.description || '',
         address: restaurant.address || '',
         city: restaurant.city || '',
         state: restaurant.state || '',
@@ -250,7 +250,7 @@ export default function ProfilePage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formData.name, description: formData.description, address: formData.address,
+          name: formData.name, custom_description: formData.description, address: formData.address,
           city: formData.city, state: formData.state, zip_code: formData.zip_code,
           phone: formData.phone, website: formData.website, categories: formData.categories,
           checkin_pin: formData.checkin_pin,
