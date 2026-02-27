@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -24,7 +25,7 @@ import type { RootStackParamList } from '../navigation/types';
 import type { Restaurant, RestaurantHours, HappyHour } from '../types/database';
 import type { ApiEvent } from '../lib/events';
 import type { TimeSlot, ItineraryItemWithReason, ItineraryMood } from '../types/itinerary';
-import { ITINERARY_MOODS, ALL_TIME_SLOTS } from '../types/itinerary';
+import { ITINERARY_MOODS, TIME_SLOT_CONFIG } from '../types/itinerary';
 import { generateItinerary, getAlternativesForSlot, type GenerateItineraryParams } from '../lib/itineraryGenerator';
 import { useSaveItinerary } from '../hooks/useItineraries';
 import { useFavorites, useUserLocation } from '../hooks';
@@ -153,6 +154,7 @@ export default function ItineraryBuilderScreen() {
   const [selectedMood, setSelectedMood] = useState<ItineraryMood | null>(null);
   const [items, setItems] = useState<ItineraryItemWithReason[]>([]);
   const [skippedSlots, setSkippedSlots] = useState<TimeSlot[]>([]);
+  const [walkMinutes, setWalkMinutes] = useState<(number | null)[]>([]);
   const [hasGenerated, setHasGenerated] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [preferences, setPreferences] = useState<OnboardingData | null>(null);
@@ -167,6 +169,25 @@ export default function ItineraryBuilderScreen() {
   const { data: allEvents = [], isLoading: loadingEvents } = useAllEvents(marketId);
   const { data: favorites = [] } = useFavorites();
   const { location: userLocation } = useUserLocation();
+
+  // Fetch community vote counts for this month — used to boost popular restaurants in scoring
+  const { data: voteCountsRaw } = useQuery<Map<string, number>>({
+    queryKey: ['itinerary', 'voteCounts'],
+    queryFn: async () => {
+      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+      const { data, error } = await supabase
+        .from('votes')
+        .select('restaurant_id')
+        .eq('month', currentMonth);
+      if (error || !data) return new Map();
+      const tally = new Map<string, number>();
+      for (const v of data) {
+        tally.set(v.restaurant_id, (tally.get(v.restaurant_id) || 0) + 1);
+      }
+      return tally;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
   const isLoadingData = loadingRestaurants || loadingHours || loadingHappyHours || loadingEvents;
 
@@ -190,21 +211,65 @@ export default function ItineraryBuilderScreen() {
     allHours,
     allHappyHours,
     allEvents,
-  }), [selectedDate, selectedMood, preferences, userLocation, favorites, restaurants, allHours, allHappyHours, allEvents]);
+    restaurantVoteCounts: voteCountsRaw,
+  }), [selectedDate, selectedMood, preferences, userLocation, favorites, restaurants, allHours, allHappyHours, allEvents, voteCountsRaw]);
 
   // ─── Handlers ───────────────────────────────────────────────
 
   const handleGenerate = useCallback(() => {
     setIsGenerating(true);
-    // Run async-like with a brief delay for visual feedback
     setTimeout(() => {
       const result = generateItinerary(generatorParams);
       setItems(result.items);
       setSkippedSlots(result.skippedSlots);
+      setWalkMinutes(result.walkMinutes);
       setHasGenerated(true);
       setIsGenerating(false);
     }, 300);
   }, [generatorParams]);
+
+  // ── Emoji map for share text ─────────────────────────────────────────────
+  const SLOT_EMOJI: Record<TimeSlot, string> = {
+    breakfast:  '☀️',
+    morning:    '☕',
+    lunch:      '🍽',
+    afternoon:  '🌤',
+    happy_hour: '🍺',
+    dinner:     '🍷',
+    evening:    '🎵',
+  };
+
+  const handleShare = useCallback(async () => {
+    if (items.length === 0) return;
+
+    const dateObj = new Date(selectedDate + 'T12:00:00');
+    const dateLabel = dateObj.toLocaleDateString('en-US', {
+      weekday: 'long', month: 'long', day: 'numeric',
+    });
+    const moodLabel = selectedMood ? ITINERARY_MOODS[selectedMood].label : 'Night Out';
+
+    let msg = `${ITINERARY_MOODS[selectedMood ?? 'foodie_tour']?.icon ? '' : '🗓'} ${moodLabel} in Lancaster — ${dateLabel}\n\n`;
+
+    items.forEach((item, i) => {
+      const config = TIME_SLOT_CONFIG[item.time_slot as TimeSlot];
+      const emoji = SLOT_EMOJI[item.time_slot as TimeSlot] ?? '📍';
+      msg += `${emoji} ${config.label} · ${config.defaultTimeRange}\n`;
+      msg += `   ${item.display_name}\n`;
+      if (item.reason) msg += `   ${item.reason}\n`;
+      if (i < items.length - 1) {
+        const wm = walkMinutes[i];
+        msg += wm ? `\n   ↓ ${wm} min walk\n\n` : '\n';
+      }
+    });
+
+    msg += `\nPlanned on TasteLanc 🍴\nhttps://apps.apple.com/app/tastelanc/id6755852717`;
+
+    try {
+      await Share.share({ message: msg });
+    } catch (e) {
+      // User dismissed share sheet — no action needed
+    }
+  }, [items, selectedDate, selectedMood, walkMinutes]);
 
   const handleItemPress = useCallback((item: ItineraryItemWithReason) => {
     if (item.restaurant_id) {
@@ -326,6 +391,7 @@ export default function ItineraryBuilderScreen() {
                   setHasGenerated(false);
                   setItems([]);
                   setSkippedSlots([]);
+                  setWalkMinutes([]);
                 }
               }}
               activeOpacity={0.7}
@@ -360,6 +426,7 @@ export default function ItineraryBuilderScreen() {
                       setHasGenerated(false);
                       setItems([]);
                       setSkippedSlots([]);
+                      setWalkMinutes([]);
                     }
                   }}
                   activeOpacity={0.7}
@@ -418,12 +485,15 @@ export default function ItineraryBuilderScreen() {
         {hasGenerated && (
           <>
             <View style={styles.timelineHeader}>
-              <Text style={styles.timelineTitle}>Your Day in Lancaster</Text>
+              <Text style={styles.timelineTitle}>
+                Your {items.length} Stops in Lancaster
+              </Text>
               <TouchableOpacity
                 onPress={() => {
                   setHasGenerated(false);
                   setItems([]);
                   setSkippedSlots([]);
+                  setWalkMinutes([]);
                 }}
               >
                 <Text style={styles.regenerateText}>Regenerate</Text>
@@ -433,15 +503,25 @@ export default function ItineraryBuilderScreen() {
             <ItineraryTimeline
               items={items}
               skippedSlots={skippedSlots}
+              walkMinutes={walkMinutes}
               onItemPress={handleItemPress}
               onSwapItem={handleSwapItem}
               onRemoveItem={handleRemoveItem}
-              showEmptySlots={true}
+              showEmptySlots={false}
             />
 
-            {/* Save button */}
+            {/* Share + Save buttons */}
             {items.length > 0 && (
-              <View style={styles.saveSection}>
+              <View style={styles.actionRow}>
+                <TouchableOpacity
+                  style={styles.shareButton}
+                  onPress={handleShare}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="share-outline" size={18} color={colors.accent} />
+                  <Text style={styles.shareButtonText}>Share</Text>
+                </TouchableOpacity>
+
                 <TouchableOpacity
                   style={styles.saveButton}
                   onPress={handleSave}
@@ -454,7 +534,7 @@ export default function ItineraryBuilderScreen() {
                     <Ionicons name="bookmark" size={18} color={colors.text} />
                   )}
                   <Text style={styles.saveButtonText}>
-                    {saveItineraryMutation.isPending ? 'Saving...' : 'Save Itinerary'}
+                    {saveItineraryMutation.isPending ? 'Saving...' : 'Save'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -611,12 +691,32 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.accent,
   },
-  // Save
-  saveSection: {
+  // Action row (Share + Save)
+  actionRow: {
+    flexDirection: 'row',
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
+    gap: spacing.sm,
+  },
+  shareButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.cardBg,
+    paddingVertical: 16,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+  },
+  shareButtonText: {
+    fontSize: typography.headline,
+    fontWeight: '600',
+    color: colors.accent,
   },
   saveButton: {
+    flex: 2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

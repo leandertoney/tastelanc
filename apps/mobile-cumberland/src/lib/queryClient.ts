@@ -66,6 +66,9 @@ export const queryKeys = {
   hours: {
     byRestaurant: (restaurantId: string) => ['hours', restaurantId] as const,
   },
+  openStatus: {
+    today: (dayOfWeek: string) => ['openStatus', dayOfWeek] as const,
+  },
   favorites: ['favorites'] as const,
   voting: {
     balance: ['voting', 'balance'] as const,

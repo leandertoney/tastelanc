@@ -53,7 +53,7 @@ export default function PartnerCTACard({
 
           <View style={styles.ctaButton}>
             <Text style={styles.ctaText}>Contact Us</Text>
-            <Ionicons name="arrow-forward" size={16} color={colors.text} />
+            <Ionicons name="arrow-forward" size={16} color={colors.accent} />
           </View>
         </View>
       </LinearGradient>
@@ -107,13 +107,13 @@ const styles = StyleSheet.create({
   headline: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.text,
+    color: colors.textOnAccent,
     textAlign: 'center',
     marginBottom: spacing.xs,
   },
   subtext: {
     fontSize: 14,
-    color: colors.textMuted,
+    color: 'rgba(255,255,255,0.7)',
     textAlign: 'center',
     marginBottom: spacing.lg,
     lineHeight: 20,
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.gold,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
@@ -130,6 +130,6 @@ const styles = StyleSheet.create({
   ctaText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.accent,
   },
 });

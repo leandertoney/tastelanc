@@ -151,29 +151,37 @@ export function usePlatformSocialProof() {
       // Calculate one week ago
       const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-      // Query upcoming happy hours (starting within 2 hours)
+      // Query upcoming happy hours (starting within 2 hours) — filtered to this market
       let upcomingHappyHoursCount = 0;
       try {
-        const { count } = await supabase
+        let hhQuery = supabase
           .from('happy_hours')
-          .select('*', { count: 'exact', head: true })
+          .select('*, restaurant:restaurants!inner(market_id)', { count: 'exact', head: true })
           .eq('is_active', true)
           .contains('days_of_week', [dayOfWeek])
           .gt('start_time', currentTime)
           .lte('start_time', twoHoursTime);
+        if (marketId) {
+          hhQuery = hhQuery.eq('restaurant.market_id', marketId);
+        }
+        const { count } = await hhQuery;
         upcomingHappyHoursCount = count || 0;
       } catch {
         // Ignore - will show 0
       }
 
-      // Query new specials added this week
+      // Query new specials added this week — filtered to this market
       let newSpecialsCount = 0;
       try {
-        const { count } = await supabase
+        let spQuery = supabase
           .from('specials')
-          .select('*', { count: 'exact', head: true })
+          .select('*, restaurant:restaurants!inner(market_id)', { count: 'exact', head: true })
           .eq('is_active', true)
           .gte('created_at', oneWeekAgo);
+        if (marketId) {
+          spQuery = spQuery.eq('restaurant.market_id', marketId);
+        }
+        const { count } = await spQuery;
         newSpecialsCount = count || 0;
       } catch {
         // Ignore - will show 0
