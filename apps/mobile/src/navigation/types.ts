@@ -2,6 +2,7 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { RestaurantCategory, CuisineType } from '../types/database';
 import type { VoteCategory } from '../types/voting';
 import type { ApiEvent } from '../lib/events';
+import type { ItineraryItemWithReason, ItineraryMood } from '../types/itinerary';
 
 // Onboarding Stack param list
 export type OnboardingStackParamList = {
@@ -83,6 +84,17 @@ export type RootStackParamList = {
   // Squad Picker
   SquadBuilder: undefined;
   SquadVote: { pollId: string };
+  // Itinerary result card (shareable branded card)
+  ItineraryCard: {
+    items: ItineraryItemWithReason[];
+    walkMinutes: (number | null)[];
+    mood: ItineraryMood | null;
+    date: string;
+    stopCount?: 2 | 3;
+  };
+  // Personal history
+  MyRestaurants: undefined;
+  Wishlist: undefined;
 };
 
 // Type helpers for useNavigation hook

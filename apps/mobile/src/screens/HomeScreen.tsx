@@ -33,7 +33,7 @@ import {
   SocialProofBanner,
   PromoCard,
   PlanYourDayCard,
-  SquadPickerCard,
+  // SquadPickerCard,  // Hidden for now — feature not ready yet
   BlogSection,
   RecommendedSection,
   ErrorBoundary,
@@ -179,11 +179,10 @@ export default function HomeScreen() {
         <EventsSection />
       </ErrorBoundary>
 
-      {/* Plan Your Day + Squad Picker CTAs */}
+      {/* Plan Your Day CTA */}
       <ErrorBoundary level="section">
-        <View style={styles.ctaRow}>
+        <View style={styles.ctaWrapper}>
           <PlanYourDayCard />
-          <SquadPickerCard />
         </View>
       </ErrorBoundary>
 
@@ -355,11 +354,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textMuted,
   },
-  ctaRow: {
-    flexDirection: 'row',
+  ctaWrapper: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    gap: spacing.sm,
   },
   footerLoader: {
     paddingVertical: 20,

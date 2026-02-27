@@ -37,6 +37,8 @@ export interface GenerateItineraryParams {
   allEvents: ApiEvent[];
   /** Optional: map of restaurantId → total vote count this month */
   restaurantVoteCounts?: Map<string, number>;
+  /** Number of stops to generate (default 3). 2-stop mode uses first + last chapter. */
+  stopCount?: 2 | 3;
 }
 
 export interface GenerateResult {
@@ -155,6 +157,11 @@ const MOOD_EXCLUDE_CATEGORIES: Partial<Record<ItineraryMood, Partial<Record<Time
   date_night: {
     dinner:  ['bars', 'nightlife'],
   },
+  bar_crawl: {
+    // Don't send people to breakfast/brunch/dessert spots on a bar crawl
+    dinner:  ['breakfast', 'brunch', 'desserts'],
+    evening: ['breakfast', 'brunch', 'desserts'],
+  },
 };
 
 function passesVibeFilter(
@@ -178,7 +185,7 @@ const MOOD_CATEGORY_BOOSTS: Record<ItineraryMood, Partial<Record<RestaurantCateg
   date_night:      { rooftops: 20, dinner: 15, bars: 5 },
   brunch_lover:    { brunch: 25 },
   family_day:      { lunch: 10, dinner: 10, outdoor_dining: 15 },
-  bar_crawl:       { bars: 25, nightlife: 20, rooftops: 15 },
+  bar_crawl:       { bars: 40, nightlife: 35, rooftops: 25 },
   budget_friendly: { lunch: 5, brunch: 5 },
 };
 
@@ -193,6 +200,19 @@ const MOOD_CUISINE_BOOSTS: Record<ItineraryMood, Partial<Record<CuisineType, num
 
 // ─── Rich reason text ─────────────────────────────────────────────────────────
 
+/**
+ * Format a 24h time string (e.g. "16:00") into a display string (e.g. "4 PM")
+ */
+function formatTimeDisplay(time24: string): string {
+  const parts = time24.trim().split(':');
+  let hour = parseInt(parts[0], 10);
+  const min = parseInt(parts[1] || '0', 10);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  if (hour > 12) hour -= 12;
+  if (hour === 0) hour = 12;
+  return min > 0 ? `${hour}:${min.toString().padStart(2, '0')} ${ampm}` : `${hour} ${ampm}`;
+}
+
 function buildReason(
   restaurant: Restaurant,
   slot: TimeSlot,
@@ -203,34 +223,59 @@ function buildReason(
   event: ApiEvent | undefined,
   isFavorite: boolean,
   votesThisMonth: number,
-  walkStr: string | null,
 ): string {
   const parts: string[] = [];
 
-  // 1. Best-for tag (most specific context)
-  const bestFor = (restaurant as any).best_for as string[] | null | undefined;
-  if (bestFor?.length) {
-    const tag = bestFor[0];
-    parts.push(tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase());
+  // 1. Event details — most compelling signal (show for ANY slot, not just evening)
+  if (hasEvent && event?.name) {
+    let eventStr = event.name;
+    // Add performer if available
+    if (event.performer_name) {
+      eventStr += ` with ${event.performer_name}`;
+    }
+    // Add event start time
+    if (event.start_time) {
+      eventStr += ` \u00B7 ${formatTimeDisplay(event.start_time)}`;
+    }
+    parts.push(eventStr);
   }
 
-  // 2. Contextual signal: live data wins
-  if (slot === 'happy_hour' && hasHappyHour && happyHour?.description) {
-    parts.push(happyHour.description);
-  } else if (slot === 'evening' && hasEvent && event?.name) {
-    parts.push(`${event.name} tonight`);
-  } else if (votesThisMonth >= 3) {
-    parts.push(`${votesThisMonth} community votes this month`);
-  } else if (isFavorite) {
-    parts.push('One of your spots');
-  } else if (restaurant.cuisine && CUISINE_LABELS[restaurant.cuisine]) {
-    parts.push(CUISINE_LABELS[restaurant.cuisine]);
+  // 2. Happy hour details — show for ANY slot (not just happy_hour)
+  if (hasHappyHour && happyHour) {
+    let hhStr = 'Happy Hour';
+    // Add time range
+    if (happyHour.start_time && happyHour.end_time) {
+      hhStr += ` ${formatTimeDisplay(happyHour.start_time)}\u2013${formatTimeDisplay(happyHour.end_time)}`;
+    }
+    // Add deal description if available
+    if (happyHour.description) {
+      hhStr += ` \u00B7 ${happyHour.description}`;
+    }
+    parts.push(hhStr);
   }
 
-  // 3. Walk time connector
-  if (walkStr) parts.push(`${walkStr} walk`);
+  // 3. Best-for tag (specific context about the restaurant)
+  if (parts.length === 0) {
+    const bestFor = (restaurant as any).best_for as string[] | null | undefined;
+    if (bestFor?.length) {
+      const tag = bestFor[0];
+      parts.push(tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase());
+    }
+  }
 
-  return parts.slice(0, 2).join(' · ') || 'Local Lancaster pick';
+  // 4. Fallback signals — only if we don't already have event/HH info
+  if (parts.length === 0) {
+    if (votesThisMonth >= 3) {
+      parts.push(`${votesThisMonth} community votes this month`);
+    } else if (isFavorite) {
+      parts.push('One of your spots');
+    } else if (restaurant.cuisine && CUISINE_LABELS[restaurant.cuisine]) {
+      parts.push(CUISINE_LABELS[restaurant.cuisine]);
+    }
+  }
+
+  // Walk time is NOT included here — it's displayed separately in the card connector
+  return parts.slice(0, 2).join(' \u00B7 ') || 'Local Lancaster pick';
 }
 
 // ─── Scoring ──────────────────────────────────────────────────────────────────
@@ -358,8 +403,13 @@ export function generateItinerary(params: GenerateItineraryParams): GenerateResu
     if (isOnDay) eventsByRestaurant.set(restaurantId, event);
   }
 
-  // Determine 3 chapters based on mood
-  const chapters: TimeSlot[] = mood ? [...MOOD_CHAPTERS[mood]] : [...DEFAULT_CHAPTERS];
+  // Determine chapters based on mood and stop count
+  const allChapters: TimeSlot[] = mood ? [...MOOD_CHAPTERS[mood]] : [...DEFAULT_CHAPTERS];
+  const requestedStops = params.stopCount ?? 3;
+  // For 2 stops: first + last chapter (skip middle)
+  const chapters: TimeSlot[] = requestedStops === 2
+    ? [allChapters[0], allChapters[2]]
+    : allChapters;
 
   // Cluster center: set after the first stop is picked to keep subsequent stops walkable
   let clusterCenter: { latitude: number; longitude: number } | null = userLocation;
@@ -417,7 +467,6 @@ export function generateItinerary(params: GenerateItineraryParams): GenerateResu
       eventsByRestaurant.has(winner.restaurant.id), winner.event,
       favorites.includes(winner.restaurant.id),
       restaurantVoteCounts.get(winner.restaurant.id) || 0,
-      walk.label,
     );
 
     items.push({
@@ -504,7 +553,7 @@ export function getAlternativesForSlot(
         r, slot, mood,
         happyHoursByRestaurant.has(r.id), happyHoursByRestaurant.get(r.id),
         eventsByRestaurant.has(r.id), eventsByRestaurant.get(r.id),
-        favorites.includes(r.id), votes, null,
+        favorites.includes(r.id), votes,
       );
       return { restaurant: r, score, reason };
     })

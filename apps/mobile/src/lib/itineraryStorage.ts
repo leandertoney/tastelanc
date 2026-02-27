@@ -10,11 +10,13 @@ import type { Itinerary, ItineraryItem, ItineraryWithItems } from '../types/itin
 const STORAGE_KEY = '@tastelanc_itineraries';
 const MAX_ITINERARIES = 10;
 
-// Simple UUID generator (avoids dependency on crypto.randomUUID which may not be available in all RN environments)
+// UUID v4 generator — produces valid PostgreSQL UUIDs
 function generateId(): string {
-  const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substring(2, 10);
-  return `${timestamp}-${random}-${Math.random().toString(36).substring(2, 6)}`;
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 }
 
 // ─── Storage key helpers ────────────────────────────────────────
@@ -149,7 +151,7 @@ export async function saveItinerary(
 
   // Build full item objects
   const fullItems: ItineraryItem[] = items.map((item, index) => ({
-    id: item.id || generateId(),
+    id: generateId(), // Always generate — generator IDs are for client-side keys only
     itinerary_id: fullItinerary.id,
     sort_order: item.sort_order ?? index,
     time_slot: item.time_slot || 'lunch',

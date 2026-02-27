@@ -55,52 +55,86 @@ async function getActiveHappyHours(marketId: string | null): Promise<HappyHourWi
 
 interface EntertainmentResult {
   events: ApiEvent[];
-  isUpcoming: boolean;
+  hasTodayEvents: boolean;
 }
 
-async function getEntertainmentEvents(): Promise<EntertainmentResult> {
-  const events = await fetchEntertainmentEvents();
+async function getEntertainmentEvents(marketId?: string | null): Promise<EntertainmentResult> {
+  const events = await fetchEntertainmentEvents(marketId);
   const now = new Date();
   const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as DayOfWeek;
   const todayDate = now.toISOString().split('T')[0];
 
-  const todayEvents = events.filter(event => {
-    if (event.is_recurring && event.days_of_week.includes(dayOfWeek)) return true;
-    if (event.event_date === todayDate) return true;
-    return false;
-  }).slice(0, 10);
-
-  if (todayEvents.length > 0) {
-    return { events: todayEvents, isUpcoming: false };
-  }
-
-  const upcomingEvents = events.filter(event => {
+  // Filter to upcoming/recurring events
+  const upcoming = events.filter(event => {
     if (event.is_recurring) return true;
     if (event.event_date && event.event_date >= todayDate) return true;
     return false;
-  }).slice(0, 10);
+  });
 
-  return { events: upcomingEvents, isUpcoming: true };
+  // Identify today's events
+  const isToday = (event: ApiEvent) => {
+    if (event.event_date === todayDate) return true;
+    if (event.is_recurring && event.days_of_week.includes(dayOfWeek)) return true;
+    return false;
+  };
+
+  const todayEvents = upcoming.filter(isToday);
+  const futureEvents = upcoming.filter(e => !isToday(e));
+
+  todayEvents.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+  futureEvents.sort((a, b) => {
+    const dateA = a.event_date || '9999-12-31';
+    const dateB = b.event_date || '9999-12-31';
+    if (dateA !== dateB) return dateA.localeCompare(dateB);
+    return (a.start_time || '').localeCompare(b.start_time || '');
+  });
+
+  const sorted = [...todayEvents, ...futureEvents];
+  return { events: sorted.slice(0, 5), hasTodayEvents: todayEvents.length > 0 };
 }
 
 // ========== Upcoming Events Query Function ==========
 
-async function getUpcomingEvents(): Promise<ApiEvent[]> {
-  // Fetch all events and filter out entertainment types inline
-  // (avoiding separate function to prevent potential bundling issues)
-  const allEvents = await fetchEvents();
+interface EventsResult {
+  events: ApiEvent[];
+  hasTodayEvents: boolean;
+}
+
+async function getUpcomingEvents(marketId?: string | null): Promise<EventsResult> {
+  const allEvents = await fetchEvents({ market_id: marketId });
   const nonEntertainment = allEvents.filter(
     (event: ApiEvent) => !ENTERTAINMENT_TYPES.includes(event.event_type)
   );
 
-  const today = new Date().toISOString().split('T')[0];
-  return nonEntertainment
-    .filter((event: ApiEvent) => {
-      if (event.is_recurring) return true;
-      if (event.event_date && event.event_date >= today) return true;
-      return false;
-    })
-    .slice(0, 10);
+  const now = new Date();
+  const todayDate = now.toISOString().split('T')[0];
+  const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as DayOfWeek;
+
+  const upcoming = nonEntertainment.filter(event => {
+    if (event.is_recurring) return true;
+    if (event.event_date && event.event_date >= todayDate) return true;
+    return false;
+  });
+
+  const isToday = (event: ApiEvent) => {
+    if (event.event_date === todayDate) return true;
+    if (event.is_recurring && event.days_of_week.includes(dayOfWeek)) return true;
+    return false;
+  };
+
+  const todayEvents = upcoming.filter(isToday);
+  const futureEvents = upcoming.filter(e => !isToday(e));
+
+  todayEvents.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+  futureEvents.sort((a, b) => {
+    const dateA = a.event_date || '9999-12-31';
+    const dateB = b.event_date || '9999-12-31';
+    if (dateA !== dateB) return dateA.localeCompare(dateB);
+    return (a.start_time || '').localeCompare(b.start_time || '');
+  });
+
+  const sorted = [...todayEvents, ...futureEvents];
+  return { events: sorted.slice(0, 10), hasTodayEvents: todayEvents.length > 0 };
 }
 
 // ========== Cuisines Query Function ==========
@@ -260,14 +294,14 @@ export async function prefetchHomeScreenData(userId: string | null, marketId: st
       // Entertainment events (today's or upcoming)
       queryClient.prefetchQuery({
         queryKey: ['entertainmentEvents', marketId],
-        queryFn: getEntertainmentEvents,
+        queryFn: () => getEntertainmentEvents(marketId),
         staleTime: 5 * 60 * 1000,
       }),
 
       // Upcoming events
       queryClient.prefetchQuery({
         queryKey: ['upcomingEvents', marketId],
-        queryFn: getUpcomingEvents,
+        queryFn: () => getUpcomingEvents(marketId),
         staleTime: 10 * 60 * 1000,
       }),
 

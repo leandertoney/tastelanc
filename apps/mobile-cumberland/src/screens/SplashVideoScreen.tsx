@@ -3,7 +3,9 @@ import { StyleSheet, Dimensions, Animated } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useIsRestoring } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
+import { queryClient } from '../lib/queryClient';
 import { prefetchHomeScreenData } from '../lib/prefetch';
+import { MARKET_SLUG } from '../config/market';
 import { colors } from '../constants/colors';
 
 interface SplashVideoScreenProps {
@@ -27,13 +29,31 @@ export default function SplashVideoScreen({ onComplete }: SplashVideoScreenProps
     player.play();
   });
 
-  // Start prefetching immediately
+  // Start prefetching immediately — resolve market ID first so cache is scoped
   useEffect(() => {
     const runPrefetch = async () => {
       try {
-        // Get userId from existing session (if any)
-        const { data: { session } } = await supabase.auth.getSession();
-        await prefetchHomeScreenData(session?.user?.id ?? null);
+        // Resolve full market object and user session in parallel
+        const [sessionResult, marketResult] = await Promise.all([
+          supabase.auth.getSession(),
+          supabase
+            .from('markets')
+            .select('*')
+            .eq('slug', MARKET_SLUG)
+            .eq('is_active', true)
+            .limit(1)
+            .single(),
+        ]);
+
+        const userId = sessionResult.data?.session?.user?.id ?? null;
+        const marketId = marketResult.data?.id ?? null;
+
+        // Seed market into React Query cache so MarketProvider finds it instantly
+        if (marketResult.data) {
+          queryClient.setQueryData(['market', MARKET_SLUG], marketResult.data);
+        }
+
+        await prefetchHomeScreenData(userId, marketId);
       } catch (error) {
         console.error('[Splash] Prefetch error:', error);
         // Continue anyway - components will fetch data themselves

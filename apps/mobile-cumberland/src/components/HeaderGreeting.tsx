@@ -15,15 +15,13 @@ export default function HeaderGreeting() {
 
   if (!greeting) return null;
 
-  // Show just the short greeting part (e.g. "Good Evening, Leander!")
-  // Extract up to the first ! or ? to keep it compact, then title-case
-  const short = greeting
-    .split(/[!?]/)[0]
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  // Show just the time-of-day greeting without the user's name (App Store screenshot safe)
+  const hour = new Date().getHours();
+  const timeOnly = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
 
   return (
     <Text style={styles.greeting} numberOfLines={1}>
-      {short}
+      {timeOnly}
     </Text>
   );
 }

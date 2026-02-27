@@ -16,16 +16,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigationContext } from '../navigation';
-import { colors, radius } from '../constants/colors';
+import { colors, radius, spacing, typography } from '../constants/colors';
 import { useAuth } from '../hooks/useAuth';
+import { useFavorites } from '../hooks/useFavorites';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '../lib/supabase';
 import type { RootStackParamList } from '../navigation/types';
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+import ProfileStatsRow from '../components/ProfileStatsRow';
+import RecentActivityFeed from '../components/RecentActivityFeed';
 import {
   simulateGeofenceEntry,
   getTestRestaurants,
   clearTestVisits,
   logRecentVisits,
+  seedDemoData,
 } from '../lib/radarTestUtils';
 import {
   registerForPushNotifications,
@@ -33,9 +37,37 @@ import {
   scheduleLocalNotification,
 } from '../lib/notifications';
 
-// Storage keys for preferences
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 const NOTIFICATIONS_KEY = '@tastelanc_notifications';
 const LOCATION_KEY = '@tastelanc_location';
+
+// Dynamic title based on check-in count
+function getExplorerTitle(checkinCount: number): string {
+  if (checkinCount === 0) return 'Lancaster Newcomer';
+  if (checkinCount < 5) return 'Lancaster Explorer';
+  if (checkinCount < 15) return 'Lancaster Regular';
+  if (checkinCount < 30) return 'Local Insider';
+  if (checkinCount < 50) return 'Lancaster Expert';
+  return 'Local Legend';
+}
+
+function useCheckinCount() {
+  const { userId } = useAuth();
+  return useQuery({
+    queryKey: ['checkinCount', userId],
+    queryFn: async () => {
+      if (!userId) return 0;
+      const { count } = await supabase
+        .from('checkins')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
+      return count || 0;
+    },
+    enabled: !!userId,
+    staleTime: 60 * 1000,
+  });
+}
 
 interface SettingItemProps {
   icon: string;
@@ -106,53 +138,35 @@ export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { restartOnboarding } = useNavigationContext();
   const { userId } = useAuth();
+  const { data: checkinCount = 0 } = useCheckinCount();
 
-  // Preference states
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [locationEnabled, setLocationEnabled] = useState(true);
-
-  // Dev tools state
   const [isTestingVisit, setIsTestingVisit] = useState(false);
+  const [isSeedingData, setIsSeedingData] = useState(false);
 
-  // Load preferences on mount
   useEffect(() => {
     loadPreferences();
   }, []);
 
-  // DEV ONLY: Test Radar visit tracking
   const handleTestVisit = async () => {
     if (!__DEV__ || !userId) {
       Alert.alert('Error', 'Dev tools require authentication');
       return;
     }
-
     setIsTestingVisit(true);
     try {
-      // Get a random restaurant to test with
       const restaurants = await getTestRestaurants(10);
-      if (restaurants.length === 0) {
-        Alert.alert('Error', 'No restaurants found');
-        return;
-      }
-
-      // Pick a random one
+      if (restaurants.length === 0) { Alert.alert('Error', 'No restaurants found'); return; }
       const randomRestaurant = restaurants[Math.floor(Math.random() * restaurants.length)];
-
-      // Simulate geofence entry
       const result = await simulateGeofenceEntry(userId, randomRestaurant.id);
-
       if (result.success) {
-        Alert.alert(
-          'Visit Recorded',
-          `Simulated entry at "${randomRestaurant.name}"\n\n${result.message}`,
-          [{ text: 'OK' }]
-        );
+        Alert.alert('Visit Recorded', `Simulated entry at "${randomRestaurant.name}"\n\n${result.message}`);
       } else {
         Alert.alert('Error', result.error || result.message);
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to simulate visit');
-      console.error(error);
     } finally {
       setIsTestingVisit(false);
     }
@@ -166,144 +180,68 @@ export default function ProfileScreen() {
 
   const handleClearTestVisits = async () => {
     if (!__DEV__ || !userId) return;
-
     Alert.alert('Clear Test Visits', 'Remove all manually recorded visits?', [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Clear',
-        style: 'destructive',
-        onPress: async () => {
-          const count = await clearTestVisits(userId);
-          Alert.alert('Cleared', `Removed ${count} test visits`);
-        },
-      },
+      { text: 'Clear', style: 'destructive', onPress: async () => {
+        const count = await clearTestVisits(userId);
+        Alert.alert('Cleared', `Removed ${count} test visits`);
+      }},
     ]);
+  };
+
+  const handleSeedDemoData = async () => {
+    if (!__DEV__ || !userId) {
+      Alert.alert('Error', 'Dev tools require authentication');
+      return;
+    }
+    setIsSeedingData(true);
+    try {
+      const result = await seedDemoData(userId);
+      Alert.alert(
+        'Demo Data Seeded! ✅',
+        `${result.checkins} check-ins, ${result.votes} votes, ${result.wishlist} wishlist items\n\nPull to refresh screens to see the data.`
+      );
+    } catch {
+      Alert.alert('Error', 'Failed to seed demo data');
+    } finally {
+      setIsSeedingData(false);
+    }
   };
 
   const handleTestPushNotification = async () => {
     if (!__DEV__) return;
-
     try {
-      // First, try to register and save the push token
-      console.log('Registering for push notifications...');
       const token = await registerForPushNotifications();
-
       if (token) {
-        console.log('Push token:', token);
-
-        // Save to database if we have a userId
-        if (userId) {
-          const saved = await savePushToken(token, userId);
-          console.log('Token saved to database:', saved);
-        }
-
-        // Send a local test notification
+        if (userId) await savePushToken(token, userId);
         await scheduleLocalNotification(
           'Happy Hour Alert!',
           'The Imperial has $5 drafts, $8 wine & 50% off bar menu until 7pm!',
           { screen: 'RestaurantDetail', restaurantId: '28b029d8-171b-4e05-9a2e-628e8e1d6f7d' },
           2
         );
-
-        Alert.alert(
-          'Success!',
-          `Token registered: ${token.substring(0, 25)}...\n\nA test notification will appear in 2 seconds.`
-        );
+        Alert.alert('Success!', `Token: ${token.substring(0, 25)}...\nNotification in 2s.`);
       } else {
-        Alert.alert(
-          'No Token',
-          'Could not get push token. Make sure:\n\n1. You are on a physical device\n2. Notifications are enabled in Settings'
-        );
+        Alert.alert('No Token', 'Could not get push token. Use a physical device.');
       }
     } catch (error) {
-      console.error('Push notification test error:', error);
-      Alert.alert('Error', `Failed to test push notifications: ${error}`);
+      Alert.alert('Error', `Failed: ${error}`);
     }
   };
 
   const loadPreferences = async () => {
     try {
-      const [notifications, location] = await AsyncStorage.multiGet([
-        NOTIFICATIONS_KEY,
-        LOCATION_KEY,
-      ]);
-
+      const [notifications, location] = await AsyncStorage.multiGet([NOTIFICATIONS_KEY, LOCATION_KEY]);
       if (notifications[1] !== null) setNotificationsEnabled(notifications[1] === 'true');
       if (location[1] !== null) setLocationEnabled(location[1] === 'true');
-    } catch (error) {
-      console.error('Error loading preferences:', error);
-    }
+    } catch {}
   };
 
   const savePreference = async (key: string, value: boolean) => {
-    try {
-      await AsyncStorage.setItem(key, value.toString());
-    } catch (error) {
-      console.error('Error saving preference:', error);
-    }
+    try { await AsyncStorage.setItem(key, value.toString()); } catch {}
   };
 
-  const handleNotificationsToggle = (value: boolean) => {
-    setNotificationsEnabled(value);
-    savePreference(NOTIFICATIONS_KEY, value);
-  };
-
-  const handleLocationToggle = (value: boolean) => {
-    setLocationEnabled(value);
-    savePreference(LOCATION_KEY, value);
-  };
-
-  const handleEditPreferences = () => {
-    Alert.alert(
-      'Edit Preferences',
-      'Would you like to update your dining preferences?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Restart Onboarding',
-          onPress: () => restartOnboarding(),
-        },
-      ]
-    );
-  };
-
-  const handleClearData = () => {
-    Alert.alert(
-      'Clear App Data',
-      'This will clear your favorites, check-ins, and preferences. This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear Data',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await AsyncStorage.clear();
-              Alert.alert('Success', 'All app data has been cleared.');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to clear app data.');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleSupport = () => {
-    Linking.openURL('mailto:support@tastelanc.com?subject=TasteLanc Support');
-  };
-
-  const handlePrivacyPolicy = () => {
-    Linking.openURL('https://tastelanc.com/privacy');
-  };
-
-  const handleTermsOfService = () => {
-    Linking.openURL('https://tastelanc.com/terms');
-  };
-
-  const handleSuggestFeature = () => {
-    navigation.navigate('FeatureRequest');
-  };
+  const explorerTitle = getExplorerTitle(checkinCount);
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -317,9 +255,43 @@ export default function ProfileScreen() {
           <View style={styles.avatarContainer}>
             <Ionicons name="person" size={40} color={colors.text} />
           </View>
-          <Text style={styles.headerTitle}>TasteLanc Explorer</Text>
-          <Text style={styles.headerSubtitle}>Discovering Lancaster's best spots</Text>
+          <Text style={styles.headerTitle}>{explorerTitle}</Text>
+          <Text style={styles.headerSubtitle}>
+            {checkinCount === 0
+              ? 'Start exploring Lancaster — check in to earn points'
+              : `${checkinCount} restaurant${checkinCount !== 1 ? 's' : ''} visited in Lancaster`}
+          </Text>
         </View>
+
+        {/* Stats Row */}
+        <ProfileStatsRow
+          onVisitsPress={() => navigation.navigate('MyRestaurants')}
+          onWishlistPress={() => navigation.navigate('Wishlist')}
+        />
+
+        {/* Quick links row */}
+        <View style={styles.quickLinks}>
+          <TouchableOpacity
+            style={styles.quickLink}
+            onPress={() => navigation.navigate('MyRestaurants')}
+          >
+            <Ionicons name="location" size={18} color={colors.accent} />
+            <Text style={styles.quickLinkText}>My Restaurants</Text>
+            <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
+          </TouchableOpacity>
+          <View style={styles.quickLinkDivider} />
+          <TouchableOpacity
+            style={styles.quickLink}
+            onPress={() => navigation.navigate('Wishlist')}
+          >
+            <Ionicons name="bookmark" size={18} color={colors.accent} />
+            <Text style={styles.quickLinkText}>Bucket List</Text>
+            <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Recent Activity */}
+        <RecentActivityFeed />
 
         {/* Preferences Section */}
         <SectionHeader title="Preferences" />
@@ -330,7 +302,7 @@ export default function ProfileScreen() {
             subtitle="Get notified about deals & specials"
             hasSwitch
             switchValue={notificationsEnabled}
-            onSwitchChange={handleNotificationsToggle}
+            onSwitchChange={(v) => { setNotificationsEnabled(v); savePreference(NOTIFICATIONS_KEY, v); }}
           />
           <SettingItem
             icon="location-outline"
@@ -338,13 +310,16 @@ export default function ProfileScreen() {
             subtitle="Enable nearby restaurant discovery"
             hasSwitch
             switchValue={locationEnabled}
-            onSwitchChange={handleLocationToggle}
+            onSwitchChange={(v) => { setLocationEnabled(v); savePreference(LOCATION_KEY, v); }}
           />
           <SettingItem
             icon="options-outline"
             label="Dining Preferences"
             subtitle="Update your food preferences"
-            onPress={handleEditPreferences}
+            onPress={() => Alert.alert('Edit Preferences', 'Would you like to restart onboarding?', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Restart', onPress: () => restartOnboarding() },
+            ])}
           />
         </View>
 
@@ -355,22 +330,22 @@ export default function ProfileScreen() {
             icon="bulb-outline"
             label="Suggest a Feature"
             subtitle="Share your ideas with us"
-            onPress={handleSuggestFeature}
+            onPress={() => navigation.navigate('FeatureRequest')}
           />
           <SettingItem
             icon="help-circle-outline"
             label="Help & Support"
-            onPress={handleSupport}
+            onPress={() => Linking.openURL('mailto:support@tastelanc.com?subject=TasteLanc Support')}
           />
           <SettingItem
             icon="document-text-outline"
             label="Privacy Policy"
-            onPress={handlePrivacyPolicy}
+            onPress={() => Linking.openURL('https://tastelanc.com/privacy')}
           />
           <SettingItem
             icon="shield-checkmark-outline"
             label="Terms of Service"
-            onPress={handleTermsOfService}
+            onPress={() => Linking.openURL('https://tastelanc.com/terms')}
           />
         </View>
 
@@ -381,21 +356,23 @@ export default function ProfileScreen() {
             icon="trash-outline"
             label="Clear App Data"
             subtitle="Remove all saved data"
-            onPress={handleClearData}
             danger
+            onPress={() => Alert.alert('Clear App Data', 'This will clear your favorites, check-ins, and preferences. This cannot be undone.', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Clear Data', style: 'destructive', onPress: async () => {
+                try { await AsyncStorage.clear(); Alert.alert('Success', 'All app data cleared.'); }
+                catch { Alert.alert('Error', 'Failed to clear app data.'); }
+              }},
+            ])}
           />
         </View>
 
-        {/* DEV ONLY: Developer Tools Section */}
+        {/* DEV ONLY */}
         {__DEV__ && (
           <>
             <SectionHeader title="Developer Tools" />
             <View style={styles.section}>
-              <TouchableOpacity
-                style={styles.settingItem}
-                onPress={handleTestVisit}
-                disabled={isTestingVisit}
-              >
+              <TouchableOpacity style={styles.settingItem} onPress={handleTestVisit} disabled={isTestingVisit}>
                 <View style={styles.settingLeft}>
                   <View style={[styles.iconContainer, styles.iconContainerDev]}>
                     <Ionicons name="location" size={20} color="#10B981" />
@@ -405,41 +382,30 @@ export default function ProfileScreen() {
                     <Text style={styles.settingSubtitle}>Record a test visit to random restaurant</Text>
                   </View>
                 </View>
-                {isTestingVisit ? (
-                  <ActivityIndicator size="small" color={colors.accent} />
-                ) : (
-                  <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-                )}
+                {isTestingVisit ? <ActivityIndicator size="small" color={colors.accent} /> : <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />}
               </TouchableOpacity>
-              <SettingItem
-                icon="list-outline"
-                label="Log Recent Visits"
-                subtitle="Print visits to console"
-                onPress={handleViewVisits}
-              />
-              <SettingItem
-                icon="close-circle-outline"
-                label="Clear Test Visits"
-                subtitle="Remove manually recorded visits"
-                onPress={handleClearTestVisits}
-                danger
-              />
-              <SettingItem
-                icon="notifications-outline"
-                label="Test Push Notification"
-                subtitle="Register token & send local notification"
-                onPress={handleTestPushNotification}
-              />
+              <SettingItem icon="list-outline" label="Log Recent Visits" subtitle="Print visits to console" onPress={handleViewVisits} />
+              <SettingItem icon="close-circle-outline" label="Clear Test Visits" subtitle="Remove manually recorded visits" onPress={handleClearTestVisits} danger />
+              <SettingItem icon="notifications-outline" label="Test Push Notification" subtitle="Register token & send local notification" onPress={handleTestPushNotification} />
+              <TouchableOpacity style={styles.settingItem} onPress={handleSeedDemoData} disabled={isSeedingData}>
+                <View style={styles.settingLeft}>
+                  <View style={[styles.iconContainer, styles.iconContainerDev]}>
+                    <Ionicons name="flask-outline" size={20} color="#10B981" />
+                  </View>
+                  <View style={styles.settingTextContainer}>
+                    <Text style={styles.settingLabel}>Seed Demo Data</Text>
+                    <Text style={styles.settingSubtitle}>Populate visits, votes & wishlist for testing</Text>
+                  </View>
+                </View>
+                {isSeedingData ? <ActivityIndicator size="small" color={colors.accent} /> : <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />}
+              </TouchableOpacity>
             </View>
             <View style={styles.devNote}>
-              <Text style={styles.devNoteText}>
-                User ID: {userId ? `${userId.slice(0, 8)}...` : 'Not authenticated'}
-              </Text>
+              <Text style={styles.devNoteText}>User ID: {userId ? `${userId.slice(0, 8)}...` : 'Not authenticated'}</Text>
             </View>
           </>
         )}
 
-        {/* App Version */}
         <View style={styles.versionContainer}>
           <Text style={styles.versionText}>TasteLanc v1.0.0</Text>
           <Text style={styles.versionSubtext}>Made with love in Lancaster, PA</Text>
@@ -450,126 +416,74 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.primary,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
+  container: { flex: 1, backgroundColor: colors.primary },
+  scrollView: { flex: 1 },
+  scrollContent: { paddingBottom: 40 },
   header: {
     alignItems: 'center',
-    paddingVertical: 32,
+    paddingVertical: 28,
     paddingHorizontal: 20,
     backgroundColor: colors.primaryLight,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   avatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 80, height: 80, borderRadius: 40,
     backgroundColor: colors.accent,
-    justifyContent: 'center',
+    justifyContent: 'center', alignItems: 'center',
+    marginBottom: 14,
+  },
+  headerTitle: { fontSize: typography.title2, fontWeight: '700', color: colors.text, marginBottom: 4 },
+  headerSubtitle: { fontSize: typography.footnote, color: colors.textMuted, textAlign: 'center' },
+  quickLinks: {
+    flexDirection: 'row',
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    backgroundColor: colors.cardBg,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+  },
+  quickLink: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    paddingVertical: spacing.sm + 4,
+    paddingHorizontal: spacing.sm + 4,
+    gap: spacing.xs + 2,
   },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: colors.textMuted,
-  },
-  sectionHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 8,
-  },
+  quickLinkText: { flex: 1, fontSize: typography.footnote, fontWeight: '600', color: colors.text },
+  quickLinkDivider: { width: 1, backgroundColor: colors.border },
+  sectionHeader: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 8 },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontSize: 13, fontWeight: '600', color: colors.textMuted,
+    textTransform: 'uppercase', letterSpacing: 0.5,
   },
   section: {
     backgroundColor: colors.cardBg,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: colors.border,
+    borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.border,
   },
   settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingVertical: 14, paddingHorizontal: 20,
+    borderBottomWidth: 1, borderBottomColor: colors.border,
   },
-  settingLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
+  settingLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.sm,
+    width: 36, height: 36, borderRadius: radius.sm,
     backgroundColor: colors.cardBgElevated,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
+    justifyContent: 'center', alignItems: 'center', marginRight: 14,
   },
-  iconContainerDanger: {
-    backgroundColor: `${colors.error}20`,
-  },
-  settingTextContainer: {
-    flex: 1,
-  },
-  settingLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.text,
-  },
-  settingLabelDanger: {
-    color: colors.error,
-  },
-  settingSubtitle: {
-    fontSize: 13,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  versionContainer: {
-    alignItems: 'center',
-    paddingVertical: 32,
-  },
-  versionText: {
-    fontSize: 14,
-    color: colors.textMuted,
-  },
-  versionSubtext: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
-  iconContainerDev: {
-    backgroundColor: '#10B98120',
-  },
-  devNote: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-  },
-  devNoteText: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    fontFamily: 'monospace',
-  },
+  iconContainerDanger: { backgroundColor: `${colors.error}20` },
+  iconContainerDev: { backgroundColor: '#10B98120' },
+  settingTextContainer: { flex: 1 },
+  settingLabel: { fontSize: 16, fontWeight: '500', color: colors.text },
+  settingLabelDanger: { color: colors.error },
+  settingSubtitle: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
+  versionContainer: { alignItems: 'center', paddingVertical: 32 },
+  versionText: { fontSize: 14, color: colors.textMuted },
+  versionSubtext: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
+  devNote: { paddingHorizontal: 20, paddingVertical: 8 },
+  devNoteText: { fontSize: 11, color: colors.textSecondary, fontFamily: 'monospace' },
 });

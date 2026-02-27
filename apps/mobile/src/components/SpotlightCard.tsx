@@ -42,7 +42,7 @@ export default function SpotlightCard({
         source={
           imageUrl
             ? { uri: imageUrl }
-            : require('../../assets/images/tastelanc_logo.png')
+            : require('../../assets/tastelanc_1a1a1a.png')
         }
         style={styles.backgroundImage}
         imageStyle={styles.imageStyle}

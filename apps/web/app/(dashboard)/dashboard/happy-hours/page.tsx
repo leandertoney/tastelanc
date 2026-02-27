@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Clock, Beer, Loader2, Pencil, X } from 'lucide-react';
+import { Plus, Trash2, Clock, Beer, Loader2, Pencil, X, Copy } from 'lucide-react';
 import { Button, Card, Badge } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import { HappyHourWizard, HappyHourFormData } from '@/components/dashboard/forms';
@@ -38,6 +38,8 @@ export default function HappyHoursPage() {
   const [error, setError] = useState<string | null>(null);
   const [editingHappyHour, setEditingHappyHour] = useState<HappyHour | null>(null);
   const [saving, setSaving] = useState(false);
+  const [duplicateData, setDuplicateData] = useState<HappyHourFormData | null>(null);
+  const [showMultiSlotTip, setShowMultiSlotTip] = useState(true);
 
   // Fetch happy hours on mount
   useEffect(() => {
@@ -171,6 +173,18 @@ export default function HappyHoursPage() {
     }
   };
 
+  const duplicateHappyHour = (hh: HappyHour) => {
+    setDuplicateData({
+      name: `${hh.name} (Copy)`,
+      description: hh.description || '',
+      days_of_week: [...hh.days_of_week],
+      start_time: hh.start_time,
+      end_time: hh.end_time,
+      image_url: hh.image_url || undefined,
+    });
+    setShowWizard(true);
+  };
+
   const formatTime = (time: string) => {
     if (time === '00:00') return 'Midnight';
     const [hours, minutes] = time.split(':');
@@ -219,8 +233,12 @@ export default function HappyHoursPage() {
       {showWizard && restaurant && (
         <HappyHourWizard
           restaurantId={restaurant.id}
-          onClose={() => setShowWizard(false)}
+          onClose={() => {
+            setShowWizard(false);
+            setDuplicateData(null);
+          }}
           onSubmit={handleCreateHappyHour}
+          initialData={duplicateData || undefined}
         />
       )}
 
@@ -315,6 +333,23 @@ export default function HappyHoursPage() {
         </Card>
       )}
 
+      {/* Multi-time-slot tip */}
+      {showMultiSlotTip && happyHours.length >= 1 && happyHours.length <= 3 && !showWizard && !editingHappyHour && (
+        <div className="flex items-start gap-3 p-4 bg-lancaster-gold/5 border border-lancaster-gold/20 rounded-lg">
+          <Clock className="w-5 h-5 text-lancaster-gold flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm text-gray-300">
+              <span className="text-white font-medium">Multiple time slots?</span>{' '}
+              Create a separate entry for each time window (e.g., 4-6pm weekdays and 9-11pm Thu-Sat).
+              Tap the <Copy className="w-3 h-3 inline" /> icon to quickly duplicate an existing entry.
+            </p>
+          </div>
+          <button onClick={() => setShowMultiSlotTip(false)} className="text-gray-500 hover:text-white flex-shrink-0">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* List */}
       <div className="space-y-4">
         {happyHours.map((hh) => (
@@ -339,12 +374,21 @@ export default function HappyHoursPage() {
                 <button
                   onClick={() => setEditingHappyHour(hh)}
                   className="text-gray-400 hover:text-white"
+                  title="Edit"
                 >
                   <Pencil className="w-4 h-4" />
                 </button>
                 <button
+                  onClick={() => duplicateHappyHour(hh)}
+                  className="text-gray-400 hover:text-white"
+                  title="Duplicate with different times"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+                <button
                   onClick={() => deleteHappyHour(hh.id)}
                   className="text-gray-400 hover:text-red-400"
+                  title="Delete"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
