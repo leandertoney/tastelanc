@@ -64,8 +64,11 @@ export async function POST(
     );
 
     // Use Google counts if validated, otherwise fall back to AI estimates
-    const restaurantCount = googleCounts.validated ? googleCounts.restaurantCount : research.restaurant_count;
-    const barCount = googleCounts.validated ? googleCounts.barCount : research.bar_count;
+    // Only trust Google Places if it found actual results; 0 likely means API issue
+    const restaurantCount = (googleCounts.validated && googleCounts.restaurantCount > 0)
+      ? googleCounts.restaurantCount : research.restaurant_count;
+    const barCount = (googleCounts.validated && googleCounts.barCount > 0)
+      ? googleCounts.barCount : research.bar_count;
 
     // Update city with research results
     const { data: city, error: updateError } = await serviceClient

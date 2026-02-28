@@ -40,8 +40,8 @@ const ADMIN_EMAIL = 'leandertoney@gmail.com';
 
 // Batch sizes — keep small to stay within function timeout
 const MAX_SUGGEST = 10; // cities to suggest per run
-const MAX_RESEARCH = 2; // cities to research per run
-const MAX_BRAND_GEN = 2; // cities to generate brands for per run
+const MAX_RESEARCH = 5; // cities to research per run
+const MAX_BRAND_GEN = 3; // cities to generate brands for per run
 const MAX_JOB_GEN = 2; // cities to generate job listings for per run
 const MIN_PIPELINE_SIZE = 20; // minimum active cities in pipeline
 
@@ -169,6 +169,11 @@ async function stepSuggestCities(
       // Focus on PA and neighboring states first, then expand
       min_population: 30000,
       max_population: 500000,
+      // Pass existing pipeline cities so the AI itself avoids them
+      excludeCities: (existingCities || []).map(c => ({
+        city_name: c.city_name,
+        state: c.state,
+      })),
     });
 
     // Build exclusion sets:
@@ -226,7 +231,7 @@ async function stepSuggestCities(
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '');
 
-      const { error: insertError } = await supabase
+      const { data: inserted, error: insertError } = await supabase
         .from('expansion_cities')
         .insert({
           city_name: suggestion.city_name,
@@ -242,11 +247,13 @@ async function stepSuggestCities(
             cluster_towns: suggestion.cluster_towns || [],
             cluster_population: suggestion.cluster_population || null,
           },
-        });
+        })
+        .select('id')
+        .single();
 
-      if (insertError) {
+      if (insertError || !inserted) {
         // Likely duplicate slug — skip
-        console.warn(`[expansion-agent] Skipping ${suggestion.city_name}: ${insertError.message}`);
+        console.warn(`[expansion-agent] Skipping ${suggestion.city_name}: ${insertError?.message}`);
         continue;
       }
 
@@ -256,7 +263,7 @@ async function stepSuggestCities(
 
       // Log activity
       await supabase.from('expansion_activity_log').insert({
-        city_id: null,
+        city_id: inserted.id,
         action: 'city_added',
         description: `Auto-suggested: ${suggestion.suggested_region_name || suggestion.city_name}, ${suggestion.state}${clusterLabel} (est. score: ${suggestion.estimated_score})`,
         metadata: {
@@ -329,8 +336,11 @@ async function stepResearchCities(
           research.center_longitude
         );
 
-        const restaurantCount = googleCounts.validated ? googleCounts.restaurantCount : research.restaurant_count;
-        const barCount = googleCounts.validated ? googleCounts.barCount : research.bar_count;
+        // Only trust Google Places if it found actual results; 0 likely means API issue
+        const restaurantCount = (googleCounts.validated && googleCounts.restaurantCount > 0)
+          ? googleCounts.restaurantCount : research.restaurant_count;
+        const barCount = (googleCounts.validated && googleCounts.barCount > 0)
+          ? googleCounts.barCount : research.bar_count;
 
         // Update city with research results
         await supabase
@@ -454,6 +464,7 @@ async function stepGenerateBrands(
           seo_title: proposal.seo_title || null,
           seo_description: proposal.seo_description || null,
           seo_keywords: proposal.seo_keywords || [],
+          avatar_image_url: proposal.avatar_image_url || null,
           variant_number: index + 1,
           is_selected: false,
         }));

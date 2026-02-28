@@ -124,6 +124,105 @@ export async function validateWithGooglePlaces(
 }
 
 // ─────────────────────────────────────────────────────────
+// Avatar image generation (DALL-E 3)
+// ─────────────────────────────────────────────────────────
+
+/**
+ * Generate an AI mascot avatar for a brand proposal using DALL-E 3.
+ *
+ * Art style matches Rosie (TasteLanc) and Mollie (TasteCumberland):
+ * - Cute chibi-style cartoon character
+ * - Bold, clean line art with thick outlines
+ * - Friendly winking expression, rosy cheeks
+ * - A local cultural element worked into the character design
+ * - Brand accent color as the primary palette
+ *
+ * Uploads the result to Supabase Storage and returns the public URL.
+ */
+export async function generateAvatarImage(
+  aiName: string,
+  regionName: string,
+  accentColor: string,
+  localCulture: string,
+  slug: string,
+  variant: number
+): Promise<string | null> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.warn('[avatar-gen] Missing Supabase credentials, skipping avatar generation');
+    return null;
+  }
+
+  try {
+    const prompt = `A cute chibi-style cartoon mascot character named ${aiName} for a dining discovery app called "Taste${regionName.replace(/\s+/g, '')}".
+
+Art style requirements (MUST match exactly):
+- Cute chibi proportions, head/bust only, no full body
+- Bold, clean line art with thick dark outlines
+- Friendly winking expression (one eye closed, one open), warm smile, rosy pink cheeks
+- Simple flat color fills, minimal shading
+- The character should incorporate a LOCAL CULTURAL ELEMENT from ${regionName}: ${localCulture}. This element should be worked into the character as a hat, headpiece, or surrounding motif (similar to how a rose forms the hair/hat of another character in this series).
+- Primary color palette should feature ${accentColor} as the dominant color
+- Dark background (#121212)
+- Square composition, centered
+- Style reference: cute Japanese chibi mascot meets bold American logo design, similar to a friendly app mascot icon`;
+
+    const response = await openai.images.generate({
+      model: 'dall-e-3',
+      prompt,
+      n: 1,
+      size: '1024x1024',
+      quality: 'standard',
+    });
+
+    const imageUrl = response.data?.[0]?.url;
+    if (!imageUrl) {
+      console.error('[avatar-gen] No image URL returned from DALL-E');
+      return null;
+    }
+
+    // Download the generated image
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      console.error('[avatar-gen] Failed to download generated image');
+      return null;
+    }
+
+    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+    const fileName = `expansion-avatars/${slug}-v${variant}.png`;
+
+    // Upload to Supabase Storage
+    const { createClient } = await import('@supabase/supabase-js');
+    const storageClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { error: uploadError } = await storageClient.storage
+      .from('images')
+      .upload(fileName, imageBuffer, {
+        contentType: 'image/png',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('[avatar-gen] Upload failed:', uploadError.message);
+      return null;
+    }
+
+    // Get public URL
+    const { data: publicUrl } = storageClient.storage
+      .from('images')
+      .getPublicUrl(fileName);
+
+    console.log(`[avatar-gen] Generated avatar for ${aiName}: ${publicUrl.publicUrl}`);
+    return publicUrl.publicUrl;
+  } catch (error) {
+    console.error(`[avatar-gen] Failed to generate avatar for ${aiName}:`, error);
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────
 // City research
 // ─────────────────────────────────────────────────────────
 
@@ -295,7 +394,7 @@ IMPORTANT: The app name should use the REGION name (e.g., "TasteCumberland" not 
 For each proposal, generate a JSON object with:
 - "app_name": string — follows "Taste{Region}" pattern (e.g., "TasteYork", "TasteLehigh", "TasteBerks")
 - "tagline": string — follows "Eat. Drink. Experience {Region}." pattern
-- "ai_assistant_name": string — a unique female name that fits the local culture (NOT Rosie or Mollie)
+- "ai_assistant_name": string — CRITICAL: the name MUST end in "-ie" to match our brand convention (Rosie, Mollie). Good examples: Sadie, Ellie, Sophie, Josie, Callie, Lexie, Addie, Gracie, Hattie, Tillie, Birdie, Frankie, Winnie, Bessie, Nellie, Dixie, Bonnie. The name should feel warm, approachable, and fit the local culture. MUST end in -ie. NOT Rosie or Mollie
 - "premium_name": string — follows "{AppName}+" pattern
 - "colors": object matching this exact shape:
   {
@@ -359,15 +458,51 @@ Return ONLY a JSON object with a "proposals" key containing an array of ${count}
 
   try {
     const parsed = JSON.parse(content);
-    const proposals = parsed.proposals || parsed;
-    if (Array.isArray(proposals)) {
-      return proposals as BrandProposal[];
+    let proposals: BrandProposal[];
+    if (Array.isArray(parsed.proposals || parsed)) {
+      proposals = (parsed.proposals || parsed) as BrandProposal[];
+    } else {
+      const arrayMatch = content.match(/\[[\s\S]*\]/);
+      if (arrayMatch) {
+        proposals = JSON.parse(arrayMatch[0]) as BrandProposal[];
+      } else {
+        throw new Error('Response is not an array');
+      }
     }
-    const arrayMatch = content.match(/\[[\s\S]*\]/);
-    if (arrayMatch) {
-      return JSON.parse(arrayMatch[0]) as BrandProposal[];
+
+    // Generate avatar images for each brand proposal using DALL-E 3
+    const localCulture = [
+      city.research_data?.local_food_traditions,
+      city.research_data?.tourism_factors,
+      city.dining_scene_description,
+    ].filter(Boolean).join('. ').slice(0, 300) || `the ${regionName} area`;
+
+    const avatarPromises = proposals.map((proposal, index) =>
+      generateAvatarImage(
+        proposal.ai_assistant_name,
+        regionName,
+        proposal.colors?.accent || '#4A90D9',
+        localCulture,
+        slug,
+        index + 1
+      )
+    );
+
+    const avatarUrls = await Promise.allSettled(avatarPromises);
+
+    // Attach avatar URLs to proposals and market_config_json
+    for (let i = 0; i < proposals.length; i++) {
+      const result = avatarUrls[i];
+      const avatarUrl = result?.status === 'fulfilled' ? result.value : null;
+      if (avatarUrl) {
+        proposals[i].avatar_image_url = avatarUrl;
+        if (proposals[i].market_config_json) {
+          (proposals[i].market_config_json as Record<string, unknown>).aiAvatarImage = avatarUrl;
+        }
+      }
     }
-    throw new Error('Response is not an array');
+
+    return proposals;
   } catch (error) {
     console.error('Failed to parse brand proposals response:', content);
     throw new Error(
@@ -486,6 +621,7 @@ export async function suggestCities(criteria: {
   min_population?: number;
   max_population?: number;
   count?: number;
+  excludeCities?: { city_name: string; state: string }[];
 }): Promise<CitySuggestion[]> {
   const count = criteria.count ?? 10;
 
@@ -535,9 +671,9 @@ When evaluating areas, consider:
 4. The cluster should make geographic sense — towns should be within ~30 minutes of each other
 5. Use county names, valley names, or well-known regional identifiers as the region name
 
-EXCLUDE these areas (already in our pipeline):
-- Lancaster, PA
-- Cumberland County / Carlisle / Mechanicsburg, PA
+EXCLUDE these areas (already in our pipeline or live markets — do NOT suggest these):
+- Lancaster, PA (LIVE market — TasteLanc)
+- Cumberland County / Carlisle / Mechanicsburg, PA (LIVE market — TasteCumberland)${criteria.excludeCities?.length ? '\n' + criteria.excludeCities.map(c => `- ${c.city_name}, ${c.state}`).join('\n') : ''}
 
 For each suggested region/city, return a JSON object with:
 {
