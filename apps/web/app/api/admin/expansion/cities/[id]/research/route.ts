@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-access';
-import { researchCity } from '@/lib/ai/expansion-agent';
+import { researchCity, calculateWeightedScore, validateWithGooglePlaces } from '@/lib/ai/expansion-agent';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,13 +26,17 @@ export async function POST(
     // Fetch city data
     const { data: cityRow, error: fetchError } = await serviceClient
       .from('expansion_cities')
-      .select('id, city_name, county, state')
+      .select('id, city_name, county, state, radius_miles, research_data')
       .eq('id', id)
       .single();
 
     if (fetchError || !cityRow) {
       return NextResponse.json({ error: 'City not found' }, { status: 404 });
     }
+
+    // Extract cluster info if available
+    const existingResearch = cityRow.research_data as Record<string, unknown> | null;
+    const clusterTowns = existingResearch?.cluster_towns as string[] | undefined;
 
     // Log research started
     await serviceClient
@@ -41,11 +45,27 @@ export async function POST(
         city_id: id,
         user_id: admin.userId,
         action: 'research_started',
-        description: `AI research started for ${cityRow.city_name}, ${cityRow.state}`,
+        description: `AI research started for ${cityRow.city_name}, ${cityRow.state}${clusterTowns?.length ? ` (cluster: ${clusterTowns.join(', ')})` : ''}`,
       });
 
-    // Call AI research
-    const research = await researchCity(cityRow.city_name, cityRow.county, cityRow.state);
+    // Step 1: AI research (returns sub-scores instead of a single score)
+    const research = await researchCity(cityRow.city_name, cityRow.county, cityRow.state, clusterTowns);
+
+    // Step 2: Calculate weighted score from sub-scores
+    const weightedScore = calculateWeightedScore(research.sub_scores);
+
+    // Step 3: Validate restaurant/bar counts with Google Places
+    const googleCounts = await validateWithGooglePlaces(
+      cityRow.city_name,
+      cityRow.state,
+      research.center_latitude,
+      research.center_longitude,
+      cityRow.radius_miles || 25
+    );
+
+    // Use Google counts if validated, otherwise fall back to AI estimates
+    const restaurantCount = googleCounts.validated ? googleCounts.restaurantCount : research.restaurant_count;
+    const barCount = googleCounts.validated ? googleCounts.barCount : research.bar_count;
 
     // Update city with research results
     const { data: city, error: updateError } = await serviceClient
@@ -54,14 +74,20 @@ export async function POST(
         population: research.population,
         median_income: research.median_income,
         median_age: research.median_age,
-        restaurant_count: research.restaurant_count,
-        bar_count: research.bar_count,
+        restaurant_count: restaurantCount,
+        bar_count: barCount,
         dining_scene_description: research.dining_scene_description,
         competition_analysis: research.competition_analysis,
-        market_potential_score: research.market_potential_score,
+        market_potential_score: weightedScore,
         center_latitude: research.center_latitude,
         center_longitude: research.center_longitude,
         research_data: {
+          // Preserve cluster info from initial suggestion
+          ...(clusterTowns?.length ? {
+            suggested_region_name: existingResearch?.suggested_region_name,
+            cluster_towns: clusterTowns,
+            cluster_population: existingResearch?.cluster_population,
+          } : {}),
           key_neighborhoods: research.key_neighborhoods,
           notable_restaurants: research.notable_restaurants,
           local_food_traditions: research.local_food_traditions,
@@ -69,6 +95,14 @@ export async function POST(
           tourism_factors: research.tourism_factors,
           seasonal_considerations: research.seasonal_considerations,
           expansion_reasoning: research.expansion_reasoning,
+          sub_scores: research.sub_scores,
+          sub_score_reasoning: research.sub_score_reasoning,
+          ai_estimated_restaurant_count: research.restaurant_count,
+          ai_estimated_bar_count: research.bar_count,
+          google_places_restaurant_count: googleCounts.validated ? googleCounts.restaurantCount : null,
+          google_places_bar_count: googleCounts.validated ? googleCounts.barCount : null,
+          google_places_validated: googleCounts.validated,
+          google_places_validated_at: googleCounts.validated ? new Date().toISOString() : null,
         },
         status: 'researched',
       })
@@ -88,10 +122,12 @@ export async function POST(
         city_id: id,
         user_id: admin.userId,
         action: 'research_completed',
-        description: `AI research completed for ${cityRow.city_name} — score: ${research.market_potential_score}/100`,
+        description: `AI research completed for ${cityRow.city_name} — score: ${weightedScore}/100`,
         metadata: {
           population: research.population,
-          market_potential_score: research.market_potential_score,
+          market_potential_score: weightedScore,
+          sub_scores: research.sub_scores,
+          google_places_validated: googleCounts.validated,
         },
       });
 

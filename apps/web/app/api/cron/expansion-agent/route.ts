@@ -25,6 +25,8 @@ import { verifyAdminAccess } from '@/lib/auth/admin-access';
 import { Resend } from 'resend';
 import {
   researchCity,
+  calculateWeightedScore,
+  validateWithGooglePlaces,
   generateBrandProposals,
   generateJobListing,
   suggestCities,
@@ -185,17 +187,29 @@ async function stepSuggestCities(
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '');
 
+      // Use the region name for slug if available (e.g., "lehigh-valley" instead of "allentown")
+      const regionName = suggestion.suggested_region_name || suggestion.city_name;
+      const regionSlug = regionName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+
       const { error: insertError } = await supabase
         .from('expansion_cities')
         .insert({
           city_name: suggestion.city_name,
           county: suggestion.county,
           state: suggestion.state,
-          slug,
-          population: suggestion.population,
+          slug: regionSlug,
+          population: suggestion.cluster_population || suggestion.population,
           market_potential_score: suggestion.estimated_score,
           status: 'researching',
           priority: Math.round(suggestion.estimated_score / 10),
+          research_data: {
+            suggested_region_name: suggestion.suggested_region_name || null,
+            cluster_towns: suggestion.cluster_towns || [],
+            cluster_population: suggestion.cluster_population || null,
+          },
         });
 
       if (insertError) {
@@ -204,12 +218,22 @@ async function stepSuggestCities(
         continue;
       }
 
+      const clusterLabel = suggestion.cluster_towns?.length
+        ? ` (cluster: ${suggestion.cluster_towns.join(', ')})`
+        : '';
+
       // Log activity
       await supabase.from('expansion_activity_log').insert({
         city_id: null,
         action: 'city_added',
-        description: `Auto-suggested: ${suggestion.city_name}, ${suggestion.state} (est. score: ${suggestion.estimated_score})`,
-        metadata: { source: 'autonomous_agent', reasoning: suggestion.reasoning },
+        description: `Auto-suggested: ${suggestion.suggested_region_name || suggestion.city_name}, ${suggestion.state}${clusterLabel} (est. score: ${suggestion.estimated_score})`,
+        metadata: {
+          source: 'autonomous_agent',
+          reasoning: suggestion.reasoning,
+          suggested_region_name: suggestion.suggested_region_name,
+          cluster_towns: suggestion.cluster_towns,
+          cluster_population: suggestion.cluster_population,
+        },
       });
 
       result.citiesSuggested++;
@@ -234,7 +258,7 @@ async function stepResearchCities(
   try {
     const { data: cities } = await supabase
       .from('expansion_cities')
-      .select('id, city_name, county, state')
+      .select('id, city_name, county, state, research_data')
       .eq('status', 'researching')
       .order('priority', { ascending: false })
       .limit(MAX_RESEARCH);
@@ -245,15 +269,36 @@ async function stepResearchCities(
 
     for (const city of cities) {
       try {
+        // Extract cluster towns from initial suggestion data (if any)
+        const clusterTowns = (city.research_data as Record<string, unknown>)?.cluster_towns as string[] | undefined;
+        const regionLabel = clusterTowns?.length
+          ? `${city.city_name} region (${clusterTowns.join(', ')})`
+          : `${city.city_name}`;
+
         // Log start
         await supabase.from('expansion_activity_log').insert({
           city_id: city.id,
           action: 'research_started',
-          description: `Autonomous research started for ${city.city_name}, ${city.state}`,
+          description: `Autonomous research started for ${regionLabel}, ${city.state}`,
           metadata: { source: 'autonomous_agent' },
         });
 
-        const research = await researchCity(city.city_name, city.county, city.state);
+        // Step 1: AI research with sub-scores (pass cluster towns for regional research)
+        const research = await researchCity(city.city_name, city.county, city.state, clusterTowns);
+
+        // Step 2: Calculate weighted score from sub-scores
+        const weightedScore = calculateWeightedScore(research.sub_scores);
+
+        // Step 3: Validate restaurant/bar counts with Google Places
+        const googleCounts = await validateWithGooglePlaces(
+          city.city_name,
+          city.state,
+          research.center_latitude,
+          research.center_longitude
+        );
+
+        const restaurantCount = googleCounts.validated ? googleCounts.restaurantCount : research.restaurant_count;
+        const barCount = googleCounts.validated ? googleCounts.barCount : research.bar_count;
 
         // Update city with research results
         await supabase
@@ -262,14 +307,20 @@ async function stepResearchCities(
             population: research.population,
             median_income: research.median_income,
             median_age: research.median_age,
-            restaurant_count: research.restaurant_count,
-            bar_count: research.bar_count,
+            restaurant_count: restaurantCount,
+            bar_count: barCount,
             dining_scene_description: research.dining_scene_description,
             competition_analysis: research.competition_analysis,
-            market_potential_score: research.market_potential_score,
+            market_potential_score: weightedScore,
             center_latitude: research.center_latitude,
             center_longitude: research.center_longitude,
             research_data: {
+              // Preserve cluster info from initial suggestion
+              ...(clusterTowns?.length ? {
+                suggested_region_name: (city.research_data as Record<string, unknown>)?.suggested_region_name,
+                cluster_towns: clusterTowns,
+                cluster_population: (city.research_data as Record<string, unknown>)?.cluster_population,
+              } : {}),
               key_neighborhoods: research.key_neighborhoods,
               notable_restaurants: research.notable_restaurants,
               local_food_traditions: research.local_food_traditions,
@@ -277,9 +328,17 @@ async function stepResearchCities(
               tourism_factors: research.tourism_factors,
               seasonal_considerations: research.seasonal_considerations,
               expansion_reasoning: research.expansion_reasoning,
+              sub_scores: research.sub_scores,
+              sub_score_reasoning: research.sub_score_reasoning,
+              ai_estimated_restaurant_count: research.restaurant_count,
+              ai_estimated_bar_count: research.bar_count,
+              google_places_restaurant_count: googleCounts.validated ? googleCounts.restaurantCount : null,
+              google_places_bar_count: googleCounts.validated ? googleCounts.barCount : null,
+              google_places_validated: googleCounts.validated,
+              google_places_validated_at: googleCounts.validated ? new Date().toISOString() : null,
             },
             status: 'researched',
-            priority: Math.round(research.market_potential_score / 10),
+            priority: Math.round(weightedScore / 10),
           })
           .eq('id', city.id);
 
@@ -287,16 +346,18 @@ async function stepResearchCities(
         await supabase.from('expansion_activity_log').insert({
           city_id: city.id,
           action: 'research_completed',
-          description: `Research complete for ${city.city_name} — score: ${research.market_potential_score}/100`,
+          description: `Research complete for ${city.city_name} — score: ${weightedScore}/100`,
           metadata: {
             source: 'autonomous_agent',
             population: research.population,
-            market_potential_score: research.market_potential_score,
+            market_potential_score: weightedScore,
+            sub_scores: research.sub_scores,
+            google_places_validated: googleCounts.validated,
           },
         });
 
         result.citiesResearched.push(city.city_name);
-        console.log(`[expansion-agent] Researched ${city.city_name}: ${research.market_potential_score}/100`);
+        console.log(`[expansion-agent] Researched ${city.city_name}: ${weightedScore}/100`);
       } catch (error) {
         const msg = `Research failed for ${city.city_name}: ${error}`;
         console.error(`[expansion-agent] ${msg}`);
