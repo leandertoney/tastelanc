@@ -20,6 +20,7 @@ export interface RestaurantAccessResult {
   isAdmin: boolean;
   isOwner: boolean;
   isMember: boolean;
+  isSalesRep: boolean;
   memberRole?: 'manager';
   restaurant: Restaurant | null;
   userId: string | null;
@@ -31,6 +32,8 @@ export interface RestaurantAccessResult {
  * Access is granted if:
  * 1. User is admin (super_admin or market_admin for this market)
  * 2. User is the owner of the restaurant (restaurant.owner_id === user.id)
+ * 3. User is an active team member (Elite tier only)
+ * 4. User is a sales rep (trusted internal user)
  *
  * @param supabase - Supabase client instance
  * @param restaurantId - The restaurant ID to check access for
@@ -49,6 +52,7 @@ export async function verifyRestaurantAccess(
       isAdmin: false,
       isOwner: false,
       isMember: false,
+      isSalesRep: false,
       restaurant: null,
       userId: null,
       error: 'Unauthorized - not logged in',
@@ -56,6 +60,7 @@ export async function verifyRestaurantAccess(
   }
 
   const isAdmin = await checkIsUserAdmin(supabase);
+  const isSalesRep = user.user_metadata?.role === 'sales_rep';
 
   // Resolve market for cross-market isolation (skip for admins — they manage all markets)
   let restaurantQuery = supabase
@@ -76,6 +81,7 @@ export async function verifyRestaurantAccess(
       isAdmin,
       isOwner: false,
       isMember: false,
+      isSalesRep,
       restaurant: null,
       userId: user.id,
       error: 'Restaurant not found',
@@ -84,11 +90,11 @@ export async function verifyRestaurantAccess(
 
   const isOwner = restaurant.owner_id === user.id;
 
-  // Check team membership if not owner and not admin
+  // Check team membership if not owner, not admin, and not sales rep
   let isMember = false;
   let memberRole: 'manager' | undefined;
 
-  if (!isOwner && !isAdmin) {
+  if (!isOwner && !isAdmin && !isSalesRep) {
     const { data: membership } = await supabase
       .from('restaurant_members')
       .select('role')
@@ -107,7 +113,7 @@ export async function verifyRestaurantAccess(
     }
   }
 
-  const canAccess = isAdmin || isOwner || isMember;
+  const canAccess = isAdmin || isOwner || isMember || isSalesRep;
 
   if (!canAccess) {
     return {
@@ -115,9 +121,10 @@ export async function verifyRestaurantAccess(
       isAdmin,
       isOwner,
       isMember: false,
+      isSalesRep,
       restaurant: null,
       userId: user.id,
-      error: 'Access denied - not owner, admin, or team member',
+      error: 'Access denied - not owner, admin, team member, or sales rep',
     };
   }
 
@@ -129,6 +136,7 @@ export async function verifyRestaurantAccess(
     isAdmin,
     isOwner,
     isMember,
+    isSalesRep,
     memberRole,
     restaurant: restaurantData as Restaurant,
     userId: user.id,
@@ -138,14 +146,17 @@ export async function verifyRestaurantAccess(
 /**
  * Gets the restaurant owned by the current user.
  * For admin mode, fetches a specific restaurant by ID.
+ * For sales mode, fetches a specific restaurant scoped to market.
  *
  * @param supabase - Supabase client instance
  * @param adminRestaurantId - Optional restaurant ID for admin mode
+ * @param salesRestaurantId - Optional restaurant ID for sales mode
  * @returns Object containing restaurant data and user info
  */
 export async function getOwnedRestaurant(
   supabase: SupabaseClient,
-  adminRestaurantId?: string | null
+  adminRestaurantId?: string | null,
+  salesRestaurantId?: string | null
 ): Promise<RestaurantAccessResult> {
   // Get current user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -156,6 +167,7 @@ export async function getOwnedRestaurant(
       isAdmin: false,
       isOwner: false,
       isMember: false,
+      isSalesRep: false,
       restaurant: null,
       userId: null,
       error: 'Unauthorized - not logged in',
@@ -163,6 +175,7 @@ export async function getOwnedRestaurant(
   }
 
   const isAdmin = await checkIsUserAdmin(supabase);
+  const isSalesRep = user.user_metadata?.role === 'sales_rep';
 
   // If admin mode with specific restaurant ID (admins can access any market)
   if (adminRestaurantId && isAdmin) {
@@ -178,6 +191,7 @@ export async function getOwnedRestaurant(
         isAdmin: true,
         isOwner: false,
         isMember: false,
+        isSalesRep: false,
         restaurant: null,
         userId: user.id,
         error: 'Restaurant not found',
@@ -189,6 +203,41 @@ export async function getOwnedRestaurant(
       isAdmin: true,
       isOwner: false,
       isMember: false,
+      isSalesRep: false,
+      restaurant: restaurant as Restaurant,
+      userId: user.id,
+    };
+  }
+
+  // If sales mode with specific restaurant ID (sales reps scoped to market)
+  if (salesRestaurantId && isSalesRep) {
+    const marketId = await resolveMarketId(supabase);
+    const { data: restaurant, error: restaurantError } = await supabase
+      .from('restaurants')
+      .select('*')
+      .eq('id', salesRestaurantId)
+      .eq('market_id', marketId)
+      .single();
+
+    if (restaurantError || !restaurant) {
+      return {
+        canAccess: false,
+        isAdmin: false,
+        isOwner: false,
+        isMember: false,
+        isSalesRep: true,
+        restaurant: null,
+        userId: user.id,
+        error: 'Restaurant not found',
+      };
+    }
+
+    return {
+      canAccess: true,
+      isAdmin: false,
+      isOwner: false,
+      isMember: false,
+      isSalesRep: true,
       restaurant: restaurant as Restaurant,
       userId: user.id,
     };
@@ -209,6 +258,7 @@ export async function getOwnedRestaurant(
       isAdmin,
       isOwner: false,
       isMember: false,
+      isSalesRep,
       restaurant: null,
       userId: user.id,
       error: 'No restaurant found for this owner',
@@ -220,6 +270,7 @@ export async function getOwnedRestaurant(
     isAdmin,
     isOwner: true,
     isMember: false,
+    isSalesRep,
     restaurant: restaurant as Restaurant,
     userId: user.id,
   };

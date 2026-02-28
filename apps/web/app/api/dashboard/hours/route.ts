@@ -104,7 +104,7 @@ export async function PUT(request: Request) {
     }
 
     // Use service role client for admin operations to bypass RLS
-    const dbClient = accessResult.isAdmin ? createServiceRoleClient() : supabase;
+    const dbClient = (accessResult.isAdmin || accessResult.isSalesRep) ? createServiceRoleClient() : supabase;
 
     // Delete existing hours for this restaurant
     const { error: deleteError } = await dbClient

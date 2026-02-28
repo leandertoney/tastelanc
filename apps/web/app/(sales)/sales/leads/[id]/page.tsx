@@ -25,10 +25,13 @@ import {
   Tag,
   Plus,
   Trash2,
+  Settings,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Card, Badge } from '@/components/ui';
 import { toast } from 'sonner';
+import EmailComposer from '@/components/sales/EmailComposer';
+import { AlertTriangle, Lock, Unlock } from 'lucide-react';
 
 interface Lead {
   id: string;
@@ -59,6 +62,16 @@ interface Lead {
     tier_id: string | null;
     tiers: { name: string } | null;
   } | null;
+}
+
+interface Ownership {
+  isOwner: boolean;
+  isLocked: boolean;
+  isNudge: boolean;
+  isStale: boolean;
+  daysSinceUpdate: number;
+  currentUserId: string | null;
+  isAdmin: boolean;
 }
 
 interface Activity {
@@ -127,6 +140,12 @@ export default function LeadDetailPage({
   // Tags
   const [tagInput, setTagInput] = useState('');
 
+  // Email composer
+  const [showEmailComposer, setShowEmailComposer] = useState(false);
+
+  // Ownership
+  const [ownership, setOwnership] = useState<Ownership | null>(null);
+
   // Unsaved changes detection
   const hasUnsavedChanges = useMemo(() => {
     if (!editMode || !lead) return false;
@@ -163,6 +182,7 @@ export default function LeadDetailPage({
         setLead(data.lead);
         setActivities(data.activities || []);
         setEditForm(data.lead);
+        if (data.ownership) setOwnership(data.ownership);
       } catch (error) {
         console.error('Error fetching lead:', error);
       } finally {
@@ -405,8 +425,9 @@ export default function LeadDetailPage({
         <div className="flex items-center gap-3">
           {!editMode ? (
             <button
-              onClick={() => { setEditMode(true); setEditForm(lead); }}
-              className="flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-gray-300 hover:text-white rounded-lg transition-colors border border-tastelanc-surface-light"
+              onClick={() => { if (!ownership?.isLocked) { setEditMode(true); setEditForm(lead); } }}
+              disabled={ownership?.isLocked}
+              className={`flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-gray-300 hover:text-white rounded-lg transition-colors border border-tastelanc-surface-light ${ownership?.isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <Pencil className="w-4 h-4" />
               Edit
@@ -430,6 +451,24 @@ export default function LeadDetailPage({
               </button>
             </>
           )}
+          {lead.email && (
+            <button
+              onClick={() => setShowEmailComposer(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            >
+              <Mail className="w-4 h-4" />
+              Send Email
+            </button>
+          )}
+          {lead.restaurant_id && (
+            <Link
+              href={`/dashboard/profile?sales_mode=true&restaurant_id=${lead.restaurant_id}`}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+            >
+              <Settings className="w-4 h-4" />
+              Manage Content
+            </Link>
+          )}
           <Link
             href={`/sales/checkout?email=${encodeURIComponent(lead.email || '')}&name=${encodeURIComponent(lead.contact_name || lead.business_name)}&phone=${encodeURIComponent(lead.phone || '')}&businessName=${encodeURIComponent(lead.business_name)}`}
             className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
@@ -440,6 +479,75 @@ export default function LeadDetailPage({
         </div>
       </div>
 
+      {/* Ownership Banners */}
+      {ownership?.isLocked && (
+        <div className="flex items-center gap-3 p-3 mb-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <Lock className="w-5 h-5 text-red-400 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-red-400">This lead is owned by {lead.assigned_to_name}</p>
+            <p className="text-xs text-gray-500">
+              You can view but not edit. It will become available in {14 - ownership.daysSinceUpdate} day{14 - ownership.daysSinceUpdate !== 1 ? 's' : ''} if no activity.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {ownership?.isOwner && ownership.isNudge && !ownership.isStale && (
+        <div className="flex items-center gap-3 p-3 mb-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+          <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-yellow-400">Follow up needed</p>
+            <p className="text-xs text-gray-500">
+              This lead hasn&apos;t been updated in {ownership.daysSinceUpdate} days. Other reps can claim it after 14 days.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {!ownership?.isOwner && ownership?.isStale && lead.assigned_to && (
+        <div className="flex items-center justify-between gap-3 p-3 mb-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+          <div className="flex items-center gap-3">
+            <Unlock className="w-5 h-5 text-green-400 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-green-400">This lead is available</p>
+              <p className="text-xs text-gray-500">
+                Inactive for {ownership.daysSinceUpdate} days. You can claim it.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              try {
+                const res = await fetch(`/api/sales/leads/${leadId}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ assigned_to: ownership.currentUserId }),
+                });
+                if (res.ok) {
+                  toast.success('Lead claimed');
+                  // Refresh
+                  const refreshRes = await fetch(`/api/sales/leads/${leadId}`);
+                  const refreshData = await refreshRes.json();
+                  if (refreshRes.ok) {
+                    setLead(refreshData.lead);
+                    setActivities(refreshData.activities || []);
+                    if (refreshData.ownership) setOwnership(refreshData.ownership);
+                  }
+                } else {
+                  const data = await res.json();
+                  toast.error(data.error || 'Failed to claim lead');
+                }
+              } catch {
+                toast.error('Failed to claim lead');
+              }
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors flex-shrink-0"
+          >
+            Claim This Lead
+          </button>
+        </div>
+      )}
+
       {/* Status + Linked Business bar */}
       <div className="flex items-center gap-4 mb-6">
         <div className="flex items-center gap-2">
@@ -448,8 +556,11 @@ export default function LeadDetailPage({
             {STATUS_OPTIONS.map((status) => (
               <button
                 key={status.value}
-                onClick={() => handleStatusChange(status.value)}
+                onClick={() => !ownership?.isLocked && handleStatusChange(status.value)}
+                disabled={ownership?.isLocked}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  ownership?.isLocked ? 'cursor-not-allowed opacity-50' : ''
+                } ${
                   lead.status === status.value
                     ? status.color
                     : 'text-gray-500 hover:bg-tastelanc-surface-light hover:text-gray-300'
@@ -845,9 +956,20 @@ export default function LeadDetailPage({
                           </button>
                         </div>
                       ) : (
-                        activity.description && (
-                          <p className="text-sm text-gray-400">{activity.description}</p>
-                        )
+                        <>
+                          {activity.description && (
+                            <p className="text-sm text-gray-400">{activity.description}</p>
+                          )}
+                          {activity.activity_type === 'email' && activity.metadata && (
+                            <div className="flex items-center gap-3 mt-1">
+                              {activity.metadata.sender_name && (
+                                <span className="text-xs text-gray-500">
+                                  Sent as {activity.metadata.sender_name}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -857,6 +979,26 @@ export default function LeadDetailPage({
           )}
         </Card>
       </div>
+
+      {/* Email Composer Modal */}
+      {showEmailComposer && lead.email && (
+        <EmailComposer
+          lead={lead}
+          onClose={() => setShowEmailComposer(false)}
+          onSent={async () => {
+            setShowEmailComposer(false);
+            // Refresh lead and activities
+            try {
+              const res = await fetch(`/api/sales/leads/${leadId}`);
+              const data = await res.json();
+              if (res.ok) {
+                setLead(data.lead);
+                setActivities(data.activities || []);
+              }
+            } catch { /* ignore */ }
+          }}
+        />
+      )}
     </div>
   );
 }

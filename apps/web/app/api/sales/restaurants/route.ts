@@ -17,17 +17,15 @@ export async function GET(request: Request) {
 
     const serviceClient = createServiceRoleClient();
 
-    // Resolve market
+    // Resolve market — admins can optionally see all markets
     const { data: marketRow } = await serviceClient
       .from('markets').select('id').eq('slug', MARKET_SLUG).eq('is_active', true).single();
-    if (!marketRow) {
-      return NextResponse.json({ error: 'Market not found' }, { status: 500 });
-    }
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
     const tier = searchParams.get('tier');
     const active = searchParams.get('active');
+    const marketFilter = searchParams.get('market'); // 'all' for admins to see everything
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '25', 10)));
     const sortBy = searchParams.get('sort_by') || 'name';
@@ -36,9 +34,13 @@ export async function GET(request: Request) {
     const ALLOWED_SORT_COLUMNS = ['name', 'city', 'is_active', 'created_at'];
     const safeSortBy = ALLOWED_SORT_COLUMNS.includes(sortBy) ? sortBy : 'name';
 
+    // Admins see all restaurants; sales reps see only their market
+    const scopeToMarket = !access.isAdmin || (marketFilter && marketFilter !== 'all');
+
     // Build count query with same filters
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let countQ: any = serviceClient.from('restaurants').select('id', { count: 'exact', head: true }).eq('market_id', marketRow.id);
+    let countQ: any = serviceClient.from('restaurants').select('id', { count: 'exact', head: true });
+    if (scopeToMarket && marketRow) countQ = countQ.eq('market_id', marketRow.id);
     if (search) countQ = countQ.or(`name.ilike.%${search}%,city.ilike.%${search}%`);
     if (active === 'true') countQ = countQ.eq('is_active', true);
     if (active === 'false') countQ = countQ.eq('is_active', false);
@@ -48,9 +50,12 @@ export async function GET(request: Request) {
     let query = serviceClient
       .from('restaurants')
       .select('id, name, city, state, phone, website, is_active, tier_id, tiers(name)')
-      .eq('market_id', marketRow.id)
       .order(safeSortBy, { ascending: sortDir === 'asc' })
       .range((page - 1) * limit, page * limit - 1);
+
+    if (scopeToMarket && marketRow) {
+      query = query.eq('market_id', marketRow.id);
+    }
 
     if (search) {
       query = query.or(`name.ilike.%${search}%,city.ilike.%${search}%`);
@@ -76,11 +81,14 @@ export async function GET(request: Request) {
       filtered = filtered.filter((r: any) => r.tiers?.name === tier);
     }
 
-    // Get stats for the market
-    const { data: allRestaurants } = await serviceClient
+    // Get stats — scoped same as main query
+    let statsQuery = serviceClient
       .from('restaurants')
-      .select('is_active, tiers(name)')
-      .eq('market_id', marketRow.id);
+      .select('is_active, tiers(name)');
+    if (scopeToMarket && marketRow) {
+      statsQuery = statsQuery.eq('market_id', marketRow.id);
+    }
+    const { data: allRestaurants } = await statsQuery;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const allR: any[] = allRestaurants || [];
@@ -119,6 +127,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       restaurants: restaurantsWithLeadStatus,
       stats,
+      isAdmin: access.isAdmin,
       pagination: { page, limit, total, totalPages },
     });
   } catch (error) {

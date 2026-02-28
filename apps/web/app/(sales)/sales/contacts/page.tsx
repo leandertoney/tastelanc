@@ -12,8 +12,9 @@ import {
   Eye,
   EyeOff,
   CheckSquare,
+  HelpCircle,
 } from 'lucide-react';
-import { Card, Badge } from '@/components/ui';
+import { Card, Badge, Tooltip } from '@/components/ui';
 import { toast } from 'sonner';
 
 interface ContactSubmission {
@@ -209,9 +210,14 @@ export default function SalesContactsPage() {
             <Mail className="w-8 h-8 text-tastelanc-accent" />
             Contact Inquiries
           </h1>
-          <p className="text-gray-400 mt-1">
-            {contacts.length} total{unreadCount > 0 && ` · ${unreadCount} unread`} · {convertedCount} converted
-          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-gray-400">
+              {contacts.length} total{unreadCount > 0 && ` · ${unreadCount} unread`} · {convertedCount} converted
+            </p>
+            <Tooltip content="These are businesses that reached out through the contact form on the website. Convert them to leads to start the sales process and track your outreach." position="bottom">
+              <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
+            </Tooltip>
+          </div>
         </div>
         {unconvertedSelected > 0 && (
           <button

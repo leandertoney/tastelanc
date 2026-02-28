@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, GripVertical, UtensilsCrossed, Loader2, X, Link2, Image, FileText, Check, AlertCircle } from 'lucide-react';
-import { Button, Card, Badge } from '@/components/ui';
+import { Plus, Pencil, Trash2, GripVertical, UtensilsCrossed, Loader2, X, Link2, Image, FileText, Check, AlertCircle, HelpCircle } from 'lucide-react';
+import { Button, Card, Badge, Tooltip } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import TierGate from '@/components/TierGate';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -812,7 +812,12 @@ export default function MenuPage() {
               <UtensilsCrossed className="w-6 h-6" />
               Menu Management
             </h2>
-            <p className="text-gray-400 mt-1">Manage your restaurant&apos;s menus and items</p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-gray-400">Manage your restaurant&apos;s menus and items</p>
+              <Tooltip content="Create multiple menus (Lunch, Dinner, Drinks, etc.) with sections and items. You can import menus from a URL, image, or PDF — or build them manually. Drag items to reorder." position="bottom">
+                <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
+              </Tooltip>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button onClick={() => setShowAddMenu(true)}>

@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CheckCircle,
+  Settings,
 } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 import { toast } from 'sonner';
@@ -333,6 +334,13 @@ export default function SalesRestaurantsPage() {
                       </td>
                       <td className="p-3">
                         <div className="flex items-center justify-end gap-2">
+                          <Link
+                            href={`/dashboard/profile?sales_mode=true&restaurant_id=${r.id}`}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
+                          >
+                            <Settings className="w-3.5 h-3.5" />
+                            Manage
+                          </Link>
                           {r.has_lead ? (
                             <span className="flex items-center gap-1 text-xs text-green-400">
                               <CheckCircle className="w-3.5 h-3.5" />

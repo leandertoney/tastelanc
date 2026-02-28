@@ -20,8 +20,9 @@ import {
   Lightbulb,
   RefreshCw,
   Loader2,
+  HelpCircle,
 } from 'lucide-react';
-import { Card, Badge } from '@/components/ui';
+import { Card, Badge, Tooltip } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import { useTierAccess } from '@/components/TierGate';
 
@@ -370,7 +371,12 @@ export default function DashboardPage() {
               {/* Conversion Funnel - Top of Analytics */}
               {analyticsData.conversionFunnel && (
                 <Card className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-6">Conversion Funnel (30d)</h3>
+                  <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+                    Conversion Funnel (30d)
+                    <Tooltip content="How users discover your restaurant: Impressions (seen in listings) → Detail Views (clicked your page) → Actions (called, visited website, etc.)" position="right">
+                      <HelpCircle className="w-3.5 h-3.5 text-gray-600 hover:text-gray-400 cursor-help" />
+                    </Tooltip>
+                  </h3>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="text-center">
                       <p className="text-3xl font-bold text-white">{analyticsData.conversionFunnel.impressions.toLocaleString()}</p>
@@ -481,7 +487,12 @@ export default function DashboardPage() {
         {/* Profile Completion */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">Profile Completion</h3>
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              Profile Completion
+              <Tooltip content="Complete every item to maximize your visibility in the app. Restaurants with full profiles get more views and favorites from users." position="top">
+                <HelpCircle className="w-3.5 h-3.5 text-gray-600 hover:text-gray-400 cursor-help" />
+              </Tooltip>
+            </h3>
             <Badge variant="accent">{profileCompletion?.percentage || 0}%</Badge>
           </div>
           <div className="w-full bg-tastelanc-surface rounded-full h-2 mb-4">

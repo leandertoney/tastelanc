@@ -94,6 +94,12 @@ export async function middleware(request: NextRequest) {
       return supabaseResponse;
     }
 
+    // Check for sales mode - allow sales rep or admin to access dashboard when managing a restaurant
+    const salesMode = request.nextUrl.searchParams.get('sales_mode') === 'true';
+    if ((isSalesRep || isAdmin) && salesMode && restaurantId) {
+      return supabaseResponse;
+    }
+
     // Redirect admin to admin dashboard (when not in admin mode)
     if (isAdmin) {
       const url = request.nextUrl.clone();

@@ -87,7 +87,7 @@ export async function POST(request: Request) {
     } = body;
 
     // Use service role client for admin operations to bypass RLS
-    const dbClient = accessResult.isAdmin ? createServiceRoleClient() : supabase;
+    const dbClient = (accessResult.isAdmin || accessResult.isSalesRep) ? createServiceRoleClient() : supabase;
 
     // Create the happy hour
     const { data: happyHour, error: happyHourError } = await dbClient

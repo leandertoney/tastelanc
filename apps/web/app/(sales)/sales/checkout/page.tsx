@@ -17,8 +17,9 @@ import {
   Trash2,
   ArrowRight,
   ArrowLeft,
+  HelpCircle,
 } from 'lucide-react';
-import { Card } from '@/components/ui';
+import { Card, Tooltip } from '@/components/ui';
 import { toast } from 'sonner';
 
 interface Restaurant {
@@ -288,7 +289,12 @@ function SalesCheckoutContent() {
   return (
     <div className="max-w-xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">New Sale</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-white">New Sale</h1>
+          <Tooltip content="Build a checkout link for one or more restaurants. Add restaurants to the cart, select plans, and generate a Stripe payment link to send to the business owner. Multi-restaurant bundles get automatic discounts." position="bottom">
+            <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
+          </Tooltip>
+        </div>
       </div>
 
       {checkoutUrl ? (

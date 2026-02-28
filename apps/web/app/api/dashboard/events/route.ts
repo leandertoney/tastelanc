@@ -39,7 +39,7 @@ export async function GET(request: Request) {
     }
 
     // Use service role client for admin reads to bypass RLS
-    const readClient = accessResult.isAdmin ? createServiceRoleClient() : supabase;
+    const readClient = (accessResult.isAdmin || accessResult.isSalesRep) ? createServiceRoleClient() : supabase;
     const { data: events, error } = await readClient
       .from('events')
       .select('*')
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
     } = body;
 
     // Use service role client for admin operations to bypass RLS
-    const dbClient = accessResult.isAdmin ? createServiceRoleClient() : supabase;
+    const dbClient = (accessResult.isAdmin || accessResult.isSalesRep) ? createServiceRoleClient() : supabase;
 
     // Validate required fields
     if (!name || !start_time) {
