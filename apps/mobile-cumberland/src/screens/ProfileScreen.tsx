@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigationContext } from '../navigation';
@@ -33,9 +34,8 @@ import {
   savePushToken,
   scheduleLocalNotification,
 } from '../lib/notifications';
+import { supabase } from '../lib/supabase';
 
-// Storage keys for preferences
-const NOTIFICATIONS_KEY = '@tastelanc_notifications';
 const LOCATION_KEY = '@tastelanc_location';
 
 interface SettingItemProps {
@@ -106,14 +106,27 @@ function SectionHeader({ title }: { title: string }) {
 export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { restartOnboarding } = useNavigationContext();
-  const { userId } = useAuth();
+  const { userId, user, isAnonymous } = useAuth();
 
   // Preference states
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [notificationPermission, setNotificationPermission] = useState<string>('undetermined');
   const [locationEnabled, setLocationEnabled] = useState(true);
 
   // Dev tools state
   const [isTestingVisit, setIsTestingVisit] = useState(false);
+
+  // Check real iOS notification permission status
+  useEffect(() => {
+    const checkPermission = async () => {
+      try {
+        const { status } = await Notifications.getPermissionsAsync();
+        setNotificationPermission(status);
+      } catch {
+        setNotificationPermission('undetermined');
+      }
+    };
+    checkPermission();
+  }, []);
 
   // Load preferences on mount
   useEffect(() => {
@@ -224,13 +237,8 @@ export default function ProfileScreen() {
 
   const loadPreferences = async () => {
     try {
-      const [notifications, location] = await AsyncStorage.multiGet([
-        NOTIFICATIONS_KEY,
-        LOCATION_KEY,
-      ]);
-
-      if (notifications[1] !== null) setNotificationsEnabled(notifications[1] === 'true');
-      if (location[1] !== null) setLocationEnabled(location[1] === 'true');
+      const location = await AsyncStorage.getItem(LOCATION_KEY);
+      if (location !== null) setLocationEnabled(location === 'true');
     } catch (error) {
       console.error('Error loading preferences:', error);
     }
@@ -242,11 +250,6 @@ export default function ProfileScreen() {
     } catch (error) {
       console.error('Error saving preference:', error);
     }
-  };
-
-  const handleNotificationsToggle = (value: boolean) => {
-    setNotificationsEnabled(value);
-    savePreference(NOTIFICATIONS_KEY, value);
   };
 
   const handleLocationToggle = (value: boolean) => {
@@ -320,6 +323,9 @@ export default function ProfileScreen() {
           </View>
           <Text style={styles.headerTitle}>{BRAND.userTitle}</Text>
           <Text style={styles.headerSubtitle}>{BRAND.userSubtitle}</Text>
+          <Text style={styles.headerEmail}>
+            {isAnonymous ? 'Guest Account' : user?.email || 'Signed In'}
+          </Text>
         </View>
 
         {/* Preferences Section */}
@@ -328,10 +334,60 @@ export default function ProfileScreen() {
           <SettingItem
             icon="notifications-outline"
             label="Push Notifications"
-            subtitle="Get notified about deals & specials"
-            hasSwitch
-            switchValue={notificationsEnabled}
-            onSwitchChange={handleNotificationsToggle}
+            subtitle={
+              notificationPermission === 'granted'
+                ? 'Enabled — tap to verify'
+                : notificationPermission === 'denied'
+                ? 'Blocked — tap to open Settings'
+                : 'Not yet enabled — tap to allow'
+            }
+            onPress={async () => {
+              if (notificationPermission === 'denied') {
+                Linking.openSettings();
+              } else if (notificationPermission === 'granted') {
+                try {
+                  // Refresh session to ensure valid JWT before DB write
+                  const { data: sessionData } = await supabase.auth.getSession();
+                  const sessionOk = !!sessionData?.session;
+
+                  const token = await registerForPushNotifications();
+                  if (token && userId) {
+                    const { error: dbError } = await supabase
+                      .from('push_tokens')
+                      .upsert(
+                        {
+                          user_id: userId,
+                          token,
+                          platform: 'ios',
+                          app_slug: 'taste-cumberland',
+                          updated_at: new Date().toISOString(),
+                        },
+                        { onConflict: 'token' }
+                      );
+                    Alert.alert(
+                      dbError ? 'Save Failed' : 'Notifications Active',
+                      dbError
+                        ? `Error: ${dbError.message}\nCode: ${dbError.code}\nSession: ${sessionOk ? 'valid' : 'EXPIRED'}\n\nUser: ${userId.substring(0, 8)}...\nToken: ${token.substring(0, 25)}...`
+                        : `Token registered successfully.\n\nToken: ${token.substring(0, 25)}...`
+                    );
+                  } else {
+                    Alert.alert(
+                      'Registration Issue',
+                      `Could not get push token.\nSession: ${sessionOk ? 'valid' : 'EXPIRED'}\n\nUser ID: ${userId ? userId.substring(0, 8) + '...' : 'none'}\nToken: ${token || 'none'}`
+                    );
+                  }
+                } catch (error) {
+                  Alert.alert('Error', `Registration failed: ${error}`);
+                }
+              } else {
+                const { status } = await Notifications.requestPermissionsAsync();
+                setNotificationPermission(status);
+                if (status === 'granted' && userId) {
+                  const token = await registerForPushNotifications();
+                  if (token) await savePushToken(token, userId);
+                }
+              }
+            }}
           />
           <SettingItem
             icon="location-outline"
@@ -487,6 +543,11 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 14,
     color: colors.textMuted,
+  },
+  headerEmail: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 6,
   },
   sectionHeader: {
     paddingHorizontal: 20,
