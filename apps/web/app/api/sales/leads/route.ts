@@ -20,27 +20,11 @@ export async function GET(request: Request) {
     const category = searchParams.get('category');
     const search = searchParams.get('search');
 
-    // Get sales rep's market assignments (if not admin)
-    let marketIds: string[] = [];
-    if (access.isSalesRep && access.userId) {
-      const { data: rep } = await serviceClient
-        .from('sales_reps')
-        .select('market_ids')
-        .eq('id', access.userId)
-        .single();
-      marketIds = rep?.market_ids || [];
-    }
-
-    // Build query
+    // Build query — sales reps can access all leads across all markets
     let query = serviceClient
       .from('business_leads')
       .select('*')
       .order('created_at', { ascending: false });
-
-    // Scope to market if sales rep has market assignments
-    if (access.isSalesRep && marketIds.length > 0) {
-      query = query.in('market_id', marketIds);
-    }
 
     if (status && status !== 'all') {
       query = query.eq('status', status);
@@ -63,16 +47,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch leads' }, { status: 500 });
     }
 
-    // Get stats (same scope)
-    let statsQuery = serviceClient
+    // Get stats (all leads globally)
+    const { data: allLeads } = await serviceClient
       .from('business_leads')
       .select('status');
-
-    if (access.isSalesRep && marketIds.length > 0) {
-      statsQuery = statsQuery.in('market_id', marketIds);
-    }
-
-    const { data: allLeads } = await statsQuery;
 
     const stats = {
       total: allLeads?.length || 0,
