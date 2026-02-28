@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { BRAND } from '@/config/market';
 import { Card, Badge } from '@/components/ui';
-import { Crown, DollarSign, TrendingUp, Users, Sparkles, RefreshCw } from 'lucide-react';
+import { Crown, DollarSign, TrendingUp, Users, Sparkles, RefreshCw, Loader2 } from 'lucide-react';
 
 interface ConsumerSubscription {
   id: string;
@@ -181,7 +181,7 @@ export default function AdminConsumersPage() {
         </div>
         {isLoading ? (
           <div className="p-8 md:p-12 text-center">
-            <RefreshCw className="w-8 h-8 text-gray-600 mx-auto mb-4 animate-spin" />
+            <Loader2 className="w-8 h-8 text-tastelanc-accent mx-auto mb-4 animate-spin" />
             <p className="text-gray-400">Loading subscriptions...</p>
           </div>
         ) : subscriptions.length === 0 ? (

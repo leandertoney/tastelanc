@@ -111,6 +111,7 @@ export default function SalesLeadsPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 25, total: 0, totalPages: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -120,6 +121,7 @@ export default function SalesLeadsPage() {
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   const fetchLeads = async (pageOverride?: number) => {
+    setFetchError(false);
     try {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
@@ -131,6 +133,7 @@ export default function SalesLeadsPage() {
       params.set('sort_dir', sortDir);
 
       const res = await fetch(`/api/sales/leads?${params}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setLeads(data.leads || []);
       setStats(data.stats || null);
@@ -138,6 +141,8 @@ export default function SalesLeadsPage() {
       if (data.currentUserId) setCurrentUserId(data.currentUserId);
     } catch (error) {
       console.error('Error fetching leads:', error);
+      setFetchError(true);
+      toast.error('Failed to load leads');
     } finally {
       setIsLoading(false);
     }
@@ -400,6 +405,18 @@ export default function SalesLeadsPage() {
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-tastelanc-accent" />
         </div>
+      ) : fetchError && filteredLeads.length === 0 ? (
+        <Card className="p-12 text-center">
+          <Users className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-white mb-2">Couldn&apos;t load leads</h3>
+          <p className="text-gray-400 mb-4">Something went wrong. Please try again.</p>
+          <button
+            onClick={() => fetchLeads(1)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white rounded-lg transition-colors"
+          >
+            Retry
+          </button>
+        </Card>
       ) : filteredLeads.length === 0 ? (
         <Card className="p-12 text-center">
           <Users className="w-12 h-12 text-gray-500 mx-auto mb-4" />

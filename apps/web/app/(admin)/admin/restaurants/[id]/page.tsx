@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-access';
+import AdminRestaurantActions from '@/components/admin/AdminRestaurantActions';
 import {
   ArrowLeft,
   Store,
@@ -12,8 +13,6 @@ import {
   Clock,
   Edit,
   ExternalLink,
-  CheckCircle,
-  XCircle,
   ShoppingCart,
 } from 'lucide-react';
 
@@ -65,6 +64,12 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
     ownerEmail = owner?.email;
   }
 
+  // Fetch tiers for the tier selector
+  const { data: tiers } = await supabase
+    .from('tiers')
+    .select('id, name, display_name')
+    .order('price_monthly', { ascending: true });
+
   // Fetch counts
   const [hoursResult, eventsResult, specialsResult, happyHoursResult] = await Promise.all([
     supabase.from('restaurant_hours').select('id', { count: 'exact' }).eq('restaurant_id', id),
@@ -72,8 +77,6 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
     supabase.from('specials').select('id', { count: 'exact' }).eq('restaurant_id', id).eq('is_active', true),
     supabase.from('happy_hours').select('id', { count: 'exact' }).eq('restaurant_id', id).eq('is_active', true),
   ]);
-
-  const tier = restaurant.tiers;
 
   return (
     <div className="space-y-8">
@@ -117,62 +120,19 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Status Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-4">
-          <p className="text-sm text-gray-400 mb-1">Status</p>
-          <div className="flex items-center gap-2">
-            {restaurant.is_active ? (
-              <>
-                <CheckCircle className="w-5 h-5 text-green-400" />
-                <span className="text-white font-medium">Active</span>
-              </>
-            ) : (
-              <>
-                <XCircle className="w-5 h-5 text-red-400" />
-                <span className="text-white font-medium">Inactive</span>
-              </>
-            )}
-          </div>
-        </div>
-        <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-4">
-          <p className="text-sm text-gray-400 mb-1">Verified</p>
-          <div className="flex items-center gap-2">
-            {restaurant.is_verified ? (
-              <>
-                <CheckCircle className="w-5 h-5 text-green-400" />
-                <span className="text-white font-medium">Yes</span>
-              </>
-            ) : (
-              <>
-                <XCircle className="w-5 h-5 text-gray-400" />
-                <span className="text-white font-medium">No</span>
-              </>
-            )}
-          </div>
-        </div>
-        <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-4">
-          <p className="text-sm text-gray-400 mb-1">Subscription</p>
-          <p className="text-white font-medium capitalize">
-            {tier?.display_name || tier?.name || 'Basic'}
-          </p>
-          {restaurant.stripe_subscription_id ? (
-            <p className="text-xs text-green-500 mt-1">
-              Stripe Linked ✓
-            </p>
-          ) : (
-            <p className="text-xs text-gray-500 mt-1">
-              No Stripe subscription
-            </p>
-          )}
-        </div>
-        <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-4">
-          <p className="text-sm text-gray-400 mb-1">Owner</p>
-          <p className="text-white font-medium truncate">
-            {ownerEmail || 'No owner assigned'}
-          </p>
-        </div>
-      </div>
+      {/* Interactive Admin Controls */}
+      <AdminRestaurantActions
+        restaurantId={restaurant.id}
+        initialIsActive={restaurant.is_active}
+        initialIsVerified={restaurant.is_verified}
+        initialTierId={restaurant.tier_id}
+        initialAdminNotes={restaurant.admin_notes || null}
+        tiers={(tiers || []).map((t: any) => ({
+          id: t.id,
+          name: t.name,
+          display_name: t.display_name,
+        }))}
+      />
 
       {/* Details Grid */}
       <div className="grid md:grid-cols-2 gap-6">
@@ -270,7 +230,11 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
           <Clock className="w-5 h-5 text-tastelanc-accent" />
           Metadata
         </h2>
-        <div className="grid md:grid-cols-3 gap-4 text-sm">
+        <div className="grid md:grid-cols-4 gap-4 text-sm">
+          <div>
+            <p className="text-gray-400">Owner</p>
+            <p className="text-white truncate">{ownerEmail || 'No owner assigned'}</p>
+          </div>
           <div>
             <p className="text-gray-400">Created</p>
             <p className="text-white">{new Date(restaurant.created_at).toLocaleDateString()}</p>

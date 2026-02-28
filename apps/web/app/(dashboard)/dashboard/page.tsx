@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -18,6 +18,8 @@ import {
   Layers,
   Crown,
   Lightbulb,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
@@ -88,6 +90,8 @@ interface AnalyticsData {
   };
 }
 
+const DASHBOARD_REFRESH_INTERVAL = 2 * 60 * 60 * 1000; // 2 hours
+
 export default function DashboardPage() {
   const { restaurant, restaurantId, isLoading: contextLoading, buildApiUrl } = useRestaurant();
   const searchParams = useSearchParams();
@@ -100,6 +104,9 @@ export default function DashboardPage() {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const buildNavHref = (href: string) => {
     if (adminMode && adminRestaurantId) {
@@ -108,48 +115,78 @@ export default function DashboardPage() {
     return href;
   };
 
-  useEffect(() => {
+  const fetchAll = useCallback(async (silent = false) => {
     if (!restaurantId || !restaurant) return;
 
-    const fetchStats = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch(buildApiUrl('/api/dashboard/overview-stats'));
-        if (!response.ok) throw new Error('Failed to fetch overview stats');
+    if (!silent) setIsLoading(true);
+    else setIsRefreshing(true);
+    setFetchError(false);
+
+    let statsOk = false;
+    try {
+      const response = await fetch(buildApiUrl('/api/dashboard/overview-stats'));
+      if (response.ok) {
         const data = await response.json();
         setStats(data.stats);
         setProfileCompletion(data.profileCompletion);
-      } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
+        statsOk = true;
       }
-      setIsLoading(false);
-    };
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    }
+    if (!statsOk && !silent) setFetchError(true);
+    if (!silent) setIsLoading(false);
 
-    const fetchAnalytics = async () => {
-      if (!hasPremium) {
-        setAnalyticsLoading(false);
-        return;
-      }
-      setAnalyticsLoading(true);
+    if (hasPremium) {
+      if (!silent) setAnalyticsLoading(true);
       try {
         const response = await fetch(buildApiUrl('/api/dashboard/analytics'));
-        if (!response.ok) throw new Error('Failed to fetch analytics');
-        const data = await response.json();
-        setAnalyticsData(data);
+        if (response.ok) {
+          const data = await response.json();
+          setAnalyticsData(data);
+        }
       } catch (error) {
         console.error('Error fetching analytics:', error);
       }
+      if (!silent) setAnalyticsLoading(false);
+    } else {
       setAnalyticsLoading(false);
-    };
+    }
 
-    fetchStats();
-    fetchAnalytics();
+    setIsRefreshing(false);
   }, [restaurantId, restaurant, buildApiUrl, hasPremium]);
+
+  useEffect(() => {
+    fetchAll();
+    intervalRef.current = setInterval(() => fetchAll(true), DASHBOARD_REFRESH_INTERVAL);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [fetchAll]);
 
   if (contextLoading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="w-8 h-8 border-4 border-tastelanc-accent border-t-transparent rounded-full animate-spin" />
+        <Loader2 className="w-8 h-8 animate-spin text-tastelanc-accent" />
+      </div>
+    );
+  }
+
+  if (fetchError && !stats) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] p-6">
+        <div className="text-center max-w-md">
+          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-white mb-2">Couldn&apos;t load dashboard</h2>
+          <p className="text-gray-400 text-sm mb-6">
+            We had trouble fetching your dashboard data. Please check your connection and try again.
+          </p>
+          <button
+            onClick={() => fetchAll()}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white rounded-lg transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -202,6 +239,20 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* Stats Header with Refresh */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-white">Overview</h2>
+        <button
+          onClick={() => fetchAll(true)}
+          disabled={isRefreshing}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-400 hover:text-white rounded-lg hover:bg-tastelanc-surface-light transition-colors disabled:opacity-50"
+          title="Refresh data"
+        >
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <span className="hidden sm:inline">Refresh</span>
+        </button>
+      </div>
+
       {/* Stats Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statsDisplay.map((stat) => {
