@@ -226,7 +226,7 @@ export default async function handler(req: Request, context: Context) {
     let totalMessages = 0;
     let successCount = 0;
 
-    for (const [slug, tokens] of tokensByProject) {
+    for (const [slug, tokens] of Array.from(tokensByProject)) {
       const messages: PushMessage[] = tokens.map((token) => ({
         to: token,
         sound: 'default' as const,

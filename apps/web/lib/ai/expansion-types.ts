@@ -1,0 +1,228 @@
+// ─────────────────────────────────────────────────────────
+// City Expansion Agent — TypeScript Types
+// ─────────────────────────────────────────────────────────
+
+// Pipeline statuses
+export type ExpansionCityStatus =
+  | 'researching'
+  | 'researched'
+  | 'brand_ready'
+  | 'approved'
+  | 'setup_in_progress'
+  | 'live'
+  | 'on_hold'
+  | 'rejected';
+
+export type JobListingStatus = 'draft' | 'approved' | 'posted' | 'closed';
+
+export type JobRoleType = 'sales_rep' | 'market_manager' | 'content_creator' | 'community_manager';
+
+export type ExpansionAction =
+  | 'city_added'
+  | 'research_started'
+  | 'research_completed'
+  | 'brand_generated'
+  | 'brand_selected'
+  | 'brand_regenerated'
+  | 'job_listing_generated'
+  | 'job_listing_approved'
+  | 'job_listing_rejected'
+  | 'city_approved'
+  | 'city_rejected'
+  | 'city_put_on_hold'
+  | 'market_created'
+  | 'status_changed'
+  | 'note_added';
+
+export type InboundEmailCategory = 'inquiry' | 'lead' | 'spam' | 'other';
+
+// ─────────────────────────────────────────────────────────
+// Database row types
+// ─────────────────────────────────────────────────────────
+
+export interface ExpansionCity {
+  id: string;
+  city_name: string;
+  county: string;
+  state: string;
+  slug: string;
+  population: number | null;
+  median_income: number | null;
+  median_age: number | null;
+  restaurant_count: number | null;
+  bar_count: number | null;
+  dining_scene_description: string | null;
+  competition_analysis: string | null;
+  market_potential_score: number | null;
+  research_data: CityResearchData;
+  center_latitude: number | null;
+  center_longitude: number | null;
+  radius_miles: number;
+  status: ExpansionCityStatus;
+  priority: number;
+  admin_notes: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  rejected_reason: string | null;
+  market_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BrandDraft {
+  id: string;
+  city_id: string;
+  app_name: string;
+  tagline: string;
+  ai_assistant_name: string;
+  premium_name: string;
+  colors: BrandColors;
+  market_config_json: Record<string, unknown>;
+  seo_title: string | null;
+  seo_description: string | null;
+  seo_keywords: string[] | null;
+  is_selected: boolean;
+  variant_number: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ExpansionJobListing {
+  id: string;
+  city_id: string;
+  title: string;
+  role_type: JobRoleType;
+  description: string;
+  requirements: string[] | null;
+  compensation_summary: string | null;
+  location: string | null;
+  is_remote: boolean;
+  status: JobListingStatus;
+  approved_by: string | null;
+  approved_at: string | null;
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  city?: ExpansionCity;
+}
+
+export interface ActivityLogEntry {
+  id: string;
+  city_id: string;
+  user_id: string | null;
+  action: ExpansionAction;
+  description: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface InboundEmail {
+  id: string;
+  from_email: string;
+  from_name: string | null;
+  to_email: string;
+  subject: string | null;
+  body_text: string | null;
+  body_html: string | null;
+  headers: Record<string, unknown>;
+  attachments: unknown[];
+  is_read: boolean;
+  is_archived: boolean;
+  admin_notes: string | null;
+  category: InboundEmailCategory;
+  linked_city_id: string | null;
+  created_at: string;
+}
+
+// ─────────────────────────────────────────────────────────
+// AI response types
+// ─────────────────────────────────────────────────────────
+
+export interface CityResearchData {
+  key_neighborhoods?: string[];
+  notable_restaurants?: string[];
+  local_food_traditions?: string;
+  college_presence?: string;
+  tourism_factors?: string;
+  seasonal_considerations?: string;
+  expansion_reasoning?: string;
+  [key: string]: unknown;
+}
+
+export interface CityResearchResult {
+  population: number;
+  median_income: number;
+  median_age: number;
+  restaurant_count: number;
+  bar_count: number;
+  dining_scene_description: string;
+  competition_analysis: string;
+  market_potential_score: number;
+  center_latitude: number;
+  center_longitude: number;
+  key_neighborhoods: string[];
+  notable_restaurants: string[];
+  local_food_traditions: string;
+  college_presence: string;
+  tourism_factors: string;
+  seasonal_considerations: string;
+  expansion_reasoning: string;
+}
+
+export interface BrandColors {
+  accent: string;
+  accentHover: string;
+  gold: string;
+  bg: string;
+  card: string;
+  surface: string;
+  surfaceLight: string;
+  headerBg: string;
+  headerText: string;
+}
+
+export interface BrandProposal {
+  app_name: string;
+  tagline: string;
+  ai_assistant_name: string;
+  premium_name: string;
+  colors: BrandColors;
+  seo_title: string;
+  seo_description: string;
+  seo_keywords: string[];
+  market_config_json: Record<string, unknown>;
+}
+
+export interface JobListingDraft {
+  title: string;
+  description: string;
+  requirements: string[];
+  compensation_summary: string;
+  location: string;
+}
+
+export interface CitySuggestion {
+  city_name: string;
+  county: string;
+  state: string;
+  population: number;
+  reasoning: string;
+  estimated_score: number;
+}
+
+// ─────────────────────────────────────────────────────────
+// Dashboard stats
+// ─────────────────────────────────────────────────────────
+
+export interface ExpansionStats {
+  total: number;
+  researching: number;
+  researched: number;
+  brand_ready: number;
+  approved: number;
+  setup_in_progress: number;
+  live: number;
+  on_hold: number;
+  rejected: number;
+}
