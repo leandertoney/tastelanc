@@ -15,9 +15,12 @@ import {
   ChevronDown,
   ChevronUp,
   MapPin,
+  ExternalLink,
+  CheckCircle2,
+  Bot,
 } from 'lucide-react';
 import { useState } from 'react';
-import type { ExpansionCity, MarketSubScores } from '@/lib/ai/expansion-types';
+import type { ExpansionCity, MarketSubScores, ResearchSource } from '@/lib/ai/expansion-types';
 import { SCORING_WEIGHTS } from '@/lib/ai/expansion-agent';
 
 interface CityResearchPanelProps {
@@ -350,6 +353,61 @@ export default function CityResearchPanel({
           subValue={barSub}
         />
       </div>
+
+      {/* Data Sources */}
+      {(() => {
+        const sources = (rd.sources as ResearchSource[] | undefined) || [];
+        const hasCensus = sources.some(s => s.name?.includes('Census'));
+        const hasGoogle = rd.google_places_validated === true;
+        return sources.length > 0 ? (
+          <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5">
+            <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+              Data Sources
+              {hasCensus && (
+                <span className="text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full font-medium flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Census Verified
+                </span>
+              )}
+              {hasGoogle && (
+                <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded-full font-medium flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Google Places
+                </span>
+              )}
+              {!hasCensus && !hasGoogle && (
+                <span className="text-[10px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 rounded-full font-medium flex items-center gap-1">
+                  <Bot className="w-3 h-3" /> AI Estimated
+                </span>
+              )}
+            </h4>
+            <div className="space-y-2">
+              {sources.map((source, i) => (
+                <div key={i} className="flex items-start gap-3 text-xs">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-300 font-medium truncate">{source.name}</span>
+                      {source.name?.includes('Census') && (
+                        <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                      )}
+                      {source.name?.includes('Google') && (
+                        <CheckCircle2 className="w-3 h-3 text-blue-400 flex-shrink-0" />
+                      )}
+                    </div>
+                    <span className="text-gray-500">{source.data_point}</span>
+                  </div>
+                  <a
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-tastelanc-accent hover:text-tastelanc-accent/80 flex-shrink-0"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null;
+      })()}
 
       {/* Prose sections */}
       <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5 space-y-5">

@@ -14,6 +14,7 @@ export async function GET() {
     'sitemap-categories.xml',
     'sitemap-blog.xml',
     'sitemap-rosie.xml',
+    'sitemap-careers.xml',
   ];
 
   const sitemapEntries = sitemaps
