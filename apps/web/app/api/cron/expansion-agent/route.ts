@@ -159,10 +159,10 @@ async function stepSuggestCities(
       .from('expansion_cities')
       .select('city_name, state');
 
-    // Also get existing markets
+    // Get existing live markets — NEVER suggest cities that are already live markets
     const { data: existingMarkets } = await supabase
       .from('markets')
-      .select('slug');
+      .select('name, slug');
 
     const suggestions = await suggestCities({
       count: needed,
@@ -171,22 +171,54 @@ async function stepSuggestCities(
       max_population: 500000,
     });
 
-    // Filter out cities that already exist in our pipeline
-    const existingNames = new Set(
+    // Build exclusion sets:
+    // 1. Cities already in expansion pipeline
+    const existingPipelineNames = new Set(
       (existingCities || []).map((c) => `${c.city_name.toLowerCase()}-${c.state.toLowerCase()}`)
     );
 
-    const newSuggestions = suggestions.filter(
-      (s) => !existingNames.has(`${s.city_name.toLowerCase()}-${s.state.toLowerCase()}`)
+    // 2. Live market names/slugs (Lancaster, Cumberland, etc.)
+    const liveMarketNames = new Set(
+      (existingMarkets || []).flatMap((m) => [
+        m.slug?.toLowerCase(),
+        m.name?.toLowerCase(),
+      ]).filter(Boolean)
     );
+
+    // 3. Hard-coded known market cities that must NEVER be re-suggested
+    const KNOWN_MARKET_CITIES = new Set([
+      'lancaster-pa',
+      'carlisle-pa',
+      'mechanicsburg-pa',
+      'camp hill-pa',
+      'shippensburg-pa',
+      'boiling springs-pa',
+    ]);
+
+    const newSuggestions = suggestions.filter((s) => {
+      const cityKey = `${s.city_name.toLowerCase()}-${s.state.toLowerCase()}`;
+      const regionKey = s.suggested_region_name
+        ? `${s.suggested_region_name.toLowerCase()}-${s.state.toLowerCase()}`
+        : null;
+
+      // Skip if already in pipeline
+      if (existingPipelineNames.has(cityKey)) return false;
+
+      // Skip if matches a live market
+      if (liveMarketNames.has(s.city_name.toLowerCase())) return false;
+      if (regionKey && liveMarketNames.has(s.suggested_region_name!.toLowerCase())) return false;
+
+      // Skip hard-coded known market cities
+      if (KNOWN_MARKET_CITIES.has(cityKey)) return false;
+
+      // Skip if any cluster town is a known market city
+      if (s.cluster_towns?.some((t) => KNOWN_MARKET_CITIES.has(`${t.toLowerCase()}-${s.state.toLowerCase()}`))) return false;
+
+      return true;
+    });
 
     // Insert new cities
     for (const suggestion of newSuggestions) {
-      const slug = suggestion.city_name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '');
-
       // Use the region name for slug if available (e.g., "lehigh-valley" instead of "allentown")
       const regionName = suggestion.suggested_region_name || suggestion.city_name;
       const regionSlug = regionName
