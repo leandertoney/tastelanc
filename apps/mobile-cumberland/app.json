@@ -27,7 +27,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.tastelanc.cumberland",
-      "buildNumber": "1",
+      "buildNumber": "6",
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": []
       },
