@@ -31,7 +31,7 @@ import {
   generateJobListing,
   suggestCities,
 } from '@/lib/ai/expansion-agent';
-import type { ExpansionCity, BrandDraft } from '@/lib/ai/expansion-types';
+import type { ExpansionCity, BrandDraft, ResearchSource } from '@/lib/ai/expansion-types';
 
 const CRON_SECRET = process.env.CRON_SECRET;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -41,23 +41,29 @@ const ADMIN_EMAIL = 'leandertoney@gmail.com';
 // Batch sizes — keep small to stay within function timeout
 const MAX_SUGGEST = 10; // cities to suggest per run
 const MAX_RESEARCH = 5; // cities to research per run
-const MAX_BRAND_GEN = 3; // cities to generate brands for per run
-const MAX_JOB_GEN = 2; // cities to generate job listings for per run
+const MAX_BRAND_GEN = 5; // cities to generate brands for per run
+const MAX_JOB_GEN = 5; // cities to generate job listings for per run
 const MIN_PIPELINE_SIZE = 20; // minimum active cities in pipeline
 
 // Role types to auto-generate job listings for
 const AUTO_JOB_ROLES = ['sales_rep'] as const;
+// Content creator role: only generated for larger markets
+const CONTENT_CREATOR_MIN_POPULATION = 100000;
+const CONTENT_CREATOR_MIN_CLUSTER_POPULATION = 150000;
 
 interface RunResult {
   citiesSuggested: number;
   citiesResearched: string[];
   brandsGenerated: string[];
   jobsGenerated: string[];
+  jobsAutoPosted: string[];
   errors: string[];
   needsAdminAttention: {
     brandsToReview: number;
     jobsToApprove: number;
     citiesReadyToApprove: number;
+    newApplications: number;
+    totalPostedJobs: number;
   };
 }
 
@@ -92,11 +98,14 @@ export async function POST(request: Request) {
     citiesResearched: [],
     brandsGenerated: [],
     jobsGenerated: [],
+    jobsAutoPosted: [],
     errors: [],
     needsAdminAttention: {
       brandsToReview: 0,
       jobsToApprove: 0,
       citiesReadyToApprove: 0,
+      newApplications: 0,
+      totalPostedJobs: 0,
     },
   };
 
@@ -113,11 +122,14 @@ export async function POST(request: Request) {
     // ── Step 4: Generate job listings for ready cities ───────
     await stepGenerateJobs(supabase, result);
 
+    // ── Step 4.5: Auto-post approved jobs ─────────────────────
+    await stepAutoPostJobs(supabase, result);
+
     // ── Step 5: Count items needing admin attention ──────────
     await stepCountPendingReview(supabase, result);
 
     // ── Step 6: Notify admin if there are items to review ───
-    await stepNotifyAdmin(result);
+    await stepNotifyAdmin(result, supabase);
 
     console.log('[expansion-agent] Run complete:', JSON.stringify(result, null, 2));
 
@@ -342,6 +354,20 @@ async function stepResearchCities(
         const barCount = (googleCounts.validated && googleCounts.barCount > 0)
           ? googleCounts.barCount : research.bar_count;
 
+        // Build sources array — start with Census/Wikipedia from AI research
+        const sources: ResearchSource[] = [...(research.sources || [])];
+
+        // Add Google Places as a source if validated
+        if (googleCounts.validated) {
+          const now = new Date().toISOString();
+          sources.push({
+            name: 'Google Places API',
+            url: `https://www.google.com/maps/search/restaurants+${encodeURIComponent(city.city_name + ', ' + city.state)}`,
+            data_point: `Restaurants: ${googleCounts.restaurantCount}, Bars: ${googleCounts.barCount}`,
+            accessed_at: now,
+          });
+        }
+
         // Update city with research results
         await supabase
           .from('expansion_cities')
@@ -363,6 +389,8 @@ async function stepResearchCities(
                 cluster_towns: clusterTowns,
                 cluster_population: (city.research_data as Record<string, unknown>)?.cluster_population,
               } : {}),
+              // Research sources for admin panel
+              sources,
               key_neighborhoods: research.key_neighborhoods,
               notable_restaurants: research.notable_restaurants,
               local_food_traditions: research.local_food_traditions,
@@ -546,8 +574,18 @@ async function stepGenerateJobs(
       if ((jobCount ?? 0) > 0) continue; // Already has listings
 
       try {
-        // Generate job listings for each auto-role
-        for (const roleType of AUTO_JOB_ROLES) {
+        // Determine which roles to generate for this city
+        const rolesToGenerate: string[] = [...AUTO_JOB_ROLES];
+
+        // Add content_creator for larger markets
+        const cityPop = city.population || 0;
+        const clusterPop = (city.research_data as Record<string, unknown>)?.cluster_population as number || 0;
+        if (cityPop >= CONTENT_CREATOR_MIN_POPULATION || clusterPop >= CONTENT_CREATOR_MIN_CLUSTER_POPULATION) {
+          rolesToGenerate.push('content_creator');
+        }
+
+        // Generate job listings for each role
+        for (const roleType of rolesToGenerate) {
           const listing = await generateJobListing(
             city as ExpansionCity,
             selectedBrand as BrandDraft,
@@ -592,6 +630,67 @@ async function stepGenerateJobs(
 }
 
 // ─────────────────────────────────────────────────────────
+// Step 4.5: Auto-post approved jobs
+// ─────────────────────────────────────────────────────────
+
+async function stepAutoPostJobs(
+  supabase: SupabaseClient,
+  result: RunResult
+) {
+  try {
+    // Find approved jobs that haven't been posted yet
+    const { data: approvedJobs } = await supabase
+      .from('expansion_job_listings')
+      .select('id, city_id, title, role_type')
+      .eq('status', 'approved')
+      .is('posted_at', null);
+
+    if (!approvedJobs || approvedJobs.length === 0) return;
+
+    console.log(`[expansion-agent] Auto-posting ${approvedJobs.length} approved jobs...`);
+
+    const now = new Date();
+    const validThrough = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000); // 90 days
+
+    for (const job of approvedJobs) {
+      try {
+        await supabase
+          .from('expansion_job_listings')
+          .update({
+            status: 'posted',
+            posted_at: now.toISOString(),
+            valid_through: validThrough.toISOString(),
+          })
+          .eq('id', job.id);
+
+        // Log activity
+        await supabase.from('expansion_activity_log').insert({
+          city_id: job.city_id,
+          action: 'job_posted',
+          description: `Auto-posted ${job.role_type} listing: ${job.title}`,
+          metadata: {
+            source: 'autonomous_agent',
+            job_listing_id: job.id,
+            valid_through: validThrough.toISOString(),
+          },
+        });
+
+        result.jobsAutoPosted.push(job.title);
+        console.log(`[expansion-agent] Posted job: ${job.title}`);
+      } catch (error) {
+        const msg = `Auto-post failed for job ${job.id}: ${error}`;
+        console.error(`[expansion-agent] ${msg}`);
+        result.errors.push(msg);
+      }
+    }
+  } catch (error) {
+    const msg = `Step 4.5 (auto-post jobs) failed: ${error}`;
+    console.error(`[expansion-agent] ${msg}`);
+    result.errors.push(msg);
+  }
+}
+
+// ─────────────────────────────────────────────────────────
 // Step 5: Count items needing admin attention
 // ─────────────────────────────────────────────────────────
 
@@ -623,8 +722,7 @@ async function stepCountPendingReview(
       .select('*', { count: 'exact', head: true })
       .eq('status', 'draft');
 
-    // Cities ready to approve for launch (brand_ready + brand selected + jobs approved)
-    // This is a more complex check — simplify to brand_ready cities with a selected brand
+    // Cities ready to approve for launch
     let citiesReadyToApprove = 0;
     for (const city of brandReadyCities || []) {
       const { count: selectedCount } = await supabase
@@ -636,10 +734,26 @@ async function stepCountPendingReview(
       if ((selectedCount ?? 0) > 0) citiesReadyToApprove++;
     }
 
+    // New job applications since last run (~2 hours ago)
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+    const { count: newApps } = await supabase
+      .from('job_applications')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'new')
+      .gte('created_at', twoHoursAgo);
+
+    // Total posted jobs across all markets
+    const { count: postedJobs } = await supabase
+      .from('expansion_job_listings')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'posted');
+
     result.needsAdminAttention = {
       brandsToReview,
       jobsToApprove: draftJobs ?? 0,
       citiesReadyToApprove,
+      newApplications: newApps ?? 0,
+      totalPostedJobs: postedJobs ?? 0,
     };
   } catch (error) {
     console.error(`[expansion-agent] Step 5 (count pending) failed: ${error}`);
@@ -647,11 +761,14 @@ async function stepCountPendingReview(
 }
 
 // ─────────────────────────────────────────────────────────
-// Step 6: Notify admin via email
+// Step 6: Notify admin via email (rich template)
 // ─────────────────────────────────────────────────────────
 
-async function stepNotifyAdmin(result: RunResult) {
-  const { needsAdminAttention, citiesResearched, brandsGenerated, jobsGenerated, citiesSuggested, errors } = result;
+async function stepNotifyAdmin(
+  result: RunResult,
+  supabase?: SupabaseClient
+) {
+  const { needsAdminAttention, citiesResearched, brandsGenerated, jobsGenerated, jobsAutoPosted, citiesSuggested, errors } = result;
   const totalPending =
     needsAdminAttention.brandsToReview +
     needsAdminAttention.jobsToApprove +
@@ -661,7 +778,8 @@ async function stepNotifyAdmin(result: RunResult) {
     citiesSuggested > 0 ||
     citiesResearched.length > 0 ||
     brandsGenerated.length > 0 ||
-    jobsGenerated.length > 0;
+    jobsGenerated.length > 0 ||
+    jobsAutoPosted.length > 0;
 
   // Only send email if there's new work or pending items
   if (!hasNewWork && totalPending === 0) {
@@ -672,57 +790,164 @@ async function stepNotifyAdmin(result: RunResult) {
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    const lines: string[] = [];
-    lines.push('<h2>Expansion Agent Report</h2>');
-
-    if (hasNewWork) {
-      lines.push('<h3>New Work Completed</h3>');
-      lines.push('<ul>');
-      if (citiesSuggested > 0) {
-        lines.push(`<li><strong>${citiesSuggested} cities</strong> added to pipeline</li>`);
+    // Fetch pipeline stats for the progress bar
+    let pipelineStats = { researching: 0, researched: 0, brand_ready: 0, approved: 0, live: 0, posted_jobs: 0 };
+    if (supabase) {
+      const statuses = ['researching', 'researched', 'brand_ready', 'approved', 'live'];
+      for (const status of statuses) {
+        const { count } = await supabase
+          .from('expansion_cities')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', status);
+        (pipelineStats as Record<string, number>)[status] = count ?? 0;
       }
-      if (citiesResearched.length > 0) {
-        lines.push(`<li><strong>${citiesResearched.length} cities</strong> researched: ${citiesResearched.join(', ')}</li>`);
-      }
-      if (brandsGenerated.length > 0) {
-        lines.push(`<li><strong>${brandsGenerated.length} cities</strong> received brand proposals: ${brandsGenerated.join(', ')}</li>`);
-      }
-      if (jobsGenerated.length > 0) {
-        lines.push(`<li><strong>${jobsGenerated.length} cities</strong> received job listings: ${jobsGenerated.join(', ')}</li>`);
-      }
-      lines.push('</ul>');
+      pipelineStats.posted_jobs = needsAdminAttention.totalPostedJobs;
     }
 
-    if (totalPending > 0) {
-      lines.push('<h3>Needs Your Attention</h3>');
-      lines.push('<ul>');
-      if (needsAdminAttention.brandsToReview > 0) {
-        lines.push(`<li><strong>${needsAdminAttention.brandsToReview} cities</strong> need brand selection</li>`);
+    // Fetch recently branded cities with avatars for thumbnails
+    let brandThumbnails: { city: string; avatar: string; name: string }[] = [];
+    if (supabase && brandsGenerated.length > 0) {
+      for (const cityName of brandsGenerated.slice(0, 5)) {
+        const { data: city } = await supabase
+          .from('expansion_cities')
+          .select('id')
+          .eq('city_name', cityName)
+          .single();
+        if (city) {
+          const { data: brands } = await supabase
+            .from('expansion_brand_drafts')
+            .select('app_name, avatar_image_url, ai_assistant_name')
+            .eq('city_id', city.id)
+            .not('avatar_image_url', 'is', null)
+            .limit(3);
+          if (brands) {
+            for (const b of brands) {
+              if (b.avatar_image_url) {
+                brandThumbnails.push({ city: cityName, avatar: b.avatar_image_url, name: b.ai_assistant_name });
+              }
+            }
+          }
+        }
       }
-      if (needsAdminAttention.jobsToApprove > 0) {
-        lines.push(`<li><strong>${needsAdminAttention.jobsToApprove} job listings</strong> awaiting approval</li>`);
-      }
-      if (needsAdminAttention.citiesReadyToApprove > 0) {
-        lines.push(`<li><strong>${needsAdminAttention.citiesReadyToApprove} cities</strong> ready for launch approval</li>`);
-      }
-      lines.push('</ul>');
-      lines.push('<p><a href="https://tastelanc.com/admin/expansion" style="color: #A41E22; font-weight: bold;">Review in Dashboard →</a></p>');
     }
 
-    if (errors.length > 0) {
-      lines.push('<h3>Errors</h3>');
-      lines.push('<ul>');
-      for (const err of errors) {
-        lines.push(`<li style="color: #cc3333;">${err}</li>`);
-      }
-      lines.push('</ul>');
-    }
+    const DASHBOARD_URL = 'https://tastelanc.com/admin/expansion';
+    const ACCENT = '#A41E22';
+
+    // Build the HTML email
+    const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
+<body style="margin:0;padding:0;background:#0a0a0a;color:#e5e5e5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:24px;">
+
+  <!-- Header -->
+  <div style="text-align:center;margin-bottom:24px;">
+    <h1 style="color:white;font-size:22px;margin:0;">Expansion Agent Report</h1>
+    <p style="color:#888;font-size:13px;margin:4px 0 0;">${new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+  </div>
+
+  <!-- Pipeline Progress Bar -->
+  <div style="background:#1a1a1a;border-radius:12px;padding:16px;margin-bottom:20px;">
+    <h3 style="color:white;font-size:14px;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;">Pipeline Overview</h3>
+    <div style="display:flex;gap:0;border-radius:8px;overflow:hidden;height:28px;background:#222;">
+      ${pipelineStats.researching > 0 ? `<div style="background:#3b82f6;flex:${pipelineStats.researching};display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:600;">${pipelineStats.researching}</div>` : ''}
+      ${pipelineStats.researched > 0 ? `<div style="background:#8b5cf6;flex:${pipelineStats.researched};display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:600;">${pipelineStats.researched}</div>` : ''}
+      ${pipelineStats.brand_ready > 0 ? `<div style="background:#f59e0b;flex:${pipelineStats.brand_ready};display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:600;">${pipelineStats.brand_ready}</div>` : ''}
+      ${pipelineStats.approved > 0 ? `<div style="background:#10b981;flex:${pipelineStats.approved};display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:600;">${pipelineStats.approved}</div>` : ''}
+      ${pipelineStats.live > 0 ? `<div style="background:${ACCENT};flex:${pipelineStats.live};display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:600;">${pipelineStats.live}</div>` : ''}
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:#888;">
+      <span style="color:#3b82f6;">Researching ${pipelineStats.researching}</span>
+      <span style="color:#8b5cf6;">Researched ${pipelineStats.researched}</span>
+      <span style="color:#f59e0b;">Branded ${pipelineStats.brand_ready}</span>
+      <span style="color:#10b981;">Approved ${pipelineStats.approved}</span>
+      <span style="color:${ACCENT};">Live ${pipelineStats.live}</span>
+    </div>
+    <p style="color:#888;font-size:12px;margin:8px 0 0;text-align:center;">
+      <strong style="color:white;">${pipelineStats.posted_jobs}</strong> jobs posted across all markets
+      ${needsAdminAttention.newApplications > 0 ? ` &bull; <strong style="color:#f59e0b;">${needsAdminAttention.newApplications} new application${needsAdminAttention.newApplications > 1 ? 's' : ''}</strong>` : ''}
+    </p>
+  </div>
+
+  ${hasNewWork ? `
+  <!-- New Work -->
+  <div style="background:#1a1a1a;border-radius:12px;padding:16px;margin-bottom:20px;">
+    <h3 style="color:white;font-size:14px;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;">New This Run</h3>
+    <table style="width:100%;border-collapse:collapse;">
+      ${citiesSuggested > 0 ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">Cities Added</td><td style="padding:6px 0;text-align:right;color:white;font-weight:600;font-size:13px;">${citiesSuggested}</td></tr>` : ''}
+      ${citiesResearched.length > 0 ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">Cities Researched</td><td style="padding:6px 0;text-align:right;color:white;font-weight:600;font-size:13px;">${citiesResearched.join(', ')}</td></tr>` : ''}
+      ${brandsGenerated.length > 0 ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">Brands Generated</td><td style="padding:6px 0;text-align:right;color:white;font-weight:600;font-size:13px;">${brandsGenerated.join(', ')}</td></tr>` : ''}
+      ${jobsGenerated.length > 0 ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">Jobs Generated</td><td style="padding:6px 0;text-align:right;color:white;font-weight:600;font-size:13px;">${jobsGenerated.join(', ')}</td></tr>` : ''}
+      ${jobsAutoPosted.length > 0 ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">Jobs Auto-Posted</td><td style="padding:6px 0;text-align:right;color:#10b981;font-weight:600;font-size:13px;">${jobsAutoPosted.length} posted</td></tr>` : ''}
+    </table>
+  </div>
+  ` : ''}
+
+  ${brandThumbnails.length > 0 ? `
+  <!-- Avatar Thumbnails -->
+  <div style="background:#1a1a1a;border-radius:12px;padding:16px;margin-bottom:20px;">
+    <h3 style="color:white;font-size:14px;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;">New Brand Mascots</h3>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+      ${brandThumbnails.slice(0, 6).map(b => `
+        <div style="text-align:center;">
+          <img src="${b.avatar}" width="64" height="64" style="border-radius:50%;border:2px solid #333;" alt="${b.name}" />
+          <p style="color:#ccc;font-size:11px;margin:4px 0 0;">${b.name}</p>
+          <p style="color:#666;font-size:10px;margin:2px 0 0;">${b.city}</p>
+        </div>
+      `).join('')}
+    </div>
+  </div>
+  ` : ''}
+
+  ${totalPending > 0 ? `
+  <!-- Needs Attention -->
+  <div style="background:#1a1a1a;border:1px solid ${ACCENT}44;border-radius:12px;padding:16px;margin-bottom:20px;">
+    <h3 style="color:${ACCENT};font-size:14px;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;">Needs Your Attention</h3>
+    <table style="width:100%;border-collapse:collapse;">
+      ${needsAdminAttention.brandsToReview > 0 ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">Brand Selection Needed</td><td style="padding:6px 0;text-align:right;color:#f59e0b;font-weight:600;font-size:13px;">${needsAdminAttention.brandsToReview} cities</td></tr>` : ''}
+      ${needsAdminAttention.jobsToApprove > 0 ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">Job Listings to Approve</td><td style="padding:6px 0;text-align:right;color:#f59e0b;font-weight:600;font-size:13px;">${needsAdminAttention.jobsToApprove} drafts</td></tr>` : ''}
+      ${needsAdminAttention.citiesReadyToApprove > 0 ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">Cities Ready for Launch</td><td style="padding:6px 0;text-align:right;color:#10b981;font-weight:600;font-size:13px;">${needsAdminAttention.citiesReadyToApprove} cities</td></tr>` : ''}
+      ${needsAdminAttention.newApplications > 0 ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">New Job Applications</td><td style="padding:6px 0;text-align:right;color:#f59e0b;font-weight:600;font-size:13px;">${needsAdminAttention.newApplications} new</td></tr>` : ''}
+    </table>
+    <div style="text-align:center;margin-top:16px;">
+      <a href="${DASHBOARD_URL}" style="display:inline-block;background:${ACCENT};color:white;text-decoration:none;padding:10px 24px;border-radius:8px;font-weight:600;font-size:14px;">Review in Dashboard</a>
+    </div>
+  </div>
+  ` : ''}
+
+  ${errors.length > 0 ? `
+  <!-- Errors -->
+  <div style="background:#1a1a1a;border:1px solid #cc333344;border-radius:12px;padding:16px;margin-bottom:20px;">
+    <h3 style="color:#cc3333;font-size:14px;margin:0 0 8px;">Errors (${errors.length})</h3>
+    ${errors.map(err => `<p style="color:#cc6666;font-size:12px;margin:4px 0;">&bull; ${err}</p>`).join('')}
+  </div>
+  ` : ''}
+
+  <!-- Footer -->
+  <p style="text-align:center;color:#555;font-size:11px;margin-top:24px;">
+    TasteLanc Expansion Agent &bull; <a href="${DASHBOARD_URL}" style="color:${ACCENT};">Dashboard</a> &bull; <a href="https://tastelanc.com/api/jobs/feed.xml" style="color:${ACCENT};">Indeed Feed</a>
+  </p>
+
+</div>
+</body>
+</html>`;
+
+    // Build subject line
+    const subjectParts: string[] = [];
+    if (citiesSuggested > 0) subjectParts.push(`${citiesSuggested} cities added`);
+    if (brandsGenerated.length > 0) subjectParts.push(`${brandsGenerated.length} branded`);
+    if (jobsAutoPosted.length > 0) subjectParts.push(`${jobsAutoPosted.length} jobs posted`);
+    if (needsAdminAttention.newApplications > 0) subjectParts.push(`${needsAdminAttention.newApplications} new application${needsAdminAttention.newApplications > 1 ? 's' : ''}`);
+    if (totalPending > 0 && subjectParts.length === 0) subjectParts.push(`${totalPending} items need review`);
+    const subjectDetail = subjectParts.length > 0 ? subjectParts.join(', ') : 'Status update';
 
     await resend.emails.send({
       from: 'TasteLanc Expansion Agent <noreply@tastelanc.com>',
       to: ADMIN_EMAIL,
-      subject: `Expansion Agent: ${hasNewWork ? 'New progress' : ''}${hasNewWork && totalPending > 0 ? ' + ' : ''}${totalPending > 0 ? `${totalPending} items need review` : ''}`,
-      html: lines.join('\n'),
+      subject: `Expansion: ${subjectDetail}`,
+      html,
     });
 
     console.log('[expansion-agent] Admin notification sent');

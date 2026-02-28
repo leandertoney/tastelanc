@@ -27,6 +27,8 @@ export type ExpansionAction =
   | 'job_listing_generated'
   | 'job_listing_approved'
   | 'job_listing_rejected'
+  | 'job_posted'
+  | 'application_received'
   | 'city_approved'
   | 'city_rejected'
   | 'city_put_on_hold'
@@ -99,6 +101,12 @@ export interface ExpansionJobListing {
   location: string | null;
   is_remote: boolean;
   status: JobListingStatus;
+  posted_at: string | null;
+  valid_through: string | null;
+  employment_type: string;
+  salary_min: number | null;
+  salary_max: number | null;
+  salary_unit: string;
   approved_by: string | null;
   approved_at: string | null;
   admin_notes: string | null;
@@ -106,6 +114,23 @@ export interface ExpansionJobListing {
   updated_at: string;
   // Joined fields
   city?: ExpansionCity;
+  brand?: BrandDraft;
+}
+
+export interface JobApplication {
+  id: string;
+  job_listing_id: string | null;
+  city_id: string | null;
+  name: string;
+  email: string;
+  phone: string | null;
+  linkedin: string | null;
+  message: string | null;
+  resume_url: string | null;
+  status: 'new' | 'reviewed' | 'contacted' | 'rejected' | 'hired';
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ActivityLogEntry {
@@ -162,11 +187,20 @@ export interface SubScoreReasoning {
 // AI response types
 // ─────────────────────────────────────────────────────────
 
+export interface ResearchSource {
+  name: string;           // "US Census Bureau ACS 2023"
+  url: string;            // clickable link to source
+  data_point: string;     // "Population: 126,092"
+  accessed_at: string;    // ISO timestamp
+}
+
 export interface CityResearchData {
   // Regional clustering
   suggested_region_name?: string;     // e.g. "Cumberland", "Lehigh Valley"
   cluster_towns?: string[];           // e.g. ["Carlisle", "Mechanicsburg", "Camp Hill"]
   cluster_population?: number;        // combined population of all cluster towns
+  // Validated data sources
+  sources?: ResearchSource[];
   // Research data
   key_neighborhoods?: string[];
   notable_restaurants?: string[];

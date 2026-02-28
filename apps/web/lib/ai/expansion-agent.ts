@@ -7,7 +7,9 @@ import type {
   JobListingDraft,
   CitySuggestion,
   MarketSubScores,
+  ResearchSource,
 } from './expansion-types';
+import { fetchCensusData } from './census-data';
 
 // ─────────────────────────────────────────────────────────
 // City Expansion AI Agent
@@ -239,7 +241,37 @@ export async function researchCity(
   county: string,
   state: string,
   clusterTowns?: string[]
-): Promise<CityResearchResult> {
+): Promise<CityResearchResult & { sources: ResearchSource[] }> {
+  // ── Step 1: Fetch real Census data ──────────────────────
+  const now = new Date().toISOString();
+  const sources: ResearchSource[] = [];
+  let censusBlock = '';
+
+  const census = await fetchCensusData(cityName, state);
+  if (census) {
+    censusBlock = `
+VERIFIED DEMOGRAPHIC DATA (use these exact numbers, do NOT estimate these):
+- Population: ${census.population.toLocaleString()} (source: US Census Bureau ACS ${census.year})
+- Median Household Income: $${census.median_income.toLocaleString()} (source: US Census Bureau ACS ${census.year})
+- Median Age: ${census.median_age} (source: US Census Bureau ACS ${census.year})
+Do NOT override these numbers with estimates.`;
+    sources.push(
+      { name: `US Census Bureau ACS ${census.year}`, url: census.source_url, data_point: `Population: ${census.population.toLocaleString()}`, accessed_at: now },
+      { name: `US Census Bureau ACS ${census.year}`, url: census.source_url, data_point: `Median Income: $${census.median_income.toLocaleString()}`, accessed_at: now },
+      { name: `US Census Bureau ACS ${census.year}`, url: census.source_url, data_point: `Median Age: ${census.median_age}`, accessed_at: now },
+    );
+  }
+
+  // Add Wikipedia as general reference
+  const wikiCity = encodeURIComponent(`${cityName}, ${state}`).replace(/%20/g, '_').replace(/%2C/g, ',');
+  sources.push({
+    name: 'Wikipedia',
+    url: `https://en.wikipedia.org/wiki/${wikiCity}`,
+    data_point: 'General city reference',
+    accessed_at: now,
+  });
+
+  // ── Step 2: AI research with verified data ─────────────
   const systemPrompt =
     'You are a market research analyst for a restaurant/dining discovery app company. ' +
     'You specialize in evaluating small-to-mid-size US cities and regional markets for expansion. ' +
@@ -250,13 +282,14 @@ export async function researchCity(
     : `the city of ${cityName}, ${county}`;
 
   const userPrompt = `Research ${regionLabel}, ${state} as a potential market for a local dining discovery app (similar to a hyperlocal Yelp/TripAdvisor focused on happy hours, events, specials, and curated restaurant guides).${clusterTowns?.length ? `\n\nIMPORTANT: This is a REGIONAL market covering multiple towns: ${clusterTowns.join(', ')}. Research the ENTIRE region, not just the anchor city. Population, restaurant counts, and scores should reflect the combined area.` : ''}
+${censusBlock}
 
 Please return a JSON object with the following fields:
 
 {
-  "population": <number — estimated city/metro population>,
-  "median_income": <number — estimated median household income in USD>,
-  "median_age": <number — estimated median age>,
+  "population": <number — ${census ? `USE ${census.population} from Census data` : 'estimated city/metro population'}>,
+  "median_income": <number — ${census ? `USE ${census.median_income} from Census data` : 'estimated median household income in USD'}>,
+  "median_age": <number — ${census ? `USE ${census.median_age} from Census data` : 'estimated median age'}>,
   "restaurant_count": <number — estimated number of restaurants in the area>,
   "bar_count": <number — estimated number of bars/pubs/breweries>,
   "dining_scene_description": "<string — 2-3 paragraphs describing the local dining scene, food culture, and trends>",
@@ -288,7 +321,7 @@ Please return a JSON object with the following fields:
   }
 }
 
-Be as accurate as possible with population, income, and location data. For restaurant/bar counts, provide reasonable estimates. Return ONLY the JSON object, no additional text.`;
+${census ? 'Use the verified Census data for population, income, and age. Do NOT estimate these.' : 'Be as accurate as possible with population, income, and location data.'} For restaurant/bar counts, provide reasonable estimates. Return ONLY the JSON object, no additional text.`;
 
   const response = await openai.chat.completions.create({
     model: MODEL,
@@ -315,6 +348,13 @@ Be as accurate as possible with population, income, and location data. For resta
 
     const parsed = JSON.parse(jsonStr);
 
+    // Override with Census data if available (AI sometimes ignores instructions)
+    if (census) {
+      parsed.population = census.population;
+      parsed.median_income = census.median_income;
+      parsed.median_age = census.median_age;
+    }
+
     // Ensure sub_scores exist with defaults
     const subScores: MarketSubScores = {
       population_density: parsed.sub_scores?.population_density ?? 50,
@@ -329,7 +369,8 @@ Be as accurate as possible with population, income, and location data. For resta
       ...parsed,
       sub_scores: subScores,
       sub_score_reasoning: parsed.sub_score_reasoning || {},
-    } as CityResearchResult;
+      sources,
+    } as CityResearchResult & { sources: ResearchSource[] };
   } catch (error) {
     console.error('Failed to parse city research response:', content);
     throw new Error(
