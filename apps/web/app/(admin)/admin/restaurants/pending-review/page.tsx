@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Card, Badge, Button } from '@/components/ui';
 import { Store, MapPin, Check, X, Loader2, ClipboardCheck } from 'lucide-react';
+import { toast } from 'sonner';
 import { CATEGORIES_BY_GROUP, CATEGORY_GROUPS, ALL_CATEGORIES } from '@/lib/constants/categories';
 import type { RestaurantCategory } from '@/types/database';
 import { useMarket } from '@/contexts/MarketContext';
@@ -89,9 +90,10 @@ export default function PendingReviewPage() {
 
     if (error) {
       console.error('Error approving venue:', error);
-      alert('Failed to approve venue. Please try again.');
+      toast.error('Failed to approve venue');
     } else {
       setVenues((prev) => prev.filter((v) => v.id !== venueId));
+      toast.success('Venue approved');
     }
     setApproving(null);
   }
@@ -106,9 +108,10 @@ export default function PendingReviewPage() {
 
     if (error) {
       console.error('Error rejecting venue:', error);
-      alert('Failed to delete venue. Please try again.');
+      toast.error('Failed to delete venue');
     } else {
       setVenues((prev) => prev.filter((v) => v.id !== venueId));
+      toast.success('Venue deleted');
     }
     setRejecting(null);
   }

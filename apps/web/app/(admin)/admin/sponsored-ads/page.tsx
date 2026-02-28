@@ -13,6 +13,7 @@ import {
   Megaphone,
   ExternalLink,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface FeaturedAd {
   id: string;
@@ -121,9 +122,13 @@ export default function SponsoredAdsPage() {
               }
             : null
         );
+        toast.success(newValue ? 'Ad activated' : 'Ad deactivated');
+      } else {
+        toast.error('Failed to update ad');
       }
     } catch (err) {
       console.error('Failed to toggle ad:', err);
+      toast.error('Failed to update ad');
     }
   };
 
@@ -143,9 +148,12 @@ export default function SponsoredAdsPage() {
               }
             : null
         );
+      } else {
+        toast.error('Failed to update priority');
       }
     } catch (err) {
       console.error('Failed to update priority:', err);
+      toast.error('Failed to update priority');
     }
   };
 

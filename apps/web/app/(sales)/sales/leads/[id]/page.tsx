@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -11,7 +11,6 @@ import {
   Loader2,
   Save,
   ShoppingCart,
-  Clock,
   MessageSquare,
   PhoneCall,
   Video,
@@ -19,10 +18,14 @@ import {
   CalendarCheck,
   CheckCircle,
   XCircle,
+  Clock,
+  Pencil,
+  X,
   Store,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Card, Badge } from '@/components/ui';
+import { toast } from 'sonner';
 
 interface Lead {
   id: string;
@@ -42,6 +45,8 @@ interface Lead {
   notes: string | null;
   last_contacted_at: string | null;
   created_at: string;
+  assigned_to: string | null;
+  assigned_to_name: string | null;
   restaurant_id: string | null;
   google_place_id: string | null;
   restaurants: {
@@ -64,11 +69,11 @@ interface Activity {
 }
 
 const STATUS_OPTIONS = [
-  { value: 'new', label: 'New', color: 'bg-blue-500/20 text-blue-400' },
-  { value: 'contacted', label: 'Contacted', color: 'bg-yellow-500/20 text-yellow-400' },
-  { value: 'interested', label: 'Interested', color: 'bg-green-500/20 text-green-400' },
-  { value: 'not_interested', label: 'Not Interested', color: 'bg-red-500/20 text-red-400' },
-  { value: 'converted', label: 'Converted', color: 'bg-lancaster-gold/20 text-lancaster-gold' },
+  { value: 'new', label: 'New', color: 'bg-blue-500/20 text-blue-400', icon: Clock },
+  { value: 'contacted', label: 'Contacted', color: 'bg-yellow-500/20 text-yellow-400', icon: Mail },
+  { value: 'interested', label: 'Interested', color: 'bg-green-500/20 text-green-400', icon: CheckCircle },
+  { value: 'not_interested', label: 'Not Interested', color: 'bg-red-500/20 text-red-400', icon: XCircle },
+  { value: 'converted', label: 'Converted', color: 'bg-lancaster-gold/20 text-lancaster-gold', icon: CheckCircle },
 ];
 
 const ACTIVITY_TYPES = [
@@ -88,13 +93,15 @@ const ACTIVITY_ICONS: Record<string, typeof PhoneCall> = {
   status_change: CheckCircle,
 };
 
+const CATEGORIES = ['restaurant', 'bar', 'cafe', 'brewery', 'bakery', 'food_truck', 'other'];
+
 export default function LeadDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }) {
   const router = useRouter();
-  const { id: leadId } = use(params);
+  const { id: leadId } = params;
   const [lead, setLead] = useState<Lead | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -144,13 +151,16 @@ export default function LeadDetailPage({
       if (res.ok) {
         const data = await res.json();
         setLead(data.lead);
-        // Refresh activities to show status change
         const actRes = await fetch(`/api/sales/leads/${leadId}/activities`);
         const actData = await actRes.json();
         setActivities(actData.activities || []);
+        toast.success('Status updated');
+      } else {
+        toast.error('Failed to update status');
       }
     } catch (error) {
       console.error('Error updating status:', error);
+      toast.error('Failed to update status');
     }
   };
 
@@ -160,16 +170,32 @@ export default function LeadDetailPage({
       const res = await fetch(`/api/sales/leads/${leadId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify({
+          business_name: editForm.business_name,
+          contact_name: editForm.contact_name,
+          email: editForm.email,
+          phone: editForm.phone,
+          website: editForm.website,
+          address: editForm.address,
+          city: editForm.city,
+          state: editForm.state,
+          zip_code: editForm.zip_code,
+          category: editForm.category,
+          notes: editForm.notes,
+        }),
       });
 
       if (res.ok) {
         const data = await res.json();
-        setLead(data.lead);
+        setLead({ ...lead!, ...data.lead });
         setEditMode(false);
+        toast.success('Changes saved');
+      } else {
+        toast.error('Failed to save changes');
       }
     } catch (error) {
       console.error('Error saving lead:', error);
+      toast.error('Failed to save changes');
     } finally {
       setIsSaving(false);
     }
@@ -194,13 +220,16 @@ export default function LeadDetailPage({
         setActivities((prev) => [data.activity, ...prev]);
         setActivityDescription('');
 
-        // Refresh lead to get updated last_contacted_at
         const leadRes = await fetch(`/api/sales/leads/${leadId}`);
         const leadData = await leadRes.json();
         setLead(leadData.lead);
+        toast.success('Activity logged');
+      } else {
+        toast.error('Failed to log activity');
       }
     } catch (error) {
       console.error('Error logging activity:', error);
+      toast.error('Failed to log activity');
     } finally {
       setIsLoggingActivity(false);
     }
@@ -226,313 +255,384 @@ export default function LeadDetailPage({
   }
 
   const currentStatusConfig = STATUS_OPTIONS.find((s) => s.value === lead.status);
+  const inputClass = 'w-full px-3 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent';
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div>
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <button
-          onClick={() => router.back()}
-          className="p-2 text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold text-white">{lead.business_name}</h1>
-          <div className="flex items-center gap-3 mt-1">
-            <Badge className={currentStatusConfig?.color || ''}>
-              {currentStatusConfig?.label || lead.status}
-            </Badge>
-            {lead.category && (
-              <Badge className="bg-tastelanc-surface-light text-gray-300">{lead.category}</Badge>
-            )}
-            {lead.source && (
-              <span className="text-xs text-gray-500">Source: {lead.source}</span>
-            )}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.back()}
+            className="p-2 text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-white">{lead.business_name}</h1>
+            <div className="flex items-center gap-3 mt-1">
+              {lead.category && (
+                <span className="text-sm text-gray-400 capitalize">{lead.category.replace('_', ' ')}</span>
+              )}
+              <span className="text-gray-600">|</span>
+              <span className="text-sm text-gray-500">Source: {lead.source}</span>
+              <span className="text-gray-600">|</span>
+              <span className="text-sm text-gray-500">Added {new Date(lead.created_at).toLocaleDateString()}</span>
+            </div>
           </div>
         </div>
-        <Link
-          href={`/sales/checkout?email=${encodeURIComponent(lead.email || '')}&name=${encodeURIComponent(lead.contact_name || lead.business_name)}&phone=${encodeURIComponent(lead.phone || '')}`}
-          className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
-        >
-          <ShoppingCart className="w-4 h-4" />
-          Create Sale
-        </Link>
+        <div className="flex items-center gap-3">
+          {!editMode ? (
+            <button
+              onClick={() => { setEditMode(true); setEditForm(lead); }}
+              className="flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-gray-300 hover:text-white rounded-lg transition-colors border border-tastelanc-surface-light"
+            >
+              <Pencil className="w-4 h-4" />
+              Edit
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => { setEditMode(false); setEditForm(lead); }}
+                className="flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4" />
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={isSaving}
+                className="flex items-center gap-2 px-4 py-2 bg-tastelanc-accent hover:bg-tastelanc-accent-hover disabled:opacity-50 text-white rounded-lg transition-colors"
+              >
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save Changes
+              </button>
+            </>
+          )}
+          <Link
+            href={`/sales/checkout?email=${encodeURIComponent(lead.email || '')}&name=${encodeURIComponent(lead.contact_name || lead.business_name)}&phone=${encodeURIComponent(lead.phone || '')}&businessName=${encodeURIComponent(lead.business_name)}`}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            Create Sale
+          </Link>
+        </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        {/* Left Column: Lead Details */}
-        <div className="md:col-span-1 space-y-4">
-          {/* Contact Info */}
-          <Card className="p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Contact</h2>
+      {/* Status + Linked Business bar */}
+      <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-400">Status:</span>
+          <div className="flex gap-1">
+            {STATUS_OPTIONS.map((status) => (
               <button
-                onClick={() => {
-                  if (editMode) {
-                    handleSaveEdit();
-                  } else {
-                    setEditMode(true);
-                  }
-                }}
-                className="text-xs text-tastelanc-accent hover:underline flex items-center gap-1"
+                key={status.value}
+                onClick={() => handleStatusChange(status.value)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  lead.status === status.value
+                    ? status.color
+                    : 'text-gray-500 hover:bg-tastelanc-surface-light hover:text-gray-300'
+                }`}
               >
-                {editMode ? (
-                  isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Save className="w-3 h-3" /> Save</>
-                ) : 'Edit'}
+                {status.label}
               </button>
-            </div>
+            ))}
+          </div>
+        </div>
 
-            {editMode ? (
-              <div className="space-y-3">
-                <div>
-                  <label className="text-xs text-gray-500">Contact Name</label>
-                  <input
-                    type="text"
-                    value={editForm.contact_name || ''}
-                    onChange={(e) => setEditForm({ ...editForm, contact_name: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500">Email</label>
-                  <input
-                    type="email"
-                    value={editForm.email || ''}
-                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500">Phone</label>
-                  <input
-                    type="tel"
-                    value={editForm.phone || ''}
-                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500">Website</label>
-                  <input
-                    type="text"
-                    value={editForm.website || ''}
-                    onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500">Notes</label>
-                  <textarea
-                    value={editForm.notes || ''}
-                    onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                    rows={3}
-                    className="w-full mt-1 px-3 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent resize-none"
-                  />
-                </div>
-                <button
-                  onClick={() => { setEditMode(false); setEditForm(lead); }}
-                  className="text-xs text-gray-500 hover:text-white"
-                >
-                  Cancel
-                </button>
+        {lead.restaurants && (
+          <>
+            <span className="text-gray-600">|</span>
+            <div className="flex items-center gap-2">
+              <Store className="w-4 h-4 text-green-400" />
+              <span className="text-sm text-green-400">{lead.restaurants.name}</span>
+              {lead.restaurants.tiers?.name && (
+                <Badge className="bg-lancaster-gold/20 text-lancaster-gold text-xs">{lead.restaurants.tiers.name}</Badge>
+              )}
+              <Badge className={`text-xs ${lead.restaurants.is_active ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                {lead.restaurants.is_active ? 'Active' : 'Inactive'}
+              </Badge>
+            </div>
+          </>
+        )}
+        {!lead.restaurants && lead.google_place_id && (
+          <>
+            <span className="text-gray-600">|</span>
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-blue-400" />
+              <span className="text-sm text-blue-400">Google Places</span>
+              <span className="text-xs text-gray-500">Not yet in directory</span>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Lead Details Card */}
+      <Card className="p-6 mb-6">
+        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">Lead Details</h2>
+        {editMode ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Business Name</label>
+              <input
+                type="text"
+                value={editForm.business_name || ''}
+                onChange={(e) => setEditForm({ ...editForm, business_name: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Contact Name</label>
+              <input
+                type="text"
+                value={editForm.contact_name || ''}
+                onChange={(e) => setEditForm({ ...editForm, contact_name: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Category</label>
+              <select
+                value={editForm.category || 'restaurant'}
+                onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                className={inputClass}
+              >
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat.charAt(0).toUpperCase() + cat.slice(1).replace('_', ' ')}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Email</label>
+              <input
+                type="text"
+                value={editForm.email || ''}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Phone</label>
+              <input
+                type="tel"
+                value={editForm.phone || ''}
+                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Website</label>
+              <input
+                type="text"
+                value={editForm.website || ''}
+                onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Address</label>
+              <input
+                type="text"
+                value={editForm.address || ''}
+                onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">City</label>
+              <input
+                type="text"
+                value={editForm.city || ''}
+                onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">State</label>
+                <input
+                  type="text"
+                  value={editForm.state || ''}
+                  onChange={(e) => setEditForm({ ...editForm, state: e.target.value })}
+                  className={inputClass}
+                />
               </div>
-            ) : (
-              <div className="space-y-3">
-                {lead.contact_name && (
-                  <p className="text-white font-medium">{lead.contact_name}</p>
-                )}
-                {lead.email && (
-                  <a href={`mailto:${lead.email}`} className="flex items-center gap-2 text-sm text-gray-400 hover:text-white">
-                    <Mail className="w-4 h-4" /> {lead.email}
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">ZIP</label>
+                <input
+                  type="text"
+                  value={editForm.zip_code || ''}
+                  onChange={(e) => setEditForm({ ...editForm, zip_code: e.target.value })}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+            <div className="md:col-span-3">
+              <label className="block text-xs text-gray-500 mb-1">Notes</label>
+              <textarea
+                value={editForm.notes || ''}
+                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                rows={3}
+                className={`${inputClass} resize-none`}
+              />
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4">
+              <Field label="Contact Name" value={lead.contact_name} />
+              <Field label="Email">
+                {lead.email ? (
+                  <a href={`mailto:${lead.email}`} className="text-sm text-white hover:text-tastelanc-accent flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-gray-500" />
+                    {lead.email}
                   </a>
-                )}
-                {lead.phone && (
-                  <a href={`tel:${lead.phone}`} className="flex items-center gap-2 text-sm text-gray-400 hover:text-white">
-                    <Phone className="w-4 h-4" /> {lead.phone}
+                ) : null}
+              </Field>
+              <Field label="Phone">
+                {lead.phone ? (
+                  <a href={`tel:${lead.phone}`} className="text-sm text-white hover:text-tastelanc-accent flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-gray-500" />
+                    {lead.phone}
                   </a>
-                )}
-                {lead.website && (
+                ) : null}
+              </Field>
+              <Field label="Website">
+                {lead.website ? (
                   <a
                     href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-gray-400 hover:text-white"
+                    className="text-sm text-white hover:text-tastelanc-accent flex items-center gap-1.5"
                   >
-                    <Globe className="w-4 h-4" /> Website
+                    <Globe className="w-3.5 h-3.5 text-gray-500" />
+                    {lead.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}
                   </a>
-                )}
-                {(lead.address || lead.city) && (
-                  <p className="flex items-center gap-2 text-sm text-gray-400">
-                    <MapPin className="w-4 h-4" />
+                ) : null}
+              </Field>
+              <Field label="Address">
+                {(lead.address || lead.city) ? (
+                  <span className="text-sm text-white flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
                     {[lead.address, lead.city, lead.state, lead.zip_code].filter(Boolean).join(', ')}
-                  </p>
-                )}
-                {lead.notes && (
-                  <div className="pt-3 border-t border-tastelanc-surface-light">
-                    <p className="text-xs text-gray-500 mb-1">Notes</p>
-                    <p className="text-sm text-gray-300">{lead.notes}</p>
-                  </div>
-                )}
-                <div className="pt-3 border-t border-tastelanc-surface-light text-xs text-gray-500">
-                  <p>Added {new Date(lead.created_at).toLocaleDateString()}</p>
-                  {lead.last_contacted_at && (
-                    <p>Last contact {new Date(lead.last_contacted_at).toLocaleDateString()}</p>
-                  )}
-                </div>
+                  </span>
+                ) : null}
+              </Field>
+              <Field label="Category" value={lead.category ? lead.category.charAt(0).toUpperCase() + lead.category.slice(1).replace('_', ' ') : null} />
+              <Field label="Last Contacted" value={lead.last_contacted_at ? new Date(lead.last_contacted_at).toLocaleDateString() : null} />
+              <Field label="Assigned To" value={lead.assigned_to_name || 'Unassigned'} />
+            </div>
+            {lead.notes && (
+              <div className="mt-4 pt-4 border-t border-tastelanc-surface-light">
+                <p className="text-xs text-gray-500 mb-1">Notes</p>
+                <p className="text-sm text-gray-300 whitespace-pre-wrap">{lead.notes}</p>
               </div>
             )}
-          </Card>
+          </>
+        )}
+      </Card>
 
-          {/* Status Pipeline */}
-          <Card className="p-5">
-            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Status</h2>
-            <div className="space-y-2">
-              {STATUS_OPTIONS.map((status) => (
+      {/* Activity Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Log Activity */}
+        <Card className="p-6 lg:col-span-1">
+          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">Log Activity</h2>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {ACTIVITY_TYPES.map((type) => {
+              const Icon = type.icon;
+              return (
                 <button
-                  key={status.value}
-                  onClick={() => handleStatusChange(status.value)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                    lead.status === status.value
-                      ? `${status.color} font-medium`
-                      : 'text-gray-400 hover:bg-tastelanc-surface-light'
+                  key={type.value}
+                  onClick={() => setActivityType(type.value)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                    activityType === type.value
+                      ? 'bg-tastelanc-accent text-white'
+                      : 'bg-tastelanc-surface-light text-gray-400 hover:text-white'
                   }`}
                 >
-                  {status.label}
+                  <Icon className="w-3.5 h-3.5" />
+                  {type.label}
                 </button>
-              ))}
-            </div>
-          </Card>
+              );
+            })}
+          </div>
+          <textarea
+            value={activityDescription}
+            onChange={(e) => setActivityDescription(e.target.value)}
+            rows={3}
+            placeholder={`Describe the ${ACTIVITY_TYPES.find(t => t.value === activityType)?.label.toLowerCase()}...`}
+            className={`${inputClass} resize-none mb-3`}
+          />
+          <button
+            onClick={handleLogActivity}
+            disabled={isLoggingActivity || !activityDescription.trim()}
+            className="w-full px-4 py-2.5 bg-tastelanc-accent hover:bg-tastelanc-accent-hover disabled:opacity-50 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            {isLoggingActivity ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              'Log Activity'
+            )}
+          </button>
+        </Card>
 
-          {/* Linked Business */}
-          {(lead.restaurant_id || lead.google_place_id) && (
-            <Card className="p-5">
-              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Linked Business</h2>
-              {lead.restaurants ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Store className="w-4 h-4 text-green-400" />
-                    <span className="text-white font-medium">{lead.restaurants.name}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge className="bg-green-500/20 text-green-400">In Directory</Badge>
-                    {lead.restaurants.tiers?.name && (
-                      <Badge className="bg-lancaster-gold/20 text-lancaster-gold">{lead.restaurants.tiers.name}</Badge>
-                    )}
-                    <Badge className={lead.restaurants.is_active ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}>
-                      {lead.restaurants.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </div>
-                </div>
-              ) : lead.google_place_id ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-blue-400" />
-                    <span className="text-white font-medium">{lead.business_name}</span>
-                  </div>
-                  <Badge className="bg-blue-500/20 text-blue-400">Google Places</Badge>
-                  <p className="text-xs text-gray-500">Not yet in directory</p>
-                </div>
-              ) : null}
-            </Card>
-          )}
-        </div>
+        {/* Activity Timeline */}
+        <Card className="p-6 lg:col-span-2">
+          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">Activity History</h2>
+          {activities.length === 0 ? (
+            <p className="text-gray-500 text-sm text-center py-8">No activity logged yet</p>
+          ) : (
+            <div className="space-y-0">
+              {activities.map((activity, index) => {
+                const Icon = ACTIVITY_ICONS[activity.activity_type] || MessageSquare;
+                const isLast = index === activities.length - 1;
 
-        {/* Right Column: Activity Log */}
-        <div className="md:col-span-2 space-y-4">
-          {/* Log Activity Form */}
-          <Card className="p-5">
-            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Log Activity</h2>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {ACTIVITY_TYPES.map((type) => {
-                const Icon = type.icon;
                 return (
-                  <button
-                    key={type.value}
-                    onClick={() => setActivityType(type.value)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                      activityType === type.value
-                        ? 'bg-tastelanc-accent text-white'
-                        : 'bg-tastelanc-surface-light text-gray-400 hover:text-white'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    {type.label}
-                  </button>
+                  <div key={activity.id} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        activity.activity_type === 'status_change'
+                          ? 'bg-lancaster-gold/20'
+                          : 'bg-tastelanc-surface-light'
+                      }`}>
+                        <Icon className={`w-4 h-4 ${
+                          activity.activity_type === 'status_change' ? 'text-lancaster-gold' : 'text-gray-400'
+                        }`} />
+                      </div>
+                      {!isLast && <div className="w-px flex-1 bg-tastelanc-surface-light min-h-[16px]" />}
+                    </div>
+                    <div className="pb-4">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-xs font-medium text-gray-300 capitalize">
+                          {activity.activity_type.replace('_', ' ')}
+                        </span>
+                        <span className="text-xs text-gray-600">
+                          {new Date(activity.created_at).toLocaleString()}
+                        </span>
+                      </div>
+                      {activity.description && (
+                        <p className="text-sm text-gray-400">{activity.description}</p>
+                      )}
+                    </div>
+                  </div>
                 );
               })}
             </div>
-            <div className="flex gap-3">
-              <textarea
-                value={activityDescription}
-                onChange={(e) => setActivityDescription(e.target.value)}
-                rows={2}
-                placeholder={`Describe the ${ACTIVITY_TYPES.find(t => t.value === activityType)?.label.toLowerCase()}...`}
-                className="flex-1 px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent resize-none"
-              />
-              <button
-                onClick={handleLogActivity}
-                disabled={isLoggingActivity || !activityDescription.trim()}
-                className="self-end px-4 py-2.5 bg-tastelanc-accent hover:bg-tastelanc-accent-hover disabled:opacity-50 text-white rounded-lg transition-colors"
-              >
-                {isLoggingActivity ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  'Log'
-                )}
-              </button>
-            </div>
-          </Card>
-
-          {/* Activity Timeline */}
-          <Card className="p-5">
-            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">Activity History</h2>
-            {activities.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-6">No activity logged yet</p>
-            ) : (
-              <div className="space-y-0">
-                {activities.map((activity, index) => {
-                  const Icon = ACTIVITY_ICONS[activity.activity_type] || MessageSquare;
-                  const isLast = index === activities.length - 1;
-
-                  return (
-                    <div key={activity.id} className="flex gap-3">
-                      {/* Timeline line + dot */}
-                      <div className="flex flex-col items-center">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          activity.activity_type === 'status_change'
-                            ? 'bg-lancaster-gold/20'
-                            : 'bg-tastelanc-surface-light'
-                        }`}>
-                          <Icon className={`w-4 h-4 ${
-                            activity.activity_type === 'status_change' ? 'text-lancaster-gold' : 'text-gray-400'
-                          }`} />
-                        </div>
-                        {!isLast && <div className="w-px flex-1 bg-tastelanc-surface-light min-h-[16px]" />}
-                      </div>
-
-                      {/* Content */}
-                      <div className={`pb-4 ${isLast ? '' : ''}`}>
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-xs font-medium text-gray-300 capitalize">
-                            {activity.activity_type.replace('_', ' ')}
-                          </span>
-                          <span className="text-xs text-gray-600">
-                            {new Date(activity.created_at).toLocaleString()}
-                          </span>
-                        </div>
-                        {activity.description && (
-                          <p className="text-sm text-gray-400">{activity.description}</p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </Card>
-        </div>
+          )}
+        </Card>
       </div>
+    </div>
+  );
+}
+
+function Field({ label, value, children }: { label: string; value?: string | null; children?: React.ReactNode }) {
+  const content = children || (value ? <span className="text-sm text-white">{value}</span> : null);
+  return (
+    <div>
+      <p className="text-xs text-gray-500 mb-1">{label}</p>
+      {content || <span className="text-sm text-gray-600">—</span>}
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, Badge } from '@/components/ui';
 import { Lightbulb, Calendar, User, Trash2, Star, Loader2, MessageSquare } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface FeatureRequest {
   id: string;
@@ -71,8 +72,10 @@ export default function AdminFeatureRequestsPage() {
       if (!response.ok) throw new Error('Failed to update');
       const data = await response.json();
       setRequests(prev => prev.map(r => r.id === id ? data.request : r));
+      toast.success('Updated');
     } catch (err) {
       console.error('Failed to update:', err);
+      toast.error('Failed to update');
     } finally {
       setUpdatingId(null);
     }
@@ -87,8 +90,10 @@ export default function AdminFeatureRequestsPage() {
       });
       if (!response.ok) throw new Error('Failed to delete');
       setRequests(prev => prev.filter(r => r.id !== id));
+      toast.success('Deleted');
     } catch (err) {
       console.error('Failed to delete:', err);
+      toast.error('Failed to delete');
     }
   };
 

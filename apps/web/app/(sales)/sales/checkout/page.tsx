@@ -19,6 +19,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { Card } from '@/components/ui';
+import { toast } from 'sonner';
 
 interface Restaurant {
   id: string;
@@ -209,8 +210,11 @@ function SalesCheckoutContent() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to create checkout');
       setCheckoutUrl(data.checkoutUrl);
+      toast.success('Checkout link created');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      const msg = err instanceof Error ? err.message : 'Something went wrong';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsProcessing(false);
     }

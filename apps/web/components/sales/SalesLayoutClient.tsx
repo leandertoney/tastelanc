@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Menu, TrendingUp } from 'lucide-react';
+import { Menu, TrendingUp, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import SalesSidebar from './SalesSidebar';
 
 export default function SalesLayoutClient({
@@ -10,10 +10,16 @@ export default function SalesLayoutClient({
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   return (
     <div className="flex min-h-screen bg-tastelanc-bg">
-      <SalesSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <SalesSidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        collapsed={collapsed}
+        onToggleCollapse={() => setCollapsed((c) => !c)}
+      />
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile Header */}
@@ -37,7 +43,7 @@ export default function SalesLayoutClient({
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-8 overflow-auto">
+        <main className="flex-1 p-4 md:p-5 overflow-auto">
           {children}
         </main>
       </div>

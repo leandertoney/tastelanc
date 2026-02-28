@@ -13,6 +13,8 @@ import {
   Mail,
   X,
   Plus,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -29,15 +31,17 @@ const NAV_ITEMS: Array<{
   { href: '/sales/leads/new', icon: Plus, label: 'Add Lead' },
   { href: '/sales/contacts', icon: Mail, label: 'Inquiries', section: 'Outreach' },
   { href: '/sales/checkout', icon: CreditCard, label: 'New Sale', highlight: true, section: 'Sales' },
-  { href: '/sales/restaurants', icon: Store, label: 'Restaurant Directory', section: 'Reference' },
+  { href: '/sales/restaurants', icon: Store, label: 'Directory', section: 'Reference' },
 ];
 
 interface SalesSidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-export default function SalesSidebar({ isOpen, onClose }: SalesSidebarProps) {
+export default function SalesSidebar({ isOpen, onClose, collapsed, onToggleCollapse }: SalesSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -73,19 +77,20 @@ export default function SalesSidebar({ isOpen, onClose }: SalesSidebarProps) {
       <aside
         className={`
           fixed md:static inset-y-0 left-0 z-50
-          w-64 bg-tastelanc-surface border-r border-tastelanc-surface-light
+          ${collapsed ? 'md:w-16' : 'md:w-64'} w-64
+          bg-tastelanc-surface border-r border-tastelanc-surface-light
           min-h-screen flex flex-col
-          transform transition-transform duration-300 ease-in-out
+          transform transition-all duration-200 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
       >
         {/* Logo */}
-        <div className="p-6 border-b border-tastelanc-surface-light flex items-center justify-between">
+        <div className={`border-b border-tastelanc-surface-light flex items-center ${collapsed ? 'md:justify-center md:p-3 p-6' : 'p-6'} justify-between`}>
           <Link href="/sales" className="flex items-center gap-2" onClick={handleNavClick}>
-            <div className="w-10 h-10 bg-tastelanc-accent rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-white" />
+            <div className={`${collapsed ? 'md:w-8 md:h-8' : ''} w-10 h-10 bg-tastelanc-accent rounded-lg flex items-center justify-center flex-shrink-0`}>
+              <TrendingUp className={`${collapsed ? 'md:w-4 md:h-4' : ''} w-6 h-6 text-white`} />
             </div>
-            <div>
+            <div className={`${collapsed ? 'md:hidden' : ''}`}>
               <span className="text-xl font-bold text-white">{BRAND.name}</span>
               <span className="block text-xs text-tastelanc-accent">Sales CRM</span>
             </div>
@@ -100,7 +105,7 @@ export default function SalesSidebar({ isOpen, onClose }: SalesSidebarProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 overflow-y-auto">
+        <nav className={`flex-1 ${collapsed ? 'md:p-2' : 'md:p-4'} p-4 overflow-y-auto`}>
           <ul className="space-y-1">
             {NAV_ITEMS.map((item, index) => {
               const isActive = pathname === item.href ||
@@ -108,15 +113,19 @@ export default function SalesSidebar({ isOpen, onClose }: SalesSidebarProps) {
 
               return (
                 <li key={item.href}>
-                  {item.section && (
+                  {item.section && !collapsed && (
                     <p className={`text-[10px] uppercase tracking-wider text-gray-500 px-4 ${index > 0 ? 'mt-4' : ''} mb-2`}>
                       {item.section}
                     </p>
                   )}
+                  {item.section && collapsed && index > 0 && (
+                    <div className="hidden md:block border-t border-tastelanc-surface-light my-2" />
+                  )}
                   <Link
                     href={item.href}
                     onClick={handleNavClick}
-                    className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${
+                    title={collapsed ? item.label : undefined}
+                    className={`flex items-center gap-3 ${collapsed ? 'md:justify-center md:px-0 md:py-2.5' : ''} px-4 py-2.5 rounded-lg transition-colors ${
                       isActive
                         ? 'bg-tastelanc-accent text-white'
                         : item.highlight
@@ -124,8 +133,8 @@ export default function SalesSidebar({ isOpen, onClose }: SalesSidebarProps) {
                         : 'text-gray-400 hover:bg-tastelanc-surface-light hover:text-white'
                     }`}
                   >
-                    <item.icon className={`w-5 h-5 ${item.highlight && !isActive ? 'text-lancaster-gold' : ''}`} />
-                    {item.label}
+                    <item.icon className={`w-5 h-5 flex-shrink-0 ${item.highlight && !isActive ? 'text-lancaster-gold' : ''}`} />
+                    <span className={`${collapsed ? 'md:hidden' : ''}`}>{item.label}</span>
                   </Link>
                 </li>
               );
@@ -133,14 +142,31 @@ export default function SalesSidebar({ isOpen, onClose }: SalesSidebarProps) {
           </ul>
         </nav>
 
-        {/* Logout */}
-        <div className="p-4 border-t border-tastelanc-surface-light">
+        {/* Collapse toggle + Logout */}
+        <div className={`border-t border-tastelanc-surface-light ${collapsed ? 'md:p-2' : 'md:p-4'} p-4`}>
+          {/* Collapse toggle — desktop only */}
+          <button
+            onClick={onToggleCollapse}
+            className={`hidden md:flex items-center gap-3 ${collapsed ? 'justify-center px-0' : 'px-4'} py-2.5 rounded-lg text-gray-400 hover:bg-tastelanc-surface-light hover:text-white transition-colors w-full mb-1`}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? (
+              <PanelLeftOpen className="w-5 h-5 flex-shrink-0" />
+            ) : (
+              <>
+                <PanelLeftClose className="w-5 h-5 flex-shrink-0" />
+                <span>Collapse</span>
+              </>
+            )}
+          </button>
+
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-tastelanc-surface-light hover:text-white transition-colors w-full"
+            title={collapsed ? 'Sign Out' : undefined}
+            className={`flex items-center gap-3 ${collapsed ? 'md:justify-center md:px-0' : ''} px-4 py-3 rounded-lg text-gray-400 hover:bg-tastelanc-surface-light hover:text-white transition-colors w-full`}
           >
-            <LogOut className="w-5 h-5" />
-            Sign Out
+            <LogOut className="w-5 h-5 flex-shrink-0" />
+            <span className={`${collapsed ? 'md:hidden' : ''}`}>Sign Out</span>
           </button>
         </div>
       </aside>

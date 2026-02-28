@@ -19,12 +19,28 @@ export async function GET(request: Request) {
     const status = searchParams.get('status');
     const category = searchParams.get('category');
     const search = searchParams.get('search');
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '25', 10)));
+    const sortBy = searchParams.get('sort_by') || 'created_at';
+    const sortDir = searchParams.get('sort_dir') === 'asc' ? 'asc' : 'desc';
 
-    // Build query — sales reps can access all leads across all markets
+    const ALLOWED_SORT_COLUMNS = ['business_name', 'contact_name', 'status', 'category', 'city', 'created_at', 'last_contacted_at'];
+    const safeSortBy = ALLOWED_SORT_COLUMNS.includes(sortBy) ? sortBy : 'created_at';
+
+    // Get total count for pagination (with same filters)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let countQ: any = serviceClient.from('business_leads').select('id', { count: 'exact', head: true });
+    if (status && status !== 'all') countQ = countQ.eq('status', status);
+    if (category && category !== 'all') countQ = countQ.eq('category', category);
+    if (search) countQ = countQ.or(`business_name.ilike.%${search}%,contact_name.ilike.%${search}%,email.ilike.%${search}%`);
+    const { count: totalCount } = await countQ;
+
+    // Build paginated query — sales reps can access all leads across all markets
     let query = serviceClient
       .from('business_leads')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order(safeSortBy, { ascending: sortDir === 'asc' })
+      .range((page - 1) * limit, page * limit - 1);
 
     if (status && status !== 'all') {
       query = query.eq('status', status);
@@ -61,6 +77,17 @@ export async function GET(request: Request) {
       converted: allLeads?.filter((l) => l.status === 'converted').length || 0,
     };
 
+    // Fetch sales rep names for assigned_to lookup
+    const { data: reps } = await serviceClient
+      .from('sales_reps')
+      .select('id, name');
+    const repNameMap: Record<string, string> = {};
+    if (reps) {
+      for (const rep of reps) {
+        repNameMap[rep.id] = rep.name;
+      }
+    }
+
     // Fetch activity types per lead for contact indicators
     const leadIds = (leads || []).map((l: { id: string }) => l.id);
     let activityMap: Record<string, string[]> = {};
@@ -82,13 +109,22 @@ export async function GET(request: Request) {
       }
     }
 
-    // Attach activity_types to each lead
-    const leadsWithActivities = (leads || []).map((lead: { id: string }) => ({
+    // Attach activity_types and assigned_to_name to each lead
+    const leadsWithActivities = (leads || []).map((lead: { id: string; assigned_to: string | null }) => ({
       ...lead,
       activity_types: activityMap[lead.id] || [],
+      assigned_to_name: lead.assigned_to ? repNameMap[lead.assigned_to] || null : null,
     }));
 
-    return NextResponse.json({ leads: leadsWithActivities, stats });
+    const total = totalCount ?? 0;
+    const totalPages = Math.ceil(total / limit);
+
+    return NextResponse.json({
+      leads: leadsWithActivities,
+      stats,
+      currentUserId: access.userId,
+      pagination: { page, limit, total, totalPages },
+    });
   } catch (error) {
     console.error('Error in sales leads API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

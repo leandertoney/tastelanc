@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Providers from '@/components/Providers';
 import { BRAND } from '@/config/market';
+import { Toaster } from 'sonner';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
 
@@ -74,6 +75,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen font-sans">
         <Providers>{children}</Providers>
+        <Toaster position="top-right" richColors theme="dark" />
       </body>
     </html>
   );
