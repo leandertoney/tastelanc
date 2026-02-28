@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { Bot, Check, Loader2 } from 'lucide-react';
 import type { BrandDraft } from '@/lib/ai/expansion-types';
 import ColorSwatchRow from './ColorSwatchRow';
@@ -11,6 +12,8 @@ interface BrandProposalCardProps {
 }
 
 export default function BrandProposalCard({ brand, onSelect, isSelecting }: BrandProposalCardProps) {
+  const accentColor = brand.colors?.accent || '#A41E22';
+
   return (
     <div
       className={`bg-tastelanc-surface rounded-xl border p-5 transition-all ${
@@ -32,14 +35,42 @@ export default function BrandProposalCard({ brand, onSelect, isSelecting }: Bran
         )}
       </div>
 
-      {/* App name + tagline */}
-      <h3 className="text-xl font-bold text-white mb-1">{brand.app_name}</h3>
-      <p className="text-sm text-gray-400 mb-4">{brand.tagline}</p>
+      {/* Avatar + Name */}
+      <div className="flex items-center gap-4 mb-4">
+        {brand.avatar_image_url ? (
+          <div
+            className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 border-2"
+            style={{ borderColor: accentColor }}
+          >
+            <Image
+              src={brand.avatar_image_url}
+              alt={`${brand.ai_assistant_name} avatar`}
+              width={80}
+              height={80}
+              className="w-full h-full object-cover"
+              unoptimized
+            />
+          </div>
+        ) : (
+          <div
+            className="w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0 border-2"
+            style={{ borderColor: accentColor, backgroundColor: `${accentColor}20` }}
+          >
+            <span className="text-2xl font-bold" style={{ color: accentColor }}>
+              {brand.ai_assistant_name?.charAt(0) || '?'}
+            </span>
+          </div>
+        )}
+        <div>
+          <h3 className="text-xl font-bold text-white">{brand.app_name}</h3>
+          <p className="text-sm text-gray-400">{brand.tagline}</p>
+        </div>
+      </div>
 
       {/* AI assistant + premium */}
       <div className="space-y-2 mb-4">
         <div className="flex items-center gap-2 text-sm">
-          <Bot className="w-4 h-4 text-tastelanc-accent flex-shrink-0" />
+          <Bot className="w-4 h-4 flex-shrink-0" style={{ color: accentColor }} />
           <span className="text-gray-300">
             AI Assistant: <span className="text-white font-medium">{brand.ai_assistant_name}</span>
           </span>

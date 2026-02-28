@@ -22,6 +22,9 @@ interface ExpansionPipelineCardProps {
 
 export default function ExpansionPipelineCard({ city, onStatusChange }: ExpansionPipelineCardProps) {
   const statusConfig = STATUS_CONFIG[city.status] || STATUS_CONFIG.researching;
+  const rd = city.research_data || {};
+  const regionName = rd.suggested_region_name as string | undefined;
+  const clusterTowns = (rd.cluster_towns as string[]) || [];
 
   return (
     <Link href={`/admin/expansion/${city.id}`}>
@@ -29,7 +32,7 @@ export default function ExpansionPipelineCard({ city, onStatusChange }: Expansio
         <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
           {/* City Info */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-1.5">
+            <div className="flex items-center gap-3 mb-1.5 flex-wrap">
               <h3 className="font-semibold text-white truncate text-lg group-hover:text-tastelanc-accent transition-colors">
                 {city.city_name}
               </h3>
@@ -37,6 +40,16 @@ export default function ExpansionPipelineCard({ city, onStatusChange }: Expansio
               <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${statusConfig.className}`}>
                 {statusConfig.label}
               </span>
+              {regionName && (
+                <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium bg-tastelanc-accent/15 text-tastelanc-accent flex-shrink-0">
+                  Taste{regionName.replace(/\s+/g, '')}
+                </span>
+              )}
+              {clusterTowns.length > 0 && (
+                <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium bg-purple-500/15 text-purple-400 flex-shrink-0">
+                  {clusterTowns.length} towns
+                </span>
+              )}
             </div>
 
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-gray-400">
