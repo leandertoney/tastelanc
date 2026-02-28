@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Clock, Beer, Loader2, Pencil, X, Copy } from 'lucide-react';
-import { Button, Card, Badge } from '@/components/ui';
+import { Plus, Trash2, Clock, Beer, Loader2, Pencil, X, Copy, HelpCircle } from 'lucide-react';
+import { Button, Card, Badge, Tooltip } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import { HappyHourWizard, HappyHourFormData } from '@/components/dashboard/forms';
 import HappyHourImageUpload from '@/components/dashboard/forms/HappyHourImageUpload';
@@ -215,7 +215,12 @@ export default function HappyHoursPage() {
             <Clock className="w-6 h-6 text-lancaster-gold" />
             Happy Hours
           </h2>
-          <p className="text-gray-400 mt-1">Manage your happy hour specials</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-gray-400">Manage your happy hour specials</p>
+            <Tooltip content="Happy hours are one of the most viewed features in the app. Add drink and food deals with prices, select the days and times, and upload an eye-catching image to attract more customers." position="bottom">
+              <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
+            </Tooltip>
+          </div>
         </div>
         <Button onClick={() => setShowWizard(true)}>
           <Plus className="w-4 h-4 mr-2" />

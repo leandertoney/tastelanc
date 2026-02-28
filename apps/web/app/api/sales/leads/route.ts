@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
+import { STALE_DAYS } from '@/lib/utils/lead-aging';
 
 export async function GET(request: Request) {
   try {
@@ -27,20 +28,36 @@ export async function GET(request: Request) {
     const ALLOWED_SORT_COLUMNS = ['business_name', 'contact_name', 'status', 'category', 'city', 'created_at', 'last_contacted_at'];
     const safeSortBy = ALLOWED_SORT_COLUMNS.includes(sortBy) ? sortBy : 'created_at';
 
-    // Get total count for pagination (with same filters)
+    // Stale cutoff for sales rep visibility scoping
+    const staleCutoff = new Date();
+    staleCutoff.setDate(staleCutoff.getDate() - STALE_DAYS);
+    const staleCutoffStr = staleCutoff.toISOString();
+
+    // Get total count for pagination (with same filters + visibility scope)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let countQ: any = serviceClient.from('business_leads').select('id', { count: 'exact', head: true });
+    if (access.isSalesRep && !access.isAdmin) {
+      countQ = countQ.or(`assigned_to.eq.${access.userId},assigned_to.is.null,updated_at.lt.${staleCutoffStr}`);
+    }
     if (status && status !== 'all') countQ = countQ.eq('status', status);
     if (category && category !== 'all') countQ = countQ.eq('category', category);
     if (search) countQ = countQ.or(`business_name.ilike.%${search}%,contact_name.ilike.%${search}%,email.ilike.%${search}%`);
     const { count: totalCount } = await countQ;
 
-    // Build paginated query — sales reps can access all leads across all markets
+    // Build paginated query
     let query = serviceClient
       .from('business_leads')
       .select('*')
       .order(safeSortBy, { ascending: sortDir === 'asc' })
       .range((page - 1) * limit, page * limit - 1);
+
+    // Scope visibility for sales reps (not admins)
+    if (access.isSalesRep && !access.isAdmin) {
+      // Show: assigned to me, unassigned, or stale (updated > 14 days ago)
+      query = query.or(
+        `assigned_to.eq.${access.userId},assigned_to.is.null,updated_at.lt.${staleCutoffStr}`
+      );
+    }
 
     if (status && status !== 'all') {
       query = query.eq('status', status);
@@ -63,10 +80,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch leads' }, { status: 500 });
     }
 
-    // Get stats (all leads globally)
-    const { data: allLeads } = await serviceClient
+    // Get stats — scoped to visible leads for sales reps, global for admins
+    let statsQuery = serviceClient
       .from('business_leads')
       .select('status');
+    if (access.isSalesRep && !access.isAdmin) {
+      statsQuery = statsQuery.or(`assigned_to.eq.${access.userId},assigned_to.is.null,updated_at.lt.${staleCutoffStr}`);
+    }
+    const { data: allLeads } = await statsQuery;
 
     const stats = {
       total: allLeads?.length || 0,
@@ -123,6 +144,7 @@ export async function GET(request: Request) {
       leads: leadsWithActivities,
       stats,
       currentUserId: access.userId,
+      isAdmin: access.isAdmin,
       pagination: { page, limit, total, totalPages },
     });
   } catch (error) {

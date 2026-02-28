@@ -16,10 +16,17 @@ export async function GET() {
 
     const serviceClient = createServiceRoleClient();
 
-    const { data: contacts, error } = await serviceClient
+    let query = serviceClient
       .from('contact_submissions')
       .select('*')
       .order('created_at', { ascending: false });
+
+    // Sales reps only see inquiries from 2026-02-28 onward (pre-existing ones are admin-only)
+    if (!access.isAdmin) {
+      query = query.gte('created_at', '2026-02-28T00:00:00Z');
+    }
+
+    const { data: contacts, error } = await query;
 
     if (error) {
       console.error('Error fetching contacts:', error);

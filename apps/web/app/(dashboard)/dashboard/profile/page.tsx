@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Save, Upload, MapPin, Phone, Globe, Mail, AlertCircle, Loader2, Clock, Image as ImageIcon, Star, Trash2, Check, KeyRound } from 'lucide-react';
-import { Button, Card, Badge } from '@/components/ui';
+import { Save, Upload, MapPin, Phone, Globe, Mail, AlertCircle, Loader2, Clock, Image as ImageIcon, Star, Trash2, Check, KeyRound, HelpCircle } from 'lucide-react';
+import { Button, Card, Badge, Tooltip } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import { toast } from 'sonner';
 import type { RestaurantCategory, DayOfWeek } from '@/types/database';
@@ -442,9 +442,14 @@ export default function ProfilePage() {
     <div className="max-w-4xl space-y-8">
       <div>
         <h2 className="text-2xl font-bold text-white">Restaurant Profile</h2>
-        <p className="text-gray-400 mt-1">
-          Update your restaurant&apos;s public information
-        </p>
+        <div className="flex items-center gap-2 mt-1">
+          <p className="text-gray-400">
+            Update your restaurant&apos;s public information
+          </p>
+          <Tooltip content="This is what users see when they view your restaurant. Add your description, photos, address, phone, website, and hours. A complete profile gets significantly more views." position="bottom">
+            <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
+          </Tooltip>
+        </div>
       </div>
 
       {error && (

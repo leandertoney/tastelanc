@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Calendar, Music, Mic2, HelpCircle, PartyPopper, Loader2, Tv, Laugh, Pencil, X, Grid3x3 } from 'lucide-react';
-import { Button, Card, Badge } from '@/components/ui';
+import { Button, Card, Badge, Tooltip } from '@/components/ui';
 import { toast } from 'sonner';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import { EventWizard, EventFormData } from '@/components/dashboard/forms';
@@ -53,6 +53,7 @@ const MODE_CONFIG = {
     title: 'Entertainment',
     icon: Music,
     subtitle: 'Manage recurring entertainment like trivia, live music, and karaoke',
+    hint: 'Entertainment listings repeat weekly (e.g. Trivia every Wednesday). Choose the type, days, time, and add an image. These show in the "Entertainment Tonight" section of the app.',
     addLabel: 'Add Entertainment',
     emptyTitle: 'No entertainment yet',
     emptyText: 'Add entertainment like trivia, live music, or karaoke to attract customers',
@@ -64,6 +65,7 @@ const MODE_CONFIG = {
     title: 'Events',
     icon: Calendar,
     subtitle: 'Manage special events and promotions',
+    hint: 'Events are one-time or limited-run occasions (wine dinners, holiday parties, etc.). Set a specific date, add details and an image. These appear in "Upcoming Events" in the app.',
     addLabel: 'Add Event',
     emptyTitle: 'No events yet',
     emptyText: 'Add special events and promotions to attract customers',
@@ -272,7 +274,12 @@ export default function EventsManager({ mode }: EventsManagerProps) {
             <TitleIcon className="w-6 h-6 text-tastelanc-accent" />
             {config.title}
           </h2>
-          <p className="text-gray-400 mt-1">{config.subtitle}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-gray-400">{config.subtitle}</p>
+            <Tooltip content={config.hint} position="bottom">
+              <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
+            </Tooltip>
+          </div>
         </div>
         <Button onClick={() => setShowWizard(true)}>
           <Plus className="w-4 h-4 mr-2" />

@@ -121,7 +121,7 @@ export async function PUT(request: Request) {
     updateData.updated_at = new Date().toISOString();
 
     // Use service role client for admin operations to bypass RLS
-    const dbClient = accessResult.isAdmin ? createServiceRoleClient() : supabase;
+    const dbClient = (accessResult.isAdmin || accessResult.isSalesRep) ? createServiceRoleClient() : supabase;
 
     const { data: restaurant, error } = await dbClient
       .from('restaurants')

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Sparkles, Loader2, Pencil, X } from 'lucide-react';
-import { Button, Card, Badge } from '@/components/ui';
+import { Plus, Trash2, Sparkles, Loader2, Pencil, X, HelpCircle } from 'lucide-react';
+import { Button, Card, Badge, Tooltip } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import { SpecialWizard, SpecialFormData } from '@/components/dashboard/forms';
 import SpecialImageUpload from '@/components/dashboard/forms/SpecialImageUpload';
@@ -201,7 +201,12 @@ export default function SpecialsPage() {
             <Sparkles className="w-6 h-6 text-tastelanc-accent" />
             Daily Specials
           </h2>
-          <p className="text-gray-400 mt-1">Manage recurring weekly specials</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-gray-400">Manage recurring weekly specials</p>
+            <Tooltip content="Specials repeat weekly on the days you choose. Add a name, description, price, and image. Users see these when browsing your restaurant in the app." position="bottom">
+              <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
+            </Tooltip>
+          </div>
         </div>
         <Button onClick={() => setShowWizard(true)}>
           <Plus className="w-4 h-4 mr-2" />

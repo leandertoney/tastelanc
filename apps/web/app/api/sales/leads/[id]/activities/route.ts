@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
+import { getLeadAge } from '@/lib/utils/lead-aging';
 
 export async function GET(
   request: Request,
@@ -74,15 +75,26 @@ export async function POST(
 
     const serviceClient = createServiceRoleClient();
 
-    // Verify lead exists
+    // Verify lead exists and check ownership
     const { data: lead } = await serviceClient
       .from('business_leads')
-      .select('id')
+      .select('id, assigned_to, updated_at, created_at')
       .eq('id', id)
       .single();
 
     if (!lead) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
+    }
+
+    // Ownership enforcement
+    if (lead.assigned_to && lead.assigned_to !== access.userId && !access.isAdmin) {
+      const aging = getLeadAge(lead);
+      if (!aging.isStale) {
+        return NextResponse.json(
+          { error: 'This lead is owned by another sales rep' },
+          { status: 403 }
+        );
+      }
     }
 
     // Create activity

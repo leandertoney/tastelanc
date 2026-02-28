@@ -77,7 +77,7 @@ export async function PUT(
     updateData.updated_at = new Date().toISOString();
 
     // Use service role client for admin operations to bypass RLS
-    const dbClient = accessResult.isAdmin ? createServiceRoleClient() : supabase;
+    const dbClient = (accessResult.isAdmin || accessResult.isSalesRep) ? createServiceRoleClient() : supabase;
 
     const { data: item, error: updateError } = await dbClient
       .from('menu_items')
@@ -131,7 +131,7 @@ export async function DELETE(
     }
 
     // Use service role client for admin operations to bypass RLS
-    const dbClient = accessResult.isAdmin ? createServiceRoleClient() : supabase;
+    const dbClient = (accessResult.isAdmin || accessResult.isSalesRep) ? createServiceRoleClient() : supabase;
 
     const { error } = await dbClient
       .from('menu_items')

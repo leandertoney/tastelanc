@@ -16,6 +16,8 @@ interface RestaurantContextType {
   isMember: boolean;
   /** Role of the team member ('manager') - only set when isMember is true */
   memberRole?: 'manager';
+  /** Whether current user is a sales rep managing this restaurant */
+  isSalesRep: boolean;
   isLoading: boolean;
   error: string | null;
   refreshRestaurant: () => Promise<void>;
@@ -34,6 +36,7 @@ const RestaurantContext = createContext<RestaurantContextType>({
   isAdmin: false,
   isOwner: false,
   isMember: false,
+  isSalesRep: false,
   isLoading: true,
   error: null,
   refreshRestaurant: async () => {},
@@ -65,14 +68,16 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
   const [isOwner, setIsOwner] = useState(false);
   const [isMember, setIsMember] = useState(false);
   const [memberRole, setMemberRole] = useState<'manager' | undefined>(undefined);
+  const [isSalesRep, setIsSalesRep] = useState(false);
   const [ownershipMap, setOwnershipMap] = useState<Record<string, 'owner' | 'manager'>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const { marketId } = useMarket();
 
-  // Check for admin mode from URL params
+  // Check for admin mode and sales mode from URL params
   const adminMode = searchParams.get('admin_mode') === 'true';
+  const salesMode = searchParams.get('sales_mode') === 'true';
   const adminRestaurantId = searchParams.get('restaurant_id');
 
   const fetchRestaurant = useCallback(async () => {
@@ -123,6 +128,33 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
         setRestaurants([]);
         setTier(tierData as Tier || null);
         setIsOwner(false);
+        setIsSalesRep(false);
+        setIsLoading(false);
+        return;
+      }
+
+      // If sales mode with specific restaurant ID
+      const userIsSalesRep = user.user_metadata?.role === 'sales_rep';
+      if (salesMode && adminRestaurantId && userIsSalesRep) {
+        let salesQuery = supabase
+          .from('restaurants')
+          .select('*, tiers(*)')
+          .eq('id', adminRestaurantId);
+        if (marketId) salesQuery = salesQuery.eq('market_id', marketId);
+        const { data: restaurantData, error: restaurantError } = await salesQuery.single();
+
+        if (restaurantError || !restaurantData) {
+          setError('Restaurant not found');
+          setIsLoading(false);
+          return;
+        }
+
+        const { tiers: tierData, ...rest } = restaurantData;
+        setRestaurant(rest as Restaurant);
+        setRestaurants([]);
+        setTier(tierData as Tier || null);
+        setIsOwner(false);
+        setIsSalesRep(true);
         setIsLoading(false);
         return;
       }
@@ -219,7 +251,7 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
       setError('Failed to load restaurant');
       setIsLoading(false);
     }
-  }, [adminMode, adminRestaurantId, marketId]);
+  }, [adminMode, salesMode, adminRestaurantId, marketId]);
 
   const switchRestaurant = useCallback((id: string) => {
     const target = restaurants.find((r) => r.id === id);
@@ -249,17 +281,19 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
     return () => subscription.unsubscribe();
   }, [fetchRestaurant]);
 
-  // Helper to build API URLs with restaurant_id and admin_mode
+  // Helper to build API URLs with restaurant_id and admin_mode/sales_mode
   const buildApiUrl = useCallback((path: string): string => {
     if (!restaurant?.id) return path;
     const separator = path.includes('?') ? '&' : '?';
     let url = `${path}${separator}restaurant_id=${restaurant.id}`;
-    // Add admin_mode parameter if in admin mode
     if (adminMode && isAdmin) {
       url += '&admin_mode=true';
     }
+    if (salesMode && isSalesRep) {
+      url += '&sales_mode=true';
+    }
     return url;
-  }, [restaurant?.id, adminMode, isAdmin]);
+  }, [restaurant?.id, adminMode, isAdmin, salesMode, isSalesRep]);
 
   const value: RestaurantContextType = {
     restaurant,
@@ -269,6 +303,7 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
     isOwner,
     isMember,
     memberRole,
+    isSalesRep,
     isLoading,
     error,
     refreshRestaurant: fetchRestaurant,

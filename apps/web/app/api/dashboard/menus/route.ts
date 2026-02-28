@@ -106,7 +106,7 @@ export async function POST(request: Request) {
     }
 
     // Use service role client for admin operations to bypass RLS
-    const dbClient = accessResult.isAdmin ? createServiceRoleClient() : supabase;
+    const dbClient = (accessResult.isAdmin || accessResult.isSalesRep) ? createServiceRoleClient() : supabase;
 
     // Get max display_order for this restaurant's menus
     const { data: existingMenus } = await dbClient

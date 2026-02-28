@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
+import { getLeadAge } from '@/lib/utils/lead-aging';
 
 export async function GET(
   request: Request,
@@ -49,7 +50,24 @@ export async function GET(
       .eq('lead_id', id)
       .order('created_at', { ascending: false });
 
-    return NextResponse.json({ lead: { ...lead, assigned_to_name }, activities: activities || [] });
+    // Compute ownership info for client
+    const aging = getLeadAge(lead);
+    const isOwner = lead.assigned_to === access.userId;
+    const isLocked = !access.isAdmin && lead.assigned_to && !isOwner && !aging.isStale;
+
+    return NextResponse.json({
+      lead: { ...lead, assigned_to_name },
+      activities: activities || [],
+      ownership: {
+        isOwner,
+        isLocked,
+        isNudge: aging.isNudge,
+        isStale: aging.isStale,
+        daysSinceUpdate: aging.daysSinceUpdate,
+        currentUserId: access.userId,
+        isAdmin: access.isAdmin,
+      },
+    });
   } catch (error) {
     console.error('Error fetching lead:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -75,6 +93,33 @@ export async function PUT(
     const serviceClient = createServiceRoleClient();
     const body = await request.json();
 
+    // Ownership enforcement — fetch current lead
+    const { data: currentLead } = await serviceClient
+      .from('business_leads')
+      .select('status, assigned_to, updated_at, created_at')
+      .eq('id', id)
+      .single();
+
+    if (!currentLead) {
+      return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
+    }
+
+    // Check ownership: if assigned to another rep and caller isn't admin
+    if (currentLead.assigned_to && currentLead.assigned_to !== access.userId && !access.isAdmin) {
+      const aging = getLeadAge(currentLead);
+
+      if (!aging.isStale) {
+        // <14 days — locked
+        return NextResponse.json(
+          { error: 'This lead is owned by another sales rep. It will become available after 14 days of inactivity.' },
+          { status: 403 }
+        );
+      }
+
+      // 14+ days — stale, allow and auto-reassign
+      // Will be set below via assigned_to override
+    }
+
     const {
       business_name,
       contact_name,
@@ -92,13 +137,6 @@ export async function PUT(
       assigned_to,
     } = body;
 
-    // Fetch current lead to detect status changes
-    const { data: currentLead } = await serviceClient
-      .from('business_leads')
-      .select('status')
-      .eq('id', id)
-      .single();
-
     // Build update object
     const updateData: Record<string, unknown> = {};
     if (business_name !== undefined) updateData.business_name = business_name;
@@ -115,6 +153,18 @@ export async function PUT(
     if (notes !== undefined) updateData.notes = notes;
     if (tags !== undefined) updateData.tags = tags;
     if (assigned_to !== undefined) updateData.assigned_to = assigned_to;
+
+    // Auto-reassign stale leads when another rep edits
+    if (
+      currentLead.assigned_to &&
+      currentLead.assigned_to !== access.userId &&
+      !access.isAdmin
+    ) {
+      const aging = getLeadAge(currentLead);
+      if (aging.isStale) {
+        updateData.assigned_to = access.userId;
+      }
+    }
 
     // Update last_contacted_at on certain status changes
     if (status && ['contacted', 'interested'].includes(status)) {

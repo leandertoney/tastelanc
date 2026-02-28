@@ -25,9 +25,14 @@ import {
   ChevronsUpDown,
   ChevronLeft,
   ChevronRight,
+  AlertTriangle,
+  Unlock,
+  Lock,
+  HelpCircle,
 } from 'lucide-react';
-import { Card, Badge } from '@/components/ui';
+import { Card, Badge, Tooltip } from '@/components/ui';
 import { toast } from 'sonner';
+import { getLeadAge } from '@/lib/utils/lead-aging';
 
 interface BusinessLead {
   id: string;
@@ -44,6 +49,7 @@ interface BusinessLead {
   notes: string | null;
   last_contacted_at: string | null;
   created_at: string;
+  updated_at: string;
   activity_types: string[];
   assigned_to: string | null;
   assigned_to_name: string | null;
@@ -116,6 +122,7 @@ export default function SalesLeadsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [ownerFilter, setOwnerFilter] = useState<'all' | 'mine'>('all');
   const [sortBy, setSortBy] = useState<SortColumn>('created_at');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
@@ -139,6 +146,7 @@ export default function SalesLeadsPage() {
       setStats(data.stats || null);
       if (data.pagination) setPagination(data.pagination);
       if (data.currentUserId) setCurrentUserId(data.currentUserId);
+      if (data.isAdmin) setIsAdmin(data.isAdmin);
     } catch (error) {
       console.error('Error fetching leads:', error);
       setFetchError(true);
@@ -279,7 +287,12 @@ export default function SalesLeadsPage() {
             <Briefcase className="w-8 h-8 text-tastelanc-accent" />
             Business Leads
           </h1>
-          <p className="text-gray-400 mt-1">Manage outreach and restaurant partnerships</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-gray-400">Manage outreach and restaurant partnerships</p>
+            <Tooltip content="Your lead pipeline. Change status by clicking the status badge on each row. Click a lead name to view details, log activities, or send emails. Leads idle 7+ days get a follow-up nudge; 14+ days become claimable by other reps." position="bottom">
+              <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
+            </Tooltip>
+          </div>
         </div>
         <div className="flex gap-3">
           {leads.length > 0 && (
@@ -471,6 +484,9 @@ export default function SalesLeadsPage() {
               <tbody className="divide-y divide-tastelanc-surface-light">
                 {filteredLeads.map((lead) => {
                   const statusConfig = STATUS_CONFIG[lead.status] || STATUS_CONFIG.new;
+                  const isOtherRepsLead = lead.assigned_to && lead.assigned_to !== currentUserId;
+                  const aging = isOtherRepsLead ? getLeadAge(lead) : null;
+                  const isLocked = !isAdmin && isOtherRepsLead && aging && !aging.isStale;
 
                   return (
                     <tr
@@ -532,17 +548,23 @@ export default function SalesLeadsPage() {
 
                       {/* Status */}
                       <td className={`${tdClass} overflow-hidden`}>
-                        <select
-                          value={lead.status}
-                          onChange={(e) => handleStatusChange(lead.id, e.target.value)}
-                          className={`w-full px-2 py-1 rounded text-xs font-medium border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-tastelanc-accent ${statusConfig.color}`}
-                        >
-                          <option value="new">New</option>
-                          <option value="contacted">Contacted</option>
-                          <option value="interested">Interested</option>
-                          <option value="not_interested">Not Interested</option>
-                          <option value="converted">Converted</option>
-                        </select>
+                        {isLocked ? (
+                          <Badge className={statusConfig.color}>
+                            {statusConfig.label}
+                          </Badge>
+                        ) : (
+                          <select
+                            value={lead.status}
+                            onChange={(e) => handleStatusChange(lead.id, e.target.value)}
+                            className={`w-full px-2 py-1 rounded text-xs font-medium border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-tastelanc-accent ${statusConfig.color}`}
+                          >
+                            <option value="new">New</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="interested">Interested</option>
+                            <option value="not_interested">Not Interested</option>
+                            <option value="converted">Converted</option>
+                          </select>
+                        )}
                       </td>
 
                       {/* Outreach */}
@@ -572,7 +594,37 @@ export default function SalesLeadsPage() {
                       {/* Assigned To */}
                       <td className={`${tdClass} overflow-hidden`}>
                         {lead.assigned_to_name ? (
-                          <span className="text-gray-300 truncate block" title={lead.assigned_to_name}>{lead.assigned_to_name}</span>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-gray-300 truncate block" title={lead.assigned_to_name}>
+                              {lead.assigned_to === currentUserId ? (
+                                <span className="text-white">{lead.assigned_to_name}</span>
+                              ) : (
+                                <span className="flex items-center gap-1">
+                                  {(() => {
+                                    const aging = getLeadAge(lead);
+                                    return aging.isStale ? (
+                                      <Unlock className="w-3 h-3 text-green-400 flex-shrink-0" />
+                                    ) : (
+                                      <Lock className="w-3 h-3 text-gray-500 flex-shrink-0" />
+                                    );
+                                  })()}
+                                  <span className="truncate">{lead.assigned_to_name}</span>
+                                </span>
+                              )}
+                            </span>
+                            {lead.assigned_to === currentUserId && (() => {
+                              const aging = getLeadAge(lead);
+                              if (aging.isNudge && !aging.isStale) {
+                                return (
+                                  <span className="flex items-center gap-0.5 text-[10px] text-yellow-400">
+                                    <AlertTriangle className="w-2.5 h-2.5" />
+                                    Follow up
+                                  </span>
+                                );
+                              }
+                              return null;
+                            })()}
+                          </div>
                         ) : (
                           <span className="text-gray-600">—</span>
                         )}

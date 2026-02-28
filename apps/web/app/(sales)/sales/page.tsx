@@ -11,8 +11,9 @@ import {
   ArrowRight,
   RefreshCw,
   AlertCircle,
+  HelpCircle,
 } from 'lucide-react';
-import { Card, Badge } from '@/components/ui';
+import { Card, Badge, Tooltip } from '@/components/ui';
 
 interface Stats {
   total: number;
@@ -138,7 +139,12 @@ export default function SalesDashboard() {
             <TrendingUp className="w-8 h-8 text-tastelanc-accent" />
             Sales Dashboard
           </h1>
-          <p className="text-gray-400 mt-1">Track your pipeline and outreach</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-gray-400">Track your pipeline and outreach</p>
+            <Tooltip content="This is your home base. Pipeline cards show lead counts by stage — click any card to see those leads. The sections below highlight leads needing attention." position="bottom">
+              <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
+            </Tooltip>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -159,84 +165,48 @@ export default function SalesDashboard() {
         </div>
       </div>
 
-      {/* Pipeline Funnel */}
+      {/* Pipeline Summary */}
       {stats && stats.total > 0 && (
-        <Card className="p-6 mb-6">
-          <h2 className="text-sm font-medium text-gray-400 mb-4">Conversion Pipeline</h2>
-          <div className="flex items-stretch gap-1">
-            {[
-              { label: 'New', count: stats.new, color: 'bg-blue-500', textColor: 'text-blue-400' },
-              { label: 'Contacted', count: stats.contacted, color: 'bg-yellow-500', textColor: 'text-yellow-400' },
-              { label: 'Interested', count: stats.interested, color: 'bg-green-500', textColor: 'text-green-400' },
-              { label: 'Converted', count: stats.converted, color: 'bg-lancaster-gold', textColor: 'text-lancaster-gold' },
-            ].map((stage, i, arr) => {
-              const pct = stats.total > 0 ? Math.max((stage.count / stats.total) * 100, 8) : 25;
-              const conversionFromPrev = i > 0 && arr[i - 1].count > 0
-                ? Math.round((stage.count / arr[i - 1].count) * 100)
-                : null;
-              return (
-                <div key={stage.label} className="flex-1 min-w-0">
-                  <div className="text-center mb-2">
-                    <span className={`text-2xl font-bold ${stage.textColor}`}>{stage.count}</span>
-                    <p className="text-xs text-gray-500">{stage.label}</p>
-                  </div>
-                  <div className="h-3 rounded-full bg-tastelanc-surface overflow-hidden">
-                    <div
-                      className={`h-full ${stage.color} rounded-full transition-all`}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  {conversionFromPrev !== null && (
-                    <p className="text-xs text-gray-500 text-center mt-1">{conversionFromPrev}%</p>
-                  )}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          {[
+            { label: 'New', count: stats.new, dotColor: 'bg-blue-400', href: '/sales/leads?status=new' },
+            { label: 'Contacted', count: stats.contacted, dotColor: 'bg-yellow-400', href: '/sales/leads?status=contacted' },
+            { label: 'Interested', count: stats.interested, dotColor: 'bg-green-400', href: '/sales/leads?status=interested' },
+            { label: 'Converted', count: stats.converted, dotColor: 'bg-lancaster-gold', href: '/sales/leads?status=converted' },
+          ].map((stage) => (
+            <Link key={stage.label} href={stage.href}>
+              <Card className="p-4 hover:bg-tastelanc-surface-light/50 transition-colors cursor-pointer">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`w-2 h-2 rounded-full ${stage.dotColor}`} />
+                  <span className="text-xs text-gray-500 uppercase tracking-wider">{stage.label}</span>
                 </div>
-              );
-            })}
-          </div>
-          {stats.notInterested > 0 && (
-            <div className="mt-4 pt-3 border-t border-tastelanc-surface-light flex items-center justify-between">
-              <span className="text-xs text-gray-500">Not Interested</span>
-              <span className="text-sm font-medium text-red-400">{stats.notInterested}</span>
-            </div>
-          )}
-          {stats.total > 0 && (
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-xs text-gray-500">Overall conversion rate</span>
-              <span className="text-sm font-medium text-lancaster-gold">
-                {Math.round((stats.converted / stats.total) * 100)}%
-              </span>
-            </div>
-          )}
-        </Card>
+                <span className="text-2xl font-bold text-white">{stage.count}</span>
+              </Card>
+            </Link>
+          ))}
+        </div>
       )}
 
-      {/* Pipeline Stats */}
+      {/* Quick Stats Row */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
-          <Card className="p-4">
-            <div className="text-2xl font-bold text-white">{stats.total}</div>
-            <div className="text-sm text-gray-400">Total Leads</div>
-          </Card>
-          <Card className="p-4">
-            <div className="text-2xl font-bold text-blue-400">{stats.new}</div>
-            <div className="text-sm text-gray-400">New</div>
-          </Card>
-          <Card className="p-4">
-            <div className="text-2xl font-bold text-yellow-400">{stats.contacted}</div>
-            <div className="text-sm text-gray-400">Contacted</div>
-          </Card>
-          <Card className="p-4">
-            <div className="text-2xl font-bold text-green-400">{stats.interested}</div>
-            <div className="text-sm text-gray-400">Interested</div>
-          </Card>
-          <Card className="p-4">
-            <div className="text-2xl font-bold text-red-400">{stats.notInterested}</div>
-            <div className="text-sm text-gray-400">Not Interested</div>
-          </Card>
-          <Card className="p-4">
-            <div className="text-2xl font-bold text-lancaster-gold">{stats.converted}</div>
-            <div className="text-sm text-gray-400">Converted</div>
-          </Card>
+        <div className="flex items-center gap-4 mb-6 text-sm">
+          <span className="text-gray-500">{stats.total} total leads</span>
+          {stats.notInterested > 0 && (
+            <>
+              <span className="text-gray-700">·</span>
+              <Link href="/sales/leads?status=not_interested" className="text-red-400 hover:text-red-300 transition-colors">
+                {stats.notInterested} not interested
+              </Link>
+            </>
+          )}
+          {stats.converted > 0 && (
+            <>
+              <span className="text-gray-700">·</span>
+              <span className="text-lancaster-gold">
+                {Math.round((stats.converted / stats.total) * 100)}% conversion rate
+              </span>
+            </>
+          )}
         </div>
       )}
 
@@ -247,6 +217,9 @@ export default function SalesDashboard() {
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               <Clock className="w-5 h-5 text-yellow-400" />
               Needs Follow-Up
+              <Tooltip content="Leads you haven't contacted in over 3 days. Reach out soon to keep them warm!" position="top">
+                <HelpCircle className="w-3.5 h-3.5 text-gray-600 hover:text-gray-400 cursor-help" />
+              </Tooltip>
             </h2>
             <Link href="/sales/leads?status=contacted" className="text-sm text-tastelanc-accent hover:underline flex items-center gap-1">
               View all <ArrowRight className="w-3 h-3" />
@@ -285,6 +258,9 @@ export default function SalesDashboard() {
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               <Briefcase className="w-5 h-5 text-tastelanc-accent" />
               Recent Leads
+              <Tooltip content="Your most recently added leads. Click any lead to view details, log activity, or send an email." position="top">
+                <HelpCircle className="w-3.5 h-3.5 text-gray-600 hover:text-gray-400 cursor-help" />
+              </Tooltip>
             </h2>
             <Link href="/sales/leads" className="text-sm text-tastelanc-accent hover:underline flex items-center gap-1">
               View all <ArrowRight className="w-3 h-3" />

@@ -15,23 +15,35 @@ import {
   Plus,
   PanelLeftClose,
   PanelLeftOpen,
+  CalendarDays,
+  DollarSign,
+  Settings,
+  HelpCircle,
 } from 'lucide-react';
+import { Tooltip } from '@/components/ui';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
-const NAV_ITEMS: Array<{
+interface NavItem {
   href: string;
   icon: typeof LayoutDashboard;
   label: string;
   highlight?: boolean;
   section?: string;
-}> = [
-  { href: '/sales', icon: LayoutDashboard, label: 'Overview', section: 'Pipeline' },
-  { href: '/sales/leads', icon: Briefcase, label: 'Business Leads', highlight: true },
-  { href: '/sales/leads/new', icon: Plus, label: 'Add Lead' },
-  { href: '/sales/contacts', icon: Mail, label: 'Inquiries', section: 'Outreach' },
-  { href: '/sales/checkout', icon: CreditCard, label: 'New Sale', highlight: true, section: 'Sales' },
-  { href: '/sales/restaurants', icon: Store, label: 'Directory', section: 'Reference' },
+  adminOnly?: boolean;
+  hint?: string;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { href: '/sales', icon: LayoutDashboard, label: 'Overview', section: 'Pipeline', hint: 'Your sales pipeline at a glance — track leads and performance' },
+  { href: '/sales/leads', icon: Briefcase, label: 'Business Leads', highlight: true, hint: 'View and manage all your assigned leads' },
+  { href: '/sales/leads/new', icon: Plus, label: 'Add Lead', hint: 'Create a new business lead to start the sales process' },
+  { href: '/sales/checkout', icon: CreditCard, label: 'New Sale', highlight: true, section: 'Actions', hint: 'Generate a checkout link for a restaurant ready to sign up' },
+  { href: '/sales/calendar', icon: CalendarDays, label: 'Calendar', hint: 'Schedule and track meetings with prospects' },
+  { href: '/sales/contacts', icon: Mail, label: 'Inquiries', hint: 'Incoming contact form submissions from interested businesses' },
+  { href: '/sales/restaurants', icon: Store, label: 'Directory', section: 'Reference', hint: 'Browse all restaurants in your market for prospecting' },
+  { href: '/sales/commissions', icon: DollarSign, label: 'Commissions', highlight: true, section: 'Earnings', hint: 'Track your earnings, payouts, and commission tier progress' },
+  { href: '/sales/settings', icon: Settings, label: 'Settings', hint: 'Manage your profile and preferences' },
 ];
 
 interface SalesSidebarProps {
@@ -39,12 +51,16 @@ interface SalesSidebarProps {
   onClose?: () => void;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
+  isAdmin?: boolean;
 }
 
-export default function SalesSidebar({ isOpen, onClose, collapsed, onToggleCollapse }: SalesSidebarProps) {
+export default function SalesSidebar({ isOpen, onClose, collapsed, onToggleCollapse, isAdmin }: SalesSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
+
+  // Filter out admin-only items for non-admin users
+  const visibleNavItems = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin);
 
   const handleLogout = async () => {
     try {
@@ -107,7 +123,7 @@ export default function SalesSidebar({ isOpen, onClose, collapsed, onToggleColla
         {/* Navigation */}
         <nav className={`flex-1 ${collapsed ? 'md:p-2' : 'md:p-4'} p-4 overflow-y-auto`}>
           <ul className="space-y-1">
-            {NAV_ITEMS.map((item, index) => {
+            {visibleNavItems.map((item, index) => {
               const isActive = pathname === item.href ||
                 (item.href !== '/sales' && pathname.startsWith(item.href) && item.href !== '/sales/leads/new');
 
@@ -121,21 +137,30 @@ export default function SalesSidebar({ isOpen, onClose, collapsed, onToggleColla
                   {item.section && collapsed && index > 0 && (
                     <div className="hidden md:block border-t border-tastelanc-surface-light my-2" />
                   )}
-                  <Link
-                    href={item.href}
-                    onClick={handleNavClick}
-                    title={collapsed ? item.label : undefined}
-                    className={`flex items-center gap-3 ${collapsed ? 'md:justify-center md:px-0 md:py-2.5' : ''} px-4 py-2.5 rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-tastelanc-accent text-white'
-                        : item.highlight
-                        ? 'text-lancaster-gold hover:bg-lancaster-gold/10'
-                        : 'text-gray-400 hover:bg-tastelanc-surface-light hover:text-white'
-                    }`}
-                  >
-                    <item.icon className={`w-5 h-5 flex-shrink-0 ${item.highlight && !isActive ? 'text-lancaster-gold' : ''}`} />
-                    <span className={`${collapsed ? 'md:hidden' : ''}`}>{item.label}</span>
-                  </Link>
+                  <div className="group/nav relative flex items-center">
+                    <Link
+                      href={item.href}
+                      onClick={handleNavClick}
+                      title={collapsed ? item.label : undefined}
+                      className={`flex items-center gap-3 flex-1 ${collapsed ? 'md:justify-center md:px-0 md:py-2.5' : ''} px-4 py-2.5 rounded-lg transition-colors ${
+                        isActive
+                          ? 'bg-tastelanc-accent text-white'
+                          : item.highlight
+                          ? 'text-lancaster-gold hover:bg-lancaster-gold/10'
+                          : 'text-gray-400 hover:bg-tastelanc-surface-light hover:text-white'
+                      }`}
+                    >
+                      <item.icon className={`w-5 h-5 flex-shrink-0 ${item.highlight && !isActive ? 'text-lancaster-gold' : ''}`} />
+                      <span className={`${collapsed ? 'md:hidden' : ''}`}>{item.label}</span>
+                    </Link>
+                    {item.hint && !collapsed && (
+                      <Tooltip content={item.hint} position="right">
+                        <span className="absolute right-2 opacity-0 group-hover/nav:opacity-100 transition-opacity cursor-help">
+                          <HelpCircle className="w-3.5 h-3.5 text-gray-600 hover:text-gray-400" />
+                        </span>
+                      </Tooltip>
+                    )}
+                  </div>
                 </li>
               );
             })}

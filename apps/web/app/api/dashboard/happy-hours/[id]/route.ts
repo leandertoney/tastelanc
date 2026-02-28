@@ -57,7 +57,7 @@ export async function PUT(
     updateData.updated_at = new Date().toISOString();
 
     // Use service role client for admin operations to bypass RLS
-    const dbClient = accessResult.isAdmin ? createServiceRoleClient() : supabase;
+    const dbClient = (accessResult.isAdmin || accessResult.isSalesRep) ? createServiceRoleClient() : supabase;
 
     const { error: updateError } = await dbClient
       .from('happy_hours')
@@ -160,7 +160,7 @@ export async function DELETE(
     }
 
     // Use service role client for admin operations to bypass RLS
-    const dbClient = accessResult.isAdmin ? createServiceRoleClient() : supabase;
+    const dbClient = (accessResult.isAdmin || accessResult.isSalesRep) ? createServiceRoleClient() : supabase;
 
     // Delete items first (cascade might handle this, but be explicit)
     await dbClient
