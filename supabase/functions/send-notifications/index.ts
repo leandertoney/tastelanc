@@ -77,40 +77,79 @@ async function sendPushNotifications(messages: PushMessage[]): Promise<ExpoPushR
 }
 
 /**
- * Get all push tokens from the database
+ * Get all push tokens from the database, grouped by Expo project (app_slug).
+ * Expo Push API rejects batch sends containing tokens from multiple projects
+ * (PUSH_TOO_MANY_EXPERIENCE_IDS), so callers must send separate batches per group.
  */
-async function getAllPushTokens(supabase: ReturnType<typeof createClient>): Promise<string[]> {
+async function getAllPushTokensGrouped(supabase: ReturnType<typeof createClient>): Promise<Map<string, string[]>> {
   const { data, error } = await supabase
     .from('push_tokens')
-    .select('token');
+    .select('token, app_slug');
 
   if (error || !data) {
     console.error('Error fetching push tokens:', error);
-    return [];
+    return new Map();
   }
 
-  return data.map(t => t.token);
+  const groups = new Map<string, string[]>();
+  for (const t of data) {
+    const slug = t.app_slug || 'tastelanc';
+    if (!groups.has(slug)) groups.set(slug, []);
+    groups.get(slug)!.push(t.token);
+  }
+  return groups;
 }
 
 /**
- * Get push tokens for users who favorited a specific restaurant
+ * Send push notifications to all tokens, automatically batching by Expo project.
+ * Takes a function that builds messages for a given set of tokens.
  */
-async function getFavoriteUserTokens(
+async function sendToAllTokens(
+  supabase: ReturnType<typeof createClient>,
+  buildMessages: (tokens: string[]) => PushMessage[]
+): Promise<{ sent: number; total: number }> {
+  const groups = await getAllPushTokensGrouped(supabase);
+  let sent = 0;
+  let total = 0;
+
+  for (const [slug, tokens] of groups) {
+    const messages = buildMessages(tokens);
+    total += messages.length;
+    console.log(`Sending ${messages.length} messages for project ${slug}`);
+    const result = await sendPushNotifications(messages);
+    sent += result.data.filter(r => r.status === 'ok').length;
+  }
+
+  return { sent, total };
+}
+
+/**
+ * Get push tokens for users who favorited a specific restaurant, grouped by project.
+ */
+async function getFavoriteUserTokensGrouped(
   supabase: ReturnType<typeof createClient>,
   restaurantId: string
-): Promise<string[]> {
+): Promise<Map<string, string[]>> {
   const { data, error } = await supabase
     .from('favorites')
-    .select('user_id, push_tokens!inner(token)')
+    .select('user_id, push_tokens!inner(token, app_slug)')
     .eq('restaurant_id', restaurantId);
 
   if (error || !data) {
     console.error('Error fetching favorite user tokens:', error);
-    return [];
+    return new Map();
   }
 
-  // @ts-ignore - Supabase join typing
-  return data.flatMap(f => f.push_tokens?.map((t: any) => t.token) || []);
+  const groups = new Map<string, string[]>();
+  for (const f of data) {
+    // @ts-ignore - Supabase join typing
+    for (const t of (f.push_tokens || [])) {
+      const slug = t.app_slug || 'tastelanc';
+      if (!groups.has(slug)) groups.set(slug, []);
+      groups.get(slug)!.push(t.token);
+    }
+  }
+  return groups;
 }
 
 /**
@@ -185,14 +224,6 @@ async function sendHappyHourAlerts(supabase: ReturnType<typeof createClient>): P
     return { sent: 0, restaurants: [] };
   }
 
-  // Get all push tokens
-  const tokens = await getAllPushTokens(supabase);
-  if (tokens.length === 0) {
-    console.log('No push tokens registered');
-    return { sent: 0, restaurants: [] };
-  }
-
-  const messages: PushMessage[] = [];
   const restaurantNames: string[] = [];
 
   for (const hh of happyHours) {
@@ -225,10 +256,11 @@ async function sendHappyHourAlerts(supabase: ReturnType<typeof createClient>): P
     body = `${preview} + ${count - 2} more have happy hours right now`;
   }
 
-  for (const token of tokens) {
-    messages.push({
+  // Send separate batches per Expo project to avoid PUSH_TOO_MANY_EXPERIENCE_IDS
+  const { sent: successCount } = await sendToAllTokens(supabase, (tokens) =>
+    tokens.map(token => ({
       to: token,
-      sound: 'default',
+      sound: 'default' as const,
       title,
       body,
       data: {
@@ -236,12 +268,8 @@ async function sendHappyHourAlerts(supabase: ReturnType<typeof createClient>): P
         // @ts-ignore - Supabase join typing
         restaurantId: count === 1 ? happyHours[0].restaurant.id : undefined,
       },
-    });
-  }
-
-  // Send notifications
-  const result = await sendPushNotifications(messages);
-  const successCount = result.data.filter(r => r.status === 'ok').length;
+    }))
+  );
 
   return { sent: successCount, restaurants: restaurantNames };
 }
@@ -287,10 +315,10 @@ async function sendGeofenceAlert(
     .gte('end_time', currentTime)
     .single();
 
-  // Get user's push tokens (may have multiple devices)
+  // Get user's push tokens grouped by project (user may have both apps)
   const { data: tokenData } = await supabase
     .from('push_tokens')
-    .select('token')
+    .select('token, app_slug')
     .eq('user_id', userId);
 
   if (!tokenData || tokenData.length === 0) {
@@ -303,19 +331,31 @@ async function sendGeofenceAlert(
     body = `${restaurant.name} has ${happyHour.description} right now!`;
   }
 
-  const messages: PushMessage[] = tokenData.map(t => ({
-    to: t.token,
-    sound: 'default',
-    title: happyHour ? 'Happy Hour Nearby!' : 'Check This Out!',
-    body,
-    data: {
-      screen: 'RestaurantDetail',
-      restaurantId,
-    },
-  }));
+  // Group by project and send separate batches
+  const groups = new Map<string, string[]>();
+  for (const t of tokenData) {
+    const slug = t.app_slug || 'tastelanc';
+    if (!groups.has(slug)) groups.set(slug, []);
+    groups.get(slug)!.push(t.token);
+  }
 
-  const result = await sendPushNotifications(messages);
-  return { sent: result.data.some(r => r.status === 'ok') };
+  let anySent = false;
+  for (const [, tokens] of groups) {
+    const messages: PushMessage[] = tokens.map(token => ({
+      to: token,
+      sound: 'default',
+      title: happyHour ? 'Happy Hour Nearby!' : 'Check This Out!',
+      body,
+      data: {
+        screen: 'RestaurantDetail',
+        restaurantId,
+      },
+    }));
+    const result = await sendPushNotifications(messages);
+    if (result.data.some(r => r.status === 'ok')) anySent = true;
+  }
+
+  return { sent: anySent };
 }
 
 /**
@@ -329,10 +369,10 @@ async function sendAreaEntryNotification(
   areaName: string,
   restaurantCount: number
 ): Promise<{ sent: boolean; reason?: string }> {
-  // Get user's push tokens (may have multiple devices)
+  // Get user's push tokens grouped by project
   const { data: tokenData } = await supabase
     .from('push_tokens')
-    .select('token')
+    .select('token, app_slug')
     .eq('user_id', userId);
 
   if (!tokenData || tokenData.length === 0) {
@@ -341,23 +381,35 @@ async function sendAreaEntryNotification(
 
   // Build the notification message
   const countText = restaurantCount > 0
-    ? `Check out ${restaurantCount} restaurant${restaurantCount === 1 ? '' : 's'} on TasteLanc nearby`
-    : 'Discover restaurants on TasteLanc nearby';
+    ? `Check out ${restaurantCount} restaurant${restaurantCount === 1 ? '' : 's'} nearby`
+    : 'Discover restaurants nearby';
 
-  const messages: PushMessage[] = tokenData.map(t => ({
-    to: t.token,
-    sound: 'default',
-    title: `You're in ${areaName}!`,
-    body: countText,
-    data: {
-      screen: 'AreaRestaurants',
-      areaId,
-      areaName,
-    },
-  }));
+  // Group by project and send separate batches
+  const groups = new Map<string, string[]>();
+  for (const t of tokenData) {
+    const slug = t.app_slug || 'tastelanc';
+    if (!groups.has(slug)) groups.set(slug, []);
+    groups.get(slug)!.push(t.token);
+  }
 
-  const result = await sendPushNotifications(messages);
-  return { sent: result.data.some(r => r.status === 'ok') };
+  let anySent = false;
+  for (const [, tokens] of groups) {
+    const messages: PushMessage[] = tokens.map(token => ({
+      to: token,
+      sound: 'default',
+      title: `You're in ${areaName}!`,
+      body: countText,
+      data: {
+        screen: 'AreaRestaurants',
+        areaId,
+        areaName,
+      },
+    }));
+    const result = await sendPushNotifications(messages);
+    if (result.data.some(r => r.status === 'ok')) anySent = true;
+  }
+
+  return { sent: anySent };
 }
 
 // ─── Pick strategy config ────────────────────────────────────────────────────
@@ -606,25 +658,23 @@ async function sendTodaysPick(supabase: ReturnType<typeof createClient>): Promis
 
   if (!restaurantId) return { sent: 0, reason: 'No restaurant selected' };
 
-  // ── Send to all tokens ─────────────────────────────────────────────────────
-
-  const tokens = await getAllPushTokens(supabase);
-  if (!tokens.length) return { sent: 0, reason: 'No push tokens registered' };
+  // ── Send to all tokens (separate batches per Expo project) ──────────────
 
   const title = `${strategy.emoji} ${strategy.title}`;
-  const messages: PushMessage[] = tokens.map(token => ({
-    to: token,
-    sound: 'default',
-    title,
-    body: notifBody,
-    data: {
-      screen: 'RestaurantDetail',
-      restaurantId,
-    },
-  }));
+  const { sent: successCount, total } = await sendToAllTokens(supabase, (tokens) =>
+    tokens.map(token => ({
+      to: token,
+      sound: 'default' as const,
+      title,
+      body: notifBody,
+      data: {
+        screen: 'RestaurantDetail',
+        restaurantId,
+      },
+    }))
+  );
 
-  const result = await sendPushNotifications(messages);
-  const successCount = result.data.filter(r => r.status === 'ok').length;
+  if (total === 0) return { sent: 0, reason: 'No push tokens registered' };
 
   return {
     sent: successCount,
@@ -706,23 +756,21 @@ Deno.serve(async (req) => {
           });
         }
 
-        const tokens = await getAllPushTokens(supabase);
         const truncatedSummary = summary.length > 120 ? summary.substring(0, 117) + '...' : summary;
-        const messages: PushMessage[] = tokens.map(token => ({
-          to: token,
-          sound: 'default',
-          title: `New from Rosie: ${title}`,
-          body: truncatedSummary,
-          data: {
-            screen: 'BlogDetail',
-            blogSlug: slug,
-          },
-        }));
+        const blogResult = await sendToAllTokens(supabase, (tokens) =>
+          tokens.map(token => ({
+            to: token,
+            sound: 'default' as const,
+            title: `New from Rosie: ${title}`,
+            body: truncatedSummary,
+            data: {
+              screen: 'BlogDetail',
+              blogSlug: slug,
+            },
+          }))
+        );
 
-        const result = await sendPushNotifications(messages);
-        const successCount = result.data.filter(r => r.status === 'ok').length;
-
-        return new Response(JSON.stringify({ sent: successCount, total: tokens.length }), {
+        return new Response(JSON.stringify(blogResult), {
           headers: { 'Content-Type': 'application/json' },
         });
       }
@@ -746,19 +794,17 @@ Deno.serve(async (req) => {
           });
         }
 
-        const tokens = await getAllPushTokens(supabase);
-        const messages: PushMessage[] = tokens.map(token => ({
-          to: token,
-          sound: 'default',
-          title,
-          body: message,
-          data: data || {},
-        }));
+        const broadcastResult = await sendToAllTokens(supabase, (tokens) =>
+          tokens.map(token => ({
+            to: token,
+            sound: 'default' as const,
+            title,
+            body: message,
+            data: data || {},
+          }))
+        );
 
-        const result = await sendPushNotifications(messages);
-        const successCount = result.data.filter(r => r.status === 'ok').length;
-
-        return new Response(JSON.stringify({ sent: successCount, total: tokens.length }), {
+        return new Response(JSON.stringify(broadcastResult), {
           headers: { 'Content-Type': 'application/json' },
         });
       }

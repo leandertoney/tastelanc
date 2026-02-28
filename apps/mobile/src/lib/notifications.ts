@@ -102,6 +102,7 @@ export async function savePushToken(token: string, userId: string): Promise<bool
           user_id: userId,
           token,
           platform: Platform.OS,
+          app_slug: 'tastelanc',
           updated_at: new Date().toISOString(),
         },
         {
