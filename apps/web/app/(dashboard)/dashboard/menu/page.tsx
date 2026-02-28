@@ -5,6 +5,10 @@ import { Plus, Pencil, Trash2, GripVertical, UtensilsCrossed, Loader2, X, Link2,
 import { Button, Card, Badge } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import TierGate from '@/components/TierGate';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import SortableMenuItem from '@/components/dashboard/SortableMenuItem';
+import { toast } from 'sonner';
 
 // Types for URL import
 interface ParsedMenuItem {
@@ -156,6 +160,51 @@ export default function MenuPage() {
   // PDF Import states
   const [showPdfImport, setShowPdfImport] = useState(false);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+
+  // Drag-and-drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
+  const handleItemDragEnd = async (event: DragEndEvent, section: MenuSection) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = section.menu_items.findIndex((i) => i.id === active.id);
+    const newIndex = section.menu_items.findIndex((i) => i.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(section.menu_items, oldIndex, newIndex);
+
+    // Optimistic update
+    setMenus((prev) =>
+      prev.map((menu) => ({
+        ...menu,
+        menu_sections: menu.menu_sections.map((s) =>
+          s.id === section.id
+            ? { ...s, menu_items: reordered.map((item, i) => ({ ...item, display_order: i })) }
+            : s
+        ),
+      }))
+    );
+
+    // Persist to server
+    try {
+      const res = await fetch(buildApiUrl('/api/dashboard/menus/reorder'), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'menu_items',
+          restaurant_id: restaurant?.id,
+          items: reordered.map((item, i) => ({ id: item.id, display_order: i })),
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to save order');
+    } catch {
+      toast.error('Failed to save item order');
+      fetchMenus();
+    }
+  };
 
   // Fetch menus on mount
   useEffect(() => {
@@ -1148,47 +1197,25 @@ export default function MenuPage() {
                   </div>
 
                   <div className="divide-y divide-tastelanc-surface-light">
-                    {section.menu_items.map((item) => (
-                      <div
-                        key={item.id}
-                        className={`flex items-center justify-between p-4 hover:bg-tastelanc-surface/50 ${!item.is_available ? 'opacity-50' : ''}`}
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={(event) => handleItemDragEnd(event, section)}
+                    >
+                      <SortableContext
+                        items={section.menu_items.map((i) => i.id)}
+                        strategy={verticalListSortingStrategy}
                       >
-                        <div className="flex items-center gap-3">
-                          <GripVertical className="w-4 h-4 text-gray-500 cursor-grab" />
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="text-white font-medium">{item.name}</p>
-                              {item.is_featured && <Badge variant="accent">Featured</Badge>}
-                              {!item.is_available && <Badge>Unavailable</Badge>}
-                            </div>
-                            {item.description && <p className="text-gray-400 text-sm">{item.description}</p>}
-                            {item.dietary_flags.length > 0 && (
-                              <div className="flex gap-1 mt-1">
-                                {item.dietary_flags.map((flag) => (
-                                  <Badge key={flag} className="text-xs">
-                                    {flag}
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          {item.price !== null && <span className="text-gray-300">${item.price.toFixed(2)}</span>}
-                          {item.price_description && !item.price && (
-                            <span className="text-gray-400 text-sm">{item.price_description}</span>
-                          )}
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => setEditingItem(item)} className="text-gray-400 hover:text-white">
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => handleDeleteItem(item.id)} className="text-gray-400 hover:text-red-400">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                        {section.menu_items.map((item) => (
+                          <SortableMenuItem
+                            key={item.id}
+                            item={item}
+                            onEdit={setEditingItem}
+                            onDelete={handleDeleteItem}
+                          />
+                        ))}
+                      </SortableContext>
+                    </DndContext>
 
                     {/* Add Item Form */}
                     {showAddItem === section.id ? (

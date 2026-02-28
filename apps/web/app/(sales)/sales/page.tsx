@@ -1,18 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import {
   TrendingUp,
   Briefcase,
   Plus,
-  Phone,
-  Mail,
   Clock,
-  CheckCircle,
-  XCircle,
   Loader2,
   ArrowRight,
+  RefreshCw,
+  AlertCircle,
 } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 
@@ -52,44 +50,81 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   converted: { label: 'Converted', color: 'bg-lancaster-gold/20 text-lancaster-gold' },
 };
 
+const AUTO_REFRESH_INTERVAL = 2 * 60 * 60 * 1000; // 2 hours
+
 export default function SalesDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentLeads, setRecentLeads] = useState<Lead[]>([]);
   const [followUpLeads, setFollowUpLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const fetchData = useCallback(async (silent = false) => {
+    if (!silent) setIsLoading(true);
+    else setIsRefreshing(true);
+    setFetchError(false);
+
+    try {
+      const res = await fetch('/api/sales/leads');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      setStats(data.stats || null);
+
+      const leads: Lead[] = data.leads || [];
+      setRecentLeads(leads.slice(0, 5));
+
+      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+      const needsFollowUp = leads.filter(
+        (l) =>
+          ['contacted', 'interested', 'new'].includes(l.status) &&
+          (!l.last_contacted_at || l.last_contacted_at < threeDaysAgo)
+      );
+      setFollowUpLeads(needsFollowUp.slice(0, 5));
+      setLastRefreshed(new Date());
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      if (!silent) setFetchError(true);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch('/api/sales/leads');
-        const data = await res.json();
-
-        setStats(data.stats || null);
-
-        const leads: Lead[] = data.leads || [];
-        setRecentLeads(leads.slice(0, 5));
-
-        // Leads needing follow-up: contacted or interested, last contact > 3 days ago
-        const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
-        const needsFollowUp = leads.filter(
-          (l) =>
-            ['contacted', 'interested', 'new'].includes(l.status) &&
-            (!l.last_contacted_at || l.last_contacted_at < threeDaysAgo)
-        );
-        setFollowUpLeads(needsFollowUp.slice(0, 5));
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchData();
-  }, []);
+    intervalRef.current = setInterval(() => fetchData(true), AUTO_REFRESH_INTERVAL);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [fetchData]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-tastelanc-accent" />
+      </div>
+    );
+  }
+
+  if (fetchError && !stats) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center max-w-md">
+          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-white mb-2">Couldn&apos;t load sales data</h2>
+          <p className="text-gray-400 text-sm mb-6">
+            We had trouble fetching the sales dashboard. Please check your connection and try again.
+          </p>
+          <button
+            onClick={() => fetchData()}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white rounded-lg transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -105,7 +140,15 @@ export default function SalesDashboard() {
           </h1>
           <p className="text-gray-400 mt-1">Track your pipeline and outreach</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => fetchData(true)}
+            disabled={isRefreshing}
+            className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-tastelanc-surface-light transition-colors disabled:opacity-50"
+            title="Refresh data"
+          >
+            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </button>
           <Link
             href="/sales/leads/new"
             className="flex items-center gap-2 px-4 py-2 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white rounded-lg transition-colors"
@@ -115,6 +158,57 @@ export default function SalesDashboard() {
           </Link>
         </div>
       </div>
+
+      {/* Pipeline Funnel */}
+      {stats && stats.total > 0 && (
+        <Card className="p-6 mb-6">
+          <h2 className="text-sm font-medium text-gray-400 mb-4">Conversion Pipeline</h2>
+          <div className="flex items-stretch gap-1">
+            {[
+              { label: 'New', count: stats.new, color: 'bg-blue-500', textColor: 'text-blue-400' },
+              { label: 'Contacted', count: stats.contacted, color: 'bg-yellow-500', textColor: 'text-yellow-400' },
+              { label: 'Interested', count: stats.interested, color: 'bg-green-500', textColor: 'text-green-400' },
+              { label: 'Converted', count: stats.converted, color: 'bg-lancaster-gold', textColor: 'text-lancaster-gold' },
+            ].map((stage, i, arr) => {
+              const pct = stats.total > 0 ? Math.max((stage.count / stats.total) * 100, 8) : 25;
+              const conversionFromPrev = i > 0 && arr[i - 1].count > 0
+                ? Math.round((stage.count / arr[i - 1].count) * 100)
+                : null;
+              return (
+                <div key={stage.label} className="flex-1 min-w-0">
+                  <div className="text-center mb-2">
+                    <span className={`text-2xl font-bold ${stage.textColor}`}>{stage.count}</span>
+                    <p className="text-xs text-gray-500">{stage.label}</p>
+                  </div>
+                  <div className="h-3 rounded-full bg-tastelanc-surface overflow-hidden">
+                    <div
+                      className={`h-full ${stage.color} rounded-full transition-all`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  {conversionFromPrev !== null && (
+                    <p className="text-xs text-gray-500 text-center mt-1">{conversionFromPrev}%</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {stats.notInterested > 0 && (
+            <div className="mt-4 pt-3 border-t border-tastelanc-surface-light flex items-center justify-between">
+              <span className="text-xs text-gray-500">Not Interested</span>
+              <span className="text-sm font-medium text-red-400">{stats.notInterested}</span>
+            </div>
+          )}
+          {stats.total > 0 && (
+            <div className="mt-2 flex items-center justify-between">
+              <span className="text-xs text-gray-500">Overall conversion rate</span>
+              <span className="text-sm font-medium text-lancaster-gold">
+                {Math.round((stats.converted / stats.total) * 100)}%
+              </span>
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Pipeline Stats */}
       {stats && (

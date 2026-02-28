@@ -34,24 +34,30 @@ type StatusFilter = 'all' | 'unread' | 'read' | 'converted';
 export default function SalesContactsPage() {
   const [contacts, setContacts] = useState<ContactSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [convertingId, setConvertingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkConverting, setIsBulkConverting] = useState(false);
 
+  const fetchContacts = async () => {
+    setFetchError(false);
+    try {
+      const res = await fetch('/api/sales/contacts');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setContacts(data.contacts || []);
+    } catch (error) {
+      console.error('Error fetching contacts:', error);
+      setFetchError(true);
+      toast.error('Failed to load contacts');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchContacts = async () => {
-      try {
-        const res = await fetch('/api/sales/contacts');
-        const data = await res.json();
-        setContacts(data.contacts || []);
-      } catch (error) {
-        console.error('Error fetching contacts:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchContacts();
   }, []);
 
@@ -170,6 +176,26 @@ export default function SalesContactsPage() {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-tastelanc-accent" />
+      </div>
+    );
+  }
+
+  if (fetchError && contacts.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center max-w-md">
+          <Mail className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-white mb-2">Couldn&apos;t load contacts</h2>
+          <p className="text-gray-400 text-sm mb-6">
+            We had trouble fetching contact inquiries. Please try again.
+          </p>
+          <button
+            onClick={fetchContacts}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white rounded-lg transition-colors"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }

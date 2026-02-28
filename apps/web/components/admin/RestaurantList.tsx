@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LayoutDashboard,
+  Filter,
 } from 'lucide-react';
 
 interface Restaurant {
@@ -42,21 +43,60 @@ interface RestaurantListProps {
 
 const ITEMS_PER_PAGE = 20;
 
+const TIER_OPTIONS = [
+  { value: 'all', label: 'All Tiers' },
+  { value: 'elite', label: 'Elite' },
+  { value: 'premium', label: 'Premium' },
+  { value: 'basic', label: 'Basic' },
+];
+
+const STATUS_OPTIONS = [
+  { value: 'all', label: 'All' },
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+  { value: 'verified', label: 'Verified' },
+  { value: 'paid', label: 'Paid' },
+];
+
 export default function RestaurantList({ restaurants }: RestaurantListProps) {
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [tierFilter, setTierFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
 
-  // Filter restaurants based on search
+  // Filter restaurants based on search + filters
   const filteredRestaurants = useMemo(() => {
-    if (!search.trim()) return restaurants;
-    const searchLower = search.toLowerCase();
-    return restaurants.filter(
-      (r) =>
-        r.name.toLowerCase().includes(searchLower) ||
-        r.city.toLowerCase().includes(searchLower) ||
-        r.state.toLowerCase().includes(searchLower)
-    );
-  }, [restaurants, search]);
+    let result = restaurants;
+
+    // Search filter
+    if (search.trim()) {
+      const searchLower = search.toLowerCase();
+      result = result.filter(
+        (r) =>
+          r.name.toLowerCase().includes(searchLower) ||
+          r.city.toLowerCase().includes(searchLower) ||
+          r.state.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Tier filter
+    if (tierFilter !== 'all') {
+      result = result.filter((r) => r.tiers?.name === tierFilter);
+    }
+
+    // Status filter
+    if (statusFilter === 'active') {
+      result = result.filter((r) => r.is_active);
+    } else if (statusFilter === 'inactive') {
+      result = result.filter((r) => !r.is_active);
+    } else if (statusFilter === 'verified') {
+      result = result.filter((r) => r.is_verified);
+    } else if (statusFilter === 'paid') {
+      result = result.filter((r) => r.stripe_subscription_id);
+    }
+
+    return result;
+  }, [restaurants, search, tierFilter, statusFilter]);
 
   // Paginate
   const totalPages = Math.ceil(filteredRestaurants.length / ITEMS_PER_PAGE);
@@ -65,16 +105,28 @@ export default function RestaurantList({ restaurants }: RestaurantListProps) {
     return filteredRestaurants.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredRestaurants, currentPage]);
 
-  // Reset to page 1 when search changes
+  // Reset to page 1 when filters change
   const handleSearchChange = (value: string) => {
     setSearch(value);
     setCurrentPage(1);
   };
 
+  const handleTierChange = (value: string) => {
+    setTierFilter(value);
+    setCurrentPage(1);
+  };
+
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
+
+  const hasActiveFilters = tierFilter !== 'all' || statusFilter !== 'all' || search.trim();
+
   return (
     <div>
-      {/* Search */}
-      <div className="mb-6">
+      {/* Search + Filters */}
+      <div className="mb-6 space-y-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
@@ -85,9 +137,54 @@ export default function RestaurantList({ restaurants }: RestaurantListProps) {
             className="w-full pl-10 pr-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
           />
         </div>
-        {search && (
-          <p className="text-sm text-gray-400 mt-2">
-            Found {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''}
+
+        {/* Filter Buttons */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5 text-sm text-gray-400">
+            <Filter className="w-4 h-4" />
+            <span>Tier:</span>
+          </div>
+          <div className="flex gap-2">
+            {TIER_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => handleTierChange(opt.value)}
+                className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                  tierFilter === opt.value
+                    ? 'bg-tastelanc-accent text-white'
+                    : 'bg-tastelanc-surface border border-tastelanc-surface-light text-gray-400 hover:text-white'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="w-px h-6 bg-tastelanc-surface-light hidden md:block" />
+
+          <div className="flex items-center gap-1.5 text-sm text-gray-400">
+            <span>Status:</span>
+          </div>
+          <div className="flex gap-2">
+            {STATUS_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => handleStatusChange(opt.value)}
+                className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                  statusFilter === opt.value
+                    ? 'bg-tastelanc-accent text-white'
+                    : 'bg-tastelanc-surface border border-tastelanc-surface-light text-gray-400 hover:text-white'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {hasActiveFilters && (
+          <p className="text-sm text-gray-400">
+            Showing {filteredRestaurants.length} of {restaurants.length} restaurant{restaurants.length !== 1 ? 's' : ''}
           </p>
         )}
       </div>
@@ -97,11 +194,11 @@ export default function RestaurantList({ restaurants }: RestaurantListProps) {
         <Card className="p-12 text-center">
           <Store className="w-12 h-12 text-gray-600 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-white mb-2">
-            {search ? 'No restaurants found' : 'No restaurants yet'}
+            {hasActiveFilters ? 'No restaurants found' : 'No restaurants yet'}
           </h3>
           <p className="text-gray-400">
-            {search
-              ? 'Try adjusting your search terms.'
+            {hasActiveFilters
+              ? 'Try adjusting your search or filters.'
               : 'Restaurants will appear here as they sign up.'}
           </p>
         </Card>
@@ -181,7 +278,7 @@ export default function RestaurantList({ restaurants }: RestaurantListProps) {
                 <div className="text-right">
                   <div className="flex items-center gap-2 mb-2">
                     <Badge
-                      variant={restaurant.tiers?.name === 'premium' ? 'gold' : 'default'}
+                      variant={restaurant.tiers?.name === 'premium' || restaurant.tiers?.name === 'elite' ? 'gold' : 'default'}
                       className="capitalize"
                     >
                       {restaurant.tiers?.display_name || restaurant.tiers?.name || 'Basic'}
@@ -199,7 +296,7 @@ export default function RestaurantList({ restaurants }: RestaurantListProps) {
                     )}
                   </div>
                   {restaurant.stripe_subscription_id && (
-                    <p className="text-xs text-green-500">Stripe Linked ✓</p>
+                    <p className="text-xs text-green-500">Stripe Linked</p>
                   )}
                   <p className="text-xs text-gray-500 mt-1">
                     Joined {new Date(restaurant.created_at).toLocaleDateString()}
@@ -209,7 +306,7 @@ export default function RestaurantList({ restaurants }: RestaurantListProps) {
                       href={`/admin/restaurants/${restaurant.id}`}
                       className="text-xs text-gray-400 hover:text-white"
                     >
-                      Details →
+                      Details
                     </Link>
                     <Link
                       href={`/dashboard?admin_mode=true&restaurant_id=${restaurant.id}`}

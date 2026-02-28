@@ -89,16 +89,63 @@ function SalesCheckoutContent() {
   const [restaurantSearch, setRestaurantSearch] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const initializedRef = useRef(false);
 
+  const STORAGE_KEY = 'salesCheckoutWizard';
+
+  // Restore state from localStorage on mount (URL params take priority)
   useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
     const paramEmail = searchParams.get('email');
     const paramName = searchParams.get('name');
     const paramPhone = searchParams.get('phone');
 
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const data = JSON.parse(saved);
+        // Restore if saved within last 24 hours
+        if (data.savedAt && Date.now() - data.savedAt < 24 * 60 * 60 * 1000) {
+          setStep(data.step || 1);
+          setEmail(paramEmail || data.email || '');
+          setContactName(paramName || data.contactName || '');
+          setPhone(paramPhone || data.phone || '');
+          setCart(data.cart || []);
+          setCurrentPlan(data.currentPlan || 'premium');
+          setCurrentDuration(data.currentDuration || 'yearly');
+          if (data.cart?.length > 0) setShowAddForm(false);
+          return;
+        }
+      }
+    } catch { /* ignore parse errors */ }
+
+    // No saved state or expired — just use URL params
     if (paramEmail) setEmail(paramEmail);
     if (paramName) setContactName(paramName);
     if (paramPhone) setPhone(paramPhone);
   }, [searchParams]);
+
+  // Auto-save to localStorage on meaningful state changes
+  useEffect(() => {
+    if (!initializedRef.current) return;
+    // Don't save if checkout is complete
+    if (checkoutUrl) return;
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        step,
+        email,
+        contactName,
+        phone,
+        cart,
+        currentPlan,
+        currentDuration,
+        savedAt: Date.now(),
+      }));
+    } catch { /* ignore quota errors */ }
+  }, [step, email, contactName, phone, cart, currentPlan, currentDuration, checkoutUrl]);
 
   const cartRestaurantIds = new Set(cart.filter(item => item.restaurantId).map(item => item.restaurantId));
   const filteredRestaurants = restaurants.filter((r) =>
@@ -210,6 +257,7 @@ function SalesCheckoutContent() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to create checkout');
       setCheckoutUrl(data.checkoutUrl);
+      try { localStorage.removeItem(STORAGE_KEY); } catch {}
       toast.success('Checkout link created');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong';
@@ -231,6 +279,7 @@ function SalesCheckoutContent() {
     setCurrentRestaurantId(''); setCheckoutUrl(''); setError('');
     setAddError(''); setStepError(''); setRestaurantSearch('');
     setIsDropdownOpen(false); setShowAddForm(true); setStep(1);
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
   };
 
   const currentPrice = PRICES[currentPlan]?.[currentDuration] || 0;

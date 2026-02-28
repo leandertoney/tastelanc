@@ -10,6 +10,7 @@ import {
   Clock,
   ArrowUp,
   RefreshCw,
+  Loader2,
 } from 'lucide-react';
 
 interface SignupData {
@@ -61,7 +62,7 @@ export default function EarlyAccessAnalyticsPage() {
   if (isLoading && !data) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-tastelanc-accent/30 border-t-tastelanc-accent rounded-full animate-spin" />
+        <Loader2 className="w-8 h-8 animate-spin text-tastelanc-accent" />
       </div>
     );
   }

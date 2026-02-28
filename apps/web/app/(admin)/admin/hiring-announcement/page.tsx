@@ -85,7 +85,7 @@ export default function HiringAnnouncementPage() {
   if (loading) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+        <Loader2 className="w-8 h-8 animate-spin text-tastelanc-accent" />
       </div>
     );
   }

@@ -10,6 +10,7 @@ import EventImageUpload from '@/components/dashboard/forms/EventImageUpload';
 import DaySelector from '@/components/dashboard/forms/DaySelector';
 import TimeRangePicker from '@/components/dashboard/forms/TimeRangePicker';
 import TierGate from '@/components/TierGate';
+import EventAnalytics from '@/components/dashboard/EventAnalytics';
 import type { DayOfWeek } from '@/types/database';
 
 // Entertainment = recurring nightlife/activities shown in "Entertainment Tonight"
@@ -278,6 +279,9 @@ export default function EventsManager({ mode }: EventsManagerProps) {
           {config.addLabel}
         </Button>
       </div>
+
+      {/* Event Analytics */}
+      <EventAnalytics />
 
       {error && (
         <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400">
