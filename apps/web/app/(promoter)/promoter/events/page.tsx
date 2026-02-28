@@ -13,6 +13,7 @@ import {
   Mic2,
   Laugh,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import PromoterEventWizard from '@/components/promoter/PromoterEventWizard';
 
 interface Event {
@@ -76,12 +77,13 @@ export default function PromoterEventsPage() {
 
       if (res.ok) {
         setEvents(events.filter(e => e.id !== eventId));
+        toast.success('Event deleted');
       } else {
-        alert('Failed to delete event');
+        toast.error('Failed to delete event');
       }
     } catch (err) {
       console.error('Error deleting event:', err);
-      alert('Failed to delete event');
+      toast.error('Failed to delete event');
     } finally {
       setDeletingId(null);
     }
@@ -144,16 +146,30 @@ export default function PromoterEventsPage() {
             <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
           </div>
         ) : events.length === 0 ? (
-          <div className="text-center py-12">
-            <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-600" />
+          <div className="text-center py-12 px-6">
+            <Calendar className="w-12 h-12 mx-auto mb-4 text-purple-400" />
             <h3 className="text-lg font-medium text-white mb-2">No events yet</h3>
-            <p className="text-gray-400 mb-4">Create your first event to start promoting</p>
+            <p className="text-gray-400 mb-6">Create your first event to start promoting your performances</p>
+            <div className="max-w-sm mx-auto mb-6 text-left space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</div>
+                <p className="text-sm text-gray-300">Choose your event type (live music, DJ, karaoke, comedy)</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</div>
+                <p className="text-sm text-gray-300">Add details, date, time, and upload your event flyer</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</div>
+                <p className="text-sm text-gray-300">Your event goes live and gets promoted to local audiences</p>
+              </div>
+            </div>
             <button
               onClick={() => setShowWizard(true)}
               className="inline-flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors"
             >
               <Plus className="w-4 h-4" />
-              Create Event
+              Create Your First Event
             </button>
           </div>
         ) : (

@@ -528,9 +528,23 @@ export default function EventsManager({ mode }: EventsManagerProps) {
         <Card className="p-12 text-center">
           <TitleIcon className="w-12 h-12 text-tastelanc-accent mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-white mb-2">{config.emptyTitle}</h3>
-          <p className="text-gray-400 mb-4">
+          <p className="text-gray-400 mb-6 max-w-md mx-auto">
             {config.emptyText}
           </p>
+          <div className="max-w-sm mx-auto mb-6 text-left space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 rounded-full bg-tastelanc-accent/20 text-tastelanc-accent flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</div>
+              <p className="text-sm text-gray-300">Pick a template or start from scratch</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 rounded-full bg-tastelanc-accent/20 text-tastelanc-accent flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</div>
+              <p className="text-sm text-gray-300">Add details, schedule, and optional artwork</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 rounded-full bg-tastelanc-accent/20 text-tastelanc-accent flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</div>
+              <p className="text-sm text-gray-300">Your event goes live on TasteLanc instantly</p>
+            </div>
+          </div>
           <Button onClick={() => setShowWizard(true)}>
             <Plus className="w-4 h-4 mr-2" />
             {config.addLabel}
