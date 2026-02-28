@@ -44,7 +44,7 @@ export function Tooltip({ content, children, position = 'right', delay = 300 }: 
           className={`absolute z-[100] ${positionClasses[position]} pointer-events-none`}
           role="tooltip"
         >
-          <div className="bg-gray-800 text-gray-100 text-xs rounded-lg px-3 py-2 shadow-lg max-w-[220px] whitespace-normal leading-relaxed border border-gray-700">
+          <div className="bg-gray-800 text-gray-100 text-xs rounded-lg px-3 py-2 shadow-lg min-w-[280px] max-w-[380px] whitespace-normal leading-relaxed border border-gray-700">
             {content}
             <div className={`absolute w-0 h-0 border-[5px] ${arrowClasses[position]}`} />
           </div>
