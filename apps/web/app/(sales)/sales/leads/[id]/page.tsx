@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -22,6 +22,9 @@ import {
   Pencil,
   X,
   Store,
+  Tag,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Card, Badge } from '@/components/ui';
@@ -113,8 +116,39 @@ export default function LeadDetailPage({
   const [activityDescription, setActivityDescription] = useState('');
   const [isLoggingActivity, setIsLoggingActivity] = useState(false);
 
+  // Activity edit/delete
+  const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
+  const [editingActivityText, setEditingActivityText] = useState('');
+  const [deletingActivityId, setDeletingActivityId] = useState<string | null>(null);
+
   // Edit form
   const [editForm, setEditForm] = useState<Partial<Lead>>({});
+
+  // Tags
+  const [tagInput, setTagInput] = useState('');
+
+  // Unsaved changes detection
+  const hasUnsavedChanges = useMemo(() => {
+    if (!editMode || !lead) return false;
+    const fields = ['business_name', 'contact_name', 'email', 'phone', 'website', 'address', 'city', 'state', 'zip_code', 'category', 'notes'] as const;
+    for (const f of fields) {
+      if ((editForm[f] || '') !== (lead[f] || '')) return true;
+    }
+    const editTags = editForm.tags || [];
+    const leadTags = lead.tags || [];
+    if (editTags.length !== leadTags.length || editTags.some((t, i) => t !== leadTags[i])) return true;
+    return false;
+  }, [editMode, editForm, lead]);
+
+  // Warn on navigation away with unsaved changes
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [hasUnsavedChanges]);
 
   useEffect(() => {
     const fetchLead = async () => {
@@ -182,6 +216,7 @@ export default function LeadDetailPage({
           zip_code: editForm.zip_code,
           category: editForm.category,
           notes: editForm.notes,
+          tags: editForm.tags,
         }),
       });
 
@@ -200,6 +235,21 @@ export default function LeadDetailPage({
       setIsSaving(false);
     }
   };
+
+  const handleCancelEdit = useCallback(() => {
+    if (hasUnsavedChanges) {
+      if (!confirm('You have unsaved changes. Discard them?')) return;
+    }
+    setEditMode(false);
+    setEditForm(lead || {});
+  }, [hasUnsavedChanges, lead]);
+
+  const handleBackNavigation = useCallback(() => {
+    if (hasUnsavedChanges) {
+      if (!confirm('You have unsaved changes. Leave this page?')) return;
+    }
+    router.back();
+  }, [hasUnsavedChanges, router]);
 
   const handleLogActivity = async () => {
     if (!activityDescription.trim()) return;
@@ -235,6 +285,70 @@ export default function LeadDetailPage({
     }
   };
 
+  const handleEditActivity = async (activityId: string) => {
+    try {
+      const res = await fetch(`/api/sales/leads/${leadId}/activities/${activityId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: editingActivityText }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setActivities((prev) =>
+          prev.map((a) => (a.id === activityId ? data.activity : a))
+        );
+        setEditingActivityId(null);
+        setEditingActivityText('');
+        toast.success('Activity updated');
+      } else {
+        toast.error('Failed to update activity');
+      }
+    } catch (error) {
+      console.error('Error updating activity:', error);
+      toast.error('Failed to update activity');
+    }
+  };
+
+  const handleDeleteActivity = async (activityId: string) => {
+    setDeletingActivityId(activityId);
+    try {
+      const res = await fetch(`/api/sales/leads/${leadId}/activities/${activityId}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setActivities((prev) => prev.filter((a) => a.id !== activityId));
+        toast.success('Activity deleted');
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Failed to delete activity');
+      }
+    } catch (error) {
+      console.error('Error deleting activity:', error);
+      toast.error('Failed to delete activity');
+    } finally {
+      setDeletingActivityId(null);
+    }
+  };
+
+  // Tag helpers
+  const addTag = () => {
+    const tag = tagInput.trim().toLowerCase();
+    if (!tag) return;
+    const current = editForm.tags || [];
+    if (current.includes(tag)) {
+      setTagInput('');
+      return;
+    }
+    setEditForm({ ...editForm, tags: [...current, tag] });
+    setTagInput('');
+  };
+
+  const removeTag = (tag: string) => {
+    setEditForm({ ...editForm, tags: (editForm.tags || []).filter((t) => t !== tag) });
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -254,16 +368,23 @@ export default function LeadDetailPage({
     );
   }
 
-  const currentStatusConfig = STATUS_OPTIONS.find((s) => s.value === lead.status);
   const inputClass = 'w-full px-3 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent';
 
   return (
     <div>
+      {/* Unsaved changes banner */}
+      {hasUnsavedChanges && (
+        <div className="mb-4 px-4 py-2.5 bg-yellow-500/10 border border-yellow-500/30 rounded-lg flex items-center gap-2 text-sm text-yellow-400">
+          <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+          You have unsaved changes
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => router.back()}
+            onClick={handleBackNavigation}
             className="p-2 text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -293,7 +414,7 @@ export default function LeadDetailPage({
           ) : (
             <>
               <button
-                onClick={() => { setEditMode(false); setEditForm(lead); }}
+                onClick={handleCancelEdit}
                 className="flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white rounded-lg transition-colors"
               >
                 <X className="w-4 h-4" />
@@ -301,7 +422,7 @@ export default function LeadDetailPage({
               </button>
               <button
                 onClick={handleSaveEdit}
-                disabled={isSaving}
+                disabled={isSaving || !hasUnsavedChanges}
                 className="flex items-center gap-2 px-4 py-2 bg-tastelanc-accent hover:bg-tastelanc-accent-hover disabled:opacity-50 text-white rounded-lg transition-colors"
               >
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -478,6 +599,43 @@ export default function LeadDetailPage({
                 className={`${inputClass} resize-none`}
               />
             </div>
+            {/* Tags Editor */}
+            <div className="md:col-span-3">
+              <label className="block text-xs text-gray-500 mb-1">Tags</label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {(editForm.tags || []).map((tag) => (
+                  <span
+                    key={tag}
+                    className="flex items-center gap-1 px-2.5 py-1 bg-tastelanc-accent/20 text-tastelanc-accent text-xs rounded-full"
+                  >
+                    {tag}
+                    <button
+                      onClick={() => removeTag(tag)}
+                      className="hover:text-white transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
+                  placeholder="Add a tag..."
+                  className={`${inputClass} flex-1`}
+                />
+                <button
+                  onClick={addTag}
+                  disabled={!tagInput.trim()}
+                  className="px-3 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-gray-300 hover:text-white rounded-lg transition-colors disabled:opacity-30"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           </div>
         ) : (
           <>
@@ -524,6 +682,25 @@ export default function LeadDetailPage({
               <Field label="Last Contacted" value={lead.last_contacted_at ? new Date(lead.last_contacted_at).toLocaleDateString() : null} />
               <Field label="Assigned To" value={lead.assigned_to_name || 'Unassigned'} />
             </div>
+            {/* Tags display */}
+            {lead.tags && lead.tags.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-tastelanc-surface-light">
+                <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                  <Tag className="w-3 h-3" />
+                  Tags
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {lead.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="px-2.5 py-1 bg-tastelanc-accent/20 text-tastelanc-accent text-xs rounded-full"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             {lead.notes && (
               <div className="mt-4 pt-4 border-t border-tastelanc-surface-light">
                 <p className="text-xs text-gray-500 mb-1">Notes</p>
@@ -588,22 +765,24 @@ export default function LeadDetailPage({
               {activities.map((activity, index) => {
                 const Icon = ACTIVITY_ICONS[activity.activity_type] || MessageSquare;
                 const isLast = index === activities.length - 1;
+                const isStatusChange = activity.activity_type === 'status_change';
+                const isEditing = editingActivityId === activity.id;
 
                 return (
-                  <div key={activity.id} className="flex gap-3">
+                  <div key={activity.id} className="flex gap-3 group">
                     <div className="flex flex-col items-center">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        activity.activity_type === 'status_change'
+                        isStatusChange
                           ? 'bg-lancaster-gold/20'
                           : 'bg-tastelanc-surface-light'
                       }`}>
                         <Icon className={`w-4 h-4 ${
-                          activity.activity_type === 'status_change' ? 'text-lancaster-gold' : 'text-gray-400'
+                          isStatusChange ? 'text-lancaster-gold' : 'text-gray-400'
                         }`} />
                       </div>
                       {!isLast && <div className="w-px flex-1 bg-tastelanc-surface-light min-h-[16px]" />}
                     </div>
-                    <div className="pb-4">
+                    <div className="pb-4 flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="text-xs font-medium text-gray-300 capitalize">
                           {activity.activity_type.replace('_', ' ')}
@@ -611,9 +790,64 @@ export default function LeadDetailPage({
                         <span className="text-xs text-gray-600">
                           {new Date(activity.created_at).toLocaleString()}
                         </span>
+                        {/* Edit/Delete actions for non-status-change activities */}
+                        {!isStatusChange && !isEditing && (
+                          <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => {
+                                setEditingActivityId(activity.id);
+                                setEditingActivityText(activity.description || '');
+                              }}
+                              className="p-1 text-gray-500 hover:text-white rounded transition-colors"
+                              title="Edit"
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteActivity(activity.id)}
+                              disabled={deletingActivityId === activity.id}
+                              className="p-1 text-gray-500 hover:text-red-400 rounded transition-colors"
+                              title="Delete"
+                            >
+                              {deletingActivityId === activity.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3 h-3" />
+                              )}
+                            </button>
+                          </div>
+                        )}
                       </div>
-                      {activity.description && (
-                        <p className="text-sm text-gray-400">{activity.description}</p>
+                      {isEditing ? (
+                        <div className="flex gap-2 mt-1">
+                          <input
+                            type="text"
+                            value={editingActivityText}
+                            onChange={(e) => setEditingActivityText(e.target.value)}
+                            className="flex-1 px-2 py-1 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded text-sm text-white focus:outline-none focus:ring-1 focus:ring-tastelanc-accent"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleEditActivity(activity.id);
+                              if (e.key === 'Escape') { setEditingActivityId(null); setEditingActivityText(''); }
+                            }}
+                          />
+                          <button
+                            onClick={() => handleEditActivity(activity.id)}
+                            className="px-2 py-1 bg-tastelanc-accent text-white text-xs rounded transition-colors hover:bg-tastelanc-accent-hover"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => { setEditingActivityId(null); setEditingActivityText(''); }}
+                            className="px-2 py-1 text-gray-400 text-xs rounded transition-colors hover:text-white"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        activity.description && (
+                          <p className="text-sm text-gray-400">{activity.description}</p>
+                        )
                       )}
                     </div>
                   </div>

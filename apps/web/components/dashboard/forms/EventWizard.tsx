@@ -432,15 +432,25 @@ export default function EventWizard({ onClose, onSubmit, restaurantId, allowedTy
         <div className="space-y-6">
           {/* Preview Card */}
           <div className="p-4 bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light">
-            <h3 className="text-lg font-semibold text-white mb-1">{formData.name}</h3>
-            {formData.performer_name && (
-              <p className="text-lancaster-gold text-sm mb-2">{formData.performer_name}</p>
-            )}
-            {formData.description && (
-              <p className="text-gray-400 text-sm mb-3">{formData.description}</p>
-            )}
+            <div className="flex gap-4">
+              {formData.image_url && (
+                <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={formData.image_url} alt={formData.name} className="w-full h-full object-cover" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-semibold text-white mb-1">{formData.name}</h3>
+                {formData.performer_name && (
+                  <p className="text-lancaster-gold text-sm mb-1">{formData.performer_name}</p>
+                )}
+                {formData.description && (
+                  <p className="text-gray-400 text-sm mb-2 line-clamp-2">{formData.description}</p>
+                )}
+              </div>
+            </div>
 
-            <div className="flex flex-wrap gap-2 text-sm">
+            <div className="flex flex-wrap gap-2 text-sm mt-3">
               <span className="px-2 py-1 bg-tastelanc-bg rounded text-gray-300">
                 {formatTime(formData.start_time)}
                 {formData.end_time && ` - ${formatTime(formData.end_time)}`}
