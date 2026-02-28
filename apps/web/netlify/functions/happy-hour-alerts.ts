@@ -183,10 +183,11 @@ export default async function handler(req: Request, context: Context) {
       );
     }
 
-    // Get all push tokens
+    // Get all push tokens grouped by app_slug to avoid PUSH_TOO_MANY_EXPERIENCE_IDS error.
+    // Expo Push API rejects batch sends containing tokens from multiple Expo projects.
     const { data: tokenData, error: tokenError } = await supabase
       .from('push_tokens')
-      .select('token');
+      .select('token, app_slug');
 
     if (tokenError || !tokenData || tokenData.length === 0) {
       console.log('[Happy Hour Alerts] No push tokens registered');
@@ -196,7 +197,13 @@ export default async function handler(req: Request, context: Context) {
       );
     }
 
-    const tokens = tokenData.map((t) => t.token);
+    // Group tokens by app_slug (Expo project)
+    const tokensByProject = new Map<string, string[]>();
+    for (const t of tokenData) {
+      const slug = t.app_slug || 'tastelanc'; // default to tastelanc for untagged tokens
+      if (!tokensByProject.has(slug)) tokensByProject.set(slug, []);
+      tokensByProject.get(slug)!.push(t.token);
+    }
 
     // Deduplicate restaurant names (a restaurant may have multiple happy hours)
     const restaurantNames = Array.from(
@@ -215,18 +222,24 @@ export default async function handler(req: Request, context: Context) {
       body = "Tap to see what's happening near you";
     }
 
-    // Send one digest notification to each device, always linking to HappyHours screen
-    const messages: PushMessage[] = tokens.map((token) => ({
-      to: token,
-      sound: 'default' as const,
-      title,
-      body,
-      data: { screen: 'HappyHours' },
-    }));
+    // Send separate batches per Expo project
+    let totalMessages = 0;
+    let successCount = 0;
 
-    console.log(`[Happy Hour Alerts] Sending daily digest to ${messages.length} devices for ${count} restaurants`);
-    const result = await sendPushNotifications(messages);
-    const successCount = result.data.filter((r) => r.status === 'ok').length;
+    for (const [slug, tokens] of tokensByProject) {
+      const messages: PushMessage[] = tokens.map((token) => ({
+        to: token,
+        sound: 'default' as const,
+        title,
+        body,
+        data: { screen: 'HappyHours' },
+      }));
+
+      totalMessages += messages.length;
+      console.log(`[Happy Hour Alerts] Sending ${messages.length} messages for project ${slug}`);
+      const result = await sendPushNotifications(messages);
+      successCount += result.data.filter((r) => r.status === 'ok').length;
+    }
 
     // Log the run as daily digest
     await supabase.from('notification_logs').insert({
@@ -234,7 +247,7 @@ export default async function handler(req: Request, context: Context) {
       status: 'completed',
       details: {
         sent: successCount,
-        total: messages.length,
+        total: totalMessages,
         restaurants: restaurantNames,
         happy_hour_count: paidHappyHours.length,
         earliest_start: earliestStartTime,
@@ -242,7 +255,7 @@ export default async function handler(req: Request, context: Context) {
       },
     });
 
-    console.log(`[Happy Hour Alerts] Sent ${successCount}/${messages.length} notifications`);
+    console.log(`[Happy Hour Alerts] Sent ${successCount}/${totalMessages} notifications`);
 
     return new Response(
       JSON.stringify({ sent: successCount, restaurants: restaurantNames }),
