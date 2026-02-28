@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { Card } from '@/components/ui';
+import { toast } from 'sonner';
 
 const CATEGORIES = ['restaurant', 'bar', 'cafe', 'brewery', 'bakery', 'food_truck', 'other'];
 
@@ -154,9 +155,12 @@ export default function NewLeadPage() {
         throw new Error(data.error || 'Failed to create lead');
       }
 
+      toast.success('Lead created');
       router.push(`/sales/leads/${data.lead.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      const message = err instanceof Error ? err.message : 'Something went wrong';
+      setError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }

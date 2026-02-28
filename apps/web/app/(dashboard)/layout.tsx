@@ -26,8 +26,6 @@ import { createClient } from '@/lib/supabase/client';
 import { signOut } from '@/lib/supabase/auth';
 import { RestaurantProvider, useRestaurant } from '@/contexts/RestaurantContext';
 import { OnboardingProvider, OnboardingWizard } from '@/components/dashboard/onboarding';
-import { Toaster } from 'sonner';
-
 const navItems = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { href: '/dashboard/profile', label: 'Profile', icon: Store },
@@ -359,7 +357,6 @@ export default function DashboardLayout({
           <OnboardingWizard />
         </OnboardingProvider>
       </RestaurantProvider>
-      <Toaster position="top-right" richColors />
     </Suspense>
   );
 }

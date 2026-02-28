@@ -23,6 +23,7 @@ import {
   ShoppingCart,
 } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
+import { toast } from 'sonner';
 
 interface BusinessLead {
   id: string;
@@ -121,15 +122,18 @@ export default function BusinessLeadsPage() {
         throw new Error(data.error || 'Failed to convert contacts');
       }
 
+      toast.success(`Converted ${data.converted} contacts`);
       setMessage({
         type: 'success',
         text: `Converted ${data.converted} contacts. ${data.skipped} skipped (already exist).`,
       });
       fetchLeads();
     } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Failed to convert contacts';
+      toast.error(msg);
       setMessage({
         type: 'error',
-        text: error instanceof Error ? error.message : 'Failed to convert contacts',
+        text: msg,
       });
     } finally {
       setIsConverting(false);
@@ -154,8 +158,10 @@ export default function BusinessLeadsPage() {
           lead.id === leadId ? { ...lead, status: newStatus } : lead
         )
       );
+      toast.success('Status updated');
     } catch (error) {
       console.error('Error updating status:', error);
+      toast.error('Failed to update status');
     }
   };
 

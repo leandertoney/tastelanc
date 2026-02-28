@@ -12,6 +12,7 @@ import {
   Briefcase,
 } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
+import { toast } from 'sonner';
 
 interface SalesRep {
   id: string;
@@ -77,12 +78,15 @@ export default function AdminSalesRepsPage() {
         throw new Error(data.error || 'Failed to create sales rep');
       }
 
+      toast.success(`Sales rep "${form.name}" created`);
       setMessage({ type: 'success', text: `Sales rep "${form.name}" created! Welcome email sent to ${form.email}.` });
       setForm({ name: '', email: '', phone: '' });
       setShowForm(false);
       fetchReps();
     } catch (err) {
-      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Something went wrong' });
+      const msg = err instanceof Error ? err.message : 'Something went wrong';
+      toast.error(msg);
+      setMessage({ type: 'error', text: msg });
     } finally {
       setIsSubmitting(false);
     }
@@ -102,9 +106,13 @@ export default function AdminSalesRepsPage() {
             rep.id === repId ? { ...rep, is_active: !currentActive } : rep
           )
         );
+        toast.success(!currentActive ? 'Activated' : 'Deactivated');
+      } else {
+        toast.error('Failed to update status');
       }
     } catch (error) {
       console.error('Error toggling status:', error);
+      toast.error('Failed to update status');
     }
   };
 

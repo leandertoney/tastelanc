@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface SpecialImageUploadProps {
   value?: string;
@@ -38,8 +39,11 @@ export default function SpecialImageUpload({ value, onChange, restaurantId }: Sp
       }
 
       onChange(data.url);
+      toast.success('Image uploaded');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed');
+      const msg = err instanceof Error ? err.message : 'Upload failed';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsUploading(false);
     }

@@ -31,6 +31,17 @@ export async function GET(
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
     }
 
+    // Resolve assigned_to name
+    let assigned_to_name: string | null = null;
+    if (lead.assigned_to) {
+      const { data: rep } = await serviceClient
+        .from('sales_reps')
+        .select('name')
+        .eq('id', lead.assigned_to)
+        .single();
+      assigned_to_name = rep?.name || null;
+    }
+
     // Fetch activities for this lead
     const { data: activities } = await serviceClient
       .from('lead_activities')
@@ -38,7 +49,7 @@ export async function GET(
       .eq('lead_id', id)
       .order('created_at', { ascending: false });
 
-    return NextResponse.json({ lead, activities: activities || [] });
+    return NextResponse.json({ lead: { ...lead, assigned_to_name }, activities: activities || [] });
   } catch (error) {
     console.error('Error fetching lead:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Calendar, Music, Mic2, HelpCircle, PartyPopper, Loader2, Tv, Laugh, Pencil, X, Grid3x3 } from 'lucide-react';
 import { Button, Card, Badge } from '@/components/ui';
+import { toast } from 'sonner';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import { EventWizard, EventFormData } from '@/components/dashboard/forms';
 import EventImageUpload from '@/components/dashboard/forms/EventImageUpload';
@@ -143,6 +144,7 @@ export default function EventsManager({ mode }: EventsManagerProps) {
     }
 
     await fetchEvents();
+    toast.success(`${mode === 'entertainment' ? 'Entertainment' : 'Event'} created`);
   };
 
   const toggleActive = async (id: string, currentActive: boolean) => {
@@ -161,9 +163,12 @@ export default function EventsManager({ mode }: EventsManagerProps) {
       setEvents((prev) =>
         prev.map((e) => (e.id === id ? { ...e, is_active: !currentActive } : e))
       );
+      toast.success(!currentActive ? 'Activated' : 'Deactivated');
     } catch (err) {
       console.error('Error toggling event:', err);
-      setError(err instanceof Error ? err.message : 'Failed to update event');
+      const msg = err instanceof Error ? err.message : 'Failed to update event';
+      setError(msg);
+      toast.error(msg);
     }
   };
 
@@ -181,9 +186,12 @@ export default function EventsManager({ mode }: EventsManagerProps) {
       }
 
       setEvents((prev) => prev.filter((ev) => ev.id !== id));
+      toast.success('Deleted');
     } catch (err) {
       console.error('Error deleting event:', err);
-      setError(err instanceof Error ? err.message : 'Failed to delete event');
+      const msg = err instanceof Error ? err.message : 'Failed to delete event';
+      setError(msg);
+      toast.error(msg);
     }
   };
 
@@ -217,9 +225,12 @@ export default function EventsManager({ mode }: EventsManagerProps) {
 
       await fetchEvents();
       setEditingEvent(null);
+      toast.success('Changes saved');
     } catch (err) {
       console.error('Error updating event:', err);
-      setError(err instanceof Error ? err.message : 'Failed to update event');
+      const msg = err instanceof Error ? err.message : 'Failed to update event';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
