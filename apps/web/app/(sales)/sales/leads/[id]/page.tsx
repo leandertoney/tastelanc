@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -28,7 +28,7 @@ interface Lead {
   id: string;
   business_name: string;
   contact_name: string | null;
-  email: string;
+  email: string | null;
   phone: string | null;
   website: string | null;
   address: string | null;
@@ -94,7 +94,7 @@ export default function LeadDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
-  const [leadId, setLeadId] = useState<string>('');
+  const { id: leadId } = use(params);
   const [lead, setLead] = useState<Lead | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -110,12 +110,6 @@ export default function LeadDetailPage({
   const [editForm, setEditForm] = useState<Partial<Lead>>({});
 
   useEffect(() => {
-    params.then((p) => setLeadId(p.id));
-  }, [params]);
-
-  useEffect(() => {
-    if (!leadId) return;
-
     const fetchLead = async () => {
       try {
         const res = await fetch(`/api/sales/leads/${leadId}`);
@@ -258,7 +252,7 @@ export default function LeadDetailPage({
           </div>
         </div>
         <Link
-          href={`/sales/checkout?email=${encodeURIComponent(lead.email)}&name=${encodeURIComponent(lead.contact_name || lead.business_name)}&phone=${encodeURIComponent(lead.phone || '')}`}
+          href={`/sales/checkout?email=${encodeURIComponent(lead.email || '')}&name=${encodeURIComponent(lead.contact_name || lead.business_name)}&phone=${encodeURIComponent(lead.phone || '')}`}
           className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
         >
           <ShoppingCart className="w-4 h-4" />
@@ -348,9 +342,11 @@ export default function LeadDetailPage({
                 {lead.contact_name && (
                   <p className="text-white font-medium">{lead.contact_name}</p>
                 )}
-                <a href={`mailto:${lead.email}`} className="flex items-center gap-2 text-sm text-gray-400 hover:text-white">
-                  <Mail className="w-4 h-4" /> {lead.email}
-                </a>
+                {lead.email && (
+                  <a href={`mailto:${lead.email}`} className="flex items-center gap-2 text-sm text-gray-400 hover:text-white">
+                    <Mail className="w-4 h-4" /> {lead.email}
+                  </a>
+                )}
                 {lead.phone && (
                   <a href={`tel:${lead.phone}`} className="flex items-center gap-2 text-sm text-gray-400 hover:text-white">
                     <Phone className="w-4 h-4" /> {lead.phone}

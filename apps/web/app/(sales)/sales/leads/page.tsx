@@ -18,6 +18,9 @@ import {
   MessageSquare,
   ShoppingCart,
   FileText,
+  PhoneCall,
+  Video,
+  CalendarCheck,
 } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 
@@ -25,7 +28,7 @@ interface BusinessLead {
   id: string;
   business_name: string;
   contact_name: string | null;
-  email: string;
+  email: string | null;
   phone: string | null;
   website: string | null;
   city: string | null;
@@ -36,7 +39,16 @@ interface BusinessLead {
   notes: string | null;
   last_contacted_at: string | null;
   created_at: string;
+  activity_types: string[];
 }
+
+const ACTIVITY_INDICATOR_CONFIG: Record<string, { icon: typeof PhoneCall; label: string; color: string }> = {
+  call: { icon: PhoneCall, label: 'Called', color: 'text-green-400' },
+  email: { icon: Mail, label: 'Emailed', color: 'text-blue-400' },
+  meeting: { icon: Video, label: 'Met', color: 'text-purple-400' },
+  note: { icon: FileText, label: 'Note', color: 'text-gray-400' },
+  follow_up: { icon: CalendarCheck, label: 'Follow-up', color: 'text-yellow-400' },
+};
 
 interface Stats {
   total: number;
@@ -261,10 +273,12 @@ export default function SalesLeadsPage() {
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400">
                       {lead.contact_name && <span>{lead.contact_name}</span>}
-                      <span className="flex items-center gap-1">
-                        <Mail className="w-3 h-3" />
-                        {lead.email}
-                      </span>
+                      {lead.email && (
+                        <span className="flex items-center gap-1">
+                          <Mail className="w-3 h-3" />
+                          {lead.email}
+                        </span>
+                      )}
                       {lead.phone && (
                         <span className="flex items-center gap-1">
                           <Phone className="w-3 h-3" />
@@ -278,6 +292,26 @@ export default function SalesLeadsPage() {
                         </span>
                       )}
                     </div>
+                    {/* Contact type indicators */}
+                    {lead.activity_types && lead.activity_types.length > 0 && (
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        {Object.entries(ACTIVITY_INDICATOR_CONFIG).map(([type, config]) => {
+                          const Icon = config.icon;
+                          const done = lead.activity_types.includes(type);
+                          if (!done) return null;
+                          return (
+                            <span
+                              key={type}
+                              title={config.label}
+                              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${config.color} bg-white/5`}
+                            >
+                              <Icon className="w-3 h-3" />
+                              {config.label}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
                     {lead.notes && (
                       <p className="mt-2 text-sm text-gray-500 line-clamp-1">
                         <MessageSquare className="w-3 h-3 inline mr-1" />
@@ -299,13 +333,15 @@ export default function SalesLeadsPage() {
                       <option value="not_interested">Not Interested</option>
                       <option value="converted">Converted</option>
                     </select>
-                    <a
-                      href={`mailto:${lead.email}`}
-                      className="p-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface rounded-lg transition-colors"
-                      title="Send Email"
-                    >
-                      <Mail className="w-4 h-4 text-white" />
-                    </a>
+                    {lead.email && (
+                      <a
+                        href={`mailto:${lead.email}`}
+                        className="p-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface rounded-lg transition-colors"
+                        title="Send Email"
+                      >
+                        <Mail className="w-4 h-4 text-white" />
+                      </a>
+                    )}
                     {lead.phone && (
                       <a
                         href={`tel:${lead.phone}`}
@@ -316,7 +352,7 @@ export default function SalesLeadsPage() {
                       </a>
                     )}
                     <Link
-                      href={`/sales/checkout?email=${encodeURIComponent(lead.email)}&name=${encodeURIComponent(lead.contact_name || lead.business_name)}&phone=${encodeURIComponent(lead.phone || '')}&businessName=${encodeURIComponent(lead.business_name)}`}
+                      href={`/sales/checkout?email=${encodeURIComponent(lead.email || '')}&name=${encodeURIComponent(lead.contact_name || lead.business_name)}&phone=${encodeURIComponent(lead.phone || '')}&businessName=${encodeURIComponent(lead.business_name)}`}
                       className="p-2 bg-green-500/20 hover:bg-green-500/30 rounded-lg transition-colors"
                       title="Create Sale"
                     >

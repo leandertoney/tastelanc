@@ -129,8 +129,8 @@ export default function NewLeadPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!form.business_name || !form.email) {
-      setError('Business name and email are required');
+    if (!form.business_name) {
+      setError('Business name is required');
       return;
     }
 
@@ -327,9 +327,9 @@ export default function NewLeadPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Email *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
                 <input
-                  type="email"
+                  type="text"
                   value={form.email}
                   onChange={(e) => handleChange('email', e.target.value)}
                   placeholder="contact@restaurant.com"
