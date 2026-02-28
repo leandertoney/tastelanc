@@ -136,10 +136,37 @@ export interface InboundEmail {
 }
 
 // ─────────────────────────────────────────────────────────
+// Scoring types
+// ─────────────────────────────────────────────────────────
+
+export interface MarketSubScores {
+  population_density: number;   // 0-100
+  dining_scene: number;         // 0-100
+  competition: number;          // 0-100 (lower competition = higher score)
+  college_presence: number;     // 0-100
+  tourism: number;              // 0-100
+  income_level: number;         // 0-100
+}
+
+export interface SubScoreReasoning {
+  population_density: string;
+  dining_scene: string;
+  competition: string;
+  college_presence: string;
+  tourism: string;
+  income_level: string;
+}
+
+// ─────────────────────────────────────────────────────────
 // AI response types
 // ─────────────────────────────────────────────────────────
 
 export interface CityResearchData {
+  // Regional clustering
+  suggested_region_name?: string;     // e.g. "Cumberland", "Lehigh Valley"
+  cluster_towns?: string[];           // e.g. ["Carlisle", "Mechanicsburg", "Camp Hill"]
+  cluster_population?: number;        // combined population of all cluster towns
+  // Research data
   key_neighborhoods?: string[];
   notable_restaurants?: string[];
   local_food_traditions?: string;
@@ -147,6 +174,14 @@ export interface CityResearchData {
   tourism_factors?: string;
   seasonal_considerations?: string;
   expansion_reasoning?: string;
+  sub_scores?: MarketSubScores;
+  sub_score_reasoning?: SubScoreReasoning;
+  ai_estimated_restaurant_count?: number;
+  ai_estimated_bar_count?: number;
+  google_places_restaurant_count?: number;
+  google_places_bar_count?: number;
+  google_places_validated?: boolean;
+  google_places_validated_at?: string;
   [key: string]: unknown;
 }
 
@@ -158,7 +193,6 @@ export interface CityResearchResult {
   bar_count: number;
   dining_scene_description: string;
   competition_analysis: string;
-  market_potential_score: number;
   center_latitude: number;
   center_longitude: number;
   key_neighborhoods: string[];
@@ -168,6 +202,8 @@ export interface CityResearchResult {
   tourism_factors: string;
   seasonal_considerations: string;
   expansion_reasoning: string;
+  sub_scores: MarketSubScores;
+  sub_score_reasoning: SubScoreReasoning;
 }
 
 export interface BrandColors {
@@ -209,6 +245,10 @@ export interface CitySuggestion {
   population: number;
   reasoning: string;
   estimated_score: number;
+  // Regional clustering — nearby towns that would be bundled under one app
+  suggested_region_name?: string;  // e.g. "Cumberland" instead of "Carlisle"
+  cluster_towns?: string[];        // e.g. ["Carlisle", "Mechanicsburg", "Camp Hill", ...]
+  cluster_population?: number;     // combined population of all cluster towns
 }
 
 // ─────────────────────────────────────────────────────────
