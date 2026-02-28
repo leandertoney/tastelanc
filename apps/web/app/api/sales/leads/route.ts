@@ -61,7 +61,34 @@ export async function GET(request: Request) {
       converted: allLeads?.filter((l) => l.status === 'converted').length || 0,
     };
 
-    return NextResponse.json({ leads: leads || [], stats });
+    // Fetch activity types per lead for contact indicators
+    const leadIds = (leads || []).map((l: { id: string }) => l.id);
+    let activityMap: Record<string, string[]> = {};
+
+    if (leadIds.length > 0) {
+      const { data: activities } = await serviceClient
+        .from('lead_activities')
+        .select('lead_id, activity_type')
+        .in('lead_id', leadIds)
+        .neq('activity_type', 'status_change');
+
+      if (activities) {
+        for (const a of activities) {
+          if (!activityMap[a.lead_id]) activityMap[a.lead_id] = [];
+          if (!activityMap[a.lead_id].includes(a.activity_type)) {
+            activityMap[a.lead_id].push(a.activity_type);
+          }
+        }
+      }
+    }
+
+    // Attach activity_types to each lead
+    const leadsWithActivities = (leads || []).map((lead: { id: string }) => ({
+      ...lead,
+      activity_types: activityMap[lead.id] || [],
+    }));
+
+    return NextResponse.json({ leads: leadsWithActivities, stats });
   } catch (error) {
     console.error('Error in sales leads API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -100,25 +127,27 @@ export async function POST(request: Request) {
       google_place_id,
     } = body;
 
-    if (!business_name || !email) {
+    if (!business_name) {
       return NextResponse.json(
-        { error: 'Missing required fields: business_name, email' },
+        { error: 'Missing required field: business_name' },
         { status: 400 }
       );
     }
 
-    // Check if email already exists
-    const { data: existing } = await serviceClient
-      .from('business_leads')
-      .select('id')
-      .eq('email', email)
-      .single();
+    // Check if email already exists (only if email provided)
+    if (email) {
+      const { data: existing } = await serviceClient
+        .from('business_leads')
+        .select('id')
+        .eq('email', email)
+        .single();
 
-    if (existing) {
-      return NextResponse.json(
-        { error: 'A lead with this email already exists' },
-        { status: 409 }
-      );
+      if (existing) {
+        return NextResponse.json(
+          { error: 'A lead with this email already exists' },
+          { status: 409 }
+        );
+      }
     }
 
     // If restaurant_id provided, verify it exists
@@ -146,7 +175,7 @@ export async function POST(request: Request) {
       .insert({
         business_name,
         contact_name: contact_name || null,
-        email,
+        email: email || null,
         phone: phone || null,
         website: website || null,
         address: address || null,
