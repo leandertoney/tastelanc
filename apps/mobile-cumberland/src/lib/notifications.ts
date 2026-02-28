@@ -96,6 +96,17 @@ export async function registerForPushNotifications(): Promise<string | null> {
  */
 export async function savePushToken(token: string, userId: string): Promise<boolean> {
   try {
+    // Refresh the session first to ensure a valid JWT is sent with the request.
+    // Anonymous sessions can have expired access tokens — getSession() auto-refreshes.
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) {
+      console.warn('[Notifications] Session refresh failed:', sessionError.message);
+    }
+    if (!sessionData?.session) {
+      console.warn('[Notifications] No valid session — cannot save token');
+      return false;
+    }
+
     const { error } = await supabase
       .from('push_tokens')
       .upsert(
