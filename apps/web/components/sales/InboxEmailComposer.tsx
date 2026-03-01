@@ -15,6 +15,8 @@ import { toast } from 'sonner';
 interface InboxEmailComposerProps {
   onClose: () => void;
   onSent: () => void;
+  isAdmin?: boolean;
+  defaultSender?: SenderIdentity;
   replyTo?: {
     recipientEmail: string;
     recipientName?: string;
@@ -25,12 +27,12 @@ interface InboxEmailComposerProps {
 
 type Step = 'compose' | 'confirm';
 
-export default function InboxEmailComposer({ onClose, onSent, replyTo }: InboxEmailComposerProps) {
+export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSender, replyTo }: InboxEmailComposerProps) {
   const isReply = !!replyTo;
   const [step, setStep] = useState<Step>('compose');
 
-  // Sender
-  const [selectedSender, setSelectedSender] = useState<SenderIdentity>(SENDER_IDENTITIES[0]);
+  // Sender — non-admins are locked to their own identity
+  const [selectedSender, setSelectedSender] = useState<SenderIdentity>(defaultSender || SENDER_IDENTITIES[0]);
   const [senderDropdownOpen, setSenderDropdownOpen] = useState(false);
 
   // Recipient
@@ -48,25 +50,6 @@ export default function InboxEmailComposer({ onClose, onSent, replyTo }: InboxEm
 
   // Send
   const [isSending, setIsSending] = useState(false);
-
-  // Load sender preference
-  useEffect(() => {
-    const fetchPref = async () => {
-      try {
-        const res = await fetch('/api/sales/sender-preference');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.preferredSenderEmail) {
-            const found = SENDER_IDENTITIES.find(s => s.email === data.preferredSenderEmail);
-            if (found) setSelectedSender(found);
-          }
-        }
-      } catch {
-        // ignore
-      }
-    };
-    fetchPref();
-  }, []);
 
   const handleSend = async () => {
     setIsSending(true);
@@ -213,45 +196,53 @@ export default function InboxEmailComposer({ onClose, onSent, replyTo }: InboxEm
             </div>
           </div>
 
-          {/* Sender */}
+          {/* Sender — dropdown for admins, static for reps */}
           <div>
             <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Send As</label>
-            <div className="relative">
-              <button
-                onClick={() => setSenderDropdownOpen(!senderDropdownOpen)}
-                className="w-full flex items-center justify-between p-3 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white hover:border-gray-600 transition-colors"
-              >
-                <span>
-                  {selectedSender.name}
-                  {selectedSender.title && <span className="text-gray-500"> — {selectedSender.title}</span>}
-                  <span className="text-gray-600 ml-2">&lt;{selectedSender.email}&gt;</span>
-                </span>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${senderDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
+            {isAdmin ? (
+              <div className="relative">
+                <button
+                  onClick={() => setSenderDropdownOpen(!senderDropdownOpen)}
+                  className="w-full flex items-center justify-between p-3 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white hover:border-gray-600 transition-colors"
+                >
+                  <span>
+                    {selectedSender.name}
+                    {selectedSender.title && <span className="text-gray-500"> — {selectedSender.title}</span>}
+                    <span className="text-gray-600 ml-2">&lt;{selectedSender.email}&gt;</span>
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${senderDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
 
-              {senderDropdownOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-tastelanc-surface-light border border-gray-700 rounded-lg overflow-hidden z-10">
-                  {SENDER_IDENTITIES.map((sender) => (
-                    <button
-                      key={sender.email}
-                      onClick={() => { setSelectedSender(sender); setSenderDropdownOpen(false); }}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 text-sm text-left transition-colors ${
-                        selectedSender.email === sender.email
-                          ? 'bg-blue-600/10 text-white'
-                          : 'text-gray-300 hover:bg-tastelanc-bg hover:text-white'
-                      }`}
-                    >
-                      <span>
-                        {sender.name}
-                        {sender.title && <span className="text-gray-500"> — {sender.title}</span>}
-                        <span className="text-gray-600 ml-2">&lt;{sender.email}&gt;</span>
-                      </span>
-                      {selectedSender.email === sender.email && <Check className="w-4 h-4 text-blue-400" />}
+                {senderDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-tastelanc-surface-light border border-gray-700 rounded-lg overflow-hidden z-10">
+                    {SENDER_IDENTITIES.map((sender) => (
+                      <button
+                        key={sender.email}
+                        onClick={() => { setSelectedSender(sender); setSenderDropdownOpen(false); }}
+                        className={`w-full flex items-center justify-between px-3 py-2.5 text-sm text-left transition-colors ${
+                          selectedSender.email === sender.email
+                            ? 'bg-blue-600/10 text-white'
+                            : 'text-gray-300 hover:bg-tastelanc-bg hover:text-white'
+                        }`}
+                      >
+                        <span>
+                          {sender.name}
+                          {sender.title && <span className="text-gray-500"> — {sender.title}</span>}
+                          <span className="text-gray-600 ml-2">&lt;{sender.email}&gt;</span>
+                        </span>
+                        {selectedSender.email === sender.email && <Check className="w-4 h-4 text-blue-400" />}
                     </button>
                   ))}
                 </div>
               )}
-            </div>
+              </div>
+            ) : (
+              <div className="p-3 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white">
+                {selectedSender.name}
+                {selectedSender.title && <span className="text-gray-500"> — {selectedSender.title}</span>}
+                <span className="text-gray-600 ml-2">&lt;{selectedSender.email}&gt;</span>
+              </div>
+            )}
           </div>
 
           {/* Subject */}
