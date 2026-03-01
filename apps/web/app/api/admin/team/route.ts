@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-access';
+import { resend } from '@/lib/resend';
+import { generateAdminTeamInviteEmail } from '@/lib/email-templates/team-invite-template';
+import { BRAND } from '@/config/market';
+import { SENDER_IDENTITIES } from '@/config/sender-identities';
 
 export async function POST(request: Request) {
   try {
@@ -26,6 +31,7 @@ export async function POST(request: Request) {
 
     // Resolve user ID — check profiles, then try auth create (handles existing users gracefully)
     let userId: string;
+    let needsPasswordSetup = false;
 
     const { data: existingProfile } = await serviceClient
       .from('profiles')
@@ -46,6 +52,7 @@ export async function POST(request: Request) {
 
       if (newUser?.user) {
         userId = newUser.user.id;
+        needsPasswordSetup = true;
       } else if (createError?.message?.includes('already been registered')) {
         // Email exists in auth but has no profile row — find their ID
         const { data: authUsers } = await serviceClient.auth.admin.listUsers({ perPage: 1000 });
@@ -114,6 +121,48 @@ export async function POST(request: Request) {
           })
           .eq('id', userId);
       }
+    }
+
+    // Send welcome/invite email
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
+    const sender = SENDER_IDENTITIES[0]; // Primary sender identity
+
+    try {
+      let setupLink = `${siteUrl}/sales`;
+
+      if (needsPasswordSetup) {
+        // Generate a setup token so the user can set their password
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+        await serviceClient.from('password_setup_tokens').insert({
+          user_id: userId,
+          email: email.toLowerCase(),
+          token,
+          expires_at: expiresAt.toISOString(),
+          name,
+        });
+
+        setupLink = `${siteUrl}/setup-account?token=${token}`;
+      }
+
+      const { html, text } = generateAdminTeamInviteEmail(setupLink, name, role, needsPasswordSetup);
+
+      await resend.emails.send({
+        from: `${sender.name} <${sender.email}>`,
+        to: email.toLowerCase(),
+        subject: `Welcome to the ${BRAND.name} Team!`,
+        html,
+        text,
+        replyTo: sender.replyEmail,
+        headers: {
+          'List-Unsubscribe': `<${siteUrl}/api/unsubscribe/b2b?email=${encodeURIComponent(email)}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
+      });
+    } catch (emailError) {
+      // Log but don't fail the team creation if email fails
+      console.error('Error sending team invite email:', emailError);
     }
 
     return NextResponse.json({ success: true, userId });

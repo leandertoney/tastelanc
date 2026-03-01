@@ -1,9 +1,125 @@
 /**
- * Email template for team member invitations.
- * Two variants: new user (needs password setup) and existing user (already has account).
+ * Email templates for team member invitations.
+ * - generateTeamInviteEmail: Restaurant dashboard team (dark theme)
+ * - generateAdminTeamInviteEmail: Admin team members (professional light theme for Primary inbox)
  */
 
 import { BRAND } from '@/config/market';
+
+const ROLE_LABELS: Record<string, string> = {
+  sales_rep: 'Sales Representative',
+  market_admin: 'Market Administrator',
+  admin: 'Administrator',
+};
+
+/**
+ * Admin team invite email — professional light template for Primary inbox delivery.
+ */
+export function generateAdminTeamInviteEmail(
+  setupLink: string,
+  name: string,
+  role: string | null,
+  isNewUser: boolean,
+): { html: string; text: string } {
+  const roleLabel = role ? (ROLE_LABELS[role] || role.replace(/_/g, ' ')) : 'Team Member';
+  const firstName = name.split(' ')[0];
+  const actionLink = isNewUser ? setupLink : `https://${BRAND.domain}/sales`;
+  const ctaText = isNewUser ? 'Set Up Your Account' : 'Open Dashboard';
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Welcome to ${BRAND.name}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f7f7f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<div style="display:none;max-height:0;overflow:hidden;">You've been added to the ${BRAND.name} team as a ${roleLabel}.${'&nbsp;'.repeat(60)}</div>
+
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f7f7f7;">
+<tr>
+<td align="center" style="padding:24px 16px;">
+<table role="presentation" width="580" cellspacing="0" cellpadding="0" style="width:100%;max-width:580px;">
+
+<!-- Brand mark -->
+<tr>
+<td align="left" style="padding:0 0 20px 0;">
+<img src="https://${BRAND.domain}${BRAND.logoPath}" width="120" alt="${BRAND.name}" style="display:block;border:0;" />
+</td>
+</tr>
+
+<!-- Content card -->
+<tr>
+<td style="background-color:#ffffff;border-radius:8px;padding:32px 28px;border:1px solid #e5e5e5;">
+
+<p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#1a1a1a;">
+Hi ${firstName},
+</p>
+
+<p style="margin:0 0 18px 0;font-size:17px;font-weight:600;line-height:1.5;color:#111111;">
+Welcome to the ${BRAND.name} Team
+</p>
+
+<p style="margin:0 0 14px 0;font-size:15px;line-height:1.6;color:#1a1a1a;">
+You've been added as a <strong>${roleLabel}</strong> for ${BRAND.name}.${isNewUser ? ' Click below to set up your account and get started.' : ' Sign in to access your dashboard.'}
+</p>
+
+<p style="margin:16px 0 0 0;font-size:15px;line-height:1.6;color:#1a1a1a;">
+<a href="${actionLink}" style="color:#E63946;font-weight:600;text-decoration:underline;" target="_blank">${ctaText} &rarr;</a>
+</p>
+
+<p style="margin:24px 0 0 0;font-size:14px;line-height:1.6;color:#666;">
+Your dashboard includes lead management, activity tracking, email outreach, and more.
+</p>
+
+<!-- Signature -->
+<table role="presentation" cellspacing="0" cellpadding="0" style="margin-top:28px;border-top:1px solid #eee;padding-top:16px;width:100%;">
+<tr>
+<td style="padding-top:16px;">
+<p style="margin:0 0 2px 0;font-size:14px;font-weight:600;color:#1a1a1a;">The ${BRAND.name} Team</p>
+<p style="margin:0;font-size:13px;color:#999;">
+<a href="https://${BRAND.domain}" style="color:#E63946;text-decoration:none;">${BRAND.name}</a> &middot; ${BRAND.countyShort}, ${BRAND.state}
+</p>
+</td>
+</tr>
+</table>
+
+</td>
+</tr>
+
+<!-- Footer -->
+<tr>
+<td style="padding:16px 4px 0 4px;">
+<p style="margin:0;font-size:11px;color:#999;line-height:1.5;">
+This is an internal team invitation from ${BRAND.name}. If you didn't expect this, you can safely ignore it.
+</p>
+</td>
+</tr>
+
+</table>
+</td>
+</tr>
+</table>
+</body>
+</html>`;
+
+  const text = `Hi ${firstName},
+
+Welcome to the ${BRAND.name} Team
+
+You've been added as a ${roleLabel} for ${BRAND.name}.${isNewUser ? ' Click the link below to set up your account and get started.' : ' Sign in to access your dashboard.'}
+
+${ctaText}: ${actionLink}
+
+Your dashboard includes lead management, activity tracking, email outreach, and more.
+
+--
+The ${BRAND.name} Team
+${BRAND.name} · ${BRAND.countyShort}, ${BRAND.state}
+https://${BRAND.domain}`;
+
+  return { html, text };
+}
 
 export function generateTeamInviteEmail(
   actionLink: string,
