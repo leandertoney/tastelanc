@@ -30,6 +30,7 @@ export interface MarketBrand {
 
   // Domain & Social
   domain: string;
+  replyDomain: string; // Inbound subdomain for reply-to routing (e.g., in.tastelanc.com)
   socialHandle: string;
   instagramUrl: string;
 
@@ -87,6 +88,7 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
     aiAvatarImage: '/images/rosie_dark_new.png',
 
     domain: 'tastelanc.com',
+    replyDomain: 'in.tastelanc.com',
     socialHandle: '@tastelanc',
     instagramUrl: 'https://www.instagram.com/tastelanc/',
 
@@ -136,6 +138,7 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
     aiAvatarImage: '/images/mollie_avatar.png',
 
     domain: 'cumberland.tastelanc.com',
+    replyDomain: 'in.tastelanc.com',
     socialHandle: '@tastecumberland',
     instagramUrl: 'https://www.instagram.com/tastecumberland/',
 

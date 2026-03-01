@@ -216,6 +216,9 @@ export async function POST(request: Request) {
       const senderAddresses = [
         'leander@tastelanc.com', 'jordan@tastelanc.com',
         'mason@tastelanc.com', 'jamie@tastelanc.com', 'team@tastelanc.com',
+        // Inbound reply domain variants
+        'leander@in.tastelanc.com', 'jordan@in.tastelanc.com',
+        'mason@in.tastelanc.com', 'jamie@in.tastelanc.com', 'team@in.tastelanc.com',
       ];
       const isToSalesRep = senderAddresses.some(addr =>
         toEmail.toLowerCase().includes(addr.toLowerCase())

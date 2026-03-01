@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
-import { SENDER_IDENTITIES } from '@/config/sender-identities';
+import { SENDER_IDENTITIES, getAllSenderEmails, type SenderIdentity } from '@/config/sender-identities';
 
 interface ConversationItem {
   counterparty_email: string;
@@ -184,26 +184,27 @@ export async function GET(request: Request) {
   }
 }
 
-/** Get the sender identity emails this user can VIEW (admins see all, reps see their own) */
+/** Get the sender identity emails this user can VIEW (admins see all, reps see their own).
+ *  Includes both @tastelanc.com and @in.tastelanc.com variants so inbound replies match. */
 async function getRepSenderEmails(
   serviceClient: ReturnType<typeof createServiceRoleClient>,
   access: { userId: string | null; isSuperAdmin: boolean; isAdmin: boolean }
 ): Promise<string[]> {
   if (access.isAdmin) {
-    return SENDER_IDENTITIES.map(s => s.email);
+    return getAllSenderEmails();
   }
 
   const identity = await getUserIdentity(serviceClient, access);
-  if (identity) return [identity.email];
+  if (identity) return [identity.email, identity.replyEmail];
 
-  return SENDER_IDENTITIES.map(s => s.email);
+  return getAllSenderEmails();
 }
 
 /** Get the single sender identity that belongs to this user */
 async function getUserIdentity(
   serviceClient: ReturnType<typeof createServiceRoleClient>,
   access: { userId: string | null; isAdmin: boolean }
-): Promise<{ name: string; email: string; title: string } | null> {
+): Promise<SenderIdentity | null> {
   if (!access.userId) return null;
 
   // Check sales_reps for preferred sender
