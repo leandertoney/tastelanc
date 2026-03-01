@@ -10,6 +10,8 @@ import {
 } from '@/lib/resend';
 import { renderPromotionalEmail } from '@/lib/email-templates/promotional-template';
 import { renderB2BEmail } from '@/lib/email-templates/b2b-outreach-template';
+import { BRAND } from '@/config/market';
+import { SENDER_IDENTITIES } from '@/config/sender-identities';
 
 export async function POST(request: Request) {
   try {
@@ -112,6 +114,7 @@ export async function POST(request: Request) {
 
         // Use appropriate template based on campaign type
         let html: string;
+        let text: string | undefined;
         let subject = campaign.subject;
 
         if (isB2B) {
@@ -144,17 +147,28 @@ export async function POST(request: Request) {
           });
         }
 
+        // Use personal sender for B2B, generic for consumer
+        const fromLine = isB2B
+          ? `${SENDER_IDENTITIES[0].name} <${SENDER_IDENTITIES[0].email}>`
+          : EMAIL_CONFIG.from;
+
         return {
-          from: EMAIL_CONFIG.from,
+          from: fromLine,
           to: recipient.email,
           subject,
           html,
+          ...(text && { text }),
+          ...(isB2B && { replyTo: SENDER_IDENTITIES[0].replyEmail }),
+          headers: {
+            'List-Unsubscribe': `<${unsubscribeUrl}>`,
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+          },
         };
       });
 
       try {
         // Send batch
-        const result = await resend.batch.send(emailsToSend);
+        const result = await resend.batch.send(emailsToSend as unknown as Parameters<typeof resend.batch.send>[0]);
 
         // Process results
         if (result.data && Array.isArray(result.data)) {

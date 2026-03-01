@@ -108,6 +108,9 @@ export async function POST(
     const fromEmail = senderEmail || `noreply@${BRAND.domain}`;
     const fromLine = `${fromName} <${fromEmail}>`;
 
+    // Build unsubscribe URL for List-Unsubscribe header (improves deliverability)
+    const listUnsubscribeUrl = `https://${BRAND.domain}/api/unsubscribe/b2b?email=${encodeURIComponent(lead.email)}`;
+
     // Build send options with plain text for deliverability
     const sendOptions: Parameters<typeof resend.emails.send>[0] = {
       from: fromLine,
@@ -116,10 +119,15 @@ export async function POST(
       html,
       text,
       replyTo: validSender?.replyEmail || fromEmail,
+      headers: {
+        'List-Unsubscribe': `<${listUnsubscribeUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
     };
 
     if (inReplyToMessageId) {
       sendOptions.headers = {
+        ...sendOptions.headers,
         'In-Reply-To': `<${inReplyToMessageId}@resend.dev>`,
         'References': `<${inReplyToMessageId}@resend.dev>`,
       };
