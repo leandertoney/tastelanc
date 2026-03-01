@@ -13,6 +13,16 @@ export interface SenderIdentity {
  */
 export const SENDER_IDENTITIES: SenderIdentity[] = [
   {
+    name: 'Leander',
+    email: `leander@${BRAND.domain}`,
+    title: 'Founder',
+  },
+  {
+    name: 'Jordan',
+    email: `jordan@${BRAND.domain}`,
+    title: 'Co-Founder',
+  },
+  {
     name: 'Mason',
     email: `mason@${BRAND.domain}`,
     title: 'Business Development',

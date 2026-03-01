@@ -32,6 +32,11 @@ export async function GET(
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
     }
 
+    // Market scope verification
+    if (access.marketIds !== null && lead.market_id && !access.marketIds.includes(lead.market_id)) {
+      return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
+    }
+
     // Resolve assigned_to name
     let assigned_to_name: string | null = null;
     if (lead.assigned_to) {
@@ -96,11 +101,16 @@ export async function PUT(
     // Ownership enforcement — fetch current lead
     const { data: currentLead } = await serviceClient
       .from('business_leads')
-      .select('status, assigned_to, updated_at, created_at')
+      .select('status, assigned_to, updated_at, created_at, market_id')
       .eq('id', id)
       .single();
 
     if (!currentLead) {
+      return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
+    }
+
+    // Market scope verification
+    if (access.marketIds !== null && currentLead.market_id && !access.marketIds.includes(currentLead.market_id)) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
     }
 

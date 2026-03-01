@@ -39,6 +39,14 @@ export async function GET(request: Request) {
     if (access.isSalesRep && !access.isAdmin) {
       countQ = countQ.or(`assigned_to.eq.${access.userId},assigned_to.is.null,updated_at.lt.${staleCutoffStr}`);
     }
+    // Market scoping — market_admins and sales reps only see their market(s)
+    if (access.marketIds !== null && access.marketIds.length > 0) {
+      if (access.marketIds.length === 1) {
+        countQ = countQ.eq('market_id', access.marketIds[0]);
+      } else {
+        countQ = countQ.in('market_id', access.marketIds);
+      }
+    }
     if (status && status !== 'all') countQ = countQ.eq('status', status);
     if (category && category !== 'all') countQ = countQ.eq('category', category);
     if (search) countQ = countQ.or(`business_name.ilike.%${search}%,contact_name.ilike.%${search}%,email.ilike.%${search}%`);
@@ -57,6 +65,15 @@ export async function GET(request: Request) {
       query = query.or(
         `assigned_to.eq.${access.userId},assigned_to.is.null,updated_at.lt.${staleCutoffStr}`
       );
+    }
+
+    // Market scoping
+    if (access.marketIds !== null && access.marketIds.length > 0) {
+      if (access.marketIds.length === 1) {
+        query = query.eq('market_id', access.marketIds[0]);
+      } else {
+        query = query.in('market_id', access.marketIds);
+      }
     }
 
     if (status && status !== 'all') {
@@ -86,6 +103,13 @@ export async function GET(request: Request) {
       .select('status');
     if (access.isSalesRep && !access.isAdmin) {
       statsQuery = statsQuery.or(`assigned_to.eq.${access.userId},assigned_to.is.null,updated_at.lt.${staleCutoffStr}`);
+    }
+    if (access.marketIds !== null && access.marketIds.length > 0) {
+      if (access.marketIds.length === 1) {
+        statsQuery = statsQuery.eq('market_id', access.marketIds[0]);
+      } else {
+        statsQuery = statsQuery.in('market_id', access.marketIds);
+      }
     }
     const { data: allLeads } = await statsQuery;
 

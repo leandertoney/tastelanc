@@ -40,8 +40,18 @@ export async function GET(request: Request) {
       query = query.gte('meeting_date', startDate).lt('meeting_date', endDate);
     }
 
-    // Non-admin sales reps only see their own meetings
-    if (!access.isAdmin) {
+    // Visibility scoping
+    if (access.isSuperAdmin) {
+      // Super admin / co_founder see all meetings
+    } else if (access.isMarketAdmin && access.marketIds) {
+      // Market admin sees meetings from their market
+      if (access.marketIds.length === 1) {
+        query = query.eq('market_id', access.marketIds[0]);
+      } else {
+        query = query.in('market_id', access.marketIds);
+      }
+    } else {
+      // Sales rep — own meetings only
       query = query.eq('created_by', access.userId);
     }
 
@@ -90,16 +100,21 @@ export async function POST(request: Request) {
 
     const serviceClient = createServiceRoleClient();
 
-    // Resolve market
-    const marketSlug = process.env.NEXT_PUBLIC_MARKET_SLUG || 'lancaster-pa';
-    const { data: market, error: marketError } = await serviceClient
-      .from('markets')
-      .select('id')
-      .eq('slug', marketSlug)
-      .single();
-
-    if (marketError || !market) {
-      console.warn(`Market lookup failed for slug "${marketSlug}":`, marketError?.message);
+    // Resolve market — use user's market if scoped, otherwise fallback to env
+    let resolvedMarketId: string | null = null;
+    if (access.marketIds && access.marketIds.length > 0) {
+      resolvedMarketId = access.marketIds[0];
+    } else {
+      const marketSlug = process.env.NEXT_PUBLIC_MARKET_SLUG || 'lancaster-pa';
+      const { data: market, error: marketError } = await serviceClient
+        .from('markets')
+        .select('id')
+        .eq('slug', marketSlug)
+        .single();
+      if (marketError || !market) {
+        console.warn(`Market lookup failed for slug "${marketSlug}":`, marketError?.message);
+      }
+      resolvedMarketId = market?.id || null;
     }
 
     const { data: meeting, error } = await serviceClient
@@ -113,7 +128,7 @@ export async function POST(request: Request) {
         lead_id: lead_id || null,
         restaurant_id: restaurant_id || null,
         created_by: access.userId,
-        market_id: market?.id || null,
+        market_id: resolvedMarketId,
       })
       .select('*, business_leads(id, business_name, contact_name), restaurants(id, name)')
       .single();

@@ -100,7 +100,7 @@ export async function POST(
     // Determine sender
     const fromName = senderName || BRAND.name;
     const fromEmail = senderEmail || `noreply@${BRAND.domain}`;
-    const fromLine = `${fromName} from ${BRAND.name} <${fromEmail}>`;
+    const fromLine = `${fromName} <${fromEmail}>`;
 
     // Send via Resend
     const { data: resendResult, error: sendError } = await resend.emails.send({

@@ -19,7 +19,7 @@ async function sendBlogNotificationEmails(
   if (!subscribers?.length) return 0;
 
   const siteUrl = `https://${brand.domain}`;
-  const fromEmail = `${brand.aiName} from ${brand.name} <${brand.aiName.toLowerCase()}@${brand.domain}>`;
+  const fromEmail = `${brand.aiName} <${brand.aiName.toLowerCase()}@${brand.domain}>`;
   let sent = 0;
 
   for (const sub of subscribers) {

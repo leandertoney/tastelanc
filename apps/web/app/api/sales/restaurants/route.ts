@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
-import { MARKET_SLUG } from '@/config/market';
-
 export async function GET(request: Request) {
   try {
     const supabase = await createClient();
@@ -17,15 +15,10 @@ export async function GET(request: Request) {
 
     const serviceClient = createServiceRoleClient();
 
-    // Resolve market — admins can optionally see all markets
-    const { data: marketRow } = await serviceClient
-      .from('markets').select('id').eq('slug', MARKET_SLUG).eq('is_active', true).single();
-
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
     const tier = searchParams.get('tier');
     const active = searchParams.get('active');
-    const marketFilter = searchParams.get('market'); // 'all' for admins to see everything
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '25', 10)));
     const sortBy = searchParams.get('sort_by') || 'name';
@@ -34,13 +27,19 @@ export async function GET(request: Request) {
     const ALLOWED_SORT_COLUMNS = ['name', 'city', 'is_active', 'created_at'];
     const safeSortBy = ALLOWED_SORT_COLUMNS.includes(sortBy) ? sortBy : 'name';
 
-    // Admins see all restaurants; sales reps see only their market
-    const scopeToMarket = !access.isAdmin || (marketFilter && marketFilter !== 'all');
+    // Market scoping helper
+    const applyMarketScope = (q: any) => {
+      if (access.marketIds !== null && access.marketIds.length > 0) {
+        if (access.marketIds.length === 1) return q.eq('market_id', access.marketIds[0]);
+        return q.in('market_id', access.marketIds);
+      }
+      return q; // super_admin/co_founder — no filter
+    };
 
     // Build count query with same filters
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let countQ: any = serviceClient.from('restaurants').select('id', { count: 'exact', head: true });
-    if (scopeToMarket && marketRow) countQ = countQ.eq('market_id', marketRow.id);
+    countQ = applyMarketScope(countQ);
     if (search) countQ = countQ.or(`name.ilike.%${search}%,city.ilike.%${search}%`);
     if (active === 'true') countQ = countQ.eq('is_active', true);
     if (active === 'false') countQ = countQ.eq('is_active', false);
@@ -53,9 +52,7 @@ export async function GET(request: Request) {
       .order(safeSortBy, { ascending: sortDir === 'asc' })
       .range((page - 1) * limit, page * limit - 1);
 
-    if (scopeToMarket && marketRow) {
-      query = query.eq('market_id', marketRow.id);
-    }
+    query = applyMarketScope(query);
 
     if (search) {
       query = query.or(`name.ilike.%${search}%,city.ilike.%${search}%`);
@@ -85,9 +82,7 @@ export async function GET(request: Request) {
     let statsQuery = serviceClient
       .from('restaurants')
       .select('is_active, tiers(name)');
-    if (scopeToMarket && marketRow) {
-      statsQuery = statsQuery.eq('market_id', marketRow.id);
-    }
+    statsQuery = applyMarketScope(statsQuery);
     const { data: allRestaurants } = await statsQuery;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
