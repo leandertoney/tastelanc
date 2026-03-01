@@ -11,6 +11,7 @@ const supabase = createClient(
 export const dynamic = 'force-dynamic';
 
 const INBOUND_WEBHOOK_SECRET = process.env.RESEND_INBOUND_WEBHOOK_SECRET || '';
+const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 
 /**
  * Verify Svix webhook signature (used by Resend for all webhooks).
@@ -66,10 +67,28 @@ function verifySignature(payload: string, headers: Headers): boolean {
 }
 
 /**
+ * Fetch full email content from Resend Receiving API.
+ * Webhook payloads only include metadata — body, headers, and attachments
+ * must be retrieved separately via GET /emails/receiving/{id}.
+ */
+async function fetchEmailContent(emailId: string) {
+  const res = await fetch(`https://api.resend.com/emails/receiving/${emailId}`, {
+    headers: { Authorization: `Bearer ${RESEND_API_KEY}` },
+  });
+
+  if (!res.ok) {
+    console.error(`Failed to fetch email content from Resend: ${res.status}`);
+    return null;
+  }
+
+  return res.json();
+}
+
+/**
  * POST /api/inbound-email
  *
  * Resend Inbound webhook endpoint.
- * Verifies the Svix signature, then parses and stores the email.
+ * Verifies the Svix signature, fetches full email content, then stores it.
  */
 export async function POST(request: Request) {
   try {
@@ -95,8 +114,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing data' }, { status: 400 });
     }
 
-    // Parse sender info
-    const fromRaw = data.from || '';
+    // Fetch the full email content from Resend API (webhook only has metadata)
+    const emailContent = data.email_id ? await fetchEmailContent(data.email_id) : null;
+
+    // Parse sender info — try API response first, fall back to webhook data
+    const fromRaw = emailContent?.from || data.from || '';
     let fromEmail = fromRaw;
     let fromName: string | null = null;
 
@@ -108,26 +130,33 @@ export async function POST(request: Request) {
     }
 
     // Parse recipients
-    const toEmail = Array.isArray(data.to) ? data.to[0] : (data.to || '');
+    const toRaw = emailContent?.to || data.to;
+    const toEmail = Array.isArray(toRaw) ? toRaw[0] : (toRaw || '');
 
-    // Parse headers into a clean object
+    // Parse headers from API response
     const headers: Record<string, string> = {};
-    if (Array.isArray(data.headers)) {
-      for (const header of data.headers) {
-        if (header.name && header.value) {
-          headers[header.name] = header.value;
+    if (emailContent?.headers && typeof emailContent.headers === 'object') {
+      for (const [key, value] of Object.entries(emailContent.headers)) {
+        if (typeof value === 'string') {
+          headers[key] = value;
         }
       }
     }
 
-    // Parse attachments metadata (don't store file content, just metadata)
-    const attachments = Array.isArray(data.attachments)
-      ? data.attachments.map((att: { filename?: string; content_type?: string; size?: number }) => ({
+    // Parse attachments metadata
+    const rawAttachments = emailContent?.attachments || data.attachments || [];
+    const attachments = Array.isArray(rawAttachments)
+      ? rawAttachments.map((att: { filename?: string; content_type?: string; size?: number }) => ({
           filename: att.filename || 'unknown',
           content_type: att.content_type || 'application/octet-stream',
           size: att.size || 0,
         }))
       : [];
+
+    // Get body text/html from Resend API (not in webhook payload)
+    const bodyText = emailContent?.text || null;
+    const bodyHtml = emailContent?.html || null;
+    const subject = emailContent?.subject || data.subject || null;
 
     // Insert into inbound_emails table
     const { data: email, error } = await supabase
@@ -136,9 +165,9 @@ export async function POST(request: Request) {
         from_email: fromEmail,
         from_name: fromName,
         to_email: toEmail,
-        subject: data.subject || null,
-        body_text: data.text || null,
-        body_html: data.html || null,
+        subject,
+        body_text: bodyText,
+        body_html: bodyHtml,
         headers,
         attachments,
         is_read: false,
@@ -153,7 +182,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to store email' }, { status: 500 });
     }
 
-    console.log(`Inbound email stored: ${email.id} from ${fromEmail} — "${data.subject}"`);
+    console.log(`Inbound email stored: ${email.id} from ${fromEmail} — "${subject}"`);
 
     // --- CRM Lead Matching ---
     // Try to match this inbound email to an existing lead for the Sales CRM
@@ -212,9 +241,9 @@ export async function POST(request: Request) {
         from_email: fromEmail,
         from_name: fromName,
         to_email: toEmail,
-        subject: data.subject || null,
-        body_text: data.text || null,
-        body_html: data.html || null,
+        subject,
+        body_text: bodyText,
+        body_html: bodyHtml,
         in_reply_to: inReplyTo || null,
         references_header: referencesHeader || null,
         original_send_id: matchedSendId,
@@ -238,11 +267,11 @@ export async function POST(request: Request) {
         lead_id: matchedLeadId,
         user_id: activityUserId,
         activity_type: 'email_reply',
-        description: `Reply from ${fromName || fromEmail}: "${data.subject || '(no subject)'}"`,
+        description: `Reply from ${fromName || fromEmail}: "${subject || '(no subject)'}"`,
         metadata: {
           from_email: fromEmail,
           from_name: fromName,
-          subject: data.subject,
+          subject,
           reply_id: email.id,
         },
       });
