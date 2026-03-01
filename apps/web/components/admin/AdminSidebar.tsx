@@ -65,6 +65,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const router = useRouter();
   const supabase = createClient();
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -79,6 +80,24 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       }
     })();
   }, [supabase]);
+
+  // Fetch inbox unread count
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch('/api/sales/inbox/unread-count');
+        if (res.ok) {
+          const data = await res.json();
+          setInboxUnreadCount(data.count || 0);
+        }
+      } catch {
+        // Ignore
+      }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const isSuperAdmin = userRole === 'super_admin';
 
@@ -174,6 +193,11 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                   >
                     <item.icon className={`w-5 h-5 ${item.highlight && !isActive ? 'text-lancaster-gold' : ''}`} />
                     {item.label}
+                    {item.label === 'Inbox' && inboxUnreadCount > 0 && (
+                      <span className="ml-auto px-1.5 py-0.5 text-[10px] font-medium bg-blue-500 text-white rounded-full min-w-[18px] text-center">
+                        {inboxUnreadCount}
+                      </span>
+                    )}
                   </Link>
                 </li>
               );

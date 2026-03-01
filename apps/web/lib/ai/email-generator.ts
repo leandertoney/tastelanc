@@ -1,5 +1,9 @@
-import { anthropic, CLAUDE_CONFIG } from '../anthropic';
+import OpenAI from 'openai';
 import { BRAND } from '@/config/market';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY!,
+});
 
 // Types for email generation
 export type EmailObjective =
@@ -173,24 +177,24 @@ Important:
 - Be genuine and authentic, not salesy
 - For B2B: Focus on their business benefits, not just features`;
 
-  const response = await anthropic.messages.create({
-    model: CLAUDE_CONFIG.model,
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
     max_tokens: 1024,
     temperature: 0.7,
     messages: [
-      { role: 'user', content: userPrompt }
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
     ],
-    system: systemPrompt,
   });
 
-  const content = response.content[0];
-  if (content.type !== 'text') {
-    throw new Error('Unexpected response type from Claude');
+  const content = response.choices[0]?.message?.content;
+  if (!content) {
+    throw new Error('No response from OpenAI');
   }
 
   try {
     // Extract JSON from response (handle potential markdown code blocks)
-    let jsonStr = content.text;
+    let jsonStr = content;
     const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       jsonStr = jsonMatch[0];
@@ -207,7 +211,7 @@ Important:
 
     return email;
   } catch (error) {
-    console.error('Failed to parse AI response:', content.text);
+    console.error('Failed to parse AI response:', content);
     throw new Error('Failed to parse email content from AI response');
   }
 }
@@ -236,24 +240,24 @@ Requirements:
 Return ONLY a JSON array of strings, nothing else:
 ["Subject 1", "Subject 2", "Subject 3", ...]`;
 
-  const response = await anthropic.messages.create({
-    model: CLAUDE_CONFIG.model,
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
     max_tokens: 512,
-    temperature: 0.8, // Higher temperature for more variation
+    temperature: 0.8,
     messages: [
-      { role: 'user', content: userPrompt }
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
     ],
-    system: systemPrompt,
   });
 
-  const content = response.content[0];
-  if (content.type !== 'text') {
-    throw new Error('Unexpected response type from Claude');
+  const content = response.choices[0]?.message?.content;
+  if (!content) {
+    throw new Error('No response from OpenAI');
   }
 
   try {
     // Extract JSON array from response
-    let jsonStr = content.text;
+    let jsonStr = content;
     const arrayMatch = jsonStr.match(/\[[\s\S]*\]/);
     if (arrayMatch) {
       jsonStr = arrayMatch[0];
@@ -261,7 +265,7 @@ Return ONLY a JSON array of strings, nothing else:
 
     return JSON.parse(jsonStr) as string[];
   } catch (error) {
-    console.error('Failed to parse AI response:', content.text);
+    console.error('Failed to parse AI response:', content);
     throw new Error('Failed to parse subject lines from AI response');
   }
 }
@@ -293,22 +297,22 @@ Audience: ${audienceType === 'consumer' ? 'Waitlist members (consumers)' : 'Busi
 
 Return ONLY the improved content, nothing else. Maintain the same general structure but make the requested improvements.`;
 
-  const response = await anthropic.messages.create({
-    model: CLAUDE_CONFIG.model,
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
     max_tokens: 1024,
     temperature: 0.6,
     messages: [
-      { role: 'user', content: userPrompt }
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
     ],
-    system: systemPrompt,
   });
 
-  const content = response.content[0];
-  if (content.type !== 'text') {
-    throw new Error('Unexpected response type from Claude');
+  const content = response.choices[0]?.message?.content;
+  if (!content) {
+    throw new Error('No response from OpenAI');
   }
 
-  return content.text.trim();
+  return content.trim();
 }
 
 // Calculate days until a date

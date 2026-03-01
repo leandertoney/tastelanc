@@ -29,6 +29,9 @@ export interface BatchEmailParams {
   to: string;
   subject: string;
   html: string;
+  text?: string;
+  replyTo?: string;
+  headers?: Record<string, string>;
 }
 
 // Send single email
@@ -66,6 +69,9 @@ export async function sendBatchEmails(emails: BatchEmailParams[]) {
           to: email.to,
           subject: email.subject,
           html: email.html,
+          ...(email.text && { text: email.text }),
+          ...(email.replyTo && { replyTo: email.replyTo }),
+          ...(email.headers && { headers: email.headers }),
         }))
       );
       results.push(result);
