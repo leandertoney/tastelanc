@@ -42,7 +42,7 @@ export async function middleware(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (profile?.role === 'super_admin') {
+    if (profile?.role === 'super_admin' || profile?.role === 'co_founder') {
       isAdmin = true;
     } else if (profile?.role === 'market_admin') {
       // Resolve current market to check if this admin belongs here

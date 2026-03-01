@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BRAND } from '@/config/market';
@@ -21,17 +22,21 @@ import {
   Users,
   Globe,
   Inbox,
+  HeadphonesIcon,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
-const NAV_ITEMS: Array<{
+interface NavItem {
   href: string;
   icon: typeof LayoutDashboard;
   label: string;
   highlight?: boolean;
   section?: string;
-}> = [
+  superOnly?: boolean; // Only visible to super_admin
+}
+
+const NAV_ITEMS: NavItem[] = [
   // REVENUE - All subscription/payment related
   { href: '/admin', icon: LayoutDashboard, label: 'Overview', section: 'Revenue' },
   { href: '/admin/paid-members', icon: CreditCard, label: 'Restaurants', highlight: true },
@@ -39,7 +44,8 @@ const NAV_ITEMS: Array<{
   { href: '/admin/consumers', icon: Crown, label: BRAND.premiumName, highlight: true },
   { href: '/admin/sales', icon: Briefcase, label: 'Sales Pipeline', highlight: true },
   { href: '/admin/sponsored-ads', icon: Megaphone, label: 'Sponsored Ads', highlight: true },
-  { href: '/admin/sales-reps', icon: Users, label: 'Sales Reps', highlight: true },
+  { href: '/admin/team', icon: Users, label: 'Team', highlight: true },
+  { href: '/sales', icon: HeadphonesIcon, label: 'Sales CRM', highlight: true },
   // CONTENT - Restaurant management
   { href: '/admin/restaurants', icon: Store, label: 'All Restaurants', section: 'Content' },
   // MARKETING - Campaigns and outreach
@@ -49,7 +55,7 @@ const NAV_ITEMS: Array<{
   { href: '/admin/analytics', icon: BarChart3, label: 'Analytics', section: 'Insights' },
   { href: '/admin/feature-requests', icon: Lightbulb, label: 'Feature Requests', highlight: true },
   // GROWTH - Expansion and communications
-  { href: '/admin/expansion', icon: Globe, label: 'Expansion', highlight: true, section: 'Growth' },
+  { href: '/admin/expansion', icon: Globe, label: 'Expansion', highlight: true, section: 'Growth', superOnly: true },
   { href: '/admin/inbox', icon: Inbox, label: 'Inbox', highlight: true },
 ];
 
@@ -62,6 +68,28 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        setUserRole(profile?.role || null);
+      }
+    })();
+  }, [supabase]);
+
+  const isSuperAdmin = userRole === 'super_admin';
+
+  const visibleItems = NAV_ITEMS.filter(item => {
+    if (item.superOnly && !isSuperAdmin) return false;
+    return true;
+  });
 
   const handleLogout = async () => {
     try {
@@ -126,7 +154,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         {/* Navigation */}
         <nav className="flex-1 p-4 overflow-y-auto">
           <ul className="space-y-1">
-            {NAV_ITEMS.map((item, index) => {
+            {visibleItems.map((item, index) => {
               const isActive = pathname === item.href ||
                 (item.href !== '/admin' && pathname.startsWith(item.href));
 

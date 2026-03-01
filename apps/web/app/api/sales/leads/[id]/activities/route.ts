@@ -78,11 +78,16 @@ export async function POST(
     // Verify lead exists and check ownership
     const { data: lead } = await serviceClient
       .from('business_leads')
-      .select('id, assigned_to, updated_at, created_at')
+      .select('id, assigned_to, updated_at, created_at, market_id')
       .eq('id', id)
       .single();
 
     if (!lead) {
+      return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
+    }
+
+    // Market scope verification
+    if (access.marketIds !== null && lead.market_id && !access.marketIds.includes(lead.market_id)) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
     }
 

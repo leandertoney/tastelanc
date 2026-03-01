@@ -52,8 +52,12 @@ export async function PUT(
       .update(updateData)
       .eq('id', id);
 
-    // Non-admin can only update own meetings
-    if (!access.isAdmin) {
+    // Scope: super_admin/co_founder can update any, market_admin can update their market's, sales reps only own
+    if (access.isSuperAdmin) {
+      // No restriction
+    } else if (access.isMarketAdmin && access.marketIds) {
+      query = query.in('market_id', access.marketIds);
+    } else {
       query = query.eq('created_by', access.userId);
     }
 
@@ -101,7 +105,11 @@ export async function DELETE(
       .select('id')
       .eq('id', id);
 
-    if (!access.isAdmin) {
+    if (access.isSuperAdmin) {
+      // No restriction
+    } else if (access.isMarketAdmin && access.marketIds) {
+      checkQuery = checkQuery.in('market_id', access.marketIds);
+    } else {
       checkQuery = checkQuery.eq('created_by', access.userId);
     }
 
