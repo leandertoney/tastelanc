@@ -56,6 +56,8 @@ export default function TeamPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
+    name: '',
+    phone: '',
     market_ids: [] as string[],
     is_active: true,
   });
@@ -83,6 +85,8 @@ export default function TeamPage() {
   const startEdit = (member: TeamMember) => {
     setEditingId(member.id);
     setEditForm({
+      name: member.name || '',
+      phone: member.salesRepData?.phone || '',
       market_ids: member.salesRepData?.market_ids || (member.adminMarketId ? [member.adminMarketId] : []),
       is_active: member.salesRepData?.is_active ?? true,
     });
@@ -99,6 +103,8 @@ export default function TeamPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          name: editForm.name,
+          phone: editForm.phone,
           market_ids: editForm.market_ids,
           is_active: editForm.is_active,
         }),
@@ -243,6 +249,30 @@ export default function TeamPage() {
               {/* Edit form */}
               {isEditing && (
                 <div className="mt-4 pt-4 border-t border-tastelanc-surface-light">
+                  {/* Name & Phone */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">Name</label>
+                      <input
+                        type="text"
+                        value={editForm.name}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Full name"
+                        className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">Phone</label>
+                      <input
+                        type="text"
+                        value={editForm.phone}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                        placeholder="(555) 123-4567"
+                        className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                      />
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Market assignment */}
                     <div>

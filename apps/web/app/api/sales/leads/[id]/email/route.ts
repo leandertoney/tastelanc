@@ -32,6 +32,8 @@ export async function POST(
       ctaUrl,
       senderName,
       senderEmail,
+      inReplyToMessageId,
+      threadId,
     } = body;
 
     if (!subject || !headline || !emailBody) {
@@ -102,14 +104,24 @@ export async function POST(
     const fromEmail = senderEmail || `noreply@${BRAND.domain}`;
     const fromLine = `${fromName} <${fromEmail}>`;
 
-    // Send via Resend
-    const { data: resendResult, error: sendError } = await resend.emails.send({
+    // Build send options with optional threading headers
+    const sendOptions: Parameters<typeof resend.emails.send>[0] = {
       from: fromLine,
       to: lead.email,
       subject,
       html,
       replyTo: fromEmail,
-    });
+    };
+
+    if (inReplyToMessageId) {
+      sendOptions.headers = {
+        'In-Reply-To': `<${inReplyToMessageId}@resend.dev>`,
+        'References': `<${inReplyToMessageId}@resend.dev>`,
+      };
+    }
+
+    // Send via Resend
+    const { data: resendResult, error: sendError } = await resend.emails.send(sendOptions);
 
     if (sendError) {
       console.error('Resend error:', sendError);
@@ -131,6 +143,8 @@ export async function POST(
       subject,
       sender_name: fromName,
       sender_email: fromEmail,
+      thread_id: threadId || null,
+      in_reply_to_message_id: inReplyToMessageId || null,
     });
 
     // Log activity on lead

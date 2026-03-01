@@ -155,6 +155,113 @@ export async function POST(request: Request) {
 
     console.log(`Inbound email stored: ${email.id} from ${fromEmail} — "${data.subject}"`);
 
+    // --- CRM Lead Matching ---
+    // Try to match this inbound email to an existing lead for the Sales CRM
+    let matchedLeadId: string | null = null;
+    let matchedSendId: string | null = null;
+    let threadId: string | null = null;
+
+    // Strategy 1: Header-based matching (In-Reply-To → email_sends.resend_id)
+    const inReplyTo = headers['In-Reply-To'] || headers['in-reply-to'] || '';
+    const referencesHeader = headers['References'] || headers['references'] || '';
+
+    if (inReplyTo) {
+      // Resend Message-IDs look like "<resend_id@resend.dev>"
+      const resendIdMatch = inReplyTo.match(/<([^@]+)@resend\.dev>/);
+      if (resendIdMatch) {
+        const { data: sendRecord } = await supabase
+          .from('email_sends')
+          .select('id, lead_id, thread_id')
+          .eq('resend_id', resendIdMatch[1])
+          .single();
+        if (sendRecord?.lead_id) {
+          matchedLeadId = sendRecord.lead_id;
+          matchedSendId = sendRecord.id;
+          threadId = sendRecord.thread_id || sendRecord.id;
+        }
+      }
+    }
+
+    // Strategy 2: Email address matching (from_email → business_leads.email)
+    if (!matchedLeadId) {
+      const senderAddresses = [
+        'leander@tastelanc.com', 'jordan@tastelanc.com',
+        'mason@tastelanc.com', 'jamie@tastelanc.com', 'team@tastelanc.com',
+      ];
+      const isToSalesRep = senderAddresses.some(addr =>
+        toEmail.toLowerCase().includes(addr.toLowerCase())
+      );
+      if (isToSalesRep && fromEmail) {
+        const { data: leads } = await supabase
+          .from('business_leads')
+          .select('id')
+          .ilike('email', fromEmail.trim())
+          .order('updated_at', { ascending: false })
+          .limit(1);
+        if (leads && leads.length === 1) {
+          matchedLeadId = leads[0].id;
+        }
+      }
+    }
+
+    // If matched, create CRM records
+    if (matchedLeadId) {
+      // Insert into lead_email_replies
+      await supabase.from('lead_email_replies').insert({
+        lead_id: matchedLeadId,
+        from_email: fromEmail,
+        from_name: fromName,
+        to_email: toEmail,
+        subject: data.subject || null,
+        body_text: data.text || null,
+        body_html: data.html || null,
+        in_reply_to: inReplyTo || null,
+        references_header: referencesHeader || null,
+        original_send_id: matchedSendId,
+        thread_id: threadId,
+        inbound_email_id: email.id,
+        is_read: false,
+      });
+
+      // Get lead's assigned_to for user_id (required NOT NULL)
+      const { data: lead } = await supabase
+        .from('business_leads')
+        .select('assigned_to')
+        .eq('id', matchedLeadId)
+        .single();
+
+      // Use assigned rep or fall back to a known admin
+      const activityUserId = lead?.assigned_to || '2c5ec9f7-fc9a-4289-b835-9f5d76d6cbc5';
+
+      // Log activity on lead timeline
+      await supabase.from('lead_activities').insert({
+        lead_id: matchedLeadId,
+        user_id: activityUserId,
+        activity_type: 'email_reply',
+        description: `Reply from ${fromName || fromEmail}: "${data.subject || '(no subject)'}"`,
+        metadata: {
+          from_email: fromEmail,
+          from_name: fromName,
+          subject: data.subject,
+          reply_id: email.id,
+        },
+      });
+
+      // Set unread flag on lead
+      await supabase
+        .from('business_leads')
+        .update({ has_unread_replies: true })
+        .eq('id', matchedLeadId);
+
+      // Link inbound email to lead
+      await supabase
+        .from('inbound_emails')
+        .update({ linked_lead_id: matchedLeadId })
+        .eq('id', email.id);
+
+      console.log(`Inbound email matched to lead ${matchedLeadId}`);
+    }
+
     return NextResponse.json({ received: true, id: email.id });
   } catch (error) {
     console.error('Error processing inbound email webhook:', error);

@@ -46,6 +46,10 @@ export async function PUT(request: Request) {
 
     const updateData: Record<string, unknown> = {};
 
+    // Profile fields
+    if (body.name !== undefined) updateData.name = body.name || null;
+    if (body.phone !== undefined) updateData.phone = body.phone || null;
+
     // Payment methods
     if (body.payment_cashapp !== undefined) updateData.payment_cashapp = body.payment_cashapp || null;
     if (body.payment_venmo !== undefined) updateData.payment_venmo = body.payment_venmo || null;
