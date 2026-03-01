@@ -12,6 +12,7 @@ import {
   Briefcase,
   CreditCard,
   Mail,
+  Inbox,
   X,
   Plus,
   PanelLeftClose,
@@ -37,6 +38,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { href: '/sales', icon: LayoutDashboard, label: 'Overview', section: 'Pipeline', hint: 'Your sales pipeline at a glance — track leads and performance' },
+  { href: '/sales/inbox', icon: Inbox, label: 'Inbox', highlight: true, hint: 'View and reply to all your email conversations' },
   { href: '/sales/leads', icon: Briefcase, label: 'Business Leads', highlight: true, hint: 'View and manage all your assigned leads' },
   { href: '/sales/leads/new', icon: Plus, label: 'Add Lead', hint: 'Create a new business lead to start the sales process' },
   { href: '/sales/checkout', icon: CreditCard, label: 'New Sale', highlight: true, section: 'Actions', hint: 'Generate a checkout link for a restaurant ready to sign up' },
@@ -60,15 +62,23 @@ export default function SalesSidebar({ isOpen, onClose, collapsed, onToggleColla
   const router = useRouter();
   const supabase = createClient();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
 
-  // Fetch unread reply count
+  // Fetch unread counts
   useEffect(() => {
     const fetchUnread = async () => {
       try {
-        const res = await fetch('/api/sales/leads/unread-count');
-        if (res.ok) {
-          const data = await res.json();
+        const [leadsRes, inboxRes] = await Promise.all([
+          fetch('/api/sales/leads/unread-count'),
+          fetch('/api/sales/inbox/unread-count'),
+        ]);
+        if (leadsRes.ok) {
+          const data = await leadsRes.json();
           setUnreadCount(data.count || 0);
+        }
+        if (inboxRes.ok) {
+          const data = await inboxRes.json();
+          setInboxUnreadCount(data.count || 0);
         }
       } catch {
         // Ignore
@@ -172,6 +182,11 @@ export default function SalesSidebar({ isOpen, onClose, collapsed, onToggleColla
                     >
                       <item.icon className={`w-5 h-5 flex-shrink-0 ${item.highlight && !isActive ? 'text-lancaster-gold' : ''}`} />
                       <span className={`${collapsed ? 'md:hidden' : ''} flex-1`}>{item.label}</span>
+                      {item.href === '/sales/inbox' && inboxUnreadCount > 0 && !collapsed && (
+                        <span className="md:inline hidden ml-auto bg-blue-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1">
+                          {inboxUnreadCount > 99 ? '99+' : inboxUnreadCount}
+                        </span>
+                      )}
                       {item.href === '/sales/leads' && unreadCount > 0 && !collapsed && (
                         <span className="md:inline hidden ml-auto bg-blue-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1">
                           {unreadCount > 99 ? '99+' : unreadCount}

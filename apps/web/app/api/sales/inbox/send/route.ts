@@ -6,12 +6,8 @@ import { renderB2BEmail } from '@/lib/email-templates/b2b-outreach-template';
 import { BRAND } from '@/config/market';
 import { SENDER_IDENTITIES } from '@/config/sender-identities';
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: Request) {
   try {
-    const { id } = await params;
     const supabase = await createClient();
     const access = await verifySalesAccess(supabase);
 
@@ -25,6 +21,8 @@ export async function POST(
     const serviceClient = createServiceRoleClient();
     const body = await request.json();
     const {
+      recipientEmail,
+      recipientName,
       subject,
       headline,
       emailBody,
@@ -36,36 +34,18 @@ export async function POST(
       threadId,
     } = body;
 
-    if (!subject || !headline || !emailBody) {
+    if (!recipientEmail || !subject || !headline || !emailBody) {
       return NextResponse.json(
-        { error: 'Missing required fields: subject, headline, emailBody' },
+        { error: 'Missing required fields: recipientEmail, subject, headline, emailBody' },
         { status: 400 }
       );
     }
 
-    // Verify sender identity is on allowed list
-    const validSender = SENDER_IDENTITIES.find((s) => s.email === senderEmail);
+    // Verify sender identity
+    const validSender = SENDER_IDENTITIES.find(s => s.email === senderEmail);
     if (senderEmail && !validSender) {
       return NextResponse.json(
         { error: 'Invalid sender email. Must use an approved sender identity.' },
-        { status: 400 }
-      );
-    }
-
-    // Fetch lead
-    const { data: lead, error: leadError } = await serviceClient
-      .from('business_leads')
-      .select('id, email, business_name, contact_name')
-      .eq('id', id)
-      .single();
-
-    if (leadError || !lead) {
-      return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
-    }
-
-    if (!lead.email) {
-      return NextResponse.json(
-        { error: 'This lead does not have an email address' },
         { status: 400 }
       );
     }
@@ -74,18 +54,18 @@ export async function POST(
     const { data: unsub } = await serviceClient
       .from('b2b_unsubscribes')
       .select('id')
-      .eq('email', lead.email.toLowerCase())
+      .eq('email', recipientEmail.toLowerCase())
       .single();
 
     if (unsub) {
       return NextResponse.json(
-        { error: 'This lead has unsubscribed from emails' },
+        { error: 'This recipient has unsubscribed from emails' },
         { status: 400 }
       );
     }
 
     // Build unsubscribe URL
-    const unsubscribeUrl = `https://${BRAND.domain}/api/unsubscribe/b2b?email=${encodeURIComponent(lead.email)}`;
+    const unsubscribeUrl = `https://${BRAND.domain}/api/unsubscribe/b2b?email=${encodeURIComponent(recipientEmail)}`;
 
     // Render email HTML
     const html = renderB2BEmail({
@@ -95,8 +75,7 @@ export async function POST(
       ctaUrl: ctaUrl || undefined,
       previewText: subject,
       unsubscribeUrl,
-      businessName: lead.business_name,
-      contactName: lead.contact_name || undefined,
+      businessName: recipientName || undefined,
     });
 
     // Determine sender
@@ -104,10 +83,10 @@ export async function POST(
     const fromEmail = senderEmail || `noreply@${BRAND.domain}`;
     const fromLine = `${fromName} <${fromEmail}>`;
 
-    // Build send options with optional threading headers
+    // Build send options
     const sendOptions: Parameters<typeof resend.emails.send>[0] = {
       from: fromLine,
-      to: lead.email,
+      to: recipientEmail,
       subject,
       html,
       replyTo: fromEmail,
@@ -125,20 +104,30 @@ export async function POST(
 
     if (sendError) {
       console.error('Resend error:', sendError);
-      return NextResponse.json(
-        { error: 'Failed to send email' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to send email' }, { status: 500 });
     }
 
     const resendId = resendResult?.id || null;
 
+    // Auto-link to lead if recipient matches a business lead
+    let linkedLeadId: string | null = null;
+    const { data: matchedLead } = await serviceClient
+      .from('business_leads')
+      .select('id, business_name')
+      .ilike('email', recipientEmail)
+      .limit(1)
+      .single();
+
+    if (matchedLead) {
+      linkedLeadId = matchedLead.id;
+    }
+
     // Record in email_sends
     await serviceClient.from('email_sends').insert({
-      recipient_email: lead.email,
+      recipient_email: recipientEmail,
       resend_id: resendId,
       status: 'sent',
-      lead_id: id,
+      lead_id: linkedLeadId,
       sent_by: access.userId,
       subject,
       sender_name: fromName,
@@ -149,32 +138,34 @@ export async function POST(
       headline,
     });
 
-    // Log activity on lead
-    await serviceClient.from('lead_activities').insert({
-      lead_id: id,
-      user_id: access.userId,
-      activity_type: 'email',
-      description: `Sent email: "${subject}"`,
-      metadata: {
-        subject,
-        resend_id: resendId,
-        sender_name: fromName,
-        sender_email: fromEmail,
-      },
-    });
+    // If linked to a lead, log activity
+    if (linkedLeadId && access.userId) {
+      await serviceClient.from('lead_activities').insert({
+        lead_id: linkedLeadId,
+        user_id: access.userId,
+        activity_type: 'email',
+        description: `Sent email: "${subject}"`,
+        metadata: {
+          subject,
+          resend_id: resendId,
+          sender_name: fromName,
+          sender_email: fromEmail,
+          sent_from: 'inbox',
+        },
+      });
 
-    // Update last_contacted_at
-    await serviceClient
-      .from('business_leads')
-      .update({ last_contacted_at: new Date().toISOString() })
-      .eq('id', id);
+      await serviceClient
+        .from('business_leads')
+        .update({ last_contacted_at: new Date().toISOString() })
+        .eq('id', linkedLeadId);
+    }
 
-    // Save sender preference if changed
+    // Save sender preference
     if (senderName && senderEmail && access.isSalesRep) {
       const { data: existingRep } = await serviceClient
         .from('sales_reps')
         .select('id, preferred_sender_name, preferred_sender_email')
-        .eq('id', access.userId)
+        .eq('id', access.userId!)
         .single();
 
       if (existingRep && (existingRep.preferred_sender_name !== senderName || existingRep.preferred_sender_email !== senderEmail)) {
@@ -184,20 +175,18 @@ export async function POST(
             preferred_sender_name: senderName,
             preferred_sender_email: senderEmail,
           })
-          .eq('id', access.userId);
+          .eq('id', access.userId!);
       }
     }
 
     return NextResponse.json({
       success: true,
       resendId,
-      message: `Email sent to ${lead.email}`,
+      linkedLeadId,
+      message: `Email sent to ${recipientEmail}`,
     });
   } catch (error) {
-    console.error('Error in sales email send API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('Error in inbox send API:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
