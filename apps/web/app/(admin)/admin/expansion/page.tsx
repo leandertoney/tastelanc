@@ -23,7 +23,7 @@ import { toast } from 'sonner';
 import ExpansionPipelineCard from '@/components/admin/expansion/ExpansionPipelineCard';
 import AddCityModal from '@/components/admin/expansion/AddCityModal';
 import AISuggestModal from '@/components/admin/expansion/AISuggestModal';
-import type { ExpansionCity, ExpansionStats, ActivityLogEntry } from '@/lib/ai/expansion-types';
+import type { ExpansionCity, ExpansionStats, ActivityLogEntry, ExpansionReview } from '@/lib/ai/expansion-types';
 
 const ACTION_LABELS: Record<string, string> = {
   city_added: 'City Added',
@@ -65,6 +65,7 @@ export default function ExpansionPipelinePage() {
   const [stats, setStats] = useState<ExpansionStats | null>(null);
   const [activities, setActivities] = useState<ActivityLogEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [reviews, setReviews] = useState<Record<string, ExpansionReview[]>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSuggestModal, setShowSuggestModal] = useState(false);
@@ -77,20 +78,32 @@ export default function ExpansionPipelinePage() {
 
   const fetchData = async () => {
     try {
-      const [statsRes, citiesRes, activityRes] = await Promise.all([
+      const [statsRes, citiesRes, activityRes, reviewsRes] = await Promise.all([
         fetch('/api/admin/expansion/stats'),
         fetch('/api/admin/expansion/cities'),
         fetch('/api/admin/expansion/activity?limit=15'),
+        fetch('/api/admin/expansion/reviews'),
       ]);
 
-      const [statsData, citiesData, activityData] = await Promise.all([
+      const [statsData, citiesData, activityData, reviewsData] = await Promise.all([
         statsRes.json(),
         citiesRes.json(),
         activityRes.json(),
+        reviewsRes.json(),
       ]);
 
       if (statsRes.ok) setStats(statsData);
       if (activityRes.ok) setActivities(activityData.activities || []);
+
+      // Group reviews by city_id
+      if (reviewsRes.ok && reviewsData.reviews) {
+        const grouped: Record<string, ExpansionReview[]> = {};
+        for (const r of reviewsData.reviews as ExpansionReview[]) {
+          if (!grouped[r.city_id]) grouped[r.city_id] = [];
+          grouped[r.city_id].push(r);
+        }
+        setReviews(grouped);
+      }
 
       if (citiesRes.ok) {
         const allCities: ExpansionCity[] = citiesData.cities || [];
@@ -445,7 +458,7 @@ export default function ExpansionPipelinePage() {
       ) : (
         <div className="space-y-3 mb-8">
           {filteredCities.map((city) => (
-            <ExpansionPipelineCard key={city.id} city={city} />
+            <ExpansionPipelineCard key={city.id} city={city} reviews={reviews[city.id]} />
           ))}
         </div>
       )}

@@ -18,9 +18,24 @@ import {
   ExternalLink,
   CheckCircle2,
   Bot,
+  Home,
+  TrendingUp,
+  Star,
+  Coffee,
+  Beer,
+  Utensils,
 } from 'lucide-react';
 import { useState } from 'react';
-import type { ExpansionCity, MarketSubScores, ResearchSource } from '@/lib/ai/expansion-types';
+import type {
+  ExpansionCity,
+  MarketSubScores,
+  ResearchSource,
+  CollegeInfo,
+  TourismEconomicData,
+  CensusExtendedInfo,
+  VenueBreakdown,
+  CuisineEntry,
+} from '@/lib/ai/expansion-types';
 import { SCORING_WEIGHTS } from '@/lib/ai/expansion-agent';
 
 interface CityResearchPanelProps {
@@ -230,6 +245,231 @@ function ProseSection({ label, text }: { label: string; text: string | null | un
 }
 
 // ─────────────────────────────────────────────────────────
+// Data Completeness Bar
+// ─────────────────────────────────────────────────────────
+
+function DataCompletenessBar({ completeness }: { completeness: Record<string, boolean> }) {
+  const sources = [
+    { key: 'census', label: 'Census', color: 'emerald' },
+    { key: 'census_extended', label: 'Housing/Education', color: 'emerald' },
+    { key: 'college_scorecard', label: 'Colleges', color: 'blue' },
+    { key: 'bea', label: 'BEA Economy', color: 'purple' },
+    { key: 'google_places', label: 'Google Places', color: 'blue' },
+    { key: 'overpass', label: 'OpenStreetMap', color: 'teal' },
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {sources.map(({ key, label, color }) => {
+        const ok = completeness[key];
+        return (
+          <span
+            key={key}
+            className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${
+              ok
+                ? `bg-${color}-500/20 text-${color}-400`
+                : 'bg-gray-700/30 text-gray-600'
+            }`}
+            style={ok ? {} : { opacity: 0.6 }}
+          >
+            {ok ? <CheckCircle2 className="w-3 h-3" /> : null}
+            {label}
+            {!ok && ' —'}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// College Grid
+// ─────────────────────────────────────────────────────────
+
+function CollegeGrid({ colleges }: { colleges: CollegeInfo[] }) {
+  if (!colleges || colleges.length === 0) return null;
+  const totalEnrollment = colleges.reduce((sum, c) => sum + c.enrollment, 0);
+
+  return (
+    <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="text-sm font-medium text-gray-300 flex items-center gap-2">
+          <GraduationCap className="w-4 h-4 text-tastelanc-accent" />
+          Colleges & Universities
+          <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded-full font-medium">
+            College Scorecard
+          </span>
+        </h4>
+        <span className="text-xs text-gray-500">
+          {colleges.length} institutions &middot; {totalEnrollment.toLocaleString()} total enrollment
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {colleges.map((college, i) => {
+          const isSeminarTarget = (college.degree_level === "Bachelor's" || college.degree_level === 'Graduate') && college.enrollment >= 2000;
+
+          return (
+            <div
+              key={i}
+              className={`bg-tastelanc-surface-light rounded-lg p-3 ${
+                isSeminarTarget ? 'border border-tastelanc-accent/30' : ''
+              }`}
+            >
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <span className="text-sm font-medium text-white leading-tight">{college.name}</span>
+                {college.is_research_university && (
+                  <span className="flex-shrink-0" aria-label="Research University">
+                    <Star className="w-4 h-4 text-yellow-400" />
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-gray-400">{college.enrollment.toLocaleString()} students</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                  college.type === 'public'
+                    ? 'bg-blue-500/20 text-blue-400'
+                    : college.type === 'private_nonprofit'
+                    ? 'bg-purple-500/20 text-purple-400'
+                    : 'bg-gray-500/20 text-gray-400'
+                }`}>
+                  {college.type === 'public' ? 'Public' : college.type === 'private_nonprofit' ? 'Private' : 'For-Profit'}
+                </span>
+                <span className="text-[10px] text-gray-600">{college.degree_level}</span>
+                {isSeminarTarget && (
+                  <span className="text-[10px] px-1.5 py-0.5 bg-tastelanc-accent/20 text-tastelanc-accent rounded-full font-medium">
+                    Hiring Seminar Target
+                  </span>
+                )}
+              </div>
+              {college.city && (
+                <span className="text-[10px] text-gray-600 mt-1 block">{college.city}</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// Tourism & Economy Panel
+// ─────────────────────────────────────────────────────────
+
+function TourismEconomyPanel({ data }: { data: TourismEconomicData }) {
+  return (
+    <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5">
+      <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+        <TrendingUp className="w-4 h-4 text-tastelanc-accent" />
+        Tourism & Economy
+        <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded-full font-medium">
+          BEA {data.year || 'N/A'}
+        </span>
+      </h4>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {data.hospitality_gdp_millions !== null && (
+          <div className="bg-tastelanc-surface-light rounded-lg p-3">
+            <span className="text-[10px] text-gray-500 uppercase tracking-wide">Hospitality GDP</span>
+            <p className="text-lg font-bold text-white">${data.hospitality_gdp_millions.toLocaleString()}M</p>
+            {data.hospitality_pct_of_gdp !== null && (
+              <p className="text-[11px] text-gray-500">{data.hospitality_pct_of_gdp}% of county economy</p>
+            )}
+          </div>
+        )}
+
+        {data.arts_entertainment_gdp_millions !== null && (
+          <div className="bg-tastelanc-surface-light rounded-lg p-3">
+            <span className="text-[10px] text-gray-500 uppercase tracking-wide">Arts/Entertainment GDP</span>
+            <p className="text-lg font-bold text-white">${data.arts_entertainment_gdp_millions.toLocaleString()}M</p>
+          </div>
+        )}
+
+        {data.total_county_gdp_millions !== null && (
+          <div className="bg-tastelanc-surface-light rounded-lg p-3">
+            <span className="text-[10px] text-gray-500 uppercase tracking-wide">Total County GDP</span>
+            <p className="text-lg font-bold text-white">${data.total_county_gdp_millions.toLocaleString()}M</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// Venue Breakdown Panel
+// ─────────────────────────────────────────────────────────
+
+function VenueBreakdownPanel({
+  venueBreakdown,
+  cuisineDistribution,
+  googleRestaurants,
+  googleBars,
+}: {
+  venueBreakdown: VenueBreakdown;
+  cuisineDistribution: CuisineEntry[];
+  googleRestaurants?: number;
+  googleBars?: number;
+}) {
+  const venueTypes = [
+    { key: 'restaurants', label: 'Restaurants', icon: Utensils, count: venueBreakdown.restaurants },
+    { key: 'bars', label: 'Bars', icon: Beer, count: venueBreakdown.bars },
+    { key: 'cafes', label: 'Cafes', icon: Coffee, count: venueBreakdown.cafes },
+    { key: 'pubs', label: 'Pubs', icon: Wine, count: venueBreakdown.pubs },
+    { key: 'fast_food', label: 'Fast Food', icon: UtensilsCrossed, count: venueBreakdown.fast_food },
+  ].filter(v => v.count > 0);
+
+  return (
+    <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5">
+      <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+        <UtensilsCrossed className="w-4 h-4 text-tastelanc-accent" />
+        Venue Breakdown
+        <span className="text-[10px] px-1.5 py-0.5 bg-teal-500/20 text-teal-400 rounded-full font-medium">
+          OpenStreetMap
+        </span>
+      </h4>
+
+      {/* Cross-reference with Google */}
+      {(googleRestaurants || googleBars) ? (
+        <p className="text-[11px] text-gray-500 mb-3">
+          Cross-reference: Google Places {googleRestaurants?.toLocaleString() || '?'} restaurants, {googleBars?.toLocaleString() || '?'} bars
+          &bull; OSM {venueBreakdown.restaurants} restaurants, {venueBreakdown.bars} bars
+        </p>
+      ) : null}
+
+      {/* Venue type bars */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
+        {venueTypes.map(({ key, label, icon: Icon, count }) => (
+          <div key={key} className="bg-tastelanc-surface-light rounded-lg p-2 text-center">
+            <Icon className="w-4 h-4 text-gray-500 mx-auto mb-1" />
+            <p className="text-sm font-bold text-white">{count}</p>
+            <p className="text-[10px] text-gray-500">{label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Cuisine distribution */}
+      {cuisineDistribution && cuisineDistribution.length > 0 && (
+        <div>
+          <h5 className="text-xs text-gray-500 mb-2">Top Cuisines</h5>
+          <div className="flex flex-wrap gap-1.5">
+            {cuisineDistribution.slice(0, 12).map((c, i) => (
+              <span
+                key={i}
+                className="text-[11px] px-2 py-0.5 bg-tastelanc-surface-light text-gray-300 rounded-full"
+              >
+                {c.cuisine} <span className="text-gray-600">({c.count})</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
 // Main component
 // ─────────────────────────────────────────────────────────
 
@@ -278,6 +518,15 @@ export default function CityResearchPanel({
   const regionName = rd.suggested_region_name as string | undefined;
   const clusterPop = rd.cluster_population as number | undefined;
 
+  // Deep research structured data
+  const dataCompleteness = (rd.data_completeness as Record<string, boolean>) || {};
+  const hasDeepResearch = Object.keys(dataCompleteness).length > 0;
+  const colleges = (rd.colleges as CollegeInfo[]) || [];
+  const tourismEcon = rd.tourism_economic_data as TourismEconomicData | undefined;
+  const censusExt = rd.census_extended as CensusExtendedInfo | undefined;
+  const venueBreakdown = rd.venue_breakdown as VenueBreakdown | undefined;
+  const cuisineDistribution = (rd.cuisine_distribution as CuisineEntry[]) || [];
+
   // Build restaurant/bar stat labels
   const restaurantBadge = googleValidated ? 'Google' : undefined;
   const barBadge = googleValidated ? 'Google' : undefined;
@@ -290,6 +539,17 @@ export default function CityResearchPanel({
 
   return (
     <div className="space-y-6">
+      {/* Data Completeness Bar */}
+      {hasDeepResearch && (
+        <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircle2 className="w-4 h-4 text-tastelanc-accent" />
+            <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wide">Data Sources Collected</h4>
+          </div>
+          <DataCompletenessBar completeness={dataCompleteness} />
+        </div>
+      )}
+
       {/* Regional cluster info */}
       {clusterTowns.length > 0 && (
         <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5">
@@ -298,7 +558,7 @@ export default function CityResearchPanel({
             <h4 className="text-sm font-medium text-gray-300">Regional Cluster</h4>
             {regionName && (
               <span className="text-xs px-2 py-0.5 bg-tastelanc-accent/20 text-tastelanc-accent rounded-full font-medium">
-                Taste{regionName.replace(/\s+/g, '')}
+                {regionName}
               </span>
             )}
           </div>
@@ -329,7 +589,7 @@ export default function CityResearchPanel({
         )
       )}
 
-      {/* Stats grid */}
+      {/* Stats grid (expanded with housing/education data) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <StatCard icon={Users} label="Population" value={city.population} />
         <StatCard
@@ -352,32 +612,69 @@ export default function CityResearchPanel({
           badge={barBadge}
           subValue={barSub}
         />
+        {/* Extended census stats */}
+        {censusExt?.median_home_value && (
+          <StatCard
+            icon={Home}
+            label="Home Value"
+            value={`$${censusExt.median_home_value.toLocaleString()}`}
+            badge="Census"
+          />
+        )}
+        {censusExt?.median_gross_rent && (
+          <StatCard
+            icon={DollarSign}
+            label="Median Rent"
+            value={`$${censusExt.median_gross_rent.toLocaleString()}/mo`}
+            badge="Census"
+          />
+        )}
+        {censusExt?.bachelors_degree_pct && (
+          <StatCard
+            icon={GraduationCap}
+            label="Bachelor's+"
+            value={`${censusExt.bachelors_degree_pct}%`}
+            badge="Census"
+          />
+        )}
+        {censusExt?.rent_to_income_ratio && (
+          <StatCard
+            icon={TrendingUp}
+            label="Rent/Income"
+            value={`${(censusExt.rent_to_income_ratio * 100).toFixed(0)}%`}
+            subValue={censusExt.rent_to_income_ratio < 0.30 ? 'Affordable' : censusExt.rent_to_income_ratio > 0.35 ? 'High cost' : 'Moderate'}
+          />
+        )}
       </div>
+
+      {/* Venue Breakdown + Cuisine Distribution */}
+      {venueBreakdown && venueBreakdown.total_dining > 0 && (
+        <VenueBreakdownPanel
+          venueBreakdown={venueBreakdown}
+          cuisineDistribution={cuisineDistribution}
+          googleRestaurants={googleValidated ? (rd.google_places_restaurant_count as number) : undefined}
+          googleBars={googleValidated ? (rd.google_places_bar_count as number) : undefined}
+        />
+      )}
+
+      {/* College Cards Grid */}
+      {colleges.length > 0 && <CollegeGrid colleges={colleges} />}
+
+      {/* Tourism & Economy Panel */}
+      {tourismEcon && (tourismEcon.hospitality_gdp_millions !== null || tourismEcon.total_county_gdp_millions !== null) && (
+        <TourismEconomyPanel data={tourismEcon} />
+      )}
 
       {/* Data Sources */}
       {(() => {
         const sources = (rd.sources as ResearchSource[] | undefined) || [];
-        const hasCensus = sources.some(s => s.name?.includes('Census'));
-        const hasGoogle = rd.google_places_validated === true;
-        return sources.length > 0 ? (
+        if (sources.length === 0) return null;
+
+        return (
           <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5">
             <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
-              Data Sources
-              {hasCensus && (
-                <span className="text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full font-medium flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> Census Verified
-                </span>
-              )}
-              {hasGoogle && (
-                <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded-full font-medium flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> Google Places
-                </span>
-              )}
-              {!hasCensus && !hasGoogle && (
-                <span className="text-[10px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 rounded-full font-medium flex items-center gap-1">
-                  <Bot className="w-3 h-3" /> AI Estimated
-                </span>
-              )}
+              <ExternalLink className="w-4 h-4 text-gray-500" />
+              All Data Sources ({sources.length})
             </h4>
             <div className="space-y-2">
               {sources.map((source, i) => (
@@ -385,11 +682,12 @@ export default function CityResearchPanel({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-gray-300 font-medium truncate">{source.name}</span>
-                      {source.name?.includes('Census') && (
+                      {source.source_type === 'verified' ? (
                         <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
-                      )}
-                      {source.name?.includes('Google') && (
-                        <CheckCircle2 className="w-3 h-3 text-blue-400 flex-shrink-0" />
+                      ) : source.name?.includes('Census') || source.name?.includes('Google') || source.name?.includes('College') || source.name?.includes('BEA') || source.name?.includes('OpenStreetMap') ? (
+                        <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                      ) : (
+                        <Bot className="w-3 h-3 text-yellow-500 flex-shrink-0" />
                       )}
                     </div>
                     <span className="text-gray-500">{source.data_point}</span>
@@ -406,11 +704,16 @@ export default function CityResearchPanel({
               ))}
             </div>
           </div>
-        ) : null;
+        );
       })()}
 
-      {/* Prose sections */}
+      {/* Prose sections (AI synthesized from real data) */}
       <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5 space-y-5">
+        {hasDeepResearch && (
+          <p className="text-[10px] text-gray-600 uppercase tracking-wide flex items-center gap-1">
+            <Bot className="w-3 h-3" /> AI-synthesized from verified data
+          </p>
+        )}
         <ProseSection label="Dining Scene" text={city.dining_scene_description} />
         <ProseSection label="Competition Analysis" text={city.competition_analysis} />
         <ProseSection label="Local Food Traditions" text={rd.local_food_traditions as string | undefined} />

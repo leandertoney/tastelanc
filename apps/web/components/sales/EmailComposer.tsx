@@ -39,6 +39,15 @@ interface EmailComposerProps {
 type TemplateKey = 'coldOutreach' | 'followUp' | 'valueProposition' | 'custom';
 type Step = 'compose' | 'confirm';
 
+const AI_IMPROVE_OPTIONS = [
+  { key: 'professional', label: 'More Professional', instruction: 'Rewrite this email to sound more professional and polished while keeping the core message.' },
+  { key: 'friendly', label: 'More Friendly', instruction: 'Rewrite this email to sound warmer, friendlier, and more approachable while keeping the core message.' },
+  { key: 'concise', label: 'More Concise', instruction: 'Make this email shorter and more concise. Remove filler words and get to the point faster.' },
+  { key: 'expand', label: 'Expand', instruction: 'Expand on this email with more detail, context, and supporting points while keeping a professional tone.' },
+  { key: 'persuasive', label: 'More Persuasive', instruction: 'Make this email more persuasive and compelling. Focus on the value proposition and benefits for the recipient.' },
+  { key: 'grammar', label: 'Fix Grammar', instruction: 'Fix any grammar, spelling, or punctuation errors in this email. Do not change the tone or meaning.' },
+] as const;
+
 const TEMPLATE_OPTIONS: { key: TemplateKey; label: string }[] = [
   { key: 'coldOutreach', label: 'Cold Outreach' },
   { key: 'followUp', label: 'Follow Up' },
@@ -72,6 +81,7 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
   const [isGeneratingSubjects, setIsGeneratingSubjects] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
   const [suggestedSubjects, setSuggestedSubjects] = useState<string[]>([]);
+  const [showAiMenu, setShowAiMenu] = useState(false);
 
   // Send
   const [isSending, setIsSending] = useState(false);
@@ -198,12 +208,13 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
     }
   };
 
-  const handleImproveBody = async () => {
+  const handleImproveBody = async (instruction: string) => {
     if (!body.trim()) {
       toast.error('Write some content first');
       return;
     }
     setIsImproving(true);
+    setShowAiMenu(false);
     try {
       const res = await fetch('/api/sales/ai/generate-email', {
         method: 'POST',
@@ -211,7 +222,7 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
         body: JSON.stringify({
           action: 'improve',
           content: body,
-          instruction: 'Make this more persuasive and professional while keeping it concise. Focus on the value proposition for the restaurant owner.',
+          instruction,
           audienceType: 'b2b',
         }),
       });
@@ -220,10 +231,10 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
 
       const data = await res.json();
       setBody(data.improved);
-      toast.success('Body improved by AI');
+      toast.success('Email enhanced by AI');
     } catch (error) {
       console.error('Improve error:', error);
-      toast.error('Failed to improve email');
+      toast.error('Failed to enhance email');
     } finally {
       setIsImproving(false);
     }
@@ -488,17 +499,7 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
 
           {/* Body */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs text-gray-500 uppercase tracking-wider">Body</label>
-              <button
-                onClick={handleImproveBody}
-                disabled={isImproving || !body.trim()}
-                className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 disabled:opacity-40 transition-colors"
-              >
-                {isImproving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                Improve with AI
-              </button>
-            </div>
+            <label className="text-xs text-gray-500 uppercase tracking-wider mb-1.5 block">Body</label>
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
@@ -506,6 +507,26 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
               rows={8}
               className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
             />
+            {body.trim() && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {isImproving ? (
+                  <span className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] text-purple-400">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Enhancing...
+                  </span>
+                ) : (
+                  AI_IMPROVE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.key}
+                      onClick={() => handleImproveBody(opt.instruction)}
+                      className="flex items-center gap-1 px-2.5 py-1 bg-purple-600/10 text-purple-400 text-[11px] rounded-full hover:bg-purple-600/20 transition-colors"
+                    >
+                      <Wand2 className="w-2.5 h-2.5" />
+                      {opt.label}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
           </div>
 
           {/* CTA (optional) */}

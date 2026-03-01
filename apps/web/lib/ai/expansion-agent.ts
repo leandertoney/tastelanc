@@ -8,8 +8,18 @@ import type {
   CitySuggestion,
   MarketSubScores,
   ResearchSource,
+  CollegeInfo,
+  TourismEconomicData,
+  CensusExtendedInfo,
+  VenueBreakdown,
+  CuisineEntry,
 } from './expansion-types';
 import { fetchCensusData } from './census-data';
+import { fetchCensusExtendedData } from './census-extended-data';
+import { fetchCollegeScorecardData } from './college-scorecard-data';
+import { fetchBEAData } from './bea-data';
+import { fetchOverpassData } from './overpass-data';
+import { calculateSubScores } from './score-calculator';
 
 // ─────────────────────────────────────────────────────────
 // City Expansion AI Agent
@@ -228,100 +238,144 @@ Art style requirements (MUST match exactly):
 // City research
 // ─────────────────────────────────────────────────────────
 
+// Deep research result includes all structured data from verified sources
+export interface DeepResearchResult extends CityResearchResult {
+  sources: ResearchSource[];
+  colleges: CollegeInfo[];
+  total_college_enrollment: number;
+  tourism_economic_data: TourismEconomicData | null;
+  census_extended: CensusExtendedInfo | null;
+  venue_breakdown: VenueBreakdown | null;
+  cuisine_distribution: CuisineEntry[];
+  data_completeness: Record<string, boolean>;
+}
+
 /**
  * Research a city for potential market expansion.
  *
- * Returns demographic data, dining scene analysis, competition landscape,
- * and a breakdown of sub-scores across 6 categories.
- * The overall market_potential_score is NOT returned — it's computed
- * programmatically via calculateWeightedScore().
+ * Deep research pipeline:
+ *   Step 1: Parallel data fetch (Census, Census Extended, College Scorecard, BEA, Google Places)
+ *   Step 2: Fetch Overpass data (needs coordinates from Step 1)
+ *   Step 3: Compute sub-scores programmatically from real data
+ *   Step 4: AI synthesis (GPT-4o-mini) — prose descriptions only, NO score estimates
+ *
+ * The overall market_potential_score is computed via calculateWeightedScore().
  */
 export async function researchCity(
   cityName: string,
   county: string,
   state: string,
   clusterTowns?: string[]
-): Promise<CityResearchResult & { sources: ResearchSource[] }> {
-  // ── Step 1: Fetch real Census data ──────────────────────
+): Promise<DeepResearchResult> {
   const now = new Date().toISOString();
   const sources: ResearchSource[] = [];
-  let censusBlock = '';
+  const dataCompleteness: Record<string, boolean> = {};
 
-  const census = await fetchCensusData(cityName, state);
+  // ── Step 1: Parallel data fetch ────────────────────────
+  console.log(`[research] Starting deep research for ${cityName}, ${county}, ${state}`);
+
+  const [
+    censusResult,
+    censusExtResult,
+    collegeScorecardResult,
+    beaResult,
+    googlePlacesResult,
+  ] = await Promise.allSettled([
+    fetchCensusData(cityName, state),
+    fetchCensusExtendedData(cityName, state),
+    fetchCollegeScorecardData(cityName, state, clusterTowns),
+    fetchBEAData(county, state),
+    validateWithGooglePlaces(cityName, state, 0, 0, 25), // coordinates filled in Step 2 re-run if needed
+  ]);
+
+  // Extract results with graceful fallbacks
+  const census = censusResult.status === 'fulfilled' ? censusResult.value : null;
+  const censusExt = censusExtResult.status === 'fulfilled' ? censusExtResult.value : null;
+  const collegeData = collegeScorecardResult.status === 'fulfilled' ? collegeScorecardResult.value : null;
+  const beaData = beaResult.status === 'fulfilled' ? beaResult.value : null;
+
+  dataCompleteness.census = !!census;
+  dataCompleteness.census_extended = !!censusExt;
+  dataCompleteness.college_scorecard = !!collegeData;
+  dataCompleteness.bea = !!beaData;
+
+  // Build Census sources
   if (census) {
-    censusBlock = `
-VERIFIED DEMOGRAPHIC DATA (use these exact numbers, do NOT estimate these):
-- Population: ${census.population.toLocaleString()} (source: US Census Bureau ACS ${census.year})
-- Median Household Income: $${census.median_income.toLocaleString()} (source: US Census Bureau ACS ${census.year})
-- Median Age: ${census.median_age} (source: US Census Bureau ACS ${census.year})
-Do NOT override these numbers with estimates.`;
     sources.push(
-      { name: `US Census Bureau ACS ${census.year}`, url: census.source_url, data_point: `Population: ${census.population.toLocaleString()}`, accessed_at: now },
-      { name: `US Census Bureau ACS ${census.year}`, url: census.source_url, data_point: `Median Income: $${census.median_income.toLocaleString()}`, accessed_at: now },
-      { name: `US Census Bureau ACS ${census.year}`, url: census.source_url, data_point: `Median Age: ${census.median_age}`, accessed_at: now },
+      { name: `US Census Bureau ACS ${census.year}`, url: census.source_url, data_point: `Population: ${census.population.toLocaleString()}`, accessed_at: now, source_type: 'verified' },
+      { name: `US Census Bureau ACS ${census.year}`, url: census.source_url, data_point: `Median Income: $${census.median_income.toLocaleString()}`, accessed_at: now, source_type: 'verified' },
+      { name: `US Census Bureau ACS ${census.year}`, url: census.source_url, data_point: `Median Age: ${census.median_age}`, accessed_at: now, source_type: 'verified' },
     );
   }
+  if (censusExt) sources.push(...censusExt.sources);
+  if (collegeData) sources.push(...collegeData.sources);
+  if (beaData) sources.push(...beaData.sources);
 
-  // Add Wikipedia as general reference
+  // Wikipedia general reference
   const wikiCity = encodeURIComponent(`${cityName}, ${state}`).replace(/%20/g, '_').replace(/%2C/g, ',');
   sources.push({
     name: 'Wikipedia',
     url: `https://en.wikipedia.org/wiki/${wikiCity}`,
     data_point: 'General city reference',
     accessed_at: now,
+    source_type: 'ai_synthesized',
   });
 
-  // ── Step 2: AI research with verified data ─────────────
+  // ── Step 2: AI for coordinates + prose (needs Census context) ──
+  const censusBlock = census
+    ? `\nVERIFIED DEMOGRAPHIC DATA (use these exact numbers):\n- Population: ${census.population.toLocaleString()}\n- Median Household Income: $${census.median_income.toLocaleString()}\n- Median Age: ${census.median_age}`
+    : '';
+
+  const collegeBlock = collegeData
+    ? `\nVERIFIED COLLEGE DATA (${collegeData.institution_count} institutions, ${collegeData.total_enrollment.toLocaleString()} total enrollment):\n${collegeData.colleges.slice(0, 10).map(c => `- ${c.name}: ${c.enrollment.toLocaleString()} students, ${c.type}, ${c.degree_level}${c.is_research_university ? ' (Research University)' : ''}`).join('\n')}`
+    : '';
+
+  const beaBlock = beaData
+    ? `\nVERIFIED ECONOMIC DATA (BEA ${beaData.data.year}):\n- County GDP: $${beaData.data.total_county_gdp_millions?.toLocaleString() || 'N/A'}M\n- Hospitality GDP (NAICS 72): $${beaData.data.hospitality_gdp_millions?.toLocaleString() || 'N/A'}M (${beaData.data.hospitality_pct_of_gdp || 'N/A'}% of economy)\n- Arts/Entertainment GDP (NAICS 71): $${beaData.data.arts_entertainment_gdp_millions?.toLocaleString() || 'N/A'}M`
+    : '';
+
+  const censusExtBlock = censusExt
+    ? `\nVERIFIED HOUSING & EDUCATION DATA:\n- Median Home Value: $${censusExt.data.median_home_value?.toLocaleString() || 'N/A'}\n- Median Gross Rent: $${censusExt.data.median_gross_rent?.toLocaleString() || 'N/A'}/mo\n- Bachelor's Degree Rate: ${censusExt.data.bachelors_degree_pct || 'N/A'}%\n- Rent-to-Income Ratio: ${censusExt.data.rent_to_income_ratio ? (censusExt.data.rent_to_income_ratio * 100).toFixed(0) + '%' : 'N/A'}`
+    : '';
+
   const systemPrompt =
     'You are a market research analyst for a restaurant/dining discovery app company. ' +
-    'You specialize in evaluating small-to-mid-size US cities and regional markets for expansion. ' +
+    'You write insightful prose analysis based on VERIFIED DATA provided to you. ' +
+    'Do NOT estimate numbers — use only the verified data given. ' +
+    'Focus on qualitative insights: local food culture, competition landscape, neighborhoods, notable restaurants. ' +
     'Return ONLY valid JSON matching the requested schema.';
 
   const regionLabel = clusterTowns?.length
     ? `the ${county} region (including ${clusterTowns.join(', ')})`
     : `the city of ${cityName}, ${county}`;
 
-  const userPrompt = `Research ${regionLabel}, ${state} as a potential market for a local dining discovery app (similar to a hyperlocal Yelp/TripAdvisor focused on happy hours, events, specials, and curated restaurant guides).${clusterTowns?.length ? `\n\nIMPORTANT: This is a REGIONAL market covering multiple towns: ${clusterTowns.join(', ')}. Research the ENTIRE region, not just the anchor city. Population, restaurant counts, and scores should reflect the combined area.` : ''}
-${censusBlock}
+  const userPrompt = `Write qualitative analysis for ${regionLabel}, ${state} as a potential market for a local dining discovery app.
+${clusterTowns?.length ? `\nThis is a REGIONAL market covering: ${clusterTowns.join(', ')}. Analyze the ENTIRE region.` : ''}
+${censusBlock}${collegeBlock}${beaBlock}${censusExtBlock}
 
-Please return a JSON object with the following fields:
+IMPORTANT: Sub-scores are computed programmatically from the data above. Do NOT provide sub_scores or sub_score_reasoning — they will be overridden. Focus ONLY on prose analysis.
 
+Return a JSON object with:
 {
-  "population": <number — ${census ? `USE ${census.population} from Census data` : 'estimated city/metro population'}>,
-  "median_income": <number — ${census ? `USE ${census.median_income} from Census data` : 'estimated median household income in USD'}>,
-  "median_age": <number — ${census ? `USE ${census.median_age} from Census data` : 'estimated median age'}>,
-  "restaurant_count": <number — estimated number of restaurants in the area>,
-  "bar_count": <number — estimated number of bars/pubs/breweries>,
-  "dining_scene_description": "<string — 2-3 paragraphs describing the local dining scene, food culture, and trends>",
-  "competition_analysis": "<string — analysis of existing food/dining apps, Yelp presence, local food blogs, and any competing platforms>",
-  "center_latitude": <number — approximate latitude of city center>,
-  "center_longitude": <number — approximate longitude of city center>,
-  "key_neighborhoods": [<array of strings — notable neighborhoods or districts with dining activity>],
-  "notable_restaurants": [<array of strings — well-known or notable local restaurants>],
-  "local_food_traditions": "<string — local food traditions, signature dishes, or culinary heritage>",
-  "college_presence": "<string — nearby colleges/universities and their impact on the dining scene>",
-  "tourism_factors": "<string — tourism activity, seasonal visitors, and their impact on restaurants>",
-  "seasonal_considerations": "<string — seasonal factors affecting dining (e.g., summer tourism, college calendar)>",
-  "expansion_reasoning": "<string — 2-3 paragraph analysis of why this city is or is not a good expansion target>",
-  "sub_scores": {
-    "population_density": <number 0-100 — score for population size, density, and growth trends. 80+ for cities over 200k metro, 50-80 for 50k-200k, under 50 for smaller>,
-    "dining_scene": <number 0-100 — score for variety and quality of independent restaurants, food culture vibrancy, culinary innovation. Higher = more vibrant and diverse>,
-    "competition": <number 0-100 — INVERSE score: 80+ if NO competing hyperlocal dining apps exist, 50-80 if only Yelp/Google, under 50 if strong local competitors>,
-    "college_presence": <number 0-100 — score for nearby colleges/universities. 80+ for major university town, 50-80 for community college or small college, under 50 for no colleges>,
-    "tourism": <number 0-100 — score for tourism impact on dining. 80+ for major tourist destination, 50-80 for moderate tourism, under 50 for minimal>,
-    "income_level": <number 0-100 — score for dining-out spending capacity. Based on median income relative to cost of living>
-  },
-  "sub_score_reasoning": {
-    "population_density": "<1-2 sentences explaining why you gave this score>",
-    "dining_scene": "<1-2 sentences>",
-    "competition": "<1-2 sentences>",
-    "college_presence": "<1-2 sentences>",
-    "tourism": "<1-2 sentences>",
-    "income_level": "<1-2 sentences>"
-  }
+  "population": <number — ${census ? `USE ${census.population}` : 'best estimate'}>,
+  "median_income": <number — ${census ? `USE ${census.median_income}` : 'best estimate'}>,
+  "median_age": <number — ${census ? `USE ${census.median_age}` : 'best estimate'}>,
+  "restaurant_count": <number — estimated restaurants in the area>,
+  "bar_count": <number — estimated bars/pubs/breweries>,
+  "center_latitude": <number — latitude of city center>,
+  "center_longitude": <number — longitude of city center>,
+  "dining_scene_description": "<2-3 paragraphs on local dining scene, food culture, trends>",
+  "competition_analysis": "<analysis of existing food/dining apps, Yelp, local food blogs, competing platforms>",
+  "key_neighborhoods": [<notable neighborhoods with dining activity>],
+  "notable_restaurants": [<well-known local restaurants>],
+  "local_food_traditions": "<local food traditions, signature dishes, culinary heritage>",
+  "college_presence": "<prose about colleges and their impact on dining — USE verified college data above>",
+  "tourism_factors": "<tourism activity and impact — USE verified BEA economic data above>",
+  "seasonal_considerations": "<seasonal factors affecting dining>",
+  "expansion_reasoning": "<2-3 paragraph analysis of why this is/isn't a good expansion target, synthesizing ALL the verified data above>"
 }
 
-${census ? 'Use the verified Census data for population, income, and age. Do NOT estimate these.' : 'Be as accurate as possible with population, income, and location data.'} For restaurant/bar counts, provide reasonable estimates. Return ONLY the JSON object, no additional text.`;
+Return ONLY the JSON object.`;
 
   const response = await openai.chat.completions.create({
     model: MODEL,
@@ -339,44 +393,107 @@ ${census ? 'Use the verified Census data for population, income, and age. Do NOT
     throw new Error('No response from OpenAI');
   }
 
+  let parsed: Record<string, unknown>;
   try {
     let jsonStr = content;
     const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      jsonStr = jsonMatch[0];
-    }
-
-    const parsed = JSON.parse(jsonStr);
-
-    // Override with Census data if available (AI sometimes ignores instructions)
-    if (census) {
-      parsed.population = census.population;
-      parsed.median_income = census.median_income;
-      parsed.median_age = census.median_age;
-    }
-
-    // Ensure sub_scores exist with defaults
-    const subScores: MarketSubScores = {
-      population_density: parsed.sub_scores?.population_density ?? 50,
-      dining_scene: parsed.sub_scores?.dining_scene ?? 50,
-      competition: parsed.sub_scores?.competition ?? 50,
-      college_presence: parsed.sub_scores?.college_presence ?? 50,
-      tourism: parsed.sub_scores?.tourism ?? 50,
-      income_level: parsed.sub_scores?.income_level ?? 50,
-    };
-
-    return {
-      ...parsed,
-      sub_scores: subScores,
-      sub_score_reasoning: parsed.sub_score_reasoning || {},
-      sources,
-    } as CityResearchResult & { sources: ResearchSource[] };
-  } catch (error) {
+    if (jsonMatch) jsonStr = jsonMatch[0];
+    parsed = JSON.parse(jsonStr);
+  } catch {
     console.error('Failed to parse city research response:', content);
-    throw new Error(
-      `Failed to parse city research data for ${cityName}, ${state} from AI response`
-    );
+    throw new Error(`Failed to parse research data for ${cityName}, ${state}`);
   }
+
+  // Override with Census data (AI sometimes ignores instructions)
+  if (census) {
+    parsed.population = census.population;
+    parsed.median_income = census.median_income;
+    parsed.median_age = census.median_age;
+  }
+
+  const lat = parsed.center_latitude as number || 0;
+  const lng = parsed.center_longitude as number || 0;
+
+  // ── Step 2b: Fetch Overpass data + re-run Google Places with real coords ──
+  let overpassData: Awaited<ReturnType<typeof fetchOverpassData>> = null;
+  let googlePlaces = { restaurantCount: 0, barCount: 0, validated: false };
+
+  const [overpassResult2, googleResult2] = await Promise.allSettled([
+    fetchOverpassData(lat, lng, 15),
+    lat !== 0 && lng !== 0
+      ? validateWithGooglePlaces(cityName, state, lat, lng, 25)
+      : Promise.resolve({ restaurantCount: 0, barCount: 0, validated: false }),
+  ]);
+
+  overpassData = overpassResult2.status === 'fulfilled' ? overpassResult2.value : null;
+  googlePlaces = googleResult2.status === 'fulfilled'
+    ? googleResult2.value
+    : { restaurantCount: 0, barCount: 0, validated: false };
+
+  dataCompleteness.overpass = !!overpassData;
+  dataCompleteness.google_places = googlePlaces.validated;
+
+  if (overpassData) sources.push(...overpassData.sources);
+  if (googlePlaces.validated) {
+    sources.push({
+      name: 'Google Places API',
+      url: `https://www.google.com/maps/search/restaurants/@${lat},${lng},12z`,
+      data_point: `${googlePlaces.restaurantCount} restaurants, ${googlePlaces.barCount} bars`,
+      accessed_at: now,
+      source_type: 'verified',
+    });
+  }
+
+  // ── Step 3: Compute sub-scores programmatically ────────
+  const scoreResult = calculateSubScores({
+    population: (parsed.population as number) || 0,
+    cluster_population: undefined, // Set by cron route if cluster exists
+    median_income: (parsed.median_income as number) || 0,
+    median_age: (parsed.median_age as number) || 0,
+    census_extended: censusExt?.data || null,
+    colleges: collegeData?.colleges || null,
+    total_college_enrollment: collegeData?.total_enrollment,
+    has_research_university: collegeData?.has_research_university,
+    has_four_year: collegeData?.has_four_year,
+    tourism_economic_data: beaData?.data || null,
+    google_places_restaurant_count: googlePlaces.restaurantCount,
+    google_places_bar_count: googlePlaces.barCount,
+    venue_breakdown: overpassData?.venue_breakdown || null,
+    cuisine_diversity: overpassData?.cuisine_distribution.length || 0,
+  });
+
+  console.log(`[research] ${cityName}: scores = ${JSON.stringify(scoreResult.sub_scores)}`);
+
+  // ── Step 4: Assemble result ────────────────────────────
+  return {
+    population: (parsed.population as number) || 0,
+    median_income: (parsed.median_income as number) || 0,
+    median_age: (parsed.median_age as number) || 0,
+    restaurant_count: googlePlaces.restaurantCount || (parsed.restaurant_count as number) || 0,
+    bar_count: googlePlaces.barCount || (parsed.bar_count as number) || 0,
+    dining_scene_description: (parsed.dining_scene_description as string) || '',
+    competition_analysis: (parsed.competition_analysis as string) || '',
+    center_latitude: lat,
+    center_longitude: lng,
+    key_neighborhoods: (parsed.key_neighborhoods as string[]) || [],
+    notable_restaurants: (parsed.notable_restaurants as string[]) || [],
+    local_food_traditions: (parsed.local_food_traditions as string) || '',
+    college_presence: (parsed.college_presence as string) || '',
+    tourism_factors: (parsed.tourism_factors as string) || '',
+    seasonal_considerations: (parsed.seasonal_considerations as string) || '',
+    expansion_reasoning: (parsed.expansion_reasoning as string) || '',
+    sub_scores: scoreResult.sub_scores,
+    sub_score_reasoning: scoreResult.sub_score_reasoning,
+    // Deep research structured data
+    sources,
+    colleges: collegeData?.colleges || [],
+    total_college_enrollment: collegeData?.total_enrollment || 0,
+    tourism_economic_data: beaData?.data || null,
+    census_extended: censusExt?.data || null,
+    venue_breakdown: overpassData?.venue_breakdown || null,
+    cuisine_distribution: overpassData?.cuisine_distribution || [],
+    data_completeness: dataCompleteness,
+  };
 }
 
 // ─────────────────────────────────────────────────────────

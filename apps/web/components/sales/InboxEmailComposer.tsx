@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   X,
   Send,
@@ -8,6 +8,9 @@ import {
   ChevronDown,
   Check,
   ArrowLeft,
+  Sparkles,
+  Lightbulb,
+  Wand2,
 } from 'lucide-react';
 import { SENDER_IDENTITIES, type SenderIdentity } from '@/config/sender-identities';
 import { toast } from 'sonner';
@@ -26,6 +29,15 @@ interface InboxEmailComposerProps {
 }
 
 type Step = 'compose' | 'confirm';
+
+const AI_IMPROVE_OPTIONS = [
+  { key: 'professional', label: 'More Professional', instruction: 'Rewrite this email to sound more professional and polished while keeping the core message.' },
+  { key: 'friendly', label: 'More Friendly', instruction: 'Rewrite this email to sound warmer, friendlier, and more approachable while keeping the core message.' },
+  { key: 'concise', label: 'More Concise', instruction: 'Make this email shorter and more concise. Remove filler words and get to the point faster.' },
+  { key: 'expand', label: 'Expand', instruction: 'Expand on this email with more detail, context, and supporting points while keeping a professional tone.' },
+  { key: 'persuasive', label: 'More Persuasive', instruction: 'Make this email more persuasive and compelling. Focus on the value proposition and benefits for the recipient.' },
+  { key: 'grammar', label: 'Fix Grammar', instruction: 'Fix any grammar, spelling, or punctuation errors in this email. Do not change the tone or meaning.' },
+] as const;
 
 export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSender, replyTo }: InboxEmailComposerProps) {
   const isReply = !!replyTo;
@@ -48,8 +60,111 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
   const [ctaText, setCtaText] = useState('');
   const [ctaUrl, setCtaUrl] = useState('');
 
+  // AI
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isImproving, setIsImproving] = useState(false);
+  const [isGeneratingSubjects, setIsGeneratingSubjects] = useState(false);
+  const [suggestedSubjects, setSuggestedSubjects] = useState<string[]>([]);
+  const [showAiMenu, setShowAiMenu] = useState(false);
+
   // Send
   const [isSending, setIsSending] = useState(false);
+
+  const handleGenerateAI = async () => {
+    setIsGenerating(true);
+    try {
+      const res = await fetch('/api/sales/ai/generate-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'generate',
+          objective: 'b2b_cold_outreach',
+          tone: 'professional',
+          recipientContext: {
+            businessName: recipientName || recipientEmail,
+          },
+        }),
+      });
+
+      if (!res.ok) throw new Error('AI generation failed');
+
+      const data = await res.json();
+      const email = data.email;
+      if (!subject) setSubject(email.subject);
+      if (!headline) setHeadline(email.headline);
+      setBody(email.body);
+      if (email.ctaText) setCtaText(email.ctaText);
+      if (email.ctaUrl) setCtaUrl(email.ctaUrl);
+      setSuggestedSubjects([]);
+      toast.success('AI generated email content');
+    } catch (error) {
+      console.error('AI generation error:', error);
+      toast.error('Failed to generate email');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleSuggestSubjects = async () => {
+    setIsGeneratingSubjects(true);
+    try {
+      const res = await fetch('/api/sales/ai/generate-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'subjects',
+          objective: 'b2b_cold_outreach',
+          tone: 'professional',
+          count: 5,
+          recipientContext: {
+            businessName: recipientName || recipientEmail,
+          },
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to generate subjects');
+
+      const data = await res.json();
+      setSuggestedSubjects(data.subjects || []);
+    } catch (error) {
+      console.error('Subject generation error:', error);
+      toast.error('Failed to suggest subjects');
+    } finally {
+      setIsGeneratingSubjects(false);
+    }
+  };
+
+  const handleImproveBody = async (instruction: string) => {
+    if (!body.trim()) {
+      toast.error('Write some content first');
+      return;
+    }
+    setIsImproving(true);
+    setShowAiMenu(false);
+    try {
+      const res = await fetch('/api/sales/ai/generate-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'improve',
+          content: body,
+          instruction,
+          audienceType: 'b2b',
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to improve');
+
+      const data = await res.json();
+      setBody(data.improved);
+      toast.success('Email enhanced by AI');
+    } catch (error) {
+      console.error('Improve error:', error);
+      toast.error('Failed to enhance email');
+    } finally {
+      setIsImproving(false);
+    }
+  };
 
   const handleSend = async () => {
     setIsSending(true);
@@ -231,10 +346,10 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
                           <span className="text-gray-600 ml-2">&lt;{sender.email}&gt;</span>
                         </span>
                         {selectedSender.email === sender.email && <Check className="w-4 h-4 text-blue-400" />}
-                    </button>
-                  ))}
-                </div>
-              )}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="p-3 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white">
@@ -244,6 +359,28 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
               </div>
             )}
           </div>
+
+          {/* AI Tools Bar */}
+          {!isReply && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                onClick={handleGenerateAI}
+                disabled={isGenerating}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+              >
+                {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                Generate with AI
+              </button>
+              <button
+                onClick={handleSuggestSubjects}
+                disabled={isGeneratingSubjects}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+              >
+                {isGeneratingSubjects ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lightbulb className="w-3.5 h-3.5" />}
+                Suggest Subjects
+              </button>
+            </div>
+          )}
 
           {/* Subject */}
           <div>
@@ -255,6 +392,22 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
               placeholder="Email subject line..."
               className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            {suggestedSubjects.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {suggestedSubjects.map((s, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setSubject(s);
+                      setSuggestedSubjects([]);
+                    }}
+                    className="px-2.5 py-1 bg-blue-600/10 text-blue-400 text-xs rounded-full hover:bg-blue-600/20 transition-colors"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Headline */}
@@ -271,9 +424,9 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
             />
           </div>
 
-          {/* Body */}
+          {/* Body with AI enhance chips */}
           <div>
-            <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Body</label>
+            <label className="text-xs text-gray-500 uppercase tracking-wider mb-1.5 block">Body</label>
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
@@ -281,6 +434,26 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
               rows={8}
               className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
             />
+            {body.trim() && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {isImproving ? (
+                  <span className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] text-purple-400">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Enhancing...
+                  </span>
+                ) : (
+                  AI_IMPROVE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.key}
+                      onClick={() => handleImproveBody(opt.instruction)}
+                      className="flex items-center gap-1 px-2.5 py-1 bg-purple-600/10 text-purple-400 text-[11px] rounded-full hover:bg-purple-600/20 transition-colors"
+                    >
+                      <Wand2 className="w-2.5 h-2.5" />
+                      {opt.label}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
           </div>
 
           {/* CTA (optional) */}

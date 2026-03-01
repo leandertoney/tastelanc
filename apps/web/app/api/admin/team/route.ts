@@ -2,6 +2,120 @@ import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-access';
 
+export async function POST(request: Request) {
+  try {
+    const supabase = await createClient();
+    const admin = await verifyAdminAccess(supabase);
+
+    if (admin.role !== 'super_admin' && admin.role !== 'co_founder') {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    const serviceClient = createServiceRoleClient();
+    const body = await request.json();
+    const { email, name, role, market_ids, phone } = body;
+
+    if (!email || !name) {
+      return NextResponse.json({ error: 'Name and email are required' }, { status: 400 });
+    }
+
+    // Cannot create super_admin or co_founder
+    if (role === 'super_admin' || role === 'co_founder') {
+      return NextResponse.json({ error: 'Cannot assign super_admin or co_founder roles' }, { status: 400 });
+    }
+
+    // Check if user already exists in auth
+    const { data: existingUsers } = await serviceClient
+      .from('profiles')
+      .select('id, email')
+      .eq('email', email)
+      .maybeSingle();
+
+    let userId: string;
+
+    if (existingUsers) {
+      userId = existingUsers.id;
+    } else {
+      // Create auth user via admin API
+      const { data: newUser, error: createError } = await serviceClient.auth.admin.createUser({
+        email,
+        email_confirm: true,
+        user_metadata: { display_name: name },
+      });
+
+      if (createError || !newUser.user) {
+        console.error('Error creating user:', createError);
+        return NextResponse.json({ error: createError?.message || 'Failed to create user' }, { status: 500 });
+      }
+
+      userId = newUser.user.id;
+
+      // Ensure profile exists
+      await serviceClient
+        .from('profiles')
+        .upsert({
+          id: userId,
+          email,
+          display_name: name,
+          role: role || null,
+          admin_market_id: role === 'market_admin' && market_ids?.length === 1 ? market_ids[0] : null,
+        }, { onConflict: 'id' });
+    }
+
+    // Set profile role if provided
+    if (role) {
+      await serviceClient
+        .from('profiles')
+        .update({
+          role,
+          display_name: name,
+          admin_market_id: role === 'market_admin' && market_ids?.length === 1 ? market_ids[0] : null,
+        })
+        .eq('id', userId);
+    }
+
+    // Create sales_reps entry if role is sales_rep or market_admin
+    if (role === 'sales_rep' || role === 'market_admin' || (market_ids && market_ids.length > 0)) {
+      const { data: existingRep } = await serviceClient
+        .from('sales_reps')
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (!existingRep) {
+        await serviceClient.from('sales_reps').insert({
+          id: userId,
+          name,
+          email,
+          phone: phone || null,
+          market_ids: market_ids || [],
+          is_active: true,
+        });
+      } else {
+        await serviceClient
+          .from('sales_reps')
+          .update({
+            name,
+            email,
+            phone: phone || null,
+            market_ids: market_ids || [],
+            is_active: true,
+          })
+          .eq('id', userId);
+      }
+    }
+
+    return NextResponse.json({ success: true, userId });
+  } catch (error: unknown) {
+    const err = error as { status?: number; message?: string };
+    if (err.status) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    console.error('Error in team create API:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 export async function GET() {
   try {
     const supabase = await createClient();

@@ -23,6 +23,7 @@ import type {
   ExpansionJobListing,
   ActivityLogEntry,
   JobRoleType,
+  ExpansionReview,
 } from '@/lib/ai/expansion-types';
 import CityResearchPanel from '@/components/admin/expansion/CityResearchPanel';
 import BrandProposalCard from '@/components/admin/expansion/BrandProposalCard';
@@ -68,6 +69,7 @@ export default function CityDetailPage() {
   const [brands, setBrands] = useState<BrandDraft[]>([]);
   const [jobs, setJobs] = useState<ExpansionJobListing[]>([]);
   const [activities, setActivities] = useState<ActivityLogEntry[]>([]);
+  const [cityReviews, setCityReviews] = useState<ExpansionReview[]>([]);
   const [activeTab, setActiveTab] = useState<TabKey>('research');
 
   const [isLoading, setIsLoading] = useState(true);
@@ -95,11 +97,12 @@ export default function CityDetailPage() {
   async function fetchAll() {
     setIsLoading(true);
     try {
-      const [cityRes, brandsRes, jobsRes, activityRes] = await Promise.all([
+      const [cityRes, brandsRes, jobsRes, activityRes, reviewsRes] = await Promise.all([
         fetch(`/api/admin/expansion/cities/${id}`),
         fetch(`/api/admin/expansion/cities/${id}/brands`),
         fetch(`/api/admin/expansion/cities/${id}/jobs`),
         fetch(`/api/admin/expansion/activity?city_id=${id}`),
+        fetch('/api/admin/expansion/reviews'),
       ]);
 
       if (cityRes.ok) {
@@ -117,6 +120,11 @@ export default function CityDetailPage() {
       if (activityRes.ok) {
         const data = await activityRes.json();
         setActivities(data.activities || []);
+      }
+      if (reviewsRes.ok) {
+        const data = await reviewsRes.json();
+        const allReviews: ExpansionReview[] = data.reviews || [];
+        setCityReviews(allReviews.filter((r: ExpansionReview) => r.city_id === id));
       }
     } catch (err) {
       console.error('Error fetching city details:', err);
@@ -548,6 +556,56 @@ export default function CityDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Team Reviews */}
+      {(cityReviews.length > 0 || city.review_status) && (
+        <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5">
+          <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+            Team Reviews
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {['Leander', 'Jordan'].map((name) => {
+              const review = cityReviews.find((r) => r.reviewer_name === name);
+              const voteLabel = review?.vote === 'interested' ? 'Interested' : review?.vote === 'not_now' ? 'Not Now' : review?.vote === 'reject' ? 'Reject' : null;
+              const voteColor = review?.vote === 'interested' ? 'text-green-400 bg-green-500/15' : review?.vote === 'not_now' ? 'text-yellow-400 bg-yellow-500/15' : review?.vote === 'reject' ? 'text-red-400 bg-red-500/15' : '';
+              return (
+                <div key={name} className="flex items-center justify-between bg-tastelanc-surface-light/50 rounded-lg px-4 py-3">
+                  <div>
+                    <p className="text-sm font-medium text-white">{name}</p>
+                    {review && (
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {new Date(review.voted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                      </p>
+                    )}
+                  </div>
+                  {review ? (
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${voteColor}`}>
+                      {voteLabel}
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-500/15 text-gray-500">
+                      Pending
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {city.review_status && city.review_status !== 'pending_review' && (
+            <div className={`mt-3 px-4 py-2.5 rounded-lg text-sm font-medium ${
+              city.review_status === 'consensus_interested' ? 'bg-green-500/15 text-green-400' :
+              city.review_status === 'consensus_not_now' ? 'bg-yellow-500/15 text-yellow-400' :
+              city.review_status === 'consensus_reject' ? 'bg-red-500/15 text-red-400' :
+              'bg-blue-500/15 text-blue-400'
+            }`}>
+              {city.review_status === 'consensus_interested' && 'Both founders are interested — fast-track this city!'}
+              {city.review_status === 'consensus_not_now' && 'Both agreed to deprioritize — revisit later.'}
+              {city.review_status === 'consensus_reject' && 'Both agreed to reject this market.'}
+              {city.review_status === 'split_decision' && 'Split decision — discuss this one together.'}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex border-b border-tastelanc-surface-light">

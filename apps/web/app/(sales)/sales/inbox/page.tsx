@@ -13,6 +13,7 @@ import {
   Plus,
   ChevronDown,
   Check,
+  Wand2,
 } from 'lucide-react';
 import { Card } from '@/components/ui';
 import { toast } from 'sonner';
@@ -45,6 +46,9 @@ interface ThreadMessage {
   lead_id: string | null;
   resend_id: string | null;
   is_read: boolean;
+  delivery_status: string | null;
+  opened_at: string | null;
+  clicked_at: string | null;
 }
 
 function formatRelativeDate(dateStr: string) {
@@ -96,16 +100,26 @@ export default function InboxPage() {
   const [selectedSender, setSelectedSender] = useState<SenderIdentity>(SENDER_IDENTITIES[0]);
   const [senderDropdownOpen, setSenderDropdownOpen] = useState(false);
 
+  // AI enhance for reply bar
+  const [isImprovingReply, setIsImprovingReply] = useState(false);
+  const [showReplyAiMenu, setShowReplyAiMenu] = useState(false);
+
   const threadEndRef = useRef<HTMLDivElement>(null);
 
-  // Fetch conversations
-  const fetchConversations = async () => {
+  // Fetch conversations (with retry for transient 401s)
+  const fetchConversations = async (retries = 2) => {
     try {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
       if (filter !== 'all') params.set('filter', filter);
       const res = await fetch(`/api/sales/inbox?${params}`);
-      if (!res.ok) throw new Error('Failed to fetch');
+      if (!res.ok) {
+        if (res.status === 401 && retries > 0) {
+          await new Promise(r => setTimeout(r, 1000));
+          return fetchConversations(retries - 1);
+        }
+        throw new Error('Failed to fetch');
+      }
       const data = await res.json();
       setConversations(data.conversations || []);
       if (data.isAdmin !== undefined) setIsAdmin(data.isAdmin);
@@ -165,6 +179,36 @@ export default function InboxPage() {
       toast.error('Failed to load conversation');
     } finally {
       setIsLoadingThread(false);
+    }
+  };
+
+  // AI enhance reply body
+  const handleImproveReply = async (instruction: string) => {
+    if (!replyBody.trim()) {
+      toast.error('Write some content first');
+      return;
+    }
+    setIsImprovingReply(true);
+    setShowReplyAiMenu(false);
+    try {
+      const res = await fetch('/api/sales/ai/generate-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'improve',
+          content: replyBody,
+          instruction,
+          audienceType: 'b2b',
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to enhance');
+      const data = await res.json();
+      setReplyBody(data.improved);
+      toast.success('Reply enhanced by AI');
+    } catch {
+      toast.error('Failed to enhance reply');
+    } finally {
+      setIsImprovingReply(false);
     }
   };
 
@@ -435,6 +479,29 @@ export default function InboxPage() {
                             {msg.body_text}
                           </p>
                         )}
+                        {msg.direction === 'sent' && msg.delivery_status && (
+                          <div className="flex items-center gap-1.5 mt-2 pt-1.5 border-t border-white/5">
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                              msg.delivery_status === 'opened' || msg.delivery_status === 'clicked'
+                                ? 'bg-green-500/15 text-green-400'
+                                : msg.delivery_status === 'delivered'
+                                ? 'bg-blue-500/15 text-blue-400'
+                                : msg.delivery_status === 'bounced'
+                                ? 'bg-red-500/15 text-red-400'
+                                : 'bg-gray-500/15 text-gray-400'
+                            }`}>
+                              {msg.delivery_status === 'opened' || msg.delivery_status === 'clicked' ? (
+                                <><Check className="w-2.5 h-2.5" /> Opened{msg.opened_at ? ` ${formatRelativeDate(msg.opened_at)}` : ''}</>
+                              ) : msg.delivery_status === 'delivered' ? (
+                                <><Check className="w-2.5 h-2.5" /> Delivered</>
+                              ) : msg.delivery_status === 'bounced' ? (
+                                'Bounced'
+                              ) : (
+                                'Sent'
+                              )}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))
@@ -524,6 +591,34 @@ export default function InboxPage() {
                     )}
                   </button>
                 </div>
+                {/* AI enhance chips */}
+                {replyBody.trim() && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {isImprovingReply ? (
+                      <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-purple-400">
+                        <Loader2 className="w-2.5 h-2.5 animate-spin" /> Enhancing...
+                      </span>
+                    ) : (
+                      [
+                        { label: 'Professional', instruction: 'Rewrite this to sound more professional and polished while keeping the core message.' },
+                        { label: 'Friendly', instruction: 'Rewrite this to sound warmer and more approachable while keeping the core message.' },
+                        { label: 'Concise', instruction: 'Make this shorter and more concise. Remove filler words.' },
+                        { label: 'Expand', instruction: 'Expand with more detail and context while keeping a professional tone.' },
+                        { label: 'Persuasive', instruction: 'Make this more compelling. Focus on value for the recipient.' },
+                        { label: 'Fix Grammar', instruction: 'Fix grammar, spelling, and punctuation errors. Do not change tone.' },
+                      ].map((opt) => (
+                        <button
+                          key={opt.label}
+                          onClick={() => handleImproveReply(opt.instruction)}
+                          className="flex items-center gap-0.5 px-2 py-0.5 bg-purple-600/10 text-purple-400 text-[10px] rounded-full hover:bg-purple-600/20 transition-colors"
+                        >
+                          <Wand2 className="w-2 h-2" />
+                          {opt.label}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
             </Card>
           )}

@@ -34,7 +34,8 @@ export type ExpansionAction =
   | 'city_put_on_hold'
   | 'market_created'
   | 'status_changed'
-  | 'note_added';
+  | 'note_added'
+  | 'review_vote';
 
 export type InboundEmailCategory = 'inquiry' | 'lead' | 'spam' | 'other';
 
@@ -66,6 +67,7 @@ export interface ExpansionCity {
   approved_by: string | null;
   approved_at: string | null;
   rejected_reason: string | null;
+  review_status?: 'pending_review' | 'consensus_interested' | 'consensus_not_now' | 'split_decision' | 'consensus_reject';
   market_id: string | null;
   created_at: string;
   updated_at: string;
@@ -192,6 +194,50 @@ export interface ResearchSource {
   url: string;            // clickable link to source
   data_point: string;     // "Population: 126,092"
   accessed_at: string;    // ISO timestamp
+  source_type?: 'verified' | 'ai_synthesized';
+}
+
+// ─────────────────────────────────────────────────────────
+// Deep research structured data
+// ─────────────────────────────────────────────────────────
+
+export interface CollegeInfo {
+  name: string;
+  enrollment: number;
+  type: 'public' | 'private_nonprofit' | 'private_forprofit';
+  degree_level: string;          // "Certificate", "Associate", "Bachelor's", "Graduate"
+  is_research_university: boolean;
+  city: string;
+}
+
+export interface TourismEconomicData {
+  hospitality_gdp_millions: number | null;
+  arts_entertainment_gdp_millions: number | null;
+  hospitality_pct_of_gdp: number | null;
+  total_county_gdp_millions: number | null;
+  year: number | null;
+}
+
+export interface CensusExtendedInfo {
+  median_home_value: number | null;
+  median_gross_rent: number | null;
+  bachelors_degree_pct: number | null;
+  rent_to_income_ratio: number | null;
+}
+
+export interface VenueBreakdown {
+  restaurants: number;
+  bars: number;
+  cafes: number;
+  pubs: number;
+  fast_food: number;
+  nightclubs: number;
+  total_dining: number;
+}
+
+export interface CuisineEntry {
+  cuisine: string;
+  count: number;
 }
 
 export interface CityResearchData {
@@ -217,6 +263,14 @@ export interface CityResearchData {
   google_places_bar_count?: number;
   google_places_validated?: boolean;
   google_places_validated_at?: string;
+  // Deep research structured data
+  colleges?: CollegeInfo[];
+  total_college_enrollment?: number;
+  tourism_economic_data?: TourismEconomicData;
+  census_extended?: CensusExtendedInfo;
+  venue_breakdown?: VenueBreakdown;
+  cuisine_distribution?: CuisineEntry[];
+  data_completeness?: Record<string, boolean>;
   [key: string]: unknown;
 }
 
@@ -301,4 +355,18 @@ export interface ExpansionStats {
   live: number;
   on_hold: number;
   rejected: number;
+}
+
+// ─────────────────────────────────────────────────────────
+// Team review types
+// ─────────────────────────────────────────────────────────
+
+export interface ExpansionReview {
+  id: string;
+  city_id: string;
+  reviewer_email: string;
+  reviewer_name: string;
+  vote: 'interested' | 'not_now' | 'reject';
+  note?: string;
+  voted_at: string;
 }

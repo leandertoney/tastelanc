@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { MapPin, Users, Star, ArrowUpRight } from 'lucide-react';
-import type { ExpansionCity } from '@/lib/ai/expansion-types';
+import type { ExpansionCity, ExpansionReview } from '@/lib/ai/expansion-types';
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   researching: { label: 'Researching', className: 'bg-blue-500/20 text-blue-400' },
@@ -15,16 +15,31 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   rejected: { label: 'Rejected', className: 'bg-red-500/20 text-red-400' },
 };
 
+const REVIEW_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
+  consensus_interested: { label: 'Both Interested', className: 'bg-green-500/20 text-green-400' },
+  consensus_not_now: { label: 'Both Not Now', className: 'bg-yellow-500/20 text-yellow-400' },
+  consensus_reject: { label: 'Both Reject', className: 'bg-red-500/20 text-red-400' },
+  split_decision: { label: 'Split Decision', className: 'bg-blue-500/20 text-blue-400' },
+};
+
+const VOTE_COLORS: Record<string, string> = {
+  interested: 'bg-green-500',
+  not_now: 'bg-yellow-500',
+  reject: 'bg-red-500',
+};
+
 interface ExpansionPipelineCardProps {
   city: ExpansionCity;
+  reviews?: ExpansionReview[];
   onStatusChange?: (id: string, status: string) => void;
 }
 
-export default function ExpansionPipelineCard({ city, onStatusChange }: ExpansionPipelineCardProps) {
+export default function ExpansionPipelineCard({ city, reviews, onStatusChange }: ExpansionPipelineCardProps) {
   const statusConfig = STATUS_CONFIG[city.status] || STATUS_CONFIG.researching;
   const rd = city.research_data || {};
   const regionName = rd.suggested_region_name as string | undefined;
   const clusterTowns = (rd.cluster_towns as string[]) || [];
+  const reviewStatus = city.review_status && REVIEW_STATUS_CONFIG[city.review_status];
 
   return (
     <Link href={`/admin/expansion/${city.id}`}>
@@ -42,7 +57,7 @@ export default function ExpansionPipelineCard({ city, onStatusChange }: Expansio
               </span>
               {regionName && (
                 <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium bg-tastelanc-accent/15 text-tastelanc-accent flex-shrink-0">
-                  Taste{regionName.replace(/\s+/g, '')}
+                  {regionName}
                 </span>
               )}
               {clusterTowns.length > 0 && (
@@ -50,7 +65,28 @@ export default function ExpansionPipelineCard({ city, onStatusChange }: Expansio
                   {clusterTowns.length} towns
                 </span>
               )}
+              {reviewStatus && (
+                <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium flex-shrink-0 ${reviewStatus.className}`}>
+                  {reviewStatus.label}
+                </span>
+              )}
             </div>
+
+            {/* Vote indicators */}
+            {reviews && reviews.length > 0 && (
+              <div className="flex items-center gap-1.5 mt-1">
+                {reviews.map((r) => (
+                  <div
+                    key={r.reviewer_email}
+                    className="flex items-center gap-1 text-[11px] text-gray-400"
+                    title={`${r.reviewer_name}: ${r.vote === 'not_now' ? 'Not Now' : r.vote.charAt(0).toUpperCase() + r.vote.slice(1)}`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${VOTE_COLORS[r.vote] || 'bg-gray-500'}`} />
+                    <span>{r.reviewer_name.charAt(0)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-gray-400">
               <span className="flex items-center gap-1">
