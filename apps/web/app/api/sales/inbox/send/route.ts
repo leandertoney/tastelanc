@@ -94,7 +94,7 @@ export async function POST(request: Request) {
       subject,
       html,
       text,
-      replyTo: fromEmail,
+      replyTo: validSender?.replyEmail || fromEmail,
     };
 
     if (inReplyToMessageId) {

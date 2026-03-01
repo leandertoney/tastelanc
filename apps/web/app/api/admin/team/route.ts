@@ -24,43 +24,54 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Cannot assign super_admin or co_founder roles' }, { status: 400 });
     }
 
-    // Check if user already exists in auth
-    const { data: existingUsers } = await serviceClient
+    // Resolve user ID — check profiles, then try auth create (handles existing users gracefully)
+    let userId: string;
+
+    const { data: existingProfile } = await serviceClient
       .from('profiles')
-      .select('id, email')
+      .select('id')
       .eq('email', email)
       .maybeSingle();
 
-    let userId: string;
-
-    if (existingUsers) {
-      userId = existingUsers.id;
+    if (existingProfile) {
+      // User already has a profile — upgrading them to the new role
+      userId = existingProfile.id;
     } else {
-      // Create auth user via admin API
+      // Try creating a new auth user
       const { data: newUser, error: createError } = await serviceClient.auth.admin.createUser({
         email,
         email_confirm: true,
         user_metadata: { display_name: name },
       });
 
-      if (createError || !newUser.user) {
+      if (newUser?.user) {
+        userId = newUser.user.id;
+      } else if (createError?.message?.includes('already been registered')) {
+        // Email exists in auth but has no profile row — find their ID
+        const { data: authUsers } = await serviceClient.auth.admin.listUsers({ perPage: 1000 });
+        const found = authUsers?.users?.find(
+          (u) => u.email?.toLowerCase() === email.toLowerCase()
+        );
+        if (!found) {
+          return NextResponse.json({ error: 'User exists but could not be found' }, { status: 500 });
+        }
+        userId = found.id;
+      } else {
         console.error('Error creating user:', createError);
         return NextResponse.json({ error: createError?.message || 'Failed to create user' }, { status: 500 });
       }
-
-      userId = newUser.user.id;
-
-      // Ensure profile exists
-      await serviceClient
-        .from('profiles')
-        .upsert({
-          id: userId,
-          email,
-          display_name: name,
-          role: role || null,
-          admin_market_id: role === 'market_admin' && market_ids?.length === 1 ? market_ids[0] : null,
-        }, { onConflict: 'id' });
     }
+
+    // Ensure profile exists and is up to date
+    await serviceClient
+      .from('profiles')
+      .upsert({
+        id: userId,
+        email,
+        display_name: name,
+        role: role || null,
+        admin_market_id: role === 'market_admin' && market_ids?.length === 1 ? market_ids[0] : null,
+      }, { onConflict: 'id' });
 
     // Set profile role if provided
     if (role) {

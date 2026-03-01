@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
-import { SENDER_IDENTITIES } from '@/config/sender-identities';
+import { SENDER_IDENTITIES, getAllSenderEmails } from '@/config/sender-identities';
 
 interface ThreadMessage {
   id: string;
@@ -149,7 +149,7 @@ async function getRepSenderEmails(
   access: { userId: string | null; isAdmin: boolean }
 ): Promise<string[]> {
   if (access.isAdmin) {
-    return SENDER_IDENTITIES.map(s => s.email);
+    return getAllSenderEmails();
   }
 
   if (access.userId) {
@@ -160,15 +160,17 @@ async function getRepSenderEmails(
       .single();
 
     if (rep?.preferred_sender_email) {
+      const found = SENDER_IDENTITIES.find(s => s.email === rep.preferred_sender_email);
+      if (found) return [found.email, found.replyEmail];
       return [rep.preferred_sender_email];
     }
 
     if (rep?.name) {
       const firstName = rep.name.split(' ')[0].toLowerCase();
       const matched = SENDER_IDENTITIES.find(s => s.name.toLowerCase() === firstName);
-      if (matched) return [matched.email];
+      if (matched) return [matched.email, matched.replyEmail];
     }
   }
 
-  return SENDER_IDENTITIES.map(s => s.email);
+  return getAllSenderEmails();
 }
