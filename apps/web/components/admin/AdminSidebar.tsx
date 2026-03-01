@@ -10,12 +10,10 @@ import {
   Store,
   LogOut,
   Shield,
-  Sparkles,
   CreditCard,
   Mail,
   X,
   Briefcase,
-  Crown,
   Lightbulb,
   Music,
   Megaphone,
@@ -41,7 +39,6 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin', icon: LayoutDashboard, label: 'Overview', section: 'Revenue' },
   { href: '/admin/paid-members', icon: CreditCard, label: 'Restaurants', highlight: true },
   { href: '/admin/self-promoters', icon: Music, label: 'Self-Promoters', highlight: true },
-  { href: '/admin/consumers', icon: Crown, label: BRAND.premiumName, highlight: true },
   { href: '/admin/sales', icon: Briefcase, label: 'Sales Pipeline', highlight: true },
   { href: '/admin/sponsored-ads', icon: Megaphone, label: 'Sponsored Ads', highlight: true },
   { href: '/admin/team', icon: Users, label: 'Team', highlight: true },
@@ -50,7 +47,6 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/restaurants', icon: Store, label: 'All Restaurants', section: 'Content' },
   // MARKETING - Campaigns and outreach
   { href: '/admin/email-campaigns', icon: Mail, label: 'Campaigns', highlight: true, section: 'Marketing' },
-  { href: '/admin/early-access', icon: Sparkles, label: 'Waitlist', highlight: true },
   // INSIGHTS - Analytics and feedback
   { href: '/admin/analytics', icon: BarChart3, label: 'Analytics', section: 'Insights' },
   { href: '/admin/feature-requests', icon: Lightbulb, label: 'Feature Requests', highlight: true },

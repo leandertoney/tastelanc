@@ -16,6 +16,9 @@ interface ThreadMessage {
   lead_id: string | null;
   resend_id: string | null;
   is_read: boolean;
+  delivery_status: string | null; // sent, delivered, opened, clicked, bounced
+  opened_at: string | null;
+  clicked_at: string | null;
 }
 
 export async function GET(request: Request) {
@@ -44,7 +47,7 @@ export async function GET(request: Request) {
     // Fetch sent emails to this counterparty
     const { data: sentEmails } = await serviceClient
       .from('email_sends')
-      .select('id, subject, sender_name, sender_email, recipient_email, body_text, headline, resend_id, sent_at, lead_id')
+      .select('id, subject, sender_name, sender_email, recipient_email, body_text, headline, resend_id, sent_at, lead_id, status, opened_at, clicked_at')
       .eq('recipient_email', counterpartyEmail)
       .in('sender_email', repEmails)
       .order('sent_at', { ascending: true });
@@ -111,6 +114,9 @@ export async function GET(request: Request) {
         lead_id: e.lead_id,
         resend_id: e.resend_id,
         is_read: true,
+        delivery_status: e.status || 'sent',
+        opened_at: e.opened_at || null,
+        clicked_at: e.clicked_at || null,
       })),
       ...(receivedEmails || []).map(e => ({
         id: e.id,
@@ -124,7 +130,10 @@ export async function GET(request: Request) {
         timestamp: e.created_at,
         lead_id: e.linked_lead_id,
         resend_id: null,
-        is_read: true, // now marked as read
+        is_read: true,
+        delivery_status: null,
+        opened_at: null,
+        clicked_at: null,
       })),
     ].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 

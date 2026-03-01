@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
 import { resend } from '@/lib/resend';
-import { renderB2BEmail } from '@/lib/email-templates/b2b-outreach-template';
+import { renderProfessionalEmail, renderProfessionalEmailPlainText } from '@/lib/email-templates/professional-template';
 import { BRAND } from '@/config/market';
 import { SENDER_IDENTITIES } from '@/config/sender-identities';
 
@@ -67,8 +67,8 @@ export async function POST(request: Request) {
     // Build unsubscribe URL
     const unsubscribeUrl = `https://${BRAND.domain}/api/unsubscribe/b2b?email=${encodeURIComponent(recipientEmail)}`;
 
-    // Render email HTML
-    const html = renderB2BEmail({
+    // Render email HTML + plain text (professional template for Primary inbox delivery)
+    const emailProps = {
       headline,
       body: emailBody,
       ctaText: ctaText || undefined,
@@ -76,19 +76,24 @@ export async function POST(request: Request) {
       previewText: subject,
       unsubscribeUrl,
       businessName: recipientName || undefined,
-    });
+      senderName: senderName || BRAND.name,
+      senderTitle: validSender?.title || undefined,
+    };
+    const html = renderProfessionalEmail(emailProps);
+    const text = renderProfessionalEmailPlainText(emailProps);
 
     // Determine sender
     const fromName = senderName || BRAND.name;
     const fromEmail = senderEmail || `noreply@${BRAND.domain}`;
     const fromLine = `${fromName} <${fromEmail}>`;
 
-    // Build send options
+    // Build send options (include plain text for deliverability)
     const sendOptions: Parameters<typeof resend.emails.send>[0] = {
       from: fromLine,
       to: recipientEmail,
       subject,
       html,
+      text,
       replyTo: fromEmail,
     };
 

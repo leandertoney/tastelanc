@@ -10,8 +10,6 @@ import {
   MessageSquare,
   TrendingUp,
   AlertCircle,
-  Crown,
-  Mail,
   DollarSign,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -231,12 +229,8 @@ export default async function AdminDashboardPage() {
           </div>
           <div className="flex gap-6">
             <div className="text-center">
-              <p className="text-2xl font-bold text-white">{stripeRevenue.restaurantCount}</p>
-              <p className="text-gray-400 text-xs">Restaurants</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-white">{stripeRevenue.consumerCount}</p>
-              <p className="text-gray-400 text-xs">{BRAND.premiumName}</p>
+              <p className="text-2xl font-bold text-white">{stripeRevenue.totalSubscriptions}</p>
+              <p className="text-gray-400 text-xs">Paid Members</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-white">${stripeRevenue.arr.toLocaleString()}</p>
@@ -247,22 +241,7 @@ export default async function AdminDashboardPage() {
       </Card>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-6 mb-6 md:mb-8">
-        <Link href="/admin/early-access">
-          <Card className="p-4 md:p-6 hover:ring-2 hover:ring-lancaster-gold/50 transition-all cursor-pointer">
-            <div className="flex items-center justify-between mb-3 md:mb-4">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-lancaster-gold/20 rounded-lg flex items-center justify-center">
-                <Crown className="w-5 h-5 md:w-6 md:h-6 text-lancaster-gold" />
-              </div>
-              {stats.todayWaitlistSignups > 0 && (
-                <Badge variant="accent" className="text-xs">+{stats.todayWaitlistSignups} today</Badge>
-              )}
-            </div>
-            <p className="text-2xl md:text-3xl font-bold text-white">{stats.totalWaitlistSignups}</p>
-            <p className="text-gray-400 text-xs md:text-sm">Waitlist Signups</p>
-          </Card>
-        </Link>
-
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
         <Card className="p-4 md:p-6">
           <div className="flex items-center justify-between mb-3 md:mb-4">
             <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
@@ -310,57 +289,7 @@ export default async function AdminDashboardPage() {
         </Card>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-4 md:gap-8">
-        {/* Recent Waitlist Signups */}
-        <Card className="p-4 md:p-6">
-          <div className="flex items-center justify-between mb-4 md:mb-6">
-            <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-              <Crown className="w-5 h-5 text-lancaster-gold" />
-              Waitlist
-            </h2>
-            {stats.todayWaitlistSignups > 0 && (
-              <Badge variant="accent" className="text-xs">+{stats.todayWaitlistSignups} today</Badge>
-            )}
-          </div>
-          {stats.recentWaitlistSignups.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No waitlist signups yet</p>
-          ) : (
-            <div className="space-y-3">
-              {stats.recentWaitlistSignups.map((signup: { id: string; email: string; source?: string; created_at: string; converted_at?: string | null }) => (
-                <div
-                  key={signup.id}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-tastelanc-surface-light/50"
-                >
-                  <div className="w-8 h-8 bg-lancaster-gold/20 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Mail className="w-4 h-4 text-lancaster-gold" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-medium truncate">{signup.email}</p>
-                    <p className="text-gray-500 text-xs">
-                      {new Date(signup.created_at).toLocaleString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        timeZone: 'America/New_York',
-                      })}
-                    </p>
-                  </div>
-                  {signup.converted_at && (
-                    <Badge variant="default" className="text-xs bg-green-500/20 text-green-400">Converted</Badge>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-          <Link
-            href="/admin/early-access"
-            className="mt-6 inline-block text-lancaster-gold hover:underline text-sm"
-          >
-            View all analytics &rarr;
-          </Link>
-        </Card>
-
+      <div className="grid lg:grid-cols-2 gap-4 md:gap-8">
         {/* Paid Members by Plan */}
         <Card className="p-4 md:p-6">
           <h2 className="text-xl font-semibold text-white mb-6">Paid Members by Plan</h2>

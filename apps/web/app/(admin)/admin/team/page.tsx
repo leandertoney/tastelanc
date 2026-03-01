@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Users,
   Loader2,
@@ -13,6 +13,8 @@ import {
   X,
   Save,
   Crown,
+  Plus,
+  Filter,
 } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 import { toast } from 'sonner';
@@ -50,6 +52,11 @@ const ROLE_LABELS: Record<string, { label: string; color: string }> = {
   sales_rep: { label: 'Sales Rep', color: 'bg-green-500/20 text-green-400' },
 };
 
+const ASSIGNABLE_ROLES = [
+  { value: 'sales_rep', label: 'Sales Rep' },
+  { value: 'market_admin', label: 'Market Admin' },
+];
+
 export default function TeamPage() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
@@ -62,6 +69,20 @@ export default function TeamPage() {
     is_active: true,
   });
   const [isSaving, setIsSaving] = useState(false);
+
+  // Add member modal
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [addForm, setAddForm] = useState({
+    name: '',
+    email: '',
+    role: 'sales_rep',
+    phone: '',
+    market_ids: [] as string[],
+  });
+
+  // Market filter
+  const [filterMarketId, setFilterMarketId] = useState<string>('all');
 
   const fetchTeam = async () => {
     try {
@@ -81,6 +102,20 @@ export default function TeamPage() {
   useEffect(() => {
     fetchTeam();
   }, []);
+
+  // Filtered members
+  const filteredMembers = useMemo(() => {
+    if (filterMarketId === 'all') return members;
+    return members.filter((m) => {
+      // super_admin and co_founder are in all markets
+      if (m.profileRole === 'super_admin' || m.profileRole === 'co_founder') return true;
+      // Check sales rep market_ids
+      if (m.salesRepData?.market_ids?.includes(filterMarketId)) return true;
+      // Check admin market
+      if (m.adminMarketId === filterMarketId) return true;
+      return false;
+    });
+  }, [members, filterMarketId]);
 
   const startEdit = (member: TeamMember) => {
     setEditingId(member.id);
@@ -125,8 +160,53 @@ export default function TeamPage() {
     }
   };
 
+  const handleAdd = async () => {
+    if (!addForm.name.trim() || !addForm.email.trim()) {
+      toast.error('Name and email are required');
+      return;
+    }
+
+    setIsAdding(true);
+    try {
+      const res = await fetch('/api/admin/team', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: addForm.name.trim(),
+          email: addForm.email.trim().toLowerCase(),
+          role: addForm.role,
+          phone: addForm.phone.trim() || null,
+          market_ids: addForm.market_ids,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to add team member');
+      }
+
+      toast.success(`${addForm.name} added to the team`);
+      setShowAddModal(false);
+      setAddForm({ name: '', email: '', role: 'sales_rep', phone: '', market_ids: [] });
+      fetchTeam();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to add team member');
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
   const toggleMarket = (marketId: string) => {
     setEditForm(prev => ({
+      ...prev,
+      market_ids: prev.market_ids.includes(marketId)
+        ? prev.market_ids.filter(id => id !== marketId)
+        : [...prev.market_ids, marketId],
+    }));
+  };
+
+  const toggleAddMarket = (marketId: string) => {
+    setAddForm(prev => ({
       ...prev,
       market_ids: prev.market_ids.includes(marketId)
         ? prev.market_ids.filter(id => id !== marketId)
@@ -166,6 +246,13 @@ export default function TeamPage() {
           </h1>
           <p className="text-gray-400 mt-1">Manage roles and market assignments</p>
         </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="flex items-center gap-2 px-4 py-2.5 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white rounded-lg text-sm font-medium transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Add Team Member
+        </button>
       </div>
 
       {/* Summary cards */}
@@ -192,9 +279,31 @@ export default function TeamPage() {
         </Card>
       </div>
 
+      {/* Market filter */}
+      {markets.length > 1 && (
+        <div className="flex items-center gap-3 mb-4">
+          <Filter className="w-4 h-4 text-gray-400" />
+          <select
+            value={filterMarketId}
+            onChange={(e) => setFilterMarketId(e.target.value)}
+            className="px-3 py-1.5 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+          >
+            <option value="all">All Markets</option>
+            {markets.map(m => (
+              <option key={m.id} value={m.id}>{m.name}</option>
+            ))}
+          </select>
+          {filterMarketId !== 'all' && (
+            <span className="text-xs text-gray-500">
+              {filteredMembers.length} member{filteredMembers.length !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Team list */}
       <div className="space-y-3">
-        {members.map((member) => {
+        {filteredMembers.map((member) => {
           const role = getDisplayRole(member);
           const isEditing = editingId === member.id;
           const locked = isProtected(member);
@@ -334,6 +443,105 @@ export default function TeamPage() {
           );
         })}
       </div>
+
+      {/* Add Team Member Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-tastelanc-surface rounded-xl w-full max-w-md p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold text-white">Add Team Member</h2>
+              <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  value={addForm.name}
+                  onChange={(e) => setAddForm(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Jordan Smith"
+                  className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Email *</label>
+                <input
+                  type="email"
+                  value={addForm.email}
+                  onChange={(e) => setAddForm(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="jordan@tastelanc.com"
+                  className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={addForm.phone}
+                  onChange={(e) => setAddForm(prev => ({ ...prev, phone: e.target.value }))}
+                  placeholder="(555) 123-4567"
+                  className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Role</label>
+                <select
+                  value={addForm.role}
+                  onChange={(e) => setAddForm(prev => ({ ...prev, role: e.target.value }))}
+                  className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                >
+                  {ASSIGNABLE_ROLES.map(r => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Market Assignment</label>
+                <div className="space-y-2">
+                  {markets.map(market => (
+                    <label
+                      key={market.id}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={addForm.market_ids.includes(market.id)}
+                        onChange={() => toggleAddMarket(market.id)}
+                        className="rounded border-gray-600 bg-tastelanc-surface-light text-tastelanc-accent focus:ring-tastelanc-accent"
+                      />
+                      <span className="text-sm text-gray-300">{market.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleAdd}
+                disabled={isAdding || !addForm.name.trim() || !addForm.email.trim()}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-tastelanc-accent hover:bg-tastelanc-accent-hover disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                Add Member
+              </button>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="px-4 py-2.5 bg-tastelanc-surface-light text-gray-400 hover:text-white rounded-lg text-sm transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
