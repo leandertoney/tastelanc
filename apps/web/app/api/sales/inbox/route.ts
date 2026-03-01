@@ -170,42 +170,61 @@ export async function GET(request: Request) {
     // Sort by most recent
     conversations.sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
 
-    return NextResponse.json({ conversations });
+    // Determine the user's own identity for the frontend
+    const userIdentity = await getUserIdentity(serviceClient, access);
+
+    return NextResponse.json({
+      conversations,
+      isAdmin: access.isAdmin,
+      userIdentity,
+    });
   } catch (error) {
     console.error('Error in inbox API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
+/** Get the sender identity emails this user can VIEW (admins see all, reps see their own) */
 async function getRepSenderEmails(
   serviceClient: ReturnType<typeof createServiceRoleClient>,
   access: { userId: string | null; isSuperAdmin: boolean; isAdmin: boolean }
 ): Promise<string[]> {
-  // Admins see all sender identities
   if (access.isAdmin) {
     return SENDER_IDENTITIES.map(s => s.email);
   }
 
-  // Sales reps: use their preferred sender email, or fall back to matching by name
-  if (access.userId) {
-    const { data: rep } = await serviceClient
-      .from('sales_reps')
-      .select('preferred_sender_email, name')
-      .eq('id', access.userId)
-      .single();
+  const identity = await getUserIdentity(serviceClient, access);
+  if (identity) return [identity.email];
 
-    if (rep?.preferred_sender_email) {
-      return [rep.preferred_sender_email];
-    }
+  return SENDER_IDENTITIES.map(s => s.email);
+}
 
-    // Fall back: match rep name to sender identities
-    if (rep?.name) {
-      const firstName = rep.name.split(' ')[0].toLowerCase();
-      const matched = SENDER_IDENTITIES.find(s => s.name.toLowerCase() === firstName);
-      if (matched) return [matched.email];
-    }
+/** Get the single sender identity that belongs to this user */
+async function getUserIdentity(
+  serviceClient: ReturnType<typeof createServiceRoleClient>,
+  access: { userId: string | null; isAdmin: boolean }
+): Promise<{ name: string; email: string; title: string } | null> {
+  if (!access.userId) return null;
+
+  // Check sales_reps for preferred sender
+  const { data: rep } = await serviceClient
+    .from('sales_reps')
+    .select('preferred_sender_email, name')
+    .eq('id', access.userId)
+    .single();
+
+  if (rep?.preferred_sender_email) {
+    const found = SENDER_IDENTITIES.find(s => s.email === rep.preferred_sender_email);
+    if (found) return found;
   }
 
-  // Last resort: return all identities (they'll just see everything)
-  return SENDER_IDENTITIES.map(s => s.email);
+  // Fall back: match rep name to sender identities
+  if (rep?.name) {
+    const firstName = rep.name.split(' ')[0].toLowerCase();
+    const matched = SENDER_IDENTITIES.find(s => s.name.toLowerCase() === firstName);
+    if (matched) return matched;
+  }
+
+  // Default to first identity
+  return SENDER_IDENTITIES[0];
 }

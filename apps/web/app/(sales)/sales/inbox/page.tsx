@@ -78,6 +78,7 @@ export default function InboxPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Thread view
   const [selectedConvo, setSelectedConvo] = useState<Conversation | null>(null);
@@ -97,25 +98,6 @@ export default function InboxPage() {
 
   const threadEndRef = useRef<HTMLDivElement>(null);
 
-  // Load sender preference
-  useEffect(() => {
-    const fetchPref = async () => {
-      try {
-        const res = await fetch('/api/sales/sender-preference');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.preferredSenderEmail) {
-            const found = SENDER_IDENTITIES.find(s => s.email === data.preferredSenderEmail);
-            if (found) setSelectedSender(found);
-          }
-        }
-      } catch {
-        // ignore
-      }
-    };
-    fetchPref();
-  }, []);
-
   // Fetch conversations
   const fetchConversations = async () => {
     try {
@@ -126,6 +108,11 @@ export default function InboxPage() {
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
       setConversations(data.conversations || []);
+      if (data.isAdmin !== undefined) setIsAdmin(data.isAdmin);
+      if (data.userIdentity) {
+        const found = SENDER_IDENTITIES.find(s => s.email === data.userIdentity.email);
+        if (found) setSelectedSender(found);
+      }
     } catch (error) {
       console.error('Error fetching inbox:', error);
       toast.error('Failed to load inbox');
@@ -457,34 +444,40 @@ export default function InboxPage() {
 
               {/* Reply bar */}
               <div className="border-t border-tastelanc-surface-light p-3 space-y-2">
-                {/* Sender selector */}
-                <div className="relative">
-                  <button
-                    onClick={() => setSenderDropdownOpen(!senderDropdownOpen)}
-                    className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors"
-                  >
-                    <span>From: {selectedSender.name} &lt;{selectedSender.email}&gt;</span>
-                    <ChevronDown className={`w-3 h-3 transition-transform ${senderDropdownOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  {senderDropdownOpen && (
-                    <div className="absolute bottom-full left-0 mb-1 bg-tastelanc-surface border border-gray-700 rounded-lg overflow-hidden z-10 min-w-[280px]">
-                      {SENDER_IDENTITIES.map((sender) => (
-                        <button
-                          key={sender.email}
-                          onClick={() => { setSelectedSender(sender); setSenderDropdownOpen(false); }}
-                          className={`w-full flex items-center justify-between px-3 py-2 text-xs text-left transition-colors ${
-                            selectedSender.email === sender.email
-                              ? 'bg-blue-600/10 text-white'
-                              : 'text-gray-300 hover:bg-tastelanc-surface-light hover:text-white'
-                          }`}
-                        >
-                          <span>{sender.name} &lt;{sender.email}&gt;</span>
-                          {selectedSender.email === sender.email && <Check className="w-3 h-3 text-blue-400" />}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                {/* Sender: show dropdown for admins, static label for reps */}
+                {isAdmin ? (
+                  <div className="relative">
+                    <button
+                      onClick={() => setSenderDropdownOpen(!senderDropdownOpen)}
+                      className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors"
+                    >
+                      <span>From: {selectedSender.name} &lt;{selectedSender.email}&gt;</span>
+                      <ChevronDown className={`w-3 h-3 transition-transform ${senderDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {senderDropdownOpen && (
+                      <div className="absolute bottom-full left-0 mb-1 bg-tastelanc-surface border border-gray-700 rounded-lg overflow-hidden z-10 min-w-[280px]">
+                        {SENDER_IDENTITIES.map((sender) => (
+                          <button
+                            key={sender.email}
+                            onClick={() => { setSelectedSender(sender); setSenderDropdownOpen(false); }}
+                            className={`w-full flex items-center justify-between px-3 py-2 text-xs text-left transition-colors ${
+                              selectedSender.email === sender.email
+                                ? 'bg-blue-600/10 text-white'
+                                : 'text-gray-300 hover:bg-tastelanc-surface-light hover:text-white'
+                            }`}
+                          >
+                            <span>{sender.name} &lt;{sender.email}&gt;</span>
+                            {selectedSender.email === sender.email && <Check className="w-3 h-3 text-blue-400" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-500">
+                    From: {selectedSender.name} &lt;{selectedSender.email}&gt;
+                  </p>
+                )}
 
                 {/* Subject */}
                 <input
@@ -545,6 +538,8 @@ export default function InboxPage() {
             setShowCompose(false);
             fetchConversations();
           }}
+          isAdmin={isAdmin}
+          defaultSender={selectedSender}
         />
       )}
     </div>
