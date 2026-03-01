@@ -29,6 +29,11 @@ interface EmailComposerProps {
   lead: Lead;
   onClose: () => void;
   onSent: () => void;
+  replyTo?: {
+    subject: string;
+    inReplyToMessageId: string;
+    threadId: string;
+  };
 }
 
 type TemplateKey = 'coldOutreach' | 'followUp' | 'valueProposition' | 'custom';
@@ -41,7 +46,8 @@ const TEMPLATE_OPTIONS: { key: TemplateKey; label: string }[] = [
   { key: 'custom', label: 'Custom' },
 ];
 
-export default function EmailComposer({ lead, onClose, onSent }: EmailComposerProps) {
+export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailComposerProps) {
+  const isReply = !!replyTo;
   const [step, setStep] = useState<Step>('compose');
 
   // Sender
@@ -50,10 +56,12 @@ export default function EmailComposer({ lead, onClose, onSent }: EmailComposerPr
   const [lastUsedHint, setLastUsedHint] = useState<string | null>(null);
 
   // Template
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateKey>('coldOutreach');
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateKey>(isReply ? 'custom' : 'coldOutreach');
 
   // Email fields
-  const [subject, setSubject] = useState('');
+  const [subject, setSubject] = useState(
+    replyTo ? (replyTo.subject.startsWith('Re: ') ? replyTo.subject : `Re: ${replyTo.subject}`) : ''
+  );
   const [headline, setHeadline] = useState('');
   const [body, setBody] = useState('');
   const [ctaText, setCtaText] = useState('');
@@ -90,8 +98,9 @@ export default function EmailComposer({ lead, onClose, onSent }: EmailComposerPr
     fetchSenderPref();
   }, []);
 
-  // Apply template when selection changes
+  // Apply template when selection changes (skip for replies)
   useEffect(() => {
+    if (isReply) return;
     if (selectedTemplate === 'custom') {
       setSubject('');
       setHeadline('');
@@ -234,6 +243,10 @@ export default function EmailComposer({ lead, onClose, onSent }: EmailComposerPr
           ctaUrl: ctaUrl || undefined,
           senderName: selectedSender.name,
           senderEmail: selectedSender.email,
+          ...(replyTo && {
+            inReplyToMessageId: replyTo.inReplyToMessageId,
+            threadId: replyTo.threadId,
+          }),
         }),
       });
 
@@ -330,7 +343,7 @@ export default function EmailComposer({ lead, onClose, onSent }: EmailComposerPr
       <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-tastelanc-surface-light">
-          <h2 className="text-lg font-bold text-white">Compose Email</h2>
+          <h2 className="text-lg font-bold text-white">{isReply ? 'Reply' : 'Compose Email'}</h2>
           <button onClick={onClose} className="p-1 text-gray-400 hover:text-white transition-colors">
             <X className="w-5 h-5" />
           </button>
@@ -394,42 +407,44 @@ export default function EmailComposer({ lead, onClose, onSent }: EmailComposerPr
             </div>
           </div>
 
-          {/* Template + AI */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex gap-1 bg-tastelanc-bg rounded-lg p-1">
-              {TEMPLATE_OPTIONS.map((opt) => (
+          {/* Template + AI (hidden for replies) */}
+          {!isReply && (
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex gap-1 bg-tastelanc-bg rounded-lg p-1">
+                {TEMPLATE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.key}
+                    onClick={() => setSelectedTemplate(opt.key)}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                      selectedTemplate === opt.key
+                        ? 'bg-tastelanc-surface-light text-white'
+                        : 'text-gray-500 hover:text-gray-300'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-1.5 ml-auto">
                 <button
-                  key={opt.key}
-                  onClick={() => setSelectedTemplate(opt.key)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                    selectedTemplate === opt.key
-                      ? 'bg-tastelanc-surface-light text-white'
-                      : 'text-gray-500 hover:text-gray-300'
-                  }`}
+                  onClick={handleGenerateAI}
+                  disabled={isGenerating}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
                 >
-                  {opt.label}
+                  {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                  Generate with AI
                 </button>
-              ))}
+                <button
+                  onClick={handleSuggestSubjects}
+                  disabled={isGeneratingSubjects}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                >
+                  {isGeneratingSubjects ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lightbulb className="w-3.5 h-3.5" />}
+                  Suggest Subjects
+                </button>
+              </div>
             </div>
-            <div className="flex gap-1.5 ml-auto">
-              <button
-                onClick={handleGenerateAI}
-                disabled={isGenerating}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
-              >
-                {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                Generate with AI
-              </button>
-              <button
-                onClick={handleSuggestSubjects}
-                disabled={isGeneratingSubjects}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
-              >
-                {isGeneratingSubjects ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lightbulb className="w-3.5 h-3.5" />}
-                Suggest Subjects
-              </button>
-            </div>
-          </div>
+          )}
 
           {/* Subject + AI chips */}
           <div>

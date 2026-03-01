@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BRAND } from '@/config/market';
@@ -58,6 +59,25 @@ export default function SalesSidebar({ isOpen, onClose, collapsed, onToggleColla
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread reply count
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch('/api/sales/leads/unread-count');
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadCount(data.count || 0);
+        }
+      } catch {
+        // Ignore
+      }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Filter out admin-only items for non-admin users
   const visibleNavItems = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin);
@@ -151,7 +171,12 @@ export default function SalesSidebar({ isOpen, onClose, collapsed, onToggleColla
                       }`}
                     >
                       <item.icon className={`w-5 h-5 flex-shrink-0 ${item.highlight && !isActive ? 'text-lancaster-gold' : ''}`} />
-                      <span className={`${collapsed ? 'md:hidden' : ''}`}>{item.label}</span>
+                      <span className={`${collapsed ? 'md:hidden' : ''} flex-1`}>{item.label}</span>
+                      {item.href === '/sales/leads' && unreadCount > 0 && !collapsed && (
+                        <span className="md:inline hidden ml-auto bg-blue-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1">
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                      )}
                     </Link>
                     {item.hint && !collapsed && (
                       <Tooltip content={item.hint} position="right">

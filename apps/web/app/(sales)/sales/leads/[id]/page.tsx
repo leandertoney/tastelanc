@@ -26,6 +26,9 @@ import {
   Plus,
   Trash2,
   Settings,
+  Reply,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Card, Badge } from '@/components/ui';
@@ -103,6 +106,7 @@ const ACTIVITY_TYPES = [
 const ACTIVITY_ICONS: Record<string, typeof PhoneCall> = {
   call: PhoneCall,
   email: Mail,
+  email_reply: Reply,
   meeting: Video,
   note: FileText,
   follow_up: CalendarCheck,
@@ -142,6 +146,15 @@ export default function LeadDetailPage({
 
   // Email composer
   const [showEmailComposer, setShowEmailComposer] = useState(false);
+  const [replyContext, setReplyContext] = useState<{
+    subject: string;
+    inReplyToMessageId: string;
+    threadId: string;
+  } | null>(null);
+
+  // Reply content for inline expansion
+  const [replies, setReplies] = useState<Record<string, { body_text: string; body_html: string; from_email: string; subject: string }>>({});
+  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
 
   // Ownership
   const [ownership, setOwnership] = useState<Ownership | null>(null);
@@ -183,6 +196,24 @@ export default function LeadDetailPage({
         setActivities(data.activities || []);
         setEditForm(data.lead);
         if (data.ownership) setOwnership(data.ownership);
+
+        // Fetch replies (also marks them as read)
+        try {
+          const repliesRes = await fetch(`/api/sales/leads/${leadId}/replies`);
+          if (repliesRes.ok) {
+            const repliesData = await repliesRes.json();
+            const replyMap: Record<string, { body_text: string; body_html: string; from_email: string; subject: string }> = {};
+            for (const r of (repliesData.replies || [])) {
+              replyMap[r.inbound_email_id || r.id] = {
+                body_text: r.body_text || '',
+                body_html: r.body_html || '',
+                from_email: r.from_email,
+                subject: r.subject || '',
+              };
+            }
+            setReplies(replyMap);
+          }
+        } catch { /* replies are supplemental */ }
       } catch (error) {
         console.error('Error fetching lead:', error);
       } finally {
@@ -877,7 +908,11 @@ export default function LeadDetailPage({
                 const Icon = ACTIVITY_ICONS[activity.activity_type] || MessageSquare;
                 const isLast = index === activities.length - 1;
                 const isStatusChange = activity.activity_type === 'status_change';
+                const isEmailReply = activity.activity_type === 'email_reply';
                 const isEditing = editingActivityId === activity.id;
+                const replyId = activity.metadata?.reply_id;
+                const replyData = replyId ? replies[replyId] : null;
+                const isExpanded = expandedReplies.has(activity.id);
 
                 return (
                   <div key={activity.id} className="flex gap-3 group">
@@ -885,24 +920,26 @@ export default function LeadDetailPage({
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                         isStatusChange
                           ? 'bg-lancaster-gold/20'
+                          : isEmailReply
+                          ? 'bg-blue-500/20'
                           : 'bg-tastelanc-surface-light'
                       }`}>
                         <Icon className={`w-4 h-4 ${
-                          isStatusChange ? 'text-lancaster-gold' : 'text-gray-400'
+                          isStatusChange ? 'text-lancaster-gold' : isEmailReply ? 'text-blue-400' : 'text-gray-400'
                         }`} />
                       </div>
                       {!isLast && <div className="w-px flex-1 bg-tastelanc-surface-light min-h-[16px]" />}
                     </div>
                     <div className="pb-4 flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-xs font-medium text-gray-300 capitalize">
-                          {activity.activity_type.replace('_', ' ')}
+                        <span className={`text-xs font-medium capitalize ${isEmailReply ? 'text-blue-400' : 'text-gray-300'}`}>
+                          {isEmailReply ? 'Reply Received' : activity.activity_type.replace('_', ' ')}
                         </span>
                         <span className="text-xs text-gray-600">
                           {new Date(activity.created_at).toLocaleString()}
                         </span>
-                        {/* Edit/Delete actions for non-status-change activities */}
-                        {!isStatusChange && !isEditing && (
+                        {/* Edit/Delete actions for non-status-change, non-reply activities */}
+                        {!isStatusChange && !isEmailReply && !isEditing && (
                           <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
                               onClick={() => {
@@ -928,8 +965,59 @@ export default function LeadDetailPage({
                             </button>
                           </div>
                         )}
+                        {/* Reply action for inbound replies */}
+                        {isEmailReply && lead.email && (
+                          <button
+                            onClick={() => {
+                              setReplyContext({
+                                subject: activity.metadata?.subject || '',
+                                inReplyToMessageId: activity.metadata?.resend_id || '',
+                                threadId: '',
+                              });
+                              setShowEmailComposer(true);
+                            }}
+                            className="ml-auto flex items-center gap-1 px-2 py-0.5 text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded transition-colors"
+                          >
+                            <Reply className="w-3 h-3" />
+                            Reply
+                          </button>
+                        )}
                       </div>
-                      {isEditing ? (
+
+                      {/* Email reply content */}
+                      {isEmailReply ? (
+                        <div className="mt-1">
+                          {activity.metadata?.from_email && (
+                            <p className="text-xs text-gray-500 mb-1">
+                              From: {activity.metadata.from_name || activity.metadata.from_email}
+                            </p>
+                          )}
+                          {activity.description && (
+                            <p className="text-sm text-gray-400">{activity.description}</p>
+                          )}
+                          {replyData?.body_text && (
+                            <div className="mt-2">
+                              <button
+                                onClick={() => setExpandedReplies(prev => {
+                                  const next = new Set(prev);
+                                  if (next.has(activity.id)) next.delete(activity.id);
+                                  else next.add(activity.id);
+                                  return next;
+                                })}
+                                className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                              >
+                                {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                {isExpanded ? 'Hide full reply' : 'Show full reply'}
+                              </button>
+                              {isExpanded && (
+                                <div className="mt-2 p-3 bg-blue-500/5 border border-blue-500/10 rounded-lg text-sm text-gray-300 whitespace-pre-wrap max-h-64 overflow-y-auto">
+                                  {replyData.body_text}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ) : isEditing ? (
                         <div className="flex gap-2 mt-1">
                           <input
                             type="text"
@@ -984,9 +1072,11 @@ export default function LeadDetailPage({
       {showEmailComposer && lead.email && (
         <EmailComposer
           lead={lead}
-          onClose={() => setShowEmailComposer(false)}
+          replyTo={replyContext || undefined}
+          onClose={() => { setShowEmailComposer(false); setReplyContext(null); }}
           onSent={async () => {
             setShowEmailComposer(false);
+            setReplyContext(null);
             // Refresh lead and activities
             try {
               const res = await fetch(`/api/sales/leads/${leadId}`);

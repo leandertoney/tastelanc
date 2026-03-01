@@ -6,7 +6,7 @@ import {
   Loader2,
   Save,
   Smartphone,
-  CheckCircle,
+  User,
 } from 'lucide-react';
 import { Card } from '@/components/ui';
 import { toast } from 'sonner';
@@ -48,6 +48,8 @@ export default function SettingsPage() {
 
   // Local form state
   const [form, setForm] = useState({
+    name: '',
+    phone: '',
     payment_cashapp: '',
     payment_venmo: '',
     payment_zelle: '',
@@ -67,6 +69,8 @@ export default function SettingsPage() {
           if (data.settings) {
             setSettings(data.settings);
             setForm({
+              name: data.settings.name || '',
+              phone: data.settings.phone || '',
               payment_cashapp: data.settings.payment_cashapp || '',
               payment_venmo: data.settings.payment_venmo || '',
               payment_zelle: data.settings.payment_zelle || '',
@@ -115,7 +119,7 @@ export default function SettingsPage() {
 
       const data = await res.json();
       setSettings(data.settings);
-      toast.success('Payment settings saved');
+      toast.success('Settings saved');
     } catch {
       toast.error('Failed to save settings');
     } finally {
@@ -140,26 +144,41 @@ export default function SettingsPage() {
             <Settings className="w-8 h-8 text-tastelanc-accent" />
             Settings
           </h1>
-          <p className="text-gray-400 mt-1">Payment methods and preferences</p>
+          <p className="text-gray-400 mt-1">Profile, payment methods, and preferences</p>
         </div>
       </div>
 
-      {/* Rep Info */}
+      {/* Profile */}
       {settings && (
         <Card className="p-4 mb-5">
-          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Your Info</h3>
+          <div className="flex items-center gap-2 mb-4">
+            <User className="w-5 h-5 text-tastelanc-accent" />
+            <h3 className="text-sm font-semibold text-white">Profile</h3>
+          </div>
           <div className="grid md:grid-cols-3 gap-4">
             <div>
-              <span className="text-xs text-gray-500">Name</span>
-              <p className="text-sm text-white">{settings.name || '—'}</p>
+              <label className="block text-xs text-gray-500 mb-1">Name</label>
+              <input
+                type="text"
+                value={form.name}
+                onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Your name"
+                className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              />
             </div>
             <div>
-              <span className="text-xs text-gray-500">Email</span>
-              <p className="text-sm text-white">{settings.email || '—'}</p>
+              <label className="block text-xs text-gray-500 mb-1">Email</label>
+              <p className="px-3 py-2 text-sm text-gray-400">{settings.email || '—'}</p>
             </div>
             <div>
-              <span className="text-xs text-gray-500">Phone</span>
-              <p className="text-sm text-white">{settings.phone || '—'}</p>
+              <label className="block text-xs text-gray-500 mb-1">Phone</label>
+              <input
+                type="text"
+                value={form.phone}
+                onChange={(e) => setForm(prev => ({ ...prev, phone: e.target.value }))}
+                placeholder="(555) 123-4567"
+                className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              />
             </div>
           </div>
         </Card>

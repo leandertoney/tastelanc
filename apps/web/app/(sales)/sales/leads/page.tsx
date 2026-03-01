@@ -53,6 +53,7 @@ interface BusinessLead {
   activity_types: string[];
   assigned_to: string | null;
   assigned_to_name: string | null;
+  has_unread_replies: boolean;
 }
 
 interface Stats {
@@ -497,10 +498,13 @@ export default function SalesLeadsPage() {
                       <td className={`${tdClass} overflow-hidden`}>
                         <Link
                           href={`/sales/leads/${lead.id}`}
-                          className="font-medium text-white hover:text-tastelanc-accent transition-colors truncate block"
+                          className="font-medium text-white hover:text-tastelanc-accent transition-colors truncate flex items-center gap-1.5"
                           title={lead.business_name}
                         >
-                          {lead.business_name}
+                          {lead.has_unread_replies && (
+                            <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" title="Unread reply" />
+                          )}
+                          <span className="truncate">{lead.business_name}</span>
                         </Link>
                       </td>
 
