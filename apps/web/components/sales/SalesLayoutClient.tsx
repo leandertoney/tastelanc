@@ -6,6 +6,13 @@ import Link from 'next/link';
 import SalesSidebar from './SalesSidebar';
 import { createClient } from '@/lib/supabase/client';
 
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
 export default function SalesLayoutClient({
   children,
 }: {
@@ -14,12 +21,15 @@ export default function SalesLayoutClient({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [repName, setRepName] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkAdmin = async () => {
+    const init = async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+      // Check admin role
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
@@ -28,8 +38,22 @@ export default function SalesLayoutClient({
       if (profile?.role === 'super_admin' || profile?.role === 'market_admin') {
         setIsAdmin(true);
       }
+
+      // Get rep name — try sales_reps first, then user metadata
+      const { data: rep } = await supabase
+        .from('sales_reps')
+        .select('name')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (rep?.name) {
+        setRepName(rep.name.split(' ')[0]);
+      } else if (user.user_metadata?.full_name) {
+        setRepName(user.user_metadata.full_name.split(' ')[0]);
+      } else if (user.email) {
+        setRepName(user.email.split('@')[0]);
+      }
     };
-    checkAdmin();
+    init();
   }, []);
 
   return (
@@ -82,6 +106,11 @@ export default function SalesLayoutClient({
 
         {/* Main Content */}
         <main className="flex-1 p-4 md:p-5 overflow-auto">
+          {repName && (
+            <p className="text-gray-400 text-sm mb-4">
+              {getGreeting()}, <span className="text-white font-medium">{repName}</span>
+            </p>
+          )}
           {children}
         </main>
       </div>
