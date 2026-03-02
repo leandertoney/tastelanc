@@ -99,7 +99,7 @@ export default function InboxPage() {
   const [replySubject, setReplySubject] = useState('');
   const [replyHeadline, setReplyHeadline] = useState('');
   const [isSendingReply, setIsSendingReply] = useState(false);
-  const [selectedSender, setSelectedSender] = useState<SenderIdentity>(SENDER_IDENTITIES[0]);
+  const [selectedSender, setSelectedSender] = useState<SenderIdentity | null>(null);
   const [senderDropdownOpen, setSenderDropdownOpen] = useState(false);
 
   // AI enhance for reply bar
@@ -216,7 +216,7 @@ export default function InboxPage() {
 
   // Send reply
   const handleSendReply = async () => {
-    if (!selectedConvo || !replyBody.trim() || !replySubject.trim()) return;
+    if (!selectedConvo || !replyBody.trim() || !replySubject.trim() || !selectedSender) return;
 
     setIsSendingReply(true);
     try {
@@ -519,7 +519,11 @@ export default function InboxPage() {
               {/* Reply bar */}
               <div className="border-t border-tastelanc-surface-light p-3 space-y-2">
                 {/* Sender: show dropdown for admins, static label for reps */}
-                {isAdmin ? (
+                {!selectedSender ? (
+                  <p className="text-xs text-yellow-400">
+                    No sender identity configured. Contact admin to set up your email.
+                  </p>
+                ) : isAdmin ? (
                   <div className="relative">
                     <button
                       onClick={() => setSenderDropdownOpen(!senderDropdownOpen)}
@@ -587,7 +591,7 @@ export default function InboxPage() {
                   />
                   <button
                     onClick={handleSendReply}
-                    disabled={isSendingReply || !replyBody.trim() || !replySubject.trim()}
+                    disabled={isSendingReply || !replyBody.trim() || !replySubject.trim() || !selectedSender}
                     className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors self-end"
                     title="Send (Cmd+Enter)"
                   >
@@ -641,7 +645,7 @@ export default function InboxPage() {
             fetchConversations();
           }}
           isAdmin={isAdmin}
-          defaultSender={selectedSender}
+          defaultSender={selectedSender || undefined}
         />
       )}
     </div>

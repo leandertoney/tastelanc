@@ -60,7 +60,7 @@ interface InsightsData {
 }
 
 // --- Circular Score Gauge ---
-function ScoreGauge({ score, size = 160 }: { score: number; size?: number }) {
+function ScoreGauge({ score, size = 128 }: { score: number; size?: number }) {
   const strokeWidth = 10;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -122,10 +122,10 @@ function BenchmarkRow({
       <div className="flex items-center justify-between text-sm mb-2">
         <span className="text-gray-300">{label}</span>
         <div className="flex items-center gap-4 text-right">
-          <span className="text-white font-medium w-16 text-right">
+          <span className="text-white font-medium w-12 sm:w-16 text-right">
             {isBoolean ? (yours ? 'Yes' : 'No') : yours}
           </span>
-          <span className="text-gray-500 w-16 text-right">
+          <span className="text-gray-500 w-12 sm:w-16 text-right">
             {isBoolean ? `${Math.round(topAvg * 100)}%` : Math.round(topAvg)}
           </span>
         </div>

@@ -131,7 +131,7 @@ export default function TeamPage() {
     >
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-white flex items-center gap-3">
               <Users className="w-7 h-7 text-tastelanc-accent" />
@@ -170,7 +170,7 @@ export default function TeamPage() {
               <h2 className="text-lg font-semibold text-white">Invite Team Member</h2>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleInvite} className="flex gap-3">
+              <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1">
                   <input
                     type="email"
@@ -253,7 +253,7 @@ export default function TeamPage() {
 
               {/* Team Members */}
               {teamData.members.map((member) => (
-                <div key={member.id} className="flex items-center justify-between py-3">
+                <div key={member.id} className="flex flex-col sm:flex-row sm:items-center justify-between py-3 gap-2">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-tastelanc-surface rounded-full flex items-center justify-center">
                       <Users className="w-5 h-5 text-gray-400" />

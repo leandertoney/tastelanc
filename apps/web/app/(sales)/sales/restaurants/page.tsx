@@ -72,7 +72,7 @@ export default function SalesRestaurantsPage() {
       if (tierFilter !== 'all') params.set('tier', tierFilter);
       if (activeFilter !== 'all') params.set('active', activeFilter === 'active' ? 'true' : 'false');
       params.set('page', String(pageOverride ?? pagination?.page ?? 1));
-      params.set('limit', '25');
+      params.set('limit', '10');
       params.set('sort_by', sortBy);
       params.set('sort_dir', sortDir);
 

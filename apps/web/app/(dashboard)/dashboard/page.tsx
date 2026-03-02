@@ -284,7 +284,7 @@ export default function DashboardPage() {
 
       {/* Market Insights Teaser */}
       {!hasElite ? (
-        <Card className="relative" style={{ minHeight: '280px' }}>
+        <Card className="relative min-h-[200px] sm:min-h-[280px]">
           <div className="blur-md pointer-events-none select-none p-6" aria-hidden="true">
             <div className="flex items-center gap-6">
               <div className="w-20 h-20 rounded-full border-4 border-tastelanc-surface-light flex items-center justify-center flex-shrink-0">
@@ -377,13 +377,13 @@ export default function DashboardPage() {
                       <HelpCircle className="w-3.5 h-3.5 text-gray-600 hover:text-gray-400 cursor-help" />
                     </Tooltip>
                   </h3>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="text-center">
-                      <p className="text-3xl font-bold text-white">{analyticsData.conversionFunnel.impressions.toLocaleString()}</p>
+                      <p className="text-2xl sm:text-3xl font-bold text-white">{analyticsData.conversionFunnel.impressions.toLocaleString()}</p>
                       <p className="text-gray-400 text-sm mt-1">Seen in App</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-3xl font-bold text-white">{analyticsData.conversionFunnel.detailViews.toLocaleString()}</p>
+                      <p className="text-2xl sm:text-3xl font-bold text-white">{analyticsData.conversionFunnel.detailViews.toLocaleString()}</p>
                       <p className="text-gray-400 text-sm mt-1">Viewed Profile</p>
                       <p className="text-tastelanc-accent text-xs mt-0.5">
                         {analyticsData.conversionFunnel.impressions > 0
@@ -392,7 +392,7 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-3xl font-bold text-white">{analyticsData.conversionFunnel.clicks.toLocaleString()}</p>
+                      <p className="text-2xl sm:text-3xl font-bold text-white">{analyticsData.conversionFunnel.clicks.toLocaleString()}</p>
                       <p className="text-gray-400 text-sm mt-1">Took Action</p>
                       <p className="text-green-400 text-xs mt-0.5">
                         {analyticsData.conversionFunnel.detailViews > 0

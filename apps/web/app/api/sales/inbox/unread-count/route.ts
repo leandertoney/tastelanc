@@ -71,5 +71,6 @@ async function getRepSenderEmails(
     }
   }
 
-  return getAllSenderEmails();
+  // No matching identity — return empty so reps never see someone else's inbox
+  return [];
 }

@@ -152,9 +152,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       {adminMode && isAdmin && (
         <div className="fixed top-0 left-0 right-0 z-[60] bg-amber-600 text-white px-4 py-2">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
-            <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4" />
-              <span className="text-sm font-medium">
+            <div className="flex items-center gap-2 min-w-0">
+              <Shield className="w-4 h-4 flex-shrink-0" />
+              <span className="text-sm font-medium truncate">
                 Admin Mode: Editing {restaurantName}
               </span>
             </div>
@@ -173,9 +173,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       {salesMode && isSalesRep && (
         <div className="fixed top-0 left-0 right-0 z-[60] bg-blue-600 text-white px-4 py-2">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-sm font-medium">
+            <div className="flex items-center gap-2 min-w-0">
+              <TrendingUp className="w-4 h-4 flex-shrink-0" />
+              <span className="text-sm font-medium truncate">
                 Sales Mode: Managing {restaurantName}
               </span>
             </div>

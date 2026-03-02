@@ -806,7 +806,7 @@ export default function MenuPage() {
       description="Upgrade to Premium to add and manage your restaurant's full menu, making it easy for customers to see what you offer."
     >
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
               <UtensilsCrossed className="w-6 h-6" />
@@ -819,7 +819,7 @@ export default function MenuPage() {
               </Tooltip>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button onClick={() => setShowAddMenu(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Add Menu
@@ -983,7 +983,7 @@ export default function MenuPage() {
               </button>
             </div>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">Item Name *</label>
                   <input
@@ -1226,7 +1226,7 @@ export default function MenuPage() {
                     {showAddItem === section.id ? (
                       <div className="p-4 bg-tastelanc-surface/30">
                         <div className="grid gap-4 mb-4">
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <input
                               type="text"
                               placeholder="Item name *"

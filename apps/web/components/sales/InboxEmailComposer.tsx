@@ -43,8 +43,8 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
   const isReply = !!replyTo;
   const [step, setStep] = useState<Step>('compose');
 
-  // Sender — non-admins are locked to their own identity
-  const [selectedSender, setSelectedSender] = useState<SenderIdentity>(defaultSender || SENDER_IDENTITIES[0]);
+  // Sender — non-admins are locked to their own identity; admins default to first
+  const [selectedSender, setSelectedSender] = useState<SenderIdentity | null>(defaultSender || (isAdmin ? SENDER_IDENTITIES[0] : null));
   const [senderDropdownOpen, setSenderDropdownOpen] = useState(false);
 
   // Recipient
@@ -167,6 +167,10 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
   };
 
   const handleSend = async () => {
+    if (!selectedSender) {
+      toast.error('No sender identity configured. Contact admin.');
+      return;
+    }
     setIsSending(true);
     try {
       const res = await fetch('/api/sales/inbox/send', {
@@ -217,7 +221,7 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
               <div>
                 <span className="text-xs text-gray-500 uppercase tracking-wider">From</span>
                 <p className="text-sm text-white mt-1">
-                  {selectedSender.name} &lt;{selectedSender.email}&gt;
+                  {selectedSender ? `${selectedSender.name} <${selectedSender.email}>` : 'No sender configured'}
                 </p>
               </div>
 
@@ -314,7 +318,11 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
           {/* Sender — dropdown for admins, static for reps */}
           <div>
             <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Send As</label>
-            {isAdmin ? (
+            {!selectedSender ? (
+              <div className="p-3 bg-tastelanc-bg border border-yellow-600/30 rounded-lg text-sm text-yellow-400">
+                No sender identity configured. Contact admin to set up your email.
+              </div>
+            ) : isAdmin ? (
               <div className="relative">
                 <button
                   onClick={() => setSenderDropdownOpen(!senderDropdownOpen)}
