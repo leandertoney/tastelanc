@@ -20,6 +20,7 @@
     "clsx": "^2.1.1",
     "csv-parse": "^6.1.0",
     "date-fns": "^4.1.0",
+    "isomorphic-dompurify": "^3.0.0",
     "lucide-react": "^0.468.0",
     "netlify-cli": "^23.12.3",
     "next": "^14.2.18",

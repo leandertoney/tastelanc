@@ -19,6 +19,7 @@ import { Card } from '@/components/ui';
 import { toast } from 'sonner';
 import InboxEmailComposer from '@/components/sales/InboxEmailComposer';
 import { SENDER_IDENTITIES, type SenderIdentity } from '@/config/sender-identities';
+import DOMPurify from 'isomorphic-dompurify';
 
 interface Conversation {
   counterparty_email: string;
@@ -41,6 +42,7 @@ interface ThreadMessage {
   to_email: string;
   subject: string | null;
   body_text: string | null;
+  body_html: string | null;
   headline: string | null;
   timestamp: string;
   lead_id: string | null;
@@ -474,11 +476,16 @@ export default function InboxPage() {
                         {msg.subject && (
                           <p className="text-xs font-medium text-gray-300 mb-1">{msg.subject}</p>
                         )}
-                        {msg.body_text && (
+                        {msg.body_html ? (
+                          <div
+                            className="email-html-content text-sm leading-relaxed overflow-x-auto"
+                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(msg.body_html, { ADD_ATTR: ['target'] }) }}
+                          />
+                        ) : msg.body_text ? (
                           <p className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">
                             {msg.body_text}
                           </p>
-                        )}
+                        ) : null}
                         {msg.direction === 'sent' && msg.delivery_status && (
                           <div className="flex items-center gap-1.5 mt-2 pt-1.5 border-t border-white/5">
                             <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded ${
