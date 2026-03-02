@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
 import { resend } from '@/lib/resend';
-import { renderProfessionalEmailPlainText } from '@/lib/email-templates/professional-template';
+import { renderProfessionalEmail, renderProfessionalEmailPlainText } from '@/lib/email-templates/professional-template';
 import { BRAND } from '@/config/market';
 import { SENDER_IDENTITIES } from '@/config/sender-identities';
 
@@ -84,17 +84,17 @@ export async function POST(
       );
     }
 
-    // Render plain text only — no HTML so Resend can't inject tracking markup (which Gmail flags as promotional)
+    // Render HTML + plain text (multipart). Resend tracking is DISABLED on tastelanc.com
+    // so no tracking markup is injected — clean HTML lands in Gmail Primary.
     const emailProps = {
       headline,
       body: emailBody,
-      ctaText: ctaText || undefined,
-      ctaUrl: ctaUrl || undefined,
       businessName: lead.business_name,
       contactName: lead.contact_name || undefined,
       senderName: senderName || BRAND.name,
       senderTitle: validSender?.title || undefined,
     };
+    const html = renderProfessionalEmail(emailProps);
     const text = renderProfessionalEmailPlainText(emailProps);
 
     // Determine sender
@@ -102,11 +102,12 @@ export async function POST(
     const fromEmail = senderEmail || `noreply@${BRAND.domain}`;
     const fromLine = `${fromName} <${fromEmail}>`;
 
-    // Text-only send — lands in Gmail Primary. No List-Unsubscribe (signals bulk/marketing).
+    // HTML + text multipart — lands in Gmail Primary with tracking disabled.
     const sendOptions: Parameters<typeof resend.emails.send>[0] = {
       from: fromLine,
       to: lead.email,
       subject,
+      html,
       text,
       replyTo: validSender?.replyEmail || fromEmail,
     };

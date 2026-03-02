@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
 import { resend } from '@/lib/resend';
-import { renderProfessionalEmailPlainText } from '@/lib/email-templates/professional-template';
+import { renderProfessionalEmail, renderProfessionalEmailPlainText } from '@/lib/email-templates/professional-template';
 import { BRAND } from '@/config/market';
 import { SENDER_IDENTITIES } from '@/config/sender-identities';
 
@@ -50,6 +50,31 @@ export async function POST(request: Request) {
       );
     }
 
+    // Sales reps can only send from their own identity (not admin's or other reps')
+    if (access.isSalesRep && !access.isAdmin && validSender && access.userId) {
+      const { data: rep } = await serviceClient
+        .from('sales_reps')
+        .select('preferred_sender_email, name')
+        .eq('id', access.userId)
+        .single();
+
+      let allowedEmail: string | null = null;
+      if (rep?.preferred_sender_email) {
+        allowedEmail = rep.preferred_sender_email;
+      } else if (rep?.name) {
+        const firstName = rep.name.split(' ')[0].toLowerCase();
+        const matched = SENDER_IDENTITIES.find(s => s.name.toLowerCase() === firstName);
+        if (matched) allowedEmail = matched.email;
+      }
+
+      if (allowedEmail && validSender.email !== allowedEmail) {
+        return NextResponse.json(
+          { error: 'You can only send emails from your own identity.' },
+          { status: 403 }
+        );
+      }
+    }
+
     // Check B2B unsubscribes
     const { data: unsub } = await serviceClient
       .from('b2b_unsubscribes')
@@ -64,16 +89,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // Render plain text only — no HTML so Resend can't inject tracking markup (which Gmail flags as promotional)
+    // Render HTML + plain text (multipart). Resend tracking is DISABLED on tastelanc.com
+    // so no tracking markup is injected — clean HTML lands in Gmail Primary.
     const emailProps = {
       headline,
       body: emailBody,
-      ctaText: ctaText || undefined,
-      ctaUrl: ctaUrl || undefined,
       businessName: recipientName || undefined,
       senderName: senderName || BRAND.name,
       senderTitle: validSender?.title || undefined,
     };
+    const html = renderProfessionalEmail(emailProps);
     const text = renderProfessionalEmailPlainText(emailProps);
 
     // Determine sender
@@ -81,11 +106,12 @@ export async function POST(request: Request) {
     const fromEmail = senderEmail || `noreply@${BRAND.domain}`;
     const fromLine = `${fromName} <${fromEmail}>`;
 
-    // Text-only send — lands in Gmail Primary. No List-Unsubscribe (signals bulk/marketing).
+    // HTML + text multipart — lands in Gmail Primary with tracking disabled.
     const sendOptions: Parameters<typeof resend.emails.send>[0] = {
       from: fromLine,
       to: recipientEmail,
       subject,
+      html,
       text,
       replyTo: validSender?.replyEmail || fromEmail,
     };

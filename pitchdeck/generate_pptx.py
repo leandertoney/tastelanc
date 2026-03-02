@@ -18,6 +18,7 @@ from pptx.util import Inches, Pt, Emu
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
+from PIL import Image, ImageDraw
 
 # ---------------------------------------------------------------------------
 # Brand colors (from apps/mobile/src/constants/colors.ts)
@@ -40,6 +41,7 @@ ASSETS_DIR = REPO_ROOT / "apps" / "mobile" / "assets"
 WEB_PUBLIC = REPO_ROOT / "apps" / "web" / "public" / "images"
 SCREENSHOTS_DIR = ASSETS_DIR / "app-store-screenshots"
 DESKTOP_ASSETS = Path.home() / "Desktop" / "TasteLanc Assets"
+FRAMES_DIR = Path(__file__).resolve().parent / "frames"
 OUTPUT_PATH = Path(__file__).resolve().parent / "TasteLanc_PitchDeck.pptx"
 
 
@@ -118,6 +120,103 @@ def try_add_image(slide, image_path, left, top, width=None, height=None):
 
 
 # ---------------------------------------------------------------------------
+# Device frame generator
+# ---------------------------------------------------------------------------
+
+def create_device_frame(screenshot_path: Path, output_path: Path):
+    """Wrap a screenshot in an iPhone-style device frame using Pillow."""
+    ss = Image.open(screenshot_path).convert("RGBA")
+    ss_w, ss_h = ss.size  # 1242x2688 for 6.5" screenshots
+
+    # Frame dimensions
+    bezel = int(ss_w * 0.04)        # 4% border width (~50px)
+    top_bar = int(ss_h * 0.015)     # top chin
+    bottom_bar = int(ss_h * 0.015)  # bottom chin
+    corner_radius = int(ss_w * 0.08)  # rounded corners
+
+    frame_w = ss_w + bezel * 2
+    frame_h = ss_h + bezel * 2 + top_bar + bottom_bar
+
+    # Create frame canvas
+    frame = Image.new("RGBA", (frame_w, frame_h), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(frame)
+
+    # Draw outer rounded rectangle (device body - dark gray)
+    draw.rounded_rectangle(
+        [0, 0, frame_w - 1, frame_h - 1],
+        radius=corner_radius,
+        fill=(30, 30, 30, 255),  # #1E1E1E device body
+        outline=(60, 60, 60, 255),  # subtle border
+        width=2,
+    )
+
+    # Draw inner rounded rectangle (screen area - slightly inset)
+    screen_x = bezel
+    screen_y = bezel + top_bar
+    screen_corner = int(corner_radius * 0.6)
+    draw.rounded_rectangle(
+        [screen_x - 1, screen_y - 1, screen_x + ss_w, screen_y + ss_h],
+        radius=screen_corner,
+        fill=(0, 0, 0, 255),
+    )
+
+    # Draw Dynamic Island (top notch indicator)
+    island_w = int(ss_w * 0.25)
+    island_h = int(ss_h * 0.012)
+    island_x = (frame_w - island_w) // 2
+    island_y = bezel + top_bar + int(ss_h * 0.008)
+    island_radius = island_h // 2
+    draw.rounded_rectangle(
+        [island_x, island_y, island_x + island_w, island_y + island_h],
+        radius=island_radius,
+        fill=(20, 20, 20, 255),
+    )
+
+    # Paste screenshot onto frame
+    frame.paste(ss, (screen_x, screen_y))
+
+    # Re-draw the Dynamic Island ON TOP of the screenshot (like real iPhone)
+    draw2 = ImageDraw.Draw(frame)
+    draw2.rounded_rectangle(
+        [island_x, island_y, island_x + island_w, island_y + island_h],
+        radius=island_radius,
+        fill=(20, 20, 20, 255),
+    )
+
+    # Save
+    frame.save(str(output_path), "PNG")
+    return output_path
+
+
+def generate_all_device_frames():
+    """Generate device-framed versions of all 6 screenshots."""
+    FRAMES_DIR.mkdir(exist_ok=True)
+
+    screenshots = [
+        "6.5_01_home.png",
+        "6.5_02_search.png",
+        "6.5_03_rosie_ai.png",
+        "6.5_04_happy_hours.png",
+        "6.5_05_detail.png",
+        "6.5_06_voting.png",
+    ]
+
+    framed_paths = []
+    for filename in screenshots:
+        src = SCREENSHOTS_DIR / filename
+        dst = FRAMES_DIR / f"framed_{filename}"
+        if src.exists():
+            create_device_frame(src, dst)
+            framed_paths.append(dst)
+            print(f"  \u2713 Frame: {filename}")
+        else:
+            framed_paths.append(None)
+            print(f"  \u2717 Missing: {filename}")
+
+    return framed_paths
+
+
+# ---------------------------------------------------------------------------
 # Slide builders
 # ---------------------------------------------------------------------------
 
@@ -126,27 +225,30 @@ def build_slide_01_cover(prs):
     slide = prs.slides.add_slide(prs.slide_layouts[6])  # Blank layout
     set_slide_bg(slide)
 
-    # Logo
+    # Logo — constrain HEIGHT to 2.5" (logo is 1024x1024 square)
     logo_path = WEB_PUBLIC / "tastelanc_new_dark.png"
     if logo_path.exists():
-        try_add_image(slide, logo_path, Inches(4.2), Inches(1.0), width=Inches(5))
+        logo_h = Inches(2.5)
+        logo_w = Inches(2.5)  # square
+        logo_x = (SLIDE_WIDTH - logo_w) // 2  # center horizontally
+        try_add_image(slide, logo_path, logo_x, Inches(0.6), height=logo_h)
     else:
-        add_textbox(slide, Inches(2), Inches(1.5), Inches(9), Inches(1.5),
+        add_textbox(slide, Inches(2), Inches(1.0), Inches(9), Inches(1.5),
                     "TasteLanc", font_size=72, color=WHITE, bold=True,
                     alignment=PP_ALIGN.CENTER)
 
-    # Accent bar
-    add_accent_bar(slide, Inches(5.4), Inches(3.8), width=Inches(2.5))
+    # Accent bar — well below the logo (logo ends at Y=3.1)
+    add_accent_bar(slide, Inches(5.4), Inches(3.5), width=Inches(2.5))
 
-    # Tagline
-    add_textbox(slide, Inches(2), Inches(4.2), Inches(9), Inches(0.8),
-                "Eat. Drink. Experience.", font_size=36, color=WHITE, bold=True,
+    # Tagline — below accent bar
+    add_textbox(slide, Inches(2), Inches(3.9), Inches(9), Inches(0.8),
+                "Eat. Drink. Experience.", font_size=40, color=WHITE, bold=True,
                 alignment=PP_ALIGN.CENTER)
 
     # Subtitle
-    add_textbox(slide, Inches(2), Inches(5.2), Inches(9), Inches(0.6),
+    add_textbox(slide, Inches(2), Inches(4.9), Inches(9), Inches(0.6),
                 "Lancaster's go-to for what's happening now.",
-                font_size=20, color=MUTED, alignment=PP_ALIGN.CENTER)
+                font_size=22, color=MUTED, alignment=PP_ALIGN.CENTER)
 
     # Footer
     add_textbox(slide, Inches(2), Inches(6.5), Inches(9), Inches(0.4),
@@ -280,8 +382,8 @@ def build_slide_04_solution(prs):
                     desc, font_size=13, color=MUTED)
 
 
-def build_slide_05_product(prs):
-    """Slide 5: Product Demo / Screenshots"""
+def build_slide_05_product(prs, framed_paths=None):
+    """Slide 5: Product Demo / Screenshots with iPhone device frames."""
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     set_slide_bg(slide)
 
@@ -293,30 +395,37 @@ def build_slide_05_product(prs):
     add_textbox(slide, Inches(0.8), Inches(1.5), Inches(11), Inches(0.5),
                 "Live on the iOS App Store", font_size=24, color=WHITE, bold=True)
 
-    # Screenshot labels and files
-    screenshots = [
-        ("6.5_01_home.png", "Home Feed"),
-        ("6.5_02_search.png", "Map Search"),
-        ("6.5_03_rosie_ai.png", "Rosie AI"),
-        ("6.5_04_happy_hours.png", "Happy Hours"),
-        ("6.5_05_detail.png", "Restaurant Detail"),
-        ("6.5_06_voting.png", "Voting"),
+    # Screenshot labels
+    labels = ["Home Feed", "Map Search", "Rosie AI", "Happy Hours", "Restaurant Detail", "Voting"]
+    raw_filenames = [
+        "6.5_01_home.png", "6.5_02_search.png", "6.5_03_rosie_ai.png",
+        "6.5_04_happy_hours.png", "6.5_05_detail.png", "6.5_06_voting.png",
     ]
 
+    y_top = Inches(2.1)
+    img_height = Inches(4.6)
+    # 6 phones across a 13.333" slide with even spacing
+    phone_width_approx = Inches(2.0)  # framed image is slightly wider than screenshot
+    total_width = phone_width_approx * 6
+    gap = (SLIDE_WIDTH - total_width - Inches(1.0)) / 5  # distribute remaining space
     x_start = Inches(0.5)
-    y_top = Inches(2.2)
-    img_height = Inches(4.5)
-    spacing = Inches(2.1)
 
-    for i, (filename, label) in enumerate(screenshots):
-        x = x_start + spacing * i
-        img_path = SCREENSHOTS_DIR / filename
+    for i, label in enumerate(labels):
+        x = x_start + i * (phone_width_approx + gap)
 
-        if img_path.exists():
+        # Try framed image first, fall back to raw screenshot
+        img_path = None
+        if framed_paths and i < len(framed_paths) and framed_paths[i] and framed_paths[i].exists():
+            img_path = framed_paths[i]
+        else:
+            raw_path = SCREENSHOTS_DIR / raw_filenames[i]
+            if raw_path.exists():
+                img_path = raw_path
+
+        if img_path:
             try:
                 slide.shapes.add_picture(str(img_path), x, y_top, height=img_height)
             except Exception:
-                # Fallback: placeholder card
                 add_card(slide, x, y_top, Inches(1.8), img_height)
                 add_textbox(slide, x + Inches(0.1), y_top + Inches(2.0),
                             Inches(1.6), Inches(0.5),
@@ -330,9 +439,9 @@ def build_slide_05_product(prs):
                         alignment=PP_ALIGN.CENTER)
 
         # Label below
-        add_textbox(slide, x, y_top + img_height + Inches(0.05),
-                    Inches(1.9), Inches(0.3),
-                    label, font_size=11, color=MUTED,
+        add_textbox(slide, x, y_top + img_height + Inches(0.1),
+                    Inches(2.0), Inches(0.3),
+                    label, font_size=12, color=MUTED,
                     alignment=PP_ALIGN.CENTER)
 
 
@@ -817,14 +926,18 @@ def build_slide_14_ask(prs):
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     set_slide_bg(slide)
 
-    # Logo
+    # Logo — constrain HEIGHT (logo is 1024x1024 square)
     logo_path = WEB_PUBLIC / "tastelanc_new_dark.png"
+    logo_h = Inches(2.0)
     if logo_path.exists():
-        try_add_image(slide, logo_path, Inches(4.2), Inches(0.8), width=Inches(5))
+        logo_x = (SLIDE_WIDTH - logo_h) // 2  # center (square)
+        try_add_image(slide, logo_path, logo_x, Inches(0.5), height=logo_h)
 
-    add_accent_bar(slide, Inches(5.4), Inches(3.0), width=Inches(2.5))
+    # Accent bar — below logo (logo ends at Y=2.5)
+    add_accent_bar(slide, Inches(5.4), Inches(2.8), width=Inches(2.5))
 
-    add_textbox(slide, Inches(1.5), Inches(3.4), Inches(10), Inches(0.8),
+    # CTA text — below accent bar
+    add_textbox(slide, Inches(1.5), Inches(3.2), Inches(10), Inches(0.8),
                 "Partner with us to scale the\nhyper-local playbook to new markets.",
                 font_size=28, color=WHITE, bold=True,
                 alignment=PP_ALIGN.CENTER)
@@ -836,7 +949,7 @@ def build_slide_14_ask(prs):
         "Restaurant group partnerships for anchor tenant acquisition",
     ]
 
-    txBox = slide.shapes.add_textbox(Inches(3), Inches(4.6), Inches(7), Inches(1.5))
+    txBox = slide.shapes.add_textbox(Inches(3), Inches(4.4), Inches(7), Inches(1.5))
     tf = txBox.text_frame
     tf.word_wrap = True
     for i, ask in enumerate(asks):
@@ -849,11 +962,11 @@ def build_slide_14_ask(prs):
         p.alignment = PP_ALIGN.LEFT
 
     # Contact
-    add_textbox(slide, Inches(2), Inches(6.3), Inches(9), Inches(0.3),
+    add_textbox(slide, Inches(2), Inches(6.2), Inches(9), Inches(0.3),
                 "tastelanc.com  \u00b7  support@tastelanc.com",
                 font_size=16, color=MUTED, alignment=PP_ALIGN.CENTER)
 
-    add_textbox(slide, Inches(2), Inches(6.8), Inches(9), Inches(0.3),
+    add_textbox(slide, Inches(2), Inches(6.7), Inches(9), Inches(0.3),
                 "Generated from codebase \u2014 see /pitchdeck/README.md for source map",
                 font_size=10, color=RGBColor(0x55, 0x55, 0x55),
                 alignment=PP_ALIGN.CENTER)
@@ -868,28 +981,41 @@ def main():
     prs.slide_width = SLIDE_WIDTH
     prs.slide_height = SLIDE_HEIGHT
 
-    print("Building TasteLanc Pitch Deck...")
+    # Generate device-framed screenshots first
+    print("Generating iPhone device frames...")
+    framed_paths = generate_all_device_frames()
 
-    builders = [
-        ("Cover", build_slide_01_cover),
-        ("What Is TasteLanc?", build_slide_02_oneliner),
-        ("The Problem", build_slide_03_problem),
-        ("The Solution", build_slide_04_solution),
-        ("Product Screenshots", build_slide_05_product),
-        ("How It Works", build_slide_06_how_it_works),
-        ("Business Model", build_slide_07_business_model),
-        ("Pricing", build_slide_08_pricing),
-        ("Defensibility", build_slide_09_moat),
-        ("Go-to-Market", build_slide_10_gtm),
-        ("Expansion", build_slide_11_expansion),
-        ("Traction", build_slide_12_traction),
-        ("Roadmap", build_slide_13_roadmap),
-        ("The Ask", build_slide_14_ask),
-    ]
+    print("\nBuilding TasteLanc Pitch Deck...")
 
-    for name, builder in builders:
-        print(f"  \u2713 Slide: {name}")
-        builder(prs)
+    # Build slides in order
+    print("  \u2713 Slide: Cover")
+    build_slide_01_cover(prs)
+    print("  \u2713 Slide: What Is TasteLanc?")
+    build_slide_02_oneliner(prs)
+    print("  \u2713 Slide: The Problem")
+    build_slide_03_problem(prs)
+    print("  \u2713 Slide: The Solution")
+    build_slide_04_solution(prs)
+    print("  \u2713 Slide: Product Screenshots")
+    build_slide_05_product(prs, framed_paths=framed_paths)
+    print("  \u2713 Slide: How It Works")
+    build_slide_06_how_it_works(prs)
+    print("  \u2713 Slide: Business Model")
+    build_slide_07_business_model(prs)
+    print("  \u2713 Slide: Pricing")
+    build_slide_08_pricing(prs)
+    print("  \u2713 Slide: Defensibility")
+    build_slide_09_moat(prs)
+    print("  \u2713 Slide: Go-to-Market")
+    build_slide_10_gtm(prs)
+    print("  \u2713 Slide: Expansion")
+    build_slide_11_expansion(prs)
+    print("  \u2713 Slide: Traction")
+    build_slide_12_traction(prs)
+    print("  \u2713 Slide: Roadmap")
+    build_slide_13_roadmap(prs)
+    print("  \u2713 Slide: The Ask")
+    build_slide_14_ask(prs)
 
     prs.save(str(OUTPUT_PATH))
     print(f"\nSaved to: {OUTPUT_PATH}")
