@@ -17,6 +17,7 @@ import {
   HelpCircle,
   Store,
   Search,
+  User,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Card, Tooltip } from '@/components/ui';
@@ -32,6 +33,7 @@ interface Meeting {
   lead_id: string | null;
   restaurant_id: string | null;
   created_by: string;
+  creator_name: string | null;
   created_at: string;
   business_leads: {
     id: string;
@@ -521,6 +523,12 @@ export default function CalendarPage() {
                     {m.description && (
                       <p className="text-xs text-gray-500 mt-1.5 line-clamp-2">{m.description}</p>
                     )}
+                    {m.creator_name && (
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <User className="w-3 h-3 text-gray-600" />
+                        <span className="text-[11px] text-gray-600">Set by {m.creator_name}</span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -531,147 +539,152 @@ export default function CalendarPage() {
 
       {/* Create/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-xl w-full max-w-md">
-            <div className="flex items-center justify-between p-4 border-b border-tastelanc-surface-light">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowModal(false)}>
+          <div
+            className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-tastelanc-surface-light flex-shrink-0">
               <h2 className="text-lg font-bold text-white">
                 {editingMeeting ? 'Edit Meeting' : 'New Meeting'}
               </h2>
-              <button onClick={() => setShowModal(false)} className="p-1 text-gray-400 hover:text-white transition-colors">
+              <button onClick={() => setShowModal(false)} className="p-1.5 text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-4 space-y-4">
-              <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Title</label>
-                <input
-                  type="text"
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  placeholder="Meeting with..."
-                  className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
-                  autoFocus
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Date</label>
-                <input
-                  type="date"
-                  value={formDate}
-                  onChange={(e) => setFormDate(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent [color-scheme:dark]"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Start Time</label>
-                  <input
-                    type="time"
-                    value={formStartTime}
-                    onChange={(e) => setFormStartTime(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent [color-scheme:dark]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">End Time</label>
-                  <input
-                    type="time"
-                    value={formEndTime}
-                    onChange={(e) => setFormEndTime(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent [color-scheme:dark]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
-                  Link to Lead <span className="text-gray-600">(optional)</span>
-                </label>
-                <select
-                  value={formLeadId}
-                  onChange={(e) => setFormLeadId(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
-                >
-                  <option value="">No lead linked</option>
-                  {leads.map((l) => (
-                    <option key={l.id} value={l.id}>{l.business_name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="relative">
-                <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
-                  Link to Restaurant <span className="text-gray-600">(optional)</span>
-                </label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <div className="p-4 overflow-y-auto flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Title</label>
                   <input
                     type="text"
-                    value={formRestaurantSearch}
-                    onChange={(e) => {
-                      setFormRestaurantSearch(e.target.value);
-                      setShowRestaurantDropdown(true);
-                      if (!e.target.value) {
-                        setFormRestaurantId('');
-                      }
-                    }}
-                    onFocus={() => setShowRestaurantDropdown(true)}
-                    placeholder="Search restaurants..."
-                    className="w-full pl-9 pr-8 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                    value={formTitle}
+                    onChange={(e) => setFormTitle(e.target.value)}
+                    placeholder="Meeting with..."
+                    className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                    autoFocus
                   />
-                  {formRestaurantId && (
-                    <button
-                      onClick={() => { setFormRestaurantId(''); setFormRestaurantSearch(''); }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-500 hover:text-white"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
                 </div>
-                {showRestaurantDropdown && formRestaurantSearch && !formRestaurantId && (
-                  <div className="absolute z-10 mt-1 w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg shadow-lg max-h-40 overflow-y-auto">
-                    {restaurants
-                      .filter((r) => r.name.toLowerCase().includes(formRestaurantSearch.toLowerCase()))
-                      .slice(0, 10)
-                      .map((r) => (
-                        <button
-                          key={r.id}
-                          onClick={() => {
-                            setFormRestaurantId(r.id);
-                            setFormRestaurantSearch(r.name);
-                            setShowRestaurantDropdown(false);
-                          }}
-                          className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-tastelanc-surface-light hover:text-white transition-colors flex items-center gap-2"
-                        >
-                          <Store className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
-                          {r.name}
-                        </button>
-                      ))}
-                    {restaurants.filter((r) => r.name.toLowerCase().includes(formRestaurantSearch.toLowerCase())).length === 0 && (
-                      <p className="px-3 py-2 text-sm text-gray-500">No restaurants found</p>
+
+                <div>
+                  <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Date</label>
+                  <input
+                    type="date"
+                    value={formDate}
+                    onChange={(e) => setFormDate(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent [color-scheme:dark]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Start Time</label>
+                    <input
+                      type="time"
+                      value={formStartTime}
+                      onChange={(e) => setFormStartTime(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent [color-scheme:dark]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">End Time</label>
+                    <input
+                      type="time"
+                      value={formEndTime}
+                      onChange={(e) => setFormEndTime(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent [color-scheme:dark]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
+                    Link to Lead <span className="text-gray-600">(optional)</span>
+                  </label>
+                  <select
+                    value={formLeadId}
+                    onChange={(e) => setFormLeadId(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  >
+                    <option value="">No lead linked</option>
+                    {leads.map((l) => (
+                      <option key={l.id} value={l.id}>{l.business_name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="relative">
+                  <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
+                    Link to Restaurant <span className="text-gray-600">(optional)</span>
+                  </label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <input
+                      type="text"
+                      value={formRestaurantSearch}
+                      onChange={(e) => {
+                        setFormRestaurantSearch(e.target.value);
+                        setShowRestaurantDropdown(true);
+                        if (!e.target.value) {
+                          setFormRestaurantId('');
+                        }
+                      }}
+                      onFocus={() => setShowRestaurantDropdown(true)}
+                      placeholder="Search restaurants..."
+                      className="w-full pl-9 pr-8 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                    />
+                    {formRestaurantId && (
+                      <button
+                        onClick={() => { setFormRestaurantId(''); setFormRestaurantSearch(''); }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-500 hover:text-white"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     )}
                   </div>
-                )}
-              </div>
+                  {showRestaurantDropdown && formRestaurantSearch && !formRestaurantId && (
+                    <div className="absolute z-10 mt-1 w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                      {restaurants
+                        .filter((r) => r.name.toLowerCase().includes(formRestaurantSearch.toLowerCase()))
+                        .slice(0, 10)
+                        .map((r) => (
+                          <button
+                            key={r.id}
+                            onClick={() => {
+                              setFormRestaurantId(r.id);
+                              setFormRestaurantSearch(r.name);
+                              setShowRestaurantDropdown(false);
+                            }}
+                            className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-tastelanc-surface-light hover:text-white transition-colors flex items-center gap-2"
+                          >
+                            <Store className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+                            {r.name}
+                          </button>
+                        ))}
+                      {restaurants.filter((r) => r.name.toLowerCase().includes(formRestaurantSearch.toLowerCase())).length === 0 && (
+                        <p className="px-3 py-2 text-sm text-gray-500">No restaurants found</p>
+                      )}
+                    </div>
+                  )}
+                </div>
 
-              <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
-                  Notes <span className="text-gray-600">(optional)</span>
-                </label>
-                <textarea
-                  value={formDescription}
-                  onChange={(e) => setFormDescription(e.target.value)}
-                  placeholder="Meeting agenda, notes..."
-                  rows={3}
-                  className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent resize-y"
-                />
+                <div className="md:col-span-2">
+                  <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
+                    Notes <span className="text-gray-600">(optional)</span>
+                  </label>
+                  <textarea
+                    value={formDescription}
+                    onChange={(e) => setFormDescription(e.target.value)}
+                    placeholder="Meeting agenda, notes..."
+                    rows={2}
+                    className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent resize-y"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-between p-4 border-t border-tastelanc-surface-light">
+            <div className="flex items-center justify-between p-4 border-t border-tastelanc-surface-light flex-shrink-0">
               <div>
                 {editingMeeting && (
                   <button

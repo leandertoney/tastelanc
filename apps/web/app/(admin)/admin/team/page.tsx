@@ -15,6 +15,7 @@ import {
   Crown,
   Plus,
   Filter,
+  Clock,
 } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 import { toast } from 'sonner';
@@ -35,6 +36,7 @@ interface TeamMember {
     preferred_sender_email: string | null;
   } | null;
   leadCount: number;
+  lastSignInAt: string | null;
   marketNames: string[];
 }
 
@@ -228,6 +230,31 @@ export default function TeamPage() {
     return member.profileRole === 'super_admin' || member.profileRole === 'co_founder';
   };
 
+  const getLastLoginDisplay = (lastSignInAt: string | null) => {
+    if (!lastSignInAt) return { text: 'Never logged in', color: 'text-red-400' };
+    const now = new Date();
+    const last = new Date(lastSignInAt);
+    const diffMs = now.getTime() - last.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+    let text: string;
+    if (diffHours < 1) {
+      const mins = Math.floor(diffMs / (1000 * 60));
+      text = mins <= 1 ? 'Just now' : `${mins}m ago`;
+    } else if (diffHours < 24) {
+      text = `${Math.floor(diffHours)}h ago`;
+    } else if (diffDays < 7) {
+      text = `${Math.floor(diffDays)}d ago`;
+    } else {
+      text = last.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    // Green = within 24h, Yellow = within 7d, Red = over 7d
+    const color = diffHours < 24 ? 'text-green-400' : diffDays < 7 ? 'text-amber-400' : 'text-red-400';
+    return { text, color };
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -307,6 +334,7 @@ export default function TeamPage() {
           const role = getDisplayRole(member);
           const isEditing = editingId === member.id;
           const locked = isProtected(member);
+          const lastLogin = getLastLoginDisplay(member.lastSignInAt);
 
           return (
             <Card key={member.id} className="p-4">
@@ -340,6 +368,9 @@ export default function TeamPage() {
                     </span>
                     <span className="flex items-center gap-1">
                       <MapPin className="w-3 h-3" /> {member.marketNames.join(', ') || 'No market'}
+                    </span>
+                    <span className={`flex items-center gap-1 ${lastLogin.color}`}>
+                      <Clock className="w-3 h-3" /> {lastLogin.text}
                     </span>
                   </div>
                 </div>

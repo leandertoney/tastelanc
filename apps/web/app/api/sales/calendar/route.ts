@@ -62,7 +62,40 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch meetings' }, { status: 500 });
     }
 
-    return NextResponse.json({ meetings: meetings || [] });
+    // Resolve creator names from sales_reps
+    const creatorIds = [...new Set((meetings || []).map((m: { created_by: string }) => m.created_by).filter(Boolean))];
+    const creatorNameMap: Record<string, string> = {};
+    if (creatorIds.length > 0) {
+      const { data: reps } = await serviceClient
+        .from('sales_reps')
+        .select('id, name')
+        .in('id', creatorIds);
+      if (reps) {
+        for (const r of reps) {
+          creatorNameMap[r.id] = r.name;
+        }
+      }
+      // Fallback to profiles for anyone not in sales_reps
+      const missingIds = creatorIds.filter(id => !creatorNameMap[id]);
+      if (missingIds.length > 0) {
+        const { data: profiles } = await serviceClient
+          .from('profiles')
+          .select('id, display_name, email')
+          .in('id', missingIds);
+        if (profiles) {
+          for (const p of profiles) {
+            creatorNameMap[p.id] = p.display_name || p.email || 'Unknown';
+          }
+        }
+      }
+    }
+
+    const enrichedMeetings = (meetings || []).map((m: { created_by: string; [key: string]: unknown }) => ({
+      ...m,
+      creator_name: creatorNameMap[m.created_by] || null,
+    }));
+
+    return NextResponse.json({ meetings: enrichedMeetings });
   } catch (error) {
     console.error('Error in calendar API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
