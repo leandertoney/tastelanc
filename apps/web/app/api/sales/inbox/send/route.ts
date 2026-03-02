@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
 import { resend } from '@/lib/resend';
-import { renderProfessionalEmail, renderProfessionalEmailPlainText } from '@/lib/email-templates/professional-template';
+import { renderProfessionalEmailPlainText } from '@/lib/email-templates/professional-template';
 import { BRAND } from '@/config/market';
 import { SENDER_IDENTITIES } from '@/config/sender-identities';
 
@@ -64,22 +64,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // Build unsubscribe URL
-    const unsubscribeUrl = `https://${BRAND.domain}/api/unsubscribe/b2b?email=${encodeURIComponent(recipientEmail)}`;
-
-    // Render email HTML + plain text (professional template for Primary inbox delivery)
+    // Render plain text only — no HTML so Resend can't inject tracking markup (which Gmail flags as promotional)
     const emailProps = {
       headline,
       body: emailBody,
       ctaText: ctaText || undefined,
       ctaUrl: ctaUrl || undefined,
-      previewText: subject,
-      unsubscribeUrl,
       businessName: recipientName || undefined,
       senderName: senderName || BRAND.name,
       senderTitle: validSender?.title || undefined,
     };
-    const html = renderProfessionalEmail(emailProps);
     const text = renderProfessionalEmailPlainText(emailProps);
 
     // Determine sender
@@ -87,26 +81,17 @@ export async function POST(request: Request) {
     const fromEmail = senderEmail || `noreply@${BRAND.domain}`;
     const fromLine = `${fromName} <${fromEmail}>`;
 
-    // Build unsubscribe mailto for List-Unsubscribe header (improves deliverability)
-    const listUnsubscribeUrl = `https://${BRAND.domain}/api/unsubscribe/b2b?email=${encodeURIComponent(recipientEmail)}`;
-
-    // Build send options (include plain text for deliverability)
+    // Text-only send — lands in Gmail Primary. No List-Unsubscribe (signals bulk/marketing).
     const sendOptions: Parameters<typeof resend.emails.send>[0] = {
       from: fromLine,
       to: recipientEmail,
       subject,
-      html,
       text,
       replyTo: validSender?.replyEmail || fromEmail,
-      headers: {
-        'List-Unsubscribe': `<${listUnsubscribeUrl}>`,
-        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-      },
     };
 
     if (inReplyToMessageId) {
       sendOptions.headers = {
-        ...sendOptions.headers,
         'In-Reply-To': `<${inReplyToMessageId}@resend.dev>`,
         'References': `<${inReplyToMessageId}@resend.dev>`,
       };
