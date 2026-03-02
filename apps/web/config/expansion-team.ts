@@ -3,22 +3,22 @@
 
 export interface TeamMember {
   name: string;
-  workEmail: string;      // to: address for review emails
-  personalEmail: string;  // cc: address
+  email: string;          // actual inbox — review emails go here
+  senderIdentity: string; // @tastelanc.com address (outbound "from" only, no inbox)
   role: string;
 }
 
 export const EXPANSION_TEAM: TeamMember[] = [
   {
     name: 'Leander',
-    workEmail: 'leander@tastelanc.com',
-    personalEmail: 'leandertoney@gmail.com',
+    email: 'leandertoney@gmail.com',
+    senderIdentity: 'leander@tastelanc.com',
     role: 'Founder',
   },
   {
     name: 'Jordan',
-    workEmail: 'jordan@tastelanc.com',
-    personalEmail: 'jmtoney1987@gmail.com',
+    email: 'jmtoney1987@gmail.com',
+    senderIdentity: 'jordan@tastelanc.com',
     role: 'Co-Founder',
   },
 ];
@@ -45,7 +45,7 @@ export function calculateConsensus(
 ): { status: ReviewStatus; priorityDelta: number } {
   const teamSize = EXPANSION_TEAM.length;
   const teamVotes = votes.filter(v =>
-    EXPANSION_TEAM.some(m => m.workEmail === v.reviewer_email)
+    EXPANSION_TEAM.some(m => m.email === v.reviewer_email)
   );
 
   // Not everyone has voted yet
@@ -70,7 +70,7 @@ export function calculateConsensus(
   return { status: 'split_decision', priorityDelta: 0 };
 }
 
-/** Find team member by work email */
-export function getTeamMember(workEmail: string): TeamMember | undefined {
-  return EXPANSION_TEAM.find(m => m.workEmail === workEmail);
+/** Find team member by email */
+export function getTeamMember(email: string): TeamMember | undefined {
+  return EXPANSION_TEAM.find(m => m.email === email);
 }

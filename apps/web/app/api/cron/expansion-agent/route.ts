@@ -33,6 +33,7 @@ import {
 import type { ExpansionCity, BrandDraft, CityResearchData } from '@/lib/ai/expansion-types';
 import { EXPANSION_TEAM } from '@/config/expansion-team';
 import { generateReviewToken } from '@/lib/expansion-review-token';
+import { getSenderByEmail } from '@/config/sender-identities';
 
 const CRON_SECRET = process.env.CRON_SECRET;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -946,7 +947,7 @@ async function stepNotifyAdmin(
       // Filter cities this member hasn't voted on yet
       const unvotedCities = citiesForReview.filter(c => {
         const cityVotes = existingVotes[c.id] || [];
-        return !cityVotes.some(v => v.reviewer_email === member.workEmail);
+        return !cityVotes.some(v => v.reviewer_email === member.email);
       });
 
       // Cities where partner voted but this member hasn't
@@ -966,7 +967,7 @@ async function stepNotifyAdmin(
 
       // Build voting cards for unvoted cities
       const votingCardsHtml = unvotedCities.length > 0
-        ? unvotedCities.map(c => buildCityReviewCard(c, member.workEmail, BASE_URL)).join('')
+        ? unvotedCities.map(c => buildCityReviewCard(c, member.email, BASE_URL)).join('')
         : '';
 
       // Build vote summary for decided cities
@@ -990,8 +991,8 @@ async function stepNotifyAdmin(
       const partnerPendingHtml = partnerVotedCities.length > 0
         ? partnerVotedCities.map(c => {
             const cityVotes = existingVotes[c.id] || [];
-            const partnerVote = cityVotes.find(v => v.reviewer_email !== member.workEmail);
-            const partnerMember = EXPANSION_TEAM.find(m => m.workEmail === partnerVote?.reviewer_email);
+            const partnerVote = cityVotes.find(v => v.reviewer_email !== member.email);
+            const partnerMember = EXPANSION_TEAM.find(m => m.email === partnerVote?.reviewer_email);
             return `
             <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;">
               <span style="color:#94a3b8;font-size:12px;">${c.city_name} — ${partnerMember?.name || 'Partner'} voted
@@ -1121,16 +1122,18 @@ async function stepNotifyAdmin(
 </body>
 </html>`;
 
-      // Send to this team member
+      // Send to this team member's @in.tastelanc.com inbox (routes through Resend inbound → webhook → dashboard inbox)
+      const senderIdentity = getSenderByEmail(member.senderIdentity);
+      const deliveryEmail = senderIdentity?.replyEmail || member.email;
+
       await resend.emails.send({
-        from: 'TasteLanc Expansion Agent <noreply@tastelanc.com>',
-        to: member.workEmail,
-        cc: member.personalEmail,
+        from: 'TasteLanc Expansion <expansion@tastelanc.com>',
+        to: deliveryEmail,
         subject: `Expansion: ${subjectDetail}`,
         html,
       });
 
-      console.log(`[expansion-agent] Notification sent to ${member.name} (${member.workEmail}, cc: ${member.personalEmail})`);
+      console.log(`[expansion-agent] Notification sent to ${member.name} (${deliveryEmail})`);
     }
 
     console.log(`[expansion-agent] Team notifications sent to ${EXPANSION_TEAM.length} members`);

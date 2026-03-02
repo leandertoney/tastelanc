@@ -305,3 +305,27 @@ a {
   inset: 0;
   z-index: 55;
 }
+
+/* Scoped styles for rendered HTML emails in inbox thread view */
+.email-html-content {
+  max-width: 100%;
+  word-break: break-word;
+}
+.email-html-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.email-html-content a {
+  color: #60a5fa;
+  text-decoration: underline;
+}
+.email-html-content a:hover {
+  color: #93bbfd;
+}
+.email-html-content table {
+  max-width: 100%;
+}
+.email-html-content h1, .email-html-content h2, .email-html-content h3 {
+  color: white;
+}

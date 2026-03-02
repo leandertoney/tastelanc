@@ -11,6 +11,7 @@ interface ThreadMessage {
   to_email: string;
   subject: string | null;
   body_text: string | null;
+  body_html: string | null;
   headline: string | null;
   timestamp: string;
   lead_id: string | null;
@@ -55,7 +56,7 @@ export async function GET(request: Request) {
     // Fetch received emails from this counterparty
     const { data: receivedEmails } = await serviceClient
       .from('inbound_emails')
-      .select('id, from_email, from_name, to_email, subject, body_text, is_read, created_at, linked_lead_id')
+      .select('id, from_email, from_name, to_email, subject, body_text, body_html, is_read, created_at, linked_lead_id')
       .eq('from_email', counterpartyEmail)
       .in('to_email', repEmails)
       .order('created_at', { ascending: true });
@@ -109,6 +110,7 @@ export async function GET(request: Request) {
         to_email: e.recipient_email,
         subject: e.subject,
         body_text: e.body_text,
+        body_html: null,
         headline: e.headline,
         timestamp: e.sent_at,
         lead_id: e.lead_id,
@@ -126,6 +128,7 @@ export async function GET(request: Request) {
         to_email: e.to_email,
         subject: e.subject,
         body_text: e.body_text,
+        body_html: e.body_html || null,
         headline: null,
         timestamp: e.created_at,
         lead_id: e.linked_lead_id,
