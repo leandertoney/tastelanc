@@ -116,6 +116,8 @@ export const SMART_DEFAULTS: Record<EventType, SmartDefault> = {
   comedy: { time: '20:00', days: ['friday', 'saturday'], duration: 120 },
   sports: { time: '12:00', days: ['sunday'], duration: 240 },
   bingo: { time: '19:00', days: ['wednesday', 'thursday'], duration: 120 },
+  music_bingo: { time: '19:00', days: ['wednesday', 'thursday'], duration: 120 },
+  poker: { time: '19:00', days: ['tuesday', 'wednesday'], duration: 180 },
   other: { time: '19:00', days: ['friday'], duration: 120 },
 };
 

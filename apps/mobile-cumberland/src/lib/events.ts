@@ -127,6 +127,8 @@ export const ENTERTAINMENT_TYPES: EventType[] = [
   'comedy',
   'sports',
   'bingo',
+  'music_bingo',
+  'poker',
 ];
 
 /**

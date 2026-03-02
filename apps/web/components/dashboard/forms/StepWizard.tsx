@@ -55,7 +55,7 @@ export default function StepWizard({
       {/* Wizard Container */}
       <div
         className={cn(
-          'relative w-full max-w-lg mx-4 bg-tastelanc-bg border border-tastelanc-surface-light rounded-2xl shadow-2xl animate-scale-in overflow-hidden',
+          'relative w-full max-w-2xl mx-4 bg-tastelanc-bg border border-tastelanc-surface-light rounded-2xl shadow-2xl animate-scale-in overflow-hidden',
           'max-h-[90vh] flex flex-col',
           className
         )}
