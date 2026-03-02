@@ -35,15 +35,18 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  // REVENUE - All subscription/payment related
-  { href: '/admin', icon: LayoutDashboard, label: 'Overview', section: 'Revenue' },
-  { href: '/admin/inbox', icon: Inbox, label: 'Inbox', highlight: true },
-  { href: '/admin/paid-members', icon: CreditCard, label: 'Restaurants', highlight: true },
-  { href: '/admin/self-promoters', icon: Music, label: 'Self-Promoters', highlight: true },
+  // DASHBOARD
+  { href: '/admin', icon: LayoutDashboard, label: 'Overview' },
+  // SALES - Outreach and pipeline
+  { href: '/admin/inbox', icon: Inbox, label: 'Inbox', highlight: true, section: 'Sales' },
   { href: '/admin/sales', icon: Briefcase, label: 'Sales Pipeline', highlight: true },
-  { href: '/admin/sponsored-ads', icon: Megaphone, label: 'Sponsored Ads', highlight: true },
-  { href: '/admin/team', icon: Users, label: 'Team', highlight: true },
   { href: '/sales', icon: HeadphonesIcon, label: 'Sales CRM', highlight: true },
+  // REVENUE - Money-generating products
+  { href: '/admin/paid-members', icon: CreditCard, label: 'Restaurants', highlight: true, section: 'Revenue' },
+  { href: '/admin/self-promoters', icon: Music, label: 'Self-Promoters', highlight: true },
+  { href: '/admin/sponsored-ads', icon: Megaphone, label: 'Sponsored Ads', highlight: true },
+  // TEAM - People management
+  { href: '/admin/team', icon: Users, label: 'Team', highlight: true, section: 'Team' },
   // CONTENT - Restaurant management
   { href: '/admin/restaurants', icon: Store, label: 'All Restaurants', section: 'Content' },
   // MARKETING - Campaigns and outreach
