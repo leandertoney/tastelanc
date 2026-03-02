@@ -297,11 +297,12 @@ export default function ItineraryCardScreen() {
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Screenshot hint */}
-          <Text style={styles.screenshotHint}>
-            Screenshot this card {'\u2192'} share on your Story
-          </Text>
         </View>
+
+        {/* Screenshot hint (outside card for clean screenshots) */}
+        <Text style={styles.screenshotHint}>
+          Screenshot this card {'\u2192'} share on your Story
+        </Text>
 
         {/* ─── Action Buttons (outside the branded card) ──────── */}
         <View style={styles.actionRow}>
@@ -532,9 +533,10 @@ const styles = StyleSheet.create({
   // ─── Screenshot Hint ──────────────────────────────────────
   screenshotHint: {
     fontSize: typography.caption2,
-    color: 'rgba(255,255,255,0.3)',
+    color: colors.textSecondary,
     textAlign: 'center',
     marginTop: spacing.md,
+    paddingHorizontal: spacing.md,
   },
 
   // ─── Action Buttons ───────────────────────────────────────

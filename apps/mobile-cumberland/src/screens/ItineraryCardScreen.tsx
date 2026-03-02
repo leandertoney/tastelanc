@@ -189,7 +189,7 @@ export default function ItineraryCardScreen() {
         <View style={styles.cardContainer}>
           {/* Logo */}
           <Image
-            source={require('../../assets/tastelanc_1a1a1a.png')}
+            source={require('../../assets/icon.png')}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -293,11 +293,12 @@ export default function ItineraryCardScreen() {
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Screenshot hint */}
-          <Text style={styles.screenshotHint}>
-            Screenshot this card {'\u2192'} share on your Story
-          </Text>
         </View>
+
+        {/* Screenshot hint (outside card for clean screenshots) */}
+        <Text style={styles.screenshotHint}>
+          Screenshot this card {'\u2192'} share on your Story
+        </Text>
 
         {/* ─── Action Buttons (outside the branded card) ──────── */}
         <View style={styles.actionRow}>
@@ -387,8 +388,11 @@ const styles = StyleSheet.create({
 
   // ─── Logo ──────────────────────────────────────────────────
   logo: {
-    width: 120,
+    width: 40,
     height: 40,
+    borderRadius: 8,
+    borderWidth: 0.5,
+    borderColor: colors.accent,
     alignSelf: 'center',
     marginBottom: spacing.lg,
   },
@@ -528,9 +532,10 @@ const styles = StyleSheet.create({
   // ─── Screenshot Hint ──────────────────────────────────────
   screenshotHint: {
     fontSize: typography.caption2,
-    color: 'rgba(15,30,46,0.3)',
+    color: colors.textSecondary,
     textAlign: 'center',
     marginTop: spacing.md,
+    paddingHorizontal: spacing.md,
   },
 
   // ─── Action Buttons ───────────────────────────────────────

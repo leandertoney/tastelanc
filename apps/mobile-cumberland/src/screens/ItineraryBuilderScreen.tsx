@@ -36,7 +36,7 @@ import { colors, radius, spacing, typography } from '../constants/colors';
 import type { OnboardingData } from '../types/onboarding';
 import { useMarket } from '../context/MarketContext';
 
-const logo = require('../../assets/tastelanc_1a1a1a.png');
+const logo = require('../../assets/icon.png');
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ItineraryBuilder'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -394,8 +394,11 @@ const styles = StyleSheet.create({
 
   // ─── Logo ──────────────────────────────────────────────────
   logo: {
-    width: 120,
+    width: 40,
     height: 40,
+    borderRadius: 8,
+    borderWidth: 0.5,
+    borderColor: colors.accent,
     alignSelf: 'center',
     marginBottom: spacing.md,
   },
