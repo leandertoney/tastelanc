@@ -184,7 +184,7 @@ export async function GET(request: Request) {
   }
 }
 
-/** Get the sender identity emails this user can VIEW (admins see all, reps see their own).
+/** Get the sender identity emails this user can VIEW (admins see all, reps see their own ONLY).
  *  Includes both @tastelanc.com and @in.tastelanc.com variants so inbound replies match. */
 async function getRepSenderEmails(
   serviceClient: ReturnType<typeof createServiceRoleClient>,
@@ -197,7 +197,8 @@ async function getRepSenderEmails(
   const identity = await getUserIdentity(serviceClient, access);
   if (identity) return [identity.email, identity.replyEmail];
 
-  return getAllSenderEmails();
+  // No matching identity — return empty so reps never see someone else's inbox
+  return [];
 }
 
 /** Get the single sender identity that belongs to this user */
@@ -226,6 +227,6 @@ async function getUserIdentity(
     if (matched) return matched;
   }
 
-  // Default to first identity
-  return SENDER_IDENTITIES[0];
+  // No match — return null so reps never default to another person's identity
+  return null;
 }

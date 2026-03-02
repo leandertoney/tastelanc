@@ -213,7 +213,7 @@ export default function SubscriptionPage() {
       </div>
 
       {/* Plans Grid */}
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-3 gap-4 md:gap-6">
         {PLANS.map((plan) => {
           const isCurrentPlan = plan.id === currentPlan;
           const tierOrder = { basic: 0, premium: 1, elite: 2 };
@@ -306,7 +306,7 @@ export default function SubscriptionPage() {
       {/* Features Comparison */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold text-white mb-6">Why Upgrade?</h3>
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-4 md:gap-8">
           <div className="text-center">
             <div className="w-12 h-12 bg-tastelanc-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Sparkles className="w-6 h-6 text-tastelanc-accent" />

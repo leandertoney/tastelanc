@@ -11,7 +11,6 @@ import {
   TrendingUp,
   Briefcase,
   CreditCard,
-  Mail,
   Inbox,
   X,
   Plus,
@@ -43,7 +42,6 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/sales/leads/new', icon: Plus, label: 'Add Lead', hint: 'Create a new business lead to start the sales process' },
   { href: '/sales/checkout', icon: CreditCard, label: 'New Sale', highlight: true, section: 'Actions', hint: 'Generate a checkout link for a restaurant ready to sign up' },
   { href: '/sales/calendar', icon: CalendarDays, label: 'Calendar', hint: 'Schedule and track meetings with prospects' },
-  { href: '/sales/contacts', icon: Mail, label: 'Inquiries', hint: 'Incoming contact form submissions from interested businesses' },
   { href: '/sales/restaurants', icon: Store, label: 'Directory', section: 'Reference', hint: 'Browse all restaurants in your market for prospecting' },
   { href: '/sales/commissions', icon: DollarSign, label: 'Commissions', highlight: true, section: 'Earnings', hint: 'Track your earnings, payouts, and commission tier progress' },
   { href: '/sales/settings', icon: Settings, label: 'Settings', hint: 'Manage your profile and preferences' },
@@ -130,7 +128,7 @@ export default function SalesSidebar({ isOpen, onClose, collapsed, onToggleColla
           ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
       >
-        {/* Logo */}
+        {/* Logo + Collapse toggle */}
         <div className={`border-b border-tastelanc-surface-light flex items-center ${collapsed ? 'md:justify-center md:p-3 p-6' : 'p-6'} justify-between`}>
           <Link href="/sales" className="flex items-center gap-2" onClick={handleNavClick}>
             <div className={`${collapsed ? 'md:w-8 md:h-8' : ''} w-10 h-10 bg-tastelanc-accent rounded-lg flex items-center justify-center flex-shrink-0`}>
@@ -141,13 +139,27 @@ export default function SalesSidebar({ isOpen, onClose, collapsed, onToggleColla
               <span className="block text-xs text-tastelanc-accent">Sales CRM</span>
             </div>
           </Link>
-          <button
-            onClick={onClose}
-            className="md:hidden text-gray-400 hover:text-white p-1"
-            aria-label="Close menu"
-          >
-            <X className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-1">
+            {/* Collapse toggle — desktop only */}
+            <button
+              onClick={onToggleCollapse}
+              className="hidden md:flex items-center justify-center p-1.5 rounded-lg text-gray-400 hover:bg-tastelanc-surface-light hover:text-white transition-colors"
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {collapsed ? (
+                <PanelLeftOpen className="w-4 h-4" />
+              ) : (
+                <PanelLeftClose className="w-4 h-4" />
+              )}
+            </button>
+            <button
+              onClick={onClose}
+              className="md:hidden text-gray-400 hover:text-white p-1"
+              aria-label="Close menu"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         {/* Navigation */}
@@ -207,24 +219,8 @@ export default function SalesSidebar({ isOpen, onClose, collapsed, onToggleColla
           </ul>
         </nav>
 
-        {/* Collapse toggle + Logout */}
+        {/* Logout */}
         <div className={`border-t border-tastelanc-surface-light ${collapsed ? 'md:p-2' : 'md:p-4'} p-4`}>
-          {/* Collapse toggle — desktop only */}
-          <button
-            onClick={onToggleCollapse}
-            className={`hidden md:flex items-center gap-3 ${collapsed ? 'justify-center px-0' : 'px-4'} py-2.5 rounded-lg text-gray-400 hover:bg-tastelanc-surface-light hover:text-white transition-colors w-full mb-1`}
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {collapsed ? (
-              <PanelLeftOpen className="w-5 h-5 flex-shrink-0" />
-            ) : (
-              <>
-                <PanelLeftClose className="w-5 h-5 flex-shrink-0" />
-                <span>Collapse</span>
-              </>
-            )}
-          </button>
-
           <button
             onClick={handleLogout}
             title={collapsed ? 'Sign Out' : undefined}

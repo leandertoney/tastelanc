@@ -195,7 +195,7 @@ export default function SpecialsPage() {
       description="Upgrade to Premium to create and manage weekly specials that attract more customers."
     >
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-tastelanc-accent" />
@@ -305,7 +305,7 @@ export default function SpecialsPage() {
             </div>
 
             {/* Price */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Original Price

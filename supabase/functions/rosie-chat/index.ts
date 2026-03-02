@@ -269,6 +269,7 @@ serve(async (req) => {
       const { data: cached, error: cacheError } = await supabase.rpc('find_similar_cache', {
         query_embedding: JSON.stringify(embedding),
         similarity_threshold: 0.88,
+        p_market_slug: resolvedSlug,
       });
 
       if (cached && cached.length > 0) {
@@ -342,6 +343,7 @@ User question: ${message}`,
       answer,
       query_type: queryType,
       referenced_ids: referencedIds,
+      market_slug: resolvedSlug,
     });
 
     console.log(`Cache miss - stored new response for: "${message.substring(0, 50)}..."`);

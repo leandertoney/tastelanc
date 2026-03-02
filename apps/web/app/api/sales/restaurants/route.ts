@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     const tier = searchParams.get('tier');
     const active = searchParams.get('active');
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '25', 10)));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '10', 10)));
     const sortBy = searchParams.get('sort_by') || 'name';
     const sortDir = searchParams.get('sort_dir') === 'desc' ? 'desc' : 'asc';
 

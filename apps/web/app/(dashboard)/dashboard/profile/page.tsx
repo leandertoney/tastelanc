@@ -472,7 +472,7 @@ export default function ProfilePage() {
           />
           {restaurant?.cover_image_url ? (
             <div
-              className="relative aspect-[3/1] bg-tastelanc-surface rounded-lg overflow-hidden"
+              className="relative aspect-[2/1] sm:aspect-[3/1] bg-tastelanc-surface rounded-lg overflow-hidden"
               onClick={() => !uploadingCover && coverInputRef.current?.click()}
             >
               <img
@@ -499,7 +499,7 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div
-              className="aspect-[3/1] bg-tastelanc-surface rounded-lg flex items-center justify-center border-2 border-dashed border-tastelanc-surface-light hover:border-tastelanc-accent transition-colors cursor-pointer"
+              className="aspect-[2/1] sm:aspect-[3/1] bg-tastelanc-surface rounded-lg flex items-center justify-center border-2 border-dashed border-tastelanc-surface-light hover:border-tastelanc-accent transition-colors cursor-pointer"
               onClick={() => !uploadingCover && coverInputRef.current?.click()}
             >
               <div className="text-center">
@@ -667,7 +667,7 @@ export default function ProfilePage() {
           <p className="text-gray-400 text-sm mb-4">
             This is the 4-digit PIN guests enter to check in at your restaurant and earn rewards points. Share it with your staff so they can provide it to customers.
           </p>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex-1 max-w-[200px]">
               <label className="block text-sm font-medium text-gray-300 mb-2">PIN Code</label>
               <input
@@ -736,7 +736,7 @@ export default function ProfilePage() {
                   key={entry.day_of_week}
                   className="flex flex-col sm:flex-row sm:items-center gap-4 py-4 border-b border-tastelanc-surface-light last:border-0"
                 >
-                  <div className="w-32">
+                  <div className="w-24 sm:w-32">
                     <span className="text-white font-medium">{capitalizeDay(entry.day_of_week)}</span>
                   </div>
                   <div className="flex items-center gap-2">
