@@ -13,6 +13,8 @@ const EVENT_TYPE_ICONS: Record<EventType, keyof typeof Ionicons.glyphMap> = {
   comedy: 'happy',
   sports: 'football',
   bingo: 'grid',
+  music_bingo: 'musical-notes',
+  poker: 'diamond',
   other: 'calendar',
   promotion: 'megaphone',
 };

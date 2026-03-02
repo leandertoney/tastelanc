@@ -24,7 +24,7 @@ export default function TemplateSelector<T>({
   return (
     <div className={cn('space-y-4', className)}>
       {/* Template Grid */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         {templates.map((template) => {
           const Icon = template.icon;
 

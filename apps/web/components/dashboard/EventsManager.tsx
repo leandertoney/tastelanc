@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Calendar, Music, Mic2, HelpCircle, PartyPopper, Loader2, Tv, Laugh, Pencil, X, Grid3x3 } from 'lucide-react';
+import { Plus, Trash2, Calendar, Music, Music2, Mic2, HelpCircle, PartyPopper, Loader2, Tv, Laugh, Pencil, X, Grid3x3, Spade, Info } from 'lucide-react';
 import { Button, Card, Badge, Tooltip } from '@/components/ui';
 import { toast } from 'sonner';
 import { useRestaurant } from '@/contexts/RestaurantContext';
@@ -14,7 +14,7 @@ import EventAnalytics from '@/components/dashboard/EventAnalytics';
 import type { DayOfWeek } from '@/types/database';
 
 // Entertainment = recurring nightlife/activities shown in "Entertainment Tonight"
-const ENTERTAINMENT_TYPES = ['live_music', 'dj', 'trivia', 'karaoke', 'comedy', 'sports', 'bingo'];
+const ENTERTAINMENT_TYPES = ['live_music', 'dj', 'trivia', 'karaoke', 'comedy', 'sports', 'bingo', 'music_bingo', 'poker'];
 // Events = one-off specials and promotions shown in "Upcoming Events"
 const EVENT_ONLY_TYPES = ['other'];
 
@@ -26,6 +26,8 @@ const ALL_EVENT_TYPES = [
   { value: 'comedy', label: 'Comedy Night', icon: Laugh },
   { value: 'sports', label: 'Sports Event', icon: Tv },
   { value: 'bingo', label: 'Bingo Night', icon: Grid3x3 },
+  { value: 'music_bingo', label: 'Music Bingo', icon: Music2 },
+  { value: 'poker', label: 'Poker', icon: Spade },
   { value: 'other', label: 'Special Event / Other', icon: PartyPopper },
 ];
 
@@ -54,6 +56,7 @@ const MODE_CONFIG = {
     icon: Music,
     subtitle: 'Manage recurring entertainment like trivia, live music, and karaoke',
     hint: 'Entertainment listings repeat weekly (e.g. Trivia every Wednesday). Choose the type, days, time, and add an image. These show in the "Entertainment Tonight" section of the app.',
+    tipText: 'Entertainment is for recurring weekly activities like trivia, live music, karaoke, poker nights, and bingo. These appear in the "Entertainment Tonight" section of the app and repeat on a weekly schedule.',
     addLabel: 'Add Entertainment',
     emptyTitle: 'No entertainment yet',
     emptyText: 'Add entertainment like trivia, live music, or karaoke to attract customers',
@@ -66,6 +69,7 @@ const MODE_CONFIG = {
     icon: Calendar,
     subtitle: 'Manage special events and promotions',
     hint: 'Events are one-time or limited-run occasions (wine dinners, holiday parties, etc.). Set a specific date, add details and an image. These appear in "Upcoming Events" in the app.',
+    tipText: 'Events are for one-time or limited-run occasions like wine dinners, holiday parties, or special promotions. These appear in "Upcoming Events" in the app. For recurring weekly activities, use Entertainment instead.',
     addLabel: 'Add Event',
     emptyTitle: 'No events yet',
     emptyText: 'Add special events and promotions to attract customers',
@@ -84,6 +88,12 @@ export default function EventsManager({ mode }: EventsManagerProps) {
   const [error, setError] = useState<string | null>(null);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [saving, setSaving] = useState(false);
+  const [tipDismissed, setTipDismissed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(`tip-dismissed-${mode}`) === 'true';
+    }
+    return false;
+  });
 
   const filteredEventTypes = ALL_EVENT_TYPES.filter((t) => config.allowedTypes.includes(t.value));
   const TitleIcon = config.icon;
@@ -286,6 +296,23 @@ export default function EventsManager({ mode }: EventsManagerProps) {
           {config.addLabel}
         </Button>
       </div>
+
+      {/* Info Tip Banner */}
+      {!tipDismissed && (
+        <div className="relative z-50 flex items-start gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+          <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-blue-300 flex-1">{config.tipText}</p>
+          <button
+            onClick={() => {
+              setTipDismissed(true);
+              localStorage.setItem(`tip-dismissed-${mode}`, 'true');
+            }}
+            className="p-1 text-blue-400 hover:text-white flex-shrink-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Event Analytics */}
       <EventAnalytics />

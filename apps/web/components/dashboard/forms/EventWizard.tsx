@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Music, HelpCircle, Mic2, Calendar, PartyPopper, Tv, Laugh, Grid3x3 } from 'lucide-react';
+import { Music, Music2, HelpCircle, Mic2, Calendar, PartyPopper, Tv, Laugh, Grid3x3, Spade } from 'lucide-react';
 import { Button } from '@/components/ui';
 import StepWizard from './StepWizard';
 import WizardStep from './WizardStep';
@@ -111,6 +111,32 @@ const EVENT_TEMPLATES: Template<Partial<EventFormData>>[] = [
       name: 'Bingo Night',
       start_time: '19:00',
       days_of_week: ['wednesday'],
+      is_recurring: true,
+    },
+  },
+  {
+    id: 'music_bingo',
+    name: 'Music Bingo',
+    description: 'Bingo meets music trivia',
+    icon: Music2,
+    defaults: {
+      event_type: 'music_bingo',
+      name: 'Music Bingo',
+      start_time: '19:00',
+      days_of_week: ['wednesday'],
+      is_recurring: true,
+    },
+  },
+  {
+    id: 'poker',
+    name: 'Poker',
+    description: 'Cards & competition',
+    icon: Spade,
+    defaults: {
+      event_type: 'poker',
+      name: 'Poker Night',
+      start_time: '19:00',
+      days_of_week: ['tuesday'],
       is_recurring: true,
     },
   },

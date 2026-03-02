@@ -28,7 +28,7 @@ export type CuisineType =
   | 'brunch'
   | 'desserts';
 
-export type EventType = 'live_music' | 'trivia' | 'karaoke' | 'dj' | 'comedy' | 'sports' | 'bingo' | 'other' | 'promotion';
+export type EventType = 'live_music' | 'trivia' | 'karaoke' | 'dj' | 'comedy' | 'sports' | 'bingo' | 'music_bingo' | 'poker' | 'other' | 'promotion';
 
 export type DayOfWeek =
   | 'monday'

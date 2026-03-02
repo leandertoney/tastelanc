@@ -20,7 +20,7 @@ export type RestaurantCategory =
   | 'brewery' | 'winery' | 'distillery' | 'cocktail_bar'
   // Features
   | 'live_music' | 'sports_bar' | 'pet_friendly' | 'byob' | 'late_night' | 'family_friendly' | 'date_night';
-export type EventType = 'live_music' | 'trivia' | 'karaoke' | 'dj' | 'comedy' | 'sports' | 'bingo' | 'other';
+export type EventType = 'live_music' | 'trivia' | 'karaoke' | 'dj' | 'comedy' | 'sports' | 'bingo' | 'music_bingo' | 'poker' | 'other';
 export type NotificationStatus = 'pending' | 'sent' | 'failed' | 'cancelled';
 export type TeamMemberRole = 'owner' | 'manager';
 export type TeamMemberStatus = 'pending' | 'active' | 'revoked';

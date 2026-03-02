@@ -152,6 +152,8 @@ export const EVENT_TYPE_LABELS: Record<string, string> = {
   comedy: 'Comedy',
   sports: 'Sports',
   bingo: 'Bingo',
+  music_bingo: 'Music Bingo',
+  poker: 'Poker',
   other: 'Other',
 };
 
