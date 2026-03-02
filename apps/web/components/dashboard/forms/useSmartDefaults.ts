@@ -31,6 +31,8 @@ const SMART_MESSAGES: Record<EventType, string> = {
   comedy: "Comedy shows do best on Friday and Saturday at 8pm. Laughter guaranteed!",
   sports: "Sunday at noon is perfect for sports watch parties. Go Eagles!",
   bingo: "Bingo nights are a hit on Wednesday and Thursday at 7pm. Get your daubers ready!",
+  music_bingo: "Music bingo is a crowd favorite on Wednesday and Thursday at 7pm. Song-based fun!",
+  poker: "Poker nights draw regulars on Tuesday and Wednesday at 7pm. Deal 'em up!",
   other: "Evening events on Fridays tend to draw the biggest crowds.",
 };
 
