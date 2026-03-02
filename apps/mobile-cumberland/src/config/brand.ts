@@ -32,7 +32,7 @@ export const BRAND = {
   aiName: 'Mollie',
   mollieGreeting:
     "Hi! I'm Mollie, your TasteCumberland AI assistant. I can help you discover restaurants, find deals, and plan your next dining experience. What are you in the mood for today?",
-  mollieSubtitle: 'Your TasteCumberland AI',
+  mollieSubtitle: 'Your AI Concierge',
   mollieSamplePrompt: 'What are the best dinner spots in Cumberland County?',
 
   // Brand palette — the 4 colors that define the visual identity
