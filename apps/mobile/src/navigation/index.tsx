@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react';
-import { View, Animated, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Animated, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RootNavigator from './RootNavigator';
@@ -12,7 +12,6 @@ import { SignUpModalProvider } from '../context/SignUpModalContext';
 import { EmailGateProvider } from '../context/EmailGateContext';
 import { ErrorBoundary } from '../components';
 import { ONBOARDING_STORAGE_KEY, ONBOARDING_DATA_KEY } from '../types/onboarding';
-import { colors } from '../constants/colors';
 import { env } from '../lib/env';
 import { initRadar, startTracking } from '../lib/radar';
 // import { initRevenueCat } from '../lib/revenuecat'; // Disabled - app is free
@@ -163,18 +162,10 @@ export default function Navigation() {
     setHasCompletedOnboarding(true);
   }, []);
 
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
-
   return (
     <>
-      {/* Mount navigation tree once splash video finishes */}
-      {splashDone && (
+      {/* Mount navigation tree once splash video finishes AND onboarding status is known */}
+      {splashDone && !isLoading && (
         <AuthProvider>
           <MarketProvider>
             <EmailGateProvider>
@@ -237,12 +228,6 @@ function NavigationFallback({ hasCompletedOnboarding }: { hasCompletedOnboarding
 }
 
 const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-  },
   splashOverlay: {
     zIndex: 10,
   },

@@ -20,7 +20,7 @@
         "expo-channel-name": "production"
       }
     },
-    "runtimeVersion": "1.0.7",
+    "runtimeVersion": "1.0.5",
     "assetBundlePatterns": [
       "**/*"
     ],
