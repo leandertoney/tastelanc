@@ -24,7 +24,7 @@ export default function SalesLayoutClient({
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
       if (profile?.role === 'super_admin' || profile?.role === 'market_admin') {
         setIsAdmin(true);
       }

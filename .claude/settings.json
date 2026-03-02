@@ -4,7 +4,32 @@
       "Bash(PGPASSWORD='LTMackin!23' psql:*)",
       "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"\n-- Check unmatched_subscriptions\nSELECT * FROM unmatched_subscriptions ORDER BY created_at DESC LIMIT 10;\n\")",
       "WebFetch(domain:www.newtownfoodandspirits.com)",
-      "Bash(SUPABASE_DB_PASSWORD='LTMackin!23' npx supabase migration repair:*)"
+      "Bash(SUPABASE_DB_PASSWORD='LTMackin!23' npx supabase migration repair:*)",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT id, city_id, app_name, ai_assistant_name, premium_name, tagline, is_selected, variant_number, created_at FROM expansion_brand_drafts ORDER BY city_id, variant_number;\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT id, city_id, title, role_type, status, is_remote, created_at FROM expansion_job_listings ORDER BY city_id, created_at;\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT action, COUNT\\(*\\) as cnt FROM expansion_activity_log GROUP BY action ORDER BY cnt DESC;\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT city_id, action, description, created_at FROM expansion_activity_log ORDER BY created_at DESC LIMIT 30;\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT dining_scene_description, competition_analysis, research_data FROM expansion_cities LIMIT 3;\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT city_name, status, dining_scene_description IS NOT NULL AND dining_scene_description != '''' as has_dining_desc, competition_analysis IS NOT NULL AND competition_analysis != '''' as has_competition, research_data != ''{}'' as has_research_data, median_income IS NOT NULL as has_income, restaurant_count, bar_count FROM expansion_cities ORDER BY status, market_potential_score DESC NULLS LAST;\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT city_name, status, \\(dining_scene_description IS NOT NULL AND dining_scene_description <> ''''\\) as has_dining, \\(competition_analysis IS NOT NULL AND competition_analysis <> ''''\\) as has_competition, \\(research_data <> ''{}''\\) as has_research, \\(median_income IS NOT NULL\\) as has_income, restaurant_count, bar_count FROM expansion_cities ORDER BY status, market_potential_score DESC NULLS LAST;\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT city_name, state, status, created_at, updated_at, \\(updated_at - created_at\\) as processing_time FROM expansion_cities WHERE status = ''researching'' ORDER BY created_at;\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT action, city_id, description FROM expansion_activity_log WHERE action = ''city_added'';\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"\\\\d+ expansion_activity_log\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT schemaname, tablename FROM pg_tables WHERE tablename LIKE ''expansion%'';\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT * FROM cron.job_run_details WHERE jobid = 13 ORDER BY start_time DESC LIMIT 5;\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT current_setting\\(''app.settings.cron_secret'', true\\) IS NOT NULL as has_cron_secret;\")",
+      "Bash(DOTENV_CONFIG_PATH=.env.local npx tsx -e \":*)",
+      "Bash(DOTENV_CONFIG_PATH=.env.local npx tsx scripts/test-review-email.ts)",
+      "WebFetch(domain:resend.com)",
+      "Bash(SUPABASE_DB_PASSWORD='LTMackin!23' npx supabase db execute --project-ref kufcxxynjvyharhtfptd \"SELECT sr.id, sr.name, sr.email, sr.is_active, p.role FROM sales_reps sr LEFT JOIN profiles p ON sr.id = p.id WHERE sr.name ILIKE ''%cliff%'' OR sr.name ILIKE ''%whitehead%''\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT sr.id, sr.name, sr.email, sr.is_active, p.role FROM sales_reps sr LEFT JOIN profiles p ON sr.id = p.id WHERE sr.name ILIKE ''%cliff%'' OR sr.name ILIKE ''%whitehead%''\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT reviewer_email, reviewer_name, vote, city_id, voted_at FROM expansion_reviews ORDER BY voted_at DESC LIMIT 20;\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT id, from_email, from_name, to_email, subject, is_read, created_at FROM inbound_emails WHERE from_email LIKE ''%expansion%'' OR subject LIKE ''%Expansion%'' ORDER BY created_at DESC LIMIT 5;\")",
+      "Bash(open /Users/leandertoney/tastelanc/pitchdeck/TasteLanc_PitchDeck.pptx)",
+      "Bash(open /Users/leandertoney/tastelanc/pitchdeck/TasteLanc_PitchDeck.md)",
+      "Bash(md5)",
+      "Bash(git ls-tree HEAD pitchdeck/frames/)",
+      "Bash(gh api repos/leandertoney/tastelanc/deployments --jq '.[0] | {sha: .sha[0:7], created_at: .created_at, environment: .environment, description: .description}')"
     ]
   }
 }

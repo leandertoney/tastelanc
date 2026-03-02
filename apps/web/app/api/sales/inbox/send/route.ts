@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
+import { getUserIdentity } from '@/lib/auth/rep-identity';
 import { resend } from '@/lib/resend';
 import { renderProfessionalEmail, renderProfessionalEmailPlainText } from '@/lib/email-templates/professional-template';
 import { BRAND } from '@/config/market';
@@ -41,9 +42,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify sender identity
+    // Verify sender identity — allow known identities OR any @tastelanc.com address (domain-verified)
     const validSender = SENDER_IDENTITIES.find(s => s.email === senderEmail);
-    if (senderEmail && !validSender) {
+    const isDomainEmail = senderEmail && senderEmail.endsWith(`@${BRAND.domain}`);
+    if (senderEmail && !validSender && !isDomainEmail) {
       return NextResponse.json(
         { error: 'Invalid sender email. Must use an approved sender identity.' },
         { status: 400 }
@@ -51,23 +53,9 @@ export async function POST(request: Request) {
     }
 
     // Sales reps can only send from their own identity (not admin's or other reps')
-    if (access.isSalesRep && !access.isAdmin && validSender && access.userId) {
-      const { data: rep } = await serviceClient
-        .from('sales_reps')
-        .select('preferred_sender_email, name')
-        .eq('id', access.userId)
-        .single();
-
-      let allowedEmail: string | null = null;
-      if (rep?.preferred_sender_email) {
-        allowedEmail = rep.preferred_sender_email;
-      } else if (rep?.name) {
-        const firstName = rep.name.split(' ')[0].toLowerCase();
-        const matched = SENDER_IDENTITIES.find(s => s.name.toLowerCase() === firstName);
-        if (matched) allowedEmail = matched.email;
-      }
-
-      if (allowedEmail && validSender.email !== allowedEmail) {
+    if (access.isSalesRep && !access.isAdmin && senderEmail && access.userId) {
+      const repIdentity = await getUserIdentity(serviceClient, access);
+      if (repIdentity && senderEmail !== repIdentity.email) {
         return NextResponse.json(
           { error: 'You can only send emails from your own identity.' },
           { status: 403 }
@@ -96,7 +84,7 @@ export async function POST(request: Request) {
       body: emailBody,
       businessName: recipientName || undefined,
       senderName: senderName || BRAND.name,
-      senderTitle: validSender?.title || undefined,
+      senderTitle: validSender?.title || (isDomainEmail ? 'Sales Representative' : undefined),
     };
     const html = renderProfessionalEmail(emailProps);
     const text = renderProfessionalEmailPlainText(emailProps);
@@ -113,7 +101,7 @@ export async function POST(request: Request) {
       subject,
       html,
       text,
-      replyTo: validSender?.replyEmail || fromEmail,
+      replyTo: validSender?.replyEmail || (isDomainEmail ? fromEmail.replace(`@${BRAND.domain}`, `@${BRAND.replyDomain}`) : fromEmail),
     };
 
     if (inReplyToMessageId) {

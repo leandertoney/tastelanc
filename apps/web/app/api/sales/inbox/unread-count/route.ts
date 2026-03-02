@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
-import { SENDER_IDENTITIES, getAllSenderEmails } from '@/config/sender-identities';
+import { getRepSenderEmails } from '@/lib/auth/rep-identity';
 
 export async function GET() {
   try {
@@ -41,36 +41,4 @@ export async function GET() {
     console.error('Error in inbox unread count API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
-
-async function getRepSenderEmails(
-  serviceClient: ReturnType<typeof createServiceRoleClient>,
-  access: { userId: string | null; isAdmin: boolean }
-): Promise<string[]> {
-  if (access.isAdmin) {
-    return getAllSenderEmails();
-  }
-
-  if (access.userId) {
-    const { data: rep } = await serviceClient
-      .from('sales_reps')
-      .select('preferred_sender_email, name')
-      .eq('id', access.userId)
-      .single();
-
-    if (rep?.preferred_sender_email) {
-      const found = SENDER_IDENTITIES.find(s => s.email === rep.preferred_sender_email);
-      if (found) return [found.email, found.replyEmail];
-      return [rep.preferred_sender_email];
-    }
-
-    if (rep?.name) {
-      const firstName = rep.name.split(' ')[0].toLowerCase();
-      const matched = SENDER_IDENTITIES.find(s => s.name.toLowerCase() === firstName);
-      if (matched) return [matched.email, matched.replyEmail];
-    }
-  }
-
-  // No matching identity — return empty so reps never see someone else's inbox
-  return [];
 }

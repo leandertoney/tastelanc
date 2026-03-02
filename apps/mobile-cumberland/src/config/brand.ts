@@ -17,7 +17,7 @@ export const BRAND = {
   slogan: "Cumberland County's go-to for what's happening now.",
 
   // URLs (shared backend)
-  supportEmail: 'support@tastelanc.com',
+  supportEmail: 'info@tastelanc.com',
   privacyUrl: 'https://tastelanc.com/privacy',
   termsUrl: 'https://tastelanc.com/terms',
   websiteUrl: 'https://tastelanc.com',
