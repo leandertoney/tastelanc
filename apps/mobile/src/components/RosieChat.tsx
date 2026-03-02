@@ -453,7 +453,7 @@ export default function RosieChat({ visible, onClose, onNavigateToRestaurant }: 
             </View>
             <View>
               <Text style={styles.headerTitle}>Rosie</Text>
-              <Text style={styles.headerSubtitle}>Your TasteLanc AI</Text>
+              <Text style={styles.headerSubtitle}>Your AI Concierge</Text>
             </View>
           </View>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>

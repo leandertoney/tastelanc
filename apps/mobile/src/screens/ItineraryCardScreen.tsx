@@ -30,6 +30,7 @@ import type { TimeSlot, ItineraryMood, ItineraryItemWithReason } from '../types/
 import { ITINERARY_MOODS, TIME_SLOT_CONFIG } from '../types/itinerary';
 import { useSaveItinerary } from '../hooks/useItineraries';
 import { colors, radius, spacing, typography } from '../constants/colors';
+import { BRAND } from '../config/brand';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ItineraryCard'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -104,7 +105,7 @@ export default function ItineraryCardScreen() {
     day: 'numeric',
   });
 
-  const moodTitle = mood ? MOOD_TITLES[mood] : 'YOUR LANCASTER DAY';
+  const moodTitle = mood ? MOOD_TITLES[mood] : `YOUR ${BRAND.cityName.toUpperCase()} DAY`;
 
   // ─── Handlers ───────────────────────────────────────────────────────────
 
@@ -113,7 +114,7 @@ export default function ItineraryCardScreen() {
 
     const moodLabel = mood ? ITINERARY_MOODS[mood].label : 'Day Out';
 
-    let msg = `\uD83D\uDCCD ${moodLabel} in Lancaster \u2014 ${formattedDate}\n\n`;
+    let msg = `\uD83D\uDCCD ${moodLabel} in ${BRAND.cityName} \u2014 ${formattedDate}\n\n`;
 
     const timeLabels = mood ? MOOD_TIME_LABELS[mood] : DEFAULT_TIME_LABELS;
 
@@ -134,7 +135,7 @@ export default function ItineraryCardScreen() {
       }
     });
 
-    msg += `\n\u2500\u2500 Curated by TasteLanc \u2500\u2500\nhttps://apps.apple.com/app/tastelanc/id6755852717`;
+    msg += `\n\u2500\u2500 Curated by ${BRAND.appName} \u2500\u2500\n${BRAND.appStoreUrl || BRAND.websiteUrl}`;
 
     try {
       await Share.share({ message: msg });
@@ -149,7 +150,7 @@ export default function ItineraryCardScreen() {
     try {
       await saveItineraryMutation.mutateAsync({
         itinerary: {
-          title: `Lancaster ${mood ? ITINERARY_MOODS[mood].label : 'Day'} \u2014 ${formattedDate}`,
+          title: `${BRAND.cityName} ${mood ? ITINERARY_MOODS[mood].label : 'Day'} \u2014 ${formattedDate}`,
           date,
           is_generated: true,
         },
@@ -158,7 +159,7 @@ export default function ItineraryCardScreen() {
 
       Alert.alert(
         'Plan Saved!',
-        'Your day plan has been saved. Have a great time in Lancaster!',
+        `Your day plan has been saved. Have a great time in ${BRAND.cityName}!`,
       );
     } catch {
       Alert.alert('Error', 'Failed to save plan. Please try again.');
@@ -192,7 +193,7 @@ export default function ItineraryCardScreen() {
         <View style={styles.cardContainer}>
           {/* Logo */}
           <Image
-            source={require('../../assets/tastelanc_1a1a1a.png')}
+            source={require('../../assets/icon.png')}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -202,7 +203,7 @@ export default function ItineraryCardScreen() {
 
           {/* Date + Location */}
           <Text style={styles.dateText}>{formattedDate}</Text>
-          <Text style={styles.locationText}>Lancaster, PA</Text>
+          <Text style={styles.locationText}>{BRAND.cityName}, PA</Text>
 
           {/* ─── Stop Cards ───────────────────────────────────── */}
           <View style={styles.stopsContainer}>
@@ -293,7 +294,7 @@ export default function ItineraryCardScreen() {
           {/* Footer branding */}
           <View style={styles.footerBranding}>
             <View style={styles.dividerLine} />
-            <Text style={styles.curatedText}>Curated by TasteLanc</Text>
+            <Text style={styles.curatedText}>Curated by {BRAND.appName}</Text>
             <View style={styles.dividerLine} />
           </View>
 
@@ -392,8 +393,11 @@ const styles = StyleSheet.create({
 
   // ─── Logo ──────────────────────────────────────────────────
   logo: {
-    width: 120,
+    width: 40,
     height: 40,
+    borderRadius: 8,
+    borderWidth: 0.5,
+    borderColor: colors.accent,
     alignSelf: 'center',
     marginBottom: spacing.lg,
   },
