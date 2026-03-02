@@ -63,7 +63,7 @@ export async function GET(request: Request) {
     }
 
     // Resolve creator names from sales_reps
-    const creatorIds = [...new Set((meetings || []).map((m: { created_by: string }) => m.created_by).filter(Boolean))];
+    const creatorIds = Array.from(new Set((meetings || []).map((m: { created_by: string }) => m.created_by).filter(Boolean)));
     const creatorNameMap: Record<string, string> = {};
     if (creatorIds.length > 0) {
       const { data: reps } = await serviceClient
