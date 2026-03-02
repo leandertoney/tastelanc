@@ -185,7 +185,7 @@ export async function checkPremiumStatus(supabase: SupabaseClient, userId: strin
     .select('status')
     .eq('user_id', userId)
     .eq('status', 'active')
-    .single();
+    .maybeSingle();
 
   return !!subscription;
 }

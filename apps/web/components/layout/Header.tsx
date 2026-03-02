@@ -38,7 +38,7 @@ export default function Header() {
             .select('status')
             .eq('user_id', user.id)
             .eq('status', 'active')
-            .single();
+            .maybeSingle();
 
           setAuthStatus({
             isLoggedIn: true,
