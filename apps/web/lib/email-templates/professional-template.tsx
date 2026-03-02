@@ -1,10 +1,14 @@
 /**
- * Professional Email Template — Plain Personal Style
+ * Professional Email Template — Gmail Primary Tab Safe
  *
- * Designed to land in Gmail PRIMARY tab by mimicking a human-sent email.
- * No logos, no styled containers, no colored CTAs, no marketing signals.
+ * Tested & confirmed to land in Gmail PRIMARY tab when sent via Resend
+ * with open/click tracking DISABLED on the domain.
  *
- * This template is used for all CRM/inbox 1:1 sales emails.
+ * SAFE:     <p>, <strong>, <br>, inline styles (margin, font-size, color:#666)
+ * UNSAFE:   <a>, <img>, <ul>/<li>, <table>, border-top, brand accent colors
+ *
+ * Any links, images, or list elements will trigger Promotions tab.
+ * CTA should be conversational ("reply to this email") not a link.
  */
 
 import { BRAND } from '@/config/market';
@@ -25,10 +29,7 @@ export interface ProfessionalEmailProps {
 }
 
 export function renderProfessionalEmail({
-  headline,
   body,
-  ctaText,
-  ctaUrl,
   businessName,
   contactName,
   senderName,
@@ -57,7 +58,7 @@ export function renderProfessionalEmail({
     : 'Hello,';
 
   const signatureName = senderName || 'The Team';
-  const signatureTitle = senderTitle ? ` | ${senderTitle}` : '';
+  const titleLine = senderTitle ? `${senderTitle}, ${BRAND.name}` : BRAND.name;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -71,9 +72,7 @@ export function renderProfessionalEmail({
 
 ${formattedBody}
 
-${ctaText && ctaUrl ? `<p style="margin:14px 0 0 0;"><a href="${ctaUrl}" style="color:#1a73e8;" target="_blank">${ctaText}</a></p>` : ''}
-
-<p style="margin:28px 0 0 0;font-size:13px;color:#666666;">—<br>${signatureName}${signatureTitle}<br>${BRAND.name} · ${BRAND.countyShort}, ${BRAND.state}</p>
+<p style="margin:28px 0 0 0;font-size:13px;color:#666666;">—<br><strong>${signatureName}</strong><br>${titleLine}<br>${BRAND.countyShort}, ${BRAND.state}</p>
 
 </body>
 </html>`;
@@ -85,10 +84,7 @@ ${ctaText && ctaUrl ? `<p style="margin:14px 0 0 0;"><a href="${ctaUrl}" style="
  * Generate a plain-text version of the email for multipart sending.
  */
 export function renderProfessionalEmailPlainText({
-  headline,
   body,
-  ctaText,
-  ctaUrl,
   businessName,
   contactName,
   senderName,
@@ -104,15 +100,11 @@ export function renderProfessionalEmailPlainText({
 
   const greeting = contactName ? `Hi ${contactName},` : 'Hello,';
   const signatureName = senderName || 'The Team';
-  const signatureTitle = senderTitle ? ` | ${senderTitle}` : '';
+  const titleLine = senderTitle ? `${senderTitle}, ${BRAND.name}` : BRAND.name;
 
   let text = `${greeting}\n\n${personalizedBody}`;
 
-  if (ctaText && ctaUrl) {
-    text += `\n\n${ctaText}: ${ctaUrl}`;
-  }
-
-  text += `\n\n--\n${signatureName}${signatureTitle}\n${BRAND.name} · ${BRAND.countyShort}, ${BRAND.state}`;
+  text += `\n\n--\n${signatureName}\n${titleLine}\n${BRAND.countyShort}, ${BRAND.state}`;
 
   return text;
 }
