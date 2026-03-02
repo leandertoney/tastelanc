@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
-import { SENDER_IDENTITIES, getAllSenderEmails, type SenderIdentity } from '@/config/sender-identities';
+import { getRepSenderEmails, getUserIdentity } from '@/lib/auth/rep-identity';
 
 interface ConversationItem {
   counterparty_email: string;
@@ -184,49 +184,3 @@ export async function GET(request: Request) {
   }
 }
 
-/** Get the sender identity emails this user can VIEW (admins see all, reps see their own ONLY).
- *  Includes both @tastelanc.com and @in.tastelanc.com variants so inbound replies match. */
-async function getRepSenderEmails(
-  serviceClient: ReturnType<typeof createServiceRoleClient>,
-  access: { userId: string | null; isSuperAdmin: boolean; isAdmin: boolean }
-): Promise<string[]> {
-  if (access.isAdmin) {
-    return getAllSenderEmails();
-  }
-
-  const identity = await getUserIdentity(serviceClient, access);
-  if (identity) return [identity.email, identity.replyEmail];
-
-  // No matching identity — return empty so reps never see someone else's inbox
-  return [];
-}
-
-/** Get the single sender identity that belongs to this user */
-async function getUserIdentity(
-  serviceClient: ReturnType<typeof createServiceRoleClient>,
-  access: { userId: string | null; isAdmin: boolean }
-): Promise<SenderIdentity | null> {
-  if (!access.userId) return null;
-
-  // Check sales_reps for preferred sender
-  const { data: rep } = await serviceClient
-    .from('sales_reps')
-    .select('preferred_sender_email, name')
-    .eq('id', access.userId)
-    .single();
-
-  if (rep?.preferred_sender_email) {
-    const found = SENDER_IDENTITIES.find(s => s.email === rep.preferred_sender_email);
-    if (found) return found;
-  }
-
-  // Fall back: match rep name to sender identities
-  if (rep?.name) {
-    const firstName = rep.name.split(' ')[0].toLowerCase();
-    const matched = SENDER_IDENTITIES.find(s => s.name.toLowerCase() === firstName);
-    if (matched) return matched;
-  }
-
-  // No match — return null so reps never default to another person's identity
-  return null;
-}

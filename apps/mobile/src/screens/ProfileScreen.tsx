@@ -400,7 +400,7 @@ export default function ProfileScreen() {
           <SettingItem
             icon="help-circle-outline"
             label="Help & Support"
-            onPress={() => Linking.openURL('mailto:support@tastelanc.com?subject=TasteLanc Support')}
+            onPress={() => Linking.openURL('mailto:info@tastelanc.com?subject=TasteLanc Support')}
           />
           <SettingItem
             icon="document-text-outline"

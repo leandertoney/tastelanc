@@ -963,7 +963,7 @@ def build_slide_14_ask(prs):
 
     # Contact
     add_textbox(slide, Inches(2), Inches(6.2), Inches(9), Inches(0.3),
-                "tastelanc.com  \u00b7  support@tastelanc.com",
+                "tastelanc.com  \u00b7  info@tastelanc.com",
                 font_size=16, color=MUTED, alignment=PP_ALIGN.CENTER)
 
     add_textbox(slide, Inches(2), Inches(6.7), Inches(9), Inches(0.3),

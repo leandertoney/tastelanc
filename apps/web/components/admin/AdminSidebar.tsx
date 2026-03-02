@@ -37,6 +37,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   // REVENUE - All subscription/payment related
   { href: '/admin', icon: LayoutDashboard, label: 'Overview', section: 'Revenue' },
+  { href: '/admin/inbox', icon: Inbox, label: 'Inbox', highlight: true },
   { href: '/admin/paid-members', icon: CreditCard, label: 'Restaurants', highlight: true },
   { href: '/admin/self-promoters', icon: Music, label: 'Self-Promoters', highlight: true },
   { href: '/admin/sales', icon: Briefcase, label: 'Sales Pipeline', highlight: true },
@@ -50,9 +51,8 @@ const NAV_ITEMS: NavItem[] = [
   // INSIGHTS - Analytics and feedback
   { href: '/admin/analytics', icon: BarChart3, label: 'Analytics', section: 'Insights' },
   { href: '/admin/feature-requests', icon: Lightbulb, label: 'Feature Requests', highlight: true },
-  // GROWTH - Expansion and communications
+  // GROWTH - Expansion
   { href: '/admin/expansion', icon: Globe, label: 'Expansion', highlight: true, section: 'Growth', superOnly: true },
-  { href: '/admin/inbox', icon: Inbox, label: 'Inbox', highlight: true },
 ];
 
 interface AdminSidebarProps {

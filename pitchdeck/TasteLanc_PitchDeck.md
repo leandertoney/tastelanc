@@ -290,7 +290,7 @@ TasteLanc has proven the hyper-local playbook in Lancaster, PA — a mid-sized c
 
 **Contact:**
 - Web: tastelanc.com
-- Email: support@tastelanc.com
+- Email: info@tastelanc.com
 
 ---
 

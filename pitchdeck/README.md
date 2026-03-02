@@ -208,7 +208,7 @@ python3 pitchdeck/generate_pptx.py
 | Claim | Source |
 |-------|--------|
 | Contact: tastelanc.com | `apps/mobile/src/config/brand.ts:23` |
-| Contact: support@tastelanc.com | `apps/mobile/src/config/brand.ts:20` |
+| Contact: info@tastelanc.com | `apps/mobile/src/config/brand.ts:20` |
 | No fundraising numbers | Intentionally generic — no amounts fabricated |
 
 ---

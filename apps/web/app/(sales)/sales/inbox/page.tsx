@@ -19,7 +19,7 @@ import { Card } from '@/components/ui';
 import { toast } from 'sonner';
 import InboxEmailComposer from '@/components/sales/InboxEmailComposer';
 import { SENDER_IDENTITIES, type SenderIdentity } from '@/config/sender-identities';
-import DOMPurify from 'isomorphic-dompurify';
+
 
 interface Conversation {
   counterparty_email: string;
@@ -79,6 +79,53 @@ function formatTimestamp(dateStr: string) {
   });
 }
 
+/** Strip quoted reply content from an email, returning only the new message */
+function stripQuotedReply(text: string): string {
+  const lines = text.split('\n');
+  const cutLines: number[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    // "On <date> <name> wrote:" pattern
+    if (/^On .+ wrote:$/i.test(line)) { cutLines.push(i); break; }
+    // Gmail-style separator
+    if (/^-{2,}\s*(Forwarded|Original) Message/i.test(line)) { cutLines.push(i); break; }
+    // Outlook-style separator
+    if (/^_{5,}/.test(line) || /^-{5,}$/.test(line)) { cutLines.push(i); break; }
+    // "From: ... Sent: ..." block (Outlook)
+    if (/^From:\s/.test(line) && i + 1 < lines.length && /^(Sent|Date):\s/.test(lines[i + 1].trim())) { cutLines.push(i); break; }
+  }
+
+  const result = cutLines.length > 0
+    ? lines.slice(0, cutLines[0]).join('\n')
+    : text;
+
+  // Also strip leading/trailing blank lines and "> " quoted lines at the end
+  return result.replace(/(\n\s*>.*)+\s*$/, '').trim();
+}
+
+/** Extract just the reply text from an HTML email body */
+function extractReplyFromHtml(html: string, plainText: string | null): string {
+  // If we have plain text, prefer that — much easier to strip quotes from
+  if (plainText) return stripQuotedReply(plainText);
+
+  // Fallback: strip blockquotes and gmail_quote divs from HTML, then extract text
+  const cleaned = html
+    .replace(/<blockquote[\s\S]*?<\/blockquote>/gi, '')
+    .replace(/<div class="gmail_quote"[\s\S]*$/gi, '')
+    .replace(/<div id="(appendonsend|divRplyFwdMsg)"[\s\S]*$/gi, '')
+    .replace(/<hr[\s/>][\s\S]*$/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return stripQuotedReply(cleaned);
+}
+
 export default function InboxPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -126,8 +173,7 @@ export default function InboxPage() {
       setConversations(data.conversations || []);
       if (data.isAdmin !== undefined) setIsAdmin(data.isAdmin);
       if (data.userIdentity) {
-        const found = SENDER_IDENTITIES.find(s => s.email === data.userIdentity.email);
-        if (found) setSelectedSender(found);
+        setSelectedSender(data.userIdentity);
       }
     } catch (error) {
       console.error('Error fetching inbox:', error);
@@ -476,11 +522,11 @@ export default function InboxPage() {
                         {msg.subject && (
                           <p className="text-xs font-medium text-gray-300 mb-1">{msg.subject}</p>
                         )}
-                        {msg.body_html ? (
-                          <div
-                            className="email-html-content text-sm leading-relaxed overflow-x-auto"
-                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(msg.body_html, { ADD_ATTR: ['target'] }) }}
-                          />
+                        {msg.direction === 'received' ? (
+                          // Received: strip quoted reply, show only new content as plain text
+                          <p className="text-sm text-white whitespace-pre-wrap leading-relaxed">
+                            {extractReplyFromHtml(msg.body_html || '', msg.body_text) || '(empty message)'}
+                          </p>
                         ) : msg.body_text ? (
                           <p className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">
                             {msg.body_text}
