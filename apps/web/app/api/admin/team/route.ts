@@ -204,6 +204,15 @@ export async function GET() {
       .select('id, name, slug, is_active')
       .order('name');
 
+    // Fetch auth users for last_sign_in_at
+    const { data: authData } = await serviceClient.auth.admin.listUsers({ perPage: 1000 });
+    const lastSignInMap: Record<string, string | null> = {};
+    if (authData?.users) {
+      for (const u of authData.users) {
+        lastSignInMap[u.id] = u.last_sign_in_at || null;
+      }
+    }
+
     // Fetch lead counts per rep
     const { data: leadCounts } = await serviceClient
       .from('business_leads')
@@ -242,6 +251,7 @@ export async function GET() {
           isSalesRep: false,
           salesRepData: null,
           leadCount: leadCountMap[p.id] || 0,
+          lastSignInAt: lastSignInMap[p.id] || null,
           marketNames: p.role === 'super_admin' || p.role === 'co_founder'
             ? ['All Markets']
             : p.admin_market_id ? [marketMap[p.admin_market_id] || 'Unknown'] : [],
@@ -288,6 +298,7 @@ export async function GET() {
               preferred_sender_email: rep.preferred_sender_email,
             },
             leadCount: leadCountMap[rep.id] || 0,
+            lastSignInAt: lastSignInMap[rep.id] || null,
             marketNames: repMarketNames,
           });
         }
