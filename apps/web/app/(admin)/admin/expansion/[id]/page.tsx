@@ -88,6 +88,7 @@ export default function CityDetailPage() {
   const [jobRoleType, setJobRoleType] = useState<JobRoleType>('sales_rep');
   const [userRole, setUserRole] = useState<string | null>(null);
   const isSuperAdmin = userRole === 'super_admin';
+  const canManage = userRole === 'super_admin' || userRole === 'co_founder';
 
   // ─── Data fetching ───────────────────────────────────
   useEffect(() => {
@@ -499,8 +500,8 @@ export default function CityDetailPage() {
             </p>
           </div>
 
-          {/* Action buttons (super_admin only) */}
-          {isSuperAdmin && (
+          {/* Action buttons */}
+          {canManage && (
             <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
               {canApprove && (
                 <button
@@ -517,7 +518,7 @@ export default function CityDetailPage() {
                 </button>
               )}
 
-              {canGoLive && (
+              {canGoLive && isSuperAdmin && (
                 <button
                   onClick={handleGoLive}
                   disabled={isActivating}
@@ -640,7 +641,7 @@ export default function CityDetailPage() {
         {activeTab === 'research' && (
           <CityResearchPanel
             city={city}
-            onReResearch={isSuperAdmin ? handleResearch : undefined}
+            onReResearch={canManage ? handleResearch : undefined}
             isResearching={isResearching}
           />
         )}
@@ -648,8 +649,8 @@ export default function CityDetailPage() {
         {/* ─── Brand Tab ───────────────────────── */}
         {activeTab === 'brand' && (
           <div className="space-y-4">
-            {/* Generate button (super_admin only) */}
-            {isSuperAdmin && (
+            {/* Generate button */}
+            {canManage && (
               <div className="flex justify-end">
                 <button
                   onClick={handleGenerateBrands}
@@ -684,7 +685,7 @@ export default function CityDetailPage() {
                   <BrandProposalCard
                     key={brand.id}
                     brand={brand}
-                    onSelect={isSuperAdmin ? handleSelectBrand : undefined}
+                    onSelect={canManage ? handleSelectBrand : undefined}
                     isSelecting={selectingBrandId === brand.id}
                   />
                 ))}
@@ -696,8 +697,8 @@ export default function CityDetailPage() {
         {/* ─── Jobs Tab ────────────────────────── */}
         {activeTab === 'jobs' && (
           <div className="space-y-4">
-            {/* Generate controls (super_admin only) */}
-            {isSuperAdmin && (
+            {/* Generate controls */}
+            {canManage && (
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-end">
                 <select
                   value={jobRoleType}
@@ -743,8 +744,8 @@ export default function CityDetailPage() {
                   <JobListingCard
                     key={job.id}
                     job={job}
-                    onApprove={isSuperAdmin ? handleApproveJob : undefined}
-                    onReject={isSuperAdmin ? handleRejectJob : undefined}
+                    onApprove={canManage ? handleApproveJob : undefined}
+                    onReject={canManage ? handleRejectJob : undefined}
                     isUpdating={updatingJobId === job.id}
                   />
                 ))}
