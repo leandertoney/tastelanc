@@ -72,6 +72,7 @@ export default function ExpansionPipelinePage() {
   const [isRunningAgent, setIsRunningAgent] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const isSuperAdmin = userRole === 'super_admin';
+  const canManage = userRole === 'super_admin' || userRole === 'co_founder';
   const [pendingReview, setPendingReview] = useState<PendingReview>({
     brandsToReview: [],
     jobsToApprove: [],
@@ -284,7 +285,7 @@ export default function ExpansionPipelinePage() {
           </p>
         </div>
         <div className="flex gap-3">
-          {isSuperAdmin && (
+          {canManage && (
             <>
               <button
                 onClick={handleRunAgent}

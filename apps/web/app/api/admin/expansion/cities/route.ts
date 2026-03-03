@@ -55,8 +55,8 @@ export async function POST(request: NextRequest) {
     try { admin = await verifyAdminAccess(supabase); }
     catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
-    if (admin.role !== 'super_admin') {
-      return NextResponse.json({ error: 'Super admin access required' }, { status: 403 });
+    if (admin.role !== 'super_admin' && admin.role !== 'co_founder') {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     const serviceClient = createServiceRoleClient();
