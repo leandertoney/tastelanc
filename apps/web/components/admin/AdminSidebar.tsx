@@ -31,7 +31,7 @@ interface NavItem {
   label: string;
   highlight?: boolean;
   section?: string;
-  superOnly?: boolean; // Only visible to super_admin
+  superOnly?: boolean; // Only visible to super_admin and co_founder
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -103,9 +103,10 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   }, []);
 
   const isSuperAdmin = userRole === 'super_admin';
+  const isCoFounder = userRole === 'co_founder';
 
   const visibleItems = NAV_ITEMS.filter(item => {
-    if (item.superOnly && !isSuperAdmin) return false;
+    if (item.superOnly && !isSuperAdmin && !isCoFounder) return false;
     return true;
   });
 
