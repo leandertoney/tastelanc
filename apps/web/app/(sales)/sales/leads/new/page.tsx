@@ -185,7 +185,7 @@ export default function NewLeadPage() {
 
       {/* Business Search */}
       {!manualMode && !selectedResult && (
-        <Card className="p-6 mb-4">
+        <Card className="p-6 mb-4 overflow-visible">
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Find a Business</h2>
           <div ref={searchRef} className="relative">
             <div className="relative">
