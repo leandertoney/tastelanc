@@ -282,6 +282,7 @@ function isSelfPromoterSubscription(priceId: string): boolean {
 // Helper to determine restaurant tier from price ID (Starter tier removed)
 function getRestaurantTier(priceId: string): string {
   if ((ELITE_PRICE_IDS as readonly string[]).includes(priceId)) return 'elite';
+  if (priceId === RESTAURANT_PRICE_IDS.coffee_shop_monthly) return 'coffee_shop';
   // Default to premium for any paid subscription (starter tier removed)
   return 'premium';
 }

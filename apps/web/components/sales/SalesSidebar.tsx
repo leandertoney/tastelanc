@@ -53,9 +53,10 @@ interface SalesSidebarProps {
   collapsed?: boolean;
   onToggleCollapse?: () => void;
   isAdmin?: boolean;
+  brandName?: string;
 }
 
-export default function SalesSidebar({ isOpen, onClose, collapsed, onToggleCollapse, isAdmin }: SalesSidebarProps) {
+export default function SalesSidebar({ isOpen, onClose, collapsed, onToggleCollapse, isAdmin, brandName }: SalesSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -135,7 +136,7 @@ export default function SalesSidebar({ isOpen, onClose, collapsed, onToggleColla
               <TrendingUp className={`${collapsed ? 'md:w-4 md:h-4' : ''} w-6 h-6 text-white`} />
             </div>
             <div className={`${collapsed ? 'md:hidden' : ''}`}>
-              <span className="text-xl font-bold text-white">{BRAND.name}</span>
+              <span className="text-xl font-bold text-white">{brandName || BRAND.name}</span>
               <span className="block text-xs text-tastelanc-accent">Sales CRM</span>
             </div>
           </Link>

@@ -33,20 +33,22 @@ interface CartItem {
   id: string;
   restaurantId: string;
   restaurantName: string;
-  plan: 'premium' | 'elite';
-  duration: '3mo' | '6mo' | 'yearly';
+  plan: 'premium' | 'elite' | 'coffee_shop';
+  duration: 'monthly' | '3mo' | '6mo' | 'yearly';
   price: number;
 }
 
 const DURATIONS = [
+  { id: 'monthly', label: 'Month-to-Month' },
   { id: '3mo', label: '3 Months' },
   { id: '6mo', label: '6 Months' },
   { id: 'yearly', label: '1 Year' },
 ];
 
 const PRICES: Record<string, Record<string, number>> = {
-  premium: { '3mo': 250, '6mo': 450, yearly: 800 },
-  elite: { '3mo': 350, '6mo': 600, yearly: 1100 },
+  premium: { monthly: 99, '3mo': 250, '6mo': 450, yearly: 800 },
+  elite: { monthly: 149, '3mo': 350, '6mo': 600, yearly: 1100 },
+  coffee_shop: { monthly: 49 },
 };
 
 function getDiscountPercent(count: number): number {
@@ -472,13 +474,13 @@ function SalesCheckoutContent() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">Plan</label>
-                      <div className="grid grid-cols-2 gap-3">
-                        {(['premium', 'elite'] as const).map((plan) => (
-                          <button key={plan} onClick={() => setCurrentPlan(plan)}
+                      <div className="grid grid-cols-3 gap-3">
+                        {(['premium', 'elite', 'coffee_shop'] as const).map((plan) => (
+                          <button key={plan} onClick={() => { setCurrentPlan(plan); if (plan === 'coffee_shop') setCurrentDuration('monthly'); }}
                             className={`p-3 rounded-lg border-2 text-center transition-all ${
                               currentPlan === plan ? 'border-tastelanc-accent bg-tastelanc-accent/10 text-white' : 'border-tastelanc-surface-light text-gray-300 hover:border-gray-600'
                             }`}>
-                            <span className="font-semibold text-sm capitalize">{plan}</span>
+                            <span className="font-semibold text-sm capitalize">{plan === 'coffee_shop' ? 'Coffee Shop' : plan}</span>
                           </button>
                         ))}
                       </div>
@@ -486,8 +488,8 @@ function SalesCheckoutContent() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">Duration</label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {DURATIONS.map((d) => {
+                      <div className={`grid gap-2 ${currentPlan === 'coffee_shop' ? 'grid-cols-1' : 'grid-cols-4'}`}>
+                        {DURATIONS.filter((d) => currentPlan !== 'coffee_shop' || d.id === 'monthly').map((d) => {
                           const price = PRICES[currentPlan]?.[d.id] || 0;
                           return (
                             <button key={d.id} onClick={() => setCurrentDuration(d.id)}

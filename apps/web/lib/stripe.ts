@@ -14,16 +14,20 @@ export function getStripe() {
   return stripeClient;
 }
 
-// Restaurant Plans - 6 prices (2 tiers × 3 durations) - Starter tier removed
+// Restaurant Plans - Starter tier removed
 export const RESTAURANT_PRICE_IDS = {
-  // Premium: $250/3mo, $450/6mo, $800/year
+  // Premium: $99/mo, $250/3mo, $450/6mo, $800/year
+  premium_monthly: process.env.STRIPE_PRICE_PREMIUM_MONTHLY || 'price_premium_monthly',
   premium_3mo: process.env.STRIPE_PRICE_PREMIUM_3MO || 'price_premium_3mo',
   premium_6mo: process.env.STRIPE_PRICE_PREMIUM_6MO || 'price_premium_6mo',
   premium_yearly: process.env.STRIPE_PRICE_PREMIUM_YEARLY || 'price_premium_yearly',
-  // Elite: $350/3mo, $600/6mo, $1100/year
+  // Elite: $149/mo, $350/3mo, $600/6mo, $1100/year
+  elite_monthly: process.env.STRIPE_PRICE_ELITE_MONTHLY || 'price_elite_monthly',
   elite_3mo: process.env.STRIPE_PRICE_ELITE_3MO || 'price_elite_3mo',
   elite_6mo: process.env.STRIPE_PRICE_ELITE_6MO || 'price_elite_6mo',
   elite_yearly: process.env.STRIPE_PRICE_ELITE_YEARLY || 'price_elite_yearly',
+  // Coffee Shop: $49/mo
+  coffee_shop_monthly: process.env.STRIPE_PRICE_COFFEE_SHOP_MONTHLY || 'price_coffee_shop_monthly',
 } as const;
 
 // Consumer Plans - 2 prices (monthly, yearly)
@@ -57,6 +61,7 @@ export const ALL_CONSUMER_PRICE_IDS = [
 
 // All elite restaurant price IDs (for tier detection in webhooks)
 export const ELITE_PRICE_IDS = [
+  RESTAURANT_PRICE_IDS.elite_monthly,
   RESTAURANT_PRICE_IDS.elite_3mo,
   RESTAURANT_PRICE_IDS.elite_6mo,
   RESTAURANT_PRICE_IDS.elite_yearly,
@@ -64,8 +69,9 @@ export const ELITE_PRICE_IDS = [
 
 // Price info for display - Starter tier removed
 export const RESTAURANT_PRICES = {
-  premium: { '3mo': 250, '6mo': 450, yearly: 800 },
-  elite: { '3mo': 350, '6mo': 600, yearly: 1100 },
+  premium: { monthly: 99, '3mo': 250, '6mo': 450, yearly: 800 },
+  elite: { monthly: 149, '3mo': 350, '6mo': 600, yearly: 1100 },
+  coffee_shop: { monthly: 49 },
 } as const;
 
 export const CONSUMER_PRICES = {
@@ -75,12 +81,15 @@ export const CONSUMER_PRICES = {
 // Plan display names - Starter tier removed
 export const PLAN_NAMES: Record<string, string> = {
   // Restaurant plans
+  price_premium_monthly: 'Premium (Month-to-Month)',
   price_premium_3mo: 'Premium (3 Months)',
   price_premium_6mo: 'Premium (6 Months)',
   price_premium_yearly: 'Premium (Annual)',
+  price_elite_monthly: 'Elite (Month-to-Month)',
   price_elite_3mo: 'Elite (3 Months)',
   price_elite_6mo: 'Elite (6 Months)',
   price_elite_yearly: 'Elite (Annual)',
+  price_coffee_shop_monthly: 'Coffee Shop (Monthly)',
   // Consumer plans
   price_consumer_monthly: 'Premium (Monthly)',
   price_consumer_yearly: 'Premium (Annual)',
@@ -98,6 +107,7 @@ export function getDiscountPercent(restaurantCount: number): number {
 
 // Duration to Stripe billing interval mapping (for programmatic subscription creation)
 export const DURATION_TO_INTERVAL: Record<string, { interval: 'month' | 'year'; interval_count: number }> = {
+  'monthly': { interval: 'month', interval_count: 1 },
   '3mo': { interval: 'month', interval_count: 3 },
   '6mo': { interval: 'month', interval_count: 6 },
   'yearly': { interval: 'year', interval_count: 1 },
@@ -105,6 +115,7 @@ export const DURATION_TO_INTERVAL: Record<string, { interval: 'month' | 'year'; 
 
 // Duration display labels
 export const DURATION_LABELS: Record<string, string> = {
+  'monthly': 'Month-to-Month',
   '3mo': '3 Months',
   '6mo': '6 Months',
   'yearly': '1 Year',

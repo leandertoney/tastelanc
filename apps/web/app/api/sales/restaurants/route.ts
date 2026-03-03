@@ -36,10 +36,37 @@ export async function GET(request: Request) {
       return q; // super_admin/co_founder — no filter
     };
 
+    // For non-admin reps: get restaurant IDs claimed by OTHER reps (hide from search)
+    let claimedRestaurantIds: string[] = [];
+    if (!access.isAdmin && access.userId) {
+      const { data: claimedLeads } = await serviceClient
+        .from('business_leads')
+        .select('restaurant_id')
+        .not('assigned_to', 'is', null)
+        .neq('assigned_to', access.userId)
+        .not('status', 'in', '("not_interested","converted")')
+        .not('restaurant_id', 'is', null);
+
+      if (claimedLeads) {
+        claimedRestaurantIds = Array.from(new Set(
+          claimedLeads.map((l: any) => l.restaurant_id).filter(Boolean) as string[]
+        ));
+      }
+    }
+
+    // Helper to exclude claimed restaurants from a query
+    const applyClaimedFilter = (q: any) => {
+      if (claimedRestaurantIds.length > 0) {
+        return q.not('id', 'in', `(${claimedRestaurantIds.join(',')})`);
+      }
+      return q;
+    };
+
     // Build count query with same filters
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let countQ: any = serviceClient.from('restaurants').select('id', { count: 'exact', head: true });
     countQ = applyMarketScope(countQ);
+    countQ = applyClaimedFilter(countQ);
     if (search) countQ = countQ.or(`name.ilike.%${search}%,city.ilike.%${search}%`);
     if (active === 'true') countQ = countQ.eq('is_active', true);
     if (active === 'false') countQ = countQ.eq('is_active', false);
@@ -53,6 +80,7 @@ export async function GET(request: Request) {
       .range((page - 1) * limit, page * limit - 1);
 
     query = applyMarketScope(query);
+    query = applyClaimedFilter(query);
 
     if (search) {
       query = query.or(`name.ilike.%${search}%,city.ilike.%${search}%`);

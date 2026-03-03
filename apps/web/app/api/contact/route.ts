@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { MARKET_SLUG } from '@/config/market';
 
 export async function POST(request: Request) {
   try {
@@ -25,6 +26,13 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
+    // Resolve current deployment's market ID
+    const { data: market } = await supabase
+      .from('markets')
+      .select('id')
+      .eq('slug', MARKET_SLUG)
+      .single();
+
     // Store in Supabase
     const { error } = await supabase
       .from('contact_submissions')
@@ -35,6 +43,7 @@ export async function POST(request: Request) {
         business_name: business_name || null,
         message,
         interested_plan: interested_plan || null,
+        market_id: market?.id || null,
       });
 
     if (error) {
