@@ -40,7 +40,7 @@ import { SCORING_WEIGHTS } from '@/lib/ai/expansion-agent';
 
 interface CityResearchPanelProps {
   city: ExpansionCity;
-  onReResearch: () => void;
+  onReResearch?: () => void;
   isResearching?: boolean;
 }
 
@@ -488,25 +488,27 @@ export default function CityResearchPanel({
       <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-8 text-center">
         <Search className="w-10 h-10 text-gray-600 mx-auto mb-3" />
         <p className="text-gray-400 mb-4">
-          No research data yet. Click Research to get started.
+          No research data yet.{onReResearch ? ' Click Research to get started.' : ''}
         </p>
-        <button
-          onClick={onReResearch}
-          disabled={isResearching}
-          className="px-5 py-2.5 bg-tastelanc-accent text-white rounded-lg text-sm font-medium hover:bg-tastelanc-accent/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
-        >
-          {isResearching ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Researching...
-            </>
-          ) : (
-            <>
-              <Search className="w-4 h-4" />
-              Research City
-            </>
-          )}
-        </button>
+        {onReResearch && (
+          <button
+            onClick={onReResearch}
+            disabled={isResearching}
+            className="px-5 py-2.5 bg-tastelanc-accent text-white rounded-lg text-sm font-medium hover:bg-tastelanc-accent/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
+          >
+            {isResearching ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Researching...
+              </>
+            ) : (
+              <>
+                <Search className="w-4 h-4" />
+                Research City
+              </>
+            )}
+          </button>
+        )}
       </div>
     );
   }
@@ -730,24 +732,27 @@ export default function CityResearchPanel({
       </div>
 
       {/* Re-research button */}
-      <div className="flex justify-end">
-        <button
-          onClick={onReResearch}
-          disabled={isResearching}
-          className="px-4 py-2 bg-tastelanc-surface-light text-gray-300 rounded-lg text-sm font-medium hover:bg-tastelanc-surface-light/80 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-        >
-          {isResearching ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Re-Researching...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="w-4 h-4" />
-              Re-Research
-            </>
-          )}
-        </button>
+      {onReResearch && (
+        <div className="flex justify-end">
+          <button
+            onClick={onReResearch}
+            disabled={isResearching}
+            className="px-4 py-2 bg-tastelanc-surface-light text-gray-300 rounded-lg text-sm font-medium hover:bg-tastelanc-surface-light/80 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {isResearching ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Re-Researching...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4" />
+                Re-Research
+              </>
+            )}
+          </button>
+        </div>
+      )}
       </div>
     </div>
   );

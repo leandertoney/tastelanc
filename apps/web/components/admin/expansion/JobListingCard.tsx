@@ -29,8 +29,8 @@ const ROLE_TYPE_LABELS: Record<string, string> = {
 
 interface JobListingCardProps {
   job: ExpansionJobListing;
-  onApprove: (jobId: string) => void;
-  onReject: (jobId: string) => void;
+  onApprove?: (jobId: string) => void;
+  onReject?: (jobId: string) => void;
   isUpdating?: boolean;
 }
 
@@ -129,8 +129,8 @@ export default function JobListingCard({
         </div>
       )}
 
-      {/* Action buttons (only for draft jobs) */}
-      {job.status === 'draft' && (
+      {/* Action buttons (only for draft jobs, when callbacks provided) */}
+      {job.status === 'draft' && onApprove && onReject && (
         <div className="flex items-center gap-2 pt-2 border-t border-tastelanc-surface-light">
           <button
             onClick={() => onApprove(job.id)}

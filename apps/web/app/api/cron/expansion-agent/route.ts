@@ -112,26 +112,25 @@ export async function POST(request: Request) {
   };
 
   try {
-    // ── Step 1: Fill pipeline if below threshold ──────────────
+    // ── Step 1: Count pending items & send notification FIRST ──
+    // (Runs before heavy AI work so the 5-minute timeout can't prevent delivery)
+    await stepCountPendingReview(supabase, result);
+    await stepNotifyAdmin(result, supabase);
+
+    // ── Step 2: Fill pipeline if below threshold ──────────────
     await stepSuggestCities(supabase, result);
 
-    // ── Step 2: Research cities in "researching" status ───────
+    // ── Step 3: Research cities in "researching" status ───────
     await stepResearchCities(supabase, result);
 
-    // ── Step 3: Generate brands for "researched" cities ──────
+    // ── Step 4: Generate brands for "researched" cities ──────
     await stepGenerateBrands(supabase, result);
 
-    // ── Step 4: Generate job listings for ready cities ───────
+    // ── Step 5: Generate job listings for ready cities ───────
     await stepGenerateJobs(supabase, result);
 
-    // ── Step 4.5: Auto-post approved jobs ─────────────────────
+    // ── Step 5.5: Auto-post approved jobs ─────────────────────
     await stepAutoPostJobs(supabase, result);
-
-    // ── Step 5: Count items needing admin attention ──────────
-    await stepCountPendingReview(supabase, result);
-
-    // ── Step 6: Notify admin if there are items to review ───
-    await stepNotifyAdmin(result, supabase);
 
     console.log('[expansion-agent] Run complete:', JSON.stringify(result, null, 2));
 

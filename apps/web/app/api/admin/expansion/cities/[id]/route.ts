@@ -16,8 +16,8 @@ export async function GET(
     try { admin = await verifyAdminAccess(supabase); }
     catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
-    if (admin.role !== 'super_admin') {
-      return NextResponse.json({ error: 'Super admin access required' }, { status: 403 });
+    if (admin.role !== 'super_admin' && admin.role !== 'co_founder') {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     const serviceClient = createServiceRoleClient();
@@ -49,6 +49,7 @@ export async function GET(
       city,
       brand_drafts_count: brand_drafts_count || 0,
       job_listings_count: job_listings_count || 0,
+      role: admin.role,
     });
   } catch (error) {
     console.error('Error fetching expansion city:', error);

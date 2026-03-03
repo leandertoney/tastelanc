@@ -70,6 +70,8 @@ export default function ExpansionPipelinePage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSuggestModal, setShowSuggestModal] = useState(false);
   const [isRunningAgent, setIsRunningAgent] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const isSuperAdmin = userRole === 'super_admin';
   const [pendingReview, setPendingReview] = useState<PendingReview>({
     brandsToReview: [],
     jobsToApprove: [],
@@ -92,7 +94,10 @@ export default function ExpansionPipelinePage() {
         reviewsRes.json(),
       ]);
 
-      if (statsRes.ok) setStats(statsData);
+      if (statsRes.ok) {
+        setStats(statsData);
+        if (statsData.role) setUserRole(statsData.role);
+      }
       if (activityRes.ok) setActivities(activityData.activities || []);
 
       // Group reviews by city_id
@@ -279,25 +284,29 @@ export default function ExpansionPipelinePage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <button
-            onClick={handleRunAgent}
-            disabled={isRunningAgent}
-            className="flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg transition-colors text-sm font-medium text-gray-300 disabled:opacity-50"
-          >
-            {isRunningAgent ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Play className="w-4 h-4" />
-            )}
-            {isRunningAgent ? 'Running...' : 'Run Agent Now'}
-          </button>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg transition-colors text-sm font-medium text-gray-300"
-          >
-            <Plus className="w-4 h-4" />
-            Add City
-          </button>
+          {isSuperAdmin && (
+            <>
+              <button
+                onClick={handleRunAgent}
+                disabled={isRunningAgent}
+                className="flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg transition-colors text-sm font-medium text-gray-300 disabled:opacity-50"
+              >
+                {isRunningAgent ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Play className="w-4 h-4" />
+                )}
+                {isRunningAgent ? 'Running...' : 'Run Agent Now'}
+              </button>
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg transition-colors text-sm font-medium text-gray-300"
+              >
+                <Plus className="w-4 h-4" />
+                Add City
+              </button>
+            </>
+          )}
         </div>
       </div>
 
