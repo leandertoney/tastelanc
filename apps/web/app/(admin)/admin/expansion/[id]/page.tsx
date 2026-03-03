@@ -86,6 +86,8 @@ export default function CityDetailPage() {
   const [rejectReason, setRejectReason] = useState('');
 
   const [jobRoleType, setJobRoleType] = useState<JobRoleType>('sales_rep');
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const isSuperAdmin = userRole === 'super_admin';
 
   // ─── Data fetching ───────────────────────────────────
   useEffect(() => {
@@ -108,6 +110,7 @@ export default function CityDetailPage() {
       if (cityRes.ok) {
         const data = await cityRes.json();
         setCity(data.city);
+        if (data.role) setUserRole(data.role);
       }
       if (brandsRes.ok) {
         const data = await brandsRes.json();
@@ -496,64 +499,66 @@ export default function CityDetailPage() {
             </p>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
-            {canApprove && (
-              <button
-                onClick={handleApproveForLaunch}
-                disabled={isApproving}
-                className="flex items-center gap-1.5 px-4 py-2 bg-green-500/10 text-green-400 border border-green-500/20 rounded-lg text-sm font-medium hover:bg-green-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isApproving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4" />
-                )}
-                Approve for Launch
-              </button>
-            )}
-
-            {canGoLive && (
-              <button
-                onClick={handleGoLive}
-                disabled={isActivating}
-                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-sm font-medium hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isActivating ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Rocket className="w-4 h-4" />
-                )}
-                Go Live
-              </button>
-            )}
-
-            {canChangeStatus && (
-              <>
+          {/* Action buttons (super_admin only) */}
+          {isSuperAdmin && (
+            <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+              {canApprove && (
                 <button
-                  onClick={handlePutOnHold}
-                  disabled={isChangingStatus}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-gray-500/10 text-gray-400 border border-gray-500/20 rounded-lg text-sm font-medium hover:bg-gray-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleApproveForLaunch}
+                  disabled={isApproving}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-green-500/10 text-green-400 border border-green-500/20 rounded-lg text-sm font-medium hover:bg-green-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isChangingStatus ? (
+                  {isApproving ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <PauseCircle className="w-4 h-4" />
+                    <CheckCircle2 className="w-4 h-4" />
                   )}
-                  Put on Hold
+                  Approve for Launch
                 </button>
+              )}
 
+              {canGoLive && (
                 <button
-                  onClick={() => setShowRejectModal(true)}
-                  disabled={isChangingStatus}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg text-sm font-medium hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleGoLive}
+                  disabled={isActivating}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-sm font-medium hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <XCircle className="w-4 h-4" />
-                  Reject
+                  {isActivating ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Rocket className="w-4 h-4" />
+                  )}
+                  Go Live
                 </button>
-              </>
-            )}
-          </div>
+              )}
+
+              {canChangeStatus && (
+                <>
+                  <button
+                    onClick={handlePutOnHold}
+                    disabled={isChangingStatus}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-gray-500/10 text-gray-400 border border-gray-500/20 rounded-lg text-sm font-medium hover:bg-gray-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isChangingStatus ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <PauseCircle className="w-4 h-4" />
+                    )}
+                    Put on Hold
+                  </button>
+
+                  <button
+                    onClick={() => setShowRejectModal(true)}
+                    disabled={isChangingStatus}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg text-sm font-medium hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    Reject
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -635,7 +640,7 @@ export default function CityDetailPage() {
         {activeTab === 'research' && (
           <CityResearchPanel
             city={city}
-            onReResearch={handleResearch}
+            onReResearch={isSuperAdmin ? handleResearch : undefined}
             isResearching={isResearching}
           />
         )}
@@ -643,26 +648,28 @@ export default function CityDetailPage() {
         {/* ─── Brand Tab ───────────────────────── */}
         {activeTab === 'brand' && (
           <div className="space-y-4">
-            {/* Generate button */}
-            <div className="flex justify-end">
-              <button
-                onClick={handleGenerateBrands}
-                disabled={isGeneratingBrands}
-                className="flex items-center gap-2 px-4 py-2 bg-tastelanc-accent text-white rounded-lg text-sm font-medium hover:bg-tastelanc-accent/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isGeneratingBrands ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Generating Brands...
-                  </>
-                ) : (
-                  <>
-                    <Palette className="w-4 h-4" />
-                    Generate Brands
-                  </>
-                )}
-              </button>
-            </div>
+            {/* Generate button (super_admin only) */}
+            {isSuperAdmin && (
+              <div className="flex justify-end">
+                <button
+                  onClick={handleGenerateBrands}
+                  disabled={isGeneratingBrands}
+                  className="flex items-center gap-2 px-4 py-2 bg-tastelanc-accent text-white rounded-lg text-sm font-medium hover:bg-tastelanc-accent/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGeneratingBrands ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Generating Brands...
+                    </>
+                  ) : (
+                    <>
+                      <Palette className="w-4 h-4" />
+                      Generate Brands
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
 
             {brands.length === 0 ? (
               <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-8 text-center">
@@ -677,7 +684,7 @@ export default function CityDetailPage() {
                   <BrandProposalCard
                     key={brand.id}
                     brand={brand}
-                    onSelect={handleSelectBrand}
+                    onSelect={isSuperAdmin ? handleSelectBrand : undefined}
                     isSelecting={selectingBrandId === brand.id}
                   />
                 ))}
@@ -689,37 +696,39 @@ export default function CityDetailPage() {
         {/* ─── Jobs Tab ────────────────────────── */}
         {activeTab === 'jobs' && (
           <div className="space-y-4">
-            {/* Generate controls */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-end">
-              <select
-                value={jobRoleType}
-                onChange={(e) => setJobRoleType(e.target.value as JobRoleType)}
-                className="px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light text-white text-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-tastelanc-accent"
-              >
-                {ROLE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={handleGenerateJob}
-                disabled={isGeneratingJob}
-                className="flex items-center gap-2 px-4 py-2 bg-tastelanc-accent text-white rounded-lg text-sm font-medium hover:bg-tastelanc-accent/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isGeneratingJob ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4" />
-                    Generate Listing
-                  </>
-                )}
-              </button>
-            </div>
+            {/* Generate controls (super_admin only) */}
+            {isSuperAdmin && (
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-end">
+                <select
+                  value={jobRoleType}
+                  onChange={(e) => setJobRoleType(e.target.value as JobRoleType)}
+                  className="px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light text-white text-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-tastelanc-accent"
+                >
+                  {ROLE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleGenerateJob}
+                  disabled={isGeneratingJob}
+                  className="flex items-center gap-2 px-4 py-2 bg-tastelanc-accent text-white rounded-lg text-sm font-medium hover:bg-tastelanc-accent/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGeneratingJob ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      Generate Listing
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
 
             {jobs.length === 0 ? (
               <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-8 text-center">
@@ -734,8 +743,8 @@ export default function CityDetailPage() {
                   <JobListingCard
                     key={job.id}
                     job={job}
-                    onApprove={handleApproveJob}
-                    onReject={handleRejectJob}
+                    onApprove={isSuperAdmin ? handleApproveJob : undefined}
+                    onReject={isSuperAdmin ? handleRejectJob : undefined}
                     isUpdating={updatingJobId === job.id}
                   />
                 ))}

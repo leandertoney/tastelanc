@@ -11,8 +11,8 @@ export async function GET(request: NextRequest) {
     try { admin = await verifyAdminAccess(supabase); }
     catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
-    if (admin.role !== 'super_admin') {
-      return NextResponse.json({ error: 'Super admin access required' }, { status: 403 });
+    if (admin.role !== 'super_admin' && admin.role !== 'co_founder') {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     const serviceClient = createServiceRoleClient();
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    return NextResponse.json(stats);
+    return NextResponse.json({ ...stats, role: admin.role });
   } catch (error) {
     console.error('Error fetching expansion stats:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

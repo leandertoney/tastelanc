@@ -7,7 +7,7 @@ import ColorSwatchRow from './ColorSwatchRow';
 
 interface BrandProposalCardProps {
   brand: BrandDraft;
-  onSelect: (brandId: string) => void;
+  onSelect?: (brandId: string) => void;
   isSelecting?: boolean;
 }
 
@@ -87,7 +87,7 @@ export default function BrandProposalCard({ brand, onSelect, isSelecting }: Bran
       </div>
 
       {/* Select button */}
-      {!brand.is_selected && (
+      {!brand.is_selected && onSelect && (
         <button
           onClick={() => onSelect(brand.id)}
           disabled={isSelecting}
