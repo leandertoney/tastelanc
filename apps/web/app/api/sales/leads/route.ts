@@ -234,6 +234,12 @@ export async function POST(request: Request) {
     // Determine source based on linking
     const source = restaurant_id ? 'directory' : google_place_id ? 'google_places' : 'manual';
 
+    // Auto-assign market_id from the sales rep's market when not provided
+    let resolvedMarketId = market_id || null;
+    if (!resolvedMarketId && access.marketIds && access.marketIds.length === 1) {
+      resolvedMarketId = access.marketIds[0];
+    }
+
     // Create lead, auto-assign to the creating sales rep
     const { data: lead, error } = await serviceClient
       .from('business_leads')
@@ -252,7 +258,7 @@ export async function POST(request: Request) {
         notes: notes || null,
         tags: tags || [],
         status: 'new',
-        market_id: market_id || null,
+        market_id: resolvedMarketId,
         assigned_to: access.isSalesRep ? access.userId : null,
         restaurant_id: restaurant_id || null,
         google_place_id: google_place_id || null,
