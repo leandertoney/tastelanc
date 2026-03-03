@@ -753,7 +753,6 @@ export default function CityResearchPanel({
           </button>
         </div>
       )}
-      </div>
     </div>
   );
 }
