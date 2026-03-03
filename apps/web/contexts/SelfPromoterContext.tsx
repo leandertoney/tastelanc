@@ -97,7 +97,7 @@ export function SelfPromoterProvider({ children }: SelfPromoterProviderProps) {
         .select('role, admin_market_id')
         .eq('id', user.id)
         .single();
-      const userIsAdmin = profile?.role === 'super_admin' ||
+      const userIsAdmin = profile?.role === 'super_admin' || profile?.role === 'co_founder' ||
         (profile?.role === 'market_admin' && profile?.admin_market_id === marketId);
       setIsAdmin(userIsAdmin);
 

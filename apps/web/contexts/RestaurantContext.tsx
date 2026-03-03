@@ -102,14 +102,14 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
         .select('role, admin_market_id')
         .eq('id', user.id)
         .single();
-      const userIsAdmin = profile?.role === 'super_admin' ||
+      const userIsAdmin = profile?.role === 'super_admin' || profile?.role === 'co_founder' ||
         (profile?.role === 'market_admin' && profile?.admin_market_id === marketId);
       setIsAdmin(userIsAdmin);
 
       // If admin mode with specific restaurant ID
       if (adminMode && adminRestaurantId && userIsAdmin) {
-        // super_admin can access restaurants across all markets
-        const isSuperAdmin = profile?.role === 'super_admin';
+        // super_admin and co_founder can access restaurants across all markets
+        const isSuperAdmin = profile?.role === 'super_admin' || profile?.role === 'co_founder';
         let adminQuery = supabase
           .from('restaurants')
           .select('*, tiers(*)')
