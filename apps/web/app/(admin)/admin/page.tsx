@@ -110,31 +110,44 @@ async function getAdminStats(scopedMarketId: string | null) {
   if (scopedMarketId) activeSubQuery = activeSubQuery.eq('market_id', scopedMarketId);
   const { count: activeSubscriptions } = await activeSubQuery;
 
-  // Get total page views (last 30 days)
+  // Get total page views (last 30 days) — scope by market via restaurant join
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const { count: totalPageViews } = await supabase
-    .from('analytics_page_views')
-    .select('*', { count: 'exact', head: true })
-    .gte('viewed_at', thirtyDaysAgo.toISOString());
+  let pageViewQuery = scopedMarketId
+    ? supabase
+        .from('analytics_page_views')
+        .select('*, restaurants!inner(market_id)', { count: 'exact', head: true })
+        .gte('viewed_at', thirtyDaysAgo.toISOString())
+        .eq('restaurants.market_id', scopedMarketId)
+    : supabase
+        .from('analytics_page_views')
+        .select('*', { count: 'exact', head: true })
+        .gte('viewed_at', thirtyDaysAgo.toISOString());
+  const { count: totalPageViews } = await pageViewQuery;
 
-  // Get contact submissions
-  const { count: totalContacts } = await supabase
+  // Get contact submissions — scoped by market_id
+  let contactCountQuery = supabase
     .from('contact_submissions')
     .select('*', { count: 'exact', head: true });
+  if (scopedMarketId) contactCountQuery = contactCountQuery.eq('market_id', scopedMarketId);
+  const { count: totalContacts } = await contactCountQuery;
 
-  const { count: unreadContacts } = await supabase
+  let unreadContactQuery = supabase
     .from('contact_submissions')
     .select('*', { count: 'exact', head: true })
     .is('read_at', null);
+  if (scopedMarketId) unreadContactQuery = unreadContactQuery.eq('market_id', scopedMarketId);
+  const { count: unreadContacts } = await unreadContactQuery;
 
-  // Get recent contacts
-  const { data: recentContacts } = await supabase
+  // Get recent contacts — scoped by market_id
+  let recentContactQuery = supabase
     .from('contact_submissions')
     .select('*')
     .order('created_at', { ascending: false })
     .limit(5);
+  if (scopedMarketId) recentContactQuery = recentContactQuery.eq('market_id', scopedMarketId);
+  const { data: recentContacts } = await recentContactQuery;
 
   // Get paid restaurants by tier
   let paidTierQuery = supabase
@@ -148,6 +161,7 @@ async function getAdminStats(scopedMarketId: string | null) {
     starter: 0,
     premium: 0,
     elite: 0,
+    coffee_shop: 0,
   };
 
   paidRestaurantsByTier?.forEach((restaurant) => {
@@ -158,32 +172,36 @@ async function getAdminStats(scopedMarketId: string | null) {
     }
   });
 
-  // Get waitlist/early access signups
-  const { count: totalWaitlistSignups } = await supabase
+  // Get waitlist/early access signups — scoped by market_id
+  let waitlistQuery = supabase
     .from('early_access_signups')
     .select('*', { count: 'exact', head: true });
+  if (scopedMarketId) waitlistQuery = waitlistQuery.eq('market_id', scopedMarketId);
+  const { count: totalWaitlistSignups } = await waitlistQuery;
 
   // Get today's waitlist signups (using EST timezone)
-  // Create midnight EST for today
   const now = new Date();
   const estOffset = -5 * 60; // EST is UTC-5
   const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
   const estTime = new Date(utcTime + (estOffset * 60000));
-  // Get start of day in EST, then convert to UTC for query
   const todayStartEST = new Date(estTime.getFullYear(), estTime.getMonth(), estTime.getDate(), 0, 0, 0);
-  const todayStartUTC = new Date(todayStartEST.getTime() + (5 * 60 * 60000)); // Add 5 hours to get UTC
+  const todayStartUTC = new Date(todayStartEST.getTime() + (5 * 60 * 60000));
 
-  const { count: todayWaitlistSignups } = await supabase
+  let todayWaitlistQuery = supabase
     .from('early_access_signups')
     .select('*', { count: 'exact', head: true })
     .gte('created_at', todayStartUTC.toISOString());
+  if (scopedMarketId) todayWaitlistQuery = todayWaitlistQuery.eq('market_id', scopedMarketId);
+  const { count: todayWaitlistSignups } = await todayWaitlistQuery;
 
-  // Get recent waitlist signups
-  const { data: recentWaitlistSignups } = await supabase
+  // Get recent waitlist signups — scoped by market_id
+  let recentWaitlistQuery = supabase
     .from('early_access_signups')
     .select('*')
     .order('created_at', { ascending: false })
     .limit(5);
+  if (scopedMarketId) recentWaitlistQuery = recentWaitlistQuery.eq('market_id', scopedMarketId);
+  const { data: recentWaitlistSignups } = await recentWaitlistQuery;
 
   return {
     totalRestaurants: totalRestaurants || 0,
@@ -203,9 +221,12 @@ export default async function AdminDashboardPage() {
   const supabase = await createClient();
   const admin = await verifyAdminAccess(supabase);
 
+  // Only super_admin and co_founder see Stripe financial data
+  const canSeeFinancials = admin.role === 'super_admin' || admin.role === 'co_founder';
+
   const [stats, stripeRevenue] = await Promise.all([
     getAdminStats(admin.scopedMarketId),
-    getStripeRevenue(),
+    canSeeFinancials ? getStripeRevenue() : Promise.resolve({ mrr: 0, arr: 0, totalSubscriptions: 0, restaurantCount: 0, consumerCount: 0, selfPromoterCount: 0 }),
   ]);
 
   return (
@@ -215,30 +236,32 @@ export default async function AdminDashboardPage() {
         <p className="text-gray-400 mt-1 text-sm md:text-base">Overview of {BRAND.name} platform</p>
       </div>
 
-      {/* Revenue Banner */}
-      <Card className="p-4 md:p-6 mb-6 md:mb-8 bg-gradient-to-r from-green-500/10 to-green-500/5 border-green-500/30">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-green-400" />
+      {/* Revenue Banner — super_admin & co_founder only */}
+      {canSeeFinancials && (
+        <Card className="p-4 md:p-6 mb-6 md:mb-8 bg-gradient-to-r from-green-500/10 to-green-500/5 border-green-500/30">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-green-400" />
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm">Monthly Recurring Revenue</p>
+                <p className="text-3xl font-bold text-green-400">${stripeRevenue.mrr.toLocaleString()}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-gray-400 text-sm">Monthly Recurring Revenue</p>
-              <p className="text-3xl font-bold text-green-400">${stripeRevenue.mrr.toLocaleString()}</p>
+            <div className="flex gap-6">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-white">{stripeRevenue.totalSubscriptions}</p>
+                <p className="text-gray-400 text-xs">Paid Members</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-white">${stripeRevenue.arr.toLocaleString()}</p>
+                <p className="text-gray-400 text-xs">ARR</p>
+              </div>
             </div>
           </div>
-          <div className="flex gap-6">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-white">{stripeRevenue.totalSubscriptions}</p>
-              <p className="text-gray-400 text-xs">Paid Members</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-white">${stripeRevenue.arr.toLocaleString()}</p>
-              <p className="text-gray-400 text-xs">ARR</p>
-            </div>
-          </div>
-        </div>
-      </Card>
+        </Card>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
@@ -253,17 +276,29 @@ export default async function AdminDashboardPage() {
           <p className="text-gray-400 text-xs md:text-sm">Total Restaurants</p>
         </Card>
 
-        <Link href="/admin/paid-members">
-          <Card className="p-4 md:p-6 hover:ring-2 hover:ring-green-500/50 transition-all cursor-pointer">
+        {canSeeFinancials ? (
+          <Link href="/admin/paid-members">
+            <Card className="p-4 md:p-6 hover:ring-2 hover:ring-green-500/50 transition-all cursor-pointer">
+              <div className="flex items-center justify-between mb-3 md:mb-4">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+                  <Users className="w-5 h-5 md:w-6 md:h-6 text-green-500" />
+                </div>
+              </div>
+              <p className="text-2xl md:text-3xl font-bold text-white">{stripeRevenue.totalSubscriptions}</p>
+              <p className="text-gray-400 text-xs md:text-sm">Paid Members</p>
+            </Card>
+          </Link>
+        ) : (
+          <Card className="p-4 md:p-6">
             <div className="flex items-center justify-between mb-3 md:mb-4">
               <div className="w-10 h-10 md:w-12 md:h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
                 <Users className="w-5 h-5 md:w-6 md:h-6 text-green-500" />
               </div>
             </div>
-            <p className="text-2xl md:text-3xl font-bold text-white">{stripeRevenue.totalSubscriptions}</p>
-            <p className="text-gray-400 text-xs md:text-sm">Paid Members</p>
+            <p className="text-2xl md:text-3xl font-bold text-white">{stats.activeSubscriptions}</p>
+            <p className="text-gray-400 text-xs md:text-sm">Active Subscriptions</p>
           </Card>
-        </Link>
+        )}
 
         <Card className="p-4 md:p-6">
           <div className="flex items-center justify-between mb-3 md:mb-4">
@@ -332,6 +367,20 @@ export default async function AdminDashboardPage() {
                   className="h-full bg-purple-500 rounded-full"
                   style={{
                     width: `${Math.max(5, (stats.signupsByPlan.elite / Math.max(stats.activeSubscriptions, 1)) * 100)}%`,
+                  }}
+                />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between mb-1">
+                <span className="text-gray-400">Coffee Shop</span>
+                <span className="text-white font-medium">{stats.signupsByPlan.coffee_shop}</span>
+              </div>
+              <div className="h-2 bg-tastelanc-surface-light rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-amber-600 rounded-full"
+                  style={{
+                    width: `${Math.max(5, (stats.signupsByPlan.coffee_shop / Math.max(stats.activeSubscriptions, 1)) * 100)}%`,
                   }}
                 />
               </div>

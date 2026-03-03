@@ -1,16 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Menu, TrendingUp, Shield, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import SalesSidebar from './SalesSidebar';
 import { createClient } from '@/lib/supabase/client';
+import { MARKET_CONFIG, type MarketBrand } from '@/config/market';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return 'Good morning';
   if (hour < 17) return 'Good afternoon';
   return 'Good evening';
+}
+
+function hexToRgb(hex: string): string {
+  const h = hex.replace('#', '');
+  return `${parseInt(h.slice(0, 2), 16)} ${parseInt(h.slice(2, 4), 16)} ${parseInt(h.slice(4, 6), 16)}`;
 }
 
 export default function SalesLayoutClient({
@@ -22,6 +28,7 @@ export default function SalesLayoutClient({
   const [collapsed, setCollapsed] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [repName, setRepName] = useState<string | null>(null);
+  const [repMarketConfig, setRepMarketConfig] = useState<MarketBrand | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -39,10 +46,10 @@ export default function SalesLayoutClient({
         setIsAdmin(true);
       }
 
-      // Get rep name — try sales_reps first, then user metadata
+      // Get rep name and market — try sales_reps first, then user metadata
       const { data: rep } = await supabase
         .from('sales_reps')
-        .select('name')
+        .select('name, market_ids')
         .eq('id', user.id)
         .maybeSingle();
       if (rep?.name) {
@@ -52,18 +59,45 @@ export default function SalesLayoutClient({
       } else if (user.email) {
         setRepName(user.email.split('@')[0]);
       }
+
+      // Resolve rep's market for branding
+      if (rep?.market_ids?.length) {
+        const { data: market } = await supabase
+          .from('markets')
+          .select('slug')
+          .eq('id', rep.market_ids[0])
+          .single();
+        if (market?.slug && MARKET_CONFIG[market.slug]) {
+          setRepMarketConfig(MARKET_CONFIG[market.slug]);
+        }
+      }
     };
     init();
   }, []);
 
+  // Build CSS variable overrides for the rep's market
+  const marketStyle = useMemo(() => {
+    if (!repMarketConfig) return undefined;
+    return {
+      '--brand-accent': hexToRgb(repMarketConfig.colors.accent),
+      '--brand-accent-hover': hexToRgb(repMarketConfig.colors.accentHover),
+      '--brand-gold': hexToRgb(repMarketConfig.colors.gold),
+      '--brand-bg': hexToRgb(repMarketConfig.colors.bg),
+      '--brand-card': hexToRgb(repMarketConfig.colors.card),
+      '--brand-surface': hexToRgb(repMarketConfig.colors.surface),
+      '--brand-surface-light': hexToRgb(repMarketConfig.colors.surfaceLight),
+    } as React.CSSProperties;
+  }, [repMarketConfig]);
+
   return (
-    <div className="flex min-h-screen bg-tastelanc-bg">
+    <div className="flex min-h-screen bg-tastelanc-bg" style={marketStyle}>
       <SalesSidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         collapsed={collapsed}
         onToggleCollapse={() => setCollapsed((c) => !c)}
         isAdmin={isAdmin}
+        brandName={repMarketConfig?.name}
       />
 
       <div className="flex-1 flex flex-col min-w-0">

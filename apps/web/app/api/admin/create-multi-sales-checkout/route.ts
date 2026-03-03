@@ -13,8 +13,8 @@ interface CheckoutItem {
   restaurantId: string | null;
   restaurantName: string;
   isNewRestaurant: boolean;
-  plan: 'premium' | 'elite';
-  duration: '3mo' | '6mo' | 'yearly';
+  plan: 'premium' | 'elite' | 'coffee_shop';
+  duration: 'monthly' | '3mo' | '6mo' | 'yearly';
 }
 
 function getSupabaseAdmin() {
@@ -58,10 +58,10 @@ export async function POST(request: Request) {
       if (!item.restaurantName) {
         throw new Error(`Item ${index + 1}: Restaurant name is required`);
       }
-      if (!['premium', 'elite'].includes(item.plan)) {
+      if (!['premium', 'elite', 'coffee_shop'].includes(item.plan)) {
         throw new Error(`Item ${index + 1}: Invalid plan "${item.plan}"`);
       }
-      if (!['3mo', '6mo', 'yearly'].includes(item.duration)) {
+      if (!['monthly', '3mo', '6mo', 'yearly'].includes(item.duration)) {
         throw new Error(`Item ${index + 1}: Invalid duration "${item.duration}"`);
       }
 

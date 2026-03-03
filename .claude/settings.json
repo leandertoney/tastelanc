@@ -29,7 +29,26 @@
       "Bash(open /Users/leandertoney/tastelanc/pitchdeck/TasteLanc_PitchDeck.md)",
       "Bash(md5)",
       "Bash(git ls-tree HEAD pitchdeck/frames/)",
-      "Bash(gh api repos/leandertoney/tastelanc/deployments --jq '.[0] | {sha: .sha[0:7], created_at: .created_at, environment: .environment, description: .description}')"
+      "Bash(gh api repos/leandertoney/tastelanc/deployments --jq '.[0] | {sha: .sha[0:7], created_at: .created_at, environment: .environment, description: .description}')",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"DELETE FROM supabase_migrations.schema_migrations WHERE version = ''20260302_expansion_reviews'';\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT id, role, admin_market_id, full_name FROM profiles WHERE role IN \\(''super_admin'', ''co_founder'', ''market_admin''\\) ORDER BY role;\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT p.id, p.role, p.admin_market_id, u.email FROM profiles p JOIN auth.users u ON u.id = p.id WHERE p.role IN \\(''super_admin'', ''co_founder'', ''market_admin''\\) ORDER BY p.role;\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT status, COUNT\\(*\\) FROM expansion_cities GROUP BY status ORDER BY status;\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT action, created_at FROM expansion_activity_log ORDER BY created_at DESC LIMIT 10;\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"\\\\dt job_applications\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT COUNT\\(*\\) as brands_to_review FROM expansion_cities ec WHERE ec.status = ''brand_ready'' AND NOT EXISTS \\(SELECT 1 FROM expansion_brand_drafts ebd WHERE ebd.city_id = ec.id AND ebd.is_selected = true\\);\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT COUNT\\(*\\) as draft_jobs FROM expansion_job_listings WHERE status = ''draft'';\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT id, from_email, subject, created_at, category FROM inbound_emails WHERE subject ILIKE ''%expansion%'' OR from_email ILIKE ''%expansion%'' ORDER BY created_at DESC LIMIT 10;\")",
+      "Bash(awk 'NR>=542 && NR<=759' /Users/leandertoney/tastelanc/apps/web/components/admin/expansion/CityResearchPanel.tsx)",
+      "Read(//Users/leandertoney/tastelanc/**)",
+      "Bash(awk 'NR>=1880 && NR<=1920')",
+      "Read(//Users/leandertoney/tastelanc/apps/web/NR>0 && $0 ~ /**)",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"INSERT INTO public.tiers \\(name, display_name, price_monthly, price_yearly, has_logo, has_menu, has_analytics, has_push_notifications, has_preferred_placement\\) VALUES \\(''coffee_shop'', ''Coffee Shop'', 49.00, 0, true, true, false, false, false\\) ON CONFLICT \\(name\\) DO NOTHING;\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd@aws-0-us-west-2.pooler.supabase.com:6543/postgres\" -c \"INSERT INTO public.tiers \\(name, display_name, price_monthly, price_yearly, has_logo, has_menu, has_analytics, has_push_notifications, has_preferred_placement\\) VALUES \\(''coffee_shop'', ''Coffee Shop'', 49.00, 0, true, true, false, false, false\\) ON CONFLICT \\(name\\) DO NOTHING;\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql -h aws-0-us-west-2.pooler.supabase.com -p 5432 -U postgres.kufcxxynjvyharhtfptd -d postgres -c \"SELECT id, full_name, role FROM profiles WHERE full_name ILIKE ''%jordan%'' OR full_name ILIKE ''%leander%'' LIMIT 5;\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT id, full_name, role FROM profiles WHERE full_name ILIKE ''%jordan%'' OR role = ''co_founder'' LIMIT 5;\")",
+      "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT id, display_name, role FROM profiles WHERE role IN \\(''co_founder'', ''super_admin''\\) ORDER BY role;\")",
+      "Bash(netlify --version)"
     ]
   }
 }

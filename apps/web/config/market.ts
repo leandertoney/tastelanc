@@ -145,7 +145,7 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
     logoPath: '/images/tastecumberland_logo.png',
 
     appStoreUrls: {
-      ios: '',
+      ios: 'https://apps.apple.com/us/app/tastecumberland/id6759233248',
       android: '',
     },
 

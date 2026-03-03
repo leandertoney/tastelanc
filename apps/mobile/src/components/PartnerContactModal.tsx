@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { colors, radius, spacing } from '../constants/colors';
+import { useMarket } from '../context/MarketContext';
 
 type ContactCategory = 'restaurant' | 'happy_hour' | 'entertainment' | 'event';
 
@@ -51,6 +52,7 @@ export default function PartnerContactModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const { marketId } = useMarket();
 
   // Reset form when modal opens
   useEffect(() => {
@@ -88,6 +90,7 @@ export default function PartnerContactModal({
           business_name: formData.businessName.trim() || null,
           message: formData.message.trim(),
           interested_plan: null,
+          market_id: marketId || null,
         });
 
       if (insertError) {

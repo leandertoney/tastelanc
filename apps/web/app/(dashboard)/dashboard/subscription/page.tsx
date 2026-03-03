@@ -9,7 +9,7 @@ const PLANS = [
   {
     id: 'basic',
     name: 'Basic',
-    prices: { '3mo': 0, '6mo': 0, yearly: 0 },
+    prices: { monthly: 0, '3mo': 0, '6mo': 0, yearly: 0 },
     period: 'Free forever',
     description: 'Get started with essential features',
     features: [
@@ -23,7 +23,7 @@ const PLANS = [
   {
     id: 'premium',
     name: 'Premium',
-    prices: { '3mo': 250, '6mo': 450, yearly: 800 },
+    prices: { monthly: 99, '3mo': 250, '6mo': 450, yearly: 800 },
     period: '',
     description: 'Best for active restaurants',
     features: [
@@ -42,7 +42,7 @@ const PLANS = [
   {
     id: 'elite',
     name: 'Elite',
-    prices: { '3mo': 350, '6mo': 600, yearly: 1100 },
+    prices: { monthly: 149, '3mo': 350, '6mo': 600, yearly: 1100 },
     period: '',
     description: 'Maximum visibility & features',
     features: [
@@ -60,16 +60,18 @@ const PLANS = [
   },
 ];
 
-type BillingPeriod = '3mo' | '6mo' | 'yearly';
+type BillingPeriod = 'monthly' | '3mo' | '6mo' | 'yearly';
 
 // Map plan + billing period to Stripe price ID env var keys
 const PRICE_KEY_MAP: Record<string, Record<BillingPeriod, string>> = {
   premium: {
+    monthly: 'premium_monthly',
     '3mo': 'premium_3mo',
     '6mo': 'premium_6mo',
     yearly: 'premium_yearly',
   },
   elite: {
+    monthly: 'elite_monthly',
     '3mo': 'elite_3mo',
     '6mo': 'elite_6mo',
     yearly: 'elite_yearly',
@@ -180,6 +182,16 @@ export default function SubscriptionPage() {
       {/* Billing Toggle */}
       <div className="flex items-center justify-center gap-2 flex-wrap">
         <button
+          onClick={() => setBillingPeriod('monthly')}
+          className={`px-4 py-2 rounded-lg transition-colors ${
+            billingPeriod === 'monthly'
+              ? 'bg-tastelanc-accent text-white'
+              : 'bg-tastelanc-surface text-gray-400 hover:text-white'
+          }`}
+        >
+          Monthly
+        </button>
+        <button
           onClick={() => setBillingPeriod('3mo')}
           className={`px-4 py-2 rounded-lg transition-colors ${
             billingPeriod === '3mo'
@@ -266,7 +278,7 @@ export default function SubscriptionPage() {
                   </span>
                   {displayPrice > 0 && (
                     <span className="text-gray-400">
-                      /{billingPeriod === 'yearly' ? 'year' : billingPeriod}
+                      /{billingPeriod === 'yearly' ? 'year' : billingPeriod === 'monthly' ? 'mo' : billingPeriod}
                     </span>
                   )}
                 </div>
@@ -350,7 +362,7 @@ export default function SubscriptionPage() {
           <div>
             <h4 className="font-medium text-white mb-1">How does billing work?</h4>
             <p className="text-gray-400 text-sm">
-              You&apos;ll be charged at the beginning of each billing cycle. Choose 3-month, 6-month, or annual billing.
+              You&apos;ll be charged at the beginning of each billing cycle. Choose month-to-month, 3-month, 6-month, or annual billing.
             </p>
           </div>
           <div>

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { MARKET_SLUG } from '@/config/market';
 
 // Use service role key to bypass RLS for inserts
 function getSupabaseAdmin() {
@@ -37,6 +38,13 @@ export async function POST(request: Request) {
       });
     }
 
+    // Resolve current deployment's market ID
+    const { data: market } = await supabaseAdmin
+      .from('markets')
+      .select('id')
+      .eq('slug', MARKET_SLUG)
+      .single();
+
     // Insert new signup
     const { error } = await supabaseAdmin
       .from('early_access_signups')
@@ -44,6 +52,7 @@ export async function POST(request: Request) {
         email: email.toLowerCase().trim(),
         source,
         referral_code: referralCode || null,
+        market_id: market?.id || null,
       });
 
     if (error) {
