@@ -46,14 +46,23 @@ async function sendBlogNotificationEmails(
   return sent;
 }
 
+// Map market slugs to EAS app slugs for push token filtering
+const MARKET_APP_SLUG: Record<string, string> = {
+  'lancaster-pa': 'tastelanc',
+  'cumberland-pa': 'taste-cumberland',
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function sendPushNotifications(
   supabase: any,
-  post: { title: string; slug: string; summary: string }
+  post: { title: string; slug: string; summary: string },
+  marketSlug: string,
+  aiName: string,
 ): Promise<number> {
   try {
+    const appSlug = MARKET_APP_SLUG[marketSlug] || 'tastelanc';
     const { data, error } = await supabase.functions.invoke('send-notifications/new-blog-post', {
-      body: { title: post.title, summary: post.summary, slug: post.slug },
+      body: { title: post.title, summary: post.summary, slug: post.slug, app_slug: appSlug, ai_name: aiName },
     });
     if (error) {
       console.error('Push notification error:', error);
@@ -184,7 +193,7 @@ export async function POST(request: Request) {
               title: post.title,
               slug: post.slug,
               summary: post.summary,
-            });
+            }, marketSlug, brand.aiName);
 
             console.log(`Fallback published: "${post.title}" - ${emailsSent} emails, ${pushSent} push`);
             return NextResponse.json({
@@ -225,7 +234,7 @@ export async function POST(request: Request) {
         title: post.title,
         slug: post.slug,
         summary: post.summary,
-      });
+      }, marketSlug, brand.aiName);
 
       console.log(`Published: "${post.title}" - ${emailsSent} emails, ${pushSent} push`);
       published.push({ slug: post.slug, title: post.title, emailsSent, pushSent });

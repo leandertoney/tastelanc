@@ -435,7 +435,52 @@ const PICK_STRATEGIES_BY_DAY: Record<string, PickStrategy> = {
  * Rotates pick categories by day of week. Uses day-of-month as a
  * deterministic seed so everyone gets the same pick, but it varies day-to-day.
  */
+// Map market slugs to their app slug and AI name for Today's Pick
+const MARKET_INFO: Record<string, { appSlug: string; aiName: string; label: string }> = {
+  'lancaster-pa': { appSlug: 'tastelanc', aiName: 'Rosie', label: 'Lancaster' },
+  'cumberland-pa': { appSlug: 'taste-cumberland', aiName: 'Mollie', label: 'Cumberland' },
+};
+
 async function sendTodaysPick(supabase: ReturnType<typeof createClient>): Promise<{
+  sent: number;
+  restaurant?: string;
+  strategy?: string;
+  reason?: string;
+}> {
+  // Run Today's Pick independently for each active market
+  const { data: markets } = await supabase
+    .from('markets')
+    .select('id, slug')
+    .eq('is_active', true);
+
+  if (!markets?.length) return { sent: 0, reason: 'No active markets' };
+
+  let totalSent = 0;
+  let lastRestaurant = '';
+  let lastStrategy = '';
+
+  for (const market of markets) {
+    const info = MARKET_INFO[market.slug];
+    if (!info) {
+      console.log(`No app info for market ${market.slug}, skipping`);
+      continue;
+    }
+
+    const result = await sendTodaysPickForMarket(supabase, market.id, market.slug, info);
+    totalSent += result.sent;
+    if (result.restaurant) lastRestaurant = result.restaurant;
+    if (result.strategy) lastStrategy = result.strategy;
+  }
+
+  return { sent: totalSent, restaurant: lastRestaurant, strategy: lastStrategy };
+}
+
+async function sendTodaysPickForMarket(
+  supabase: ReturnType<typeof createClient>,
+  marketId: string,
+  marketSlug: string,
+  marketInfo: { appSlug: string; aiName: string; label: string },
+): Promise<{
   sent: number;
   restaurant?: string;
   strategy?: string;
@@ -491,7 +536,7 @@ async function sendTodaysPick(supabase: ReturnType<typeof createClient>): Promis
       if (r) {
         restaurantId = r.id;
         restaurantName = r.name;
-        notifBody = `Lancaster is voting ${r.name} #1 this month. Have you tried it yet?`;
+        notifBody = `${marketInfo.label} is voting ${r.name} #1 this month. Have you tried it yet?`;
       }
     }
 
@@ -500,6 +545,7 @@ async function sendTodaysPick(supabase: ReturnType<typeof createClient>): Promis
       const { data } = await supabase
         .from('restaurants')
         .select('id, name, description, best_for')
+        .eq('market_id', marketId)
         .eq('is_active', true)
         .eq('is_verified', true)
         .order('name')
@@ -518,8 +564,9 @@ async function sendTodaysPick(supabase: ReturnType<typeof createClient>): Promis
       .from('happy_hours')
       .select(`
         restaurant_id, description, start_time,
-        restaurants!inner(id, name, is_active, is_verified)
+        restaurants!inner(id, name, is_active, is_verified, market_id)
       `)
+      .eq('restaurants.market_id', marketId)
       .eq('is_active', true)
       .contains('days_of_week', [etDayOfWeek])
       .limit(30);
@@ -542,6 +589,7 @@ async function sendTodaysPick(supabase: ReturnType<typeof createClient>): Promis
     const { data } = await supabase
       .from('restaurants')
       .select('id, name, description, best_for, cuisine')
+      .eq('market_id', marketId)
       .eq('is_active', true)
       .eq('is_verified', true)
       .not('tier_id', 'in', `(${PAID_TIER_IDS.join(',')})`)
@@ -568,8 +616,9 @@ async function sendTodaysPick(supabase: ReturnType<typeof createClient>): Promis
       .from('events')
       .select(`
         id, name, description, event_type, start_time,
-        restaurant:restaurants!inner(id, name, is_active)
+        restaurant:restaurants!inner(id, name, is_active, market_id)
       `)
+      .eq('restaurant.market_id', marketId)
       .eq('is_active', true)
       .or(`event_date.eq.${todayStr},is_recurring.eq.true`)
       .limit(30);
@@ -593,13 +642,14 @@ async function sendTodaysPick(supabase: ReturnType<typeof createClient>): Promis
           return ` at ${dh} ${s}`;
         })()
       : ' tonight';
-    notifBody = `${ev.name} at ${r.name}${timeStr}. Live entertainment in Lancaster tonight 🎶`;
+    notifBody = `${ev.name} at ${r.name}${timeStr}. Live entertainment in ${marketInfo.label} tonight 🎶`;
 
   } else if (strategy.type === 'weekend_kickoff') {
     // Top verified restaurant with a happy hour or event on Friday
     const { data } = await supabase
       .from('restaurants')
       .select('id, name, description, best_for, categories')
+      .eq('market_id', marketId)
       .eq('is_active', true)
       .eq('is_verified', true)
       .order('name')
@@ -614,13 +664,14 @@ async function sendTodaysPick(supabase: ReturnType<typeof createClient>): Promis
     const r = pool[dayOfMonth % pool.length] as any;
     restaurantId = r.id;
     restaurantName = r.name;
-    notifBody = `Weekend starts NOW. ${r.name} is the place to be tonight in Lancaster 🔥`;
+    notifBody = `Weekend starts NOW. ${r.name} is the place to be tonight in ${marketInfo.label} 🔥`;
 
   } else if (strategy.type === 'date_night') {
     // Upscale dinner pick for Saturday
     const { data } = await supabase
       .from('restaurants')
       .select('id, name, description, best_for, categories')
+      .eq('market_id', marketId)
       .eq('is_active', true)
       .eq('is_verified', true)
       .order('name')
@@ -643,6 +694,7 @@ async function sendTodaysPick(supabase: ReturnType<typeof createClient>): Promis
     const { data } = await supabase
       .from('restaurants')
       .select('id, name, description, best_for, categories')
+      .eq('market_id', marketId)
       .eq('is_active', true)
       .eq('is_verified', true)
       .contains('categories', ['brunch'])
@@ -658,11 +710,16 @@ async function sendTodaysPick(supabase: ReturnType<typeof createClient>): Promis
 
   if (!restaurantId) return { sent: 0, reason: 'No restaurant selected' };
 
-  // ── Send to all tokens (separate batches per Expo project) ──────────────
+  // ── Send only to tokens for this market's app ──────────────
 
   const title = `${strategy.emoji} ${strategy.title}`;
-  const { sent: successCount, total } = await sendToAllTokens(supabase, (tokens) =>
-    tokens.map(token => ({
+  const groups = await getAllPushTokensGrouped(supabase);
+  const tokens = groups.get(marketInfo.appSlug) || [];
+  console.log(`Today's Pick (${marketInfo.label}): sending to ${tokens.length} tokens for app ${marketInfo.appSlug}`);
+
+  let successCount = 0;
+  if (tokens.length > 0) {
+    const messages = tokens.map(token => ({
       to: token,
       sound: 'default' as const,
       title,
@@ -671,10 +728,12 @@ async function sendTodaysPick(supabase: ReturnType<typeof createClient>): Promis
         screen: 'RestaurantDetail',
         restaurantId,
       },
-    }))
-  );
+    }));
+    const result = await sendPushNotifications(messages);
+    successCount = result.data.filter(r => r.status === 'ok').length;
+  }
 
-  if (total === 0) return { sent: 0, reason: 'No push tokens registered' };
+  if (tokens.length === 0) return { sent: 0, reason: `No push tokens for ${marketInfo.appSlug}` };
 
   return {
     sent: successCount,
@@ -745,9 +804,9 @@ Deno.serve(async (req) => {
       }
 
       case 'new-blog-post': {
-        // Send notification to all users about a new blog post
+        // Send notification to users of a specific app about a new blog post
         const body = await req.json();
-        const { title, summary, slug } = body;
+        const { title, summary, slug, app_slug, ai_name } = body;
 
         if (!title || !summary || !slug) {
           return new Response(JSON.stringify({ error: 'Missing title, summary, or slug' }), {
@@ -756,21 +815,32 @@ Deno.serve(async (req) => {
           });
         }
 
+        const targetAppSlug = app_slug || 'tastelanc';
+        const aiDisplayName = ai_name || 'Rosie';
         const truncatedSummary = summary.length > 120 ? summary.substring(0, 117) + '...' : summary;
-        const blogResult = await sendToAllTokens(supabase, (tokens) =>
-          tokens.map(token => ({
+
+        // Only send to tokens for the target app
+        const groups = await getAllPushTokensGrouped(supabase);
+        const tokens = groups.get(targetAppSlug) || [];
+        console.log(`Blog notification: sending to ${tokens.length} tokens for app ${targetAppSlug}`);
+
+        let sent = 0;
+        if (tokens.length > 0) {
+          const messages = tokens.map(token => ({
             to: token,
             sound: 'default' as const,
-            title: `New from Rosie: ${title}`,
+            title: `New from ${aiDisplayName}: ${title}`,
             body: truncatedSummary,
             data: {
               screen: 'BlogDetail',
               blogSlug: slug,
             },
-          }))
-        );
+          }));
+          const result = await sendPushNotifications(messages);
+          sent = result.data.filter(r => r.status === 'ok').length;
+        }
 
-        return new Response(JSON.stringify(blogResult), {
+        return new Response(JSON.stringify({ sent, total: tokens.length }), {
           headers: { 'Content-Type': 'application/json' },
         });
       }
