@@ -72,7 +72,7 @@ interface Pagination {
   totalPages: number;
 }
 
-type SortColumn = 'business_name' | 'contact_name' | 'city' | 'category' | 'status' | 'created_at' | 'last_contacted_at';
+type SortColumn = 'business_name' | 'contact_name' | 'city' | 'status' | 'created_at' | 'last_contacted_at';
 type SortDir = 'asc' | 'desc';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof CheckCircle }> = {
@@ -90,8 +90,6 @@ const ACTIVITY_ICONS: Record<string, { icon: typeof PhoneCall; label: string; co
   note: { icon: FileText, label: 'Note', color: 'text-gray-400' },
   follow_up: { icon: CalendarCheck, label: 'Follow-up', color: 'text-yellow-400' },
 };
-
-const CATEGORIES = ['restaurant', 'bar', 'cafe', 'brewery', 'bakery', 'food_truck', 'other'];
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -121,7 +119,6 @@ export default function SalesLeadsPage() {
   const [fetchError, setFetchError] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [ownerFilter, setOwnerFilter] = useState<'all' | 'mine'>('all');
@@ -134,7 +131,6 @@ export default function SalesLeadsPage() {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
       if (statusFilter !== 'all') params.set('status', statusFilter);
-      if (categoryFilter !== 'all') params.set('category', categoryFilter);
       params.set('page', String(pageOverride ?? pagination.page));
       params.set('limit', String(pagination.limit));
       params.set('sort_by', sortBy);
@@ -160,7 +156,7 @@ export default function SalesLeadsPage() {
   useEffect(() => {
     setPagination((p) => ({ ...p, page: 1 }));
     fetchLeads(1);
-  }, [statusFilter, categoryFilter, sortBy, sortDir]);
+  }, [statusFilter, sortBy, sortDir]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -394,18 +390,6 @@ export default function SalesLeadsPage() {
               <option value="not_interested">Not Interested</option>
               <option value="converted">Converted</option>
             </select>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
-            >
-              <option value="all">All Categories</option>
-              {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat.charAt(0).toUpperCase() + cat.slice(1).replace('_', ' ')}
-                </option>
-              ))}
-            </select>
           </div>
         </div>
       </Card>
@@ -436,11 +420,11 @@ export default function SalesLeadsPage() {
           <Users className="w-12 h-12 text-gray-500 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-white mb-2">No leads found</h3>
           <p className="text-gray-400 mb-4">
-            {search || statusFilter !== 'all' || categoryFilter !== 'all' || ownerFilter === 'mine'
+            {search || statusFilter !== 'all' || ownerFilter === 'mine'
               ? 'Try adjusting your filters'
               : 'Add your first business lead to get started'}
           </p>
-          {!search && statusFilter === 'all' && categoryFilter === 'all' && ownerFilter === 'all' && (
+          {!search && statusFilter === 'all' && ownerFilter === 'all' && (
             <Link
               href="/sales/leads/new"
               className="inline-flex items-center gap-2 px-4 py-2 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white rounded-lg transition-colors"
@@ -455,17 +439,16 @@ export default function SalesLeadsPage() {
           <div className="overflow-x-auto">
             <table className="w-full table-fixed">
               <colgroup>
-                <col className="w-[15%]" />{/* Business */}
-                <col className="w-[13%]" />{/* Contact */}
-                <col className="w-[10%]" />{/* Phone */}
-                <col className="w-[7%]" />{/* City */}
-                <col className="w-[8%]" />{/* Category */}
+                <col className="w-[18%]" />{/* Business */}
+                <col className="w-[15%]" />{/* Contact */}
+                <col className="w-[11%]" />{/* Phone */}
+                <col className="w-[8%]" />{/* City */}
                 <col className="w-[10%]" />{/* Status */}
-                <col className="w-[7%]" />{/* Outreach */}
-                <col className="w-[10%]" />{/* Assigned To */}
+                <col className="w-[8%]" />{/* Outreach */}
+                <col className="w-[11%]" />{/* Assigned To */}
                 <col className="w-[7%]" />{/* Last Contact */}
                 <col className="w-[7%]" />{/* Added */}
-                <col className="w-[6%]" />{/* Actions */}
+                <col className="w-[5%]" />{/* Actions */}
               </colgroup>
               <thead>
                 <tr className="border-b border-tastelanc-surface-light bg-tastelanc-surface/50">
@@ -473,7 +456,6 @@ export default function SalesLeadsPage() {
                   <SortHeader column="contact_name" label="Contact" />
                   <SortHeader column={null} label="Phone" />
                   <SortHeader column="city" label="City" />
-                  <SortHeader column="category" label="Category" />
                   <SortHeader column="status" label="Status" />
                   <SortHeader column={null} label="Outreach" />
                   <SortHeader column={null} label="Rep" />
@@ -537,17 +519,6 @@ export default function SalesLeadsPage() {
                       {/* City */}
                       <td className={`${tdClass} text-gray-400`}>
                         {lead.city || <span className="text-gray-600">—</span>}
-                      </td>
-
-                      {/* Category */}
-                      <td className={tdClass}>
-                        {lead.category ? (
-                          <span className="text-xs text-gray-400 capitalize">
-                            {lead.category.replace('_', ' ')}
-                          </span>
-                        ) : (
-                          <span className="text-gray-600">—</span>
-                        )}
                       </td>
 
                       {/* Status */}
