@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
 import { getRepSenderEmails, getUserIdentity } from '@/lib/auth/rep-identity';
+import { INFO_INBOX_EMAILS } from '@/config/sender-identities';
 
 interface ConversationItem {
   counterparty_email: string;
@@ -32,27 +33,32 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const filter = searchParams.get('filter') || 'all'; // all | unread
+    const inbox = searchParams.get('inbox') || 'crm'; // crm | info
 
     // Determine which sender emails this user can see
     const repEmails = await getRepSenderEmails(serviceClient, access);
 
-    if (repEmails.length === 0) {
+    if (repEmails.length === 0 && inbox !== 'info') {
       return NextResponse.json({ conversations: [] });
     }
 
-    // Fetch outbound emails
-    const { data: sentEmails } = await serviceClient
+    // Info@ inbox: only show inbound emails to info@/inbox@ addresses
+    const isInfoInbox = inbox === 'info' && access.isAdmin;
+    const inboundFilterEmails = isInfoInbox ? INFO_INBOX_EMAILS : repEmails;
+
+    // Fetch outbound emails (skip for info@ inbox — no outbound from info@)
+    const sentEmails = isInfoInbox ? [] : (await serviceClient
       .from('email_sends')
       .select('recipient_email, subject, body_text, sender_email, sender_name, sent_at, lead_id')
       .in('sender_email', repEmails)
       .not('recipient_email', 'is', null)
-      .order('sent_at', { ascending: false });
+      .order('sent_at', { ascending: false })).data;
 
     // Fetch inbound emails
     const { data: receivedEmails } = await serviceClient
       .from('inbound_emails')
       .select('from_email, from_name, to_email, subject, body_text, is_read, created_at, linked_lead_id')
-      .in('to_email', repEmails)
+      .in('to_email', inboundFilterEmails)
       .order('created_at', { ascending: false });
 
     // Build conversations grouped by counterparty email

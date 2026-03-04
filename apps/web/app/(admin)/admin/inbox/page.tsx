@@ -86,6 +86,7 @@ export default function AdminInboxPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [activeInbox, setActiveInbox] = useState<'crm' | 'info'>('crm');
 
   // Thread view
   const [selectedConvo, setSelectedConvo] = useState<Conversation | null>(null);
@@ -121,6 +122,7 @@ export default function AdminInboxPage() {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
       if (filter !== 'all') params.set('filter', filter);
+      if (activeInbox === 'info') params.set('inbox', 'info');
       const res = await fetch(`/api/sales/inbox?${params}`);
       if (!res.ok) {
         if (res.status === 401 && retries > 0) {
@@ -145,8 +147,9 @@ export default function AdminInboxPage() {
 
   useEffect(() => {
     setIsLoading(true);
+    setSelectedConvo(null);
     fetchConversations();
-  }, [filter]);
+  }, [filter, activeInbox]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -168,7 +171,9 @@ export default function AdminInboxPage() {
     clearAttachments();
 
     try {
-      const res = await fetch(`/api/sales/inbox/thread?email=${encodeURIComponent(convo.counterparty_email)}`);
+      const threadParams = new URLSearchParams({ email: convo.counterparty_email });
+      if (activeInbox === 'info') threadParams.set('inbox', 'info');
+      const res = await fetch(`/api/sales/inbox/thread?${threadParams}`);
       if (!res.ok) throw new Error('Failed to fetch thread');
       const data = await res.json();
       setThreadMessages(data.messages || []);
@@ -288,8 +293,35 @@ export default function AdminInboxPage() {
         </button>
       </div>
 
+      {/* Inbox tabs */}
+      <div className="flex gap-1 mb-3 bg-tastelanc-surface rounded-lg p-1 w-fit">
+        <button
+          onClick={() => setActiveInbox('crm')}
+          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            activeInbox === 'crm'
+              ? 'bg-tastelanc-surface-light text-white'
+              : 'text-gray-500 hover:text-gray-300'
+          }`}
+        >
+          CRM Inbox
+        </button>
+        <button
+          onClick={() => setActiveInbox('info')}
+          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            activeInbox === 'info'
+              ? 'bg-tastelanc-surface-light text-white'
+              : 'text-gray-500 hover:text-gray-300'
+          }`}
+        >
+          <span className="flex items-center gap-1.5">
+            <Mail className="w-3.5 h-3.5" />
+            info@tastelanc.com
+          </span>
+        </button>
+      </div>
+
       {/* Main content */}
-      <div className="flex gap-4 h-[calc(100%-80px)]">
+      <div className="flex gap-4 h-[calc(100%-120px)]">
         {/* Left: Conversation list */}
         <div className={`${selectedConvo ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[380px] md:min-w-[380px]`}>
           {/* Search + filters */}
@@ -332,7 +364,7 @@ export default function AdminInboxPage() {
                 <Mail className="w-10 h-10 text-gray-500 mx-auto mb-3" />
                 <h3 className="text-sm font-semibold text-white mb-1">No conversations</h3>
                 <p className="text-xs text-gray-400">
-                  {search ? 'Try a different search' : 'Send your first email to get started'}
+                  {search ? 'Try a different search' : activeInbox === 'info' ? 'No emails to info@tastelanc.com yet' : 'Send your first email to get started'}
                 </p>
               </div>
             ) : (
