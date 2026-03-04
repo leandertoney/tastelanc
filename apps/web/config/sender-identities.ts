@@ -5,6 +5,7 @@ export interface SenderIdentity {
   email: string;
   replyEmail: string; // @in.tastelanc.com address for Reply-To routing
   title: string;
+  extraInboxEmails?: string[]; // additional addresses visible in this user's inbox only
 }
 
 /**
@@ -13,6 +14,7 @@ export interface SenderIdentity {
  *
  * `email` = used in the From line (brand identity)
  * `replyEmail` = used in the Reply-To header (routes to Resend inbound)
+ * `extraInboxEmails` = additional inbound addresses this user can see in the inbox
  */
 export const SENDER_IDENTITIES: SenderIdentity[] = [
   {
@@ -20,12 +22,14 @@ export const SENDER_IDENTITIES: SenderIdentity[] = [
     email: `leander@${BRAND.domain}`,
     replyEmail: `leander@${BRAND.replyDomain}`,
     title: 'Founder',
+    extraInboxEmails: [`info@${BRAND.domain}`, `inbox@${BRAND.replyDomain}`],
   },
   {
     name: 'Jordan',
     email: `jordan@${BRAND.domain}`,
     replyEmail: `jordan@${BRAND.replyDomain}`,
     title: 'Co-Founder',
+    extraInboxEmails: [`info@${BRAND.domain}`, `inbox@${BRAND.replyDomain}`],
   },
   {
     name: 'Mason',
