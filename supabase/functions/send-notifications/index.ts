@@ -173,18 +173,47 @@ async function isPaidTier(
 }
 
 /**
- * Send happy hour alerts for upcoming happy hours
- * Called by a scheduled function (e.g., every 30 minutes)
+ * Send happy hour alerts for upcoming happy hours.
+ * Runs independently for each active market so notifications are scoped correctly.
  */
 async function sendHappyHourAlerts(supabase: ReturnType<typeof createClient>): Promise<{
   sent: number;
   restaurants: string[];
 }> {
+  const { data: markets } = await supabase
+    .from('markets')
+    .select('id, slug')
+    .eq('is_active', true);
+
+  if (!markets?.length) return { sent: 0, restaurants: [] };
+
+  let totalSent = 0;
+  const allRestaurants: string[] = [];
+
+  for (const market of markets) {
+    const info = MARKET_INFO[market.slug];
+    if (!info) {
+      console.log(`No app info for market ${market.slug}, skipping happy hour alerts`);
+      continue;
+    }
+
+    const result = await sendHappyHourAlertsForMarket(supabase, market.id, market.slug, info);
+    totalSent += result.sent;
+    allRestaurants.push(...result.restaurants);
+  }
+
+  return { sent: totalSent, restaurants: allRestaurants };
+}
+
+async function sendHappyHourAlertsForMarket(
+  supabase: ReturnType<typeof createClient>,
+  marketId: string,
+  marketSlug: string,
+  marketInfo: { appSlug: string; aiName: string; label: string },
+): Promise<{ sent: number; restaurants: string[] }> {
   const now = new Date();
-  // Use ET timezone for day/time calculations since restaurants are in ET
   const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'America/New_York' }).toLowerCase();
 
-  // Get current time in ET, truncated to minutes with 2-min look-back buffer
   const etTime = now.toLocaleTimeString('en-US', {
     timeZone: 'America/New_York',
     hour12: false,
@@ -202,7 +231,7 @@ async function sendHappyHourAlerts(supabase: ReturnType<typeof createClient>): P
   const currentTimeStr = fmt(Math.max(0, lookBackMin));
   const alertTimeStr = fmt(lookAheadMin);
 
-  // Find happy hours starting in the next 30 minutes for paid tier restaurants
+  // Find happy hours starting soon for paid tier restaurants IN THIS MARKET
   const { data: happyHours, error } = await supabase
     .from('happy_hours')
     .select(`
@@ -211,8 +240,9 @@ async function sendHappyHourAlerts(supabase: ReturnType<typeof createClient>): P
       description,
       start_time,
       end_time,
-      restaurant:restaurants!inner(id, name, tier_id)
+      restaurant:restaurants!inner(id, name, tier_id, market_id)
     `)
+    .eq('restaurant.market_id', marketId)
     .eq('is_active', true)
     .contains('days_of_week', [dayOfWeek])
     .gte('start_time', currentTimeStr)
@@ -220,33 +250,30 @@ async function sendHappyHourAlerts(supabase: ReturnType<typeof createClient>): P
     .in('restaurants.tier_id', PAID_TIER_IDS);
 
   if (error || !happyHours || happyHours.length === 0) {
-    console.log('No upcoming happy hours for paid restaurants');
+    console.log(`No upcoming happy hours for paid restaurants in ${marketInfo.label}`);
     return { sent: 0, restaurants: [] };
   }
 
   const restaurantNames: string[] = [];
-
-  for (const hh of happyHours) {
+  for (const h of happyHours) {
     // @ts-ignore - Supabase join typing
-    const restaurant = hh.restaurant;
-    restaurantNames.push(restaurant.name);
+    restaurantNames.push(h.restaurant.name);
   }
 
-  // Build a single digest notification instead of one per restaurant
   const count = restaurantNames.length;
   let title: string;
   let body: string;
 
   if (count === 1) {
-    const hh = happyHours[0];
+    const h = happyHours[0];
     // @ts-ignore - Supabase join typing
-    const restaurant = hh.restaurant;
-    const [hours] = hh.start_time.split(':');
-    const h = parseInt(hours, 10);
-    const suffix = h >= 12 ? 'pm' : 'am';
-    const displayHour = h > 12 ? h - 12 : h === 0 ? 12 : h;
+    const restaurant = h.restaurant;
+    const [hours] = h.start_time.split(':');
+    const hr = parseInt(hours, 10);
+    const suffix = hr >= 12 ? 'pm' : 'am';
+    const displayHour = hr > 12 ? hr - 12 : hr === 0 ? 12 : hr;
     title = `Happy Hour at ${restaurant.name}!`;
-    body = hh.description || `Starting at ${displayHour}${suffix}`;
+    body = h.description || `Starting at ${displayHour}${suffix}`;
   } else if (count === 2) {
     title = `${count} Happy Hours Starting Soon!`;
     body = `${restaurantNames[0]} and ${restaurantNames[1]} have happy hours right now`;
@@ -256,9 +283,14 @@ async function sendHappyHourAlerts(supabase: ReturnType<typeof createClient>): P
     body = `${preview} + ${count - 2} more have happy hours right now`;
   }
 
-  // Send separate batches per Expo project to avoid PUSH_TOO_MANY_EXPERIENCE_IDS
-  const { sent: successCount } = await sendToAllTokens(supabase, (tokens) =>
-    tokens.map(token => ({
+  // Send ONLY to tokens for this market's app
+  const groups = await getAllPushTokensGrouped(supabase);
+  const tokens = groups.get(marketInfo.appSlug) || [];
+  console.log(`Happy Hour Alerts (${marketInfo.label}): sending to ${tokens.length} tokens for ${marketInfo.appSlug}`);
+
+  let successCount = 0;
+  if (tokens.length > 0) {
+    const messages = tokens.map(token => ({
       to: token,
       sound: 'default' as const,
       title,
@@ -268,8 +300,10 @@ async function sendHappyHourAlerts(supabase: ReturnType<typeof createClient>): P
         // @ts-ignore - Supabase join typing
         restaurantId: count === 1 ? happyHours[0].restaurant.id : undefined,
       },
-    }))
-  );
+    }));
+    const result = await sendPushNotifications(messages);
+    successCount = result.data.filter(r => r.status === 'ok').length;
+  }
 
   return { sent: successCount, restaurants: restaurantNames };
 }
