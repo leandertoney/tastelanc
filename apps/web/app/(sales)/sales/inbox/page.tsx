@@ -14,11 +14,15 @@ import {
   ChevronDown,
   Check,
   Wand2,
+  Paperclip,
 } from 'lucide-react';
 import { Card } from '@/components/ui';
 import { toast } from 'sonner';
 import InboxEmailComposer from '@/components/sales/InboxEmailComposer';
 import { SENDER_IDENTITIES, type SenderIdentity } from '@/config/sender-identities';
+import { useFileAttachments } from '@/hooks/useFileAttachments';
+import { EditableAttachmentChips, ReadonlyAttachmentChips } from '@/components/sales/AttachmentChips';
+import { ALLOWED_EXTENSIONS } from '@/lib/types/attachments';
 
 
 interface Conversation {
@@ -51,6 +55,7 @@ interface ThreadMessage {
   delivery_status: string | null;
   opened_at: string | null;
   clicked_at: string | null;
+  attachments?: Array<{ url?: string; filename: string; size: number; contentType?: string; content_type?: string }>;
 }
 
 function formatRelativeDate(dateStr: string) {
@@ -153,6 +158,13 @@ export default function InboxPage() {
   const [isImprovingReply, setIsImprovingReply] = useState(false);
   const [showReplyAiMenu, setShowReplyAiMenu] = useState(false);
 
+  // Attachments for reply
+  const {
+    attachments: replyAttachments, isUploading: isUploadingAttachment,
+    openFilePicker, removeAttachment, clearAttachments,
+    fileInputRef, handleFileChange,
+  } = useFileAttachments();
+
   const threadEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch conversations (with retry for transient 401s)
@@ -206,6 +218,7 @@ export default function InboxPage() {
     setReplySubject(lastSubject.startsWith('Re: ') ? lastSubject : `Re: ${lastSubject}`);
     setReplyHeadline('');
     setReplyBody('');
+    clearAttachments();
 
     try {
       const res = await fetch(`/api/sales/inbox/thread?email=${encodeURIComponent(convo.counterparty_email)}`);
@@ -283,6 +296,7 @@ export default function InboxPage() {
           ...(lastSent?.resend_id && {
             inReplyToMessageId: lastSent.resend_id,
           }),
+          ...(replyAttachments.length > 0 && { attachments: replyAttachments }),
         }),
       });
 
@@ -294,6 +308,7 @@ export default function InboxPage() {
       toast.success('Reply sent');
       setReplyBody('');
       setReplyHeadline('');
+      clearAttachments();
 
       // Refresh thread
       openThread(selectedConvo);
@@ -532,6 +547,9 @@ export default function InboxPage() {
                             {msg.body_text}
                           </p>
                         ) : null}
+                        {msg.attachments && msg.attachments.length > 0 && (
+                          <ReadonlyAttachmentChips attachments={msg.attachments} />
+                        )}
                         {msg.direction === 'sent' && msg.delivery_status && (
                           <div className="flex items-center gap-1.5 mt-2 pt-1.5 border-t border-white/5">
                             <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded ${
@@ -636,6 +654,14 @@ export default function InboxPage() {
                     }}
                   />
                   <button
+                    onClick={openFilePicker}
+                    disabled={isUploadingAttachment}
+                    className="px-2 py-2 text-gray-400 hover:text-white transition-colors self-end"
+                    title="Attach files"
+                  >
+                    <Paperclip className="w-4 h-4" />
+                  </button>
+                  <button
                     onClick={handleSendReply}
                     disabled={isSendingReply || !replyBody.trim() || !replySubject.trim() || !selectedSender}
                     className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors self-end"
@@ -648,6 +674,12 @@ export default function InboxPage() {
                     )}
                   </button>
                 </div>
+                {/* Attachment chips */}
+                <EditableAttachmentChips
+                  attachments={replyAttachments}
+                  onRemove={removeAttachment}
+                  isUploading={isUploadingAttachment}
+                />
                 {/* AI enhance chips */}
                 {replyBody.trim() && (
                   <div className="flex flex-wrap gap-1 mt-1">
@@ -694,6 +726,16 @@ export default function InboxPage() {
           defaultSender={selectedSender || undefined}
         />
       )}
+
+      {/* Hidden file input for reply attachments */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={ALLOWED_EXTENSIONS}
+        multiple
+        className="hidden"
+        onChange={handleFileChange}
+      />
     </div>
   );
 }

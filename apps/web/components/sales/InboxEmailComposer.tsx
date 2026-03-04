@@ -11,9 +11,13 @@ import {
   Sparkles,
   Lightbulb,
   Wand2,
+  Paperclip,
 } from 'lucide-react';
 import { SENDER_IDENTITIES, type SenderIdentity } from '@/config/sender-identities';
 import { toast } from 'sonner';
+import { useFileAttachments } from '@/hooks/useFileAttachments';
+import { EditableAttachmentChips } from '@/components/sales/AttachmentChips';
+import { ALLOWED_EXTENSIONS } from '@/lib/types/attachments';
 
 interface InboxEmailComposerProps {
   onClose: () => void;
@@ -66,6 +70,12 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
   const [isGeneratingSubjects, setIsGeneratingSubjects] = useState(false);
   const [suggestedSubjects, setSuggestedSubjects] = useState<string[]>([]);
   const [showAiMenu, setShowAiMenu] = useState(false);
+
+  // Attachments
+  const {
+    attachments, isUploading, openFilePicker, removeAttachment,
+    clearAttachments, fileInputRef, handleFileChange,
+  } = useFileAttachments();
 
   // Send
   const [isSending, setIsSending] = useState(false);
@@ -189,6 +199,7 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
           ...(replyTo?.inReplyToMessageId && {
             inReplyToMessageId: replyTo.inReplyToMessageId,
           }),
+          ...(attachments.length > 0 && { attachments }),
         }),
       });
 
@@ -198,6 +209,7 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
       }
 
       toast.success(`Email sent to ${recipientEmail}`);
+      clearAttachments();
       onSent();
     } catch (error) {
       console.error('Send error:', error);
@@ -243,6 +255,15 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
                   {body.substring(0, 300)}{body.length > 300 ? '...' : ''}
                 </div>
               </div>
+
+              {attachments.length > 0 && (
+                <div>
+                  <span className="text-xs text-gray-500 uppercase tracking-wider">Attachments</span>
+                  <p className="text-sm text-white mt-1">
+                    {attachments.length} file{attachments.length !== 1 ? 's' : ''} attached
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-3 mt-6">
@@ -491,6 +512,13 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
               />
             </div>
           </div>
+
+          {/* Attachments */}
+          <EditableAttachmentChips
+            attachments={attachments}
+            onRemove={removeAttachment}
+            isUploading={isUploading}
+          />
         </div>
 
         {/* Footer */}
@@ -502,6 +530,14 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
             Cancel
           </button>
           <button
+            onClick={openFilePicker}
+            disabled={isUploading}
+            className="flex items-center gap-1.5 px-3 py-2.5 text-gray-400 hover:text-white transition-colors"
+            title="Attach files"
+          >
+            <Paperclip className="w-4 h-4" />
+          </button>
+          <button
             onClick={() => setStep('confirm')}
             disabled={!canSend}
             className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
@@ -510,6 +546,16 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
             Review & Send
           </button>
         </div>
+
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={ALLOWED_EXTENSIONS}
+          multiple
+          className="hidden"
+          onChange={handleFileChange}
+        />
       </div>
     </div>
   );
