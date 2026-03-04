@@ -33,6 +33,7 @@ export async function POST(request: Request) {
       senderEmail,
       inReplyToMessageId,
       threadId,
+      attachments,
     } = body;
 
     if (!recipientEmail || !subject || !headline || !emailBody) {
@@ -40,6 +41,28 @@ export async function POST(request: Request) {
         { error: 'Missing required fields: recipientEmail, subject, headline, emailBody' },
         { status: 400 }
       );
+    }
+
+    // Validate attachments if provided
+    const validatedAttachments: Array<{ url: string; filename: string; size: number; contentType: string }> = [];
+    if (attachments && Array.isArray(attachments)) {
+      let totalSize = 0;
+      for (const att of attachments) {
+        if (!att.url || !att.filename) continue;
+        totalSize += att.size || 0;
+        validatedAttachments.push({
+          url: att.url,
+          filename: att.filename,
+          size: att.size || 0,
+          contentType: att.contentType || 'application/octet-stream',
+        });
+      }
+      if (totalSize > 40 * 1024 * 1024) {
+        return NextResponse.json(
+          { error: 'Total attachment size exceeds 40MB limit' },
+          { status: 400 }
+        );
+      }
     }
 
     // Verify sender identity — allow known identities OR any @tastelanc.com address (domain-verified)
@@ -102,6 +125,12 @@ export async function POST(request: Request) {
       html,
       text,
       replyTo: validSender?.replyEmail || (isDomainEmail ? fromEmail.replace(`@${BRAND.domain}`, `@${BRAND.replyDomain}`) : fromEmail),
+      ...(validatedAttachments.length > 0 && {
+        attachments: validatedAttachments.map(att => ({
+          filename: att.filename,
+          path: att.url,
+        })),
+      }),
     };
 
     if (inReplyToMessageId) {
@@ -148,6 +177,7 @@ export async function POST(request: Request) {
       in_reply_to_message_id: inReplyToMessageId || null,
       body_text: emailBody,
       headline,
+      attachments: validatedAttachments.length > 0 ? validatedAttachments : [],
     });
 
     // If linked to a lead, log activity

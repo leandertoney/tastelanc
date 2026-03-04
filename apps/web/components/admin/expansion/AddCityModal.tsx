@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Loader2, MapPin } from 'lucide-react';
+import { X, Loader2, MapPin, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import AutocompleteInput from '@/components/ui/AutocompleteInput';
 import { useUSCitySearch } from '@/hooks/useUSCitySearch';
@@ -17,8 +17,9 @@ export default function AddCityModal({ isOpen, onClose, onCityAdded }: AddCityMo
   const [county, setCounty] = useState('');
   const [state, setState] = useState('PA');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFromDropdown, setSelectedFromDropdown] = useState(false);
 
-  const { cityOptions, countyOptions, searchCities, searchCounties } = useUSCitySearch();
+  const { cityOptions, countyOptions, searchCities, searchCounties, findCity } = useUSCitySearch();
 
   if (!isOpen) return null;
 
@@ -30,6 +31,27 @@ export default function AddCityModal({ isOpen, onClose, onCityAdded }: AddCityMo
       return;
     }
 
+    // If not selected from dropdown, try to auto-match against the dataset
+    let finalCity = cityName.trim();
+    let finalCounty = county.trim();
+    let finalState = state.trim() || 'PA';
+
+    if (!selectedFromDropdown) {
+      const match = findCity(finalCity, finalState);
+      if (match) {
+        // Auto-correct to the canonical name from the dataset
+        finalCity = match.c;
+        finalCounty = match.co;
+        finalState = match.s;
+      } else {
+        // No match at all — warn and block
+        toast.error(
+          'City not found in US cities database. Please select from the dropdown to ensure accurate Census data.',
+        );
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -37,9 +59,9 @@ export default function AddCityModal({ isOpen, onClose, onCityAdded }: AddCityMo
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          city_name: cityName.trim(),
-          county: county.trim(),
-          state: state.trim() || 'PA',
+          city_name: finalCity,
+          county: finalCounty,
+          state: finalState,
         }),
       });
 
@@ -49,13 +71,14 @@ export default function AddCityModal({ isOpen, onClose, onCityAdded }: AddCityMo
         throw new Error(data.error || 'Failed to add city');
       }
 
-      toast.success(`${cityName} added to the pipeline`);
+      toast.success(`${finalCity} added to the pipeline`);
       onCityAdded(data.city);
 
       // Reset form
       setCityName('');
       setCounty('');
       setState('PA');
+      setSelectedFromDropdown(false);
       onClose();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to add city';
@@ -64,6 +87,9 @@ export default function AddCityModal({ isOpen, onClose, onCityAdded }: AddCityMo
       setIsSubmitting(false);
     }
   };
+
+  // Show status indicator based on whether the city was selected from dropdown
+  const showMatchStatus = cityName.trim().length >= 2;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -99,6 +125,7 @@ export default function AddCityModal({ isOpen, onClose, onCityAdded }: AddCityMo
               value={cityName}
               onChange={(val) => {
                 setCityName(val);
+                setSelectedFromDropdown(false);
                 searchCities(val);
               }}
               onSelect={(option) => {
@@ -106,11 +133,27 @@ export default function AddCityModal({ isOpen, onClose, onCityAdded }: AddCityMo
                 setCityName(city.c);
                 setCounty(city.co);
                 setState(city.s);
+                setSelectedFromDropdown(true);
               }}
               options={cityOptions}
-              placeholder="e.g. York"
+              placeholder="Start typing to search US cities..."
               autoFocus
             />
+            {showMatchStatus && (
+              <div className="mt-1.5 flex items-center gap-1.5">
+                {selectedFromDropdown ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-400 shrink-0" />
+                    <span className="text-xs text-green-400">Census-verified city selected</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span className="text-xs text-amber-400">Select from dropdown for accurate Census data</span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div>
@@ -142,8 +185,12 @@ export default function AddCityModal({ isOpen, onClose, onCityAdded }: AddCityMo
               value={state}
               onChange={(e) => setState(e.target.value)}
               placeholder="PA"
-              className="w-full px-3 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              disabled={selectedFromDropdown}
+              className="w-full px-3 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent disabled:opacity-60"
             />
+            {selectedFromDropdown && (
+              <p className="text-xs text-gray-500 mt-1">Auto-filled from city selection</p>
+            )}
           </div>
 
           {/* Actions */}

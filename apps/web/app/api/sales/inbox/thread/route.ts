@@ -20,6 +20,7 @@ interface ThreadMessage {
   delivery_status: string | null; // sent, delivered, opened, clicked, bounced
   opened_at: string | null;
   clicked_at: string | null;
+  attachments: Array<{ url?: string; filename: string; size: number; contentType?: string; content_type?: string }>;
 }
 
 export async function GET(request: Request) {
@@ -48,7 +49,7 @@ export async function GET(request: Request) {
     // Fetch sent emails to this counterparty
     const { data: sentEmails } = await serviceClient
       .from('email_sends')
-      .select('id, subject, sender_name, sender_email, recipient_email, body_text, headline, resend_id, sent_at, lead_id, status, opened_at, clicked_at')
+      .select('id, subject, sender_name, sender_email, recipient_email, body_text, headline, resend_id, sent_at, lead_id, status, opened_at, clicked_at, attachments')
       .eq('recipient_email', counterpartyEmail)
       .in('sender_email', repEmails)
       .order('sent_at', { ascending: true });
@@ -56,7 +57,7 @@ export async function GET(request: Request) {
     // Fetch received emails from this counterparty
     const { data: receivedEmails } = await serviceClient
       .from('inbound_emails')
-      .select('id, from_email, from_name, to_email, subject, body_text, body_html, is_read, created_at, linked_lead_id')
+      .select('id, from_email, from_name, to_email, subject, body_text, body_html, is_read, created_at, linked_lead_id, attachments')
       .eq('from_email', counterpartyEmail)
       .in('to_email', repEmails)
       .order('created_at', { ascending: true });
@@ -119,6 +120,7 @@ export async function GET(request: Request) {
         delivery_status: e.status || 'sent',
         opened_at: e.opened_at || null,
         clicked_at: e.clicked_at || null,
+        attachments: e.attachments || [],
       })),
       ...(receivedEmails || []).map(e => ({
         id: e.id,
@@ -137,6 +139,7 @@ export async function GET(request: Request) {
         delivery_status: null,
         opened_at: null,
         clicked_at: null,
+        attachments: e.attachments || [],
       })),
     ].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 

@@ -127,5 +127,21 @@ export function useUSCitySearch() {
     [isLoaded],
   );
 
-  return { cityOptions, countyOptions, searchCities, searchCounties, isLoaded };
+  const findCity = useCallback(
+    (name: string, stateAbbr?: string): CityEntry | null => {
+      if (!citiesCache) return null;
+      const normalized = name.toLowerCase().trim();
+      const stateUpper = stateAbbr?.toUpperCase();
+      let best: CityEntry | null = null;
+      for (const city of citiesCache) {
+        if (city.c.toLowerCase() !== normalized) continue;
+        if (stateUpper && city.s !== stateUpper) continue;
+        if (!best || city.p > best.p) best = city;
+      }
+      return best;
+    },
+    [isLoaded],
+  );
+
+  return { cityOptions, countyOptions, searchCities, searchCounties, findCity, isLoaded };
 }
