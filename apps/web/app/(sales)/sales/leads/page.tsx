@@ -439,13 +439,12 @@ export default function SalesLeadsPage() {
           <div className="overflow-x-auto">
             <table className="w-full table-fixed">
               <colgroup>
-                <col className="w-[18%]" />{/* Business */}
-                <col className="w-[15%]" />{/* Contact */}
-                <col className="w-[11%]" />{/* Phone */}
-                <col className="w-[8%]" />{/* City */}
-                <col className="w-[10%]" />{/* Status */}
-                <col className="w-[8%]" />{/* Outreach */}
-                <col className="w-[11%]" />{/* Assigned To */}
+                <col className="w-[20%]" />{/* Business */}
+                <col className="w-[17%]" />{/* Contact */}
+                <col className="w-[12%]" />{/* Phone */}
+                <col className="w-[9%]" />{/* City */}
+                <col className="w-[11%]" />{/* Status */}
+                <col className="w-[12%]" />{/* Assigned To */}
                 <col className="w-[7%]" />{/* Last Contact */}
                 <col className="w-[7%]" />{/* Added */}
                 <col className="w-[5%]" />{/* Actions */}
@@ -457,7 +456,6 @@ export default function SalesLeadsPage() {
                   <SortHeader column={null} label="Phone" />
                   <SortHeader column="city" label="City" />
                   <SortHeader column="status" label="Status" />
-                  <SortHeader column={null} label="Outreach" />
                   <SortHeader column={null} label="Rep" />
                   <SortHeader column="last_contacted_at" label="Last" />
                   <SortHeader column="created_at" label="Added" />
@@ -539,30 +537,6 @@ export default function SalesLeadsPage() {
                             <option value="not_interested">Not Interested</option>
                             <option value="converted">Converted</option>
                           </select>
-                        )}
-                      </td>
-
-                      {/* Outreach */}
-                      <td className={tdClass}>
-                        {lead.activity_types && lead.activity_types.length > 0 ? (
-                          <div className="flex items-center gap-1">
-                            {Object.entries(ACTIVITY_ICONS).map(([type, config]) => {
-                              const Icon = config.icon;
-                              const done = lead.activity_types.includes(type);
-                              if (!done) return null;
-                              return (
-                                <span
-                                  key={type}
-                                  title={config.label}
-                                  className={`${config.color}`}
-                                >
-                                  <Icon className="w-3.5 h-3.5" />
-                                </span>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <span className="text-gray-600">—</span>
                         )}
                       </td>
 
