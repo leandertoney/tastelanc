@@ -69,30 +69,18 @@ export async function getUserIdentity(
 
 /**
  * Get the list of email addresses a rep can see in inbox queries.
- * Admins see all known identities + their extra inbox emails;
- * reps see only their own (both domains) + any extra inbox emails.
+ * Admins see all known identities; reps see only their own (both domains).
  */
 export async function getRepSenderEmails(
   serviceClient: ServiceClient,
   access: AccessContext,
 ): Promise<string[]> {
-  const identity = await getUserIdentity(serviceClient, access);
-
   if (access.isAdmin) {
-    const emails = getAllSenderEmails();
-    if (identity?.extraInboxEmails) {
-      emails.push(...identity.extraInboxEmails);
-    }
-    return emails;
+    return getAllSenderEmails();
   }
 
-  if (identity) {
-    const emails = [identity.email, identity.replyEmail];
-    if (identity.extraInboxEmails) {
-      emails.push(...identity.extraInboxEmails);
-    }
-    return emails;
-  }
+  const identity = await getUserIdentity(serviceClient, access);
+  if (identity) return [identity.email, identity.replyEmail];
 
   return [];
 }

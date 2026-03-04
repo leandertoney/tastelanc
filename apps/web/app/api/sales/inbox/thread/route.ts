@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
 import { getRepSenderEmails } from '@/lib/auth/rep-identity';
+import { INFO_INBOX_EMAILS } from '@/config/sender-identities';
 
 interface ThreadMessage {
   id: string;
@@ -45,6 +46,13 @@ export async function GET(request: Request) {
 
     // Determine which sender emails this user can see
     const repEmails = await getRepSenderEmails(serviceClient, access);
+    const inbox = searchParams.get('inbox') || 'crm';
+
+    // For info@ inbox threads, include both rep emails AND info@ addresses
+    // so the full conversation is visible (inbound to info@ + any replies sent from CRM)
+    const allVisibleEmails = inbox === 'info' && access.isAdmin
+      ? [...repEmails, ...INFO_INBOX_EMAILS]
+      : repEmails;
 
     // Fetch sent emails to this counterparty
     const { data: sentEmails } = await serviceClient
@@ -59,7 +67,7 @@ export async function GET(request: Request) {
       .from('inbound_emails')
       .select('id, from_email, from_name, to_email, subject, body_text, body_html, is_read, created_at, linked_lead_id, attachments')
       .eq('from_email', counterpartyEmail)
-      .in('to_email', repEmails)
+      .in('to_email', allVisibleEmails)
       .order('created_at', { ascending: true });
 
     // Mark unread received emails as read
