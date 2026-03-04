@@ -3,6 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
+// Market slug → app_slug mapping for push token filtering
+const MARKET_APP_SLUG: Record<string, string> = {
+  'lancaster-pa': 'tastelanc',
+  'cumberland-pa': 'taste-cumberland',
+};
+
 // Tier IDs that get push notification features
 const PAID_TIER_IDS = [
   '00000000-0000-0000-0000-000000000002', // premium
@@ -183,27 +189,24 @@ export default async function handler(req: Request, context: Context) {
       );
     }
 
-    // Get all push tokens grouped by app_slug to avoid PUSH_TOO_MANY_EXPERIENCE_IDS error.
-    // Expo Push API rejects batch sends containing tokens from multiple Expo projects.
+    // Only send to push tokens for this market's app
+    const targetAppSlug = MARKET_APP_SLUG[marketSlug] || 'tastelanc';
+    console.log(`[Happy Hour Alerts] Targeting app_slug: ${targetAppSlug} for market: ${marketSlug}`);
+
     const { data: tokenData, error: tokenError } = await supabase
       .from('push_tokens')
-      .select('token, app_slug');
+      .select('token')
+      .eq('app_slug', targetAppSlug);
 
     if (tokenError || !tokenData || tokenData.length === 0) {
-      console.log('[Happy Hour Alerts] No push tokens registered');
+      console.log(`[Happy Hour Alerts] No push tokens for ${targetAppSlug}`);
       return new Response(
-        JSON.stringify({ sent: 0, message: 'No push tokens registered' }),
+        JSON.stringify({ sent: 0, message: `No push tokens for ${targetAppSlug}` }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    // Group tokens by app_slug (Expo project)
-    const tokensByProject = new Map<string, string[]>();
-    for (const t of tokenData) {
-      const slug = t.app_slug || 'tastelanc'; // default to tastelanc for untagged tokens
-      if (!tokensByProject.has(slug)) tokensByProject.set(slug, []);
-      tokensByProject.get(slug)!.push(t.token);
-    }
+    const tokens = tokenData.map(t => t.token);
 
     // Deduplicate restaurant names (a restaurant may have multiple happy hours)
     const restaurantNames = Array.from(
@@ -222,24 +225,19 @@ export default async function handler(req: Request, context: Context) {
       body = "Tap to see what's happening near you";
     }
 
-    // Send separate batches per Expo project
-    let totalMessages = 0;
-    let successCount = 0;
+    // Send to all tokens for this market's app
+    const messages: PushMessage[] = tokens.map((token) => ({
+      to: token,
+      sound: 'default' as const,
+      title,
+      body,
+      data: { screen: 'HappyHours' },
+    }));
 
-    for (const [slug, tokens] of Array.from(tokensByProject)) {
-      const messages: PushMessage[] = tokens.map((token) => ({
-        to: token,
-        sound: 'default' as const,
-        title,
-        body,
-        data: { screen: 'HappyHours' },
-      }));
-
-      totalMessages += messages.length;
-      console.log(`[Happy Hour Alerts] Sending ${messages.length} messages for project ${slug}`);
-      const result = await sendPushNotifications(messages);
-      successCount += result.data.filter((r) => r.status === 'ok').length;
-    }
+    const totalMessages = messages.length;
+    console.log(`[Happy Hour Alerts] Sending ${totalMessages} messages for ${targetAppSlug}`);
+    const result = await sendPushNotifications(messages);
+    const successCount = result.data.filter((r) => r.status === 'ok').length;
 
     // Log the run as daily digest
     await supabase.from('notification_logs').insert({
