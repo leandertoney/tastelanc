@@ -84,8 +84,8 @@ export async function POST(request: Request) {
     try {
       const authClient = await createClient();
       const admin = await verifyAdminAccess(authClient);
-      if (admin.role !== 'super_admin') {
-        return NextResponse.json({ error: 'Super admin access required' }, { status: 403 });
+      if (admin.role !== 'super_admin' && admin.role !== 'co_founder') {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 });
       }
     } catch {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

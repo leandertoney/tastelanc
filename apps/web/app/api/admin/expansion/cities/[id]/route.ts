@@ -76,12 +76,12 @@ export async function PUT(
     const serviceClient = createServiceRoleClient();
 
     const body = await request.json();
-    const { status, priority, admin_notes, rejected_reason } = body;
+    const { status, priority, admin_notes, rejected_reason, city_name, county, state, radius_miles } = body;
 
     // Fetch current city to detect changes
     const { data: currentCity, error: fetchError } = await serviceClient
       .from('expansion_cities')
-      .select('status, admin_notes')
+      .select('status, admin_notes, city_name, county, state')
       .eq('id', id)
       .single();
 
@@ -95,6 +95,10 @@ export async function PUT(
     if (priority !== undefined) updatePayload.priority = priority;
     if (admin_notes !== undefined) updatePayload.admin_notes = admin_notes;
     if (rejected_reason !== undefined) updatePayload.rejected_reason = rejected_reason;
+    if (city_name !== undefined) updatePayload.city_name = city_name;
+    if (county !== undefined) updatePayload.county = county;
+    if (state !== undefined) updatePayload.state = state;
+    if (radius_miles !== undefined) updatePayload.radius_miles = radius_miles;
 
     if (Object.keys(updatePayload).length === 0) {
       return NextResponse.json({ error: 'No fields to update' }, { status: 400 });

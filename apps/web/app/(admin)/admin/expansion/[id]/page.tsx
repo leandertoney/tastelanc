@@ -15,6 +15,9 @@ import {
   PauseCircle,
   XCircle,
   Plus,
+  Pencil,
+  Check,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type {
@@ -89,6 +92,13 @@ export default function CityDetailPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const isSuperAdmin = userRole === 'super_admin';
   const canManage = userRole === 'super_admin' || userRole === 'co_founder';
+
+  // Inline city editing
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editCounty, setEditCounty] = useState('');
+  const [editState, setEditState] = useState('');
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // ─── Data fetching ───────────────────────────────────
   useEffect(() => {
@@ -431,6 +441,45 @@ export default function CityDetailPage() {
     }
   }
 
+  function startEditing() {
+    if (!city) return;
+    setEditName(city.city_name);
+    setEditCounty(city.county);
+    setEditState(city.state);
+    setIsEditing(true);
+  }
+
+  async function saveEdit() {
+    if (!editName.trim() || !editCounty.trim()) {
+      toast.error('City name and county are required');
+      return;
+    }
+    setIsSavingEdit(true);
+    try {
+      const res = await fetch(`/api/admin/expansion/cities/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          city_name: editName.trim(),
+          county: editCounty.trim(),
+          state: editState.trim() || 'PA',
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update city');
+      }
+      const data = await res.json();
+      setCity(data.city);
+      setIsEditing(false);
+      toast.success('City details updated');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update city');
+    } finally {
+      setIsSavingEdit(false);
+    }
+  }
+
   // ─── Derived ─────────────────────────────────────────
 
   const hasSelectedBrand = brands.some((b) => b.is_selected);
@@ -483,21 +532,77 @@ export default function CityDetailPage() {
         <div className="flex flex-col md:flex-row md:items-center gap-4">
           {/* Title + status */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-2xl font-bold text-white truncate">
-                {city.city_name}
-              </h1>
-              {statusConfig && (
-                <span
-                  className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${statusConfig.className}`}
-                >
-                  {statusConfig.label}
-                </span>
-              )}
-            </div>
-            <p className="text-sm text-gray-400">
-              {city.county} County, {city.state}
-            </p>
+            {isEditing ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="text-xl font-bold text-white bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-tastelanc-accent w-full max-w-xs"
+                    placeholder="City name"
+                  />
+                  <input
+                    type="text"
+                    value={editCounty}
+                    onChange={(e) => setEditCounty(e.target.value)}
+                    className="text-sm text-gray-300 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-tastelanc-accent w-full max-w-[180px]"
+                    placeholder="County"
+                  />
+                  <input
+                    type="text"
+                    value={editState}
+                    onChange={(e) => setEditState(e.target.value)}
+                    className="text-sm text-gray-300 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-tastelanc-accent w-16"
+                    placeholder="ST"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={saveEdit}
+                    disabled={isSavingEdit}
+                    className="flex items-center gap-1 px-3 py-1 bg-tastelanc-accent text-white rounded-lg text-xs font-medium hover:bg-tastelanc-accent/80 transition-colors disabled:opacity-50"
+                  >
+                    {isSavingEdit ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className="flex items-center gap-1 px-3 py-1 text-gray-400 hover:text-white text-xs transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 mb-1">
+                  <h1 className="text-2xl font-bold text-white truncate">
+                    {city.city_name}
+                  </h1>
+                  {canManage && (
+                    <button
+                      onClick={startEditing}
+                      className="p-1 text-gray-600 hover:text-gray-300 transition-colors flex-shrink-0"
+                      title="Edit city details"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                  )}
+                  {statusConfig && (
+                    <span
+                      className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${statusConfig.className}`}
+                    >
+                      {statusConfig.label}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-gray-400">
+                  {city.county} County, {city.state}
+                </p>
+              </>
+            )}
           </div>
 
           {/* Action buttons */}
