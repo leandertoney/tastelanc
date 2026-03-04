@@ -1,5 +1,6 @@
 import type { Config, Context } from '@netlify/functions';
 import { createClient } from '@supabase/supabase-js';
+import { validateMarketScope } from '../../lib/notifications/market-guard';
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
@@ -208,6 +209,16 @@ export default async function handler(req: Request, context: Context) {
 
     const tokens = tokenData.map(t => t.token);
 
+    // Market guard: validate scoping before sending
+    const guard = validateMarketScope(marketSlug, targetAppSlug, tokens.length, 'happy_hour_daily_digest');
+    if (!guard.valid) {
+      console.error(`[Happy Hour Alerts] ${guard.error}`);
+      return new Response(
+        JSON.stringify({ sent: 0, error: guard.error }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Deduplicate restaurant names (a restaurant may have multiple happy hours)
     const restaurantNames = Array.from(
       new Set(paidHappyHours.map((hh: any) => hh.restaurant.name as string))
@@ -246,6 +257,8 @@ export default async function handler(req: Request, context: Context) {
       details: {
         sent: successCount,
         total: totalMessages,
+        market_slug: marketSlug,
+        app_slug: targetAppSlug,
         restaurants: restaurantNames,
         happy_hour_count: paidHappyHours.length,
         earliest_start: earliestStartTime,

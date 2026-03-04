@@ -49,6 +49,29 @@ npx supabase link --project-ref kufcxxynjvyharhtfptd
 **When the user says "TasteLanc", work ONLY in `apps/mobile/`.**
 **NEVER push OTA updates or builds to one app when working on the other.**
 
+## CRITICAL: Market Isolation — MANDATORY for ALL Data Operations
+
+**Every database query, push notification, and user-facing data operation MUST be scoped to a specific market. Sending cross-market data to users is a critical bug that damages user trust.**
+
+### Market ↔ App Mapping
+| Market Slug | App Slug | Push Token Filter |
+|---|---|---|
+| `lancaster-pa` | `tastelanc` | `.eq('app_slug', 'tastelanc')` |
+| `cumberland-pa` | `taste-cumberland` | `.eq('app_slug', 'taste-cumberland')` |
+
+### Rules
+1. **Push notifications**: Query data with `market_id` filter AND send only to that market's `app_slug` tokens
+2. **Cron jobs / scheduled functions**: MUST iterate over each market independently — never query all markets then send one notification
+3. **Database queries**: `restaurants`, `happy_hours`, `events`, `specials` queries MUST filter by `market_id`
+4. **New notification types**: Use the `sendTodaysPickForMarket` / `sendHappyHourAlertsForMarket` per-market pattern
+5. **Runtime guard**: Use `validateMarketScope()` from `apps/web/lib/notifications/market-guard.ts` before sending any push notification
+6. **Audit script**: Run `npx tsx scripts/audit-notifications.ts` to verify all notification code is market-scoped
+
+### Reference Files
+- Edge function: `supabase/functions/send-notifications/index.ts` (MARKET_INFO mapping)
+- Netlify function: `apps/web/netlify/functions/happy-hour-alerts.ts` (MARKET_APP_SLUG mapping)
+- Runtime guard: `apps/web/lib/notifications/market-guard.ts`
+
 ## Deployment
 
 **IMPORTANT: This project uses Netlify for web application deployment, NOT Vercel.**
