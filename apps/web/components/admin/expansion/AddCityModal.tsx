@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { X, Loader2, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
+import AutocompleteInput from '@/components/ui/AutocompleteInput';
+import { useUSCitySearch } from '@/hooks/useUSCitySearch';
 
 interface AddCityModalProps {
   isOpen: boolean;
@@ -15,6 +17,8 @@ export default function AddCityModal({ isOpen, onClose, onCityAdded }: AddCityMo
   const [county, setCounty] = useState('');
   const [state, setState] = useState('PA');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { cityOptions, countyOptions, searchCities, searchCounties } = useUSCitySearch();
 
   if (!isOpen) return null;
 
@@ -91,12 +95,20 @@ export default function AddCityModal({ isOpen, onClose, onCityAdded }: AddCityMo
             <label className="block text-sm font-medium text-gray-400 mb-1.5">
               City Name <span className="text-red-400">*</span>
             </label>
-            <input
-              type="text"
+            <AutocompleteInput
               value={cityName}
-              onChange={(e) => setCityName(e.target.value)}
+              onChange={(val) => {
+                setCityName(val);
+                searchCities(val);
+              }}
+              onSelect={(option) => {
+                const city = option.value as { c: string; co: string; s: string; p: number };
+                setCityName(city.c);
+                setCounty(city.co);
+                setState(city.s);
+              }}
+              options={cityOptions}
               placeholder="e.g. York"
-              className="w-full px-3 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               autoFocus
             />
           </div>
@@ -105,12 +117,19 @@ export default function AddCityModal({ isOpen, onClose, onCityAdded }: AddCityMo
             <label className="block text-sm font-medium text-gray-400 mb-1.5">
               County <span className="text-red-400">*</span>
             </label>
-            <input
-              type="text"
+            <AutocompleteInput
               value={county}
-              onChange={(e) => setCounty(e.target.value)}
+              onChange={(val) => {
+                setCounty(val);
+                searchCounties(val);
+              }}
+              onSelect={(option) => {
+                const countyData = option.value as { co: string; s: string; p: number };
+                setCounty(countyData.co);
+                setState(countyData.s);
+              }}
+              options={countyOptions}
               placeholder="e.g. York County"
-              className="w-full px-3 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
             />
           </div>
 
