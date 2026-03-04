@@ -372,6 +372,7 @@ Return a JSON object with:
   "college_presence": "<prose about colleges and their impact on dining — USE verified college data above>",
   "tourism_factors": "<tourism activity and impact — USE verified BEA economic data above>",
   "seasonal_considerations": "<seasonal factors affecting dining>",
+  "city_symbolism": "<the city/region's most iconic symbols, historical figures, mascots, nicknames, founding stories, famous landmarks, and cultural icons — these will be used to inspire a mascot name for the app, so be specific about names and references that could inspire a character name ending in -ie>",
   "expansion_reasoning": "<2-3 paragraph analysis of why this is/isn't a good expansion target, synthesizing ALL the verified data above>"
 }
 
@@ -546,13 +547,23 @@ MARKET CONTEXT:
 ${city.research_data?.local_food_traditions ? `- Food traditions: ${city.research_data.local_food_traditions}` : ''}
 ${city.research_data?.college_presence ? `- College presence: ${city.research_data.college_presence}` : ''}
 ${city.research_data?.tourism_factors ? `- Tourism: ${city.research_data.tourism_factors}` : ''}
+${city.research_data?.city_symbolism ? `- City symbolism & icons: ${city.research_data.city_symbolism}` : ''}
+
+USE THE CITY SYMBOLISM above to derive meaningful, locally-inspired mascot names. Each name must come from a DIFFERENT local reference.
 
 IMPORTANT: The app name should use the REGION name (e.g., "TasteCumberland" not "TasteCarlisle", "TasteLehigh" not "TasteAllentown") so it covers the whole area.
 
 For each proposal, generate a JSON object with:
 - "app_name": string — follows "Taste{Region}" pattern (e.g., "TasteYork", "TasteLehigh", "TasteBerks")
 - "tagline": string — follows "Eat. Drink. Experience {Region}." pattern
-- "ai_assistant_name": string — CRITICAL: the name MUST end in "-ie" to match our brand convention (Rosie, Mollie). Good examples: Sadie, Ellie, Sophie, Josie, Callie, Lexie, Addie, Gracie, Hattie, Tillie, Birdie, Frankie, Winnie, Bessie, Nellie, Dixie, Bonnie. The name should feel warm, approachable, and fit the local culture. MUST end in -ie. NOT Rosie or Mollie
+- "ai_assistant_name": string — CRITICAL RULES:
+  1. The name MUST end in "-ie" or "-y" (pronounced -ee) to match our brand convention
+  2. The name MUST be directly inspired by something iconic to THIS specific city/region — a historical figure, landmark, symbol, mascot, founding story, or cultural reference. Examples of how our existing names work:
+     - Lancaster PA → "Rosie" — inspired by the RED ROSE, Lancaster's city symbol (War of the Roses)
+     - Cumberland County PA → "Mollie" — inspired by MOLLY PITCHER, the Revolutionary War heroine from Carlisle, PA
+  3. Each of the ${count} proposals MUST derive its name from a DIFFERENT local reference — do NOT suggest similar names or the same cultural reference twice
+  4. NEVER use: Rosie, Mollie/Molly, or generic names with no city connection (no Sadie, Ellie, Sophie unless they reference a specific local figure)
+  5. Include a brief note in the market_config_json under "ai_name_origin" explaining what local reference inspired the name
 - "premium_name": string — follows "{AppName}+" pattern
 - "colors": object matching this exact shape:
   {
@@ -593,7 +604,10 @@ For each proposal, generate a JSON object with:
     }
   }
 
-Each proposal should have a DISTINCT color palette and AI assistant name. Make the colors feel local — inspired by the city's character, landscape, or heritage.
+Each proposal MUST have:
+- A DISTINCT color palette inspired by the city's character, landscape, or heritage
+- A COMPLETELY DIFFERENT AI assistant name, each derived from a different local icon/symbol/figure (explain the origin in ai_name_origin)
+- Do NOT reuse the same cultural reference for multiple names
 
 Return ONLY a JSON object with a "proposals" key containing an array of ${count} proposal objects:
 {"proposals": [{ ... }, { ... }, { ... }]}`;

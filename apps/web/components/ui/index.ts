@@ -1,3 +1,5 @@
+export { default as AutocompleteInput } from './AutocompleteInput';
+export type { AutocompleteOption } from './AutocompleteInput';
 export { default as Button } from './Button';
 export { Card, CardHeader, CardContent, CardFooter } from './Card';
 export { Badge } from './Badge';
