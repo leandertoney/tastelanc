@@ -44,6 +44,55 @@ const STATE_NAMES: Record<string, string> = {
   DC: 'District of Columbia',
 };
 
+// Common city name abbreviations → full forms
+const CITY_ABBREVIATIONS: Record<string, string> = {
+  ft: 'fort',
+  st: 'saint',
+  mt: 'mount',
+};
+
+/**
+ * Expand common abbreviations: "Ft Lauderdale" → "Fort Lauderdale"
+ */
+function expandCityAbbreviations(name: string): string {
+  const lower = name.toLowerCase();
+  for (const [abbr, full] of Object.entries(CITY_ABBREVIATIONS)) {
+    if (lower.startsWith(abbr + ' ') || lower.startsWith(abbr + '.')) {
+      return full + name.slice(abbr.length);
+    }
+  }
+  return name;
+}
+
+/**
+ * Check if a Census place name matches a given city name.
+ * Handles standard suffixes (city, town, borough) AND
+ * consolidated city-county governments (Nashville-Davidson, Louisville/Jefferson).
+ */
+function matchesCityName(placeName: string, normalizedCity: string, stateName: string): boolean {
+  // Standard place suffixes
+  if (
+    placeName.startsWith(`${normalizedCity} city,`) ||
+    placeName.startsWith(`${normalizedCity} town,`) ||
+    placeName.startsWith(`${normalizedCity} borough,`) ||
+    placeName.startsWith(`${normalizedCity} village,`) ||
+    placeName.startsWith(`${normalizedCity} cdp,`) ||
+    placeName === `${normalizedCity}, ${stateName.toLowerCase()}`
+  ) {
+    return true;
+  }
+
+  // Consolidated city-county governments (e.g. Nashville-Davidson, Louisville/Jefferson)
+  if (
+    placeName.startsWith(`${normalizedCity}-`) ||
+    placeName.startsWith(`${normalizedCity}/`)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 /**
  * Fetch real demographic data from the US Census Bureau ACS 5-Year Estimates.
  *
@@ -67,6 +116,12 @@ export async function fetchCensusData(
   const stateName = STATE_NAMES[stateAbbr.toUpperCase()] || stateAbbr;
   const year = 2023; // Latest available ACS 5-year
 
+  // Expand abbreviations: "Ft Lauderdale" → "Fort Lauderdale"
+  const expandedCity = expandCityAbbreviations(cityName);
+  const normalizedCity = expandedCity.toLowerCase().trim();
+  // Also try the original name if different
+  const originalNormalized = cityName.toLowerCase().trim();
+
   try {
     // Fetch all places in the state with population, income, and age
     const url = `https://api.census.gov/data/${year}/acs/acs5?get=NAME,B01003_001E,B19013_001E,B01002_001E&for=place:*&in=state:${fips}`;
@@ -83,31 +138,26 @@ export async function fetchCensusData(
     // Format: [NAME, population, income, age, state, place]
     if (!data || data.length < 2) return null;
 
-    // Normalize city name for matching
-    const normalizedCity = cityName.toLowerCase().trim();
-
-    // Try to find an exact match first, then fuzzy match
+    // Try to find a match using expanded name first, then original
     let match: string[] | undefined;
 
     for (const row of data.slice(1)) {
       const placeName = row[0].toLowerCase();
-      // Census names look like "Allentown city, Pennsylvania" or "Reading city, Pennsylvania"
-      if (
-        placeName.startsWith(`${normalizedCity} city,`) ||
-        placeName.startsWith(`${normalizedCity} town,`) ||
-        placeName.startsWith(`${normalizedCity} borough,`) ||
-        placeName.startsWith(`${normalizedCity} village,`) ||
-        placeName.startsWith(`${normalizedCity} cdp,`) ||
-        placeName === `${normalizedCity}, ${stateName.toLowerCase()}`
-      ) {
+      if (matchesCityName(placeName, normalizedCity, stateName)) {
+        match = row;
+        break;
+      }
+      // Try original if different from expanded
+      if (originalNormalized !== normalizedCity && matchesCityName(placeName, originalNormalized, stateName)) {
         match = row;
         break;
       }
     }
 
     if (!match) {
-      console.warn(`[census] No match found for "${cityName}" in ${stateAbbr}`);
-      return null;
+      // Fallback: try us-cities.json for population data
+      console.warn(`[census] No Census match for "${cityName}" in ${stateAbbr}, trying us-cities.json fallback`);
+      return fetchFromUSCitiesJSON(expandedCity, stateAbbr);
     }
 
     const population = parseInt(match[1], 10);
@@ -118,7 +168,7 @@ export async function fetchCensusData(
     if (isNaN(population) || population <= 0) return null;
 
     // Build Census QuickFacts URL
-    const encodedCity = encodeURIComponent(`${cityName} city, ${stateName}`).replace(/%20/g, '_');
+    const encodedCity = encodeURIComponent(`${expandedCity} city, ${stateName}`).replace(/%20/g, '_');
     const sourceUrl = `https://data.census.gov/profile/${encodedCity}`;
 
     return {
@@ -130,6 +180,55 @@ export async function fetchCensusData(
     };
   } catch (err) {
     console.error(`[census] Error fetching data for ${cityName}, ${stateAbbr}:`, err);
+    // Try local fallback on API failure too
+    return fetchFromUSCitiesJSON(expandedCity, stateAbbr);
+  }
+}
+
+/**
+ * Fallback: look up population from the bundled us-cities.json file.
+ * Only returns population (no income/age), but better than nothing.
+ */
+async function fetchFromUSCitiesJSON(
+  cityName: string,
+  stateAbbr: string,
+): Promise<CensusData | null> {
+  try {
+    const { readFile } = await import('fs/promises');
+    const { join } = await import('path');
+    const filePath = join(process.cwd(), 'public', 'data', 'us-cities.json');
+    const raw = await readFile(filePath, 'utf-8');
+    const cities: { c: string; co: string; s: string; p: number }[] = JSON.parse(raw);
+
+    const normalized = cityName.toLowerCase().trim();
+    const stateUpper = stateAbbr.toUpperCase();
+
+    // Find the largest matching city in that state (in case of duplicates)
+    let best: (typeof cities)[number] | null = null;
+    for (const city of cities) {
+      if (city.s === stateUpper && city.c.toLowerCase() === normalized) {
+        if (!best || city.p > best.p) {
+          best = city;
+        }
+      }
+    }
+
+    if (!best) {
+      console.warn(`[census] No us-cities.json match for "${cityName}", ${stateAbbr}`);
+      return null;
+    }
+
+    console.log(`[census] Fallback: found ${best.c}, ${best.s} with population ${best.p.toLocaleString()} from us-cities.json`);
+
+    return {
+      population: best.p,
+      median_income: 0, // Not available in this dataset
+      median_age: 0,
+      source_url: `https://en.wikipedia.org/wiki/${encodeURIComponent(best.c)},_${stateAbbr}`,
+      year: 2023,
+    };
+  } catch (err) {
+    console.error(`[census] us-cities.json fallback failed:`, err);
     return null;
   }
 }
