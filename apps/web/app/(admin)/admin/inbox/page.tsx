@@ -88,7 +88,6 @@ export default function AdminInboxPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [activeInbox, setActiveInbox] = useState<'crm' | 'info'>('crm');
   const [activeView, setActiveView] = useState<'all' | 'unread' | 'sent' | 'drafts'>('all');
 
@@ -148,7 +147,7 @@ export default function AdminInboxPage() {
     try {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
-      if (filter !== 'all') params.set('filter', filter);
+      if (activeView === 'unread') params.set('filter', 'unread');
       if (activeInbox === 'info') params.set('inbox', 'info');
       const res = await fetch(`/api/sales/inbox?${params}`);
       if (!res.ok) {
@@ -177,7 +176,7 @@ export default function AdminInboxPage() {
     setIsLoading(true);
     setSelectedConvo(null);
     fetchConversations();
-  }, [filter, activeInbox, activeView]);
+  }, [activeInbox, activeView]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -394,22 +393,11 @@ export default function AdminInboxPage() {
               ]).map((tab) => (
                 <button
                   key={tab.key}
-                  onClick={() => {
-                    if (tab.key === 'sent' || tab.key === 'drafts') {
-                      setActiveView(tab.key);
-                    } else {
-                      setActiveView('all');
-                      setFilter(tab.key);
-                    }
-                  }}
+                  onClick={() => setActiveView(tab.key)}
                   className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                    (tab.key === 'sent' || tab.key === 'drafts')
-                      ? activeView === tab.key
-                        ? 'bg-tastelanc-surface-light text-white'
-                        : 'text-gray-500 hover:text-gray-300'
-                      : activeView !== 'sent' && activeView !== 'drafts' && filter === tab.key
-                        ? 'bg-tastelanc-surface-light text-white'
-                        : 'text-gray-500 hover:text-gray-300'
+                    activeView === tab.key
+                      ? 'bg-tastelanc-surface-light text-white'
+                      : 'text-gray-500 hover:text-gray-300'
                   }`}
                 >
                   {tab.icon && <tab.icon className="w-3 h-3" />}

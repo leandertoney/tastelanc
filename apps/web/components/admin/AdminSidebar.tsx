@@ -21,6 +21,8 @@ import {
   Globe,
   Inbox,
   HeadphonesIcon,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -61,9 +63,11 @@ const NAV_ITEMS: NavItem[] = [
 interface AdminSidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
+export default function AdminSidebar({ isOpen, onClose, collapsed, onToggleCollapse }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -143,22 +147,24 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       <aside
         className={`
           fixed md:static inset-y-0 left-0 z-50
-          w-64 bg-tastelanc-surface border-r border-tastelanc-surface-light
+          ${collapsed ? 'md:w-[68px]' : 'w-64'} bg-tastelanc-surface border-r border-tastelanc-surface-light
           min-h-screen flex flex-col
-          transform transition-transform duration-300 ease-in-out
-          ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+          transform transition-all duration-300 ease-in-out
+          ${isOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0'}
         `}
       >
         {/* Logo */}
-        <div className="p-6 border-b border-tastelanc-surface-light flex items-center justify-between">
+        <div className={`${collapsed ? 'p-3' : 'p-6'} border-b border-tastelanc-surface-light flex items-center justify-between`}>
           <Link href="/admin" className="flex items-center gap-2" onClick={handleNavClick}>
-            <div className="w-10 h-10 bg-tastelanc-accent rounded-lg flex items-center justify-center">
-              <Shield className="w-6 h-6 text-white" />
+            <div className={`${collapsed ? 'w-9 h-9' : 'w-10 h-10'} bg-tastelanc-accent rounded-lg flex items-center justify-center flex-shrink-0`}>
+              <Shield className={`${collapsed ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
             </div>
-            <div>
-              <span className="text-xl font-bold text-white">{BRAND.name}</span>
-              <span className="block text-xs text-tastelanc-accent">Admin Panel</span>
-            </div>
+            {!collapsed && (
+              <div>
+                <span className="text-xl font-bold text-white">{BRAND.name}</span>
+                <span className="block text-xs text-tastelanc-accent">Admin Panel</span>
+              </div>
+            )}
           </Link>
           {/* Close button for mobile */}
           <button
@@ -171,7 +177,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 overflow-y-auto">
+        <nav className={`flex-1 ${collapsed ? 'p-2' : 'p-4'} overflow-y-auto`}>
           <ul className="space-y-1">
             {visibleItems.map((item, index) => {
               const isActive = pathname === item.href ||
@@ -179,15 +185,19 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
 
               return (
                 <li key={item.href}>
-                  {item.section && (
+                  {item.section && !collapsed && (
                     <p className={`text-[10px] uppercase tracking-wider text-gray-500 px-4 ${index > 0 ? 'mt-4' : ''} mb-2`}>
                       {item.section}
                     </p>
                   )}
+                  {item.section && collapsed && index > 0 && (
+                    <div className="my-2 mx-2 border-t border-tastelanc-surface-light" />
+                  )}
                   <Link
                     href={item.href}
                     onClick={handleNavClick}
-                    className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${
+                    title={collapsed ? item.label : undefined}
+                    className={`flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-lg transition-colors relative ${
                       isActive
                         ? 'bg-tastelanc-accent text-white'
                         : item.highlight
@@ -195,12 +205,18 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                         : 'text-gray-400 hover:bg-tastelanc-surface-light hover:text-white'
                     }`}
                   >
-                    <item.icon className={`w-5 h-5 ${item.highlight && !isActive ? 'text-lancaster-gold' : ''}`} />
-                    {item.label}
+                    <item.icon className={`w-5 h-5 flex-shrink-0 ${item.highlight && !isActive ? 'text-lancaster-gold' : ''}`} />
+                    {!collapsed && item.label}
                     {item.label === 'Inbox' && inboxUnreadCount > 0 && (
-                      <span className="ml-auto px-1.5 py-0.5 text-[10px] font-medium bg-blue-500 text-white rounded-full min-w-[18px] text-center">
-                        {inboxUnreadCount}
-                      </span>
+                      collapsed ? (
+                        <span className="absolute -top-1 -right-1 px-1 py-0.5 text-[9px] font-bold bg-blue-500 text-white rounded-full min-w-[16px] text-center leading-none">
+                          {inboxUnreadCount}
+                        </span>
+                      ) : (
+                        <span className="ml-auto px-1.5 py-0.5 text-[10px] font-medium bg-blue-500 text-white rounded-full min-w-[18px] text-center">
+                          {inboxUnreadCount}
+                        </span>
+                      )
                     )}
                   </Link>
                 </li>
@@ -209,14 +225,23 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           </ul>
         </nav>
 
-        {/* Logout */}
-        <div className="p-4 border-t border-tastelanc-surface-light">
+        {/* Collapse toggle + Logout */}
+        <div className={`${collapsed ? 'p-2' : 'p-4'} border-t border-tastelanc-surface-light space-y-1`}>
+          <button
+            onClick={onToggleCollapse}
+            className={`hidden md:flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-lg text-gray-400 hover:bg-tastelanc-surface-light hover:text-white transition-colors w-full`}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
+            {!collapsed && 'Collapse'}
+          </button>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-tastelanc-surface-light hover:text-white transition-colors w-full"
+            title={collapsed ? 'Sign Out' : undefined}
+            className={`flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-lg text-gray-400 hover:bg-tastelanc-surface-light hover:text-white transition-colors w-full`}
           >
             <LogOut className="w-5 h-5" />
-            Sign Out
+            {!collapsed && 'Sign Out'}
           </button>
         </div>
       </aside>
