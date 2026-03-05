@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { verifyRestaurantAccess } from '@/lib/auth/restaurant-access';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_MENU || process.env.OPENAI_API_KEY });
 const AI_MODEL = 'gpt-4o-mini';
 
 // Allow up to 60s for this route

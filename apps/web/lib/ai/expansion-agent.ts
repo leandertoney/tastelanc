@@ -33,7 +33,7 @@ import { calculateSubScores } from './score-calculator';
 // ─────────────────────────────────────────────────────────
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
+  apiKey: process.env.OPENAI_API_KEY_EXPANSION || process.env.OPENAI_API_KEY!,
 });
 
 const MODEL = 'gpt-4o-mini';

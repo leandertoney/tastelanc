@@ -11,7 +11,7 @@ const BRAND_CONFIG: Record<string, { name: string; countyShort: string; county: 
 const BRAND = BRAND_CONFIG[MARKET_SLUG] || BRAND_CONFIG['lancaster-pa'];
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
+  apiKey: process.env.OPENAI_API_KEY_BLOG || process.env.OPENAI_API_KEY!,
 });
 
 const supabase = createClient(
@@ -800,8 +800,8 @@ async function sendBlogNotificationEmails(post: BlogEmailParams): Promise<number
 export default async function handler(req: Request, context: Context) {
   try {
     // Check for required env vars
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY not configured');
+    if (!(process.env.OPENAI_API_KEY_BLOG || process.env.OPENAI_API_KEY)) {
+      throw new Error('OPENAI_API_KEY_BLOG not configured');
     }
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       throw new Error('Supabase credentials not configured');

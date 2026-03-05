@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { BRAND } from '@/config/market';
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
+  apiKey: process.env.OPENAI_API_KEY_EMAIL || process.env.OPENAI_API_KEY!,
 });
 
 // Types for email generation

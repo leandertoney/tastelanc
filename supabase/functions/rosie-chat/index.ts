@@ -5,10 +5,13 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import OpenAI from 'https://esm.sh/openai@4';
 
-// Initialize OpenAI client (used for both chat and embeddings)
-const openai = new OpenAI({
-  apiKey: Deno.env.get('OPENAI_API_KEY'),
-});
+// OpenAI client created per-request with market-specific key
+function getOpenAIClient(marketSlug: string): OpenAI {
+  const apiKey = marketSlug === 'cumberland-pa'
+    ? (Deno.env.get('OPENAI_API_KEY_CUMBERLAND') || Deno.env.get('OPENAI_API_KEY'))
+    : (Deno.env.get('OPENAI_API_KEY_LANCASTER') || Deno.env.get('OPENAI_API_KEY'));
+  return new OpenAI({ apiKey });
+}
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -207,6 +210,7 @@ serve(async (req) => {
 
     // Resolve market — default to lancaster-pa for backwards compatibility
     const resolvedSlug = marketSlug || 'lancaster-pa';
+    const openai = getOpenAIClient(resolvedSlug);
     let marketId: string | null = null;
     const { data: marketRow } = await supabase
       .from('markets')
