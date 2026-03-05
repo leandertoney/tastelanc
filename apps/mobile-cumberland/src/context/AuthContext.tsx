@@ -53,6 +53,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setSession(existingSession);
         setUser(existingSession.user);
         console.log('Existing session found:', existingSession.user.id);
+
+        // Track last seen (fire-and-forget)
+        supabase.from('profiles')
+          .update({ last_seen_at: new Date().toISOString() })
+          .eq('id', existingSession.user.id)
+          .then(() => {})
+          .catch((e) => console.warn('[Auth] last_seen update failed:', e));
       } else {
         // No session - create anonymous user
         console.log('No session found, creating anonymous user...');
@@ -106,6 +113,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             premium_active: false,
             premium_source: null,
             premium_expires_at: null,
+            last_seen_at: new Date().toISOString(),
           });
 
         if (insertError) {

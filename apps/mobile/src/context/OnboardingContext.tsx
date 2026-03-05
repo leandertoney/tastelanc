@@ -6,6 +6,7 @@ import {
   ONBOARDING_STORAGE_KEY,
   ONBOARDING_DATA_KEY,
 } from '../types/onboarding';
+import { supabase } from '../lib/supabase';
 
 interface OnboardingContextType {
   data: OnboardingData;
@@ -87,6 +88,20 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const completeOnboarding = useCallback(async () => {
     await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
     await AsyncStorage.setItem(ONBOARDING_DATA_KEY, JSON.stringify(data));
+
+    // Sync display_name to profiles table (fire-and-forget)
+    if (data.name) {
+      supabase.auth.getUser().then(({ data: authData }) => {
+        if (authData?.user?.id) {
+          supabase
+            .from('profiles')
+            .update({ display_name: data.name })
+            .eq('id', authData.user.id)
+            .then(() => {})
+            .catch((e) => console.warn('[Onboarding] Failed to sync display_name:', e));
+        }
+      });
+    }
   }, [data]);
 
   const resetOnboarding = useCallback(async () => {
