@@ -153,7 +153,7 @@ export default function AdminSidebar({ isOpen, onClose, collapsed, onToggleColla
           ${isOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0'}
         `}
       >
-        {/* Logo */}
+        {/* Logo + collapse toggle */}
         <div className={`${collapsed ? 'p-3' : 'p-6'} border-b border-tastelanc-surface-light flex items-center justify-between`}>
           <Link href="/admin" className="flex items-center gap-2" onClick={handleNavClick}>
             <div className={`${collapsed ? 'w-9 h-9' : 'w-10 h-10'} bg-tastelanc-accent rounded-lg flex items-center justify-center flex-shrink-0`}>
@@ -166,6 +166,14 @@ export default function AdminSidebar({ isOpen, onClose, collapsed, onToggleColla
               </div>
             )}
           </Link>
+          {/* Collapse toggle for desktop */}
+          <button
+            onClick={onToggleCollapse}
+            className="hidden md:block text-gray-400 hover:text-white p-1 transition-colors"
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
+          </button>
           {/* Close button for mobile */}
           <button
             onClick={onClose}
@@ -225,16 +233,8 @@ export default function AdminSidebar({ isOpen, onClose, collapsed, onToggleColla
           </ul>
         </nav>
 
-        {/* Collapse toggle + Logout */}
-        <div className={`${collapsed ? 'p-2' : 'p-4'} border-t border-tastelanc-surface-light space-y-1`}>
-          <button
-            onClick={onToggleCollapse}
-            className={`hidden md:flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-lg text-gray-400 hover:bg-tastelanc-surface-light hover:text-white transition-colors w-full`}
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {collapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
-            {!collapsed && 'Collapse'}
-          </button>
+        {/* Logout */}
+        <div className={`${collapsed ? 'p-2' : 'p-4'} border-t border-tastelanc-surface-light`}>
           <button
             onClick={handleLogout}
             title={collapsed ? 'Sign Out' : undefined}
