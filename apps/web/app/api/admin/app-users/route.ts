@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
       email?: string;
       is_anonymous?: boolean;
       created_at: string;
+      last_sign_in_at?: string;
       user_metadata?: Record<string, unknown>;
     }> = [];
 
@@ -103,7 +104,9 @@ export async function GET(request: NextRequest) {
 
       const isAnon = authUser.is_anonymous ?? true;
       const token = tokenMap.get(authUser.id);
-      const lastSeen = profile?.last_seen_at ? new Date(profile.last_seen_at) : null;
+      // Use last_seen_at from profiles (set by app), fall back to last_sign_in_at from auth
+      const lastSeenRaw = profile?.last_seen_at || authUser.last_sign_in_at || null;
+      const lastSeen = lastSeenRaw ? new Date(lastSeenRaw) : null;
 
       if (isAnon) {
         anonymousCount++;
@@ -128,7 +131,7 @@ export async function GET(request: NextRequest) {
         email: authUser.email || null,
         display_name: profile?.display_name || null,
         is_anonymous: isAnon,
-        last_seen_at: profile?.last_seen_at || null,
+        last_seen_at: lastSeenRaw,
         created_at: authUser.created_at,
         platform: token?.platform || null,
         favorites_count: favCountMap.get(authUser.id) || 0,
