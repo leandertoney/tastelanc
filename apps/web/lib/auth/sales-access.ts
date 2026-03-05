@@ -47,7 +47,7 @@ export async function verifySalesAccess(
   const isSuperAdmin = profileRole === 'super_admin' || profileRole === 'co_founder';
   const isMarketAdmin = profileRole === 'market_admin';
   const isAdmin = isSuperAdmin || isMarketAdmin;
-  const isSalesRep = user.user_metadata?.role === 'sales_rep';
+  const isSalesRep = profileRole === 'sales_rep' || user.user_metadata?.role === 'sales_rep';
   const canAccess = isAdmin || isSalesRep;
 
   // Determine market scope
