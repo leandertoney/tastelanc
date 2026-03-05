@@ -5,6 +5,8 @@ import { getFavorites, toggleFavorite, isFavorited } from '../lib/favorites';
 import { useAuth } from './useAuth';
 import { useSignUpModal } from '../context/SignUpModalContext';
 import { trackClick } from '../lib/analytics';
+import { requestReviewIfEligible } from '../lib/reviewPrompts';
+import { supabase } from '../lib/supabase';
 
 /**
  * Hook to get all favorites for the current user
@@ -45,6 +47,15 @@ export function useToggleFavorite() {
       }
       const result = await toggleFavorite(userId, restaurantId);
       trackClick('favorite', restaurantId);
+      requestReviewIfEligible('first_save');
+      // Power user trigger: 3rd+ favorite saved
+      const { count } = await supabase
+        .from('favorites')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId);
+      if (count && count >= 3) {
+        requestReviewIfEligible('power_user');
+      }
       return result;
     },
     onMutate: async (restaurantId) => {

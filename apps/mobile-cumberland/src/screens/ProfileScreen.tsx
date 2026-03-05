@@ -20,6 +20,8 @@ import { useNavigationContext } from '../navigation';
 import { colors, radius } from '../constants/colors';
 import { BRAND } from '../config/brand';
 import { useAuth } from '../hooks/useAuth';
+import { useSignUpModal } from '../context/SignUpModalContext';
+import { useQuery } from '@tanstack/react-query';
 import type { RootStackParamList } from '../navigation/types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -103,10 +105,30 @@ function SectionHeader({ title }: { title: string }) {
   );
 }
 
+function useDisplayName() {
+  const { userId, isAnonymous } = useAuth();
+  return useQuery({
+    queryKey: ['displayName', userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      const { data } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('id', userId)
+        .single();
+      return data?.display_name || null;
+    },
+    enabled: !!userId && !isAnonymous,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { restartOnboarding } = useNavigationContext();
   const { userId, user, isAnonymous } = useAuth();
+  const { showSignUpModal } = useSignUpModal();
+  const { data: displayName } = useDisplayName();
 
   // Preference states
   const [notificationPermission, setNotificationPermission] = useState<string>('undetermined');
@@ -321,11 +343,22 @@ export default function ProfileScreen() {
           <View style={styles.avatarContainer}>
             <Ionicons name="person" size={40} color={colors.textOnAccent} />
           </View>
-          <Text style={styles.headerTitle}>{BRAND.userTitle}</Text>
+          <Text style={styles.headerTitle}>
+            {!isAnonymous && displayName ? displayName : BRAND.userTitle}
+          </Text>
           <Text style={styles.headerSubtitle}>{BRAND.userSubtitle}</Text>
           <Text style={styles.headerEmail}>
             {isAnonymous ? 'Guest Account' : user?.email || 'Signed In'}
           </Text>
+          {isAnonymous && (
+            <TouchableOpacity
+              style={styles.signInButton}
+              onPress={() => showSignUpModal({ action: 'access your full profile' })}
+            >
+              <Ionicons name="log-in-outline" size={18} color={colors.textOnAccent} />
+              <Text style={styles.signInButtonText}>Sign In</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Preferences Section */}
@@ -548,6 +581,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     marginTop: 6,
+  },
+  signInButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+    backgroundColor: colors.accent,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: radius.full,
+  },
+  signInButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.textOnAccent,
   },
   sectionHeader: {
     paddingHorizontal: 20,

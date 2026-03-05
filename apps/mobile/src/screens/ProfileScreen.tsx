@@ -20,6 +20,9 @@ import { useNavigationContext } from '../navigation';
 import { colors, radius, spacing, typography } from '../constants/colors';
 import { useAuth } from '../hooks/useAuth';
 import { useFavorites } from '../hooks/useFavorites';
+import { useSalesRole } from '../hooks/useSalesRole';
+import { useUnreadCount } from '../hooks/useSalesInbox';
+import { useSignUpModal } from '../context/SignUpModalContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import type { RootStackParamList } from '../navigation/types';
@@ -66,6 +69,24 @@ function useCheckinCount() {
     },
     enabled: !!userId,
     staleTime: 60 * 1000,
+  });
+}
+
+function useDisplayName() {
+  const { userId, isAnonymous } = useAuth();
+  return useQuery({
+    queryKey: ['displayName', userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      const { data } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('id', userId)
+        .single();
+      return data?.display_name || null;
+    },
+    enabled: !!userId && !isAnonymous,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -138,7 +159,11 @@ export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { restartOnboarding } = useNavigationContext();
   const { userId, user, isAnonymous } = useAuth();
+  const { showSignUpModal } = useSignUpModal();
   const { data: checkinCount = 0 } = useCheckinCount();
+  const { data: displayName } = useDisplayName();
+  const { isSalesRep } = useSalesRole();
+  const { data: unreadData } = useUnreadCount();
 
   const [notificationPermission, setNotificationPermission] = useState<string>('undetermined');
   const [locationEnabled, setLocationEnabled] = useState(true);
@@ -267,15 +292,28 @@ export default function ProfileScreen() {
           <View style={styles.avatarContainer}>
             <Ionicons name="person" size={40} color={colors.text} />
           </View>
-          <Text style={styles.headerTitle}>{explorerTitle}</Text>
+          <Text style={styles.headerTitle}>
+            {!isAnonymous && displayName ? displayName : explorerTitle}
+          </Text>
           <Text style={styles.headerSubtitle}>
-            {checkinCount === 0
+            {!isAnonymous && displayName
+              ? `${explorerTitle} · ${checkinCount} visit${checkinCount !== 1 ? 's' : ''}`
+              : checkinCount === 0
               ? 'Start exploring Lancaster — check in to earn points'
               : `${checkinCount} restaurant${checkinCount !== 1 ? 's' : ''} visited in Lancaster`}
           </Text>
           <Text style={styles.headerEmail}>
             {isAnonymous ? 'Guest Account' : user?.email || 'Signed In'}
           </Text>
+          {isAnonymous && (
+            <TouchableOpacity
+              style={styles.signInButton}
+              onPress={() => showSignUpModal({ action: 'access your full profile' })}
+            >
+              <Ionicons name="log-in-outline" size={18} color={colors.text} />
+              <Text style={styles.signInButtonText}>Sign In</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Stats Row */}
@@ -304,6 +342,38 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
+
+        {/* Sales Dashboard - only visible for sales reps / admins */}
+        {isSalesRep && (
+          <>
+            <SectionHeader title="Sales" />
+            <View style={styles.section}>
+              <TouchableOpacity
+                style={styles.settingItem}
+                onPress={() => navigation.navigate('SalesDashboard')}
+                activeOpacity={0.7}
+              >
+                <View style={styles.settingLeft}>
+                  <View style={[styles.iconContainer, styles.iconContainerSales]}>
+                    <Ionicons name="briefcase" size={20} color={colors.accent} />
+                  </View>
+                  <View style={styles.settingTextContainer}>
+                    <Text style={styles.settingLabel}>Sales Dashboard</Text>
+                    <Text style={styles.settingSubtitle}>Inbox, leads & CRM</Text>
+                  </View>
+                </View>
+                <View style={styles.salesBadgeRow}>
+                  {(unreadData?.count ?? 0) > 0 && (
+                    <View style={styles.salesBadge}>
+                      <Text style={styles.salesBadgeText}>{unreadData!.count}</Text>
+                    </View>
+                  )}
+                  <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+                </View>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
 
         {/* Recent Activity */}
         <RecentActivityFeed />
@@ -501,6 +571,21 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: typography.title2, fontWeight: '700', color: colors.text, marginBottom: 4 },
   headerSubtitle: { fontSize: typography.footnote, color: colors.textMuted, textAlign: 'center' },
   headerEmail: { fontSize: typography.footnote, color: colors.textSecondary, marginTop: 6 },
+  signInButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+    backgroundColor: colors.accent,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: radius.full,
+  },
+  signInButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text,
+  },
   quickLinks: {
     flexDirection: 'row',
     marginHorizontal: spacing.md,
@@ -542,6 +627,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center', marginRight: 14,
   },
   iconContainerDanger: { backgroundColor: `${colors.error}20` },
+  iconContainerSales: { backgroundColor: `${colors.accent}20` },
+  salesBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  salesBadge: {
+    backgroundColor: colors.error,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  salesBadgeText: { fontSize: 11, fontWeight: '700', color: colors.text },
   iconContainerDev: { backgroundColor: '#10B98120' },
   settingTextContainer: { flex: 1 },
   settingLabel: { fontSize: 16, fontWeight: '500', color: colors.text },
