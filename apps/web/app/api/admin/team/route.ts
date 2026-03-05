@@ -31,7 +31,9 @@ export async function POST(request: Request) {
 
     // Resolve user ID — check profiles, then try auth create (handles existing users gracefully)
     let userId: string;
-    let needsPasswordSetup = false;
+    // Always send password setup for team members — even if they have a mobile
+    // app account, they need CRM credentials
+    let needsPasswordSetup = true;
 
     const { data: existingProfile } = await serviceClient
       .from('profiles')
@@ -40,7 +42,6 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (existingProfile) {
-      // User already has a profile — upgrading them to the new role
       userId = existingProfile.id;
     } else {
       // Try creating a new auth user
