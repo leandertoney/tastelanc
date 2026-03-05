@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   X,
   Send,
@@ -12,6 +12,7 @@ import {
   Lightbulb,
   Wand2,
   Paperclip,
+  Save,
 } from 'lucide-react';
 import { SENDER_IDENTITIES, type SenderIdentity } from '@/config/sender-identities';
 import { toast } from 'sonner';
@@ -30,6 +31,18 @@ interface InboxEmailComposerProps {
     subject: string;
     inReplyToMessageId?: string;
   };
+  draftId?: string;
+  initialDraft?: {
+    recipientEmail?: string;
+    recipientName?: string;
+    subject?: string;
+    headline?: string;
+    body?: string;
+    ctaText?: string;
+    ctaUrl?: string;
+    attachments?: Array<{ url?: string; filename: string; size: number; contentType?: string; content_type?: string }>;
+  };
+  embedded?: boolean;
 }
 
 type Step = 'compose' | 'confirm';
@@ -43,7 +56,7 @@ const AI_IMPROVE_OPTIONS = [
   { key: 'grammar', label: 'Fix Grammar', instruction: 'Fix any grammar, spelling, or punctuation errors in this email. Do not change the tone or meaning.' },
 ] as const;
 
-export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSender, replyTo }: InboxEmailComposerProps) {
+export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSender, replyTo, draftId: initialDraftId, initialDraft, embedded }: InboxEmailComposerProps) {
   const isReply = !!replyTo;
   const [step, setStep] = useState<Step>('compose');
 
@@ -52,17 +65,24 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
   const [senderDropdownOpen, setSenderDropdownOpen] = useState(false);
 
   // Recipient
-  const [recipientEmail, setRecipientEmail] = useState(replyTo?.recipientEmail || '');
-  const [recipientName, setRecipientName] = useState(replyTo?.recipientName || '');
+  const [recipientEmail, setRecipientEmail] = useState(initialDraft?.recipientEmail || replyTo?.recipientEmail || '');
+  const [recipientName, setRecipientName] = useState(initialDraft?.recipientName || replyTo?.recipientName || '');
 
   // Email fields
   const [subject, setSubject] = useState(
-    replyTo ? (replyTo.subject.startsWith('Re: ') ? replyTo.subject : `Re: ${replyTo.subject}`) : ''
+    initialDraft?.subject || (replyTo ? (replyTo.subject.startsWith('Re: ') ? replyTo.subject : `Re: ${replyTo.subject}`) : '')
   );
-  const [headline, setHeadline] = useState('');
-  const [body, setBody] = useState('');
-  const [ctaText, setCtaText] = useState('');
-  const [ctaUrl, setCtaUrl] = useState('');
+  const [headline, setHeadline] = useState(initialDraft?.headline || '');
+  const [body, setBody] = useState(initialDraft?.body || '');
+  const [ctaText, setCtaText] = useState(initialDraft?.ctaText || '');
+  const [ctaUrl, setCtaUrl] = useState(initialDraft?.ctaUrl || '');
+
+  // Draft
+  const [currentDraftId, setCurrentDraftId] = useState<string | undefined>(initialDraftId);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [draftSaved, setDraftSaved] = useState(false);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasContentRef = useRef(false);
 
   // AI
   const [isGenerating, setIsGenerating] = useState(false);
@@ -79,6 +99,75 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
 
   // Send
   const [isSending, setIsSending] = useState(false);
+
+  // Track if there's any content worth saving
+  useEffect(() => {
+    hasContentRef.current = !!(recipientEmail.trim() || subject.trim() || body.trim());
+  }, [recipientEmail, subject, body]);
+
+  // Auto-save draft (debounced 3s)
+  const saveDraft = useCallback(async () => {
+    if (!recipientEmail.trim() && !subject.trim() && !body.trim()) return;
+    setIsSavingDraft(true);
+    try {
+      const res = await fetch('/api/sales/inbox/drafts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...(currentDraftId && { id: currentDraftId }),
+          draft_type: isReply ? 'reply' : 'new',
+          recipient_email: recipientEmail || null,
+          recipient_name: recipientName || null,
+          subject: subject || null,
+          headline: headline || null,
+          body: body || null,
+          cta_text: ctaText || null,
+          cta_url: ctaUrl || null,
+          sender_email: selectedSender?.email || null,
+          sender_name: selectedSender?.name || null,
+          in_reply_to_message_id: replyTo?.inReplyToMessageId || null,
+          attachments: attachments.length > 0 ? attachments : [],
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.draft?.id) setCurrentDraftId(data.draft.id);
+        setDraftSaved(true);
+        setTimeout(() => setDraftSaved(false), 2000);
+      }
+    } catch {
+      // Silent fail for auto-save
+    } finally {
+      setIsSavingDraft(false);
+    }
+  }, [currentDraftId, isReply, recipientEmail, recipientName, subject, headline, body, ctaText, ctaUrl, selectedSender, replyTo, attachments]);
+
+  // Trigger auto-save on changes
+  useEffect(() => {
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    if (!recipientEmail.trim() && !subject.trim() && !body.trim()) return;
+    autoSaveTimerRef.current = setTimeout(saveDraft, 3000);
+    return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
+  }, [recipientEmail, recipientName, subject, headline, body, ctaText, ctaUrl, attachments, saveDraft]);
+
+  // Delete draft after successful send
+  const deleteDraft = async () => {
+    if (!currentDraftId) return;
+    try {
+      await fetch(`/api/sales/inbox/drafts/${currentDraftId}`, { method: 'DELETE' });
+    } catch {
+      // Ignore
+    }
+  };
+
+  // Save draft on close if there's content
+  const handleClose = async () => {
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    if (hasContentRef.current) {
+      await saveDraft();
+    }
+    onClose();
+  };
 
   const handleGenerateAI = async () => {
     setIsGenerating(true);
@@ -210,6 +299,7 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
 
       toast.success(`Email sent to ${recipientEmail}`);
       clearAttachments();
+      await deleteDraft();
       onSent();
     } catch (error) {
       console.error('Send error:', error);
@@ -223,84 +313,88 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
 
   // Confirm step
   if (step === 'confirm') {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-        <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-          <div className="p-6">
-            <h2 className="text-lg font-bold text-white mb-6">Confirm & Send</h2>
+    const confirmInner = (
+      <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <h2 className="text-lg font-bold text-white mb-6">Confirm & Send</h2>
 
-            <div className="space-y-4">
+          <div className="space-y-4">
+            <div>
+              <span className="text-xs text-gray-500 uppercase tracking-wider">From</span>
+              <p className="text-sm text-white mt-1">
+                {selectedSender ? `${selectedSender.name} <${selectedSender.email}>` : 'No sender configured'}
+              </p>
+            </div>
+
+            <div>
+              <span className="text-xs text-gray-500 uppercase tracking-wider">To</span>
+              <p className="text-sm text-white mt-1">
+                {recipientName ? `${recipientName} ` : ''}&lt;{recipientEmail}&gt;
+              </p>
+            </div>
+
+            <div>
+              <span className="text-xs text-gray-500 uppercase tracking-wider">Subject</span>
+              <p className="text-sm text-white mt-1">{subject}</p>
+            </div>
+
+            <div>
+              <span className="text-xs text-gray-500 uppercase tracking-wider">Preview</span>
+              <div className="mt-1 p-3 bg-tastelanc-bg rounded-lg text-sm text-gray-300 max-h-32 overflow-y-auto whitespace-pre-wrap">
+                {body.substring(0, 300)}{body.length > 300 ? '...' : ''}
+              </div>
+            </div>
+
+            {attachments.length > 0 && (
               <div>
-                <span className="text-xs text-gray-500 uppercase tracking-wider">From</span>
+                <span className="text-xs text-gray-500 uppercase tracking-wider">Attachments</span>
                 <p className="text-sm text-white mt-1">
-                  {selectedSender ? `${selectedSender.name} <${selectedSender.email}>` : 'No sender configured'}
+                  {attachments.length} file{attachments.length !== 1 ? 's' : ''} attached
                 </p>
               </div>
+            )}
+          </div>
 
-              <div>
-                <span className="text-xs text-gray-500 uppercase tracking-wider">To</span>
-                <p className="text-sm text-white mt-1">
-                  {recipientName ? `${recipientName} ` : ''}&lt;{recipientEmail}&gt;
-                </p>
-              </div>
-
-              <div>
-                <span className="text-xs text-gray-500 uppercase tracking-wider">Subject</span>
-                <p className="text-sm text-white mt-1">{subject}</p>
-              </div>
-
-              <div>
-                <span className="text-xs text-gray-500 uppercase tracking-wider">Preview</span>
-                <div className="mt-1 p-3 bg-tastelanc-bg rounded-lg text-sm text-gray-300 max-h-32 overflow-y-auto whitespace-pre-wrap">
-                  {body.substring(0, 300)}{body.length > 300 ? '...' : ''}
-                </div>
-              </div>
-
-              {attachments.length > 0 && (
-                <div>
-                  <span className="text-xs text-gray-500 uppercase tracking-wider">Attachments</span>
-                  <p className="text-sm text-white mt-1">
-                    {attachments.length} file{attachments.length !== 1 ? 's' : ''} attached
-                  </p>
-                </div>
+          <div className="flex items-center gap-3 mt-6">
+            <button
+              onClick={() => setStep('compose')}
+              className="flex items-center gap-2 px-4 py-2.5 text-gray-400 hover:text-white transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Go Back
+            </button>
+            <button
+              onClick={handleSend}
+              disabled={isSending}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
+            >
+              {isSending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
               )}
-            </div>
-
-            <div className="flex items-center gap-3 mt-6">
-              <button
-                onClick={() => setStep('compose')}
-                className="flex items-center gap-2 px-4 py-2.5 text-gray-400 hover:text-white transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Go Back
-              </button>
-              <button
-                onClick={handleSend}
-                disabled={isSending}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
-              >
-                {isSending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-                {isSending ? 'Sending...' : 'Confirm & Send'}
-              </button>
-            </div>
+              {isSending ? 'Sending...' : 'Confirm & Send'}
+            </button>
           </div>
         </div>
+      </div>
+    );
+
+    if (embedded) return confirmInner;
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        {confirmInner}
       </div>
     );
   }
 
   // Compose step
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+  const composeInner = (
+      <div className={`bg-tastelanc-surface border border-tastelanc-surface-light rounded-xl w-full ${embedded ? 'h-full overflow-y-auto' : 'max-w-2xl max-h-[90vh] overflow-y-auto'}`}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-tastelanc-surface-light">
           <h2 className="text-lg font-bold text-white">{isReply ? 'Reply' : 'Compose Email'}</h2>
-          <button onClick={onClose} className="p-1 text-gray-400 hover:text-white transition-colors">
+          <button onClick={handleClose} className="p-1 text-gray-400 hover:text-white transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -522,29 +616,51 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-4 border-t border-tastelanc-surface-light">
-          <button
-            onClick={onClose}
-            className="px-4 py-2.5 text-gray-400 hover:text-white transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={openFilePicker}
-            disabled={isUploading}
-            className="flex items-center gap-1.5 px-3 py-2.5 text-gray-400 hover:text-white transition-colors"
-            title="Attach files"
-          >
-            <Paperclip className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setStep('confirm')}
-            disabled={!canSend}
-            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
-          >
-            <Send className="w-4 h-4" />
-            Review & Send
-          </button>
+        <div className="flex items-center justify-between p-4 border-t border-tastelanc-surface-light">
+          <div className="flex items-center gap-2">
+            {isSavingDraft && (
+              <span className="flex items-center gap-1 text-[11px] text-gray-500">
+                <Loader2 className="w-3 h-3 animate-spin" /> Saving...
+              </span>
+            )}
+            {draftSaved && !isSavingDraft && (
+              <span className="flex items-center gap-1 text-[11px] text-green-500">
+                <Check className="w-3 h-3" /> Draft saved
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleClose}
+              className="px-4 py-2.5 text-gray-400 hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={openFilePicker}
+              disabled={isUploading}
+              className="flex items-center gap-1.5 px-3 py-2.5 text-gray-400 hover:text-white transition-colors"
+              title="Attach files"
+            >
+              <Paperclip className="w-4 h-4" />
+            </button>
+            <button
+              onClick={saveDraft}
+              disabled={isSavingDraft || (!recipientEmail.trim() && !subject.trim() && !body.trim())}
+              className="flex items-center gap-1.5 px-3 py-2.5 text-gray-400 hover:text-white disabled:opacity-30 transition-colors"
+              title="Save draft"
+            >
+              <Save className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setStep('confirm')}
+              disabled={!canSend}
+              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+            >
+              <Send className="w-4 h-4" />
+              Review & Send
+            </button>
+          </div>
         </div>
 
         {/* Hidden file input */}
@@ -557,6 +673,12 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
           onChange={handleFileChange}
         />
       </div>
+  );
+
+  if (embedded) return composeInner;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      {composeInner}
     </div>
   );
 }

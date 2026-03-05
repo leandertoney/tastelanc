@@ -15,10 +15,13 @@ import {
   Check,
   Wand2,
   Paperclip,
+  FileEdit,
 } from 'lucide-react';
 import { Card } from '@/components/ui';
 import { toast } from 'sonner';
 import InboxEmailComposer from '@/components/sales/InboxEmailComposer';
+import InboxSentView from '@/components/sales/InboxSentView';
+import InboxDraftsView from '@/components/sales/InboxDraftsView';
 import { SENDER_IDENTITIES, type SenderIdentity } from '@/config/sender-identities';
 import { useFileAttachments } from '@/hooks/useFileAttachments';
 import { EditableAttachmentChips, ReadonlyAttachmentChips } from '@/components/sales/AttachmentChips';
@@ -132,6 +135,7 @@ function extractReplyFromHtml(html: string, plainText: string | null): string {
 }
 
 export default function InboxPage() {
+  const [activeTab, setActiveTab] = useState<'inbox' | 'sent' | 'drafts'>('inbox');
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -346,8 +350,44 @@ export default function InboxPage() {
         </button>
       </div>
 
+      {/* Tab bar */}
+      <div className="flex gap-1 mb-3">
+        {([
+          { key: 'inbox' as const, label: 'Inbox', icon: Inbox },
+          { key: 'sent' as const, label: 'Sent', icon: Send },
+          { key: 'drafts' as const, label: 'Drafts', icon: FileEdit },
+        ]).map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === tab.key
+                ? 'bg-tastelanc-accent text-white'
+                : 'text-gray-400 hover:bg-tastelanc-surface-light hover:text-white'
+            }`}
+          >
+            <tab.icon className="w-4 h-4" />
+            {tab.label}
+            {tab.key === 'inbox' && totalUnread > 0 && (
+              <span className="ml-1 bg-blue-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1">
+                {totalUnread > 99 ? '99+' : totalUnread}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
       {/* Main content */}
-      <div className="flex gap-4 h-[calc(100%-80px)]">
+      {activeTab === 'sent' ? (
+        <div className="h-[calc(100%-130px)]">
+          <InboxSentView />
+        </div>
+      ) : activeTab === 'drafts' ? (
+        <div className="h-[calc(100%-130px)]">
+          <InboxDraftsView isAdmin={isAdmin} defaultSender={selectedSender || undefined} onDraftSent={() => fetchConversations()} />
+        </div>
+      ) : (
+      <div className="flex gap-4 h-[calc(100%-130px)]">
         {/* Left: Conversation list */}
         <div className={`${selectedConvo ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[380px] md:min-w-[380px]`}>
           {/* Search + filters */}
@@ -713,6 +753,8 @@ export default function InboxPage() {
           )}
         </div>
       </div>
+
+      )}
 
       {/* Compose modal */}
       {showCompose && (
