@@ -46,11 +46,10 @@ export async function GET(request: Request) {
 
     // Determine which sender emails this user can see
     const repEmails = await getRepSenderEmails(serviceClient, access);
-    const inbox = searchParams.get('inbox') || 'crm';
 
-    // For info@ inbox threads, include both rep emails AND info@ addresses
-    // so the full conversation is visible (inbound to info@ + any replies sent from CRM)
-    const allVisibleEmails = inbox === 'info' && access.isAdmin
+    // Admins always see info@ inbound in threads so conversations are complete
+    // (replies to info@tastelanc.com route to inbox@in.tastelanc.com)
+    const allVisibleEmails = access.isAdmin
       ? [...repEmails, ...INFO_INBOX_EMAILS]
       : repEmails;
 
