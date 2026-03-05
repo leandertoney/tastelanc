@@ -84,6 +84,14 @@ export function useToggleFavorite() {
         if (error) throw error;
         trackClick('favorite', restaurantId);
         requestReviewIfEligible('first_save');
+        // Power user trigger: 3rd+ favorite saved
+        const { count } = await supabase
+          .from('favorites')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId);
+        if (count && count >= 3) {
+          requestReviewIfEligible('power_user');
+        }
         return { added: true };
       }
     },
