@@ -84,7 +84,7 @@ export default function SalesSidebar({ isOpen, onClose, collapsed, onToggleColla
       }
     };
     fetchUnread();
-    const interval = setInterval(fetchUnread, 60000);
+    const interval = setInterval(fetchUnread, 30000);
     return () => clearInterval(interval);
   }, []);
 

@@ -84,21 +84,21 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
     })();
   }, [supabase]);
 
-  // Fetch inbox unread count
+  // Fetch inbox unread count (every 30s)
   useEffect(() => {
     const fetchUnread = async () => {
       try {
         const res = await fetch('/api/sales/inbox/unread-count');
         if (res.ok) {
           const data = await res.json();
-          setInboxUnreadCount(data.count || 0);
+          setInboxUnreadCount((data.crmCount || 0) + (data.infoCount || 0));
         }
       } catch {
         // Ignore
       }
     };
     fetchUnread();
-    const interval = setInterval(fetchUnread, 60000);
+    const interval = setInterval(fetchUnread, 30000);
     return () => clearInterval(interval);
   }, []);
 

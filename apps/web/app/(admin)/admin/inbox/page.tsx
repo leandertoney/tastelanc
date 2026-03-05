@@ -15,9 +15,12 @@ import {
   Check,
   Wand2,
   Paperclip,
+  FileEdit,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import InboxEmailComposer from '@/components/sales/InboxEmailComposer';
+import InboxSentView from '@/components/sales/InboxSentView';
+import InboxDraftsView from '@/components/sales/InboxDraftsView';
 import { SENDER_IDENTITIES, type SenderIdentity } from '@/config/sender-identities';
 import { useFileAttachments } from '@/hooks/useFileAttachments';
 import { EditableAttachmentChips, ReadonlyAttachmentChips } from '@/components/sales/AttachmentChips';
@@ -86,7 +89,11 @@ export default function AdminInboxPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
-  const [activeInbox, setActiveInbox] = useState<'crm' | 'info'>('crm');
+  const [activeInbox, setActiveInbox] = useState<'crm' | 'info' | 'sent' | 'drafts'>('crm');
+
+  // Tab unread counts
+  const [crmUnreadCount, setCrmUnreadCount] = useState(0);
+  const [infoUnreadCount, setInfoUnreadCount] = useState(0);
 
   // Thread view
   const [selectedConvo, setSelectedConvo] = useState<Conversation | null>(null);
@@ -115,6 +122,25 @@ export default function AdminInboxPage() {
   } = useFileAttachments();
 
   const threadEndRef = useRef<HTMLDivElement>(null);
+
+  // Fetch tab unread counts (every 30s)
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch('/api/sales/inbox/unread-count');
+        if (res.ok) {
+          const data = await res.json();
+          setCrmUnreadCount(data.crmCount || 0);
+          setInfoUnreadCount(data.infoCount || 0);
+        }
+      } catch {
+        // Ignore
+      }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Fetch conversations from the sales inbox API (admins have access)
   const fetchConversations = async (retries = 2) => {
@@ -146,6 +172,7 @@ export default function AdminInboxPage() {
   };
 
   useEffect(() => {
+    if (activeInbox === 'sent' || activeInbox === 'drafts') return;
     setIsLoading(true);
     setSelectedConvo(null);
     fetchConversations();
@@ -303,7 +330,14 @@ export default function AdminInboxPage() {
               : 'text-gray-500 hover:text-gray-300'
           }`}
         >
-          CRM Inbox
+          <span className="flex items-center gap-1.5">
+            CRM Inbox
+            {crmUnreadCount > 0 && (
+              <span className="px-1.5 py-0.5 text-[10px] font-medium bg-blue-500 text-white rounded-full min-w-[18px] text-center">
+                {crmUnreadCount}
+              </span>
+            )}
+          </span>
         </button>
         <button
           onClick={() => setActiveInbox('info')}
@@ -316,11 +350,51 @@ export default function AdminInboxPage() {
           <span className="flex items-center gap-1.5">
             <Mail className="w-3.5 h-3.5" />
             info@tastelanc.com
+            {infoUnreadCount > 0 && (
+              <span className="px-1.5 py-0.5 text-[10px] font-medium bg-blue-500 text-white rounded-full min-w-[18px] text-center">
+                {infoUnreadCount}
+              </span>
+            )}
+          </span>
+        </button>
+        <button
+          onClick={() => setActiveInbox('sent')}
+          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            activeInbox === 'sent'
+              ? 'bg-tastelanc-surface-light text-white'
+              : 'text-gray-500 hover:text-gray-300'
+          }`}
+        >
+          <span className="flex items-center gap-1.5">
+            <Send className="w-3.5 h-3.5" />
+            Sent
+          </span>
+        </button>
+        <button
+          onClick={() => setActiveInbox('drafts')}
+          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            activeInbox === 'drafts'
+              ? 'bg-tastelanc-surface-light text-white'
+              : 'text-gray-500 hover:text-gray-300'
+          }`}
+        >
+          <span className="flex items-center gap-1.5">
+            <FileEdit className="w-3.5 h-3.5" />
+            Drafts
           </span>
         </button>
       </div>
 
       {/* Main content */}
+      {activeInbox === 'sent' ? (
+        <div className="h-[calc(100%-120px)]">
+          <InboxSentView />
+        </div>
+      ) : activeInbox === 'drafts' ? (
+        <div className="h-[calc(100%-120px)]">
+          <InboxDraftsView isAdmin onDraftSent={() => fetchConversations()} />
+        </div>
+      ) : (
       <div className="flex gap-4 h-[calc(100%-120px)]">
         {/* Left: Conversation list */}
         <div className={`${selectedConvo ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[380px] md:min-w-[380px]`}>
@@ -671,6 +745,7 @@ export default function AdminInboxPage() {
           )}
         </div>
       </div>
+      )}
 
       {/* Compose modal */}
       {showCompose && (

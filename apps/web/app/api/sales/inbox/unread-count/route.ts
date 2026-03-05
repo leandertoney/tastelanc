@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
 import { getRepSenderEmails } from '@/lib/auth/rep-identity';
+import { INFO_INBOX_EMAILS } from '@/config/sender-identities';
 
 export async function GET() {
   try {
@@ -16,27 +17,35 @@ export async function GET() {
     }
 
     const serviceClient = createServiceRoleClient();
-
-    // Determine which sender emails this user can see
     const repEmails = await getRepSenderEmails(serviceClient, access);
 
-    if (repEmails.length === 0) {
-      return NextResponse.json({ count: 0 });
+    // CRM unread count (emails to rep sender addresses)
+    let crmCount = 0;
+    if (repEmails.length > 0) {
+      const { count } = await serviceClient
+        .from('inbound_emails')
+        .select('id', { count: 'exact', head: true })
+        .in('to_email', repEmails)
+        .eq('is_read', false);
+      crmCount = count || 0;
     }
 
-    // Count unread inbound emails addressed to rep's identities
-    const { count, error } = await serviceClient
-      .from('inbound_emails')
-      .select('id', { count: 'exact', head: true })
-      .in('to_email', repEmails)
-      .eq('is_read', false);
-
-    if (error) {
-      console.error('Error fetching inbox unread count:', error);
-      return NextResponse.json({ error: 'Failed to fetch count' }, { status: 500 });
+    // Info@ unread count (admin only)
+    let infoCount = 0;
+    if (access.isAdmin) {
+      const { count } = await serviceClient
+        .from('inbound_emails')
+        .select('id', { count: 'exact', head: true })
+        .in('to_email', INFO_INBOX_EMAILS)
+        .eq('is_read', false);
+      infoCount = count || 0;
     }
 
-    return NextResponse.json({ count: count || 0 });
+    return NextResponse.json({
+      count: crmCount + infoCount,
+      crmCount,
+      infoCount,
+    });
   } catch (error) {
     console.error('Error in inbox unread count API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
