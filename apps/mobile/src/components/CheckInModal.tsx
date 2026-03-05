@@ -19,6 +19,7 @@ import { recordCheckIn, canCheckIn } from '../lib/checkins';
 import { recordPassiveVisit } from '../lib/visits';
 import { useAuth } from '../hooks/useAuth';
 import { useRecordCheckinForSocialProof } from '../hooks/useSocialProof';
+import { requestReviewIfEligible } from '../lib/reviewPrompts';
 
 interface CheckInModalProps {
   visible: boolean;
@@ -146,6 +147,9 @@ export default function CheckInModal({
         setState('success');
         setPointsEarned(10);
         setMessage(result.message);
+
+        // Moment of delight — ask for review after successful check-in
+        requestReviewIfEligible('check_in');
 
         // Auto-close after success
         setTimeout(() => {

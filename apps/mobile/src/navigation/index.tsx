@@ -18,6 +18,7 @@ import { initRadar, startTracking } from '../lib/radar';
 import { useRadarVisits } from '../hooks/useRadarVisits';
 import { useNotifications } from '../hooks/useNotifications';
 import { incrementSessionCount, requestReviewIfEligible } from '../lib/reviewPrompts';
+import SignInNudge from '../components/SignInNudge';
 
 // Context to allow resetting/completing onboarding from anywhere in the app
 type NavigationContextType = {
@@ -57,7 +58,14 @@ function NavigationInner({
   return (
     <NavigationContainer onReady={onReady}>
       <NotificationHandler>
-        {hasCompletedOnboarding ? <RootNavigator /> : <OnboardingNavigator />}
+        {hasCompletedOnboarding ? (
+          <>
+            <RootNavigator />
+            <SignInNudge />
+          </>
+        ) : (
+          <OnboardingNavigator />
+        )}
       </NotificationHandler>
     </NavigationContainer>
   );
@@ -84,7 +92,7 @@ export default function Navigation() {
 
     try {
       incrementSessionCount().then((count) => {
-        if (count === 5) {
+        if (count === 5 || count === 15 || count === 30) {
           requestReviewIfEligible('session_milestone');
         }
       }).catch((e) => {

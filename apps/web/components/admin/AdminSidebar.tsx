@@ -23,6 +23,7 @@ import {
   HeadphonesIcon,
   PanelLeftClose,
   PanelLeftOpen,
+  Smartphone,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -55,6 +56,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/email-campaigns', icon: Mail, label: 'Campaigns', highlight: true, section: 'Marketing' },
   // INSIGHTS - Analytics and feedback
   { href: '/admin/analytics', icon: BarChart3, label: 'Analytics', section: 'Insights' },
+  { href: '/admin/app-users', icon: Smartphone, label: 'App Users', highlight: true },
   { href: '/admin/feature-requests', icon: Lightbulb, label: 'Feature Requests', highlight: true },
   // GROWTH - Expansion
   { href: '/admin/expansion', icon: Globe, label: 'Expansion', highlight: true, section: 'Growth', superOnly: true },

@@ -6,7 +6,9 @@ export type ReviewTrigger =
   | 'rosie_interaction'
   | 'first_save'
   | 'first_vote'
-  | 'session_milestone';
+  | 'session_milestone'
+  | 'check_in'
+  | 'power_user';
 
 // AsyncStorage keys
 const REVIEW_KEYS = {
@@ -19,7 +21,9 @@ const REVIEW_KEYS = {
 
 // Cooldown period in days
 const PROMPT_COOLDOWN_DAYS = 30;
-const MIN_SESSIONS_BEFORE_PROMPT = 2;
+const MIN_SESSIONS_BEFORE_PROMPT = 3;
+// Engaged users (enough sessions) don't need explicit positive sentiment
+const ENGAGED_USER_SESSIONS = 5;
 
 /**
  * Get user's sentiment from onboarding soft ask
@@ -153,26 +157,32 @@ export async function markReviewPrompted(): Promise<void> {
  */
 export async function shouldPromptReview(trigger: ReviewTrigger): Promise<boolean> {
   try {
-    // Rule 1: User sentiment must be 'positive'
-    const sentiment = await getUserSentiment();
-    if (sentiment !== 'positive') {
-      return false;
-    }
-
-    // Rule 2: Haven't been prompted in last 30 days
+    // Rule 1: Haven't been prompted in last 30 days
     if (await isWithinCooldown()) {
       return false;
     }
 
-    // Rule 3: Haven't already been prompted for this trigger
+    // Rule 2: Haven't already been prompted for this trigger
     const triggersFired = await getTriggersFired();
     if (triggersFired.includes(trigger)) {
       return false;
     }
 
-    // Rule 4: App has been used at least 2 times
+    // Rule 3: App has been used enough
     const sessionCount = await getSessionCount();
     if (sessionCount < MIN_SESSIONS_BEFORE_PROMPT) {
+      return false;
+    }
+
+    // Rule 4: Either positive sentiment OR enough engagement to infer satisfaction
+    // Users who never set sentiment but keep coming back are clearly enjoying the app
+    const sentiment = await getUserSentiment();
+    if (sentiment === 'neutral') {
+      return false; // Explicitly neutral — don't ask
+    }
+    // sentiment === 'positive' → always eligible
+    // sentiment === null (never set) → eligible if engaged enough
+    if (sentiment === null && sessionCount < ENGAGED_USER_SESSIONS) {
       return false;
     }
 
