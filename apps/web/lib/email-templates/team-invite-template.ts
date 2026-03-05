@@ -7,7 +7,7 @@
 import { BRAND } from '@/config/market';
 
 const ROLE_LABELS: Record<string, string> = {
-  sales_rep: 'Sales Representative',
+  sales_rep: 'Restaurant Partnership Manager',
   market_admin: 'Market Administrator',
   admin: 'Administrator',
 };
