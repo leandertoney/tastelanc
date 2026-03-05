@@ -26,6 +26,26 @@ export type RestaurantCategory =
   // Features
   | 'live_music' | 'sports_bar' | 'pet_friendly' | 'byob' | 'late_night' | 'family_friendly' | 'date_night';
 
+export type RestaurantFeature =
+  // Entertainment
+  | 'live_piano' | 'live_band' | 'live_dj' | 'trivia_nights' | 'karaoke'
+  | 'comedy_shows' | 'live_sports_viewing' | 'arcade_games' | 'board_games' | 'pool_tables'
+  // Dining Experience
+  | 'private_dining' | 'prix_fixe_menu' | 'tasting_menu' | 'chefs_table'
+  | 'wine_pairing' | 'beer_flights' | 'cocktail_menu' | 'seasonal_menu' | 'farm_to_table'
+  // Space & Atmosphere
+  | 'outdoor_patio' | 'heated_patio' | 'rooftop_seating' | 'fireplace'
+  | 'waterfront' | 'garden_dining' | 'sidewalk_cafe' | 'covered_outdoor'
+  // Services
+  | 'reservations' | 'walkins_welcome' | 'takeout' | 'delivery' | 'catering'
+  | 'event_space' | 'full_bar' | 'byob_allowed' | 'valet_parking' | 'free_parking' | 'street_parking'
+  // Accessibility & Family
+  | 'wheelchair_accessible' | 'high_chairs' | 'kids_menu' | 'family_friendly'
+  | 'pet_friendly_indoor' | 'pet_friendly_patio'
+  // Dietary Accommodations
+  | 'vegan_options' | 'vegetarian_options' | 'gluten_free_options'
+  | 'halal' | 'kosher' | 'allergy_friendly';
+
 export type SubscriptionTier = 'basic' | 'premium' | 'elite';
 
 export type RewardActionType = 'trivia' | 'checkin' | 'review' | 'photo' | 'share' | 'event' | 'referral';
@@ -51,6 +71,7 @@ export interface BaseRestaurant {
   description: string | null;
   custom_description: string | null;
   categories: RestaurantCategory[];
+  features: RestaurantFeature[];
   is_active: boolean;
   created_at: string;
   updated_at: string;

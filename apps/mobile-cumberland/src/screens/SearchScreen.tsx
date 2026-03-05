@@ -37,6 +37,7 @@ import {
 import type { RestaurantCategory, RestaurantWithTier } from '../types/database';
 import type { RootStackParamList } from '../navigation/types';
 import { SearchBar, CategoryChip, CompactRestaurantCard, MapRestaurantCard } from '../components';
+import FeatureFilterModal from '../components/FeatureFilterModal';
 import { colors, radius } from '../constants/colors';
 import { trackImpression } from '../lib/impressions';
 import { NEIGHBORHOOD_BOUNDARIES } from '../data/neighborhoodBoundaries';
@@ -101,6 +102,8 @@ export default function SearchScreen() {
   // Search & filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<RestaurantCategory | 'all'>('all');
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const [featureFilterVisible, setFeatureFilterVisible] = useState(false);
   const [restaurants, setRestaurants] = useState<RestaurantWithTier[]>([]);
   const [loading, setLoading] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -186,23 +189,25 @@ export default function SearchScreen() {
     }
   };
 
-  // Debounced search
+  // Debounced search — skip while filter modal is open to avoid rapid re-queries
   useEffect(() => {
+    if (featureFilterVisible) return;
+
     const timer = setTimeout(() => {
-      if (searchQuery.trim().length >= 2 || selectedCategory !== 'all') {
+      if (searchQuery.trim().length >= 2 || selectedCategory !== 'all' || selectedFeatures.length > 0) {
         performSearch();
-      } else if (searchQuery.trim().length === 0 && selectedCategory === 'all') {
+      } else if (searchQuery.trim().length === 0 && selectedCategory === 'all' && selectedFeatures.length === 0) {
         loadAllRestaurants();
       }
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery, selectedCategory, selectedFeatures, featureFilterVisible]);
 
   // Dismiss card on search/filter change
   useEffect(() => {
     setSelectedRestaurant(null);
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery, selectedCategory, selectedFeatures]);
 
   const performSearch = useCallback(async () => {
     setLoading(true);
@@ -222,6 +227,10 @@ export default function SearchScreen() {
         query = query.contains('categories', [selectedCategory]);
       }
 
+      if (selectedFeatures.length > 0) {
+        query = query.contains('features', selectedFeatures);
+      }
+
       const { data, error } = await query;
 
       if (error) {
@@ -237,7 +246,7 @@ export default function SearchScreen() {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedCategory, marketId]);
+  }, [searchQuery, selectedCategory, selectedFeatures, marketId]);
 
   // Filter restaurants by distance and add distance field
   const filteredRestaurants = useMemo(() => {
@@ -429,6 +438,7 @@ export default function SearchScreen() {
   }, []);
 
   return (
+    <>
     <GestureHandlerRootView style={styles.root}>
       <View style={styles.container}>
         {/* Full-screen map */}
@@ -517,6 +527,8 @@ export default function SearchScreen() {
               onClear={handleClearSearch}
               placeholder="Search restaurants, bars..."
               autoFocus={false}
+              filterCount={selectedFeatures.length}
+              onFilterPress={() => setFeatureFilterVisible(true)}
             />
           </View>
           <ScrollView
@@ -657,6 +669,19 @@ export default function SearchScreen() {
         </BottomSheet>
       </View>
     </GestureHandlerRootView>
+
+    <FeatureFilterModal
+      visible={featureFilterVisible}
+      selectedFeatures={selectedFeatures}
+      onToggle={(feature) => {
+        setSelectedFeatures((prev) =>
+          prev.includes(feature) ? prev.filter((f) => f !== feature) : [...prev, feature]
+        );
+      }}
+      onClear={() => setSelectedFeatures([])}
+      onClose={() => setFeatureFilterVisible(false)}
+    />
+    </>
   );
 }
 
@@ -691,6 +716,7 @@ const styles = StyleSheet.create({
   },
   chipsContent: {
     paddingHorizontal: 16,
+    alignItems: 'center',
   },
 
   // Loading overlay

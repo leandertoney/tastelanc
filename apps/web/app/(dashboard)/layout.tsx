@@ -23,6 +23,7 @@ import {
   Music,
   TrendingUp,
   HelpCircle,
+  ListChecks,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { signOut } from '@/lib/supabase/auth';
@@ -36,6 +37,7 @@ const navItems = [
   { href: '/dashboard/entertainment', label: 'Entertainment', icon: Music, hint: 'Add live music, trivia nights, and other entertainment listings' },
   { href: '/dashboard/events', label: 'Events', icon: Calendar, hint: 'Create and promote special events at your restaurant' },
   { href: '/dashboard/specials', label: 'Specials', icon: Sparkles, hint: 'Post daily specials, limited-time offers, and promotions' },
+  { href: '/dashboard/features', label: 'Features', icon: ListChecks, hint: 'Toggle amenities like private dining, live piano, and more — helps diners find you' },
   { href: '/dashboard/menu', label: 'Menu', icon: UtensilsCrossed, hint: 'Build and maintain your digital menu with sections and items' },
   { href: '/dashboard/insights', label: 'Market Insights', icon: Lightbulb, hint: 'See how your restaurant compares in your local market' },
   { href: '/dashboard/team', label: 'Team', icon: Users, hint: 'Invite and manage team members who can edit your content' },

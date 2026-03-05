@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -47,7 +47,7 @@ import {
 } from '../components';
 import TierLockedEmptyState from '../components/TierLockedEmptyState';
 import type { Tab } from '../components';
-import { formatCategoryName, formatTime } from '../lib/formatters';
+import { formatCategoryName, formatTime, formatFeatureName, getFeatureIconName } from '../lib/formatters';
 import { colors, radius } from '../constants/colors';
 import { isTierGatingEnabled } from '../lib/feature-flags';
 import { useRecordVisit } from '../hooks/useRadarVisits';
@@ -78,7 +78,7 @@ const getCurrentDay = () => {
 };
 
 // Tab configuration
-const TABS: Tab[] = [
+const BASE_TABS: Tab[] = [
   { key: 'happy_hours', label: 'Happy Hours' },
   { key: 'specials', label: 'Specials' },
   { key: 'events', label: 'Events' },
@@ -303,6 +303,15 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
     }
   }, [userId, id, restaurant, userLocation, recordVisit, isRecordingVisit, visitRecorded, refreshLocation]);
 
+  // Build tabs dynamically — must be before early returns to respect hooks rules
+  const hasFeatures = restaurant?.features && restaurant.features.length > 0;
+  const tabs: Tab[] = useMemo(() => {
+    if (hasFeatures) {
+      return [...BASE_TABS, { key: 'features', label: 'Features' }];
+    }
+    return BASE_TABS;
+  }, [hasFeatures]);
+
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -452,7 +461,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
         )}
 
         {/* Tab Bar */}
-        <TabBar tabs={TABS} activeTab={activeTab} onTabPress={handleTabPress} />
+        <TabBar tabs={tabs} activeTab={activeTab} onTabPress={handleTabPress} />
 
         {/* Tab Content */}
         <View style={styles.tabContent}>
@@ -661,6 +670,24 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                   loading={menusLoading}
                 />
               )}
+            </View>
+          )}
+
+          {/* Features Tab */}
+          {activeTab === 'features' && hasFeatures && (
+            <View style={styles.tabSection}>
+              <View style={styles.featuresGrid}>
+                {restaurant.features!.map((feature: string) => (
+                  <View key={feature} style={styles.featureChip}>
+                    <Ionicons
+                      name={getFeatureIconName(feature) as any}
+                      size={14}
+                      color={colors.accent}
+                    />
+                    <Text style={styles.featureChipText}>{formatFeatureName(feature)}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
           )}
         </View>
@@ -1032,6 +1059,28 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 8,
     textAlign: 'center',
+  },
+
+  featuresGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  featureChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.cardBg,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+    gap: 5,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  featureChipText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.textMuted,
   },
 
   // Photos section
