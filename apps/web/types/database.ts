@@ -77,6 +77,7 @@ export interface Restaurant {
   primary_color: string;
   secondary_color: string;
   categories: RestaurantCategory[];
+  features: string[];
   is_active: boolean;
   is_verified: boolean;
   created_at: string;

@@ -74,6 +74,7 @@ export interface Restaurant {
   description: string | null;
   custom_description: string | null;
   categories: RestaurantCategory[];
+  features: string[];
   cuisine: CuisineType | null;
   is_active: boolean;
   is_verified: boolean;

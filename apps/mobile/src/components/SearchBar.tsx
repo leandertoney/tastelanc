@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   View,
+  Text,
   TextInput,
   StyleSheet,
   TouchableOpacity,
@@ -17,6 +18,8 @@ interface SearchBarProps {
   onBlur?: () => void;
   placeholder?: string;
   autoFocus?: boolean;
+  filterCount?: number;
+  onFilterPress?: () => void;
 }
 
 export default function SearchBar({
@@ -27,6 +30,8 @@ export default function SearchBar({
   onBlur,
   placeholder = 'Search restaurants...',
   autoFocus = false,
+  filterCount = 0,
+  onFilterPress,
 }: SearchBarProps) {
   const [isFocused, setIsFocused] = useState(false);
   const borderAnimation = useRef(new Animated.Value(0)).current;
@@ -85,6 +90,22 @@ export default function SearchBar({
           <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
       )}
+      {onFilterPress && (
+        <TouchableOpacity onPress={onFilterPress} style={styles.filterButton}>
+          <View style={[styles.filterIconContainer, filterCount > 0 && styles.filterIconActive]}>
+            <Ionicons
+              name="options-outline"
+              size={18}
+              color={filterCount > 0 ? '#FFFFFF' : colors.textSecondary}
+            />
+          </View>
+          {filterCount > 0 && (
+            <View style={styles.filterBadge}>
+              <Text style={styles.filterBadgeText}>{filterCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      )}
     </Animated.View>
   );
 }
@@ -111,5 +132,42 @@ const styles = StyleSheet.create({
   clearButton: {
     padding: 4,
     marginLeft: 4,
+  },
+  filterButton: {
+    marginLeft: 6,
+    position: 'relative',
+  },
+  filterIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.cardBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  filterIconActive: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+  filterBadge: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    backgroundColor: colors.accent,
+    borderRadius: 7,
+    minWidth: 14,
+    height: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: colors.inputBg,
+  },
+  filterBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });

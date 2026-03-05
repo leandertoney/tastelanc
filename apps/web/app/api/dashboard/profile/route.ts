@@ -72,6 +72,7 @@ export async function PUT(request: Request) {
       primary_color,
       secondary_color,
       checkin_pin,
+      features,
       // Enrichment fields
       price_range,
       signature_dishes,
@@ -105,6 +106,7 @@ export async function PUT(request: Request) {
     if (email !== undefined) updateData.email = email;
     if (website !== undefined) updateData.website = website;
     if (categories !== undefined) updateData.categories = categories;
+    if (features !== undefined) updateData.features = features;
     if (primary_color !== undefined) updateData.primary_color = primary_color;
     if (secondary_color !== undefined) updateData.secondary_color = secondary_color;
     if (checkin_pin !== undefined) updateData.checkin_pin = checkin_pin;

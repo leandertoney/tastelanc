@@ -6,7 +6,6 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
-  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,11 +14,12 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import type { EventType } from '../types/database';
-import { fetchEntertainmentEvents, ApiEvent, ENTERTAINMENT_TYPES, getEventVenueName } from '../lib/events';
-import { colors, radius, spacing } from '../constants/colors';
+import { fetchEntertainmentEvents, ApiEvent, getEventVenueName } from '../lib/events';
+import { colors, spacing } from '../constants/colors';
 import { useMarket } from '../context/MarketContext';
 import SpotifyStyleListItem from '../components/SpotifyStyleListItem';
 import SearchBar from '../components/SearchBar';
+import EntertainmentFilterModal from '../components/EntertainmentFilterModal';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -98,7 +98,8 @@ function formatEventDate(dateString: string | null, isRecurring: boolean): strin
 export default function EntertainmentViewAllScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { marketId } = useMarket();
-  const [selectedType, setSelectedType] = useState<EventType | null>(null);
+  const [selectedTypes, setSelectedTypes] = useState<EventType[]>([]);
+  const [filterVisible, setFilterVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: events = [], isLoading, refetch, isRefetching } = useQuery({
@@ -107,9 +108,20 @@ export default function EntertainmentViewAllScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Filter events by selected type and search query, then sort chronologically by start time
+  // Count events per type for badges
+  const typeCounts = useMemo(() => {
+    const counts: Partial<Record<EventType, number>> = {};
+    for (const event of events) {
+      counts[event.event_type] = (counts[event.event_type] || 0) + 1;
+    }
+    return counts;
+  }, [events]);
+
+  // Filter events by selected types and search query, then sort chronologically
   const filteredEvents = useMemo(() => {
-    let filtered = selectedType ? events.filter((e) => e.event_type === selectedType) : events;
+    let filtered = selectedTypes.length > 0
+      ? events.filter((e) => selectedTypes.includes(e.event_type))
+      : events;
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -120,11 +132,11 @@ export default function EntertainmentViewAllScreen() {
       );
     }
 
-    // Sort chronologically by start time (hard requirement)
+    // Sort chronologically by start time
     filtered.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
 
     return filtered;
-  }, [events, selectedType, searchQuery]);
+  }, [events, selectedTypes, searchQuery]);
 
   const handlePress = useCallback(
     (event: ApiEvent) => {
@@ -133,8 +145,14 @@ export default function EntertainmentViewAllScreen() {
     [navigation]
   );
 
+  const handleToggleType = useCallback((type: EventType) => {
+    setSelectedTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    );
+  }, []);
+
   const renderItem = ({ item }: { item: ApiEvent }) => {
-    const imageUrl = item.image_url; // API always provides image_url
+    const imageUrl = item.image_url;
     const venueName = getEventVenueName(item) || 'City-wide Event';
     const timeDisplay = formatEventTime(item.start_time, item.end_time);
     const dateDisplay = formatEventDate(item.event_date ?? null, item.is_recurring);
@@ -164,75 +182,64 @@ export default function EntertainmentViewAllScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <SearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Search events or performers..."
-        />
-      </View>
-
-      {/* Type Filter - Icon Pills */}
-      <View style={styles.filterContainer}>
-        {ENTERTAINMENT_TYPES.map((type) => {
-          const isSelected = selectedType === type;
-          return (
-            <TouchableOpacity
-              key={type}
-              style={[styles.filterChip, isSelected && styles.filterChipActive]}
-              onPress={() => setSelectedType(isSelected ? null : type)}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={EVENT_TYPE_ICONS[type]}
-                size={16}
-                color={isSelected ? colors.text : colors.textMuted}
-              />
-              <Text style={[styles.filterChipText, isSelected && styles.filterChipTextActive]}>
-                {EVENT_TYPE_LABELS[type]}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {/* Results Count */}
-      <View style={styles.resultsContainer}>
-        <Text style={styles.resultsText}>
-          {filteredEvents.length} {filteredEvents.length === 1 ? 'event' : 'events'}
-          {selectedType && ` \u00B7 ${EVENT_TYPE_LABELS[selectedType]}`}
-        </Text>
-      </View>
-
-      {/* Events List */}
-      <FlatList
-        data={filteredEvents}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            tintColor={colors.accent}
+    <>
+      <SafeAreaView style={styles.container} edges={['bottom']}>
+        {/* Search Bar with filter icon */}
+        <View style={styles.searchContainer}>
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search events or performers..."
+            filterCount={selectedTypes.length}
+            onFilterPress={() => setFilterVisible(true)}
           />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="musical-notes-outline" size={48} color={colors.textMuted} />
-            <Text style={styles.emptyTitle}>No Entertainment</Text>
-            <Text style={styles.emptyText}>
-              {selectedType
-                ? `No ${EVENT_TYPE_LABELS[selectedType].toLowerCase()} events found`
-                : 'No entertainment events scheduled'}
-            </Text>
-          </View>
-        }
+        </View>
+
+        {/* Results Count */}
+        <View style={styles.resultsContainer}>
+          <Text style={styles.resultsText}>
+            {filteredEvents.length} {filteredEvents.length === 1 ? 'event' : 'events'}
+            {selectedTypes.length > 0 && ` \u00B7 ${selectedTypes.length} filter${selectedTypes.length !== 1 ? 's' : ''}`}
+          </Text>
+        </View>
+
+        {/* Events List */}
+        <FlatList
+          data={filteredEvents}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={refetch}
+              tintColor={colors.accent}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="musical-notes-outline" size={48} color={colors.textMuted} />
+              <Text style={styles.emptyTitle}>No Entertainment</Text>
+              <Text style={styles.emptyText}>
+                {selectedTypes.length > 0
+                  ? 'No events found for the selected filters'
+                  : 'No entertainment events scheduled'}
+              </Text>
+            </View>
+          }
+        />
+      </SafeAreaView>
+
+      <EntertainmentFilterModal
+        visible={filterVisible}
+        selectedTypes={selectedTypes}
+        typeCounts={typeCounts}
+        onToggle={handleToggleType}
+        onClear={() => setSelectedTypes([])}
+        onClose={() => setFilterVisible(false)}
       />
-    </SafeAreaView>
+    </>
   );
 }
 
@@ -250,35 +257,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  filterContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    gap: 8,
-  },
-  filterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: colors.cardBg,
-    borderRadius: radius.full,
-    gap: 6,
-  },
-  filterChipActive: {
-    backgroundColor: colors.accent,
-  },
-  filterChipText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: colors.textMuted,
-  },
-  filterChipTextActive: {
-    color: colors.text,
-  },
   resultsContainer: {
     paddingHorizontal: spacing.md,
+    paddingTop: 10,
     paddingBottom: spacing.sm,
   },
   resultsText: {

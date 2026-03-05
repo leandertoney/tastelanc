@@ -150,6 +150,16 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
                   ))}
                 </div>
               )}
+
+              {restaurant.features && restaurant.features.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {restaurant.features.map((feature: string) => (
+                    <Badge key={feature}>
+                      {capitalizeWords(feature.replace(/_/g, ' '))}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col gap-2">
