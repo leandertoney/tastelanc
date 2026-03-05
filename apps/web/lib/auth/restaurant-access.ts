@@ -60,7 +60,13 @@ export async function verifyRestaurantAccess(
   }
 
   const isAdmin = await checkIsUserAdmin(supabase);
-  const isSalesRep = user.user_metadata?.role === 'sales_rep';
+  // Check sales_rep from profiles table (authoritative) and user_metadata (legacy)
+  const { data: profileData } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+  const isSalesRep = profileData?.role === 'sales_rep' || user.user_metadata?.role === 'sales_rep';
 
   // Resolve market for cross-market isolation (skip for admins — they manage all markets)
   let restaurantQuery = supabase
@@ -175,7 +181,13 @@ export async function getOwnedRestaurant(
   }
 
   const isAdmin = await checkIsUserAdmin(supabase);
-  const isSalesRep = user.user_metadata?.role === 'sales_rep';
+  // Check sales_rep from profiles table (authoritative) and user_metadata (legacy)
+  const { data: profileData } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+  const isSalesRep = profileData?.role === 'sales_rep' || user.user_metadata?.role === 'sales_rep';
 
   // If admin mode with specific restaurant ID (admins can access any market)
   if (adminRestaurantId && isAdmin) {
