@@ -770,52 +770,24 @@ function buildCityReviewCard(
   reviewerEmail: string,
   baseUrl: string
 ): string {
-  const rd = city.research_data || {};
   const score = city.market_potential_score ?? 0;
   const scoreColor = score >= 70 ? '#22c55e' : score >= 40 ? '#eab308' : '#ef4444';
-  const pop = city.population || rd.cluster_population;
-  const region = rd.suggested_region_name;
-  const topCollege = rd.colleges?.[0];
-  const enrollment = rd.total_college_enrollment;
-  const tourismPct = rd.tourism_economic_data?.hospitality_pct_of_gdp;
-  const restaurants = rd.google_places_restaurant_count || rd.venue_breakdown?.restaurants || 0;
-  const cuisineCount = rd.cuisine_distribution?.length || 0;
-  const income = city.median_income;
 
-  // Generate voting links
   const votes = ['interested', 'not_now', 'reject'] as const;
   const voteLinks = Object.fromEntries(
     votes.map(v => [v, `${baseUrl}/api/expansion/review?city=${city.id}&email=${encodeURIComponent(reviewerEmail)}&vote=${v}&token=${generateReviewToken(city.id, reviewerEmail, v)}`])
   );
 
-  const statRows: string[] = [];
-  if (pop) statRows.push(`<td style="padding:4px 8px;font-size:12px;color:#94a3b8;">Pop</td><td style="padding:4px 8px;font-size:12px;color:white;font-weight:500;">${pop.toLocaleString()}</td>`);
-  if (income) statRows.push(`<td style="padding:4px 8px;font-size:12px;color:#94a3b8;">Income</td><td style="padding:4px 8px;font-size:12px;color:white;font-weight:500;">$${income.toLocaleString()}</td>`);
-  if (enrollment) statRows.push(`<td style="padding:4px 8px;font-size:12px;color:#94a3b8;">College</td><td style="padding:4px 8px;font-size:12px;color:white;font-weight:500;">${enrollment.toLocaleString()} students${topCollege ? ` (${topCollege.name})` : ''}</td>`);
-  if (tourismPct != null) statRows.push(`<td style="padding:4px 8px;font-size:12px;color:#94a3b8;">Tourism</td><td style="padding:4px 8px;font-size:12px;color:white;font-weight:500;">${tourismPct}% of county GDP</td>`);
-  if (restaurants > 0) statRows.push(`<td style="padding:4px 8px;font-size:12px;color:#94a3b8;">Dining</td><td style="padding:4px 8px;font-size:12px;color:white;font-weight:500;">${restaurants} restaurants${cuisineCount > 0 ? `, ${cuisineCount} cuisine types` : ''}</td>`);
-
   return `
-  <div style="background:#1e293b;border-radius:12px;padding:20px;margin-bottom:16px;">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
-      <div>
-        <div style="font-size:18px;font-weight:700;color:white;">${city.city_name}, ${city.state_abbr}</div>
-        ${region ? `<div style="font-size:12px;color:#64748b;margin-top:2px;">${region} Region</div>` : ''}
-      </div>
-      <div style="background:${scoreColor}22;color:${scoreColor};font-size:20px;font-weight:700;padding:6px 14px;border-radius:8px;min-width:48px;text-align:center;">
-        ${score}
-      </div>
+  <div style="background:#1e293b;border-radius:10px;padding:14px;margin-bottom:10px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <span style="font-size:15px;font-weight:600;color:white;">${city.city_name}, ${city.state_abbr}</span>
+      <span style="color:${scoreColor};font-size:14px;font-weight:700;">${score}/100</span>
     </div>
-
-    <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
-      ${statRows.map(r => `<tr>${r}</tr>`).join('')}
-    </table>
-
-    <!-- Voting Buttons -->
-    <div style="display:flex;gap:8px;">
-      <a href="${voteLinks.interested}" style="flex:1;display:block;text-align:center;padding:10px;background:#166534;color:#bbf7d0;text-decoration:none;border-radius:8px;font-weight:600;font-size:13px;">Interested</a>
-      <a href="${voteLinks.not_now}" style="flex:1;display:block;text-align:center;padding:10px;background:#854d0e;color:#fef08a;text-decoration:none;border-radius:8px;font-weight:600;font-size:13px;">Not Now</a>
-      <a href="${voteLinks.reject}" style="flex:1;display:block;text-align:center;padding:10px;background:#991b1b;color:#fecaca;text-decoration:none;border-radius:8px;font-weight:600;font-size:13px;">Reject</a>
+    <div style="display:flex;gap:6px;">
+      <a href="${voteLinks.interested}" style="flex:1;display:block;text-align:center;padding:8px;background:#166534;color:#bbf7d0;text-decoration:none;border-radius:6px;font-weight:600;font-size:12px;">Interested</a>
+      <a href="${voteLinks.not_now}" style="flex:1;display:block;text-align:center;padding:8px;background:#854d0e;color:#fef08a;text-decoration:none;border-radius:6px;font-weight:600;font-size:12px;">Not Now</a>
+      <a href="${voteLinks.reject}" style="flex:1;display:block;text-align:center;padding:8px;background:#991b1b;color:#fecaca;text-decoration:none;border-radius:6px;font-weight:600;font-size:12px;">Reject</a>
     </div>
   </div>`;
 }
@@ -849,47 +821,6 @@ async function stepNotifyAdmin(
     const DASHBOARD_URL = `${BASE_URL}/admin/expansion`;
     const ACCENT = '#A41E22';
 
-    // Fetch pipeline stats for the progress bar
-    const pipelineStats = { researching: 0, researched: 0, brand_ready: 0, approved: 0, live: 0, posted_jobs: 0 };
-    if (supabase) {
-      const statuses = ['researching', 'researched', 'brand_ready', 'approved', 'live'];
-      for (const status of statuses) {
-        const { count } = await supabase
-          .from('expansion_cities')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', status);
-        (pipelineStats as Record<string, number>)[status] = count ?? 0;
-      }
-      pipelineStats.posted_jobs = needsAdminAttention.totalPostedJobs;
-    }
-
-    // Fetch recently branded cities with avatars for thumbnails
-    const brandThumbnails: { city: string; avatar: string; name: string }[] = [];
-    if (supabase && brandsGenerated.length > 0) {
-      for (const cityName of brandsGenerated.slice(0, 5)) {
-        const { data: city } = await supabase
-          .from('expansion_cities')
-          .select('id')
-          .eq('city_name', cityName)
-          .single();
-        if (city) {
-          const { data: brands } = await supabase
-            .from('expansion_brand_drafts')
-            .select('app_name, avatar_image_url, ai_assistant_name')
-            .eq('city_id', city.id)
-            .not('avatar_image_url', 'is', null)
-            .limit(3);
-          if (brands) {
-            for (const b of brands) {
-              if (b.avatar_image_url) {
-                brandThumbnails.push({ city: cityName, avatar: b.avatar_image_url, name: b.ai_assistant_name });
-              }
-            }
-          }
-        }
-      }
-    }
-
     // Fetch cities needing review votes + existing votes
     let citiesForReview: CityForReview[] = [];
     let existingVotes: Record<string, { reviewer_email: string; vote: string }[]> = {};
@@ -913,7 +844,6 @@ async function stepNotifyAdmin(
           status: c.status,
         }));
 
-        // Fetch existing votes for these cities
         const cityIds = reviewCities.map(c => c.id);
         if (cityIds.length > 0) {
           const { data: votes } = await supabase
@@ -943,34 +873,23 @@ async function stepNotifyAdmin(
 
     // Send personalized email to each team member
     for (const member of EXPANSION_TEAM) {
-      // Filter cities this member hasn't voted on yet
       const unvotedCities = citiesForReview.filter(c => {
         const cityVotes = existingVotes[c.id] || [];
         return !cityVotes.some(v => v.reviewer_email === member.email);
       });
 
-      // Cities where partner voted but this member hasn't
-      const partnerVotedCities = unvotedCities.filter(c => {
-        const cityVotes = existingVotes[c.id] || [];
-        return cityVotes.length > 0;
-      });
-
-      // Cities with consensus or split decisions
       const decidedCities = citiesForReview.filter(c => {
         const cityVotes = existingVotes[c.id] || [];
         return cityVotes.length >= EXPANSION_TEAM.length;
       });
 
       const VOTE_LABELS: Record<string, string> = { interested: 'Interested', not_now: 'Not Now', reject: 'Reject' };
-      const VOTE_COLORS: Record<string, string> = { interested: '#22c55e', not_now: '#eab308', reject: '#ef4444' };
 
-      // Build voting cards for unvoted cities
       const votingCardsHtml = unvotedCities.length > 0
         ? unvotedCities.map(c => buildCityReviewCard(c, member.email, BASE_URL)).join('')
         : '';
 
-      // Build vote summary for decided cities
-      const voteSummaryHtml = decidedCities.length > 0
+      const decidedListHtml = decidedCities.length > 0
         ? decidedCities.map(c => {
             const cityVotes = existingVotes[c.id] || [];
             const allSame = cityVotes.every(v => v.vote === cityVotes[0].vote);
@@ -978,150 +897,59 @@ async function stepNotifyAdmin(
             const consensusColor = allSame
               ? (cityVotes[0].vote === 'interested' ? '#22c55e' : cityVotes[0].vote === 'not_now' ? '#eab308' : '#ef4444')
               : '#3b82f6';
-            return `
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #334155;">
+            return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #334155;">
               <span style="color:white;font-size:13px;">${c.city_name}, ${c.state_abbr}</span>
               <span style="color:${consensusColor};font-size:12px;font-weight:600;">${consensusLabel}</span>
             </div>`;
           }).join('')
         : '';
 
-      // Build partner's pending votes section
-      const partnerPendingHtml = partnerVotedCities.length > 0
-        ? partnerVotedCities.map(c => {
-            const cityVotes = existingVotes[c.id] || [];
-            const partnerVote = cityVotes.find(v => v.reviewer_email !== member.email);
-            const partnerMember = EXPANSION_TEAM.find(m => m.email === partnerVote?.reviewer_email);
-            return `
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;">
-              <span style="color:#94a3b8;font-size:12px;">${c.city_name} — ${partnerMember?.name || 'Partner'} voted
-                <span style="color:${VOTE_COLORS[partnerVote?.vote || ''] || '#94a3b8'};font-weight:600;">${VOTE_LABELS[partnerVote?.vote || ''] || partnerVote?.vote}</span>
-              </span>
-            </div>`;
-          }).join('')
-        : '';
+      // Build a brief summary line
+      const summaryParts: string[] = [];
+      if (citiesSuggested > 0) summaryParts.push(`${citiesSuggested} new cities added`);
+      if (citiesResearched.length > 0) summaryParts.push(`${citiesResearched.length} researched`);
+      if (brandsGenerated.length > 0) summaryParts.push(`${brandsGenerated.length} branded`);
+      if (jobsAutoPosted.length > 0) summaryParts.push(`${jobsAutoPosted.length} jobs posted`);
+      const summaryLine = summaryParts.length > 0 ? summaryParts.join(' · ') : '';
 
       const html = `
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
 <body style="margin:0;padding:0;background:#0f172a;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-<div style="max-width:640px;margin:0 auto;padding:24px;">
+<div style="max-width:520px;margin:0 auto;padding:20px;">
 
-  <!-- Header -->
-  <div style="text-align:center;margin-bottom:24px;">
-    <h1 style="color:white;font-size:22px;margin:0;">Hey ${member.name}, here's your expansion update</h1>
-    <p style="color:#64748b;font-size:13px;margin:4px 0 0;">${new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</p>
-  </div>
+  <h2 style="color:white;font-size:18px;margin:0 0 4px;">Expansion Update</h2>
+  <p style="color:#64748b;font-size:12px;margin:0 0 16px;">${new Date().toLocaleDateString('en-US', { dateStyle: 'medium' })}</p>
 
-  <!-- Pipeline Progress Bar -->
-  <div style="background:#1e293b;border-radius:12px;padding:16px;margin-bottom:20px;">
-    <h3 style="color:white;font-size:13px;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;">Pipeline</h3>
-    <div style="display:flex;gap:0;border-radius:8px;overflow:hidden;height:28px;background:#0f172a;">
-      ${pipelineStats.researching > 0 ? `<div style="background:#3b82f6;flex:${pipelineStats.researching};display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:600;">${pipelineStats.researching}</div>` : ''}
-      ${pipelineStats.researched > 0 ? `<div style="background:#8b5cf6;flex:${pipelineStats.researched};display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:600;">${pipelineStats.researched}</div>` : ''}
-      ${pipelineStats.brand_ready > 0 ? `<div style="background:#f59e0b;flex:${pipelineStats.brand_ready};display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:600;">${pipelineStats.brand_ready}</div>` : ''}
-      ${pipelineStats.approved > 0 ? `<div style="background:#10b981;flex:${pipelineStats.approved};display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:600;">${pipelineStats.approved}</div>` : ''}
-      ${pipelineStats.live > 0 ? `<div style="background:${ACCENT};flex:${pipelineStats.live};display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:600;">${pipelineStats.live}</div>` : ''}
-    </div>
-    <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:#64748b;">
-      <span style="color:#3b82f6;">Research ${pipelineStats.researching}</span>
-      <span style="color:#8b5cf6;">Researched ${pipelineStats.researched}</span>
-      <span style="color:#f59e0b;">Branded ${pipelineStats.brand_ready}</span>
-      <span style="color:#10b981;">Approved ${pipelineStats.approved}</span>
-      <span style="color:${ACCENT};">Live ${pipelineStats.live}</span>
-    </div>
-  </div>
-
-  ${hasNewWork ? `
-  <!-- New Work Summary -->
-  <div style="background:#1e293b;border-radius:12px;padding:16px;margin-bottom:20px;">
-    <h3 style="color:white;font-size:13px;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;">New This Run</h3>
-    <table style="width:100%;border-collapse:collapse;">
-      ${citiesSuggested > 0 ? `<tr><td style="padding:5px 0;color:#94a3b8;font-size:13px;">Cities Added</td><td style="padding:5px 0;text-align:right;color:white;font-weight:600;font-size:13px;">${citiesSuggested}</td></tr>` : ''}
-      ${citiesResearched.length > 0 ? `<tr><td style="padding:5px 0;color:#94a3b8;font-size:13px;">Researched</td><td style="padding:5px 0;text-align:right;color:white;font-weight:600;font-size:13px;">${citiesResearched.join(', ')}</td></tr>` : ''}
-      ${brandsGenerated.length > 0 ? `<tr><td style="padding:5px 0;color:#94a3b8;font-size:13px;">Brands Generated</td><td style="padding:5px 0;text-align:right;color:white;font-weight:600;font-size:13px;">${brandsGenerated.join(', ')}</td></tr>` : ''}
-      ${jobsGenerated.length > 0 ? `<tr><td style="padding:5px 0;color:#94a3b8;font-size:13px;">Jobs Generated</td><td style="padding:5px 0;text-align:right;color:white;font-weight:600;font-size:13px;">${jobsGenerated.join(', ')}</td></tr>` : ''}
-      ${jobsAutoPosted.length > 0 ? `<tr><td style="padding:5px 0;color:#94a3b8;font-size:13px;">Jobs Posted</td><td style="padding:5px 0;text-align:right;color:#22c55e;font-weight:600;font-size:13px;">${jobsAutoPosted.length}</td></tr>` : ''}
-    </table>
-  </div>
-  ` : ''}
-
-  ${brandThumbnails.length > 0 ? `
-  <!-- Brand Mascots -->
-  <div style="background:#1e293b;border-radius:12px;padding:16px;margin-bottom:20px;">
-    <h3 style="color:white;font-size:13px;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;">New Mascots</h3>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
-      ${brandThumbnails.slice(0, 6).map(b => `
-        <div style="text-align:center;">
-          <img src="${b.avatar}" width="56" height="56" style="border-radius:50%;border:2px solid #334155;" alt="${b.name}" />
-          <p style="color:#e2e8f0;font-size:11px;margin:4px 0 0;">${b.name}</p>
-          <p style="color:#64748b;font-size:10px;margin:2px 0 0;">${b.city}</p>
-        </div>
-      `).join('')}
-    </div>
-  </div>
-  ` : ''}
+  ${summaryLine ? `<p style="color:#94a3b8;font-size:13px;margin:0 0 16px;">${summaryLine}</p>` : ''}
 
   ${unvotedCities.length > 0 ? `
-  <!-- Cities Needing Your Vote -->
-  <div style="margin-bottom:20px;">
-    <h3 style="color:white;font-size:13px;margin:0 0 14px;text-transform:uppercase;letter-spacing:1px;">Cities Needing Your Vote (${unvotedCities.length})</h3>
-    ${partnerPendingHtml ? `
-    <div style="background:#1e293b;border:1px solid #3b82f644;border-radius:8px;padding:12px;margin-bottom:14px;">
-      <p style="color:#93c5fd;font-size:12px;margin:0 0 4px;font-weight:600;">Your partner already voted on some of these:</p>
-      ${partnerPendingHtml}
-    </div>
-    ` : ''}
-    ${votingCardsHtml}
-  </div>
+  <h3 style="color:white;font-size:13px;margin:0 0 10px;">Vote on ${unvotedCities.length} ${unvotedCities.length === 1 ? 'city' : 'cities'}</h3>
+  ${votingCardsHtml}
   ` : ''}
 
-  ${voteSummaryHtml ? `
-  <!-- Vote Summary -->
-  <div style="background:#1e293b;border-radius:12px;padding:16px;margin-bottom:20px;">
-    <h3 style="color:white;font-size:13px;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;">Decided Cities</h3>
-    ${voteSummaryHtml}
+  ${decidedListHtml ? `
+  <div style="background:#1e293b;border-radius:10px;padding:14px;margin-bottom:14px;">
+    <h3 style="color:white;font-size:13px;margin:0 0 8px;">Decided</h3>
+    ${decidedListHtml}
   </div>
   ` : ''}
 
   ${totalPending > 0 ? `
-  <!-- Needs Attention -->
-  <div style="background:#1e293b;border:1px solid ${ACCENT}44;border-radius:12px;padding:16px;margin-bottom:20px;">
-    <h3 style="color:${ACCENT};font-size:13px;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;">Needs Attention</h3>
-    <table style="width:100%;border-collapse:collapse;">
-      ${needsAdminAttention.brandsToReview > 0 ? `<tr><td style="padding:5px 0;color:#94a3b8;font-size:13px;">Brand Selection</td><td style="padding:5px 0;text-align:right;color:#f59e0b;font-weight:600;font-size:13px;">${needsAdminAttention.brandsToReview} cities</td></tr>` : ''}
-      ${needsAdminAttention.jobsToApprove > 0 ? `<tr><td style="padding:5px 0;color:#94a3b8;font-size:13px;">Job Approvals</td><td style="padding:5px 0;text-align:right;color:#f59e0b;font-weight:600;font-size:13px;">${needsAdminAttention.jobsToApprove}</td></tr>` : ''}
-      ${needsAdminAttention.citiesReadyToApprove > 0 ? `<tr><td style="padding:5px 0;color:#94a3b8;font-size:13px;">Ready for Launch</td><td style="padding:5px 0;text-align:right;color:#22c55e;font-weight:600;font-size:13px;">${needsAdminAttention.citiesReadyToApprove}</td></tr>` : ''}
-      ${needsAdminAttention.newApplications > 0 ? `<tr><td style="padding:5px 0;color:#94a3b8;font-size:13px;">New Applications</td><td style="padding:5px 0;text-align:right;color:#f59e0b;font-weight:600;font-size:13px;">${needsAdminAttention.newApplications}</td></tr>` : ''}
-    </table>
-    <div style="text-align:center;margin-top:14px;">
-      <a href="${DASHBOARD_URL}" style="display:inline-block;background:${ACCENT};color:white;text-decoration:none;padding:10px 24px;border-radius:8px;font-weight:600;font-size:13px;">Open Dashboard</a>
-    </div>
-  </div>
+  <p style="color:#f59e0b;font-size:13px;margin:0 0 14px;">${totalPending} item${totalPending > 1 ? 's' : ''} need your review on the dashboard.</p>
   ` : ''}
 
-  ${errors.length > 0 ? `
-  <div style="background:#1e293b;border:1px solid #ef444444;border-radius:12px;padding:16px;margin-bottom:20px;">
-    <h3 style="color:#ef4444;font-size:13px;margin:0 0 8px;">Errors (${errors.length})</h3>
-    ${errors.map(err => `<p style="color:#fca5a5;font-size:12px;margin:4px 0;">&bull; ${err}</p>`).join('')}
+  <div style="text-align:center;margin-top:8px;">
+    <a href="${DASHBOARD_URL}" style="display:inline-block;background:${ACCENT};color:white;text-decoration:none;padding:10px 24px;border-radius:8px;font-weight:600;font-size:13px;">Open Dashboard</a>
   </div>
-  ` : ''}
 
-  <!-- Footer -->
-  <div style="text-align:center;margin-top:24px;padding-top:16px;border-top:1px solid #1e293b;">
-    <p style="color:#475569;font-size:11px;margin:0;">
-      TasteLanc Expansion Agent &bull;
-      <a href="${DASHBOARD_URL}" style="color:${ACCENT};">Dashboard</a> &bull;
-      <a href="${BASE_URL}/api/jobs/feed.xml" style="color:${ACCENT};">Indeed Feed</a>
-    </p>
-  </div>
+  ${errors.length > 0 ? `<p style="color:#fca5a5;font-size:11px;margin:16px 0 0;">${errors.length} error${errors.length > 1 ? 's' : ''} occurred — check dashboard for details.</p>` : ''}
 
 </div>
 </body>
 </html>`;
 
-      // Send to this team member's @in.tastelanc.com inbox (routes through Resend inbound → webhook → dashboard inbox)
       const senderIdentity = getSenderByEmail(member.senderIdentity);
       const deliveryEmail = senderIdentity?.replyEmail || member.email;
 
