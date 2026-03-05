@@ -134,7 +134,7 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
       }
 
       // If sales mode with specific restaurant ID
-      const userIsSalesRep = user.user_metadata?.role === 'sales_rep';
+      const userIsSalesRep = profile?.role === 'sales_rep' || user.user_metadata?.role === 'sales_rep';
       if (salesMode && adminRestaurantId && userIsSalesRep) {
         let salesQuery = supabase
           .from('restaurants')
