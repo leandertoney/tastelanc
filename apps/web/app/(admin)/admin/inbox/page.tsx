@@ -89,7 +89,8 @@ export default function AdminInboxPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
-  const [activeInbox, setActiveInbox] = useState<'crm' | 'info' | 'sent' | 'drafts'>('crm');
+  const [activeInbox, setActiveInbox] = useState<'crm' | 'info'>('crm');
+  const [activeView, setActiveView] = useState<'all' | 'unread' | 'sent' | 'drafts'>('all');
 
   // Tab unread counts
   const [crmUnreadCount, setCrmUnreadCount] = useState(0);
@@ -172,11 +173,11 @@ export default function AdminInboxPage() {
   };
 
   useEffect(() => {
-    if (activeInbox === 'sent' || activeInbox === 'drafts') return;
+    if (activeView === 'sent' || activeView === 'drafts') return;
     setIsLoading(true);
     setSelectedConvo(null);
     fetchConversations();
-  }, [filter, activeInbox]);
+  }, [filter, activeInbox, activeView]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -323,7 +324,7 @@ export default function AdminInboxPage() {
       {/* Inbox tabs */}
       <div className="flex gap-1 mb-3 bg-tastelanc-surface rounded-lg p-1 w-fit">
         <button
-          onClick={() => setActiveInbox('crm')}
+          onClick={() => { setActiveInbox('crm'); setActiveView('all'); }}
           className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
             activeInbox === 'crm'
               ? 'bg-tastelanc-surface-light text-white'
@@ -340,7 +341,7 @@ export default function AdminInboxPage() {
           </span>
         </button>
         <button
-          onClick={() => setActiveInbox('info')}
+          onClick={() => { setActiveInbox('info'); setActiveView('all'); }}
           className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
             activeInbox === 'info'
               ? 'bg-tastelanc-surface-light text-white'
@@ -357,40 +358,14 @@ export default function AdminInboxPage() {
             )}
           </span>
         </button>
-        <button
-          onClick={() => setActiveInbox('sent')}
-          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-            activeInbox === 'sent'
-              ? 'bg-tastelanc-surface-light text-white'
-              : 'text-gray-500 hover:text-gray-300'
-          }`}
-        >
-          <span className="flex items-center gap-1.5">
-            <Send className="w-3.5 h-3.5" />
-            Sent
-          </span>
-        </button>
-        <button
-          onClick={() => setActiveInbox('drafts')}
-          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-            activeInbox === 'drafts'
-              ? 'bg-tastelanc-surface-light text-white'
-              : 'text-gray-500 hover:text-gray-300'
-          }`}
-        >
-          <span className="flex items-center gap-1.5">
-            <FileEdit className="w-3.5 h-3.5" />
-            Drafts
-          </span>
-        </button>
       </div>
 
       {/* Main content */}
-      {activeInbox === 'sent' ? (
+      {activeView === 'sent' ? (
         <div className="h-[calc(100%-120px)]">
           <InboxSentView />
         </div>
-      ) : activeInbox === 'drafts' ? (
+      ) : activeView === 'drafts' ? (
         <div className="h-[calc(100%-120px)]">
           <InboxDraftsView isAdmin onDraftSent={() => fetchConversations()} />
         </div>
@@ -411,17 +386,34 @@ export default function AdminInboxPage() {
               />
             </div>
             <div className="flex gap-1">
-              {(['all', 'unread'] as const).map((f) => (
+              {([
+                { key: 'all' as const, label: 'All' },
+                { key: 'unread' as const, label: 'Unread' },
+                { key: 'sent' as const, label: 'Sent', icon: Send },
+                { key: 'drafts' as const, label: 'Drafts', icon: FileEdit },
+              ]).map((tab) => (
                 <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                    filter === f
-                      ? 'bg-tastelanc-surface-light text-white'
-                      : 'text-gray-500 hover:text-gray-300'
+                  key={tab.key}
+                  onClick={() => {
+                    if (tab.key === 'sent' || tab.key === 'drafts') {
+                      setActiveView(tab.key);
+                    } else {
+                      setActiveView('all');
+                      setFilter(tab.key);
+                    }
+                  }}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    (tab.key === 'sent' || tab.key === 'drafts')
+                      ? activeView === tab.key
+                        ? 'bg-tastelanc-surface-light text-white'
+                        : 'text-gray-500 hover:text-gray-300'
+                      : activeView !== 'sent' && activeView !== 'drafts' && filter === tab.key
+                        ? 'bg-tastelanc-surface-light text-white'
+                        : 'text-gray-500 hover:text-gray-300'
                   }`}
                 >
-                  {f === 'all' ? 'All' : 'Unread'}
+                  {tab.icon && <tab.icon className="w-3 h-3" />}
+                  {tab.label}
                 </button>
               ))}
             </div>
