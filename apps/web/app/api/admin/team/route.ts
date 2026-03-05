@@ -63,6 +63,9 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: 'User exists but could not be found' }, { status: 500 });
         }
         userId = found.id;
+        // User exists in auth but had no profile — they likely signed up via mobile
+        // app anonymously. They still need password setup for the web CRM.
+        needsPasswordSetup = true;
       } else {
         console.error('Error creating user:', createError);
         return NextResponse.json({ error: createError?.message || 'Failed to create user' }, { status: 500 });

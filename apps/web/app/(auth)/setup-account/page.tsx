@@ -88,7 +88,8 @@ function SetupAccountContent() {
 
       setSuccess(true);
       setTimeout(() => {
-        router.push('/login');
+        // Redirect sales/admin team to CRM, restaurant team to login
+        router.push(restaurantName ? '/login' : '/sales');
       }, 3000);
     } catch {
       setError('An error occurred. Please try again.');
@@ -196,10 +197,10 @@ function SetupAccountContent() {
                   You&apos;re all set{name ? `, ${name}` : ''}!
                 </h2>
                 <p className="text-tastelanc-header-text/60 text-lg">
-                  Your {restaurantName} dashboard is ready.
+                  {restaurantName ? `Your ${restaurantName} dashboard is ready.` : 'Your CRM dashboard is ready.'}
                 </p>
                 <p className="text-tastelanc-header-text/40 mt-4">
-                  Redirecting to login...
+                  Redirecting to {restaurantName ? 'login' : 'your dashboard'}...
                 </p>
               </div>
             ) : (
@@ -319,7 +320,7 @@ function SetupAccountContent() {
               <p className="text-tastelanc-header-text/60 mt-2">
                 {restaurantName
                   ? `Your ${restaurantName} dashboard is ready. Redirecting to login...`
-                  : 'Your password has been set. Redirecting to login...'}
+                  : 'Your CRM dashboard is ready. Redirecting to your dashboard...'}
               </p>
             </>
           ) : (
