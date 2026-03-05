@@ -12,7 +12,7 @@ import {
 } from '@/lib/rosie/blog-system-prompt';
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
+  apiKey: process.env.OPENAI_API_KEY_BLOG || process.env.OPENAI_API_KEY!,
 });
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -574,7 +574,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!process.env.OPENAI_API_KEY || !process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if (!(process.env.OPENAI_API_KEY_BLOG || process.env.OPENAI_API_KEY) || !process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       throw new Error('Missing required environment variables');
     }
 

@@ -6,7 +6,7 @@ import { createClient as createSupabaseAdmin } from '@supabase/supabase-js';
 import { MARKET_SLUG, BRAND } from '@/config/market';
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
+  apiKey: process.env.OPENAI_API_KEY_BLOG || process.env.OPENAI_API_KEY!,
 });
 
 // AI system prompt (simplified version for manual trigger)
@@ -71,8 +71,8 @@ export async function POST(request: Request) {
     catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
     // Check for OpenAI key
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json({ error: 'OPENAI_API_KEY not configured' }, { status: 500 });
+    if (!(process.env.OPENAI_API_KEY_BLOG || process.env.OPENAI_API_KEY)) {
+      return NextResponse.json({ error: 'OPENAI_API_KEY_BLOG not configured' }, { status: 500 });
     }
 
     const body = await request.json().catch(() => ({}));

@@ -7,7 +7,7 @@ import { ChatMessage, ROSIE_CONFIG } from '@/lib/rosie/types';
 import { MARKET_SLUG } from '@/config/market';
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
+  apiKey: process.env.OPENAI_API_KEY_WEB_CHAT || process.env.OPENAI_API_KEY!,
 });
 
 // Create Supabase client for API route (without cookies)
