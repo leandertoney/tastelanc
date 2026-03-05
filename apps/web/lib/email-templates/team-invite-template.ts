@@ -61,7 +61,7 @@ Welcome to the ${BRAND.name} Team
 </p>
 
 <p style="margin:0 0 14px 0;font-size:15px;line-height:1.6;color:#1a1a1a;">
-You've been added as a <strong>${roleLabel}</strong> for ${BRAND.name}.${isNewUser ? ' Click below to set up your account and get started.' : ' Sign in to access your dashboard.'}
+You've been added as a <strong>${roleLabel}</strong> for ${BRAND.name}.${isNewUser ? ' Click below to set up your password and access your CRM dashboard.' : ` Sign in at <strong>${BRAND.domain}/sales</strong> to access your CRM dashboard.`}
 </p>
 
 <p style="margin:16px 0 0 0;font-size:15px;line-height:1.6;color:#1a1a1a;">
@@ -69,7 +69,7 @@ You've been added as a <strong>${roleLabel}</strong> for ${BRAND.name}.${isNewUs
 </p>
 
 <p style="margin:24px 0 0 0;font-size:14px;line-height:1.6;color:#666;">
-Your dashboard includes lead management, activity tracking, email outreach, and more.
+Your CRM dashboard at <strong>${BRAND.domain}/sales</strong> includes lead management, activity tracking, email outreach, and more.
 </p>
 
 <!-- Signature -->
@@ -107,11 +107,11 @@ This is an internal team invitation from ${BRAND.name}. If you didn't expect thi
 
 Welcome to the ${BRAND.name} Team
 
-You've been added as a ${roleLabel} for ${BRAND.name}.${isNewUser ? ' Click the link below to set up your account and get started.' : ' Sign in to access your dashboard.'}
+You've been added as a ${roleLabel} for ${BRAND.name}.${isNewUser ? ' Click the link below to set up your password and access your CRM dashboard.' : ` Sign in at ${BRAND.domain}/sales to access your CRM dashboard.`}
 
 ${ctaText}: ${actionLink}
 
-Your dashboard includes lead management, activity tracking, email outreach, and more.
+Your CRM dashboard at ${BRAND.domain}/sales includes lead management, activity tracking, email outreach, and more.
 
 --
 The ${BRAND.name} Team
