@@ -33,14 +33,17 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Resolve admin status from profiles table (database-driven roles)
+  // Resolve roles from profiles table (authoritative source for admin + sales roles)
   let isAdmin = false;
+  let profileRole: string | null = null;
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role, admin_market_id')
       .eq('id', user.id)
       .single();
+
+    profileRole = profile?.role || null;
 
     if (profile?.role === 'super_admin' || profile?.role === 'co_founder') {
       isAdmin = true;
@@ -58,7 +61,8 @@ export async function middleware(request: NextRequest) {
   const userRole = user?.user_metadata?.role;
   const isRestaurantOwner = userRole === 'restaurant_owner';
   const isSelfPromoter = userRole === 'self_promoter';
-  const isSalesRep = userRole === 'sales_rep';
+  // Check sales_rep from both user_metadata AND profiles table (profiles is authoritative)
+  const isSalesRep = userRole === 'sales_rep' || profileRole === 'sales_rep';
 
   // Admin routes - redirect to login if not admin
   if (request.nextUrl.pathname.startsWith('/admin')) {
