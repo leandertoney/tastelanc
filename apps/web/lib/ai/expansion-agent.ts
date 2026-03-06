@@ -506,7 +506,8 @@ Return ONLY the JSON object.`;
  */
 export async function generateBrandProposals(
   city: ExpansionCity,
-  count: number = 3
+  count: number = 3,
+  avoidNames: string[] = []
 ): Promise<BrandProposal[]> {
   const systemPrompt =
     'You are a brand identity designer for a chain of local dining discovery apps. ' +
@@ -557,12 +558,10 @@ For each proposal, generate a JSON object with:
 - "app_name": string — follows "Taste{Region}" pattern (e.g., "TasteYork", "TasteLehigh", "TasteBerks")
 - "tagline": string — follows "Eat. Drink. Experience {Region}." pattern
 - "ai_assistant_name": string — CRITICAL RULES:
-  1. The name MUST end in "-ie" or "-y" (pronounced -ee) to match our brand convention
-  2. The name MUST be directly inspired by something iconic to THIS specific city/region — a historical figure, landmark, symbol, mascot, founding story, or cultural reference. Examples of how our existing names work:
-     - Lancaster PA → "Rosie" — inspired by the RED ROSE, Lancaster's city symbol (War of the Roses)
-     - Cumberland County PA → "Mollie" — inspired by MOLLY PITCHER, the Revolutionary War heroine from Carlisle, PA
-  3. Each of the ${count} proposals MUST derive its name from a DIFFERENT local reference — do NOT suggest similar names or the same cultural reference twice
-  4. NEVER use: Rosie, Mollie/Molly, or generic names with no city connection (no Sadie, Ellie, Sophie unless they reference a specific local figure)
+  1. The name MUST be directly inspired by something iconic to THIS specific city/region — a historical figure, landmark, symbol, mascot, founding story, natural feature, or cultural reference. If you said this name to a local resident, they should IMMEDIATELY recognize the reference.
+  2. The name should feel warm and approachable (like a friend's name), but does NOT need to end in -ie or -y. Natural, meaningful names are better than forced suffixes. Good examples: "Pepper" (for a spicy food city), "Ruby" (for a gem-mining region), "Birch" (for a mountain town), "Rosie" (Lancaster's Red Rose), "Mollie" (Molly Pitcher of Carlisle).
+  3. Each of the ${count} proposals MUST derive its name from a COMPLETELY DIFFERENT local reference — do NOT suggest similar names or the same cultural reference twice.
+  4. BANNED NAMES — NEVER use any of these generic names that have no city-specific meaning: Gracie, Callie, Sophie, Ellie, Tillie, Sadie, Hattie, Josie, Winnie, Dixie, Daisy, Addie, Benie, Carolinie, Gullahie, Calhounie. Also never use: Rosie, Mollie/Molly (already taken).${avoidNames.length > 0 ? `\n  5. ALREADY USED BY OTHER CITIES — do NOT reuse: ${avoidNames.join(', ')}` : ''}
   5. Include a brief note in the market_config_json under "ai_name_origin" explaining what local reference inspired the name
 - "premium_name": string — follows "{AppName}+" pattern
 - "colors": object matching this exact shape:
