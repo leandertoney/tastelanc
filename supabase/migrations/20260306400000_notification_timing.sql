@@ -29,7 +29,7 @@ BEGIN
     url := 'https://tastelanc.com/api/cron/todays-pick',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.settings.cron_secret', true)
+      'Authorization', 'Bearer 876456bac7b8a1d35318d38f7292858266e443606d9e54e41986583a297ab95a'
     ),
     body := '{"market_slug": "lancaster-pa"}'::jsonb
   );
@@ -46,7 +46,7 @@ BEGIN
     url := 'https://tastelanc.com/api/cron/todays-pick',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.settings.cron_secret', true)
+      'Authorization', 'Bearer 876456bac7b8a1d35318d38f7292858266e443606d9e54e41986583a297ab95a'
     ),
     body := '{"market_slug": "cumberland-pa"}'::jsonb
   );
