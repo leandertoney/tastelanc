@@ -47,9 +47,9 @@ const ACTION_LABELS: Record<string, string> = {
 const STATUS_ORDER: Record<string, number> = {
   brand_ready: 0,
   approved: 1,
-  researched: 2,
+  setup_in_progress: 2,
   researching: 3,
-  setup_in_progress: 4,
+  researched: 3, // same as researching — user sees both as "in progress"
   live: 5,
   on_hold: 6,
   rejected: 7,
@@ -76,6 +76,7 @@ export default function ExpansionPipelinePage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [votingCityId, setVotingCityId] = useState<string | null>(null);
   const [showVoteQueue, setShowVoteQueue] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const isSuperAdmin = userRole === 'super_admin';
   const canManage = userRole === 'super_admin' || userRole === 'co_founder';
   const [pendingReview, setPendingReview] = useState<PendingReview>({
@@ -356,11 +357,21 @@ export default function ExpansionPipelinePage() {
     return (b.market_potential_score ?? 0) - (a.market_potential_score ?? 0);
   });
 
-  const filteredCities = sortedCities.filter((city) =>
-    city.city_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    city.county.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    city.state.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredCities = sortedCities.filter((city) => {
+    const matchesSearch =
+      city.city_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      city.county.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      city.state.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (!matchesSearch) return false;
+    if (!statusFilter) return true;
+
+    if (statusFilter === 'in_progress') return city.status === 'researching' || city.status === 'researched';
+    if (statusFilter === 'brand_ready') return city.status === 'brand_ready';
+    if (statusFilter === 'approved') return city.status === 'approved' || city.status === 'setup_in_progress';
+    if (statusFilter === 'live') return city.status === 'live';
+    return true;
+  });
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -390,20 +401,23 @@ export default function ExpansionPipelinePage() {
       icon: Globe,
       colorClass: 'text-white',
       bgClass: 'bg-white/10',
+      filter: null as string | null,
     },
     {
-      label: 'Researched',
-      value: stats?.researched ?? 0,
+      label: 'In Progress',
+      value: (stats?.researching ?? 0) + (stats?.researched ?? 0),
       icon: Search,
-      colorClass: 'text-purple-400',
-      bgClass: 'bg-purple-500/20',
+      colorClass: 'text-blue-400',
+      bgClass: 'bg-blue-500/20',
+      filter: 'in_progress',
     },
     {
-      label: 'Brand Ready',
+      label: 'Ready for Review',
       value: stats?.brand_ready ?? 0,
       icon: Palette,
-      colorClass: 'text-yellow-400',
-      bgClass: 'bg-yellow-500/20',
+      colorClass: 'text-amber-400',
+      bgClass: 'bg-amber-500/20',
+      filter: 'brand_ready',
     },
     {
       label: 'Live',
@@ -411,6 +425,7 @@ export default function ExpansionPipelinePage() {
       icon: Rocket,
       colorClass: 'text-emerald-400',
       bgClass: 'bg-emerald-500/20',
+      filter: 'live',
     },
   ];
 
@@ -473,20 +488,22 @@ export default function ExpansionPipelinePage() {
             Runs every 6 hours — auto-suggests cities, researches markets, generates brands & job listings
           </p>
         </div>
-        {attentionCount > 0 && (
-          <div className="flex items-center gap-2 bg-amber-500/20 text-amber-400 px-3 py-1.5 rounded-lg text-sm font-medium">
-            <AlertCircle className="w-4 h-4" />
-            {attentionCount} need{attentionCount === 1 ? 's' : ''} review
-          </div>
-        )}
       </div>
 
       {/* Stats Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
         {statCards.map((stat) => (
-          <div
+          <button
             key={stat.label}
-            className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-4"
+            onClick={() => {
+              if (!stat.filter) { setStatusFilter(null); return; }
+              setStatusFilter(statusFilter === stat.filter ? null : stat.filter);
+            }}
+            className={`bg-tastelanc-surface rounded-xl border p-4 text-left transition-all ${
+              statusFilter === stat.filter
+                ? 'border-tastelanc-accent ring-1 ring-tastelanc-accent/30'
+                : 'border-tastelanc-surface-light hover:border-tastelanc-accent/20'
+            }`}
           >
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 ${stat.bgClass} rounded-lg flex items-center justify-center`}>
@@ -497,7 +514,7 @@ export default function ExpansionPipelinePage() {
                 <p className="text-xs text-gray-500">{stat.label}</p>
               </div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -521,22 +538,22 @@ export default function ExpansionPipelinePage() {
               </button>
             )}
             {pendingReview.brandsToReview.length > 0 && (
-              <Link
-                href={`/admin/expansion/${pendingReview.brandsToReview[0].id}`}
+              <button
+                onClick={() => setStatusFilter('brand_ready')}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 transition-colors"
               >
                 <Palette className="w-3.5 h-3.5" />
                 {pendingReview.brandsToReview.length} brand{pendingReview.brandsToReview.length !== 1 ? 's' : ''} to select
-              </Link>
+              </button>
             )}
             {pendingReview.citiesToApprove.length > 0 && (
-              <Link
-                href={`/admin/expansion/${pendingReview.citiesToApprove[0].id}`}
+              <button
+                onClick={() => setStatusFilter('approved')}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors"
               >
                 <CheckCircle className="w-3.5 h-3.5" />
                 {pendingReview.citiesToApprove.length} to approve
-              </Link>
+              </button>
             )}
           </div>
         </div>
@@ -620,6 +637,25 @@ export default function ExpansionPipelinePage() {
           />
         </div>
       </div>
+
+      {/* Active Filter Indicator */}
+      {statusFilter && (
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-xs text-gray-400">
+            Showing: <span className="text-white font-medium">
+              {statusFilter === 'in_progress' ? 'In Progress' : statusFilter === 'brand_ready' ? 'Ready for Review' : statusFilter === 'approved' ? 'Approved' : statusFilter === 'live' ? 'Live' : statusFilter}
+            </span>
+            {' '}({filteredCities.length} {filteredCities.length === 1 ? 'city' : 'cities'})
+          </span>
+          <button
+            onClick={() => setStatusFilter(null)}
+            className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium rounded bg-tastelanc-surface-light text-gray-400 hover:text-white transition-colors"
+          >
+            <X className="w-3 h-3" />
+            Clear
+          </button>
+        </div>
+      )}
 
       {/* City List */}
       {filteredCities.length === 0 ? (

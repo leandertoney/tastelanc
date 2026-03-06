@@ -114,12 +114,45 @@ export async function POST(request: Request) {
     })
     .eq('id', draft.id);
 
+  // Check if ALL brands for this city now have avatars → transition to brand_ready
+  const cityId = city.id as string;
+  const { count: totalBrands } = await supabase
+    .from('expansion_brand_drafts')
+    .select('*', { count: 'exact', head: true })
+    .eq('city_id', cityId);
+
+  const { count: brandsWithAvatars } = await supabase
+    .from('expansion_brand_drafts')
+    .select('*', { count: 'exact', head: true })
+    .eq('city_id', cityId)
+    .not('avatar_image_url', 'is', null);
+
+  let transitioned = false;
+  if (totalBrands && brandsWithAvatars && brandsWithAvatars >= totalBrands) {
+    const { error: updateError } = await supabase
+      .from('expansion_cities')
+      .update({ status: 'brand_ready' })
+      .eq('id', cityId)
+      .eq('status', 'researched'); // guard: only if still researched
+
+    if (!updateError) {
+      transitioned = true;
+      await supabase.from('expansion_activity_log').insert({
+        city_id: cityId,
+        action: 'status_changed',
+        description: `All brand avatars generated — ${cityName} is now ready for review`,
+        metadata: { source: 'autonomous_agent' },
+      });
+    }
+  }
+
   return NextResponse.json({
     avatarUrl,
     brandDraftId: draft.id as string,
     brandName: draft.ai_assistant_name as string,
-    cityName: cityName,
+    cityName,
     hasMore: remainingCount > 0,
     remaining: remainingCount,
+    transitioned,
   });
 }
