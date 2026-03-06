@@ -199,8 +199,13 @@ export default function ExpansionPipelinePage() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || `Step "${step}" failed`);
+        // Try to parse error, but handle non-JSON responses (like 504 HTML)
+        let errorMsg = `Step "${step}" failed (${res.status})`;
+        try {
+          const data = await res.json();
+          errorMsg = data.error || errorMsg;
+        } catch {}
+        throw new Error(errorMsg);
       }
 
       return res.json();
@@ -213,25 +218,36 @@ export default function ExpansionPipelinePage() {
           let hasMore = true;
           while (hasMore) {
             setAgentStatus(`${stepLabels[step]}...`);
-            const result = await runStep(step);
+            try {
+              const result = await runStep(step);
 
-            // Update status with city name if available
-            if (result.currentCity) {
-              const cityName = result.currentCity;
-              setAgentStatus(`${stepLabels[step]} ${cityName}...`);
+              // Update status with city name if available
+              if (result.currentCity) {
+                setAgentStatus(`${stepLabels[step]} ${result.currentCity}...`);
+              }
+
+              if (result.citiesResearched?.length) totalResult.citiesResearched.push(...result.citiesResearched);
+              if (result.brandsGenerated?.length) totalResult.brandsGenerated.push(...result.brandsGenerated);
+
+              hasMore = result.hasMore === true;
+            } catch (stepError: any) {
+              // If a single city times out, log it and continue to next step
+              console.warn(`[agent] ${step} step failed, moving on:`, stepError.message);
+              totalResult.errors.push(stepError.message);
+              hasMore = false;
             }
-
-            if (result.citiesResearched?.length) totalResult.citiesResearched.push(...result.citiesResearched);
-            if (result.brandsGenerated?.length) totalResult.brandsGenerated.push(...result.brandsGenerated);
-
-            hasMore = result.hasMore === true;
           }
         } else {
           setAgentStatus(`${stepLabels[step]}...`);
-          const result = await runStep(step);
-          if (result.citiesSuggested) totalResult.citiesSuggested += result.citiesSuggested;
-          if (result.citiesResearched?.length) totalResult.citiesResearched.push(...result.citiesResearched);
-          if (result.brandsGenerated?.length) totalResult.brandsGenerated.push(...result.brandsGenerated);
+          try {
+            const result = await runStep(step);
+            if (result.citiesSuggested) totalResult.citiesSuggested += result.citiesSuggested;
+            if (result.citiesResearched?.length) totalResult.citiesResearched.push(...result.citiesResearched);
+            if (result.brandsGenerated?.length) totalResult.brandsGenerated.push(...result.brandsGenerated);
+          } catch (stepError: any) {
+            console.warn(`[agent] ${step} step failed, moving on:`, stepError.message);
+            totalResult.errors.push(stepError.message);
+          }
         }
       }
 
@@ -239,7 +255,14 @@ export default function ExpansionPipelinePage() {
       if (totalResult.citiesSuggested) parts.push(`${totalResult.citiesSuggested} suggested`);
       if (totalResult.citiesResearched.length) parts.push(`${totalResult.citiesResearched.length} researched`);
       if (totalResult.brandsGenerated.length) parts.push(`${totalResult.brandsGenerated.length} branded`);
-      toast.success(`Agent completed: ${parts.join(', ') || 'no changes needed'}`);
+      if (totalResult.errors.length) parts.push(`${totalResult.errors.length} errors`);
+
+      const summary = parts.join(', ') || 'no changes needed';
+      if (totalResult.errors.length > 0) {
+        toast.error(`Agent finished with issues: ${summary}`);
+      } else {
+        toast.success(`Agent completed: ${summary}`);
+      }
 
       fetchData();
     } catch (error: any) {
