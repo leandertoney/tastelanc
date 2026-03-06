@@ -100,12 +100,19 @@ async function sendSalesTeamPushNotifications(
   if (userIds.length === 0) return;
 
   try {
-    const { data: tokens } = await supabaseClient
+    const { data: tokens, error: tokenError } = await supabaseClient
       .from('push_tokens')
       .select('token, app_slug')
       .in('user_id', userIds);
 
-    if (!tokens || tokens.length === 0) return;
+    if (tokenError) {
+      console.error('[Push] Failed to query push_tokens:', tokenError.message);
+      return;
+    }
+    if (!tokens || tokens.length === 0) {
+      console.log('[Push] No push tokens found for users:', userIds);
+      return;
+    }
 
     // Group tokens by app_slug — Expo Push API rejects mixed projects in one request
     const tokensByProject = new Map<string, string[]>();
@@ -155,10 +162,11 @@ async function resolveEmailToUserId(
   const normalizedEmail = toEmail.toLowerCase();
 
   // 1. Check sales_reps by preferred_sender_email or derived reply domain
-  const { data: reps } = await supabaseClient
+  const { data: reps, error: repsError } = await supabaseClient
     .from('sales_reps')
     .select('id, preferred_sender_email, name')
     .eq('is_active', true);
+  if (repsError) console.error('[Resolve] sales_reps query failed:', repsError.message);
 
   if (reps) {
     for (const rep of reps) {
@@ -191,10 +199,11 @@ async function resolveEmailToUserId(
 
   if (matchedIdentity) {
     // Find the profile with matching display_name first name
-    const { data: profiles } = await supabaseClient
+    const { data: profiles, error: profilesError } = await supabaseClient
       .from('profiles')
       .select('id, display_name')
       .in('role', ['super_admin', 'co_founder', 'market_admin', 'sales_rep']);
+    if (profilesError) console.error('[Resolve] profiles query failed:', profilesError.message);
 
     if (profiles) {
       const match = profiles.find(p =>
@@ -423,6 +432,7 @@ export async function POST(request: Request) {
     } else {
       // Unmatched email to a rep address — notify only the rep it was sent to
       const repUserId = await resolveEmailToUserId(supabase, toEmail);
+      console.log(`[Inbound] resolveEmailToUserId(${toEmail}) → ${repUserId || 'null'}`);
 
       if (repUserId) {
         await sendSalesTeamPushNotifications(
