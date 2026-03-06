@@ -48,8 +48,8 @@ export async function GET(request: Request) {
     const inboundFilterEmails = isInfoInbox ? INFO_INBOX_EMAILS : repEmails;
 
     // Fetch outbound emails (skip for info@ inbox — it's receive-only)
-    let sentEmails: Awaited<ReturnType<typeof serviceClient.from<'email_sends'>>>['data'] = [];
-    let sentError = null;
+    let sentEmails: { recipient_email: string; subject: string | null; body_text: string | null; sender_email: string | null; sender_name: string | null; sent_at: string | null; lead_id: string | null }[] | null = [];
+    let sentError: { message: string } | null = null;
     if (!isInfoInbox) {
       const result = await serviceClient
         .from('email_sends')
