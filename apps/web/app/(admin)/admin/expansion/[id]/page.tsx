@@ -90,6 +90,8 @@ export default function CityDetailPage() {
 
   const [jobRoleType, setJobRoleType] = useState<JobRoleType>('sales_rep');
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isVoting, setIsVoting] = useState(false);
   const isSuperAdmin = userRole === 'super_admin';
   const canManage = userRole === 'super_admin' || userRole === 'co_founder';
 
@@ -110,18 +112,23 @@ export default function CityDetailPage() {
   async function fetchAll() {
     setIsLoading(true);
     try {
-      const [cityRes, brandsRes, jobsRes, activityRes, reviewsRes] = await Promise.all([
+      const [cityRes, brandsRes, jobsRes, activityRes, reviewsRes, statsRes] = await Promise.all([
         fetch(`/api/admin/expansion/cities/${id}`),
         fetch(`/api/admin/expansion/cities/${id}/brands`),
         fetch(`/api/admin/expansion/cities/${id}/jobs`),
         fetch(`/api/admin/expansion/activity?city_id=${id}`),
         fetch('/api/admin/expansion/reviews'),
+        fetch('/api/admin/expansion/stats'),
       ]);
 
       if (cityRes.ok) {
         const data = await cityRes.json();
         setCity(data.city);
         if (data.role) setUserRole(data.role);
+      }
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        if (statsData.userEmail) setUserEmail(statsData.userEmail);
       }
       if (brandsRes.ok) {
         const data = await brandsRes.json();
@@ -145,6 +152,38 @@ export default function CityDetailPage() {
       toast.error('Failed to load city details');
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  // Check if current user has voted
+  const currentUserHasVoted = userEmail && cityReviews.some(r => r.reviewer_email === userEmail);
+
+  async function handleVote(vote: 'interested' | 'not_now' | 'reject') {
+    if (!city) return;
+    setIsVoting(true);
+    try {
+      const res = await fetch('/api/admin/expansion/reviews/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ city_id: city.id, vote }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to submit vote');
+      }
+      const result = await res.json();
+      const voteLabels = { interested: 'Interested', not_now: 'Not Now', reject: 'Reject' };
+      toast.success(`Voted "${voteLabels[vote]}"`);
+      // Refresh reviews with full vote records from API
+      setCityReviews(result.votes || []);
+      // Update city review status
+      if (result.review_status) {
+        setCity(prev => prev ? { ...prev, review_status: result.review_status } : prev);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to submit vote');
+    } finally {
+      setIsVoting(false);
     }
   }
 
@@ -669,11 +708,40 @@ export default function CityDetailPage() {
       </div>
 
       {/* Team Reviews */}
-      {(cityReviews.length > 0 || city.review_status) && (
+      {(cityReviews.length > 0 || city.review_status || canManage) && (
         <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5">
           <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
             Team Reviews
           </h3>
+          {/* Vote buttons for current user if they haven't voted */}
+          {canManage && !currentUserHasVoted && ['researched', 'brand_ready'].includes(city.status) && (
+            <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <p className="text-sm text-gray-300 mb-2">Cast your vote on this market:</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleVote('interested')}
+                  disabled={isVoting}
+                  className="flex-1 px-3 py-2 text-sm font-medium rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors disabled:opacity-50"
+                >
+                  Interested
+                </button>
+                <button
+                  onClick={() => handleVote('not_now')}
+                  disabled={isVoting}
+                  className="flex-1 px-3 py-2 text-sm font-medium rounded-lg bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors disabled:opacity-50"
+                >
+                  Not Now
+                </button>
+                <button
+                  onClick={() => handleVote('reject')}
+                  disabled={isVoting}
+                  className="flex-1 px-3 py-2 text-sm font-medium rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50"
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {['Leander', 'Jordan'].map((name) => {
               const review = cityReviews.find((r) => r.reviewer_name === name);

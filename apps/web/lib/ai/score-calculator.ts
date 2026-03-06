@@ -76,13 +76,26 @@ function scorePopulationDensity(inputs: ScoreInputs): { score: number; reasoning
   if (educationPct && educationPct > 35) score += 6;
   else if (educationPct && educationPct > 25) score += 3;
 
-  const parts: string[] = [`${pop.toLocaleString()} ${inputs.cluster_population ? 'cluster' : 'city'} population`];
-  if (age > 0) parts.push(`median age ${age}`);
-  if (educationPct) parts.push(`${educationPct}% bachelor's+`);
+  const clamped = clamp(score);
+  const popLabel = inputs.cluster_population ? 'cluster' : 'city';
+  const lines: string[] = [
+    `${clamped}/100 — ${pop.toLocaleString()} ${popLabel} population (50k-200k is our sweet spot for early-stage markets).`,
+  ];
+  if (age > 0) {
+    if (age < 33) lines.push(`Median age ${age} — young & dining-active demographic (+8 pts).`);
+    else if (age < 36) lines.push(`Median age ${age} — under 36 is dining-active (+4 pts).`);
+    else if (age > 42) lines.push(`Median age ${age} — older skewing, less nightlife demand (-5 pts).`);
+    else lines.push(`Median age ${age} — moderate, no bonus or penalty.`);
+  }
+  if (educationPct) {
+    if (educationPct > 35) lines.push(`${educationPct}% bachelor's+ — highly educated, strong dining culture (+6 pts).`);
+    else if (educationPct > 25) lines.push(`${educationPct}% bachelor's+ — above average education (+3 pts).`);
+    else lines.push(`${educationPct}% bachelor's+ — below threshold for education bonus.`);
+  }
 
   return {
-    score: clamp(score),
-    reasoning: `Score ${clamp(score)}: ${parts.join(', ')}.`,
+    score: clamped,
+    reasoning: lines.join('\n'),
   };
 }
 
@@ -119,16 +132,33 @@ function scoreDiningScene(inputs: ScoreInputs): { score: number; reasoning: stri
   if (barRatio > 0.4) score += 5;
   else if (barRatio > 0.25) score += 3;
 
-  const parts: string[] = [];
-  if (googleRestaurants > 0) parts.push(`${googleRestaurants} Google Places restaurants`);
-  if (osmRestaurants > 0) parts.push(`${osmRestaurants} OSM restaurants`);
-  if (restaurants > 0) parts.push(`${restaurantsPerCapita.toFixed(1)} per 10k residents`);
-  if (cuisineDiversity > 0) parts.push(`${cuisineDiversity} cuisine types`);
-  if (bars > 0) parts.push(`${bars} bars/pubs`);
+  const clamped = clamp(score);
+  const densityLabel = restaurantsPerCapita >= 30 ? 'high density' :
+    restaurantsPerCapita >= 20 ? 'good density' :
+    restaurantsPerCapita >= 12 ? 'moderate density' :
+    restaurantsPerCapita >= 6 ? 'low density' : 'very low density';
+
+  const lines: string[] = [
+    `${clamped}/100 — ${restaurants} restaurants found, ${restaurantsPerCapita.toFixed(1)} per 10k residents (${densityLabel}, target is 20-40).`,
+  ];
+  if (googleRestaurants > 0 && osmRestaurants > 0) {
+    lines.push(`Sources: ${googleRestaurants} via Google Places, ${osmRestaurants} via OpenStreetMap (using higher count).`);
+  }
+  if (cuisineDiversity > 0) {
+    if (cuisineDiversity >= 12) lines.push(`${cuisineDiversity} distinct cuisine types — excellent diversity (+10 pts).`);
+    else if (cuisineDiversity >= 8) lines.push(`${cuisineDiversity} distinct cuisine types — good diversity (+6 pts).`);
+    else if (cuisineDiversity >= 4) lines.push(`${cuisineDiversity} distinct cuisine types — some variety (+3 pts).`);
+    else lines.push(`${cuisineDiversity} distinct cuisine types — limited variety.`);
+  }
+  if (bars > 0) {
+    const ratioLabel = barRatio > 0.4 ? 'very active nightlife (+5 pts)' :
+      barRatio > 0.25 ? 'active nightlife (+3 pts)' : 'limited nightlife scene';
+    lines.push(`${bars} bars/pubs (${(barRatio * 100).toFixed(0)}% bar ratio — ${ratioLabel}).`);
+  }
 
   return {
-    score: clamp(score),
-    reasoning: `Score ${clamp(score)}: ${parts.join(', ')}.`,
+    score: clamped,
+    reasoning: lines.join('\n'),
   };
 }
 
@@ -144,16 +174,19 @@ function scoreCompetition(inputs: ScoreInputs): { score: number; reasoning: stri
   else if (pop > 200000) score -= 10;
   else if (pop > 100000) score -= 5;
 
-  // The actual competitive landscape (specific apps, local blogs, etc.)
-  // is still best assessed by AI prose — we just set the base score here
-  const parts: string[] = [
-    `Base 80 (no known hyperlocal dining apps in most markets this size)`,
+  const clamped = clamp(score);
+  const lines: string[] = [
+    `${clamped}/100 — Starting from base 80 (no known hyperlocal dining apps exist in most markets this size).`,
   ];
-  if (pop > 200000) parts.push(`-${pop > 300000 ? 15 : 10} for larger metro (more likely to have competitors)`);
+  if (pop > 500000) lines.push(`Population over 500k — high chance of existing competitors like Yelp/Infatuation locals (-25 pts).`);
+  else if (pop > 300000) lines.push(`Population over 300k — moderate chance of existing local dining apps (-15 pts).`);
+  else if (pop > 200000) lines.push(`Population over 200k — some competitor risk (-10 pts).`);
+  else if (pop > 100000) lines.push(`Population over 100k — slight competitor risk (-5 pts).`);
+  else lines.push(`Population under 100k — very low competition risk, ideal for first-mover advantage.`);
 
   return {
-    score: clamp(score),
-    reasoning: `Score ${clamp(score)}: ${parts.join('. ')}.`,
+    score: clamped,
+    reasoning: lines.join('\n'),
   };
 }
 
@@ -164,7 +197,7 @@ function scoreCollegePresence(inputs: ScoreInputs): { score: number; reasoning: 
   const hasFourYear = inputs.has_four_year || false;
 
   if (colleges.length === 0) {
-    return { score: 15, reasoning: 'Score 15: No colleges found in the area.' };
+    return { score: 15, reasoning: '15/100 — No colleges found in the area. College towns drive dining demand from students and young professionals.' };
   }
 
   // Base score from total enrollment
@@ -184,18 +217,24 @@ function scoreCollegePresence(inputs: ScoreInputs): { score: number; reasoning: 
   ).length;
   if (fourYearCount >= 3) score += 5;
 
+  const clamped = clamp(score);
   const topColleges = colleges.slice(0, 3).map(c => `${c.name} (${c.enrollment.toLocaleString()})`);
 
-  const parts: string[] = [
-    `${colleges.length} institution${colleges.length > 1 ? 's' : ''}`,
-    `${totalEnrollment.toLocaleString()} total enrollment`,
+  const enrollLabel = totalEnrollment >= 30000 ? 'major college market' :
+    totalEnrollment >= 15000 ? 'strong college presence' :
+    totalEnrollment >= 8000 ? 'moderate college presence' :
+    totalEnrollment >= 3000 ? 'small college presence' : 'minimal college presence';
+
+  const lines: string[] = [
+    `${clamped}/100 — ${colleges.length} institution${colleges.length > 1 ? 's' : ''}, ${totalEnrollment.toLocaleString()} total enrollment (${enrollLabel}).`,
+    `Top schools: ${topColleges.join(', ')}.`,
   ];
-  if (hasResearch) parts.push('includes R1/R2 research university');
-  parts.push(`Top: ${topColleges.join(', ')}`);
+  if (hasResearch) lines.push(`Includes R1/R2 research university (+10 pts — drives dining culture and young population).`);
+  if (fourYearCount >= 3) lines.push(`${fourYearCount} four-year institutions (+5 pts — multiple campuses = broader dining demand).`);
 
   return {
-    score: clamp(score),
-    reasoning: `Score ${clamp(score)}: ${parts.join('. ')}.`,
+    score: clamped,
+    reasoning: lines.join('\n'),
   };
 }
 
@@ -203,7 +242,7 @@ function scoreTourism(inputs: ScoreInputs): { score: number; reasoning: string }
   const tourism = inputs.tourism_economic_data;
 
   if (!tourism || tourism.hospitality_gdp_millions === null) {
-    return { score: 40, reasoning: 'Score 40: No BEA economic data available (default).' };
+    return { score: 40, reasoning: '40/100 — No BEA economic data available. Default score applied; tourism impact is unknown.' };
   }
 
   const hospitalityGdp = tourism.hospitality_gdp_millions;
@@ -226,16 +265,26 @@ function scoreTourism(inputs: ScoreInputs): { score: number; reasoning: string }
   else if (hospitalityGdp >= 500) score += 3;
 
   const arts = tourism.arts_entertainment_gdp_millions;
+  const clamped = clamp(score);
 
-  const parts: string[] = [];
-  parts.push(`Hospitality GDP: $${hospitalityGdp.toLocaleString()}M`);
-  if (pctOfGdp !== null) parts.push(`${pctOfGdp}% of county economy`);
-  if (arts !== null) parts.push(`Arts/Entertainment: $${arts.toLocaleString()}M`);
-  if (tourism.year) parts.push(`(${tourism.year} data)`);
+  const pctLabel = pctOfGdp !== null ? (
+    pctOfGdp >= 10 ? 'tourism-driven economy' :
+    pctOfGdp >= 7 ? 'strong tourism presence' :
+    pctOfGdp >= 5 ? 'above-average tourism' :
+    pctOfGdp >= 3 ? 'moderate tourism' : 'below-average tourism'
+  ) : 'unknown tourism share';
+
+  const lines: string[] = [
+    `${clamped}/100 — Hospitality GDP: $${hospitalityGdp.toLocaleString()}M${pctOfGdp !== null ? ` (${pctOfGdp}% of county economy — ${pctLabel}, national avg is ~4%)` : ''}.`,
+  ];
+  if (hospitalityGdp >= 1000) lines.push(`Large hospitality sector ($1B+) — significant visitor spending (+5 pts).`);
+  else if (hospitalityGdp >= 500) lines.push(`Substantial hospitality sector ($500M+) — meaningful visitor spending (+3 pts).`);
+  if (arts !== null) lines.push(`Arts & Entertainment GDP: $${arts.toLocaleString()}M — indicates cultural attractions that drive dining.`);
+  if (tourism.year) lines.push(`Data from ${tourism.year} BEA county-level economic analysis.`);
 
   return {
-    score: clamp(score),
-    reasoning: `Score ${clamp(score)}: ${parts.join(', ')}.`,
+    score: clamped,
+    reasoning: lines.join('\n'),
   };
 }
 
@@ -263,14 +312,29 @@ function scoreIncomeLevel(inputs: ScoreInputs): { score: number; reasoning: stri
     else if (rentToIncome > 0.40) score -= 5;
   }
 
-  const parts: string[] = [`Median income: $${income.toLocaleString()}`];
-  if (homeValue) parts.push(`home value: $${homeValue.toLocaleString()}`);
-  if (rent) parts.push(`rent: $${rent.toLocaleString()}/mo`);
-  if (rentToIncome != null) parts.push(`rent-to-income: ${(rentToIncome * 100).toFixed(0)}%`);
+  const clamped = clamp(score);
+  const incomeLabel = income >= 100000 ? 'high income market' :
+    income >= 80000 ? 'above-average income' :
+    income >= 65000 ? 'solid middle-class' :
+    income >= 50000 ? 'moderate income' :
+    income >= 40000 ? 'below-average income' : 'low income market';
+
+  const lines: string[] = [
+    `${clamped}/100 — Median household income: $${income.toLocaleString()} (${incomeLabel}).`,
+  ];
+  if (homeValue) lines.push(`Median home value: $${homeValue.toLocaleString()} — indicates overall area wealth.`);
+  if (rent) lines.push(`Median rent: $${rent.toLocaleString()}/mo.`);
+  if (rentToIncome != null) {
+    const rtiPct = (rentToIncome * 100).toFixed(0);
+    if (rentToIncome < 0.25) lines.push(`Rent-to-income: ${rtiPct}% — affordable area, more disposable income for dining out (+8 pts).`);
+    else if (rentToIncome < 0.30) lines.push(`Rent-to-income: ${rtiPct}% — reasonable affordability (+4 pts).`);
+    else if (rentToIncome > 0.40) lines.push(`Rent-to-income: ${rtiPct}% — cost-burdened area, less dining-out budget (-5 pts).`);
+    else lines.push(`Rent-to-income: ${rtiPct}% — average affordability.`);
+  }
 
   return {
-    score: clamp(score),
-    reasoning: `Score ${clamp(score)}: ${parts.join(', ')}.`,
+    score: clamped,
+    reasoning: lines.join('\n'),
   };
 }
 

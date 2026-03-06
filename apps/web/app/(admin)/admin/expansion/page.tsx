@@ -71,6 +71,8 @@ export default function ExpansionPipelinePage() {
   const [showSuggestModal, setShowSuggestModal] = useState(false);
   const [isRunningAgent, setIsRunningAgent] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [votingCityId, setVotingCityId] = useState<string | null>(null);
   const isSuperAdmin = userRole === 'super_admin';
   const canManage = userRole === 'super_admin' || userRole === 'co_founder';
   const [pendingReview, setPendingReview] = useState<PendingReview>({
@@ -98,6 +100,7 @@ export default function ExpansionPipelinePage() {
       if (statsRes.ok) {
         setStats(statsData);
         if (statsData.role) setUserRole(statsData.role);
+        if (statsData.userEmail) setUserEmail(statsData.userEmail);
       }
       if (activityRes.ok) setActivities(activityData.activities || []);
 
@@ -198,6 +201,45 @@ export default function ExpansionPipelinePage() {
     }
   };
 
+  // Cities needing the current user's vote (only pending_review — auto-advanced/rejected cities are excluded)
+  const citiesNeedingVote = cities.filter(c => {
+    if (!userEmail) return false;
+    if (!['researched', 'brand_ready'].includes(c.status)) return false;
+    if (c.review_status && c.review_status !== 'pending_review') return false;
+    const cityVotes = reviews[c.id] || [];
+    return !cityVotes.some(v => v.reviewer_email === userEmail);
+  });
+
+  const handleVote = async (cityId: string, vote: 'interested' | 'not_now' | 'reject') => {
+    setVotingCityId(cityId);
+    try {
+      const res = await fetch('/api/admin/expansion/reviews/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ city_id: cityId, vote }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to submit vote');
+      }
+
+      const result = await res.json();
+      const voteLabels = { interested: 'Interested', not_now: 'Not Now', reject: 'Reject' };
+      toast.success(`Voted "${voteLabels[vote]}" — ${result.review_status?.replace(/_/g, ' ')}`);
+
+      // Update reviews state with full vote records from API
+      setReviews(prev => ({
+        ...prev,
+        [cityId]: result.votes,
+      }));
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to submit vote');
+    } finally {
+      setVotingCityId(null);
+    }
+  };
+
   // Sort cities: items needing attention first, then by status order
   const sortedCities = [...cities].sort((a, b) => {
     const aOrder = STATUS_ORDER[a.status] ?? 99;
@@ -229,6 +271,7 @@ export default function ExpansionPipelinePage() {
 
   // Compute "needs attention" count
   const attentionCount =
+    citiesNeedingVote.length +
     pendingReview.brandsToReview.length +
     pendingReview.citiesToApprove.length;
 
@@ -331,13 +374,57 @@ export default function ExpansionPipelinePage() {
       </div>
 
       {/* Needs Your Attention Section */}
-      {(pendingReview.brandsToReview.length > 0 || pendingReview.citiesToApprove.length > 0) && (
+      {(citiesNeedingVote.length > 0 || pendingReview.brandsToReview.length > 0 || pendingReview.citiesToApprove.length > 0) && (
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-amber-400" />
             Needs Your Attention
           </h2>
           <div className="space-y-2">
+            {/* Vote Required cards */}
+            {citiesNeedingVote.map((city) => (
+              <div
+                key={`vote-${city.id}`}
+                className="flex items-center gap-4 bg-blue-500/10 border border-blue-500/20 rounded-xl p-4"
+              >
+                <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-5 h-5 text-blue-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white">
+                    {city.city_name}, {city.state}
+                    <span className="ml-2 text-xs font-normal text-gray-500">
+                      {city.market_potential_score ?? '?'}/100
+                    </span>
+                  </p>
+                  <p className="text-xs text-gray-500">Cast your vote on this market</p>
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <button
+                    onClick={() => handleVote(city.id, 'interested')}
+                    disabled={votingCityId === city.id}
+                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors disabled:opacity-50"
+                  >
+                    Interested
+                  </button>
+                  <button
+                    onClick={() => handleVote(city.id, 'not_now')}
+                    disabled={votingCityId === city.id}
+                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors disabled:opacity-50"
+                  >
+                    Not Now
+                  </button>
+                  <button
+                    onClick={() => handleVote(city.id, 'reject')}
+                    disabled={votingCityId === city.id}
+                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+            {/* Brand selection cards */}
             {pendingReview.brandsToReview.map((city) => (
               <Link
                 key={`brand-${city.id}`}

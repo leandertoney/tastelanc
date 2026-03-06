@@ -117,7 +117,7 @@ async function sendSalesTeamPushNotifications(
     }
 
     // Send one request per project
-    for (const [slug, projectTokens] of tokensByProject) {
+    for (const [slug, projectTokens] of Array.from(tokensByProject.entries())) {
       const messages = projectTokens.map(token => ({
         to: token,
         title,

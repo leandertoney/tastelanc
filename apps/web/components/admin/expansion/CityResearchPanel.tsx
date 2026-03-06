@@ -120,6 +120,9 @@ function ScoreBreakdown({ city }: { city: ExpansionCity }) {
           {SCORE_CATEGORIES.map(({ key, label, weightPct, icon: Icon }) => {
             const score = subScores[key] ?? 0;
             const reason = reasoning?.[key];
+            const weightedPts = ((score * weightPct) / 100).toFixed(1);
+            const strengthLabel = score >= 70 ? 'Strong' : score >= 45 ? 'Moderate' : 'Weak';
+            const strengthColor = score >= 70 ? 'text-green-400' : score >= 45 ? 'text-yellow-400' : 'text-red-400';
 
             return (
               <div key={key}>
@@ -127,10 +130,13 @@ function ScoreBreakdown({ city }: { city: ExpansionCity }) {
                   <div className="flex items-center gap-2">
                     <Icon className="w-3.5 h-3.5 text-gray-500" />
                     <span className="text-xs text-gray-400">
-                      {label} <span className="text-gray-600">({weightPct}%)</span>
+                      {label} <span className="text-gray-600">({weightPct}% weight = {weightedPts} pts)</span>
                     </span>
                   </div>
-                  <span className="text-xs font-semibold text-gray-300">{score}/100</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-medium ${strengthColor}`}>{strengthLabel}</span>
+                    <span className="text-xs font-semibold text-gray-300">{score}/100</span>
+                  </div>
                 </div>
                 <div className="w-full h-2 bg-tastelanc-surface-light rounded-full overflow-hidden">
                   <div
@@ -139,7 +145,7 @@ function ScoreBreakdown({ city }: { city: ExpansionCity }) {
                   />
                 </div>
                 {reason && (
-                  <p className="text-[11px] text-gray-600 mt-0.5 leading-snug">{reason}</p>
+                  <p className="text-[11px] text-gray-600 mt-1 leading-relaxed whitespace-pre-line">{reason}</p>
                 )}
               </div>
             );
