@@ -23,26 +23,53 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { brandDraftId } = await request.json();
-  if (!brandDraftId) {
-    return NextResponse.json({ error: 'brandDraftId required' }, { status: 400 });
-  }
+  const { brandDraftId, autoNext } = await request.json();
 
   const supabase = createSupabaseAdmin(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-  // Fetch the brand draft with city info
-  const { data: draft, error: draftError } = await supabase
-    .from('expansion_brand_drafts')
-    .select('*, expansion_cities(*)')
-    .eq('id', brandDraftId)
-    .single();
+  let draft: Record<string, unknown> | null = null;
+  let remainingCount = 0;
 
-  if (draftError || !draft) {
-    return NextResponse.json({ error: 'Brand draft not found' }, { status: 404 });
+  if (autoNext) {
+    // Find the next brand draft that needs an avatar
+    const { data: drafts, count } = await supabase
+      .from('expansion_brand_drafts')
+      .select('*, expansion_cities(*)', { count: 'exact' })
+      .is('avatar_image_url', null)
+      .order('created_at', { ascending: true })
+      .limit(1);
+
+    if (!drafts || drafts.length === 0) {
+      return NextResponse.json({ done: true, remaining: 0 });
+    }
+
+    draft = drafts[0];
+    remainingCount = (count ?? 1) - 1;
+  } else {
+    if (!brandDraftId) {
+      return NextResponse.json({ error: 'brandDraftId or autoNext required' }, { status: 400 });
+    }
+
+    // Fetch specific brand draft
+    const { data: d, error: draftError } = await supabase
+      .from('expansion_brand_drafts')
+      .select('*, expansion_cities(*)')
+      .eq('id', brandDraftId)
+      .single();
+
+    if (draftError || !d) {
+      return NextResponse.json({ error: 'Brand draft not found' }, { status: 404 });
+    }
+
+    if (d.avatar_image_url) {
+      return NextResponse.json({ avatarUrl: d.avatar_image_url, alreadyExists: true });
+    }
+
+    draft = d;
   }
 
-  if (draft.avatar_image_url) {
-    return NextResponse.json({ avatarUrl: draft.avatar_image_url, alreadyExists: true });
+  if (!draft) {
+    return NextResponse.json({ error: 'No draft found' }, { status: 404 });
   }
 
   const city = draft.expansion_cities;
@@ -81,5 +108,12 @@ export async function POST(request: Request) {
     })
     .eq('id', brandDraftId);
 
-  return NextResponse.json({ avatarUrl, brandDraftId });
+  return NextResponse.json({
+    avatarUrl,
+    brandDraftId: draft.id,
+    brandName: draft.ai_assistant_name,
+    cityName: (draft.expansion_cities as Record<string, unknown>)?.city_name,
+    hasMore: remainingCount > 0,
+    remaining: remainingCount,
+  });
 }

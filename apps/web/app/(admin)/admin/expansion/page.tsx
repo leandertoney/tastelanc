@@ -180,16 +180,17 @@ export default function ExpansionPipelinePage() {
     setIsRunningAgent(true);
     setAgentStatus(null);
 
-    const steps = ['suggest', 'research', 'brands', 'jobs', 'notify'] as const;
+    const steps = ['suggest', 'research', 'brands', 'avatars', 'jobs', 'notify'] as const;
     const stepLabels: Record<string, string> = {
       suggest: 'Suggesting new cities',
       research: 'Researching',
       brands: 'Generating brands for',
+      avatars: 'Creating avatar for',
       jobs: 'Creating job listings',
       notify: 'Sending notifications',
     };
 
-    const totalResult = { citiesSuggested: 0, citiesResearched: [] as string[], brandsGenerated: [] as string[], errors: [] as string[] };
+    const totalResult = { citiesSuggested: 0, citiesResearched: [] as string[], brandsGenerated: [] as string[], avatarsGenerated: 0, errors: [] as string[] };
 
     const runStep = async (step: string) => {
       const res = await fetch('/api/cron/expansion-agent', {
@@ -213,6 +214,40 @@ export default function ExpansionPipelinePage() {
 
     try {
       for (const step of steps) {
+        // Avatar generation: loop one brand at a time via dedicated endpoint
+        if (step === 'avatars') {
+          let hasMore = true;
+          while (hasMore) {
+            setAgentStatus('Generating avatars...');
+            try {
+              const res = await fetch('/api/admin/expansion/generate-avatar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ autoNext: true }),
+              });
+              if (!res.ok) {
+                let errorMsg = `Avatar generation failed (${res.status})`;
+                try { const d = await res.json(); errorMsg = d.error || errorMsg; } catch {}
+                throw new Error(errorMsg);
+              }
+              const data = await res.json();
+              if (data.done) {
+                hasMore = false;
+              } else {
+                const label = data.brandName ? `${data.brandName} (${data.cityName})` : 'brand';
+                setAgentStatus(`Created avatar for ${label}... (${data.remaining} left)`);
+                totalResult.avatarsGenerated++;
+                hasMore = data.hasMore === true;
+              }
+            } catch (stepError: any) {
+              console.warn('[agent] avatar step failed, moving on:', stepError.message);
+              totalResult.errors.push(stepError.message);
+              hasMore = false;
+            }
+          }
+          continue;
+        }
+
         // For research and brands, loop one city at a time until done
         if (step === 'research' || step === 'brands') {
           let hasMore = true;
@@ -255,6 +290,7 @@ export default function ExpansionPipelinePage() {
       if (totalResult.citiesSuggested) parts.push(`${totalResult.citiesSuggested} suggested`);
       if (totalResult.citiesResearched.length) parts.push(`${totalResult.citiesResearched.length} researched`);
       if (totalResult.brandsGenerated.length) parts.push(`${totalResult.brandsGenerated.length} branded`);
+      if (totalResult.avatarsGenerated) parts.push(`${totalResult.avatarsGenerated} avatars`);
       if (totalResult.errors.length) parts.push(`${totalResult.errors.length} errors`);
 
       const summary = parts.join(', ') || 'no changes needed';
