@@ -1,0 +1,483 @@
+// Instagram Agent v1: Post generation orchestrator
+// Decision flow: Tonight/Today → Weekend Preview → Category Roundup (fallback)
+
+import { SupabaseClient } from '@supabase/supabase-js';
+import OpenAI from 'openai';
+import {
+  ContentType,
+  GenerationResult,
+  GenerationMetadata,
+  ScoredCandidate,
+  MarketConfig,
+} from './types';
+import {
+  fetchTonightCandidates,
+  fetchWeekendCandidates,
+  fetchCategoryRoundupCandidates,
+  selectTopCandidates,
+} from './scoring';
+import {
+  buildCaptionPrompt,
+  getMarketDisplayName,
+  getAppName,
+  getTodaysRoundupCategory,
+  EVENT_TYPE_INSTAGRAM_LABELS,
+} from './prompts';
+import { selectMedia, recordMediaUsage } from './media';
+
+const MIN_CANDIDATES_FOR_POST = 3; // Need at least 3 total to make "hidden count" compelling
+const VISIBLE_COUNT = 3;
+
+interface GenerateOptions {
+  supabase: SupabaseClient;
+  market: MarketConfig;
+  date: Date;
+  forceType?: ContentType;
+}
+
+export async function generateInstagramPost(opts: GenerateOptions): Promise<GenerationResult> {
+  const { supabase, market, date, forceType } = opts;
+  const today = date.toISOString().split('T')[0];
+
+  // Check if we already have a post for today
+  const { data: existing } = await supabase
+    .from('instagram_posts')
+    .select('id, status')
+    .eq('market_id', market.market_id)
+    .eq('post_date', today)
+    .maybeSingle();
+
+  if (existing && existing.status === 'published') {
+    return { success: true, post_id: existing.id, error: 'Already published today' };
+  }
+
+  // If there's a draft or failed post for today, we'll overwrite it
+  const existingId = existing?.id;
+
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const dayOfWeek = dayNames[date.getDay()];
+  const dayNumber = date.getDay(); // 0=Sun, 5=Fri, 6=Sat
+
+  let result: GenerationResult;
+  let decisionPath = '';
+
+  // Decision flow
+  if (forceType) {
+    decisionPath = `forced:${forceType}`;
+    result = await generateByType(opts, forceType, dayOfWeek, today, decisionPath);
+  } else {
+    // Step 1: Try Tonight/Today (Mon-Sun, always attempt first)
+    decisionPath = 'auto:tonight_today';
+    result = await generateTonightToday(opts, dayOfWeek, today, decisionPath);
+
+    // Step 2: If tonight didn't have enough, try Weekend Preview (Thu/Fri only)
+    if (!result.success && (dayNumber === 4 || dayNumber === 5)) {
+      decisionPath = 'auto:weekend_preview';
+      result = await generateWeekendPreview(opts, date, decisionPath);
+    }
+
+    // Step 3: Fallback to Category Roundup (always works)
+    if (!result.success) {
+      decisionPath = 'auto:category_roundup_fallback';
+      result = await generateCategoryRoundup(opts, date, decisionPath);
+    }
+  }
+
+  // If we overwrote an existing record, update rather than insert
+  if (result.success && existingId && result.post_id !== existingId) {
+    // Delete old draft
+    await supabase.from('instagram_posts').delete().eq('id', existingId);
+  }
+
+  return result;
+}
+
+async function generateByType(
+  opts: GenerateOptions,
+  type: ContentType,
+  dayOfWeek: string,
+  today: string,
+  decisionPath: string
+): Promise<GenerationResult> {
+  switch (type) {
+    case 'tonight_today':
+      return generateTonightToday(opts, dayOfWeek, today, decisionPath);
+    case 'weekend_preview':
+      return generateWeekendPreview(opts, opts.date, decisionPath);
+    case 'category_roundup':
+      return generateCategoryRoundup(opts, opts.date, decisionPath);
+  }
+}
+
+async function generateTonightToday(
+  opts: GenerateOptions,
+  dayOfWeek: string,
+  today: string,
+  decisionPath: string
+): Promise<GenerationResult> {
+  const { supabase, market } = opts;
+
+  const { events, happyHours, specials } = await fetchTonightCandidates(
+    supabase,
+    market.market_id,
+    dayOfWeek,
+    today
+  );
+
+  // Determine best sub-type for tonight
+  type SubType = { candidates: ScoredCandidate[]; subType: string; subTypeLabel: string };
+  const subTypes: SubType[] = [];
+
+  // Group events by event_type
+  const eventsByType = new Map<string, ScoredCandidate[]>();
+  for (const e of events) {
+    // We need to look up the event type — it's stored on the entity
+    // For scoring purposes, we grouped by restaurant. The entity_name contains the event name.
+    // We'll just use all events as one bucket
+    const existing = eventsByType.get('events') || [];
+    existing.push(e);
+    eventsByType.set('events', existing);
+  }
+
+  if (events.length >= MIN_CANDIDATES_FOR_POST) {
+    subTypes.push({ candidates: events, subType: 'events', subTypeLabel: 'Events' });
+  }
+  if (happyHours.length >= MIN_CANDIDATES_FOR_POST) {
+    subTypes.push({ candidates: happyHours, subType: 'happy_hour', subTypeLabel: 'Happy Hours' });
+  }
+  if (specials.length >= MIN_CANDIDATES_FOR_POST) {
+    subTypes.push({ candidates: specials, subType: 'special', subTypeLabel: 'Specials' });
+  }
+
+  // Also try combining all tonight candidates
+  const allTonight = [...events, ...happyHours, ...specials];
+  if (subTypes.length === 0 && allTonight.length >= MIN_CANDIDATES_FOR_POST) {
+    subTypes.push({ candidates: allTonight, subType: 'tonight', subTypeLabel: 'Things Happening' });
+  }
+
+  if (subTypes.length === 0) {
+    return { success: false, error: 'Not enough tonight/today candidates' };
+  }
+
+  // Pick the sub-type with the most candidates (more hidden = better curiosity gap)
+  subTypes.sort((a, b) => b.candidates.length - a.candidates.length);
+  const chosen = subTypes[0];
+
+  const { visible, totalCount } = selectTopCandidates(chosen.candidates, VISIBLE_COUNT);
+  const dayLabel = dayOfWeek === 'saturday' || dayOfWeek === 'sunday' ? 'today' : 'tonight';
+
+  return await buildAndSavePost(opts, {
+    contentType: 'tonight_today',
+    visible,
+    totalCount,
+    dayLabel,
+    subType: chosen.subType,
+    subTypeLabel: chosen.subTypeLabel,
+    decisionPath: `${decisionPath}:${chosen.subType}`,
+  });
+}
+
+async function generateWeekendPreview(
+  opts: GenerateOptions,
+  date: Date,
+  decisionPath: string
+): Promise<GenerationResult> {
+  const { supabase, market } = opts;
+
+  // Calculate this weekend's dates
+  const dayNumber = date.getDay();
+  const daysToFriday = dayNumber <= 5 ? 5 - dayNumber : 5 - dayNumber + 7;
+  const friday = new Date(date);
+  friday.setDate(date.getDate() + daysToFriday);
+  const saturday = new Date(friday);
+  saturday.setDate(friday.getDate() + 1);
+  const sunday = new Date(friday);
+  sunday.setDate(friday.getDate() + 2);
+
+  const { candidates } = await fetchWeekendCandidates(
+    supabase,
+    market.market_id,
+    friday.toISOString().split('T')[0],
+    saturday.toISOString().split('T')[0],
+    sunday.toISOString().split('T')[0]
+  );
+
+  if (candidates.length < MIN_CANDIDATES_FOR_POST) {
+    return { success: false, error: 'Not enough weekend candidates' };
+  }
+
+  const { visible, totalCount } = selectTopCandidates(candidates, VISIBLE_COUNT);
+
+  return await buildAndSavePost(opts, {
+    contentType: 'weekend_preview',
+    visible,
+    totalCount,
+    dayLabel: 'this weekend',
+    subType: 'weekend',
+    subTypeLabel: 'Weekend Plans',
+    decisionPath,
+  });
+}
+
+async function generateCategoryRoundup(
+  opts: GenerateOptions,
+  date: Date,
+  decisionPath: string
+): Promise<GenerationResult> {
+  const { supabase, market } = opts;
+  const roundupTopic = getTodaysRoundupCategory(date);
+
+  let { candidates } = await fetchCategoryRoundupCandidates(
+    supabase,
+    market.market_id,
+    roundupTopic.category
+  );
+
+  // If the day's category doesn't have enough, try the next one
+  let attempts = 0;
+  let topicUsed = roundupTopic;
+  const dayOfYear = Math.floor(
+    (date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / 86400000
+  );
+
+  while (candidates.length < MIN_CANDIDATES_FOR_POST && attempts < 5) {
+    attempts++;
+    const { ROUNDUP_CATEGORIES } = await import('./prompts');
+    const nextTopic = ROUNDUP_CATEGORIES[(dayOfYear + attempts) % ROUNDUP_CATEGORIES.length];
+    const result = await fetchCategoryRoundupCandidates(
+      supabase,
+      market.market_id,
+      nextTopic.category
+    );
+    candidates = result.candidates;
+    topicUsed = nextTopic;
+  }
+
+  if (candidates.length < MIN_CANDIDATES_FOR_POST) {
+    // Ultimate fallback: just use all active restaurants
+    const { data: allRestaurants } = await supabase
+      .from('restaurants')
+      .select(`id, name, slug, cover_image_url, average_rating, created_at,
+        tier:tiers(slug)
+      `)
+      .eq('market_id', market.market_id)
+      .eq('is_active', true)
+      .limit(50);
+
+    if (!allRestaurants || allRestaurants.length < MIN_CANDIDATES_FOR_POST) {
+      return { success: false, error: 'Not enough restaurants for any roundup' };
+    }
+
+    const { loadRecencyMemory, scoreCandidate } = await import('./scoring');
+    const memory = await loadRecencyMemory(supabase, market.market_id);
+    candidates = allRestaurants.map((r: any) =>
+      scoreCandidate({
+        restaurant_id: r.id,
+        restaurant_name: r.name,
+        restaurant_slug: r.slug,
+        entity_id: r.id,
+        entity_type: 'restaurant',
+        entity_name: r.name,
+        image_url: null,
+        cover_image_url: r.cover_image_url,
+        tier_slug: r.tier?.slug || null,
+        average_rating: r.average_rating,
+        created_at: r.created_at,
+      }, memory)
+    );
+    topicUsed = { category: 'hidden_gems', label: 'Hidden Gems' };
+  }
+
+  const { visible, totalCount } = selectTopCandidates(candidates, VISIBLE_COUNT);
+
+  return await buildAndSavePost(opts, {
+    contentType: 'category_roundup',
+    visible,
+    totalCount,
+    dayLabel: '',
+    subType: topicUsed.category,
+    subTypeLabel: topicUsed.label,
+    decisionPath: `${decisionPath}:${topicUsed.category}`,
+  });
+}
+
+// ============================================
+// Build caption + save post
+// ============================================
+
+interface BuildPostParams {
+  contentType: ContentType;
+  visible: ScoredCandidate[];
+  totalCount: number;
+  dayLabel: string;
+  subType: string;
+  subTypeLabel: string;
+  decisionPath: string;
+}
+
+async function buildAndSavePost(
+  opts: GenerateOptions,
+  params: BuildPostParams
+): Promise<GenerationResult> {
+  const { supabase, market, date } = opts;
+  const today = date.toISOString().split('T')[0];
+
+  // Generate caption with OpenAI
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+  const marketName = getMarketDisplayName(market.market_slug);
+  const appName = getAppName(market.market_slug);
+
+  const { system, user } = buildCaptionPrompt({
+    marketName,
+    appName,
+    contentType: params.contentType,
+    visibleNames: params.visible.map(c => c.restaurant_name),
+    totalCount: params.totalCount,
+    dayLabel: params.dayLabel,
+    subType: params.subType,
+    subTypeLabel: params.subTypeLabel,
+  });
+
+  let caption: string;
+  let tokenUsage = { prompt: 0, completion: 0, total: 0 };
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      max_tokens: 500,
+      temperature: 0.8,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: user },
+      ],
+    });
+
+    caption = response.choices[0]?.message?.content?.trim() || '';
+    tokenUsage = {
+      prompt: response.usage?.prompt_tokens || 0,
+      completion: response.usage?.completion_tokens || 0,
+      total: response.usage?.total_tokens || 0,
+    };
+
+    if (!caption) {
+      throw new Error('Empty caption from OpenAI');
+    }
+  } catch (err: any) {
+    await logGeneration(supabase, market.market_id, {
+      decisionPath: params.decisionPath,
+      candidateSummary: { visible: params.visible.length, total: params.totalCount },
+      selectedPostType: params.contentType,
+      selectedIds: params.visible.map(c => c.entity_id),
+      modelUsed: 'gpt-4o-mini',
+      tokenUsage,
+      success: false,
+      errorMessage: err.message,
+    });
+    return { success: false, error: `Caption generation failed: ${err.message}` };
+  }
+
+  // Select media
+  const media = await selectMedia(supabase, market.market_id, params.visible);
+
+  const metadata: GenerationMetadata = {
+    post_type: params.contentType,
+    total_candidates: params.totalCount,
+    total_hidden: params.totalCount - params.visible.length,
+    visible_names: params.visible.map(c => c.restaurant_name),
+    decision_path: params.decisionPath,
+    model_used: 'gpt-4o-mini',
+    token_usage: tokenUsage,
+    day_of_week: new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(date),
+    ...(params.subType && { event_type: params.subType }),
+    ...(params.subTypeLabel && { category: params.subTypeLabel }),
+  };
+
+  // Upsert post record
+  const postData = {
+    market_id: market.market_id,
+    post_date: today,
+    content_type: params.contentType,
+    selected_entity_ids: params.visible.map(c => c.entity_id),
+    caption,
+    media_urls: media.urls,
+    status: 'draft' as const,
+    generation_metadata: metadata,
+  };
+
+  const { data: post, error: insertError } = await supabase
+    .from('instagram_posts')
+    .upsert(postData, { onConflict: 'market_id,post_date' })
+    .select('id')
+    .single();
+
+  if (insertError || !post) {
+    await logGeneration(supabase, market.market_id, {
+      decisionPath: params.decisionPath,
+      candidateSummary: { visible: params.visible.length, total: params.totalCount },
+      selectedPostType: params.contentType,
+      selectedIds: params.visible.map(c => c.entity_id),
+      modelUsed: 'gpt-4o-mini',
+      tokenUsage,
+      success: false,
+      errorMessage: insertError?.message || 'Failed to save post',
+    });
+    return { success: false, error: `DB save failed: ${insertError?.message}` };
+  }
+
+  // Record usage for recency memory
+  await recordMediaUsage(supabase, market.market_id, params.visible, media.urls, params.contentType);
+
+  // Log success
+  await logGeneration(supabase, market.market_id, {
+    decisionPath: params.decisionPath,
+    candidateSummary: {
+      visible: params.visible.length,
+      total: params.totalCount,
+      scores: params.visible.map(c => ({ name: c.restaurant_name, score: c.score })),
+    },
+    selectedPostType: params.contentType,
+    selectedIds: params.visible.map(c => c.entity_id),
+    modelUsed: 'gpt-4o-mini',
+    tokenUsage,
+    success: true,
+  });
+
+  return {
+    success: true,
+    post_id: post.id,
+    content_type: params.contentType,
+    caption,
+    media_urls: media.urls,
+  };
+}
+
+// ============================================
+// Logging helper
+// ============================================
+
+async function logGeneration(
+  supabase: SupabaseClient,
+  marketId: string,
+  log: {
+    decisionPath: string;
+    candidateSummary: any;
+    selectedPostType: string;
+    selectedIds: string[];
+    modelUsed: string;
+    tokenUsage: any;
+    success: boolean;
+    errorMessage?: string;
+  }
+) {
+  await supabase.from('instagram_generation_logs').insert({
+    market_id: marketId,
+    decision_path: log.decisionPath,
+    candidate_summary: log.candidateSummary,
+    selected_post_type: log.selectedPostType,
+    selected_ids: log.selectedIds,
+    model_used: log.modelUsed,
+    token_usage: log.tokenUsage,
+    success: log.success,
+    error_message: log.errorMessage || null,
+  });
+}
