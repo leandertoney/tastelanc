@@ -19,6 +19,7 @@ export async function GET(request: Request) {
     const search = searchParams.get('search');
     const tier = searchParams.get('tier');
     const active = searchParams.get('active');
+    const hasContact = searchParams.get('has_contact');
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '10', 10)));
     const sortBy = searchParams.get('sort_by') || 'name';
@@ -70,6 +71,7 @@ export async function GET(request: Request) {
     if (search) countQ = countQ.or(`name.ilike.%${search}%,city.ilike.%${search}%`);
     if (active === 'true') countQ = countQ.eq('is_active', true);
     if (active === 'false') countQ = countQ.eq('is_active', false);
+    if (hasContact === 'true') countQ = countQ.not('contact_name', 'is', null);
     const { count: totalCount } = await countQ;
 
     // Build paginated data query
@@ -90,6 +92,10 @@ export async function GET(request: Request) {
       query = query.eq('is_active', true);
     } else if (active === 'false') {
       query = query.eq('is_active', false);
+    }
+
+    if (hasContact === 'true') {
+      query = query.not('contact_name', 'is', null);
     }
 
     const { data: restaurants, error } = await query;

@@ -237,6 +237,24 @@ export async function POST(request: Request) {
     // Determine source based on linking
     const source = restaurant_id ? 'directory' : google_place_id ? 'google_places' : 'manual';
 
+    // Enforce per-rep limit on directory (direct contact) leads
+    const MAX_DIRECT_CONTACT_LEADS_PER_REP = 10;
+    if (source === 'directory' && access.isSalesRep && !access.isAdmin && access.userId) {
+      const { count } = await serviceClient
+        .from('business_leads')
+        .select('id', { count: 'exact', head: true })
+        .eq('assigned_to', access.userId)
+        .eq('source', 'directory')
+        .in('status', ['new', 'contacted', 'interested']);
+
+      if (count !== null && count >= MAX_DIRECT_CONTACT_LEADS_PER_REP) {
+        return NextResponse.json(
+          { error: `You can work up to ${MAX_DIRECT_CONTACT_LEADS_PER_REP} direct contact leads at a time. Close or convert existing ones to claim more.` },
+          { status: 429 }
+        );
+      }
+    }
+
     // Auto-assign market_id from the sales rep's market when not provided
     let resolvedMarketId = market_id || null;
     if (!resolvedMarketId && access.marketIds && access.marketIds.length === 1) {
