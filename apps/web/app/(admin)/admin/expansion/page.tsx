@@ -175,6 +175,9 @@ export default function ExpansionPipelinePage() {
         ? { ...prev, total: prev.total + 1, researching: prev.researching + 1 }
         : null
     );
+    // Auto-trigger the agent so the new city gets researched + branded immediately
+    toast.info(`${city.city_name} added — starting agent...`);
+    setTimeout(() => handleRunAgent(), 500);
   };
 
   const handleRunAgent = async () => {
