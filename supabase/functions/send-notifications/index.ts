@@ -475,19 +475,23 @@ const MARKET_INFO: Record<string, { appSlug: string; aiName: string; label: stri
   'cumberland-pa': { appSlug: 'taste-cumberland', aiName: 'Mollie', label: 'Cumberland' },
 };
 
-async function sendTodaysPick(supabase: ReturnType<typeof createClient>): Promise<{
+async function sendTodaysPick(supabase: ReturnType<typeof createClient>, targetMarketSlug?: string): Promise<{
   sent: number;
   restaurant?: string;
   strategy?: string;
   reason?: string;
 }> {
   // Run Today's Pick independently for each active market
-  const { data: markets } = await supabase
-    .from('markets')
-    .select('id, slug')
-    .eq('is_active', true);
+  let query = supabase.from('markets').select('id, slug').eq('is_active', true);
 
-  if (!markets?.length) return { sent: 0, reason: 'No active markets' };
+  // If a specific market is requested, only process that one
+  if (targetMarketSlug) {
+    query = query.eq('slug', targetMarketSlug);
+  }
+
+  const { data: markets } = await query;
+
+  if (!markets?.length) return { sent: 0, reason: targetMarketSlug ? `Market ${targetMarketSlug} not found` : 'No active markets' };
 
   let totalSent = 0;
   let lastRestaurant = '';
@@ -880,7 +884,14 @@ Deno.serve(async (req) => {
       }
 
       case 'todays-pick': {
-        const result = await sendTodaysPick(supabase);
+        let targetMarketSlug: string | undefined;
+        try {
+          const body = await req.json();
+          targetMarketSlug = body.market_slug;
+        } catch {
+          // No body — process all markets (backward compat)
+        }
+        const result = await sendTodaysPick(supabase, targetMarketSlug);
         return new Response(JSON.stringify(result), {
           headers: { 'Content-Type': 'application/json' },
         });
