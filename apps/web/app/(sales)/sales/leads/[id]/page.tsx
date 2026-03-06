@@ -822,7 +822,7 @@ export default function LeadDetailPage({
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4">
               <Field label="Contact Name" value={lead.contact_name ? `${lead.contact_name}${lead.contact_title ? ` — ${lead.contact_title}` : ''}` : null} />
-              <Field label="Email">
+              <Field label="Business Email">
                 {lead.email ? (
                   <a href={`mailto:${lead.email}`} className="text-sm text-white hover:text-tastelanc-accent flex items-center gap-1.5">
                     <Mail className="w-3.5 h-3.5 text-gray-500" />
@@ -830,7 +830,7 @@ export default function LeadDetailPage({
                   </a>
                 ) : null}
               </Field>
-              <Field label="Phone">
+              <Field label="Business Phone">
                 {lead.phone ? (
                   <a href={`tel:${lead.phone}`} className="text-sm text-white hover:text-tastelanc-accent flex items-center gap-1.5">
                     <Phone className="w-3.5 h-3.5 text-gray-500" />
@@ -863,22 +863,29 @@ export default function LeadDetailPage({
               <Field label="Last Contacted" value={lead.last_contacted_at ? new Date(lead.last_contacted_at).toLocaleDateString() : null} />
               <Field label="Assigned To" value={lead.assigned_to_name || 'Unassigned'} />
             </div>
-            {/* Direct Contact (enriched personal info) */}
+            {/* Personal / Direct Contact Info */}
             {(lead.contact_phone || lead.contact_email) && (
               <div className="mt-4 pt-4 border-t border-tastelanc-surface-light">
-                <p className="text-xs text-gray-500 mb-2 uppercase tracking-wide font-semibold">Direct Contact</p>
-                <div className="flex flex-wrap gap-4">
+                <p className="text-xs text-emerald-400 mb-3 uppercase tracking-wide font-semibold flex items-center gap-1.5">
+                  <Phone className="w-3 h-3" />
+                  Personal Contact — {lead.contact_name}{lead.contact_title ? ` (${lead.contact_title})` : ''}
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4">
                   {lead.contact_phone && (
-                    <a href={`tel:${lead.contact_phone}`} className="text-sm text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5">
-                      <Phone className="w-3.5 h-3.5" />
-                      {lead.contact_phone}
-                    </a>
+                    <Field label="Personal Phone">
+                      <a href={`tel:${lead.contact_phone}`} className="text-sm text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5" />
+                        {lead.contact_phone}
+                      </a>
+                    </Field>
                   )}
                   {lead.contact_email && (
-                    <a href={`mailto:${lead.contact_email}`} className="text-sm text-tastelanc-accent hover:text-tastelanc-accent/80 flex items-center gap-1.5">
-                      <Mail className="w-3.5 h-3.5" />
-                      {lead.contact_email}
-                    </a>
+                    <Field label="Personal Email">
+                      <a href={`mailto:${lead.contact_email}`} className="text-sm text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5">
+                        <Mail className="w-3.5 h-3.5" />
+                        {lead.contact_email}
+                      </a>
+                    </Field>
                   )}
                 </div>
               </div>
