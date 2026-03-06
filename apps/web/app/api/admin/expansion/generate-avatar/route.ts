@@ -72,24 +72,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'No draft found' }, { status: 404 });
   }
 
-  const city = draft.expansion_cities;
-  const regionName = (city.research_data as Record<string, unknown>)?.suggested_region_name as string
-    || city.city_name;
-  const slug = city.slug || regionName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const city = draft.expansion_cities as Record<string, unknown> | null;
+  if (!city) {
+    return NextResponse.json({ error: 'City data missing from brand draft' }, { status: 404 });
+  }
+
+  const rd = (city.research_data as Record<string, unknown>) || {};
+  const cityName = city.city_name as string || 'Unknown';
+  const regionName = (rd.suggested_region_name as string) || cityName;
+  const slug = (city.slug as string) || regionName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
   const localCulture = [
-    (city.research_data as Record<string, unknown>)?.local_food_traditions,
-    (city.research_data as Record<string, unknown>)?.tourism_factors,
+    rd.local_food_traditions,
+    rd.tourism_factors,
     city.dining_scene_description,
   ].filter(Boolean).join('. ').slice(0, 300) || `the ${regionName} area`;
 
+  const colors = (draft.colors as Record<string, string>) || {};
   const avatarUrl = await generateAvatarImage(
-    draft.ai_assistant_name,
+    draft.ai_assistant_name as string,
     regionName,
-    draft.colors?.accent || '#4A90D9',
+    colors.accent || '#4A90D9',
     localCulture,
     slug,
-    draft.variant_number || 1
+    (draft.variant_number as number) || 1
   );
 
   if (!avatarUrl) {
@@ -102,17 +108,17 @@ export async function POST(request: Request) {
     .update({
       avatar_image_url: avatarUrl,
       market_config_json: {
-        ...(draft.market_config_json || {}),
+        ...((draft.market_config_json as Record<string, unknown>) || {}),
         aiAvatarImage: avatarUrl,
       },
     })
-    .eq('id', brandDraftId);
+    .eq('id', draft.id);
 
   return NextResponse.json({
     avatarUrl,
-    brandDraftId: draft.id,
-    brandName: draft.ai_assistant_name,
-    cityName: (draft.expansion_cities as Record<string, unknown>)?.city_name,
+    brandDraftId: draft.id as string,
+    brandName: draft.ai_assistant_name as string,
+    cityName: cityName,
     hasMore: remainingCount > 0,
     remaining: remainingCount,
   });
