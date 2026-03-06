@@ -17,9 +17,11 @@ import {
   ChevronRight,
   CheckCircle,
   Settings,
+  User,
 } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 interface Restaurant {
   id: string;
@@ -31,6 +33,13 @@ interface Restaurant {
   is_active: boolean;
   tiers: { name: string } | null;
   has_lead: boolean;
+  contact_name: string | null;
+  contact_phone: string | null;
+  contact_email: string | null;
+  contact_title: string | null;
+  address: string | null;
+  zip_code: string | null;
+  category: string | null;
 }
 
 interface Stats {
@@ -55,6 +64,7 @@ type TierFilter = 'all' | 'elite' | 'premium' | 'standard';
 type ActiveFilter = 'all' | 'active' | 'inactive';
 
 export default function SalesRestaurantsPage() {
+  const router = useRouter();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [pagination, setPagination] = useState<Pagination | null>(null);
@@ -64,6 +74,42 @@ export default function SalesRestaurantsPage() {
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>('all');
   const [sortBy, setSortBy] = useState<SortColumn>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [creatingLeadId, setCreatingLeadId] = useState<string | null>(null);
+
+  const createLeadFromRestaurant = async (r: Restaurant) => {
+    setCreatingLeadId(r.id);
+    try {
+      const res = await fetch('/api/sales/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          business_name: r.name,
+          contact_name: r.contact_name || null,
+          phone: r.phone || null,
+          website: r.website || null,
+          city: r.city || null,
+          state: r.state || 'PA',
+          address: r.address || null,
+          zip_code: r.zip_code || null,
+          category: r.category || 'restaurant',
+          email: r.contact_email || null,
+          restaurant_id: r.id,
+          contact_phone: r.contact_phone || undefined,
+          contact_email: r.contact_email || undefined,
+          contact_title: r.contact_title || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create lead');
+      toast.success(`Lead created for ${r.name}`);
+      router.push(`/sales/leads/${data.lead.id}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Something went wrong';
+      toast.error(message);
+    } finally {
+      setCreatingLeadId(null);
+    }
+  };
 
   const fetchRestaurants = async (pageOverride?: number) => {
     try {
@@ -298,24 +344,32 @@ export default function SalesRestaurantsPage() {
                         )}
                       </td>
                       <td className="p-3">
-                        <div className="flex items-center gap-2">
-                          {r.phone && (
-                            <a href={`tel:${r.phone}`} className="text-gray-400 hover:text-white transition-colors" title={r.phone}>
-                              <Phone className="w-3.5 h-3.5" />
-                            </a>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            {r.phone && (
+                              <a href={`tel:${r.phone}`} className="text-gray-400 hover:text-white transition-colors" title={r.phone}>
+                                <Phone className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                            {r.website && (
+                              <a
+                                href={r.website.startsWith('http') ? r.website : `https://${r.website}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-gray-400 hover:text-white transition-colors"
+                                title="Website"
+                              >
+                                <Globe className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                            {!r.phone && !r.website && !r.contact_name && <span className="text-sm text-gray-600">—</span>}
+                          </div>
+                          {r.contact_name && (
+                            <div className="flex items-center gap-1" title={`${r.contact_name}${r.contact_title ? ` — ${r.contact_title}` : ''}${r.contact_phone ? ` | ${r.contact_phone}` : ''}`}>
+                              <User className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                              <span className="text-xs text-emerald-400 truncate">{r.contact_name}</span>
+                            </div>
                           )}
-                          {r.website && (
-                            <a
-                              href={r.website.startsWith('http') ? r.website : `https://${r.website}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-gray-400 hover:text-white transition-colors"
-                              title="Website"
-                            >
-                              <Globe className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-                          {!r.phone && !r.website && <span className="text-sm text-gray-600">—</span>}
                         </div>
                       </td>
                       <td className="p-3">
@@ -347,13 +401,18 @@ export default function SalesRestaurantsPage() {
                               Lead exists
                             </span>
                           ) : (
-                            <Link
-                              href={`/sales/leads/new?restaurant_id=${r.id}&name=${encodeURIComponent(r.name)}&phone=${encodeURIComponent(r.phone || '')}&website=${encodeURIComponent(r.website || '')}&city=${encodeURIComponent(r.city || '')}&state=${encodeURIComponent(r.state || '')}`}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white text-sm rounded-lg transition-colors"
+                            <button
+                              onClick={() => createLeadFromRestaurant(r)}
+                              disabled={creatingLeadId === r.id}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-tastelanc-accent hover:bg-tastelanc-accent-hover disabled:opacity-50 text-white text-sm rounded-lg transition-colors"
                             >
-                              <UserPlus className="w-3.5 h-3.5" />
+                              {creatingLeadId === r.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <UserPlus className="w-3.5 h-3.5" />
+                              )}
                               Create Lead
-                            </Link>
+                            </button>
                           )}
                         </div>
                       </td>

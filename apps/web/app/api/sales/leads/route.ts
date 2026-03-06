@@ -190,6 +190,9 @@ export async function POST(request: Request) {
       market_id,
       restaurant_id,
       google_place_id,
+      contact_phone,
+      contact_email,
+      contact_title,
     } = body;
 
     if (!business_name) {
@@ -262,6 +265,9 @@ export async function POST(request: Request) {
         assigned_to: access.isSalesRep ? access.userId : null,
         restaurant_id: restaurant_id || null,
         google_place_id: google_place_id || null,
+        contact_phone: contact_phone || null,
+        contact_email: contact_email || null,
+        contact_title: contact_title || null,
       })
       .select()
       .single();

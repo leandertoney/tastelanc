@@ -75,7 +75,7 @@ export async function GET(request: Request) {
     // Build paginated data query
     let query = serviceClient
       .from('restaurants')
-      .select('id, name, city, state, phone, website, is_active, tier_id, tiers(name)')
+      .select('id, name, city, state, phone, website, is_active, tier_id, tiers(name), contact_name, contact_phone, contact_email, contact_title, address, zip_code, category')
       .order(safeSortBy, { ascending: sortDir === 'asc' })
       .range((page - 1) * limit, page * limit - 1);
 

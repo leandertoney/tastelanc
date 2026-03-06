@@ -12,8 +12,14 @@ import {
   RefreshCw,
   AlertCircle,
   HelpCircle,
+  User,
+  Phone,
+  Mail,
+  UserPlus,
 } from 'lucide-react';
 import { Card, Badge, Tooltip } from '@/components/ui';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface Stats {
   total: number;
@@ -43,6 +49,18 @@ interface Activity {
   created_at: string;
 }
 
+interface DirectContact {
+  id: string;
+  name: string;
+  city: string | null;
+  contact_name: string | null;
+  contact_phone: string | null;
+  contact_email: string | null;
+  contact_title: string | null;
+  phone: string | null;
+  has_lead: boolean;
+}
+
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   new: { label: 'New', color: 'bg-blue-500/20 text-blue-400' },
   contacted: { label: 'Contacted', color: 'bg-yellow-500/20 text-yellow-400' },
@@ -54,13 +72,17 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
 const AUTO_REFRESH_INTERVAL = 2 * 60 * 60 * 1000; // 2 hours
 
 export default function SalesDashboard() {
+  const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentLeads, setRecentLeads] = useState<Lead[]>([]);
   const [followUpLeads, setFollowUpLeads] = useState<Lead[]>([]);
+  const [directContacts, setDirectContacts] = useState<DirectContact[]>([]);
+  const [directContactsTotal, setDirectContactsTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [fetchError, setFetchError] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+  const [creatingLeadId, setCreatingLeadId] = useState<string | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchData = useCallback(async (silent = false) => {
@@ -86,6 +108,19 @@ export default function SalesDashboard() {
       );
       setFollowUpLeads(needsFollowUp.slice(0, 5));
       setLastRefreshed(new Date());
+
+      // Fetch direct contacts (restaurants with personal contact data)
+      try {
+        const dcRes = await fetch('/api/sales/restaurants/direct-contacts');
+        if (dcRes.ok) {
+          const dcData = await dcRes.json();
+          const withoutLeads = (dcData.contacts || []).filter((c: DirectContact) => !c.has_lead);
+          setDirectContacts(withoutLeads.slice(0, 5));
+          setDirectContactsTotal(dcData.without_leads || 0);
+        }
+      } catch {
+        // Non-critical — don't block dashboard
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       if (!silent) setFetchError(true);
@@ -94,6 +129,37 @@ export default function SalesDashboard() {
       setIsRefreshing(false);
     }
   }, []);
+
+  const createLeadFromContact = async (c: DirectContact) => {
+    setCreatingLeadId(c.id);
+    try {
+      const res = await fetch('/api/sales/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          business_name: c.name,
+          contact_name: c.contact_name || null,
+          phone: c.phone || null,
+          restaurant_id: c.id,
+          contact_phone: c.contact_phone || undefined,
+          contact_email: c.contact_email || undefined,
+          contact_title: c.contact_title || undefined,
+          city: c.city || null,
+          state: 'PA',
+          category: 'restaurant',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create lead');
+      toast.success(`Lead created for ${c.name}`);
+      router.push(`/sales/leads/${data.lead.id}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Something went wrong';
+      toast.error(message);
+    } finally {
+      setCreatingLeadId(null);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -292,6 +358,74 @@ export default function SalesDashboard() {
           )}
         </Card>
       </div>
+
+      {/* Direct Contacts */}
+      {directContacts.length > 0 && (
+        <Card className="p-6 mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              <User className="w-5 h-5 text-emerald-400" />
+              Direct Contacts
+              <span className="text-sm font-normal text-gray-500">({directContactsTotal})</span>
+              <Tooltip content="Restaurants with verified decision-maker contact info (personal phone, email, title). Click 'Create Lead' to add them to your pipeline instantly." position="top">
+                <HelpCircle className="w-3.5 h-3.5 text-gray-600 hover:text-gray-400 cursor-help" />
+              </Tooltip>
+            </h2>
+            <Link href="/sales/restaurants" className="text-sm text-tastelanc-accent hover:underline flex items-center gap-1">
+              View all <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {directContacts.map((contact) => (
+              <div
+                key={contact.id}
+                className="p-3 bg-tastelanc-surface-light rounded-lg"
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="min-w-0 flex-1">
+                    <span className="text-white text-sm font-medium truncate block">{contact.name}</span>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="text-xs text-emerald-400">{contact.contact_name}</span>
+                      {contact.contact_title && (
+                        <span className="text-xs text-gray-500"> &mdash; {contact.contact_title}</span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => createLeadFromContact(contact)}
+                    disabled={creatingLeadId === contact.id}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-tastelanc-accent hover:bg-tastelanc-accent-hover disabled:opacity-50 text-white text-xs rounded-lg transition-colors ml-3 flex-shrink-0"
+                  >
+                    {creatingLeadId === contact.id ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <UserPlus className="w-3 h-3" />
+                    )}
+                    Create Lead
+                  </button>
+                </div>
+                <div className="flex items-center gap-3 text-xs">
+                  {contact.contact_phone && (
+                    <a href={`tel:${contact.contact_phone}`} className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1">
+                      <Phone className="w-3 h-3" />
+                      {contact.contact_phone}
+                    </a>
+                  )}
+                  {contact.contact_email && (
+                    <a href={`mailto:${contact.contact_email}`} className="text-tastelanc-accent hover:text-tastelanc-accent/80 flex items-center gap-1">
+                      <Mail className="w-3 h-3" />
+                      {contact.contact_email}
+                    </a>
+                  )}
+                  {contact.city && (
+                    <span className="text-gray-500">{contact.city}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
