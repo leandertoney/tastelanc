@@ -6,7 +6,7 @@
  * the most recent completed notification and block if it was sent too recently.
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 const COOLDOWN_MINUTES = 90;
 
@@ -25,7 +25,7 @@ export interface ThrottleResult {
  * @returns ThrottleResult indicating whether to suppress the notification
  */
 export async function checkNotificationThrottle(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   marketSlug: string,
 ): Promise<ThrottleResult> {
   const cooldownAgo = new Date(Date.now() - COOLDOWN_MINUTES * 60 * 1000).toISOString();
