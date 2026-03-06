@@ -501,7 +501,7 @@ async function stepGenerateBrands(
     const { data: existingBrands } = await supabase
       .from('expansion_brand_drafts')
       .select('ai_assistant_name');
-    const usedNames = [...new Set((existingBrands || []).map(b => b.ai_assistant_name))];
+    const usedNames = Array.from(new Set((existingBrands || []).map(b => b.ai_assistant_name)));
 
     console.log(`[expansion-agent] Generating brands for ${citiesToProcess.length} cities (${usedNames.length} names already used)...`);
 
