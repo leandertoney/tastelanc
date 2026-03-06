@@ -82,6 +82,22 @@ export function useNotifications() {
               (navigation as any).navigate('BlogDetail', { slug: data.blogSlug });
             }
             break;
+          case 'EmailThread':
+            if (data.counterpartyEmail) {
+              (navigation as any).navigate('EmailThread', {
+                counterpartyEmail: data.counterpartyEmail,
+                ...(data.counterpartyName && { counterpartyName: data.counterpartyName }),
+              });
+            }
+            break;
+          case 'SalesDashboard':
+            (navigation as any).navigate('SalesDashboard');
+            break;
+          case 'LeadDetail':
+            if (data.leadId) {
+              (navigation as any).navigate('LeadDetail', { leadId: data.leadId });
+            }
+            break;
           default:
             console.log('Unknown screen:', data.screen);
         }

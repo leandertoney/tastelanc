@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Dimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -199,6 +200,21 @@ export default function EventsViewAllScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { marketId } = useMarket();
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Add "Scan Flyer" header button
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('FlyerCapture')}
+          style={{ paddingHorizontal: 8 }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="scan-outline" size={24} color={colors.accent} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ['allEvents', marketId],

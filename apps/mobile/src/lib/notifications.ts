@@ -239,12 +239,15 @@ export async function getBadgeCount(): Promise<number> {
 
 // Type for notification data we send
 export interface TasteLancNotificationData {
-  screen?: 'RestaurantDetail' | 'HappyHoursViewAll' | 'EventsViewAll' | 'VoteCenter' | 'AreaRestaurants' | 'BlogDetail';
+  screen?: 'RestaurantDetail' | 'HappyHoursViewAll' | 'EventsViewAll' | 'VoteCenter' | 'AreaRestaurants' | 'BlogDetail' | 'EmailThread' | 'SalesDashboard' | 'LeadDetail';
   restaurantId?: string;
   areaId?: string;
   areaName?: string;
   category?: string;
   blogSlug?: string;
+  counterpartyEmail?: string;
+  counterpartyName?: string;
+  leadId?: string;
 }
 
 /**

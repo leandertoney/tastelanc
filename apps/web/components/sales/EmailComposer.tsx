@@ -155,11 +155,12 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
         }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        throw new Error('AI generation failed');
+        throw new Error(data.error || 'AI generation failed');
       }
 
-      const data = await res.json();
       const email = data.email;
       setSubject(email.subject);
       setHeadline(email.headline);
@@ -170,7 +171,7 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
       toast.success('AI generated email');
     } catch (error) {
       console.error('AI generation error:', error);
-      toast.error('Failed to generate email');
+      toast.error(error instanceof Error ? error.message : 'Failed to generate email');
     } finally {
       setIsGenerating(false);
     }
@@ -196,13 +197,14 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
         }),
       });
 
-      if (!res.ok) throw new Error('Failed to generate subjects');
-
       const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Failed to generate subjects');
+
       setSuggestedSubjects(data.subjects || []);
     } catch (error) {
       console.error('Subject generation error:', error);
-      toast.error('Failed to suggest subjects');
+      toast.error(error instanceof Error ? error.message : 'Failed to suggest subjects');
     } finally {
       setIsGeneratingSubjects(false);
     }
@@ -227,14 +229,15 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
         }),
       });
 
-      if (!res.ok) throw new Error('Failed to improve');
-
       const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Failed to improve');
+
       setBody(data.improved);
       toast.success('Email enhanced by AI');
     } catch (error) {
       console.error('Improve error:', error);
-      toast.error('Failed to enhance email');
+      toast.error(error instanceof Error ? error.message : 'Failed to enhance email');
     } finally {
       setIsImproving(false);
     }

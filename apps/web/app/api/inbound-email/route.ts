@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
+import { getAllSenderEmails, SENDER_IDENTITIES } from '@/config/sender-identities';
 
 // Use service role client for webhook processing (no auth context in webhooks)
 const supabase = createClient(
@@ -82,6 +83,111 @@ async function fetchEmailContent(emailId: string) {
   }
 
   return res.json();
+}
+
+/**
+ * Send push notifications to one or more sales team members.
+ * Queries push tokens across ALL app slugs (tastelanc, taste-cumberland, etc.)
+ * so reps on any market's app receive notifications.
+ */
+async function sendSalesTeamPushNotifications(
+  supabaseClient: typeof supabase,
+  userIds: string[],
+  title: string,
+  body: string,
+  data: Record<string, string>,
+) {
+  if (userIds.length === 0) return;
+
+  try {
+    const { data: tokens } = await supabaseClient
+      .from('push_tokens')
+      .select('token')
+      .in('user_id', userIds);
+
+    if (!tokens || tokens.length === 0) return;
+
+    const messages = tokens.map(t => ({
+      to: t.token,
+      title,
+      body,
+      data,
+      sound: 'default' as const,
+    }));
+
+    await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(messages),
+    });
+
+    console.log(`Push notifications sent to ${userIds.length} team member(s): ${title}`);
+  } catch (error) {
+    console.error('Failed to send push notifications:', error);
+  }
+}
+
+/**
+ * Resolve an inbound email address to the sales rep user ID.
+ * Checks sales_reps.preferred_sender_email, then SENDER_IDENTITIES + profiles.
+ */
+async function resolveEmailToUserId(
+  supabaseClient: typeof supabase,
+  toEmail: string,
+): Promise<string | null> {
+  const normalizedEmail = toEmail.toLowerCase();
+
+  // 1. Check sales_reps by preferred_sender_email or derived reply domain
+  const { data: reps } = await supabaseClient
+    .from('sales_reps')
+    .select('id, preferred_sender_email, name')
+    .eq('is_active', true);
+
+  if (reps) {
+    for (const rep of reps) {
+      if (rep.preferred_sender_email) {
+        const localPart = rep.preferred_sender_email.replace(/@.*$/, '');
+        if (
+          normalizedEmail === rep.preferred_sender_email.toLowerCase() ||
+          normalizedEmail === `${localPart}@in.tastelanc.com`
+        ) {
+          return rep.id;
+        }
+      }
+      // Check by first name match
+      if (rep.name) {
+        const firstName = rep.name.split(' ')[0].toLowerCase();
+        if (
+          normalizedEmail === `${firstName}@tastelanc.com` ||
+          normalizedEmail === `${firstName}@in.tastelanc.com`
+        ) {
+          return rep.id;
+        }
+      }
+    }
+  }
+
+  // 2. Check SENDER_IDENTITIES → match to profiles by first name
+  const matchedIdentity = SENDER_IDENTITIES.find(
+    s => s.email.toLowerCase() === normalizedEmail || s.replyEmail.toLowerCase() === normalizedEmail
+  );
+
+  if (matchedIdentity) {
+    // Find the profile with matching display_name first name
+    const { data: profiles } = await supabaseClient
+      .from('profiles')
+      .select('id, display_name')
+      .in('role', ['super_admin', 'co_founder', 'market_admin', 'sales_rep']);
+
+    if (profiles) {
+      const match = profiles.find(p =>
+        p.display_name?.split(' ')[0].toLowerCase() === matchedIdentity.name.toLowerCase()
+      );
+      if (match) return match.id;
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -213,16 +319,8 @@ export async function POST(request: Request) {
 
     // Strategy 2: Email address matching (from_email → business_leads.email)
     if (!matchedLeadId) {
-      const senderAddresses = [
-        'leander@tastelanc.com', 'jordan@tastelanc.com',
-        'mason@tastelanc.com', 'jamie@tastelanc.com', 'team@tastelanc.com',
-        'info@tastelanc.com',
-        // Inbound reply domain variants
-        'leander@in.tastelanc.com', 'jordan@in.tastelanc.com',
-        'mason@in.tastelanc.com', 'jamie@in.tastelanc.com', 'team@in.tastelanc.com',
-        'inbox@in.tastelanc.com',
-      ];
-      const isToSalesRep = senderAddresses.some(addr =>
+      const allSalesEmails = getAllSenderEmails();
+      const isToSalesRep = allSalesEmails.some(addr =>
         toEmail.toLowerCase().includes(addr.toLowerCase())
       );
       if (isToSalesRep && fromEmail) {
@@ -294,6 +392,30 @@ export async function POST(request: Request) {
         .eq('id', email.id);
 
       console.log(`Inbound email matched to lead ${matchedLeadId}`);
+
+      // Notify the assigned rep only (everyone gets their own notifications)
+      if (lead?.assigned_to) {
+        await sendSalesTeamPushNotifications(
+          supabase,
+          [lead.assigned_to],
+          `New Reply from ${fromName || fromEmail}`,
+          subject || '(No subject)',
+          { screen: 'EmailThread', counterpartyEmail: fromEmail },
+        );
+      }
+    } else {
+      // Unmatched email to a rep address — notify only the rep it was sent to
+      const repUserId = await resolveEmailToUserId(supabase, toEmail);
+
+      if (repUserId) {
+        await sendSalesTeamPushNotifications(
+          supabase,
+          [repUserId],
+          `New Email from ${fromName || fromEmail}`,
+          subject || '(No subject)',
+          { screen: 'EmailThread', counterpartyEmail: fromEmail },
+        );
+      }
     }
 
     return NextResponse.json({ received: true, id: email.id });

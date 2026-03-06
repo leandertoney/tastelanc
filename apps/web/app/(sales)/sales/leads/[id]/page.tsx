@@ -302,6 +302,30 @@ export default function LeadDetailPage({
     router.back();
   }, [hasUnsavedChanges, router]);
 
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteLead = async () => {
+    if (!lead) return;
+    if (!confirm(`Delete "${lead.business_name}"? This cannot be undone.`)) return;
+
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/sales/leads/${leadId}`, { method: 'DELETE' });
+      if (res.ok) {
+        toast.success('Lead deleted');
+        router.push('/sales');
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Failed to delete lead');
+      }
+    } catch (error) {
+      console.error('Error deleting lead:', error);
+      toast.error('Failed to delete lead');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleLogActivity = async () => {
     if (!activityDescription.trim()) return;
 
@@ -455,14 +479,26 @@ export default function LeadDetailPage({
         </div>
         <div className="flex items-center gap-3">
           {!editMode ? (
-            <button
-              onClick={() => { if (!ownership?.isLocked) { setEditMode(true); setEditForm(lead); } }}
-              disabled={ownership?.isLocked}
-              className={`flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-gray-300 hover:text-white rounded-lg transition-colors border border-tastelanc-surface-light ${ownership?.isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              <Pencil className="w-4 h-4" />
-              Edit
-            </button>
+            <div className="flex items-center gap-2">
+              {(ownership?.isAdmin || ownership?.isOwner) && (
+                <button
+                  onClick={handleDeleteLead}
+                  disabled={isDeleting}
+                  className="flex items-center gap-2 px-4 py-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </button>
+              )}
+              <button
+                onClick={() => { if (!ownership?.isLocked) { setEditMode(true); setEditForm(lead); } }}
+                disabled={ownership?.isLocked}
+                className={`flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-gray-300 hover:text-white rounded-lg transition-colors border border-tastelanc-surface-light ${ownership?.isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <Pencil className="w-4 h-4" />
+                Edit
+              </button>
+            </div>
           ) : (
             <>
               <button

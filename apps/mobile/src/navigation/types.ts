@@ -95,7 +95,47 @@ export type RootStackParamList = {
   // Personal history
   MyRestaurants: undefined;
   Wishlist: undefined;
+  // Flyer scanner
+  FlyerCapture: undefined;
+  FlyerProcessing: { imageUri: string };
+  FlyerPreview: { flyerImageUrl: string; extracted: ExtractedEventData };
+  FlyerPublishChoice: { draftData: FlyerDraftData };
+  FlyerSuccess: { draftId: string; publishingPath: string; claimUrl?: string; venueName?: string };
+  // Sales CRM
+  SalesDashboard: undefined;
+  EmailThread: { counterpartyEmail: string; counterpartyName?: string };
+  ComposeEmail: { recipientEmail?: string; recipientName?: string; subject?: string; inReplyToMessageId?: string; threadId?: string };
+  LeadDetail: { leadId: string };
 };
+
+// Flyer scanner types
+export interface ExtractedEventData {
+  event_name: string | null;
+  venue_name: string | null;
+  date: string | null;
+  time_start: string | null;
+  time_end: string | null;
+  description: string | null;
+  performers: string | null;
+  ticket_link: string | null;
+  category: string | null;
+}
+
+export interface FlyerDraftData {
+  flyerImageUrl: string;
+  eventName: string;
+  venueName: string;
+  venueId: string | null;
+  date: string;
+  timeStart: string;
+  timeEnd: string;
+  description: string;
+  performers: string;
+  category: string;
+  marketId: string;
+  extractedJson: ExtractedEventData;
+  editedJson: Record<string, unknown>;
+}
 
 // Type helpers for useNavigation hook
 declare global {
