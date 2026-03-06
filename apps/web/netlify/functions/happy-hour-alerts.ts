@@ -1,6 +1,7 @@
 import type { Config, Context } from '@netlify/functions';
 import { createClient } from '@supabase/supabase-js';
 import { validateMarketScope } from '../../lib/notifications/market-guard';
+import { checkNotificationThrottle } from '../../lib/notifications/throttle';
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
@@ -122,6 +123,18 @@ export default async function handler(req: Request, context: Context) {
       console.log('[Happy Hour Alerts] Daily digest already sent today');
       return new Response(
         JSON.stringify({ sent: 0, message: 'Daily digest already sent today' }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Throttle check: skip if another notification was sent recently to this market
+    const throttle = await checkNotificationThrottle(supabase, marketSlug);
+    if (throttle.throttled) {
+      console.log(
+        `[Happy Hour Alerts] Throttled for ${marketSlug}: last ${throttle.lastJobType} was ${throttle.minutesSinceLast}min ago`,
+      );
+      return new Response(
+        JSON.stringify({ sent: 0, message: `Throttled: ${throttle.lastJobType} sent ${throttle.minutesSinceLast}min ago` }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -254,6 +267,7 @@ export default async function handler(req: Request, context: Context) {
     await supabase.from('notification_logs').insert({
       job_type: 'happy_hour_daily_digest',
       status: 'completed',
+      market_slug: marketSlug,
       details: {
         sent: successCount,
         total: totalMessages,
