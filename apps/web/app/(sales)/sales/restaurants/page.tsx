@@ -45,10 +45,7 @@ interface Restaurant {
 interface Stats {
   total: number;
   active: number;
-  inactive: number;
-  elite: number;
-  premium: number;
-  standard: number;
+  direct_contacts: number;
 }
 
 interface Pagination {
@@ -60,9 +57,6 @@ interface Pagination {
 
 type SortColumn = 'name' | 'city' | 'is_active' | 'created_at';
 type SortDir = 'asc' | 'desc';
-type TierFilter = 'all' | 'elite' | 'premium' | 'standard';
-type ActiveFilter = 'all' | 'active' | 'inactive';
-
 export default function SalesRestaurantsPage() {
   const router = useRouter();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -70,8 +64,6 @@ export default function SalesRestaurantsPage() {
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [tierFilter, setTierFilter] = useState<TierFilter>('all');
-  const [activeFilter, setActiveFilter] = useState<ActiveFilter>('all');
   const [sortBy, setSortBy] = useState<SortColumn>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [contactFilter, setContactFilter] = useState(false);
@@ -116,8 +108,7 @@ export default function SalesRestaurantsPage() {
     try {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
-      if (tierFilter !== 'all') params.set('tier', tierFilter);
-      if (activeFilter !== 'all') params.set('active', activeFilter === 'active' ? 'true' : 'false');
+      params.set('active', 'true');
       if (contactFilter) params.set('has_contact', 'true');
       params.set('page', String(pageOverride ?? pagination?.page ?? 1));
       params.set('limit', '10');
@@ -139,7 +130,7 @@ export default function SalesRestaurantsPage() {
 
   useEffect(() => {
     fetchRestaurants(1);
-  }, [tierFilter, activeFilter, contactFilter, sortBy, sortDir]);
+  }, [contactFilter, sortBy, sortDir]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -199,7 +190,7 @@ export default function SalesRestaurantsPage() {
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-5">
+        <div className="grid grid-cols-3 gap-3 mb-5">
           <Card className="p-3">
             <div className="text-xl font-bold text-white">{stats.total}</div>
             <div className="text-xs text-gray-400">Total</div>
@@ -209,20 +200,8 @@ export default function SalesRestaurantsPage() {
             <div className="text-xs text-gray-400">Active</div>
           </Card>
           <Card className="p-3">
-            <div className="text-xl font-bold text-red-400">{stats.inactive}</div>
-            <div className="text-xs text-gray-400">Inactive</div>
-          </Card>
-          <Card className="p-3">
-            <div className="text-xl font-bold text-lancaster-gold">{stats.elite}</div>
-            <div className="text-xs text-gray-400">Elite</div>
-          </Card>
-          <Card className="p-3">
-            <div className="text-xl font-bold text-tastelanc-accent">{stats.premium}</div>
-            <div className="text-xs text-gray-400">Premium</div>
-          </Card>
-          <Card className="p-3">
-            <div className="text-xl font-bold text-gray-400">{stats.standard}</div>
-            <div className="text-xs text-gray-400">Standard</div>
+            <div className="text-xl font-bold text-emerald-400">{stats.direct_contacts}</div>
+            <div className="text-xs text-gray-400">Direct Contacts</div>
           </Card>
         </div>
       )}
@@ -239,45 +218,6 @@ export default function SalesRestaurantsPage() {
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
             />
-          </div>
-          <div className="flex gap-2">
-            {([
-              { value: 'all' as const, label: 'All Tiers' },
-              { value: 'elite' as const, label: 'Elite' },
-              { value: 'premium' as const, label: 'Premium' },
-              { value: 'standard' as const, label: 'Standard' },
-            ]).map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setTierFilter(opt.value)}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  tierFilter === opt.value
-                    ? 'bg-tastelanc-accent text-white'
-                    : 'bg-tastelanc-surface-light text-gray-400 hover:text-white'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            {([
-              { value: 'all' as const, label: 'All' },
-              { value: 'active' as const, label: 'Active' },
-              { value: 'inactive' as const, label: 'Inactive' },
-            ]).map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setActiveFilter(opt.value)}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeFilter === opt.value
-                    ? 'bg-tastelanc-accent text-white'
-                    : 'bg-tastelanc-surface-light text-gray-400 hover:text-white'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
           </div>
           <button
             onClick={() => setContactFilter((v) => !v)}

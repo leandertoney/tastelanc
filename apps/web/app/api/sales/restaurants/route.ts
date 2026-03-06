@@ -115,7 +115,7 @@ export async function GET(request: Request) {
     // Get stats — scoped same as main query
     let statsQuery = serviceClient
       .from('restaurants')
-      .select('is_active, tiers(name)');
+      .select('is_active, contact_name');
     statsQuery = applyMarketScope(statsQuery);
     const { data: allRestaurants } = await statsQuery;
 
@@ -124,10 +124,7 @@ export async function GET(request: Request) {
     const stats = {
       total: allR.length,
       active: allR.filter((r) => r.is_active).length,
-      inactive: allR.filter((r) => !r.is_active).length,
-      elite: allR.filter((r) => r.tiers?.name === 'elite').length,
-      premium: allR.filter((r) => r.tiers?.name === 'premium').length,
-      standard: allR.filter((r) => r.tiers?.name === 'standard').length,
+      direct_contacts: allR.filter((r) => r.contact_name).length,
     };
 
     // Check which restaurants already have leads
