@@ -18,6 +18,7 @@ import {
   Play,
   Bot,
   ChevronRight,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ExpansionPipelineCard from '@/components/admin/expansion/ExpansionPipelineCard';
@@ -73,6 +74,7 @@ export default function ExpansionPipelinePage() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [votingCityId, setVotingCityId] = useState<string | null>(null);
+  const [showVoteQueue, setShowVoteQueue] = useState(false);
   const isSuperAdmin = userRole === 'super_admin';
   const canManage = userRole === 'super_admin' || userRole === 'co_founder';
   const [pendingReview, setPendingReview] = useState<PendingReview>({
@@ -373,102 +375,6 @@ export default function ExpansionPipelinePage() {
         )}
       </div>
 
-      {/* Needs Your Attention Section */}
-      {(citiesNeedingVote.length > 0 || pendingReview.brandsToReview.length > 0 || pendingReview.citiesToApprove.length > 0) && (
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-amber-400" />
-            Needs Your Attention
-          </h2>
-          <div className="space-y-2">
-            {/* Vote Required cards */}
-            {citiesNeedingVote.map((city) => (
-              <div
-                key={`vote-${city.id}`}
-                className="flex items-center gap-4 bg-blue-500/10 border border-blue-500/20 rounded-xl p-4"
-              >
-                <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-5 h-5 text-blue-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white">
-                    {city.city_name}, {city.state}
-                    <span className="ml-2 text-xs font-normal text-gray-500">
-                      {city.market_potential_score ?? '?'}/100
-                    </span>
-                  </p>
-                  <p className="text-xs text-gray-500">Cast your vote on this market</p>
-                </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <button
-                    onClick={() => handleVote(city.id, 'interested')}
-                    disabled={votingCityId === city.id}
-                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors disabled:opacity-50"
-                  >
-                    Interested
-                  </button>
-                  <button
-                    onClick={() => handleVote(city.id, 'not_now')}
-                    disabled={votingCityId === city.id}
-                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors disabled:opacity-50"
-                  >
-                    Not Now
-                  </button>
-                  <button
-                    onClick={() => handleVote(city.id, 'reject')}
-                    disabled={votingCityId === city.id}
-                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50"
-                  >
-                    Reject
-                  </button>
-                </div>
-              </div>
-            ))}
-            {/* Brand selection cards */}
-            {pendingReview.brandsToReview.map((city) => (
-              <Link
-                key={`brand-${city.id}`}
-                href={`/admin/expansion/${city.id}`}
-                className="flex items-center gap-4 bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 hover:bg-amber-500/15 transition-colors group"
-              >
-                <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Palette className="w-5 h-5 text-amber-400" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-white">
-                    Select a brand for {city.city_name}, {city.state}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    3 brand proposals generated — pick your favorite
-                  </p>
-                </div>
-                <ChevronRight className="w-5 h-5 text-gray-600 group-hover:text-amber-400 transition-colors" />
-              </Link>
-            ))}
-            {pendingReview.citiesToApprove.map((city) => (
-              <Link
-                key={`approve-${city.id}`}
-                href={`/admin/expansion/${city.id}`}
-                className="flex items-center gap-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 hover:bg-emerald-500/15 transition-colors group"
-              >
-                <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <CheckCircle className="w-5 h-5 text-emerald-400" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-white">
-                    {city.city_name}, {city.state} is ready for launch approval
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Brand selected — review and approve for launch
-                  </p>
-                </div>
-                <ChevronRight className="w-5 h-5 text-gray-600 group-hover:text-emerald-400 transition-colors" />
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Stats Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
         {statCards.map((stat) => (
@@ -488,6 +394,101 @@ export default function ExpansionPipelinePage() {
           </div>
         ))}
       </div>
+
+      {/* Compact Attention Summary */}
+      {attentionCount > 0 && (
+        <div className="bg-tastelanc-surface rounded-xl border border-amber-500/20 p-4 mb-6">
+          <div className="flex items-center gap-3 mb-3">
+            <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <p className="text-sm font-medium text-white">
+              {attentionCount} item{attentionCount !== 1 ? 's' : ''} need{attentionCount === 1 ? 's' : ''} your attention
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {citiesNeedingVote.length > 0 && (
+              <button
+                onClick={() => setShowVoteQueue(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 transition-colors"
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                {citiesNeedingVote.length} to vote on
+              </button>
+            )}
+            {pendingReview.brandsToReview.length > 0 && (
+              <Link
+                href={`/admin/expansion/${pendingReview.brandsToReview[0].id}`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 transition-colors"
+              >
+                <Palette className="w-3.5 h-3.5" />
+                {pendingReview.brandsToReview.length} brand{pendingReview.brandsToReview.length !== 1 ? 's' : ''} to select
+              </Link>
+            )}
+            {pendingReview.citiesToApprove.length > 0 && (
+              <Link
+                href={`/admin/expansion/${pendingReview.citiesToApprove[0].id}`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors"
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
+                {pendingReview.citiesToApprove.length} to approve
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Inline Vote Queue (shown when "to vote on" is clicked) */}
+      {showVoteQueue && citiesNeedingVote.length > 0 && (
+        <div className="bg-tastelanc-surface rounded-xl border border-blue-500/20 p-4 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-medium text-white flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-blue-400" />
+              Vote on Markets ({citiesNeedingVote.length})
+            </p>
+            <button
+              onClick={() => setShowVoteQueue(false)}
+              className="text-gray-500 hover:text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="space-y-1.5">
+            {citiesNeedingVote.map((city) => (
+              <div
+                key={`vote-${city.id}`}
+                className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-white/5 transition-colors"
+              >
+                <Link href={`/admin/expansion/${city.id}`} className="flex-1 min-w-0 hover:underline">
+                  <span className="text-sm text-white">{city.city_name}, {city.state}</span>
+                  <span className="ml-2 text-xs text-gray-500">{city.market_potential_score ?? '?'}/100</span>
+                </Link>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button
+                    onClick={() => handleVote(city.id, 'interested')}
+                    disabled={votingCityId === city.id}
+                    className="px-2.5 py-1 text-[11px] font-medium rounded-md bg-green-500/15 text-green-400 hover:bg-green-500/25 transition-colors disabled:opacity-50"
+                  >
+                    Interested
+                  </button>
+                  <button
+                    onClick={() => handleVote(city.id, 'not_now')}
+                    disabled={votingCityId === city.id}
+                    className="px-2.5 py-1 text-[11px] font-medium rounded-md bg-yellow-500/15 text-yellow-400 hover:bg-yellow-500/25 transition-colors disabled:opacity-50"
+                  >
+                    Not Now
+                  </button>
+                  <button
+                    onClick={() => handleVote(city.id, 'reject')}
+                    disabled={votingCityId === city.id}
+                    className="px-2.5 py-1 text-[11px] font-medium rounded-md bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors disabled:opacity-50"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Quick Links */}
       <div className="flex gap-3 mb-6">
