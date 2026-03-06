@@ -529,221 +529,274 @@ async function sendTodaysPickForMarket(
 
   const dayName = now.toLocaleDateString('en-US', { ...etLocale, weekday: 'long' }).toLowerCase();
   const dayOfMonth = parseInt(now.toLocaleDateString('en-US', { ...etLocale, day: 'numeric' }), 10);
-  const etDayOfWeek = dayName; // e.g. 'tuesday'
 
   const strategy = PICK_STRATEGIES_BY_DAY[dayName];
   if (!strategy) {
     return { sent: 0, reason: `Unknown day: ${dayName}` };
   }
 
+  // ── Build eligible restaurant pool ─────────────────────────────────────────
+  // Priority 1: Paid-tier restaurants (they pay for exposure)
+  // Priority 2: Any restaurant with a happy hour or event today
+  // NEVER pick a random restaurant just because it's in the DB.
+
+  // Fetch paid-tier restaurants in this market
+  const { data: paidRestaurants } = await supabase
+    .from('restaurants')
+    .select('id, name, description, best_for, categories, tier_id')
+    .eq('market_id', marketId)
+    .eq('is_active', true)
+    .in('tier_id', PAID_TIER_IDS)
+    .order('name')
+    .limit(100);
+
+  // Fetch restaurants with a happy hour today (any tier)
+  const { data: hhData } = await supabase
+    .from('happy_hours')
+    .select(`
+      restaurant_id, description, start_time,
+      restaurants!inner(id, name, description, best_for, categories, tier_id, market_id)
+    `)
+    .eq('restaurants.market_id', marketId)
+    .eq('is_active', true)
+    .contains('days_of_week', [dayName])
+    .limit(50);
+
+  // Fetch restaurants with an event today (any tier)
+  const year = now.toLocaleDateString('en-US', { ...etLocale, year: 'numeric' });
+  const month = now.toLocaleDateString('en-US', { ...etLocale, month: '2-digit' });
+  const day = now.toLocaleDateString('en-US', { ...etLocale, day: '2-digit' });
+  const todayStr = `${year}-${month}-${day}`;
+
+  const { data: eventData } = await supabase
+    .from('events')
+    .select(`
+      id, name, description, event_type, start_time,
+      restaurant:restaurants!inner(id, name, description, best_for, categories, tier_id, market_id)
+    `)
+    .eq('restaurant.market_id', marketId)
+    .eq('is_active', true)
+    .or(`event_date.eq.${todayStr},is_recurring.eq.true`)
+    .limit(50);
+
+  // Filter recurring events to today's day
+  const todaysEvents = (eventData || []).filter((e: any) => {
+    if (e.event_date === todayStr) return true;
+    return e.days_of_week?.includes(dayName);
+  });
+
+  // Build a deduplicated map of eligible restaurants with their context
+  interface EligibleRestaurant {
+    id: string;
+    name: string;
+    description?: string;
+    best_for?: string[];
+    categories?: string[];
+    isPaid: boolean;
+    hasHappyHour: boolean;
+    hasEvent: boolean;
+    hhDescription?: string;
+    hhStartTime?: string;
+    eventName?: string;
+    eventStartTime?: string;
+  }
+
+  const eligibleMap = new Map<string, EligibleRestaurant>();
+
+  // Add paid restaurants
+  for (const r of paidRestaurants || []) {
+    eligibleMap.set(r.id, {
+      id: r.id,
+      name: r.name,
+      description: r.description,
+      best_for: r.best_for,
+      categories: r.categories,
+      isPaid: true,
+      hasHappyHour: false,
+      hasEvent: false,
+    });
+  }
+
+  // Add/enrich with happy hour restaurants
+  for (const hh of hhData || []) {
+    const r = (hh as any).restaurants;
+    const existing = eligibleMap.get(r.id);
+    if (existing) {
+      existing.hasHappyHour = true;
+      existing.hhDescription = hh.description;
+      existing.hhStartTime = hh.start_time;
+    } else {
+      eligibleMap.set(r.id, {
+        id: r.id,
+        name: r.name,
+        description: r.description,
+        best_for: r.best_for,
+        categories: r.categories,
+        isPaid: PAID_TIER_IDS.includes(r.tier_id),
+        hasHappyHour: true,
+        hasEvent: false,
+        hhDescription: hh.description,
+        hhStartTime: hh.start_time,
+      });
+    }
+  }
+
+  // Add/enrich with event restaurants
+  for (const ev of todaysEvents) {
+    const r = (ev as any).restaurant;
+    const existing = eligibleMap.get(r.id);
+    if (existing) {
+      existing.hasEvent = true;
+      existing.eventName = (ev as any).name;
+      existing.eventStartTime = (ev as any).start_time;
+    } else {
+      eligibleMap.set(r.id, {
+        id: r.id,
+        name: r.name,
+        description: r.description,
+        best_for: r.best_for,
+        categories: r.categories,
+        isPaid: PAID_TIER_IDS.includes(r.tier_id),
+        hasHappyHour: false,
+        hasEvent: true,
+        eventName: (ev as any).name,
+        eventStartTime: (ev as any).start_time,
+      });
+    }
+  }
+
+  const eligible = Array.from(eligibleMap.values());
+  if (eligible.length === 0) {
+    return { sent: 0, reason: 'No eligible restaurants (need paid tier or activity today)' };
+  }
+
+  // Sort by priority: paid+activity > paid > activity-only
+  eligible.sort((a, b) => {
+    const scoreA = (a.isPaid ? 2 : 0) + (a.hasHappyHour || a.hasEvent ? 1 : 0);
+    const scoreB = (b.isPaid ? 2 : 0) + (b.hasHappyHour || b.hasEvent ? 1 : 0);
+    return scoreB - scoreA;
+  });
+
+  console.log(`Today's Pick (${marketInfo.label}): ${eligible.length} eligible restaurants`);
+
+  // ── Pick from eligible pool based on day-of-week theme ─────────────────────
+
   let restaurantId: string | null = null;
   let restaurantName = '';
   let notifBody = '';
 
-  // ── Pick by strategy type ──────────────────────────────────────────────────
+  const formatTime = (timeStr: string) => {
+    const [h] = timeStr.split(':').map(Number);
+    const suffix = h >= 12 ? 'PM' : 'AM';
+    const dh = h > 12 ? h - 12 : h === 0 ? 12 : h;
+    return `${dh} ${suffix}`;
+  };
 
   if (strategy.type === 'most_loved') {
-    // Try to find the most-voted restaurant this month from the votes table
+    // Try votes first, but only from eligible restaurants
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-
     const { data: voteData } = await supabase
       .from('votes')
       .select('restaurant_id')
       .eq('month', currentMonth);
 
-    let topRestaurantId: string | null = null;
+    let picked: EligibleRestaurant | null = null;
     if (voteData?.length) {
-      // Tally votes client-side (edge function doesn't have RPC access easily)
+      const eligibleIds = new Set(eligible.map(e => e.id));
       const tally = new Map<string, number>();
       for (const v of voteData) {
-        tally.set(v.restaurant_id, (tally.get(v.restaurant_id) || 0) + 1);
+        if (eligibleIds.has(v.restaurant_id)) {
+          tally.set(v.restaurant_id, (tally.get(v.restaurant_id) || 0) + 1);
+        }
       }
-      const sorted = [...tally.entries()].sort((a, b) => b[1] - a[1]);
-      // Rotate among top 5 so we don't spam the same #1 every Monday
-      const topN = sorted.slice(0, Math.min(5, sorted.length));
-      topRestaurantId = topN[dayOfMonth % topN.length][0];
-    }
-
-    if (topRestaurantId) {
-      const { data: r } = await supabase
-        .from('restaurants')
-        .select('id, name, description, best_for')
-        .eq('id', topRestaurantId)
-        .single();
-
-      if (r) {
-        restaurantId = r.id;
-        restaurantName = r.name;
-        notifBody = `${marketInfo.label} is voting ${r.name} #1 this month. Have you tried it yet?`;
+      if (tally.size > 0) {
+        const sorted = [...tally.entries()].sort((a, b) => b[1] - a[1]);
+        const topN = sorted.slice(0, Math.min(5, sorted.length));
+        const winnerId = topN[dayOfMonth % topN.length][0];
+        picked = eligibleMap.get(winnerId) || null;
       }
     }
-
-    // Fallback: no votes yet — pick from verified restaurants deterministically
-    if (!restaurantId) {
-      const { data } = await supabase
-        .from('restaurants')
-        .select('id, name, description, best_for')
-        .eq('market_id', marketId)
-        .eq('is_active', true)
-        .eq('is_verified', true)
-        .order('name')
-        .limit(40);
-
-      if (!data?.length) return { sent: 0, reason: 'No restaurants for most_loved' };
-      const r = data[dayOfMonth % data.length];
-      restaurantId = r.id;
-      restaurantName = r.name;
-      const extra = r.best_for?.length ? ` Known for ${(r.best_for as string[]).slice(0, 1)[0].toLowerCase()}.` : '';
-      notifBody = `The community is loving ${r.name} right now.${extra} Have you been?`;
-    }
+    if (!picked) picked = eligible[dayOfMonth % eligible.length];
+    restaurantId = picked.id;
+    restaurantName = picked.name;
+    const extra = picked.best_for?.length ? ` Known for ${picked.best_for[0].toLowerCase()}.` : '';
+    notifBody = `The community is loving ${picked.name} right now.${extra} Have you been?`;
 
   } else if (strategy.type === 'happy_hour') {
-    const { data } = await supabase
-      .from('happy_hours')
-      .select(`
-        restaurant_id, description, start_time,
-        restaurants!inner(id, name, is_active, is_verified, market_id)
-      `)
-      .eq('restaurants.market_id', marketId)
-      .eq('is_active', true)
-      .contains('days_of_week', [etDayOfWeek])
-      .limit(30);
-
-    if (!data?.length) return { sent: 0, reason: 'No happy hours today for happy_hour pick' };
-    const hh = data[dayOfMonth % data.length] as any;
-    const r = hh.restaurants;
-    restaurantId = r.id;
-    restaurantName = r.name;
-
-    const [h] = hh.start_time.split(':').map(Number);
-    const suffix = h >= 12 ? 'PM' : 'AM';
-    const dh = h > 12 ? h - 12 : h === 0 ? 12 : h;
-    notifBody = hh.description
-      ? `${r.name}: ${hh.description} starting at ${dh} ${suffix}`
-      : `${r.name} kicks off happy hour at ${dh} ${suffix} — grab a seat before it fills up`;
+    // Prefer eligible restaurants that actually have a HH today
+    const withHH = eligible.filter(e => e.hasHappyHour);
+    const pool = withHH.length ? withHH : eligible;
+    const picked = pool[dayOfMonth % pool.length];
+    restaurantId = picked.id;
+    restaurantName = picked.name;
+    if (picked.hasHappyHour && picked.hhStartTime) {
+      notifBody = picked.hhDescription
+        ? `${picked.name}: ${picked.hhDescription} starting at ${formatTime(picked.hhStartTime)}`
+        : `${picked.name} kicks off happy hour at ${formatTime(picked.hhStartTime)} — grab a seat before it fills up`;
+    } else {
+      notifBody = `Check out ${picked.name} today in ${marketInfo.label}!`;
+    }
 
   } else if (strategy.type === 'hidden_gem') {
-    // Verified restaurants that are NOT premium/elite — the underdogs
-    const { data } = await supabase
-      .from('restaurants')
-      .select('id, name, description, best_for, cuisine')
-      .eq('market_id', marketId)
-      .eq('is_active', true)
-      .eq('is_verified', true)
-      .not('tier_id', 'in', `(${PAID_TIER_IDS.join(',')})`)
-      .order('name')
-      .limit(40);
-
-    if (!data?.length) return { sent: 0, reason: 'No hidden gems found' };
-    const r = data[dayOfMonth % data.length];
-    restaurantId = r.id;
-    restaurantName = r.name;
-    notifBody = `Most people walk right past ${r.name}. Today's your sign to finally try it.`;
+    // Non-paid restaurants with activity today — the underdogs worth discovering
+    const gems = eligible.filter(e => !e.isPaid && (e.hasHappyHour || e.hasEvent));
+    const pool = gems.length ? gems : eligible;
+    const picked = pool[dayOfMonth % pool.length];
+    restaurantId = picked.id;
+    restaurantName = picked.name;
+    notifBody = `Most people walk right past ${picked.name}. Today's your sign to finally try it.`;
 
   } else if (strategy.type === 'event_tonight') {
-    // Fetch events happening today or tonight
-    const etToday = now.toLocaleDateString('en-US', { ...etLocale, year: 'numeric', month: '2-digit', day: '2-digit' })
-      .split('/').reverse().join('-').replace(/(\d{4})-(\d{2})-(\d{2})/, '$1-$2-$3');
-    // Simple YYYY-MM-DD in ET
-    const year = now.toLocaleDateString('en-US', { ...etLocale, year: 'numeric' });
-    const month = now.toLocaleDateString('en-US', { ...etLocale, month: '2-digit' });
-    const day = now.toLocaleDateString('en-US', { ...etLocale, day: '2-digit' });
-    const todayStr = `${year}-${month}-${day}`;
-
-    const { data } = await supabase
-      .from('events')
-      .select(`
-        id, name, description, event_type, start_time,
-        restaurant:restaurants!inner(id, name, is_active, market_id)
-      `)
-      .eq('restaurant.market_id', marketId)
-      .eq('is_active', true)
-      .or(`event_date.eq.${todayStr},is_recurring.eq.true`)
-      .limit(30);
-
-    // Filter recurring events to those on today's day
-    const todaysEvents = (data || []).filter((e: any) => {
-      if (!e.is_recurring) return true;
-      return e.days_of_week?.includes(etDayOfWeek);
-    });
-
-    if (!todaysEvents.length) return { sent: 0, reason: 'No events tonight' };
-    const ev = todaysEvents[dayOfMonth % todaysEvents.length] as any;
-    const r = ev.restaurant;
-    restaurantId = r.id;
-    restaurantName = r.name;
-    const timeStr = ev.start_time
-      ? (() => {
-          const [h] = ev.start_time.split(':').map(Number);
-          const s = h >= 12 ? 'PM' : 'AM';
-          const dh = h > 12 ? h - 12 : h === 0 ? 12 : h;
-          return ` at ${dh} ${s}`;
-        })()
-      : ' tonight';
-    notifBody = `${ev.name} at ${r.name}${timeStr}. Live entertainment in ${marketInfo.label} tonight 🎶`;
+    // Prefer eligible restaurants with events
+    const withEvents = eligible.filter(e => e.hasEvent);
+    if (withEvents.length) {
+      const picked = withEvents[dayOfMonth % withEvents.length];
+      restaurantId = picked.id;
+      restaurantName = picked.name;
+      const timeStr = picked.eventStartTime ? ` at ${formatTime(picked.eventStartTime)}` : ' tonight';
+      notifBody = `${picked.eventName} at ${picked.name}${timeStr}. Live entertainment in ${marketInfo.label} tonight`;
+    } else {
+      // No events — fall back to any eligible
+      const picked = eligible[dayOfMonth % eligible.length];
+      restaurantId = picked.id;
+      restaurantName = picked.name;
+      notifBody = `Check out ${picked.name} tonight in ${marketInfo.label}!`;
+    }
 
   } else if (strategy.type === 'weekend_kickoff') {
-    // Top verified restaurant with a happy hour or event on Friday
-    const { data } = await supabase
-      .from('restaurants')
-      .select('id, name, description, best_for, categories')
-      .eq('market_id', marketId)
-      .eq('is_active', true)
-      .eq('is_verified', true)
-      .order('name')
-      .limit(50);
-
-    if (!data?.length) return { sent: 0, reason: 'No restaurants for weekend_kickoff' };
-    // Prefer bars/nightlife for Friday kickoff
-    const preferred = (data as any[]).filter((r: any) =>
-      r.categories?.some((c: string) => ['bars', 'nightlife', 'rooftops'].includes(c))
+    // Prefer bars/nightlife with happy hours for Friday
+    const withHH = eligible.filter(e => e.hasHappyHour);
+    const bars = (withHH.length ? withHH : eligible).filter(e =>
+      e.categories?.some(c => ['bars', 'nightlife', 'rooftops'].includes(c))
     );
-    const pool = preferred.length ? preferred : data;
-    const r = pool[dayOfMonth % pool.length] as any;
-    restaurantId = r.id;
-    restaurantName = r.name;
-    notifBody = `Weekend starts NOW. ${r.name} is the place to be tonight in ${marketInfo.label} 🔥`;
+    const pool = bars.length ? bars : (withHH.length ? withHH : eligible);
+    const picked = pool[dayOfMonth % pool.length];
+    restaurantId = picked.id;
+    restaurantName = picked.name;
+    notifBody = `Weekend starts NOW. ${picked.name} is the place to be tonight in ${marketInfo.label}`;
 
   } else if (strategy.type === 'date_night') {
-    // Upscale dinner pick for Saturday
-    const { data } = await supabase
-      .from('restaurants')
-      .select('id, name, description, best_for, categories')
-      .eq('market_id', marketId)
-      .eq('is_active', true)
-      .eq('is_verified', true)
-      .order('name')
-      .limit(50);
-
-    if (!data?.length) return { sent: 0, reason: 'No restaurants for date_night' };
-    const preferred = (data as any[]).filter((r: any) =>
-      r.categories?.some((c: string) => ['dinner', 'rooftops'].includes(c))
+    // Prefer dinner/upscale spots
+    const dinner = eligible.filter(e =>
+      e.categories?.some(c => ['dinner', 'rooftops', 'fine dining'].includes(c))
     );
-    const pool = preferred.length ? preferred : data;
-    const r = pool[dayOfMonth % pool.length] as any;
-    restaurantId = r.id;
-    restaurantName = r.name;
-    const tagline = r.best_for?.length
-      ? r.best_for.slice(0, 1)[0]
+    const pool = dinner.length ? dinner : eligible;
+    const picked = pool[dayOfMonth % pool.length];
+    restaurantId = picked.id;
+    restaurantName = picked.name;
+    const tagline = picked.best_for?.length
+      ? picked.best_for[0]
       : 'a perfect Saturday evening';
-    notifBody = `Make tonight special. ${r.name} is tonight's date night pick — perfect for ${tagline.toLowerCase()}.`;
+    notifBody = `Make tonight special. ${picked.name} is tonight's date night pick — perfect for ${tagline.toLowerCase()}.`;
 
   } else if (strategy.type === 'brunch') {
-    const { data } = await supabase
-      .from('restaurants')
-      .select('id, name, description, best_for, categories')
-      .eq('market_id', marketId)
-      .eq('is_active', true)
-      .eq('is_verified', true)
-      .contains('categories', ['brunch'])
-      .order('name')
-      .limit(30);
-
-    if (!data?.length) return { sent: 0, reason: 'No brunch spots found' };
-    const r = (data as any[])[dayOfMonth % data.length];
-    restaurantId = r.id;
-    restaurantName = r.name;
-    notifBody = `Sunday brunch sorted. ${r.name} is today's top pick — treat yourself ☀️`;
+    // Prefer brunch spots
+    const brunch = eligible.filter(e => e.categories?.includes('brunch'));
+    const pool = brunch.length ? brunch : eligible;
+    const picked = pool[dayOfMonth % pool.length];
+    restaurantId = picked.id;
+    restaurantName = picked.name;
+    notifBody = `Sunday brunch sorted. ${picked.name} is today's top pick — treat yourself`;
   }
 
   if (!restaurantId) return { sent: 0, reason: 'No restaurant selected' };
