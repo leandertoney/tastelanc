@@ -182,33 +182,57 @@ export default function ExpansionPipelinePage() {
 
     const steps = ['suggest', 'research', 'brands', 'jobs', 'notify'] as const;
     const stepLabels: Record<string, string> = {
-      suggest: 'Suggesting new cities...',
-      research: 'Researching markets...',
-      brands: 'Generating brand proposals...',
-      jobs: 'Creating job listings...',
-      notify: 'Sending notifications...',
+      suggest: 'Suggesting new cities',
+      research: 'Researching',
+      brands: 'Generating brands for',
+      jobs: 'Creating job listings',
+      notify: 'Sending notifications',
     };
 
-    let totalResult = { citiesSuggested: 0, citiesResearched: [] as string[], brandsGenerated: [] as string[], errors: [] as string[] };
+    const totalResult = { citiesSuggested: 0, citiesResearched: [] as string[], brandsGenerated: [] as string[], errors: [] as string[] };
+
+    const runStep = async (step: string) => {
+      const res = await fetch('/api/cron/expansion-agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source: 'manual_trigger', step }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || `Step "${step}" failed`);
+      }
+
+      return res.json();
+    };
 
     try {
       for (const step of steps) {
-        setAgentStatus(stepLabels[step]);
-        const res = await fetch('/api/cron/expansion-agent', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ source: 'manual_trigger', step }),
-        });
+        // For research and brands, loop one city at a time until done
+        if (step === 'research' || step === 'brands') {
+          let hasMore = true;
+          while (hasMore) {
+            setAgentStatus(`${stepLabels[step]}...`);
+            const result = await runStep(step);
 
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || `Step "${step}" failed`);
+            // Update status with city name if available
+            if (result.currentCity) {
+              const cityName = result.currentCity;
+              setAgentStatus(`${stepLabels[step]} ${cityName}...`);
+            }
+
+            if (result.citiesResearched?.length) totalResult.citiesResearched.push(...result.citiesResearched);
+            if (result.brandsGenerated?.length) totalResult.brandsGenerated.push(...result.brandsGenerated);
+
+            hasMore = result.hasMore === true;
+          }
+        } else {
+          setAgentStatus(`${stepLabels[step]}...`);
+          const result = await runStep(step);
+          if (result.citiesSuggested) totalResult.citiesSuggested += result.citiesSuggested;
+          if (result.citiesResearched?.length) totalResult.citiesResearched.push(...result.citiesResearched);
+          if (result.brandsGenerated?.length) totalResult.brandsGenerated.push(...result.brandsGenerated);
         }
-
-        const result = await res.json();
-        if (result.citiesSuggested) totalResult.citiesSuggested += result.citiesSuggested;
-        if (result.citiesResearched?.length) totalResult.citiesResearched.push(...result.citiesResearched);
-        if (result.brandsGenerated?.length) totalResult.brandsGenerated.push(...result.brandsGenerated);
       }
 
       const parts = [];

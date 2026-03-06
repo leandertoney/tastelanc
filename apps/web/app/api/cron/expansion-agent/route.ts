@@ -59,6 +59,8 @@ interface RunResult {
   jobsGenerated: string[];
   jobsAutoPosted: string[];
   errors: string[];
+  hasMore: boolean; // true if there's more work for this step
+  currentCity?: string; // city currently being processed (for UI feedback)
   needsAdminAttention: {
     brandsToReview: number;
     jobsToApprove: number;
@@ -103,6 +105,7 @@ export async function POST(request: Request) {
     jobsGenerated: [],
     jobsAutoPosted: [],
     errors: [],
+    hasMore: false,
     needsAdminAttention: {
       brandsToReview: 0,
       jobsToApprove: 0,
@@ -120,10 +123,10 @@ export async function POST(request: Request) {
           await stepSuggestCities(supabase, result);
           break;
         case 'research':
-          await stepResearchCities(supabase, result);
+          await stepResearchCities(supabase, result, true);
           break;
         case 'brands':
-          await stepGenerateBrands(supabase, result);
+          await stepGenerateBrands(supabase, result, true);
           break;
         case 'jobs':
           await stepGenerateJobs(supabase, result);
@@ -321,17 +324,24 @@ async function stepSuggestCities(
 
 async function stepResearchCities(
   supabase: SupabaseClient,
-  result: RunResult
+  result: RunResult,
+  singleMode = false
 ) {
   try {
-    const { data: cities } = await supabase
+    const limit = singleMode ? 1 : MAX_RESEARCH;
+    const { data: cities, count: totalCount } = await supabase
       .from('expansion_cities')
-      .select('id, city_name, county, state, research_data')
+      .select('id, city_name, county, state, research_data', { count: 'exact' })
       .eq('status', 'researching')
       .order('priority', { ascending: false })
-      .limit(MAX_RESEARCH);
+      .limit(limit);
 
     if (!cities || cities.length === 0) return;
+
+    if (singleMode) {
+      result.hasMore = (totalCount ?? 0) > 1;
+      result.currentCity = cities[0].city_name;
+    }
 
     console.log(`[expansion-agent] Researching ${cities.length} cities...`);
 
@@ -482,16 +492,18 @@ async function stepResearchCities(
 
 async function stepGenerateBrands(
   supabase: SupabaseClient,
-  result: RunResult
+  result: RunResult,
+  singleMode = false
 ) {
   try {
     // Find "researched" cities that don't have any brand drafts yet
+    // In single mode, fetch more candidates to find one without brands
     const { data: cities } = await supabase
       .from('expansion_cities')
       .select('*')
       .eq('status', 'researched')
       .order('market_potential_score', { ascending: false })
-      .limit(MAX_BRAND_GEN);
+      .limit(singleMode ? 10 : MAX_BRAND_GEN);
 
     if (!cities || cities.length === 0) return;
 
@@ -509,6 +521,13 @@ async function stepGenerateBrands(
     }
 
     if (citiesToProcess.length === 0) return;
+
+    if (singleMode) {
+      // Only process 1 city per call in dashboard mode
+      result.hasMore = citiesToProcess.length > 1;
+      result.currentCity = citiesToProcess[0].city_name;
+      citiesToProcess.length = 1; // truncate to first city only
+    }
 
     // Collect all existing brand names across cities for deduplication
     const { data: existingBrands } = await supabase
