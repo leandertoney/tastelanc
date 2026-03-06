@@ -67,6 +67,7 @@ export interface ExpansionCity {
   approved_by: string | null;
   approved_at: string | null;
   rejected_reason: string | null;
+  source?: 'manual' | 'auto';
   review_status?: 'pending_review' | 'consensus_interested' | 'consensus_not_now' | 'split_decision' | 'consensus_reject';
   market_id: string | null;
   created_at: string;
@@ -86,6 +87,8 @@ export interface BrandDraft {
   seo_description: string | null;
   seo_keywords: string[] | null;
   avatar_image_url: string | null;  // DALL-E generated mascot image
+  name_story: string | null;        // Story behind the mascot name (local cultural reference)
+  color_story: string | null;       // Story behind the brand colors (local significance)
   is_selected: boolean;
   variant_number: number;
   created_at: string;
@@ -318,6 +321,8 @@ export interface BrandProposal {
   seo_keywords: string[];
   market_config_json: Record<string, unknown>;
   avatar_image_url?: string;  // DALL-E generated mascot image URL
+  name_story?: string;        // Story behind the mascot name
+  color_story?: string;       // Story behind the brand colors
 }
 
 export interface JobListingDraft {

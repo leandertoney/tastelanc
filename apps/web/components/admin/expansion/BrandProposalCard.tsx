@@ -80,10 +80,21 @@ export default function BrandProposalCard({ brand, onSelect, isSelecting }: Bran
         </div>
       </div>
 
+      {/* Name Story */}
+      {brand.name_story && (
+        <div className="mb-4 bg-tastelanc-surface-light/50 rounded-lg p-3">
+          <p className="text-xs font-medium text-gray-500 mb-1">The Story</p>
+          <p className="text-sm text-gray-300 italic leading-relaxed">{brand.name_story}</p>
+        </div>
+      )}
+
       {/* Colors */}
       <div className="mb-4">
         <p className="text-xs text-gray-500 mb-1.5">Brand Colors</p>
         <ColorSwatchRow colors={brand.colors} />
+        {brand.color_story && (
+          <p className="text-xs text-gray-400 italic mt-1.5 leading-relaxed">{brand.color_story}</p>
+        )}
       </div>
 
       {/* Select button */}

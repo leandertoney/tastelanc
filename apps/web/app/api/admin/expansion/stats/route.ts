@@ -47,7 +47,11 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    return NextResponse.json({ ...stats, role: admin.role });
+    // Get user email for review matching
+    const { data: { user } } = await supabase.auth.getUser();
+    const userEmail = user?.email || null;
+
+    return NextResponse.json({ ...stats, role: admin.role, userEmail });
   } catch (error) {
     console.error('Error fetching expansion stats:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

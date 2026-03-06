@@ -580,6 +580,10 @@ For each proposal, generate a JSON object with:
 - "seo_title": string — page title for SEO (e.g., "TasteYork | Discover York, PA Dining")
 - "seo_description": string — meta description for SEO (150-160 chars)
 - "seo_keywords": string[] — array of 8-12 SEO keywords
+- "name_story": string — 2-3 sentences telling the FULL STORY behind the AI assistant name. What specific local historical figure, landmark, event, or cultural symbol inspired it? Why would someone from this city/region immediately appreciate the reference? Be specific with names, dates, and places. This is the "did you know?" moment that makes people love the mascot. Examples:
+  - "Rosie is named after Lancaster's iconic Red Rose — the city's symbol since the War of the Roses when the House of Lancaster carried a red rose as its emblem. Locals see red roses on street signs, the city seal, and even the Lancaster Barnstormers baseball team."
+  - "Mollie is inspired by Molly Pitcher, the legendary Revolutionary War heroine who carried water to soldiers at the Battle of Monmouth. She's celebrated throughout Carlisle with a monument on the town square and an annual festival in her honor."
+- "color_story": string — 1-2 sentences explaining the LOCAL connection to the chosen accent color. What landmark, tradition, natural feature, or symbol does it reference? Example: "The red accent mirrors Lancaster's Red Rose, seen on everything from the city seal to local restaurant signage throughout the county."
 - "market_config_json": object matching this exact interface:
   {
     "name": "<app_name>",
@@ -705,7 +709,7 @@ export async function generateJobListing(
   const roleLabels: Record<string, string> = {
     sales_rep: 'Restaurant Partnership Manager',
     market_manager: 'Market Manager',
-    content_creator: 'Content Creator & Food Photographer',
+    content_creator: 'Content Creator & Social Media Manager',
     community_manager: 'Community Manager',
   };
 

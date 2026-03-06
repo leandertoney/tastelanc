@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Insert city
+    // Insert city — manual cities get high priority to be researched first
     const { data: city, error: insertError } = await serviceClient
       .from('expansion_cities')
       .insert({
@@ -101,6 +101,8 @@ export async function POST(request: NextRequest) {
         state: stateValue,
         slug,
         status: 'researching',
+        source: 'manual',
+        priority: 100,
       })
       .select()
       .single();

@@ -107,6 +107,8 @@ export async function POST(
       seo_description: proposal.seo_description || null,
       seo_keywords: proposal.seo_keywords || [],
       avatar_image_url: proposal.avatar_image_url || null,
+      name_story: proposal.name_story || null,
+      color_story: proposal.color_story || null,
       variant_number: startVariant + index,
       is_selected: false,
     }));
