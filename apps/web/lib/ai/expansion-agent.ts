@@ -507,7 +507,8 @@ Return ONLY the JSON object.`;
 export async function generateBrandProposals(
   city: ExpansionCity,
   count: number = 3,
-  avoidNames: string[] = []
+  avoidNames: string[] = [],
+  skipAvatars: boolean = false
 ): Promise<BrandProposal[]> {
   const systemPrompt =
     'You are a brand identity designer for a chain of local dining discovery apps. ' +
@@ -646,33 +647,35 @@ Return ONLY a JSON object with a "proposals" key containing an array of ${count}
     }
 
     // Generate avatar images for each brand proposal using DALL-E 3
-    const localCulture = [
-      city.research_data?.local_food_traditions,
-      city.research_data?.tourism_factors,
-      city.dining_scene_description,
-    ].filter(Boolean).join('. ').slice(0, 300) || `the ${regionName} area`;
+    // (skipped during batch agent runs to stay within Netlify timeout)
+    if (!skipAvatars) {
+      const localCulture = [
+        city.research_data?.local_food_traditions,
+        city.research_data?.tourism_factors,
+        city.dining_scene_description,
+      ].filter(Boolean).join('. ').slice(0, 300) || `the ${regionName} area`;
 
-    const avatarPromises = proposals.map((proposal, index) =>
-      generateAvatarImage(
-        proposal.ai_assistant_name,
-        regionName,
-        proposal.colors?.accent || '#4A90D9',
-        localCulture,
-        slug,
-        index + 1
-      )
-    );
+      const avatarPromises = proposals.map((proposal, index) =>
+        generateAvatarImage(
+          proposal.ai_assistant_name,
+          regionName,
+          proposal.colors?.accent || '#4A90D9',
+          localCulture,
+          slug,
+          index + 1
+        )
+      );
 
-    const avatarUrls = await Promise.allSettled(avatarPromises);
+      const avatarUrls = await Promise.allSettled(avatarPromises);
 
-    // Attach avatar URLs to proposals and market_config_json
-    for (let i = 0; i < proposals.length; i++) {
-      const result = avatarUrls[i];
-      const avatarUrl = result?.status === 'fulfilled' ? result.value : null;
-      if (avatarUrl) {
-        proposals[i].avatar_image_url = avatarUrl;
-        if (proposals[i].market_config_json) {
-          (proposals[i].market_config_json as Record<string, unknown>).aiAvatarImage = avatarUrl;
+      for (let i = 0; i < proposals.length; i++) {
+        const result = avatarUrls[i];
+        const avatarUrl = result?.status === 'fulfilled' ? result.value : null;
+        if (avatarUrl) {
+          proposals[i].avatar_image_url = avatarUrl;
+          if (proposals[i].market_config_json) {
+            (proposals[i].market_config_json as Record<string, unknown>).aiAvatarImage = avatarUrl;
+          }
         }
       }
     }

@@ -40,9 +40,9 @@ const ADMIN_EMAIL = 'leandertoney@gmail.com';
 
 // Batch sizes — keep small to stay within function timeout
 const MAX_SUGGEST = 10; // cities to suggest per run
-const MAX_RESEARCH = 5; // cities to research per run
-const MAX_BRAND_GEN = 5; // cities to generate brands for per run
-const MAX_JOB_GEN = 5; // cities to generate job listings for per run
+const MAX_RESEARCH = 3; // cities to research per run
+const MAX_BRAND_GEN = 2; // cities to generate brands for per run (kept low for Netlify 26s timeout)
+const MAX_JOB_GEN = 3; // cities to generate job listings for per run
 const MIN_PIPELINE_SIZE = 20; // minimum active cities in pipeline
 
 // Role types to auto-generate job listings for
@@ -91,7 +91,9 @@ export async function POST(request: Request) {
     }
   }
 
-  console.log('[expansion-agent] Starting autonomous run...');
+  const requestedStep = (body as { step?: string }).step;
+
+  console.log(`[expansion-agent] Starting ${requestedStep ? `step: ${requestedStep}` : 'full run'}...`);
 
   const supabase = createSupabaseAdmin(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const result: RunResult = {
@@ -111,28 +113,39 @@ export async function POST(request: Request) {
   };
 
   try {
-    // ── Step 1: Count pending items & send notification FIRST ──
-    // (Runs before heavy AI work so the 5-minute timeout can't prevent delivery)
-    await stepCountPendingReview(supabase, result);
-    await stepNotifyAdmin(result, supabase);
-
-    // ── Step 2: Fill pipeline if below threshold ──────────────
-    await stepSuggestCities(supabase, result);
-
-    // ── Step 3: Research cities in "researching" status ───────
-    await stepResearchCities(supabase, result);
-
-    // ── Step 4: Generate brands for "researched" cities ──────
-    await stepGenerateBrands(supabase, result);
-
-    // ── Step 5: Generate job listings for ready cities ───────
-    await stepGenerateJobs(supabase, result);
-
-    // ── Step 5.5: Auto-approve jobs for approved cities ───────
-    await stepAutoApproveDefaultJobs(supabase, result);
-
-    // ── Step 5.6: Auto-post approved jobs ─────────────────────
-    await stepAutoPostJobs(supabase, result);
+    if (requestedStep) {
+      // Run a single step (called by dashboard for progress feedback)
+      switch (requestedStep) {
+        case 'suggest':
+          await stepSuggestCities(supabase, result);
+          break;
+        case 'research':
+          await stepResearchCities(supabase, result);
+          break;
+        case 'brands':
+          await stepGenerateBrands(supabase, result);
+          break;
+        case 'jobs':
+          await stepGenerateJobs(supabase, result);
+          await stepAutoApproveDefaultJobs(supabase, result);
+          await stepAutoPostJobs(supabase, result);
+          break;
+        case 'notify':
+          await stepCountPendingReview(supabase, result);
+          await stepNotifyAdmin(result, supabase);
+          break;
+      }
+    } else {
+      // Full run (cron job)
+      await stepCountPendingReview(supabase, result);
+      await stepNotifyAdmin(result, supabase);
+      await stepSuggestCities(supabase, result);
+      await stepResearchCities(supabase, result);
+      await stepGenerateBrands(supabase, result);
+      await stepGenerateJobs(supabase, result);
+      await stepAutoApproveDefaultJobs(supabase, result);
+      await stepAutoPostJobs(supabase, result);
+    }
 
     console.log('[expansion-agent] Run complete:', JSON.stringify(result, null, 2));
 
@@ -507,7 +520,7 @@ async function stepGenerateBrands(
 
     for (const city of citiesToProcess) {
       try {
-        const proposals = await generateBrandProposals(city, 3, usedNames);
+        const proposals = await generateBrandProposals(city, 3, usedNames, true);
         // Add newly generated names to the used list for subsequent cities in this batch
         for (const p of proposals) {
           if (p.ai_assistant_name) usedNames.push(p.ai_assistant_name);
