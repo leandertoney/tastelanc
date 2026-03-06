@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
-import { Bot, Check, Loader2 } from 'lucide-react';
+import { Bot, Check, Loader2, ImageIcon } from 'lucide-react';
 import type { BrandDraft } from '@/lib/ai/expansion-types';
 import ColorSwatchRow from './ColorSwatchRow';
 
@@ -13,6 +14,29 @@ interface BrandProposalCardProps {
 
 export default function BrandProposalCard({ brand, onSelect, isSelecting }: BrandProposalCardProps) {
   const accentColor = brand.colors?.accent || '#A41E22';
+  const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(brand.avatar_image_url || null);
+
+  const handleGenerateAvatar = async () => {
+    setIsGeneratingAvatar(true);
+    try {
+      const res = await fetch('/api/admin/expansion/generate-avatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brandDraftId: brand.id }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to generate avatar');
+      }
+      const data = await res.json();
+      setAvatarUrl(data.avatarUrl);
+    } catch (error) {
+      console.error('Avatar generation failed:', error);
+    } finally {
+      setIsGeneratingAvatar(false);
+    }
+  };
 
   return (
     <div
@@ -37,13 +61,13 @@ export default function BrandProposalCard({ brand, onSelect, isSelecting }: Bran
 
       {/* Avatar + Name */}
       <div className="flex items-center gap-4 mb-4">
-        {brand.avatar_image_url ? (
+        {avatarUrl ? (
           <div
             className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 border-2"
             style={{ borderColor: accentColor }}
           >
             <Image
-              src={brand.avatar_image_url}
+              src={avatarUrl}
               alt={`${brand.ai_assistant_name} avatar`}
               width={80}
               height={80}
@@ -52,14 +76,22 @@ export default function BrandProposalCard({ brand, onSelect, isSelecting }: Bran
             />
           </div>
         ) : (
-          <div
-            className="w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0 border-2"
+          <button
+            onClick={handleGenerateAvatar}
+            disabled={isGeneratingAvatar}
+            className="w-20 h-20 rounded-2xl flex flex-col items-center justify-center flex-shrink-0 border-2 transition-colors hover:opacity-80 disabled:opacity-50"
             style={{ borderColor: accentColor, backgroundColor: `${accentColor}20` }}
+            title="Generate AI avatar"
           >
-            <span className="text-2xl font-bold" style={{ color: accentColor }}>
-              {brand.ai_assistant_name?.charAt(0) || '?'}
-            </span>
-          </div>
+            {isGeneratingAvatar ? (
+              <Loader2 className="w-6 h-6 animate-spin" style={{ color: accentColor }} />
+            ) : (
+              <>
+                <ImageIcon className="w-5 h-5 mb-0.5" style={{ color: accentColor }} />
+                <span className="text-[9px] font-medium" style={{ color: accentColor }}>Generate</span>
+              </>
+            )}
+          </button>
         )}
         <div>
           <h3 className="text-xl font-bold text-white">{brand.app_name}</h3>
