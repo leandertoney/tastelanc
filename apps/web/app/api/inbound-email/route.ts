@@ -102,26 +102,43 @@ async function sendSalesTeamPushNotifications(
   try {
     const { data: tokens } = await supabaseClient
       .from('push_tokens')
-      .select('token')
+      .select('token, app_slug')
       .in('user_id', userIds);
 
     if (!tokens || tokens.length === 0) return;
 
-    const messages = tokens.map(t => ({
-      to: t.token,
-      title,
-      body,
-      data,
-      sound: 'default' as const,
-    }));
+    // Group tokens by app_slug — Expo Push API rejects mixed projects in one request
+    const tokensByProject = new Map<string, string[]>();
+    for (const t of tokens) {
+      const slug = t.app_slug || 'tastelanc';
+      const list = tokensByProject.get(slug) || [];
+      list.push(t.token);
+      tokensByProject.set(slug, list);
+    }
 
-    await fetch('https://exp.host/--/api/v2/push/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(messages),
-    });
+    // Send one request per project
+    for (const [slug, projectTokens] of tokensByProject) {
+      const messages = projectTokens.map(token => ({
+        to: token,
+        title,
+        body,
+        data,
+        sound: 'default' as const,
+      }));
 
-    console.log(`Push notifications sent to ${userIds.length} team member(s): ${title}`);
+      const res = await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(messages),
+      });
+
+      const result = await res.json();
+      if (result.errors) {
+        console.error(`Push send error for ${slug}:`, result.errors);
+      }
+    }
+
+    console.log(`Push notifications sent to ${userIds.length} team member(s) across ${tokensByProject.size} project(s): ${title}`);
   } catch (error) {
     console.error('Failed to send push notifications:', error);
   }
