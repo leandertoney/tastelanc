@@ -74,6 +74,7 @@ export default function SalesRestaurantsPage() {
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>('all');
   const [sortBy, setSortBy] = useState<SortColumn>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [contactFilter, setContactFilter] = useState(false);
   const [creatingLeadId, setCreatingLeadId] = useState<string | null>(null);
 
   const createLeadFromRestaurant = async (r: Restaurant) => {
@@ -117,6 +118,7 @@ export default function SalesRestaurantsPage() {
       if (search) params.set('search', search);
       if (tierFilter !== 'all') params.set('tier', tierFilter);
       if (activeFilter !== 'all') params.set('active', activeFilter === 'active' ? 'true' : 'false');
+      if (contactFilter) params.set('has_contact', 'true');
       params.set('page', String(pageOverride ?? pagination?.page ?? 1));
       params.set('limit', '10');
       params.set('sort_by', sortBy);
@@ -137,7 +139,7 @@ export default function SalesRestaurantsPage() {
 
   useEffect(() => {
     fetchRestaurants(1);
-  }, [tierFilter, activeFilter, sortBy, sortDir]);
+  }, [tierFilter, activeFilter, contactFilter, sortBy, sortDir]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -277,6 +279,17 @@ export default function SalesRestaurantsPage() {
               </button>
             ))}
           </div>
+          <button
+            onClick={() => setContactFilter((v) => !v)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+              contactFilter
+                ? 'bg-emerald-600 text-white'
+                : 'bg-tastelanc-surface-light text-gray-400 hover:text-white'
+            }`}
+          >
+            <User className="w-3.5 h-3.5" />
+            Direct Contacts
+          </button>
         </div>
       </Card>
 
