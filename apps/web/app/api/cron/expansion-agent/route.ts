@@ -497,11 +497,21 @@ async function stepGenerateBrands(
 
     if (citiesToProcess.length === 0) return;
 
-    console.log(`[expansion-agent] Generating brands for ${citiesToProcess.length} cities...`);
+    // Collect all existing brand names across cities for deduplication
+    const { data: existingBrands } = await supabase
+      .from('expansion_brand_drafts')
+      .select('ai_assistant_name');
+    const usedNames = [...new Set((existingBrands || []).map(b => b.ai_assistant_name))];
+
+    console.log(`[expansion-agent] Generating brands for ${citiesToProcess.length} cities (${usedNames.length} names already used)...`);
 
     for (const city of citiesToProcess) {
       try {
-        const proposals = await generateBrandProposals(city, 3);
+        const proposals = await generateBrandProposals(city, 3, usedNames);
+        // Add newly generated names to the used list for subsequent cities in this batch
+        for (const p of proposals) {
+          if (p.ai_assistant_name) usedNames.push(p.ai_assistant_name);
+        }
 
         const brandsToInsert = proposals.map((proposal, index) => ({
           city_id: city.id,

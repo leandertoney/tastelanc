@@ -32,6 +32,7 @@ import CityResearchPanel from '@/components/admin/expansion/CityResearchPanel';
 import BrandProposalCard from '@/components/admin/expansion/BrandProposalCard';
 import JobListingCard from '@/components/admin/expansion/JobListingCard';
 import ActivityTimeline from '@/components/admin/expansion/ActivityTimeline';
+import { EXPANSION_TEAM } from '@/config/expansion-team';
 
 // ─────────────────────────────────────────────────────────
 // Status badge config (shared with pipeline card)
@@ -708,83 +709,103 @@ export default function CityDetailPage() {
       </div>
 
       {/* Team Reviews */}
-      {(cityReviews.length > 0 || city.review_status || canManage) && (
-        <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5">
-          <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
-            Team Reviews
-          </h3>
-          {/* Vote buttons for current user if they haven't voted */}
-          {canManage && !currentUserHasVoted && ['researched', 'brand_ready'].includes(city.status) && (
-            <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-              <p className="text-sm text-gray-300 mb-2">Cast your vote on this market:</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleVote('interested')}
-                  disabled={isVoting}
-                  className="flex-1 px-3 py-2 text-sm font-medium rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors disabled:opacity-50"
-                >
-                  Interested
-                </button>
-                <button
-                  onClick={() => handleVote('not_now')}
-                  disabled={isVoting}
-                  className="flex-1 px-3 py-2 text-sm font-medium rounded-lg bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors disabled:opacity-50"
-                >
-                  Not Now
-                </button>
-                <button
-                  onClick={() => handleVote('reject')}
-                  disabled={isVoting}
-                  className="flex-1 px-3 py-2 text-sm font-medium rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50"
-                >
-                  Reject
-                </button>
-              </div>
-            </div>
-          )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {['Leander', 'Jordan'].map((name) => {
-              const review = cityReviews.find((r) => r.reviewer_name === name);
-              const voteLabel = review?.vote === 'interested' ? 'Interested' : review?.vote === 'not_now' ? 'Not Now' : review?.vote === 'reject' ? 'Reject' : null;
-              const voteColor = review?.vote === 'interested' ? 'text-green-400 bg-green-500/15' : review?.vote === 'not_now' ? 'text-yellow-400 bg-yellow-500/15' : review?.vote === 'reject' ? 'text-red-400 bg-red-500/15' : '';
-              return (
-                <div key={name} className="flex items-center justify-between bg-tastelanc-surface-light/50 rounded-lg px-4 py-3">
-                  <div>
-                    <p className="text-sm font-medium text-white">{name}</p>
-                    {review && (
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {new Date(review.voted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                      </p>
-                    )}
-                  </div>
-                  {review ? (
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${voteColor}`}>
-                      {voteLabel}
-                    </span>
-                  ) : (
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-500/15 text-gray-500">
-                      Pending
-                    </span>
-                  )}
+      {(cityReviews.length > 0 || city.review_status || canManage) && (() => {
+        const isAutoAdvanced = city.review_status && city.review_status !== 'pending_review' && cityReviews.length === 0;
+        const reviewResolved = city.review_status && city.review_status !== 'pending_review';
+        return (
+          <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5">
+            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+              Team Reviews
+            </h3>
+            {/* Vote buttons — only if review is still pending */}
+            {canManage && !currentUserHasVoted && !reviewResolved && ['researched', 'brand_ready'].includes(city.status) && (
+              <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <p className="text-sm text-gray-300 mb-2">Cast your vote on this market:</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleVote('interested')}
+                    disabled={isVoting}
+                    className="flex-1 px-3 py-2 text-sm font-medium rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors disabled:opacity-50"
+                  >
+                    Interested
+                  </button>
+                  <button
+                    onClick={() => handleVote('not_now')}
+                    disabled={isVoting}
+                    className="flex-1 px-3 py-2 text-sm font-medium rounded-lg bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors disabled:opacity-50"
+                  >
+                    Not Now
+                  </button>
+                  <button
+                    onClick={() => handleVote('reject')}
+                    disabled={isVoting}
+                    className="flex-1 px-3 py-2 text-sm font-medium rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50"
+                  >
+                    Reject
+                  </button>
                 </div>
-              );
-            })}
+              </div>
+            )}
+            {/* Auto-advanced banner — no individual votes to show */}
+            {isAutoAdvanced ? (
+              <div className={`px-4 py-2.5 rounded-lg text-sm font-medium ${
+                city.review_status === 'consensus_interested' ? 'bg-green-500/15 text-green-400' :
+                city.review_status === 'consensus_reject' ? 'bg-red-500/15 text-red-400' :
+                city.review_status === 'consensus_not_now' ? 'bg-yellow-500/15 text-yellow-400' :
+                'bg-blue-500/15 text-blue-400'
+              }`}>
+                {city.review_status === 'consensus_interested' && 'Auto-advanced based on market score (70+)'}
+                {city.review_status === 'consensus_reject' && 'Auto-rejected based on market score (below 55)'}
+                {city.review_status === 'consensus_not_now' && 'Deprioritized'}
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {EXPANSION_TEAM.map((member) => {
+                    const review = cityReviews.find((r) => r.reviewer_email === member.email);
+                    const voteLabel = review?.vote === 'interested' ? 'Interested' : review?.vote === 'not_now' ? 'Not Now' : review?.vote === 'reject' ? 'Reject' : null;
+                    const voteColor = review?.vote === 'interested' ? 'text-green-400 bg-green-500/15' : review?.vote === 'not_now' ? 'text-yellow-400 bg-yellow-500/15' : review?.vote === 'reject' ? 'text-red-400 bg-red-500/15' : '';
+                    return (
+                      <div key={member.email} className="flex items-center justify-between bg-tastelanc-surface-light/50 rounded-lg px-4 py-3">
+                        <div>
+                          <p className="text-sm font-medium text-white">{member.name}</p>
+                          {review && (
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {new Date(review.voted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                            </p>
+                          )}
+                        </div>
+                        {review ? (
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${voteColor}`}>
+                            {voteLabel}
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-500/15 text-gray-500">
+                            Pending
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {reviewResolved && (
+                  <div className={`mt-3 px-4 py-2.5 rounded-lg text-sm font-medium ${
+                    city.review_status === 'consensus_interested' ? 'bg-green-500/15 text-green-400' :
+                    city.review_status === 'consensus_not_now' ? 'bg-yellow-500/15 text-yellow-400' :
+                    city.review_status === 'consensus_reject' ? 'bg-red-500/15 text-red-400' :
+                    'bg-blue-500/15 text-blue-400'
+                  }`}>
+                    {city.review_status === 'consensus_interested' && 'Both founders voted interested'}
+                    {city.review_status === 'consensus_not_now' && 'Both agreed to deprioritize — revisit later.'}
+                    {city.review_status === 'consensus_reject' && 'Both agreed to reject this market.'}
+                    {city.review_status === 'split_decision' && 'Split decision — discuss this one together.'}
+                  </div>
+                )}
+              </>
+            )}
           </div>
-          {city.review_status && city.review_status !== 'pending_review' && (
-            <div className={`mt-3 px-4 py-2.5 rounded-lg text-sm font-medium ${
-              city.review_status === 'consensus_interested' ? 'bg-green-500/15 text-green-400' :
-              city.review_status === 'consensus_not_now' ? 'bg-yellow-500/15 text-yellow-400' :
-              city.review_status === 'consensus_reject' ? 'bg-red-500/15 text-red-400' :
-              'bg-blue-500/15 text-blue-400'
-            }`}>
-              {city.review_status === 'consensus_interested' && 'Both founders are interested — fast-track this city!'}
-              {city.review_status === 'consensus_not_now' && 'Both agreed to deprioritize — revisit later.'}
-              {city.review_status === 'consensus_reject' && 'Both agreed to reject this market.'}
-              {city.review_status === 'split_decision' && 'Split decision — discuss this one together.'}
-            </div>
-          )}
-        </div>
-      )}
+        );
+      })()}
 
       {/* Tabs */}
       <div className="flex border-b border-tastelanc-surface-light">
