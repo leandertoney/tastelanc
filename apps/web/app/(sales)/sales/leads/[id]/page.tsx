@@ -58,6 +58,9 @@ interface Lead {
   assigned_to_name: string | null;
   restaurant_id: string | null;
   google_place_id: string | null;
+  contact_phone: string | null;
+  contact_email: string | null;
+  contact_title: string | null;
   restaurants: {
     id: string;
     name: string;
@@ -818,7 +821,7 @@ export default function LeadDetailPage({
         ) : (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4">
-              <Field label="Contact Name" value={lead.contact_name} />
+              <Field label="Contact Name" value={lead.contact_name ? `${lead.contact_name}${lead.contact_title ? ` — ${lead.contact_title}` : ''}` : null} />
               <Field label="Email">
                 {lead.email ? (
                   <a href={`mailto:${lead.email}`} className="text-sm text-white hover:text-tastelanc-accent flex items-center gap-1.5">
@@ -860,6 +863,26 @@ export default function LeadDetailPage({
               <Field label="Last Contacted" value={lead.last_contacted_at ? new Date(lead.last_contacted_at).toLocaleDateString() : null} />
               <Field label="Assigned To" value={lead.assigned_to_name || 'Unassigned'} />
             </div>
+            {/* Direct Contact (enriched personal info) */}
+            {(lead.contact_phone || lead.contact_email) && (
+              <div className="mt-4 pt-4 border-t border-tastelanc-surface-light">
+                <p className="text-xs text-gray-500 mb-2 uppercase tracking-wide font-semibold">Direct Contact</p>
+                <div className="flex flex-wrap gap-4">
+                  {lead.contact_phone && (
+                    <a href={`tel:${lead.contact_phone}`} className="text-sm text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5" />
+                      {lead.contact_phone}
+                    </a>
+                  )}
+                  {lead.contact_email && (
+                    <a href={`mailto:${lead.contact_email}`} className="text-sm text-tastelanc-accent hover:text-tastelanc-accent/80 flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5" />
+                      {lead.contact_email}
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
             {/* Tags display */}
             {lead.tags && lead.tags.length > 0 && (
               <div className="mt-4 pt-4 border-t border-tastelanc-surface-light">
