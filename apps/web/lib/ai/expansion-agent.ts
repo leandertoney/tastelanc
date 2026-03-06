@@ -139,18 +139,27 @@ export async function validateWithGooglePlaces(
 // Avatar image generation (DALL-E 3)
 // ─────────────────────────────────────────────────────────
 
-/**
- * Generate an AI mascot avatar for a brand proposal using DALL-E 3.
- *
- * Art style matches Rosie (TasteLanc) and Mollie (TasteCumberland):
- * - Cute chibi-style cartoon character
- * - Bold, clean line art with thick outlines
- * - Friendly winking expression, rosy cheeks
- * - A local cultural element worked into the character design
- * - Brand accent color as the primary palette
- *
- * Uploads the result to Supabase Storage and returns the public URL.
- */
+function inferGenderFromName(name: string): string {
+  const lower = name.toLowerCase();
+  const femaleNames = new Set([
+    'betsy', 'rosie', 'mollie', 'ruby', 'daisy', 'penny', 'ivy', 'lily',
+    'pearl', 'hazel', 'olive', 'violet', 'stella', 'clara', 'flora',
+    'nellie', 'millie', 'dolly', 'sally', 'maggie', 'bonnie', 'belle',
+    'june', 'mae', 'grace', 'faith', 'hope', 'joy', 'dawn', 'willow',
+    'pepper', 'honey', 'ginger', 'clementine', 'magnolia', 'savannah',
+  ]);
+  const maleNames = new Set([
+    'buck', 'hank', 'duke', 'jack', 'pete', 'sam', 'gus', 'max',
+    'rex', 'bud', 'chip', 'ace', 'clyde', 'chester', 'otto', 'theo',
+    'milo', 'archie', 'barney', 'benny', 'buddy', 'louie', 'rusty',
+  ]);
+  if (femaleNames.has(lower)) return 'female';
+  if (maleNames.has(lower)) return 'male';
+  if (/(?:ie|y|a|elle|ette|ine|ina|ly)$/i.test(name)) return 'female';
+  if (/(?:ck|ke|us|er|on)$/i.test(name)) return 'male';
+  return 'female'; // default to female to match Rosie/Mollie series
+}
+
 export async function generateAvatarImage(
   aiName: string,
   regionName: string,
@@ -168,9 +177,11 @@ export async function generateAvatarImage(
   }
 
   try {
+    const gender = inferGenderFromName(aiName);
     const prompt = `A cute chibi-style cartoon mascot character named ${aiName} for a dining discovery app called "Taste${regionName.replace(/\s+/g, '')}".
 
 Art style requirements (MUST match exactly):
+- The character named ${aiName} should clearly appear as a ${gender} character
 - Cute chibi proportions, head/bust only, no full body
 - Bold, clean line art with thick dark outlines
 - Friendly winking expression (one eye closed, one open), warm smile, rosy pink cheeks

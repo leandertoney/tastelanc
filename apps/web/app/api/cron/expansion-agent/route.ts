@@ -565,17 +565,14 @@ async function stepGenerateBrands(
 
         await supabase.from('expansion_brand_drafts').insert(brandsToInsert);
 
-        // Update city status
-        await supabase
-          .from('expansion_cities')
-          .update({ status: 'brand_ready' })
-          .eq('id', city.id);
+        // Don't set brand_ready yet — city stays at 'researched' until all avatars are generated.
+        // The avatar generation endpoint handles the transition to brand_ready.
 
         // Log activity
         await supabase.from('expansion_activity_log').insert({
           city_id: city.id,
           action: 'brand_generated',
-          description: `Auto-generated 3 brand proposals for ${city.city_name}`,
+          description: `Brand text generated for ${city.city_name} (awaiting avatar images)`,
           metadata: {
             source: 'autonomous_agent',
             proposals: proposals.map((p) => p.app_name),

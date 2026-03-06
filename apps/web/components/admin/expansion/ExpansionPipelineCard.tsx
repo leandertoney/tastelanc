@@ -6,8 +6,8 @@ import type { ExpansionCity, ExpansionReview } from '@/lib/ai/expansion-types';
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   researching: { label: 'Researching', className: 'bg-blue-500/20 text-blue-400' },
-  researched: { label: 'Researched', className: 'bg-purple-500/20 text-purple-400' },
-  brand_ready: { label: 'Brand Ready', className: 'bg-yellow-500/20 text-yellow-400' },
+  researched: { label: 'Generating Brands...', className: 'bg-blue-500/20 text-blue-400' },
+  brand_ready: { label: 'Ready for Review', className: 'bg-amber-500/20 text-amber-400' },
   approved: { label: 'Approved', className: 'bg-green-500/20 text-green-400' },
   setup_in_progress: { label: 'Setting Up', className: 'bg-orange-500/20 text-orange-400' },
   live: { label: 'Live', className: 'bg-emerald-500/20 text-emerald-400' },
