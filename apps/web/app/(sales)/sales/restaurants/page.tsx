@@ -39,7 +39,7 @@ interface Restaurant {
   contact_title: string | null;
   address: string | null;
   zip_code: string | null;
-  category: string | null;
+  categories: string | null;
 }
 
 interface Stats {
@@ -91,7 +91,7 @@ export default function SalesRestaurantsPage() {
           state: r.state || 'PA',
           address: r.address || null,
           zip_code: r.zip_code || null,
-          category: r.category || 'restaurant',
+          category: r.categories || 'restaurant',
           email: r.contact_email || null,
           restaurant_id: r.id,
           contact_phone: r.contact_phone || undefined,

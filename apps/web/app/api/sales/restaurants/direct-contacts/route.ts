@@ -19,7 +19,7 @@ export async function GET() {
     // Fetch restaurants with enriched contact data
     let query = serviceClient
       .from('restaurants')
-      .select('id, name, city, state, phone, website, contact_name, contact_phone, contact_email, contact_title, address, zip_code, category')
+      .select('id, name, city, state, phone, website, contact_name, contact_phone, contact_email, contact_title, address, zip_code, categories')
       .not('contact_name', 'is', null)
       .order('name', { ascending: true });
 
