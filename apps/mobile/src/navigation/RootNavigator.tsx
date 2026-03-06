@@ -30,6 +30,15 @@ import {
   VoteHistoryScreen,
   VoteLeaderboardScreen,
 } from '../screens/voting';
+import FlyerCaptureScreen from '../screens/flyer/FlyerCaptureScreen';
+import FlyerProcessingScreen from '../screens/flyer/FlyerProcessingScreen';
+import FlyerPreviewScreen from '../screens/flyer/FlyerPreviewScreen';
+import FlyerPublishChoiceScreen from '../screens/flyer/FlyerPublishChoiceScreen';
+import FlyerSuccessScreen from '../screens/flyer/FlyerSuccessScreen';
+import SalesDashboardScreen from '../screens/sales/SalesDashboardScreen';
+import EmailThreadScreen from '../screens/sales/EmailThreadScreen';
+import ComposeEmailScreen from '../screens/sales/ComposeEmailScreen';
+import LeadDetailScreen from '../screens/sales/LeadDetailScreen';
 import { colors } from '../constants/colors';
 
 // Wrap each screen so crashes show inline error instead of killing the app
@@ -58,6 +67,15 @@ const SafeVoteCategory = withScreenErrorBoundary(VoteCategoryScreen, 'VoteCatego
 const SafeVoteRestaurant = withScreenErrorBoundary(VoteRestaurantScreen, 'VoteRestaurant');
 const SafeVoteHistory = withScreenErrorBoundary(VoteHistoryScreen, 'VoteHistory');
 const SafeVoteLeaderboard = withScreenErrorBoundary(VoteLeaderboardScreen, 'VoteLeaderboard');
+const SafeFlyerCapture = withScreenErrorBoundary(FlyerCaptureScreen, 'FlyerCapture');
+const SafeFlyerProcessing = withScreenErrorBoundary(FlyerProcessingScreen, 'FlyerProcessing');
+const SafeFlyerPreview = withScreenErrorBoundary(FlyerPreviewScreen, 'FlyerPreview');
+const SafeFlyerPublishChoice = withScreenErrorBoundary(FlyerPublishChoiceScreen, 'FlyerPublishChoice');
+const SafeFlyerSuccess = withScreenErrorBoundary(FlyerSuccessScreen, 'FlyerSuccess');
+const SafeSalesDashboard = withScreenErrorBoundary(SalesDashboardScreen, 'SalesDashboard');
+const SafeEmailThread = withScreenErrorBoundary(EmailThreadScreen, 'EmailThread');
+const SafeComposeEmail = withScreenErrorBoundary(ComposeEmailScreen, 'ComposeEmail');
+const SafeLeadDetail = withScreenErrorBoundary(LeadDetailScreen, 'LeadDetail');
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -217,6 +235,53 @@ export default function RootNavigator() {
       <Stack.Screen
         name="Wishlist"
         component={SafeWishlist}
+        options={{ headerShown: false }}
+      />
+      {/* Flyer Scanner */}
+      <Stack.Screen
+        name="FlyerCapture"
+        component={SafeFlyerCapture}
+        options={{ title: 'Scan Flyer' }}
+      />
+      <Stack.Screen
+        name="FlyerProcessing"
+        component={SafeFlyerProcessing}
+        options={{ title: 'Analyzing Flyer' }}
+      />
+      <Stack.Screen
+        name="FlyerPreview"
+        component={SafeFlyerPreview}
+        options={{ title: 'Review Event' }}
+      />
+      <Stack.Screen
+        name="FlyerPublishChoice"
+        component={SafeFlyerPublishChoice}
+        options={{ title: 'Publish Event' }}
+      />
+      <Stack.Screen
+        name="FlyerSuccess"
+        component={SafeFlyerSuccess}
+        options={{ headerShown: false }}
+      />
+      {/* Sales CRM */}
+      <Stack.Screen
+        name="SalesDashboard"
+        component={SafeSalesDashboard}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="EmailThread"
+        component={SafeEmailThread}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="ComposeEmail"
+        component={SafeComposeEmail}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="LeadDetail"
+        component={SafeLeadDetail}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

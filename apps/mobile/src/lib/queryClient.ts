@@ -93,6 +93,14 @@ export const queryKeys = {
     list: ['blog', 'list'] as const,
     detail: (slug: string) => ['blog', 'detail', slug] as const,
   },
+  sales: {
+    inbox: (search?: string, filter?: string, inbox?: string) => ['sales', 'inbox', search, filter, inbox] as const,
+    thread: (email: string) => ['sales', 'thread', email] as const,
+    senderIdentity: ['sales', 'senderIdentity'] as const,
+    unreadCount: ['sales', 'unreadCount'] as const,
+    leads: (status?: string, search?: string, page?: number) => ['sales', 'leads', status, search, page] as const,
+    leadDetail: (id: string) => ['sales', 'lead', id] as const,
+  },
   visits: {
     all: (userId: string) => ['visits', userId] as const,
     list: (userId: string, limit?: number) => ['visits', userId, 'list', limit] as const,

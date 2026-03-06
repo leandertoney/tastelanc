@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createMobileClient } from '@/lib/supabase/mobile-auth';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
 import {
   generateEmail,
@@ -13,9 +13,12 @@ import {
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
-    const access = await verifySalesAccess(supabase);
+    const supabase = createMobileClient(request);
+    if (!supabase) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
+    const access = await verifySalesAccess(supabase);
     if (!access.canAccess) {
       return NextResponse.json(
         { error: access.error },
@@ -80,11 +83,7 @@ export async function POST(request: Request) {
           );
         }
 
-        const improved = await improveEmail(
-          content,
-          instruction,
-          audienceType || 'b2b'
-        );
+        const improved = await improveEmail(content, instruction, audienceType || 'b2b');
         return NextResponse.json({ improved });
       }
 
@@ -96,10 +95,7 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('Error in sales AI email generation:', message, error);
-    return NextResponse.json(
-      { error: `AI error: ${message}` },
-      { status: 500 }
-    );
+    console.error('Error in mobile AI email generation:', message, error);
+    return NextResponse.json({ error: `AI error: ${message}` }, { status: 500 });
   }
 }

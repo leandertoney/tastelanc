@@ -64,6 +64,27 @@ export async function getUserIdentity(
     };
   }
 
+  // 3. Fall back to profile display_name (covers admins not in sales_reps)
+  const { data: profile } = await serviceClient
+    .from('profiles')
+    .select('display_name')
+    .eq('id', access.userId)
+    .single();
+
+  if (profile?.display_name) {
+    const firstName = profile.display_name.split(' ')[0].toLowerCase();
+    const matched = SENDER_IDENTITIES.find(s => s.name.toLowerCase() === firstName);
+    if (matched) return matched;
+
+    // Auto-generate from profile name
+    return {
+      name: profile.display_name.split(' ')[0],
+      email: `${firstName}@${BRAND.domain}`,
+      replyEmail: `${firstName}@${BRAND.replyDomain}`,
+      title: access.isAdmin ? 'Founder' : 'Sales Representative',
+    };
+  }
+
   return null;
 }
 

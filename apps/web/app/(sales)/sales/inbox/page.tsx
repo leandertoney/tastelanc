@@ -16,6 +16,11 @@ import {
   Wand2,
   Paperclip,
   FileEdit,
+  Trash2,
+  MailOpen,
+  CheckSquare,
+  Square,
+  X,
 } from 'lucide-react';
 import { Card } from '@/components/ui';
 import { toast } from 'sonner';
@@ -171,6 +176,84 @@ export default function InboxPage() {
 
   const threadEndRef = useRef<HTMLDivElement>(null);
 
+  // Multi-select
+  const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
+  const [isBulkActioning, setIsBulkActioning] = useState(false);
+
+  const isAllSelected = conversations.length > 0 && selectedEmails.size === conversations.length;
+  const hasSelection = selectedEmails.size > 0;
+
+  const toggleSelect = (email: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedEmails(prev => {
+      const next = new Set(prev);
+      if (next.has(email)) next.delete(email);
+      else next.add(email);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedEmails(new Set());
+    } else {
+      setSelectedEmails(new Set(conversations.map(c => c.counterparty_email)));
+    }
+  };
+
+  const clearSelection = () => setSelectedEmails(new Set());
+
+  const handleBulkAction = async (action: 'mark_read' | 'mark_unread' | 'delete') => {
+    if (selectedEmails.size === 0) return;
+
+    if (action === 'delete') {
+      if (!confirm(`Delete ${selectedEmails.size} conversation${selectedEmails.size !== 1 ? 's' : ''}? This cannot be undone.`)) return;
+    }
+
+    setIsBulkActioning(true);
+    try {
+      const res = await fetch('/api/sales/inbox/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action,
+          emails: Array.from(selectedEmails),
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed');
+      }
+
+      const labels = { mark_read: 'Marked as read', mark_unread: 'Marked as unread', delete: 'Deleted' };
+      toast.success(`${labels[action]} (${selectedEmails.size})`);
+
+      // Update local state optimistically
+      if (action === 'mark_read') {
+        setConversations(prev =>
+          prev.map(c => selectedEmails.has(c.counterparty_email) ? { ...c, unread_count: 0 } : c)
+        );
+      } else if (action === 'mark_unread') {
+        setConversations(prev =>
+          prev.map(c => selectedEmails.has(c.counterparty_email) && c.unread_count === 0 ? { ...c, unread_count: 1 } : c)
+        );
+      } else if (action === 'delete') {
+        setConversations(prev => prev.filter(c => !selectedEmails.has(c.counterparty_email)));
+        if (selectedConvo && selectedEmails.has(selectedConvo.counterparty_email)) {
+          setSelectedConvo(null);
+        }
+      }
+
+      clearSelection();
+    } catch (error) {
+      console.error('Bulk action error:', error);
+      toast.error(error instanceof Error ? error.message : 'Operation failed');
+    } finally {
+      setIsBulkActioning(false);
+    }
+  };
+
   // Fetch conversations (with retry for transient 401s)
   const fetchConversations = async (retries = 2) => {
     try {
@@ -201,6 +284,7 @@ export default function InboxPage() {
 
   useEffect(() => {
     setIsLoading(true);
+    clearSelection();
     fetchConversations();
   }, [activeView]);
 
@@ -398,6 +482,58 @@ export default function InboxPage() {
             </div>
           </Card>
 
+          {/* Bulk action toolbar */}
+          {hasSelection && (
+            <div className="flex items-center gap-2 px-3 py-2 mb-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg">
+              <button
+                onClick={toggleSelectAll}
+                className="p-1 text-gray-400 hover:text-white transition-colors"
+                title={isAllSelected ? 'Deselect all' : 'Select all'}
+              >
+                {isAllSelected ? <CheckSquare className="w-4 h-4 text-tastelanc-accent" /> : <Square className="w-4 h-4" />}
+              </button>
+              <span className="text-xs text-gray-400">{selectedEmails.size} selected</span>
+              <div className="flex-1" />
+              {isBulkActioning ? (
+                <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+              ) : (
+                <>
+                  <button
+                    onClick={() => handleBulkAction('mark_read')}
+                    className="flex items-center gap-1 px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded transition-colors"
+                    title="Mark as read"
+                  >
+                    <MailOpen className="w-3.5 h-3.5" />
+                    Read
+                  </button>
+                  <button
+                    onClick={() => handleBulkAction('mark_unread')}
+                    className="flex items-center gap-1 px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded transition-colors"
+                    title="Mark as unread"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    Unread
+                  </button>
+                  <button
+                    onClick={() => handleBulkAction('delete')}
+                    className="flex items-center gap-1 px-2 py-1 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Delete
+                  </button>
+                  <button
+                    onClick={clearSelection}
+                    className="p-1 text-gray-500 hover:text-white transition-colors"
+                    title="Clear selection"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Conversation list */}
           <div className="flex-1 overflow-y-auto space-y-1">
             {isLoading ? (
@@ -414,67 +550,89 @@ export default function InboxPage() {
               </Card>
             ) : (
               conversations.map((convo) => {
-                const isSelected = selectedConvo?.counterparty_email === convo.counterparty_email;
+                const isActive = selectedConvo?.counterparty_email === convo.counterparty_email;
                 const isUnread = convo.unread_count > 0;
+                const isChecked = selectedEmails.has(convo.counterparty_email);
 
                 return (
-                  <button
+                  <div
                     key={convo.counterparty_email}
-                    onClick={() => openThread(convo)}
-                    className={`w-full text-left p-3 rounded-lg transition-colors ${
-                      isSelected
+                    className={`group relative flex items-start gap-0 rounded-lg transition-colors ${
+                      isActive
                         ? 'bg-tastelanc-accent/20 ring-1 ring-tastelanc-accent/30'
+                        : isChecked
+                        ? 'bg-tastelanc-accent/10'
                         : isUnread
                         ? 'bg-blue-500/5 hover:bg-blue-500/10'
                         : 'hover:bg-tastelanc-surface-light/50'
                     }`}
                   >
-                    <div className="flex items-start gap-2">
-                      {/* Unread dot */}
-                      <div className="pt-1.5 w-3 flex-shrink-0">
-                        {isUnread && (
-                          <span className="block w-2 h-2 bg-blue-500 rounded-full" />
-                        )}
-                      </div>
+                    {/* Checkbox */}
+                    <button
+                      onClick={(e) => toggleSelect(convo.counterparty_email, e)}
+                      className={`flex-shrink-0 p-3 pb-0 pt-3.5 transition-opacity ${
+                        hasSelection || isChecked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      }`}
+                    >
+                      {isChecked ? (
+                        <CheckSquare className="w-4 h-4 text-tastelanc-accent" />
+                      ) : (
+                        <Square className="w-4 h-4 text-gray-600 hover:text-gray-400" />
+                      )}
+                    </button>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className={`text-sm truncate ${isUnread ? 'font-semibold text-white' : 'text-gray-300'}`}>
-                            {convo.counterparty_name || convo.counterparty_email}
-                          </span>
-                          <span className="text-[10px] text-gray-500 flex-shrink-0">
-                            {formatRelativeDate(convo.last_message_at)}
-                          </span>
+                    {/* Conversation content */}
+                    <button
+                      onClick={() => openThread(convo)}
+                      className="flex-1 text-left p-3 pl-0 min-w-0"
+                    >
+                      <div className="flex items-start gap-2">
+                        {/* Unread dot */}
+                        <div className="pt-1.5 w-3 flex-shrink-0">
+                          {isUnread && (
+                            <span className="block w-2 h-2 bg-blue-500 rounded-full" />
+                          )}
                         </div>
 
-                        {convo.last_message_subject && (
-                          <p className={`text-xs truncate mt-0.5 ${isUnread ? 'text-gray-300' : 'text-gray-500'}`}>
-                            {convo.last_message_subject}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className={`text-sm truncate ${isUnread ? 'font-semibold text-white' : 'text-gray-300'}`}>
+                              {convo.counterparty_name || convo.counterparty_email}
+                            </span>
+                            <span className="text-[10px] text-gray-500 flex-shrink-0">
+                              {formatRelativeDate(convo.last_message_at)}
+                            </span>
+                          </div>
+
+                          {convo.last_message_subject && (
+                            <p className={`text-xs truncate mt-0.5 ${isUnread ? 'text-gray-300' : 'text-gray-500'}`}>
+                              {convo.last_message_subject}
+                            </p>
+                          )}
+
+                          <p className="text-xs text-gray-600 truncate mt-0.5">
+                            {convo.last_message_direction === 'sent' && (
+                              <span className="text-gray-500">You: </span>
+                            )}
+                            {convo.last_message_snippet || 'No preview'}
                           </p>
-                        )}
 
-                        <p className="text-xs text-gray-600 truncate mt-0.5">
-                          {convo.last_message_direction === 'sent' && (
-                            <span className="text-gray-500">You: </span>
-                          )}
-                          {convo.last_message_snippet || 'No preview'}
-                        </p>
-
-                        <div className="flex items-center gap-2 mt-1">
-                          {convo.lead_business_name && (
-                            <span className="text-[10px] bg-tastelanc-surface-light text-gray-400 px-1.5 py-0.5 rounded">
-                              {convo.lead_business_name}
-                            </span>
-                          )}
-                          {convo.message_count > 1 && (
-                            <span className="text-[10px] text-gray-600">
-                              {convo.message_count} messages
-                            </span>
-                          )}
+                          <div className="flex items-center gap-2 mt-1">
+                            {convo.lead_business_name && (
+                              <span className="text-[10px] bg-tastelanc-surface-light text-gray-400 px-1.5 py-0.5 rounded">
+                                {convo.lead_business_name}
+                              </span>
+                            )}
+                            {convo.message_count > 1 && (
+                              <span className="text-[10px] text-gray-600">
+                                {convo.message_count} messages
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </button>
+                    </button>
+                  </div>
                 );
               })
             )}
