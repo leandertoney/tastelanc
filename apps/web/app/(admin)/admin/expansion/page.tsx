@@ -71,6 +71,7 @@ export default function ExpansionPipelinePage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSuggestModal, setShowSuggestModal] = useState(false);
   const [isRunningAgent, setIsRunningAgent] = useState(false);
+  const [agentStatus, setAgentStatus] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [votingCityId, setVotingCityId] = useState<string | null>(null);
@@ -177,29 +178,51 @@ export default function ExpansionPipelinePage() {
 
   const handleRunAgent = async () => {
     setIsRunningAgent(true);
-    try {
-      const res = await fetch('/api/cron/expansion-agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source: 'manual_trigger' }),
-      });
+    setAgentStatus(null);
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Agent run failed');
+    const steps = ['suggest', 'research', 'brands', 'jobs', 'notify'] as const;
+    const stepLabels: Record<string, string> = {
+      suggest: 'Suggesting new cities...',
+      research: 'Researching markets...',
+      brands: 'Generating brand proposals...',
+      jobs: 'Creating job listings...',
+      notify: 'Sending notifications...',
+    };
+
+    let totalResult = { citiesSuggested: 0, citiesResearched: [] as string[], brandsGenerated: [] as string[], errors: [] as string[] };
+
+    try {
+      for (const step of steps) {
+        setAgentStatus(stepLabels[step]);
+        const res = await fetch('/api/cron/expansion-agent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ source: 'manual_trigger', step }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || `Step "${step}" failed`);
+        }
+
+        const result = await res.json();
+        if (result.citiesSuggested) totalResult.citiesSuggested += result.citiesSuggested;
+        if (result.citiesResearched?.length) totalResult.citiesResearched.push(...result.citiesResearched);
+        if (result.brandsGenerated?.length) totalResult.brandsGenerated.push(...result.brandsGenerated);
       }
 
-      const result = await res.json();
-      toast.success(
-        `Agent completed: ${result.citiesSuggested || 0} suggested, ${result.citiesResearched?.length || 0} researched, ${result.brandsGenerated?.length || 0} branded`
-      );
+      const parts = [];
+      if (totalResult.citiesSuggested) parts.push(`${totalResult.citiesSuggested} suggested`);
+      if (totalResult.citiesResearched.length) parts.push(`${totalResult.citiesResearched.length} researched`);
+      if (totalResult.brandsGenerated.length) parts.push(`${totalResult.brandsGenerated.length} branded`);
+      toast.success(`Agent completed: ${parts.join(', ') || 'no changes needed'}`);
 
-      // Refresh data
       fetchData();
     } catch (error: any) {
       toast.error(error.message || 'Failed to run agent');
     } finally {
       setIsRunningAgent(false);
+      setAgentStatus(null);
     }
   };
 
@@ -342,7 +365,7 @@ export default function ExpansionPipelinePage() {
                 ) : (
                   <Play className="w-4 h-4" />
                 )}
-                {isRunningAgent ? 'Running...' : 'Run Agent Now'}
+                {agentStatus || (isRunningAgent ? 'Running...' : 'Run Agent Now')}
               </button>
               <button
                 onClick={() => setShowAddModal(true)}
