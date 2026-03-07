@@ -1,0 +1,23 @@
+{
+  "name": "@tastelanc/agent",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "TasteLanc monorepo automation agent powered by Claude Agent SDK",
+  "scripts": {
+    "sync-check": "npx tsx src/tasks/sync-check.ts",
+    "categorize": "npx tsx src/tasks/categorize-restaurants.ts",
+    "health-check": "npx tsx src/tasks/health-check.ts",
+    "deploy": "npx tsx src/tasks/deploy.ts",
+    "agent": "npx tsx src/index.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.0",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0"
+  }
+}

@@ -50,5 +50,49 @@
       "Bash(PGPASSWORD='LTMackin!23' psql \"postgresql://postgres.kufcxxynjvyharhtfptd:LTMackin%2123@aws-0-us-west-2.pooler.supabase.com:5432/postgres\" -c \"SELECT id, display_name, role FROM profiles WHERE role IN \\(''co_founder'', ''super_admin''\\) ORDER BY role;\")",
       "Bash(netlify --version)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/validate-app-targeting.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/validate-deployment.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/post-edit-lint.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Session complete. Remember: Web deploys via Netlify on push to main. Mobile OTA: cd apps/mobile && eas update --branch production (TasteLanc) or cd apps/mobile-cumberland && eas update --branch production (TasteCumberland)'"
+          }
+        ]
+      }
+    ]
   }
 }
