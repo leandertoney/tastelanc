@@ -10,11 +10,11 @@ import {
   CheckCircle,
   AlertTriangle,
   ExternalLink,
-  Eye,
-  Calendar,
   Sun,
   Moon,
   RefreshCw,
+  Zap,
+  Loader2,
 } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 
@@ -78,15 +78,17 @@ export default function InstagramPostsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-  const [generating, setGenerating] = useState(false);
+  const [generatingDay, setGeneratingDay] = useState<string | null>(null);
+  const [generatingWeek, setGeneratingWeek] = useState(false);
 
+  // Show 2 weeks: 14 days
+  const periodEnd = addDays(weekStart, 13);
   const weekStartKey = formatDateKey(weekStart);
-  const weekEnd = addDays(weekStart, 6);
-  const weekEndKey = formatDateKey(weekEnd);
+  const periodEndKey = formatDateKey(periodEnd);
 
   const fetchPosts = useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/instagram-posts?start=${weekStartKey}&end=${weekEndKey}`);
+      const res = await fetch(`/api/admin/instagram-posts?start=${weekStartKey}&end=${periodEndKey}`);
       const data = await res.json();
       setPosts(data.posts || []);
       setStats(data.stats || null);
@@ -95,42 +97,90 @@ export default function InstagramPostsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [weekStartKey, weekEndKey]);
+  }, [weekStartKey, periodEndKey]);
 
   useEffect(() => {
     setIsLoading(true);
     fetchPosts();
   }, [fetchPosts]);
 
-  const prevWeek = () => setWeekStart(addDays(weekStart, -7));
-  const nextWeek = () => setWeekStart(addDays(weekStart, 7));
+  const prevPeriod = () => setWeekStart(addDays(weekStart, -14));
+  const nextPeriod = () => setWeekStart(addDays(weekStart, 14));
   const goToday = () => setWeekStart(getMonday(new Date()));
 
-  const handleGenerate = async (contentType: string) => {
-    setGenerating(true);
+  const generateForDate = async (dateKey: string, slot: 'am' | 'pm') => {
+    const contentType = slot === 'am' ? 'tonight_today' : 'upcoming_events';
+    setGeneratingDay(`${dateKey}-${slot}`);
     try {
       const res = await fetch('/api/instagram/cron', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          market_slug: 'lancaster-pa',
           force_type: contentType,
-          market: 'lancaster-pa',
-          dry_run: true,
+          post_slot: slot,
+          preview_only: true,
+          target_date: dateKey,
         }),
       });
       const data = await res.json();
       if (data.error) {
         alert(`Error: ${data.error}`);
       } else {
-        alert('Preview generated! Refreshing...');
         fetchPosts();
       }
     } catch (error) {
       console.error('Error generating:', error);
       alert('Failed to generate preview');
     } finally {
-      setGenerating(false);
+      setGeneratingDay(null);
     }
+  };
+
+  const generateWeek = async (startDate: Date) => {
+    setGeneratingWeek(true);
+    const days = Array.from({ length: 7 }, (_, i) => formatDateKey(addDays(startDate, i)));
+
+    for (const dateKey of days) {
+      // Check if posts already exist for this day
+      const existing = posts.filter(p => p.post_date === dateKey);
+      const hasAm = existing.some(p => p.post_slot === 'am');
+      const hasPm = existing.some(p => p.post_slot === 'pm');
+
+      try {
+        if (!hasAm) {
+          await fetch('/api/instagram/cron', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              market_slug: 'lancaster-pa',
+              force_type: 'tonight_today',
+              post_slot: 'am',
+              preview_only: true,
+              target_date: dateKey,
+            }),
+          });
+        }
+        if (!hasPm) {
+          await fetch('/api/instagram/cron', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              market_slug: 'lancaster-pa',
+              force_type: 'upcoming_events',
+              post_slot: 'pm',
+              preview_only: true,
+              target_date: dateKey,
+            }),
+          });
+        }
+      } catch (error) {
+        console.error(`Error generating for ${dateKey}:`, error);
+      }
+    }
+
+    await fetchPosts();
+    setGeneratingWeek(false);
   };
 
   // Group posts by date
@@ -141,10 +191,14 @@ export default function InstagramPostsPage() {
     postsByDate[key].push(post);
   }
 
-  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  // Two weeks of days
+  const week1Days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const week2Start = addDays(weekStart, 7);
+  const week2Days = Array.from({ length: 7 }, (_, i) => addDays(week2Start, i));
   const today = formatDateKey(new Date());
 
-  const weekLabel = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+  const week1Label = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${addDays(weekStart, 6).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+  const week2Label = `${week2Start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${periodEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
 
   if (isLoading) {
     return (
@@ -166,24 +220,6 @@ export default function InstagramPostsPage() {
           <p className="text-gray-400 mt-1 text-sm md:text-base">
             Post calendar and preview for Lancaster
           </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleGenerate('tonight_today')}
-            disabled={generating}
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-lg transition-colors text-sm disabled:opacity-50"
-          >
-            <Sun className="w-4 h-4" />
-            Generate AM
-          </button>
-          <button
-            onClick={() => handleGenerate('upcoming_events')}
-            disabled={generating}
-            className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2.5 rounded-lg transition-colors text-sm disabled:opacity-50"
-          >
-            <Moon className="w-4 h-4" />
-            Generate PM
-          </button>
         </div>
       </div>
 
@@ -235,20 +271,20 @@ export default function InstagramPostsPage() {
         </Card>
       </div>
 
-      {/* Week Navigation */}
+      {/* Period Navigation */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <button
-            onClick={prevWeek}
+            onClick={prevPeriod}
             className="p-2 text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <h2 className="text-lg font-semibold text-white min-w-[220px] text-center">
-            {weekLabel}
+          <h2 className="text-lg font-semibold text-white min-w-[280px] text-center">
+            {week1Label} &ndash; {week2Label}
           </h2>
           <button
-            onClick={nextWeek}
+            onClick={nextPeriod}
             className="p-2 text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
           >
             <ChevronRight className="w-5 h-5" />
@@ -271,8 +307,90 @@ export default function InstagramPostsPage() {
         </div>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-2 mb-8">
+      {/* Week 1 */}
+      <WeekRow
+        label={week1Label}
+        days={week1Days}
+        today={today}
+        postsByDate={postsByDate}
+        generatingDay={generatingDay}
+        generatingWeek={generatingWeek}
+        onGenerateDay={generateForDate}
+        onGenerateWeek={() => generateWeek(weekStart)}
+        onSelectPost={setSelectedPost}
+      />
+
+      {/* Week 2 */}
+      <WeekRow
+        label={week2Label}
+        days={week2Days}
+        today={today}
+        postsByDate={postsByDate}
+        generatingDay={generatingDay}
+        generatingWeek={generatingWeek}
+        onGenerateDay={generateForDate}
+        onGenerateWeek={() => generateWeek(week2Start)}
+        onSelectPost={setSelectedPost}
+      />
+
+      {/* Post Detail Modal */}
+      {selectedPost && (
+        <PostDetailModal post={selectedPost} onClose={() => setSelectedPost(null)} />
+      )}
+    </div>
+  );
+}
+
+function WeekRow({
+  label,
+  days,
+  today,
+  postsByDate,
+  generatingDay,
+  generatingWeek,
+  onGenerateDay,
+  onGenerateWeek,
+  onSelectPost,
+}: {
+  label: string;
+  days: Date[];
+  today: string;
+  postsByDate: Record<string, Post[]>;
+  generatingDay: string | null;
+  generatingWeek: boolean;
+  onGenerateDay: (dateKey: string, slot: 'am' | 'pm') => void;
+  onGenerateWeek: () => void;
+  onSelectPost: (post: Post) => void;
+}) {
+  // Count how many empty slots exist this week
+  const emptySlots = days.reduce((count, day) => {
+    const dateKey = formatDateKey(day);
+    const dayPosts = postsByDate[dateKey] || [];
+    if (!dayPosts.some(p => p.post_slot === 'am')) count++;
+    if (!dayPosts.some(p => p.post_slot === 'pm')) count++;
+    return count;
+  }, 0);
+
+  return (
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-semibold text-gray-400">{label}</h3>
+        {emptySlots > 0 && (
+          <button
+            onClick={onGenerateWeek}
+            disabled={generatingWeek}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white font-semibold rounded-lg transition-colors text-xs disabled:opacity-50"
+          >
+            {generatingWeek ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Zap className="w-3.5 h-3.5" />
+            )}
+            {generatingWeek ? 'Generating...' : `Generate Week (${emptySlots} empty)`}
+          </button>
+        )}
+      </div>
+      <div className="grid grid-cols-7 gap-2">
         {days.map((day) => {
           const dateKey = formatDateKey(day);
           const isToday = dateKey === today;
@@ -301,34 +419,55 @@ export default function InstagramPostsPage() {
 
               {/* Slots */}
               <div className="flex-1 p-2 space-y-2">
-                {/* AM Slot */}
-                <PostSlotCard post={amPost} slot="am" onClick={() => amPost && setSelectedPost(amPost)} />
-                {/* PM Slot */}
-                <PostSlotCard post={pmPost} slot="pm" onClick={() => pmPost && setSelectedPost(pmPost)} />
+                <PostSlotCard
+                  post={amPost}
+                  slot="am"
+                  dateKey={dateKey}
+                  generating={generatingDay === `${dateKey}-am`}
+                  onClick={() => amPost ? onSelectPost(amPost) : onGenerateDay(dateKey, 'am')}
+                />
+                <PostSlotCard
+                  post={pmPost}
+                  slot="pm"
+                  dateKey={dateKey}
+                  generating={generatingDay === `${dateKey}-pm`}
+                  onClick={() => pmPost ? onSelectPost(pmPost) : onGenerateDay(dateKey, 'pm')}
+                />
               </div>
             </div>
           );
         })}
       </div>
-
-      {/* Post Detail Modal */}
-      {selectedPost && (
-        <PostDetailModal post={selectedPost} onClose={() => setSelectedPost(null)} />
-      )}
     </div>
   );
 }
 
-function PostSlotCard({ post, slot, onClick }: { post?: Post; slot: string; onClick: () => void }) {
+function PostSlotCard({ post, slot, dateKey, generating, onClick }: {
+  post?: Post;
+  slot: string;
+  dateKey: string;
+  generating: boolean;
+  onClick: () => void;
+}) {
   if (!post) {
     return (
-      <div className="rounded-lg border border-dashed border-tastelanc-surface-light p-2 text-center">
-        <p className="text-[10px] uppercase text-gray-600 flex items-center justify-center gap-1">
-          {slot === 'am' ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
-          {slot === 'am' ? '11:30 AM' : '5:30 PM'}
-        </p>
-        <p className="text-[10px] text-gray-600 mt-0.5">Empty</p>
-      </div>
+      <button
+        onClick={onClick}
+        disabled={generating}
+        className="w-full rounded-lg border border-dashed border-tastelanc-surface-light hover:border-tastelanc-accent/40 p-2 text-center transition-colors disabled:opacity-50"
+      >
+        {generating ? (
+          <Loader2 className="w-4 h-4 animate-spin text-tastelanc-accent mx-auto" />
+        ) : (
+          <>
+            <p className="text-[10px] uppercase text-gray-600 flex items-center justify-center gap-1">
+              {slot === 'am' ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
+              {slot === 'am' ? '11:30 AM' : '5:30 PM'}
+            </p>
+            <p className="text-[10px] text-gray-500 mt-0.5">Click to generate</p>
+          </>
+        )}
+      </button>
     );
   }
 

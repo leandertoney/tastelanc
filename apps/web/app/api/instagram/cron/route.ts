@@ -25,6 +25,7 @@ export async function POST(request: Request) {
   const forceType = body.force_type || undefined; // 'tonight_today', 'weekend_preview', 'category_roundup'
   const forceSubtype = body.force_subtype || undefined; // 'events', 'happy_hour', 'special'
   const postSlot = body.post_slot || 'am'; // 'am' or 'pm'
+  const targetDate = body.target_date ? new Date(body.target_date + 'T12:00:00') : new Date();
   const supabase = createServiceRoleClient();
 
   // Resolve market
@@ -57,11 +58,11 @@ export async function POST(request: Request) {
   };
 
   // Step 1: Generate post
-  console.log(`[Instagram Cron] Generating post for ${marketSlug}...`);
+  console.log(`[Instagram Cron] Generating post for ${marketSlug} (date: ${targetDate.toISOString().split('T')[0]})...`);
   const genResult = await generateInstagramPost({
     supabase,
     market: marketConfig,
-    date: new Date(),
+    date: targetDate,
     forceType,
     forceSubtype,
     postSlot,
