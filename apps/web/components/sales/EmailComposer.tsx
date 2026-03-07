@@ -38,7 +38,7 @@ interface EmailComposerProps {
   };
 }
 
-type TemplateKey = 'coldOutreach' | 'followUp' | 'valueProposition' | 'custom';
+type TemplateKey = 'coldOutreach' | 'spotlight' | 'followUp' | 'valueProposition' | 'custom';
 type Step = 'compose' | 'confirm';
 
 const AI_IMPROVE_OPTIONS = [
@@ -51,6 +51,7 @@ const AI_IMPROVE_OPTIONS = [
 ] as const;
 
 const TEMPLATE_OPTIONS: { key: TemplateKey; label: string }[] = [
+  { key: 'spotlight', label: 'Spotlight' },
   { key: 'coldOutreach', label: 'Cold Outreach' },
   { key: 'followUp', label: 'Follow Up' },
   { key: 'valueProposition', label: 'Value Proposition' },
@@ -70,7 +71,7 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
   const [lastUsedHint, setLastUsedHint] = useState<string | null>(null);
 
   // Template
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateKey>(isReply ? 'custom' : 'coldOutreach');
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateKey>(isReply ? 'custom' : 'spotlight');
 
   // Email fields
   const [subject, setSubject] = useState(
