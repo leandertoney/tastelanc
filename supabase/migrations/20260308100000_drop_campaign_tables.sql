@@ -15,8 +15,14 @@ ALTER TABLE email_sends DROP CONSTRAINT IF EXISTS email_sends_scheduled_campaign
 ALTER TABLE email_sends DROP COLUMN IF EXISTS campaign_id;
 ALTER TABLE email_sends DROP COLUMN IF EXISTS scheduled_campaign_id;
 
--- Drop campaign-only tables
+-- Drop FK constraints from unsubscribe tables that reference email_campaigns
+ALTER TABLE email_unsubscribes DROP CONSTRAINT IF EXISTS email_unsubscribes_campaign_id_fkey;
+ALTER TABLE email_unsubscribes DROP COLUMN IF EXISTS campaign_id;
+ALTER TABLE b2b_unsubscribes DROP CONSTRAINT IF EXISTS b2b_unsubscribes_campaign_id_fkey;
+ALTER TABLE b2b_unsubscribes DROP COLUMN IF EXISTS campaign_id;
+
+-- Drop campaign-only tables (email_campaigns first — it FKs to scheduled_campaigns)
 DROP TABLE IF EXISTS automation_logs;
+DROP TABLE IF EXISTS email_campaigns;
 DROP TABLE IF EXISTS scheduled_campaigns;
 DROP TABLE IF EXISTS email_templates;
-DROP TABLE IF EXISTS email_campaigns;
