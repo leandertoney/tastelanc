@@ -80,13 +80,13 @@ export default function InstagramPostsPage() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [generating, setGenerating] = useState(false);
 
+  const weekStartKey = formatDateKey(weekStart);
   const weekEnd = addDays(weekStart, 6);
+  const weekEndKey = formatDateKey(weekEnd);
 
   const fetchPosts = useCallback(async () => {
     try {
-      const start = formatDateKey(weekStart);
-      const end = formatDateKey(weekEnd);
-      const res = await fetch(`/api/admin/instagram-posts?start=${start}&end=${end}`);
+      const res = await fetch(`/api/admin/instagram-posts?start=${weekStartKey}&end=${weekEndKey}`);
       const data = await res.json();
       setPosts(data.posts || []);
       setStats(data.stats || null);
@@ -95,7 +95,7 @@ export default function InstagramPostsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [weekStart, weekEnd]);
+  }, [weekStartKey, weekEndKey]);
 
   useEffect(() => {
     setIsLoading(true);
