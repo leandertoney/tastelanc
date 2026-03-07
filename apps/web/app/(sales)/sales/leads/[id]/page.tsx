@@ -68,6 +68,7 @@ interface Lead {
     tier_id: string | null;
     tiers: { name: string } | null;
   } | null;
+  markets?: { slug: string } | null;
 }
 
 interface Ownership {
