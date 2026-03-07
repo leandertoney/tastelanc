@@ -482,19 +482,21 @@ export default function InboxPage() {
             </div>
           </Card>
 
-          {/* Bulk action toolbar */}
-          {hasSelection && (
-            <div className="flex items-center gap-2 px-3 py-2 mb-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg">
-              <button
-                onClick={toggleSelectAll}
-                className="p-1 text-gray-400 hover:text-white transition-colors"
-                title={isAllSelected ? 'Deselect all' : 'Select all'}
-              >
-                {isAllSelected ? <CheckSquare className="w-4 h-4 text-tastelanc-accent" /> : <Square className="w-4 h-4" />}
-              </button>
-              <span className="text-xs text-gray-400">{selectedEmails.size} selected</span>
-              <div className="flex-1" />
-              {isBulkActioning ? (
+          {/* Select all + bulk action toolbar */}
+          <div className="flex items-center gap-2 px-3 py-2 mb-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg">
+            <button
+              onClick={toggleSelectAll}
+              className="p-1 text-gray-400 hover:text-white transition-colors"
+              title={isAllSelected ? 'Deselect all' : 'Select all'}
+            >
+              {isAllSelected ? <CheckSquare className="w-4 h-4 text-tastelanc-accent" /> : <Square className="w-4 h-4" />}
+            </button>
+            <span className="text-xs text-gray-400">
+              {hasSelection ? `${selectedEmails.size} selected` : 'Select all'}
+            </span>
+            <div className="flex-1" />
+            {hasSelection && (
+              isBulkActioning ? (
                 <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
               ) : (
                 <>
@@ -530,9 +532,9 @@ export default function InboxPage() {
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </>
-              )}
-            </div>
-          )}
+              )
+            )}
+          </div>
 
           {/* Conversation list */}
           <div className="flex-1 overflow-y-auto space-y-1">
@@ -567,12 +569,10 @@ export default function InboxPage() {
                         : 'hover:bg-tastelanc-surface-light/50'
                     }`}
                   >
-                    {/* Checkbox */}
+                    {/* Checkbox — always visible */}
                     <button
                       onClick={(e) => toggleSelect(convo.counterparty_email, e)}
-                      className={`flex-shrink-0 p-3 pb-0 pt-3.5 transition-opacity ${
-                        hasSelection || isChecked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                      }`}
+                      className="flex-shrink-0 p-3 pb-0 pt-3.5"
                     >
                       {isChecked ? (
                         <CheckSquare className="w-4 h-4 text-tastelanc-accent" />

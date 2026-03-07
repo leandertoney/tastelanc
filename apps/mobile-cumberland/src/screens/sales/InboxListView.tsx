@@ -67,7 +67,6 @@ function ConversationRow({
 
       {/* Tappable content area */}
       <TouchableOpacity style={styles.rowTappable} onPress={onPress} activeOpacity={0.7}>
-
         <View style={styles.rowContent}>
           <View style={styles.rowTop}>
             <Text style={[styles.name, isUnread && styles.nameUnread]} numberOfLines={1}>
@@ -345,7 +344,7 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   inboxTabTextActive: {
-    color: colors.text,
+    color: colors.textOnAccent,
   },
   // Toolbar row
   toolbarRow: {
@@ -416,7 +415,7 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   filterTextActive: {
-    color: colors.text,
+    color: colors.textOnAccent,
   },
   centered: {
     flex: 1,
@@ -527,6 +526,6 @@ const styles = StyleSheet.create({
   retryText: {
     fontSize: typography.subhead,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.textOnAccent,
   },
 });

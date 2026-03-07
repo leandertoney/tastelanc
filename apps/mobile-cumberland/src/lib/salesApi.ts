@@ -73,6 +73,30 @@ export async function fetchConversations(params?: {
 }
 
 // ============================================================
+// Bulk Actions (select, delete, mark read/unread)
+// ============================================================
+
+export async function bulkAction(params: {
+  action: 'mark_read' | 'mark_unread' | 'delete';
+  emails: string[];
+  inbox?: 'crm' | 'info';
+}): Promise<{ success: boolean; action: string; count: number }> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_BASE}/inbox/bulk`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(params),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: 'Bulk action failed' }));
+    throw new Error(err.error || `HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+// ============================================================
 // Thread
 // ============================================================
 
