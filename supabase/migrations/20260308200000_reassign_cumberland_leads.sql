@@ -22,7 +22,7 @@ BEGIN
 
   UPDATE business_leads
   SET market_id = cumberland_uuid
-  WHERE market_id = lancaster_uuid
+  WHERE (market_id = lancaster_uuid OR market_id IS NULL)
     AND (
       LOWER(TRIM(city)) IN (
         'mechanicsburg', 'carlisle', 'camp hill', 'new cumberland',
