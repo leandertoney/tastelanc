@@ -40,6 +40,7 @@ interface Restaurant {
   address: string | null;
   zip_code: string | null;
   categories: string | null;
+  market_id: string | null;
 }
 
 interface Stats {
@@ -90,6 +91,7 @@ export default function SalesRestaurantsPage() {
           contact_phone: r.contact_phone || undefined,
           contact_email: r.contact_email || undefined,
           contact_title: r.contact_title || undefined,
+          market_id: r.market_id || undefined,
         }),
       });
       const data = await res.json();
