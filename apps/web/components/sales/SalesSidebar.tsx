@@ -151,7 +151,7 @@ export default function SalesSidebar({ isOpen, onClose, collapsed, onMouseEnter,
         </div>
 
         {/* Navigation */}
-        <nav className={`flex-1 ${collapsed ? 'md:p-2' : 'md:p-4'} p-4 overflow-y-auto`}>
+        <nav className={`flex-1 ${collapsed ? 'md:p-2' : 'md:p-4'} p-4 overflow-y-auto scrollbar-hide`}>
           <ul className="space-y-1">
             {visibleNavItems.map((item, index) => {
               const isActive = pathname === item.href ||
