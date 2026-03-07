@@ -390,7 +390,9 @@ async function generateUpcomingEvents(
     }
   }
 
-  const { visible, totalCount } = selectTopCandidates(candidates, VISIBLE_COUNT, today, recentEntityIds);
+  // For events: deduplicate by event (not restaurant) — same venue can show
+  // multiple times if it has different events (e.g. Live Music + Trivia)
+  const { visible, totalCount } = selectTopCandidates(candidates, VISIBLE_COUNT, today, recentEntityIds, true);
 
   return await buildAndSavePost(opts, {
     contentType: 'upcoming_events',

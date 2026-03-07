@@ -180,45 +180,69 @@ export function selectTopCandidates(
   scored: ScoredCandidate[],
   visibleCount: number = 3,
   dateSeed?: string,
-  recentEntityIds?: Set<string>
+  recentEntityIds?: Set<string>,
+  deduplicateByEntity: boolean = false
 ): { visible: ScoredCandidate[]; totalCount: number } {
   // Sort descending by score
   const sorted = [...scored].sort((a, b) => b.score - a.score);
 
-  // Deduplicate: one entry per restaurant, keep highest-scored entity
+  // Deduplicate: by entity_id (for events — same venue can appear with different events)
+  // or by restaurant_id (for specials/happy hours — one entry per restaurant)
   const seen = new Set<string>();
   const deduped: ScoredCandidate[] = [];
   for (const c of sorted) {
-    if (!seen.has(c.restaurant_id)) {
-      seen.add(c.restaurant_id);
+    const key = deduplicateByEntity ? c.entity_id : c.restaurant_id;
+    if (!seen.has(key)) {
+      seen.add(key);
       deduped.push(c);
     }
   }
 
-  // If we have a date seed, apply deterministic rotation for day-to-day variety
-  let pool = deduped;
-  if (dateSeed && pool.length > visibleCount) {
-    // Penalize candidates already used on nearby dates
-    if (recentEntityIds && recentEntityIds.size > 0) {
-      const fresh = pool.filter(c => !recentEntityIds.has(c.entity_id));
-      const reused = pool.filter(c => recentEntityIds.has(c.entity_id));
-      pool = [...fresh, ...reused]; // fresh candidates first
-    }
-
-    // Deterministic rotation: hash the date to get an offset
-    const hash = dateSeed.split('').reduce((acc, ch) => acc * 31 + ch.charCodeAt(0), 0);
-    const offset = Math.abs(hash) % pool.length;
-    pool = [...pool.slice(offset), ...pool.slice(0, offset)];
+  // Split into fresh (not used on nearby dates) and reused pools
+  let fresh = deduped;
+  let reused: ScoredCandidate[] = [];
+  if (recentEntityIds && recentEntityIds.size > 0) {
+    fresh = deduped.filter(c => !recentEntityIds.has(c.entity_id));
+    reused = deduped.filter(c => recentEntityIds.has(c.entity_id));
   }
 
-  // Prefer candidates with custom images, but fill remaining slots with any candidate
-  const withCustomImage = pool.filter(hasCustomImage);
-  const withoutCustomImage = pool.filter(c => !hasCustomImage(c));
-  const visible = [...withCustomImage, ...withoutCustomImage].slice(0, visibleCount);
+  // Apply deterministic rotation within each pool separately
+  if (dateSeed) {
+    const hash = dateSeed.split('').reduce((acc, ch) => acc * 31 + ch.charCodeAt(0), 0);
+    if (fresh.length > visibleCount) {
+      const offset = Math.abs(hash) % fresh.length;
+      fresh = [...fresh.slice(offset), ...fresh.slice(0, offset)];
+    }
+    if (reused.length > 0) {
+      const offset = Math.abs(hash) % reused.length;
+      reused = [...reused.slice(offset), ...reused.slice(0, offset)];
+    }
+  }
+
+  // Within each pool, prefer candidates with custom images
+  const sortByImage = (arr: ScoredCandidate[]) => [
+    ...arr.filter(hasCustomImage),
+    ...arr.filter(c => !hasCustomImage(c)),
+  ];
+
+  // Fill from fresh first, then fall back to reused if not enough fresh
+  // When deduplicating by entity, cap same restaurant at 2 appearances max
+  const pool = [...sortByImage(fresh), ...sortByImage(reused)];
+  const visible: ScoredCandidate[] = [];
+  const restaurantCount = new Map<string, number>();
+  const maxPerRestaurant = deduplicateByEntity ? 2 : 1;
+  for (const c of pool) {
+    if (visible.length >= visibleCount) break;
+    const count = restaurantCount.get(c.restaurant_id) || 0;
+    if (count < maxPerRestaurant) {
+      visible.push(c);
+      restaurantCount.set(c.restaurant_id, count + 1);
+    }
+  }
 
   return {
     visible,
-    totalCount: deduped.length, // total includes no-image candidates for curiosity gap count
+    totalCount: deduped.length,
   };
 }
 
