@@ -368,7 +368,6 @@ export default function SalesLeadsPage() {
             >
               <option value="all">All Reps</option>
               <option value="mine">My Leads</option>
-              <option value="unassigned">Unassigned</option>
               {reps.map((rep) => (
                 <option key={rep.id} value={rep.id}>
                   {rep.name}

@@ -116,10 +116,9 @@ export async function GET(request: Request) {
 
     // Fetch sales rep names for assigned_to lookup
     // Market-scoped: only show reps in the user's market(s)
-    let repsQuery = serviceClient
+    const { data: allReps } = await serviceClient
       .from('sales_reps')
       .select('id, name, market_ids');
-    const { data: allReps } = await repsQuery;
     // Filter reps by market overlap (super admins see all)
     const reps = allReps?.filter((rep) => {
       if (!access.marketIds) return true; // super admin sees all
@@ -127,9 +126,24 @@ export async function GET(request: Request) {
       return rep.market_ids.some((mid: string) => access.marketIds!.includes(mid));
     }) || [];
     const repNameMap: Record<string, string> = {};
-    if (reps) {
-      for (const rep of reps) {
-        repNameMap[rep.id] = rep.name;
+    for (const rep of reps) {
+      repNameMap[rep.id] = rep.name;
+    }
+
+    // Also resolve names for admins assigned to leads (not in sales_reps)
+    const assignedIds = Array.from(new Set(
+      (leads || []).map((l: { assigned_to: string | null }) => l.assigned_to).filter(Boolean) as string[]
+    ));
+    const missingIds = assignedIds.filter((id) => !repNameMap[id]);
+    if (missingIds.length > 0) {
+      const { data: profiles } = await serviceClient
+        .from('profiles')
+        .select('id, display_name, email')
+        .in('id', missingIds);
+      if (profiles) {
+        for (const p of profiles) {
+          repNameMap[p.id] = p.display_name || p.email || 'Unknown';
+        }
       }
     }
 
