@@ -115,9 +115,17 @@ export async function GET(request: Request) {
     };
 
     // Fetch sales rep names for assigned_to lookup
-    const { data: reps } = await serviceClient
+    // Market-scoped: only show reps in the user's market(s)
+    let repsQuery = serviceClient
       .from('sales_reps')
-      .select('id, name');
+      .select('id, name, market_ids');
+    const { data: allReps } = await repsQuery;
+    // Filter reps by market overlap (super admins see all)
+    const reps = allReps?.filter((rep) => {
+      if (!access.marketIds) return true; // super admin sees all
+      if (!rep.market_ids || rep.market_ids.length === 0) return false;
+      return rep.market_ids.some((mid: string) => access.marketIds!.includes(mid));
+    }) || [];
     const repNameMap: Record<string, string> = {};
     if (reps) {
       for (const rep of reps) {
@@ -301,7 +309,7 @@ export async function POST(request: Request) {
         tags: tags || [],
         status: 'new',
         market_id: resolvedMarketId,
-        assigned_to: access.isSalesRep ? access.userId : null,
+        assigned_to: access.userId || null,
         restaurant_id: restaurant_id || null,
         google_place_id: google_place_id || null,
         contact_phone: contact_phone || null,
