@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { BRAND } from '@/config/market';
 import Link from 'next/link';
@@ -24,10 +24,35 @@ const CATEGORIES = [
   { value: 'other', label: 'Other' },
 ];
 
+interface Market {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export default function NewBusinessLeadPage() {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Markets for picker
+  const [markets, setMarkets] = useState<Market[]>([]);
+  const [marketId, setMarketId] = useState('');
+
+  useEffect(() => {
+    fetch('/api/admin/markets')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.markets) {
+          setMarkets(data.markets);
+          // Default to first market
+          if (data.markets.length > 0 && !marketId) {
+            setMarketId(data.markets[0].id);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Form state
   const [businessName, setBusinessName] = useState('');
@@ -73,6 +98,7 @@ export default function NewBusinessLeadPage() {
           tags: tags
             ? tags.split(',').map((t) => t.trim()).filter((t) => t.length > 0)
             : [],
+          market_id: marketId || null,
         }),
       });
 
@@ -256,22 +282,40 @@ export default function NewBusinessLeadPage() {
             </div>
           </div>
 
-          {/* Category */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Category
-            </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
-            >
-              {CATEGORIES.map((cat) => (
-                <option key={cat.value} value={cat.value}>
-                  {cat.label}
-                </option>
-              ))}
-            </select>
+          {/* Market + Category */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Market
+              </label>
+              <select
+                value={marketId}
+                onChange={(e) => setMarketId(e.target.value)}
+                className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              >
+                {markets.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Category
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              >
+                {CATEGORIES.map((cat) => (
+                  <option key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Notes */}

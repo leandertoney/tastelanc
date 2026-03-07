@@ -45,6 +45,12 @@ export async function POST(
       );
     }
 
+    // Resolve market_id: contact's market > rep's market
+    let resolvedMarketId = contact.market_id || null;
+    if (!resolvedMarketId && access.marketIds && access.marketIds.length === 1) {
+      resolvedMarketId = access.marketIds[0];
+    }
+
     // Create lead from contact submission, auto-assign to converting sales rep
     const { data: lead, error: insertError } = await serviceClient
       .from('business_leads')
@@ -58,6 +64,7 @@ export async function POST(
         notes: contact.message || null,
         tags: contact.interested_plan ? [contact.interested_plan] : [],
         assigned_to: access.isSalesRep ? access.userId : null,
+        market_id: resolvedMarketId,
       })
       .select()
       .single();

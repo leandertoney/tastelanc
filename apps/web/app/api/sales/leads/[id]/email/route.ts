@@ -164,10 +164,20 @@ export async function POST(
       },
     });
 
-    // Update last_contacted_at
+    // Update last_contacted_at and auto-assign if unassigned
+    const leadUpdate: Record<string, string> = { last_contacted_at: new Date().toISOString() };
+    // Fetch current assignment
+    const { data: currentLead } = await serviceClient
+      .from('business_leads')
+      .select('assigned_to')
+      .eq('id', id)
+      .single();
+    if (currentLead && !currentLead.assigned_to && access.userId) {
+      leadUpdate.assigned_to = access.userId;
+    }
     await serviceClient
       .from('business_leads')
-      .update({ last_contacted_at: new Date().toISOString() })
+      .update(leadUpdate)
       .eq('id', id);
 
     // Save sender preference if changed

@@ -78,6 +78,7 @@ export async function POST(request: Request) {
           ? `Original inquiry: ${contact.message}${contact.interested_plan ? `\nInterested in: ${contact.interested_plan}` : ''}`
           : null,
         tags: contact.interested_plan ? [contact.interested_plan] : [],
+        market_id: contact.market_id || null,
       });
     }
 

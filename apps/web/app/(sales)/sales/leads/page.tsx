@@ -121,7 +121,8 @@ export default function SalesLeadsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [ownerFilter, setOwnerFilter] = useState<'all' | 'mine'>('all');
+  const [repFilter, setRepFilter] = useState('all');
+  const [reps, setReps] = useState<{ id: string; name: string }[]>([]);
   const [sortBy, setSortBy] = useState<SortColumn>('created_at');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
@@ -131,6 +132,9 @@ export default function SalesLeadsPage() {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
       if (statusFilter !== 'all') params.set('status', statusFilter);
+      if (repFilter === 'mine' && currentUserId) params.set('assigned_to', currentUserId);
+      else if (repFilter === 'unassigned') params.set('assigned_to', 'unassigned');
+      else if (repFilter !== 'all') params.set('assigned_to', repFilter);
       params.set('page', String(pageOverride ?? pagination.page));
       params.set('limit', String(pagination.limit));
       params.set('sort_by', sortBy);
@@ -144,6 +148,7 @@ export default function SalesLeadsPage() {
       if (data.pagination) setPagination(data.pagination);
       if (data.currentUserId) setCurrentUserId(data.currentUserId);
       if (data.isAdmin) setIsAdmin(data.isAdmin);
+      if (data.reps) setReps(data.reps);
     } catch (error) {
       console.error('Error fetching leads:', error);
       setFetchError(true);
@@ -156,7 +161,7 @@ export default function SalesLeadsPage() {
   useEffect(() => {
     setPagination((p) => ({ ...p, page: 1 }));
     fetchLeads(1);
-  }, [statusFilter, sortBy, sortDir]);
+  }, [statusFilter, repFilter, sortBy, sortDir]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -355,29 +360,21 @@ export default function SalesLeadsPage() {
             />
           </div>
           <div className="flex gap-3">
-            {/* My Leads / All Leads toggle */}
-            <div className="flex rounded-lg overflow-hidden border border-tastelanc-surface-light">
-              <button
-                onClick={() => setOwnerFilter('all')}
-                className={`px-3 py-2 text-sm font-medium transition-colors ${
-                  ownerFilter === 'all'
-                    ? 'bg-tastelanc-accent text-white'
-                    : 'bg-tastelanc-surface-light text-gray-400 hover:text-white'
-                }`}
-              >
-                All Leads
-              </button>
-              <button
-                onClick={() => setOwnerFilter('mine')}
-                className={`px-3 py-2 text-sm font-medium transition-colors ${
-                  ownerFilter === 'mine'
-                    ? 'bg-tastelanc-accent text-white'
-                    : 'bg-tastelanc-surface-light text-gray-400 hover:text-white'
-                }`}
-              >
-                My Leads
-              </button>
-            </div>
+            {/* Rep filter */}
+            <select
+              value={repFilter}
+              onChange={(e) => setRepFilter(e.target.value)}
+              className="px-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+            >
+              <option value="all">All Reps</option>
+              <option value="mine">My Leads</option>
+              <option value="unassigned">Unassigned</option>
+              {reps.map((rep) => (
+                <option key={rep.id} value={rep.id}>
+                  {rep.name}
+                </option>
+              ))}
+            </select>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -396,9 +393,7 @@ export default function SalesLeadsPage() {
 
       {/* Leads Table */}
       {(() => {
-        const filteredLeads = ownerFilter === 'mine' && currentUserId
-          ? leads.filter((l) => l.assigned_to === currentUserId)
-          : leads;
+        const filteredLeads = leads;
         return isLoading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-tastelanc-accent" />
@@ -420,11 +415,11 @@ export default function SalesLeadsPage() {
           <Users className="w-12 h-12 text-gray-500 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-white mb-2">No leads found</h3>
           <p className="text-gray-400 mb-4">
-            {search || statusFilter !== 'all' || ownerFilter === 'mine'
+            {search || statusFilter !== 'all' || repFilter !== 'all'
               ? 'Try adjusting your filters'
               : 'Add your first business lead to get started'}
           </p>
-          {!search && statusFilter === 'all' && ownerFilter === 'all' && (
+          {!search && statusFilter === 'all' && repFilter === 'all' && (
             <Link
               href="/sales/leads/new"
               className="inline-flex items-center gap-2 px-4 py-2 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white rounded-lg transition-colors"
