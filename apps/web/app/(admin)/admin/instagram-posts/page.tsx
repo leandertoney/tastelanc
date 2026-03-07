@@ -516,11 +516,11 @@ function PostSlotCard({ post, slot, dateKey, generating, onClick }: {
     );
   }
 
-  const statusColor =
-    post.status === 'published' ? 'bg-green-500'
-    : post.status === 'approved' ? 'bg-blue-500'
-    : post.status === 'failed' ? 'bg-red-500'
-    : 'bg-yellow-500';
+  const statusBadgeConfig =
+    post.status === 'published' ? { label: 'Published', className: 'bg-green-500/20 text-green-400', Icon: CheckCircle }
+    : post.status === 'approved' ? { label: 'Queued', className: 'bg-blue-500/20 text-blue-400', Icon: Clock }
+    : post.status === 'failed' ? { label: 'Failed', className: 'bg-red-500/20 text-red-400', Icon: AlertTriangle }
+    : { label: 'Draft', className: 'bg-yellow-500/20 text-yellow-400', Icon: null };
 
   const typeColor = CONTENT_TYPE_COLORS[post.content_type] || 'bg-gray-500/20 text-gray-400';
 
@@ -534,7 +534,10 @@ function PostSlotCard({ post, slot, dateKey, generating, onClick }: {
           {slot === 'am' ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
           {slot.toUpperCase()}
         </span>
-        <span className={`w-2 h-2 rounded-full ${statusColor}`} />
+        <span className={`inline-flex items-center gap-0.5 text-[9px] font-medium px-1.5 py-0.5 rounded-full ${statusBadgeConfig.className}`}>
+          {statusBadgeConfig.Icon && <statusBadgeConfig.Icon className="w-2.5 h-2.5" />}
+          {statusBadgeConfig.label}
+        </span>
       </div>
 
       {/* Thumbnail */}
