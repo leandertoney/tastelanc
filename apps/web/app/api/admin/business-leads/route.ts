@@ -95,6 +95,7 @@ export async function POST(request: Request) {
       source,
       notes,
       tags,
+      market_id,
     } = body;
 
     // Validate required fields
@@ -137,6 +138,7 @@ export async function POST(request: Request) {
         notes: notes || null,
         tags: tags || [],
         status: 'new',
+        market_id: market_id || null,
       })
       .select()
       .single();

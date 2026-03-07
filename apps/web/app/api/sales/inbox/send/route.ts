@@ -196,9 +196,19 @@ export async function POST(request: Request) {
         },
       });
 
+      // Auto-assign rep if unassigned
+      const { data: currentLead } = await serviceClient
+        .from('business_leads')
+        .select('assigned_to')
+        .eq('id', linkedLeadId)
+        .single();
+      const inboxLeadUpdate: Record<string, string> = { last_contacted_at: new Date().toISOString() };
+      if (currentLead && !currentLead.assigned_to && access.userId) {
+        inboxLeadUpdate.assigned_to = access.userId;
+      }
       await serviceClient
         .from('business_leads')
-        .update({ last_contacted_at: new Date().toISOString() })
+        .update(inboxLeadUpdate)
         .eq('id', linkedLeadId);
     }
 

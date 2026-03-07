@@ -20,6 +20,7 @@ export async function GET(request: Request) {
     const status = searchParams.get('status');
     const category = searchParams.get('category');
     const search = searchParams.get('search');
+    const assignedTo = searchParams.get('assigned_to');
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '10', 10)));
     const sortBy = searchParams.get('sort_by') || 'created_at';
@@ -42,6 +43,8 @@ export async function GET(request: Request) {
     }
     if (status && status !== 'all') countQ = countQ.eq('status', status);
     if (category && category !== 'all') countQ = countQ.eq('category', category);
+    if (assignedTo === 'unassigned') countQ = countQ.is('assigned_to', null);
+    else if (assignedTo) countQ = countQ.eq('assigned_to', assignedTo);
     if (search) countQ = countQ.or(`business_name.ilike.%${search}%,contact_name.ilike.%${search}%,email.ilike.%${search}%`);
     const { count: totalCount } = await countQ;
 
@@ -68,6 +71,12 @@ export async function GET(request: Request) {
 
     if (category && category !== 'all') {
       query = query.eq('category', category);
+    }
+
+    if (assignedTo === 'unassigned') {
+      query = query.is('assigned_to', null);
+    } else if (assignedTo) {
+      query = query.eq('assigned_to', assignedTo);
     }
 
     if (search) {
@@ -147,12 +156,16 @@ export async function GET(request: Request) {
     const total = totalCount ?? 0;
     const totalPages = Math.ceil(total / limit);
 
+    // Build reps list for filter dropdown
+    const repsList = reps ? reps.map((r) => ({ id: r.id, name: r.name })) : [];
+
     return NextResponse.json({
       leads: leadsWithActivities,
       stats,
       currentUserId: access.userId,
       isAdmin: access.isAdmin,
       pagination: { page, limit, total, totalPages },
+      reps: repsList,
     });
   } catch (error) {
     console.error('Error in sales leads API:', error);
