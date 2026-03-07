@@ -192,13 +192,12 @@ async function resolveEmailToUserId(
     }
   }
 
-  // 2. Check SENDER_IDENTITIES → match to profiles by first name
+  // 2. Check SENDER_IDENTITIES → match to profiles
   const matchedIdentity = SENDER_IDENTITIES.find(
     s => s.email.toLowerCase() === normalizedEmail || s.replyEmail.toLowerCase() === normalizedEmail
   );
 
   if (matchedIdentity) {
-    // Find the profile with matching display_name first name
     const { data: profiles, error: profilesError } = await supabaseClient
       .from('profiles')
       .select('id, display_name')
@@ -206,10 +205,23 @@ async function resolveEmailToUserId(
     if (profilesError) console.error('[Resolve] profiles query failed:', profilesError.message);
 
     if (profiles) {
-      const match = profiles.find(p =>
-        p.display_name?.split(' ')[0].toLowerCase() === matchedIdentity.name.toLowerCase()
-      );
+      // Match by display_name first name OR full identity name
+      const identityName = matchedIdentity.name.toLowerCase();
+      const match = profiles.find(p => {
+        const firstName = (p.display_name || '').split(' ')[0].toLowerCase();
+        return firstName === identityName || (p.display_name || '').toLowerCase() === identityName;
+      });
       if (match) return match.id;
+    }
+
+    // 3. Fallback: match by auth.users email containing the identity local part
+    const localPart = matchedIdentity.email.replace(/@.*$/, '').toLowerCase();
+    const { data: authUsers } = await supabaseClient.auth.admin.listUsers();
+    if (authUsers?.users) {
+      const authMatch = authUsers.users.find(u =>
+        u.email?.toLowerCase().includes(localPart)
+      );
+      if (authMatch) return authMatch.id;
     }
   }
 
@@ -420,20 +432,15 @@ export async function POST(request: Request) {
       console.log(`Inbound email matched to lead ${matchedLeadId}`);
     }
 
-    // Notify ALL team members (admins + sales reps) on every inbound email
-    const { data: teamMembers } = await supabase
-      .from('profiles')
-      .select('id')
-      .in('role', ['super_admin', 'co_founder', 'market_admin', 'sales_rep']);
-
-    const teamIds = (teamMembers || []).map(m => m.id);
-    if (teamIds.length > 0) {
+    // Notify the specific team member this email was sent to
+    const recipientUserId = await resolveEmailToUserId(supabase, toEmail);
+    if (recipientUserId) {
       const title = matchedLeadId
         ? `New Reply from ${fromName || fromEmail}`
         : `New Email from ${fromName || fromEmail}`;
       await sendSalesTeamPushNotifications(
         supabase,
-        teamIds,
+        [recipientUserId],
         title,
         subject || '(No subject)',
         { screen: 'EmailThread', counterpartyEmail: fromEmail },
