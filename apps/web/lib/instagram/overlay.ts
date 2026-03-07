@@ -22,7 +22,8 @@ let fontRegularBase64: string | null = null;
 
 function getFontBoldBase64(): string {
   if (!fontBoldBase64) {
-    const fontPath = join(process.cwd(), 'lib/instagram/fonts/Inter-Bold.woff2');
+    // Use TTF (not woff2) — librsvg in sharp only supports TTF/OTF data URIs
+    const fontPath = join(process.cwd(), 'lib/instagram/fonts/Inter-Bold.ttf');
     fontBoldBase64 = readFileSync(fontPath).toString('base64');
   }
   return fontBoldBase64;
@@ -30,7 +31,7 @@ function getFontBoldBase64(): string {
 
 function getFontRegularBase64(): string {
   if (!fontRegularBase64) {
-    const fontPath = join(process.cwd(), 'lib/instagram/fonts/Inter-Regular.woff2');
+    const fontPath = join(process.cwd(), 'lib/instagram/fonts/Inter-Regular.ttf');
     fontRegularBase64 = readFileSync(fontPath).toString('base64');
   }
   return fontRegularBase64;
@@ -51,12 +52,12 @@ function svgFontStyles(): string {
       @font-face {
         font-family: 'Inter';
         font-weight: 700;
-        src: url(data:font/woff2;base64,${getFontBoldBase64()});
+        src: url(data:font/ttf;base64,${getFontBoldBase64()});
       }
       @font-face {
         font-family: 'Inter';
         font-weight: 400;
-        src: url(data:font/woff2;base64,${getFontRegularBase64()});
+        src: url(data:font/ttf;base64,${getFontRegularBase64()});
       }
     </style>`;
 }

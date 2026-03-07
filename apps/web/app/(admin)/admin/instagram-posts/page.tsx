@@ -183,6 +183,19 @@ export default function InstagramPostsPage() {
     setGeneratingWeek(false);
   };
 
+  const approveAll = async (postIds: string[]) => {
+    await Promise.all(
+      postIds.map(id =>
+        fetch(`/api/admin/instagram-posts/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'approved' }),
+        })
+      )
+    );
+    fetchPosts();
+  };
+
   // Group posts by date
   const postsByDate: Record<string, Post[]> = {};
   for (const post of posts) {
@@ -318,6 +331,7 @@ export default function InstagramPostsPage() {
         onGenerateDay={generateForDate}
         onGenerateWeek={() => generateWeek(weekStart)}
         onSelectPost={setSelectedPost}
+        onApproveAll={approveAll}
       />
 
       {/* Week 2 */}
@@ -331,11 +345,24 @@ export default function InstagramPostsPage() {
         onGenerateDay={generateForDate}
         onGenerateWeek={() => generateWeek(week2Start)}
         onSelectPost={setSelectedPost}
+        onApproveAll={approveAll}
       />
 
       {/* Post Detail Modal */}
       {selectedPost && (
-        <PostDetailModal post={selectedPost} onClose={() => setSelectedPost(null)} />
+        <PostDetailModal
+          post={selectedPost}
+          onClose={() => setSelectedPost(null)}
+          onStatusChange={async (id, status) => {
+            await fetch(`/api/admin/instagram-posts/${id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status }),
+            });
+            setSelectedPost(null);
+            fetchPosts();
+          }}
+        />
       )}
     </div>
   );
@@ -351,6 +378,7 @@ function WeekRow({
   onGenerateDay,
   onGenerateWeek,
   onSelectPost,
+  onApproveAll,
 }: {
   label: string;
   days: Date[];
@@ -361,8 +389,9 @@ function WeekRow({
   onGenerateDay: (dateKey: string, slot: 'am' | 'pm') => void;
   onGenerateWeek: () => void;
   onSelectPost: (post: Post) => void;
+  onApproveAll: (postIds: string[]) => void;
 }) {
-  // Count how many empty slots exist this week
+  // Count empty and draft slots
   const emptySlots = days.reduce((count, day) => {
     const dateKey = formatDateKey(day);
     const dayPosts = postsByDate[dateKey] || [];
@@ -371,24 +400,40 @@ function WeekRow({
     return count;
   }, 0);
 
+  const draftPosts = days.flatMap(day => {
+    const dateKey = formatDateKey(day);
+    return (postsByDate[dateKey] || []).filter(p => p.status === 'draft');
+  });
+
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-sm font-semibold text-gray-400">{label}</h3>
-        {emptySlots > 0 && (
-          <button
-            onClick={onGenerateWeek}
-            disabled={generatingWeek}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white font-semibold rounded-lg transition-colors text-xs disabled:opacity-50"
-          >
-            {generatingWeek ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Zap className="w-3.5 h-3.5" />
-            )}
-            {generatingWeek ? 'Generating...' : `Generate Week (${emptySlots} empty)`}
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {draftPosts.length > 0 && (
+            <button
+              onClick={() => onApproveAll(draftPosts.map(p => p.id))}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors text-xs"
+            >
+              <CheckCircle className="w-3.5 h-3.5" />
+              Approve All ({draftPosts.length})
+            </button>
+          )}
+          {emptySlots > 0 && (
+            <button
+              onClick={onGenerateWeek}
+              disabled={generatingWeek}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white font-semibold rounded-lg transition-colors text-xs disabled:opacity-50"
+            >
+              {generatingWeek ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Zap className="w-3.5 h-3.5" />
+              )}
+              {generatingWeek ? 'Generating...' : `Generate Week (${emptySlots} empty)`}
+            </button>
+          )}
+        </div>
       </div>
       <div className="grid grid-cols-7 gap-2">
         {days.map((day) => {
@@ -473,6 +518,7 @@ function PostSlotCard({ post, slot, dateKey, generating, onClick }: {
 
   const statusColor =
     post.status === 'published' ? 'bg-green-500'
+    : post.status === 'approved' ? 'bg-blue-500'
     : post.status === 'failed' ? 'bg-red-500'
     : 'bg-yellow-500';
 
@@ -515,10 +561,16 @@ function PostSlotCard({ post, slot, dateKey, generating, onClick }: {
   );
 }
 
-function PostDetailModal({ post, onClose }: { post: Post; onClose: () => void }) {
+function PostDetailModal({ post, onClose, onStatusChange }: {
+  post: Post;
+  onClose: () => void;
+  onStatusChange: (id: string, status: string) => void;
+}) {
   const statusBadge =
     post.status === 'published'
       ? <Badge variant="accent" className="bg-green-500/20 text-green-400">Published</Badge>
+      : post.status === 'approved'
+      ? <Badge variant="accent" className="bg-blue-500/20 text-blue-400">Approved</Badge>
       : post.status === 'failed'
       ? <Badge variant="accent" className="bg-red-500/20 text-red-400">Failed</Badge>
       : <Badge variant="default">Draft</Badge>;
@@ -609,6 +661,31 @@ function PostDetailModal({ post, onClose }: { post: Post; onClose: () => void })
             )}
           </div>
           <div className="flex items-center gap-2">
+            {post.status === 'draft' && (
+              <button
+                onClick={() => onStatusChange(post.id, 'approved')}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm font-semibold"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Approve
+              </button>
+            )}
+            {post.status === 'approved' && (
+              <button
+                onClick={() => onStatusChange(post.id, 'draft')}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors text-sm font-semibold"
+              >
+                Unapprove
+              </button>
+            )}
+            {(post.status === 'draft' || post.status === 'approved') && (
+              <button
+                onClick={() => onStatusChange(post.id, 'draft')}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-gray-600 text-gray-300 rounded-lg transition-colors text-sm"
+              >
+                Regenerate
+              </button>
+            )}
             {post.instagram_permalink && (
               <a
                 href={post.instagram_permalink}
