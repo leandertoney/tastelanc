@@ -48,10 +48,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true });
     }
 
-    // Get the email send record (includes both manual and scheduled campaign IDs)
+    // Get the email send record
     const { data: sendRecord } = await supabase
       .from('email_sends')
-      .select('id, campaign_id, scheduled_campaign_id, status, opened_at, clicked_at')
+      .select('id, status, opened_at, clicked_at')
       .eq('resend_id', resendId)
       .single();
 
@@ -61,7 +61,6 @@ export async function POST(request: Request) {
     }
 
     const now = new Date().toISOString();
-    const isScheduledCampaign = !!sendRecord.scheduled_campaign_id;
 
     switch (type) {
       case 'email.delivered':
@@ -72,59 +71,22 @@ export async function POST(request: Request) {
         break;
 
       case 'email.opened':
-        // Only count first open (check opened_at to prevent double-counting)
         if (!sendRecord.opened_at) {
           await supabase
             .from('email_sends')
             .update({ status: 'opened', opened_at: now })
             .eq('id', sendRecord.id);
-
-          // Increment the appropriate campaign open count
-          if (isScheduledCampaign) {
-            await supabase.rpc('increment_scheduled_campaign_opens', {
-              p_scheduled_campaign_id: sendRecord.scheduled_campaign_id,
-            });
-          } else if (sendRecord.campaign_id) {
-            await supabase.rpc('increment_campaign_opens', {
-              campaign_id: sendRecord.campaign_id,
-            });
-          }
-
-          // Open status tracked in email_sends (opened_at) — visible in inbox UI
         }
         break;
 
       case 'email.clicked':
-        // Only count first click (check clicked_at to prevent double-counting)
         if (!sendRecord.clicked_at) {
           await supabase
             .from('email_sends')
             .update({ status: 'clicked', clicked_at: now })
             .eq('id', sendRecord.id);
 
-          // Increment the appropriate campaign click count
-          if (isScheduledCampaign) {
-            await supabase.rpc('increment_scheduled_campaign_clicks', {
-              p_scheduled_campaign_id: sendRecord.scheduled_campaign_id,
-            });
-          } else if (sendRecord.campaign_id) {
-            await supabase.rpc('increment_campaign_clicks', {
-              campaign_id: sendRecord.campaign_id,
-            });
-          }
-
-          // If this is first interaction, also count as open
           if (!sendRecord.opened_at) {
-            if (isScheduledCampaign) {
-              await supabase.rpc('increment_scheduled_campaign_opens', {
-                p_scheduled_campaign_id: sendRecord.scheduled_campaign_id,
-              });
-            } else if (sendRecord.campaign_id) {
-              await supabase.rpc('increment_campaign_opens', {
-                campaign_id: sendRecord.campaign_id,
-              });
-            }
-            // Update opened_at as well
             await supabase
               .from('email_sends')
               .update({ opened_at: now })
@@ -142,28 +104,15 @@ export async function POST(request: Request) {
             error_message: data?.bounce?.type || 'Bounced',
           })
           .eq('id', sendRecord.id);
-
-        // Increment the appropriate campaign bounce count
-        if (isScheduledCampaign) {
-          await supabase.rpc('increment_scheduled_campaign_bounces', {
-            p_scheduled_campaign_id: sendRecord.scheduled_campaign_id,
-          });
-        } else if (sendRecord.campaign_id) {
-          await supabase.rpc('increment_campaign_bounces', {
-            campaign_id: sendRecord.campaign_id,
-          });
-        }
         break;
 
       case 'email.complained':
-        // User marked as spam - add to unsubscribe list
         if (data?.to?.[0]) {
           await supabase
             .from('email_unsubscribes')
             .upsert(
               {
                 email: data.to[0],
-                campaign_id: sendRecord.campaign_id,
                 unsubscribed_at: now,
               },
               { onConflict: 'email' }

@@ -11,7 +11,6 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');
-    const campaignId = searchParams.get('campaign');
     const isTest = searchParams.get('test') === 'true';
     const type = searchParams.get('type'); // 'b2b' for business leads
 
@@ -35,7 +34,6 @@ export async function GET(request: Request) {
     const { error } = await supabase.from(tableName).upsert(
       {
         email: email.toLowerCase(),
-        campaign_id: campaignId || null,
         unsubscribed_at: new Date().toISOString(),
       },
       { onConflict: 'email' }
