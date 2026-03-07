@@ -255,8 +255,16 @@ export async function POST(request: Request) {
       }
     }
 
-    // Auto-assign market_id from the sales rep's market when not provided
+    // Auto-assign market_id: explicit > restaurant's market > rep's market
     let resolvedMarketId = market_id || null;
+    if (!resolvedMarketId && restaurant_id) {
+      const { data: restaurant } = await serviceClient
+        .from('restaurants')
+        .select('market_id')
+        .eq('id', restaurant_id)
+        .single();
+      if (restaurant?.market_id) resolvedMarketId = restaurant.market_id;
+    }
     if (!resolvedMarketId && access.marketIds && access.marketIds.length === 1) {
       resolvedMarketId = access.marketIds[0];
     }
