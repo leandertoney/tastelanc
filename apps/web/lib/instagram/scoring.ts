@@ -189,10 +189,10 @@ export function selectTopCandidates(
     }
   }
 
-  // For visible slides: only candidates with a CUSTOM uploaded image
-  // Stock/default images (tastelanc.com/images/events/*) are NOT acceptable
+  // Prefer candidates with custom images, but fill remaining slots with any candidate
   const withCustomImage = deduped.filter(hasCustomImage);
-  const visible = withCustomImage.slice(0, visibleCount);
+  const withoutCustomImage = deduped.filter(c => !hasCustomImage(c));
+  const visible = [...withCustomImage, ...withoutCustomImage].slice(0, visibleCount);
 
   return {
     visible,

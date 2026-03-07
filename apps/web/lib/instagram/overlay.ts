@@ -100,38 +100,43 @@ export async function generateCarouselSlides(opts: {
     logoBuffer = await sharp({ create: { width: 200, height: 200, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).png().toBuffer();
   }
 
-  // Fetch all source images in parallel — ONLY custom uploaded images, no stock
+  // Fetch all source images in parallel — skip stock images but keep all candidates
   const STOCK_PREFIXES = ['https://tastelanc.com/images/events/', 'https://tastelanc.com/images/entertainment/', 'https://tastecumberland.com/images/events/'];
   const imageBuffers = await Promise.all(
     candidates.map(async (c) => {
-      if (!c.image_url || STOCK_PREFIXES.some(p => c.image_url!.startsWith(p))) return null;
-      try {
-        return await fetchImageBuffer(c.image_url);
-      } catch {
-        return null;
+      // Try primary image first, then cover_image_url as fallback
+      const urls = [c.image_url, c.cover_image_url].filter(Boolean) as string[];
+      for (const url of urls) {
+        if (STOCK_PREFIXES.some(p => url.startsWith(p))) continue;
+        try {
+          return await fetchImageBuffer(url);
+        } catch {
+          continue;
+        }
       }
+      return null;
     })
   );
 
-  const validIndices = imageBuffers.map((b, i) => b !== null ? i : -1).filter(i => i !== -1);
-  const validBuffers = validIndices.map(i => imageBuffers[i]!);
-  const validCandidates = validIndices.map(i => candidates[i]);
-
+  // Keep ALL candidates — use null buffer for those without images (slides will use solid bg)
   let allSlides: Buffer[];
 
   if (contentType === 'upcoming_events') {
-    // EVENT POSTER style — completely different design
+    // EVENT POSTER style — only use candidates with images
+    const validIndices = imageBuffers.map((b, i) => b !== null ? i : -1).filter(i => i !== -1);
+    const validBuffers = validIndices.map(i => imageBuffers[i]!);
+    const validCandidates = validIndices.map(i => candidates[i]);
     allSlides = await composeEventPosterSlides(validBuffers, validCandidates, headline, totalCount, logoBuffer, appName, marketName);
   } else {
-    // MAGAZINE style — original design for happy hours, specials, roundups
-    const coverImage = validBuffers[0] || null;
+    // MAGAZINE style — ALL candidates get slides, even without images
+    const coverImage = imageBuffers.find(b => b !== null) || null;
     const [coverSlide, ...restaurantSlides] = await Promise.all([
       composeCoverSlide(coverImage, headline, logoBuffer, appName),
-      ...validCandidates.map((c, i) =>
-        composeRestaurantSlide(validBuffers[i], c.restaurant_name, c.detail_text, logoBuffer)
+      ...candidates.map((c, i) =>
+        composeRestaurantSlide(imageBuffers[i], c.restaurant_name, c.detail_text, logoBuffer)
       ),
     ]);
-    const ctaBackgroundImage = validBuffers[validBuffers.length - 1] || validBuffers[0] || null;
+    const ctaBackgroundImage = imageBuffers.filter(b => b !== null).pop() || coverImage;
     const ctaSlide = await composeCTASlide(appName, totalCount, logoBuffer, ctaBackgroundImage);
     allSlides = [coverSlide, ...restaurantSlides, ctaSlide];
   }
@@ -264,12 +269,10 @@ async function composeRestaurantSlide(
   detail: string,
   logoBuffer: Buffer
 ): Promise<Buffer> {
-  // Restaurant slides MUST have a real image — no stock/fallback
-  if (!imageBuffer) {
-    throw new Error(`No image available for restaurant slide: ${name}`);
-  }
-
-  const base = sharp(imageBuffer).resize(SIZE, SIZE, { fit: 'cover', position: 'centre' });
+  // If no image, create a dark gradient background
+  const base = imageBuffer
+    ? sharp(imageBuffer).resize(SIZE, SIZE, { fit: 'cover', position: 'centre' })
+    : sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: { r: 25, g: 25, b: 30 } } });
 
   // Heavier bottom gradient for magazine feel
   const gradientSvg = Buffer.from(`
