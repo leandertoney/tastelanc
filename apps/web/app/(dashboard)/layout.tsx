@@ -302,7 +302,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Navigation */}
-          <nav className={`flex-1 ${sidebarCollapsed ? 'lg:p-2' : ''} p-4 overflow-y-auto`}>
+          <nav className={`flex-1 ${sidebarCollapsed ? 'lg:p-2' : ''} p-4 overflow-y-auto scrollbar-hide`}>
             <ul className="space-y-1">
               {filteredNavItems.map((item) => {
                 const isActive = pathname === item.href;

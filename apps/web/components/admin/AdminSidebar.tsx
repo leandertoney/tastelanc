@@ -180,7 +180,7 @@ export default function AdminSidebar({ isOpen, onClose, collapsed, onMouseEnter,
         </div>
 
         {/* Navigation */}
-        <nav className={`flex-1 ${collapsed ? 'p-2' : 'p-4'} overflow-y-auto`}>
+        <nav className={`flex-1 ${collapsed ? 'p-2' : 'p-4'} overflow-y-auto scrollbar-hide`}>
           <ul className="space-y-1">
             {visibleItems.map((item, index) => {
               const isActive = pathname === item.href ||
