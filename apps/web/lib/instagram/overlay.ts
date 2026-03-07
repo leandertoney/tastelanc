@@ -3,7 +3,7 @@
 // Design: Magazine cover aesthetic (inspired by Barfly Lancaster)
 
 import sharp from 'sharp';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, copyFileSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SlideCandidate, MarketConfig, HeadlineParts } from './types';
@@ -16,45 +16,54 @@ const JPEG_QUALITY = 92;
 const ACCENT = '#E8C547'; // warm gold accent
 const ACCENT_DIM = 'rgba(232,197,71,0.8)';
 
-// Load fonts once at module level (cached across invocations)
-let fontBoldBase64: string | null = null;
-let fontRegularBase64: string | null = null;
+// Install Inter fonts via fontconfig so librsvg/Pango can find them.
+// Data URI @font-face in SVG is unreliable with librsvg on serverless.
+let fontsInstalled = false;
 
 function findFontFile(filename: string): string {
-  // Try multiple paths — process.cwd() differs between local dev and Netlify serverless
   const candidates = [
-    join(process.cwd(), 'lib/instagram/fonts', filename),             // local dev (apps/web)
-    join(process.cwd(), '.next/server/lib/instagram/fonts', filename), // Next.js output tracing
-    join(process.cwd(), 'apps/web/lib/instagram/fonts', filename),    // monorepo root
+    join(process.cwd(), 'lib/instagram/fonts', filename),
+    join(process.cwd(), '.next/server/lib/instagram/fonts', filename),
+    join(process.cwd(), 'apps/web/lib/instagram/fonts', filename),
   ];
   for (const p of candidates) {
-    if (existsSync(p)) {
-      console.log(`[Instagram] Found font ${filename} at: ${p}`);
-      return p;
+    if (existsSync(p)) return p;
+  }
+  console.error(`[Instagram] Font ${filename} NOT found! cwd=${process.cwd()}`);
+  return candidates[0];
+}
+
+function ensureSystemFonts(): void {
+  if (fontsInstalled) return;
+
+  const fontDir = '/tmp/fonts';
+  mkdirSync(fontDir, { recursive: true });
+
+  // Copy Inter TTF files to /tmp/fonts
+  for (const name of ['Inter-Bold.ttf', 'Inter-Regular.ttf']) {
+    const dest = join(fontDir, name);
+    if (!existsSync(dest)) {
+      const src = findFontFile(name);
+      copyFileSync(src, dest);
+      console.log(`[Instagram] Copied ${name} to ${dest}`);
     }
   }
-  // Log all attempts for debugging on Netlify
-  console.error(`[Instagram] Font ${filename} NOT found! cwd=${process.cwd()}, tried: ${candidates.join(', ')}`);
-  return candidates[0]; // will throw on readFileSync — better than silent empty text
-}
 
-function getFontBoldBase64(): string {
-  if (!fontBoldBase64) {
-    // Use TTF (not woff2) — librsvg in sharp only supports TTF/OTF data URIs
-    const fontPath = findFontFile('Inter-Bold.ttf');
-    fontBoldBase64 = readFileSync(fontPath).toString('base64');
-    console.log(`[Instagram] Loaded Inter-Bold.ttf (${fontBoldBase64.length} chars base64)`);
+  // Write fontconfig config pointing to /tmp/fonts
+  const fontsConf = join(fontDir, 'fonts.conf');
+  if (!existsSync(fontsConf)) {
+    writeFileSync(fontsConf, `<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+<fontconfig>
+  <dir>/tmp/fonts</dir>
+  <cachedir>/tmp/fontconfig-cache</cachedir>
+</fontconfig>`);
   }
-  return fontBoldBase64;
-}
 
-function getFontRegularBase64(): string {
-  if (!fontRegularBase64) {
-    const fontPath = findFontFile('Inter-Regular.ttf');
-    fontRegularBase64 = readFileSync(fontPath).toString('base64');
-    console.log(`[Instagram] Loaded Inter-Regular.ttf (${fontRegularBase64.length} chars base64)`);
-  }
-  return fontRegularBase64;
+  // Tell fontconfig where to find our config
+  process.env.FONTCONFIG_FILE = fontsConf;
+  console.log(`[Instagram] Fontconfig configured: FONTCONFIG_FILE=${fontsConf}`);
+  fontsInstalled = true;
 }
 
 function escapeXml(str: string): string {
@@ -67,19 +76,10 @@ function escapeXml(str: string): string {
 }
 
 function svgFontStyles(): string {
-  return `
-    <style>
-      @font-face {
-        font-family: 'Inter';
-        font-weight: 700;
-        src: url(data:font/ttf;base64,${getFontBoldBase64()});
-      }
-      @font-face {
-        font-family: 'Inter';
-        font-weight: 400;
-        src: url(data:font/ttf;base64,${getFontRegularBase64()});
-      }
-    </style>`;
+  // Ensure fonts are installed via fontconfig before any SVG rendering
+  ensureSystemFonts();
+  // No @font-face needed — fontconfig makes Inter available system-wide
+  return '';
 }
 
 /**
