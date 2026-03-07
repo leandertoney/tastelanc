@@ -10,6 +10,11 @@ const nextConfig = {
       },
     ],
   },
+  // Ensure font files are included in serverless function bundles
+  outputFileTracingIncludes: {
+    '/api/instagram/cron': ['./lib/instagram/fonts/**/*'],
+    '/api/instagram/publish-approved': ['./lib/instagram/fonts/**/*'],
+  },
 };
 
 export default nextConfig;

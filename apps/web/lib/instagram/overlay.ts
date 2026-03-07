@@ -20,19 +20,39 @@ const ACCENT_DIM = 'rgba(232,197,71,0.8)';
 let fontBoldBase64: string | null = null;
 let fontRegularBase64: string | null = null;
 
+function findFontFile(filename: string): string {
+  // Try multiple paths — process.cwd() differs between local dev and Netlify serverless
+  const candidates = [
+    join(process.cwd(), 'lib/instagram/fonts', filename),             // local dev (apps/web)
+    join(process.cwd(), '.next/server/lib/instagram/fonts', filename), // Next.js output tracing
+    join(process.cwd(), 'apps/web/lib/instagram/fonts', filename),    // monorepo root
+  ];
+  for (const p of candidates) {
+    if (existsSync(p)) {
+      console.log(`[Instagram] Found font ${filename} at: ${p}`);
+      return p;
+    }
+  }
+  // Log all attempts for debugging on Netlify
+  console.error(`[Instagram] Font ${filename} NOT found! cwd=${process.cwd()}, tried: ${candidates.join(', ')}`);
+  return candidates[0]; // will throw on readFileSync — better than silent empty text
+}
+
 function getFontBoldBase64(): string {
   if (!fontBoldBase64) {
     // Use TTF (not woff2) — librsvg in sharp only supports TTF/OTF data URIs
-    const fontPath = join(process.cwd(), 'lib/instagram/fonts/Inter-Bold.ttf');
+    const fontPath = findFontFile('Inter-Bold.ttf');
     fontBoldBase64 = readFileSync(fontPath).toString('base64');
+    console.log(`[Instagram] Loaded Inter-Bold.ttf (${fontBoldBase64.length} chars base64)`);
   }
   return fontBoldBase64;
 }
 
 function getFontRegularBase64(): string {
   if (!fontRegularBase64) {
-    const fontPath = join(process.cwd(), 'lib/instagram/fonts/Inter-Regular.ttf');
+    const fontPath = findFontFile('Inter-Regular.ttf');
     fontRegularBase64 = readFileSync(fontPath).toString('base64');
+    console.log(`[Instagram] Loaded Inter-Regular.ttf (${fontRegularBase64.length} chars base64)`);
   }
   return fontRegularBase64;
 }
