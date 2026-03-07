@@ -56,10 +56,9 @@ const CONTENT_TYPE_COLORS: Record<string, string> = {
   category_roundup: 'bg-green-500/20 text-green-400',
 };
 
-function getMonday(d: Date) {
+function getSunday(d: Date) {
   const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  return new Date(d.getFullYear(), d.getMonth(), diff);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() - day);
 }
 
 function formatDateKey(d: Date) {
@@ -76,7 +75,7 @@ export default function InstagramPostsPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
+  const [weekStart, setWeekStart] = useState(() => getSunday(new Date()));
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [generatingDay, setGeneratingDay] = useState<string | null>(null);
   const [generatingWeek, setGeneratingWeek] = useState(false);
@@ -106,7 +105,7 @@ export default function InstagramPostsPage() {
 
   const prevPeriod = () => setWeekStart(addDays(weekStart, -14));
   const nextPeriod = () => setWeekStart(addDays(weekStart, 14));
-  const goToday = () => setWeekStart(getMonday(new Date()));
+  const goToday = () => setWeekStart(getSunday(new Date()));
 
   const generateForDate = async (dateKey: string, slot: 'am' | 'pm') => {
     const contentType = slot === 'am' ? 'tonight_today' : 'upcoming_events';
@@ -222,100 +221,50 @@ export default function InstagramPostsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 md:mb-8">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
-            <Instagram className="w-7 h-7 text-pink-400" />
+    <div className="max-w-full mx-auto px-2">
+      {/* Header + Stats + Nav — compact single row */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-4">
+          <h1 className="text-lg font-bold text-white flex items-center gap-2">
+            <Instagram className="w-5 h-5 text-pink-400" />
             Instagram Posts
           </h1>
-          <p className="text-gray-400 mt-1 text-sm md:text-base">
-            Post calendar and preview for Lancaster
-          </p>
+          <div className="flex items-center gap-3 text-xs text-gray-400">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> {stats?.published || 0} published</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500 inline-block" /> {stats?.drafts || 0} drafts</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> {stats?.failed || 0} failed</span>
+          </div>
         </div>
-      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-pink-500/20 rounded-lg flex items-center justify-center">
-              <Instagram className="w-5 h-5 text-pink-400" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-white">{stats?.total || 0}</p>
-              <p className="text-xs text-gray-500">Total Posts</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 text-green-400" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-white">{stats?.published || 0}</p>
-              <p className="text-xs text-gray-500">Published</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
-              <Clock className="w-5 h-5 text-yellow-400" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-white">{stats?.drafts || 0}</p>
-              <p className="text-xs text-gray-500">Drafts</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-5 h-5 text-red-400" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-white">{stats?.failed || 0}</p>
-              <p className="text-xs text-gray-500">Failed</p>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Period Navigation */}
-      <div className="flex items-center justify-between mb-4">
+        {/* Period Navigation */}
         <div className="flex items-center gap-2">
           <button
             onClick={prevPeriod}
-            className="p-2 text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
+            className="p-1.5 text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4" />
           </button>
-          <h2 className="text-lg font-semibold text-white min-w-[280px] text-center">
-            {week1Label} &ndash; {week2Label}
+          <h2 className="text-sm font-semibold text-white min-w-[220px] text-center">
+            {week1Label} – {week2Label}
           </h2>
           <button
             onClick={nextPeriod}
-            className="p-2 text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
+            className="p-1.5 text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-4 h-4" />
           </button>
-        </div>
-        <div className="flex items-center gap-2">
           <button
             onClick={goToday}
-            className="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
+            className="px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
           >
             Today
           </button>
           <button
             onClick={() => { setIsLoading(true); fetchPosts(); }}
-            className="p-2 text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
+            className="p-1.5 text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
             title="Refresh"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
@@ -406,9 +355,9 @@ function WeekRow({
   });
 
   return (
-    <div className="mb-6">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold text-gray-400">{label}</h3>
+    <div className="mb-3">
+      <div className="flex items-center justify-between mb-1.5">
+        <h3 className="text-xs font-semibold text-gray-400">{label}</h3>
         <div className="flex items-center gap-2">
           {draftPosts.length > 0 && (
             <button
@@ -435,7 +384,7 @@ function WeekRow({
           )}
         </div>
       </div>
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-1.5">
         {days.map((day) => {
           const dateKey = formatDateKey(day);
           const isToday = dateKey === today;
@@ -446,24 +395,26 @@ function WeekRow({
           return (
             <div
               key={dateKey}
-              className={`rounded-xl border min-h-[200px] flex flex-col ${
+              className={`rounded-lg border flex flex-col ${
                 isToday
                   ? 'border-tastelanc-accent bg-tastelanc-accent/5'
                   : 'border-tastelanc-surface-light bg-tastelanc-surface'
               }`}
             >
               {/* Day header */}
-              <div className={`px-3 py-2 border-b ${isToday ? 'border-tastelanc-accent/30' : 'border-tastelanc-surface-light'}`}>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500">
-                  {day.toLocaleDateString('en-US', { weekday: 'short' })}
-                </p>
-                <p className={`text-lg font-bold ${isToday ? 'text-tastelanc-accent' : 'text-white'}`}>
-                  {day.getDate()}
-                </p>
+              <div className={`px-2 py-1 border-b ${isToday ? 'border-tastelanc-accent/30' : 'border-tastelanc-surface-light'}`}>
+                <div className="flex items-baseline gap-1.5">
+                  <p className={`text-sm font-bold ${isToday ? 'text-tastelanc-accent' : 'text-white'}`}>
+                    {day.getDate()}
+                  </p>
+                  <p className="text-[9px] uppercase tracking-wider text-gray-500">
+                    {day.toLocaleDateString('en-US', { weekday: 'short' })}
+                  </p>
+                </div>
               </div>
 
               {/* Slots */}
-              <div className="flex-1 p-2 space-y-2">
+              <div className="flex-1 p-1.5 space-y-1.5">
                 <PostSlotCard
                   post={amPost}
                   slot="am"
@@ -499,7 +450,7 @@ function PostSlotCard({ post, slot, dateKey, generating, onClick }: {
       <button
         onClick={onClick}
         disabled={generating}
-        className="w-full rounded-lg border border-dashed border-tastelanc-surface-light hover:border-tastelanc-accent/40 p-2 text-center transition-colors disabled:opacity-50"
+        className="w-full rounded-lg border border-dashed border-tastelanc-surface-light hover:border-tastelanc-accent/40 p-1.5 text-center transition-colors disabled:opacity-50"
       >
         {generating ? (
           <Loader2 className="w-4 h-4 animate-spin text-tastelanc-accent mx-auto" />
@@ -527,9 +478,9 @@ function PostSlotCard({ post, slot, dateKey, generating, onClick }: {
   return (
     <button
       onClick={onClick}
-      className="w-full rounded-lg border border-tastelanc-surface-light hover:border-tastelanc-accent/50 p-2 text-left transition-colors group"
+      className="w-full rounded-lg border border-tastelanc-surface-light hover:border-tastelanc-accent/50 p-1.5 text-left transition-colors group"
     >
-      <div className="flex items-center justify-between mb-1">
+      <div className="flex items-center justify-between mb-0.5">
         <span className="text-[10px] uppercase text-gray-500 flex items-center gap-1">
           {slot === 'am' ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
           {slot.toUpperCase()}
@@ -542,7 +493,7 @@ function PostSlotCard({ post, slot, dateKey, generating, onClick }: {
 
       {/* Thumbnail */}
       {post.media_urls?.[0] && (
-        <div className="relative w-full aspect-square rounded overflow-hidden mb-1.5">
+        <div className="relative w-full aspect-[4/3] rounded overflow-hidden mb-1">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={post.media_urls[0]}
