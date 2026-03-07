@@ -171,10 +171,16 @@ export function scoreCandidate(
 /**
  * Select top N candidates, deduplicating by restaurant_id.
  * Returns [visible, totalCount] where visible is 2-3 restaurants and totalCount is all eligible.
+ *
+ * @param dateSeed - Optional date string (YYYY-MM-DD) for deterministic day-to-day variety.
+ *                   Different dates will rotate which candidates are selected.
+ * @param recentEntityIds - Entity IDs already used in nearby posts — these get deprioritized.
  */
 export function selectTopCandidates(
   scored: ScoredCandidate[],
-  visibleCount: number = 3
+  visibleCount: number = 3,
+  dateSeed?: string,
+  recentEntityIds?: Set<string>
 ): { visible: ScoredCandidate[]; totalCount: number } {
   // Sort descending by score
   const sorted = [...scored].sort((a, b) => b.score - a.score);
@@ -189,9 +195,25 @@ export function selectTopCandidates(
     }
   }
 
+  // If we have a date seed, apply deterministic rotation for day-to-day variety
+  let pool = deduped;
+  if (dateSeed && pool.length > visibleCount) {
+    // Penalize candidates already used on nearby dates
+    if (recentEntityIds && recentEntityIds.size > 0) {
+      const fresh = pool.filter(c => !recentEntityIds.has(c.entity_id));
+      const reused = pool.filter(c => recentEntityIds.has(c.entity_id));
+      pool = [...fresh, ...reused]; // fresh candidates first
+    }
+
+    // Deterministic rotation: hash the date to get an offset
+    const hash = dateSeed.split('').reduce((acc, ch) => acc * 31 + ch.charCodeAt(0), 0);
+    const offset = Math.abs(hash) % pool.length;
+    pool = [...pool.slice(offset), ...pool.slice(0, offset)];
+  }
+
   // Prefer candidates with custom images, but fill remaining slots with any candidate
-  const withCustomImage = deduped.filter(hasCustomImage);
-  const withoutCustomImage = deduped.filter(c => !hasCustomImage(c));
+  const withCustomImage = pool.filter(hasCustomImage);
+  const withoutCustomImage = pool.filter(c => !hasCustomImage(c));
   const visible = [...withCustomImage, ...withoutCustomImage].slice(0, visibleCount);
 
   return {

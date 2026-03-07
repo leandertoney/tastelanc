@@ -185,7 +185,33 @@ async function generateTonightToday(
     chosen = subTypes[0];
   }
 
-  const { visible, totalCount } = selectTopCandidates(chosen.candidates, VISIBLE_COUNT);
+  // Query recently-used entities for variety (same as upcoming_events)
+  const weekStart = new Date(opts.date);
+  weekStart.setDate(opts.date.getDate() - 3);
+  const weekEnd = new Date(opts.date);
+  weekEnd.setDate(opts.date.getDate() + 3);
+
+  const { data: nearbyPosts } = await supabase
+    .from('instagram_posts')
+    .select('selected_entity_ids, post_date')
+    .eq('market_id', market.market_id)
+    .eq('content_type', 'tonight_today')
+    .neq('post_date', today)
+    .gte('post_date', weekStart.toISOString().split('T')[0])
+    .lte('post_date', weekEnd.toISOString().split('T')[0]);
+
+  const recentEntityIds = new Set<string>();
+  if (nearbyPosts) {
+    for (const p of nearbyPosts) {
+      if (p.selected_entity_ids) {
+        for (const id of p.selected_entity_ids) {
+          recentEntityIds.add(id);
+        }
+      }
+    }
+  }
+
+  const { visible, totalCount } = selectTopCandidates(chosen.candidates, VISIBLE_COUNT, today, recentEntityIds);
   const dayLabel = dayOfWeek === 'saturday' || dayOfWeek === 'sunday' ? 'today' : 'tonight';
 
   return await buildAndSavePost(opts, {
@@ -329,6 +355,7 @@ async function generateUpcomingEvents(
   decisionPath: string
 ): Promise<GenerationResult> {
   const { supabase, market, date } = opts;
+  const today = date.toISOString().split('T')[0];
 
   const { candidates } = await fetchUpcomingEventsCandidates(supabase, market.market_id, date);
 
@@ -336,7 +363,34 @@ async function generateUpcomingEvents(
     return { success: false, error: 'Not enough upcoming events' };
   }
 
-  const { visible, totalCount } = selectTopCandidates(candidates, VISIBLE_COUNT);
+  // Query entity IDs already used in nearby posts (same week, same market, same content type)
+  // to avoid repeating the same events across consecutive days
+  const weekStart = new Date(date);
+  weekStart.setDate(date.getDate() - 3); // look back 3 days
+  const weekEnd = new Date(date);
+  weekEnd.setDate(date.getDate() + 3); // look ahead 3 days
+
+  const { data: nearbyPosts } = await supabase
+    .from('instagram_posts')
+    .select('selected_entity_ids, post_date')
+    .eq('market_id', market.market_id)
+    .eq('content_type', 'upcoming_events')
+    .neq('post_date', today) // exclude this date (we're regenerating it)
+    .gte('post_date', weekStart.toISOString().split('T')[0])
+    .lte('post_date', weekEnd.toISOString().split('T')[0]);
+
+  const recentEntityIds = new Set<string>();
+  if (nearbyPosts) {
+    for (const p of nearbyPosts) {
+      if (p.selected_entity_ids) {
+        for (const id of p.selected_entity_ids) {
+          recentEntityIds.add(id);
+        }
+      }
+    }
+  }
+
+  const { visible, totalCount } = selectTopCandidates(candidates, VISIBLE_COUNT, today, recentEntityIds);
 
   return await buildAndSavePost(opts, {
     contentType: 'upcoming_events',
