@@ -181,6 +181,17 @@ Would it help if I sent over more details about how it works? Happy to answer an
       ctaText: "Learn More",
       ctaUrl: `https://${brand.domain}/for-restaurants`,
     },
+    spotlight: {
+      name: "Local Restaurant Spotlight",
+      subject: "Local Restaurant Spotlight",
+      previewText: `${brand.name} — real-time restaurant activity`,
+      headline: "Local Restaurant Spotlight",
+      body: `Hey! We run ${brand.name}, a ${brand.countyShort}-focused app highlighting real-time restaurant activity — happy hours, events, menus, specials, and more.
+
+If you're interested in being featured, happy to share how it works and what's included.`,
+      ctaText: "",
+      ctaUrl: "",
+    },
     valueProposition: {
       name: "Value Focused - Benefits Heavy",
       subject: "Free marketing for {business_name} - no catch",
