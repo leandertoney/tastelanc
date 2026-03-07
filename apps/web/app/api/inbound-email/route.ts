@@ -418,31 +418,26 @@ export async function POST(request: Request) {
         .eq('id', email.id);
 
       console.log(`Inbound email matched to lead ${matchedLeadId}`);
+    }
 
-      // Notify the assigned rep only (everyone gets their own notifications)
-      if (lead?.assigned_to) {
-        await sendSalesTeamPushNotifications(
-          supabase,
-          [lead.assigned_to],
-          `New Reply from ${fromName || fromEmail}`,
-          subject || '(No subject)',
-          { screen: 'EmailThread', counterpartyEmail: fromEmail },
-        );
-      }
-    } else {
-      // Unmatched email to a rep address — notify only the rep it was sent to
-      const repUserId = await resolveEmailToUserId(supabase, toEmail);
-      console.log(`[Inbound] resolveEmailToUserId(${toEmail}) → ${repUserId || 'null'}`);
+    // Notify ALL team members (admins + sales reps) on every inbound email
+    const { data: teamMembers } = await supabase
+      .from('profiles')
+      .select('id')
+      .in('role', ['super_admin', 'co_founder', 'market_admin', 'sales_rep']);
 
-      if (repUserId) {
-        await sendSalesTeamPushNotifications(
-          supabase,
-          [repUserId],
-          `New Email from ${fromName || fromEmail}`,
-          subject || '(No subject)',
-          { screen: 'EmailThread', counterpartyEmail: fromEmail },
-        );
-      }
+    const teamIds = (teamMembers || []).map(m => m.id);
+    if (teamIds.length > 0) {
+      const title = matchedLeadId
+        ? `New Reply from ${fromName || fromEmail}`
+        : `New Email from ${fromName || fromEmail}`;
+      await sendSalesTeamPushNotifications(
+        supabase,
+        teamIds,
+        title,
+        subject || '(No subject)',
+        { screen: 'EmailThread', counterpartyEmail: fromEmail },
+      );
     }
 
     return NextResponse.json({ received: true, id: email.id });
