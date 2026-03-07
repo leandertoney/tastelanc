@@ -36,9 +36,9 @@ export async function POST(
       threadId,
     } = body;
 
-    if (!subject || !headline || !emailBody) {
+    if (!subject || !emailBody) {
       return NextResponse.json(
-        { error: 'Missing required fields: subject, headline, emailBody' },
+        { error: 'Missing required fields: subject, emailBody' },
         { status: 400 }
       );
     }
@@ -88,7 +88,7 @@ export async function POST(
     // so no tracking markup is injected — clean HTML lands in Gmail Primary.
     const marketSlug = (lead as any).markets?.slug as string | undefined;
     const emailProps = {
-      headline,
+      headline: headline || subject,
       body: emailBody,
       businessName: lead.business_name,
       contactName: lead.contact_name || undefined,
@@ -147,7 +147,7 @@ export async function POST(
       thread_id: threadId || null,
       in_reply_to_message_id: inReplyToMessageId || null,
       body_text: emailBody,
-      headline,
+      headline: headline || subject,
     });
 
     // Log activity on lead

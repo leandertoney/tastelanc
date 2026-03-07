@@ -76,10 +76,7 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
   const [subject, setSubject] = useState(
     replyTo ? (replyTo.subject.startsWith('Re: ') ? replyTo.subject : `Re: ${replyTo.subject}`) : ''
   );
-  const [headline, setHeadline] = useState('');
   const [body, setBody] = useState('');
-  const [ctaText, setCtaText] = useState('');
-  const [ctaUrl, setCtaUrl] = useState('');
 
   // AI
   const [isGenerating, setIsGenerating] = useState(false);
@@ -118,22 +115,16 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
     if (isReply) return;
     if (selectedTemplate === 'custom') {
       setSubject('');
-      setHeadline('');
       setBody('');
-      setCtaText('');
-      setCtaUrl('');
       return;
     }
 
     const template = B2B_TEMPLATES[selectedTemplate];
     if (template) {
       setSubject(personalize(template.subject));
-      setHeadline(personalize(template.headline));
       setBody(personalize(template.body));
-      setCtaText(template.ctaText);
-      setCtaUrl(template.ctaUrl);
     }
-  }, [selectedTemplate]);
+  }, [selectedTemplate, marketSlug]);
 
   const personalize = (text: string): string => {
     return text
@@ -169,10 +160,7 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
 
       const email = data.email;
       setSubject(email.subject);
-      setHeadline(email.headline);
       setBody(email.body);
-      setCtaText(email.ctaText);
-      setCtaUrl(email.ctaUrl);
       setSuggestedSubjects([]);
       toast.success('AI generated email');
     } catch (error) {
@@ -259,10 +247,8 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           subject,
-          headline,
+          headline: subject,
           emailBody: body,
-          ctaText: ctaText || undefined,
-          ctaUrl: ctaUrl || undefined,
           senderName: selectedSender.name,
           senderEmail: selectedSender.email,
           ...(replyTo && {
@@ -287,7 +273,7 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
     }
   };
 
-  const canSend = subject.trim() && headline.trim() && body.trim() && lead.email;
+  const canSend = subject.trim() && body.trim() && lead.email;
 
   // Confirmation step
   if (step === 'confirm') {
@@ -496,18 +482,6 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
             )}
           </div>
 
-          {/* Headline */}
-          <div>
-            <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Headline</label>
-            <input
-              type="text"
-              value={headline}
-              onChange={(e) => setHeadline(e.target.value)}
-              placeholder="Main headline in email..."
-              className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
           {/* Body */}
           <div>
             <label className="text-xs text-gray-500 uppercase tracking-wider mb-1.5 block">Body</label>
@@ -538,30 +512,6 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
                 )}
               </div>
             )}
-          </div>
-
-          {/* CTA (optional) */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">CTA Text <span className="text-gray-600">(optional)</span></label>
-              <input
-                type="text"
-                value={ctaText}
-                onChange={(e) => setCtaText(e.target.value)}
-                placeholder="e.g. Schedule a Call"
-                className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">CTA URL <span className="text-gray-600">(optional)</span></label>
-              <input
-                type="text"
-                value={ctaUrl}
-                onChange={(e) => setCtaUrl(e.target.value)}
-                placeholder="https://..."
-                className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
           </div>
 
           {/* Recipient info */}

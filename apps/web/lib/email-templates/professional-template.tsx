@@ -14,7 +14,7 @@
 import { BRAND, MARKET_CONFIG, type MarketBrand } from '@/config/market';
 
 export interface ProfessionalEmailProps {
-  headline: string;
+  headline?: string;
   body: string;
   ctaText?: string;
   ctaUrl?: string;

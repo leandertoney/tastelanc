@@ -36,9 +36,9 @@ export async function POST(request: Request) {
       attachments,
     } = body;
 
-    if (!recipientEmail || !subject || !headline || !emailBody) {
+    if (!recipientEmail || !subject || !emailBody) {
       return NextResponse.json(
-        { error: 'Missing required fields: recipientEmail, subject, headline, emailBody' },
+        { error: 'Missing required fields: recipientEmail, subject, emailBody' },
         { status: 400 }
       );
     }
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
     // Render HTML + plain text (multipart). Resend tracking is DISABLED on tastelanc.com
     // so no tracking markup is injected — clean HTML lands in Gmail Primary.
     const emailProps = {
-      headline,
+      headline: headline || subject,
       body: emailBody,
       businessName: recipientName || undefined,
       senderName: senderName || BRAND.name,
@@ -176,7 +176,7 @@ export async function POST(request: Request) {
       thread_id: threadId || null,
       in_reply_to_message_id: inReplyToMessageId || null,
       body_text: emailBody,
-      headline,
+      headline: headline || subject,
       attachments: validatedAttachments.length > 0 ? validatedAttachments : [],
     });
 
