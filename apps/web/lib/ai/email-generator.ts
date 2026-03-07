@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { BRAND } from '@/config/market';
+import { BRAND, MARKET_CONFIG, type MarketBrand } from '@/config/market';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY_EMAIL || process.env.OPENAI_API_KEY!,
@@ -26,6 +26,7 @@ export interface EmailGenerationContext {
   audienceType: AudienceType;
   tone: EmailTone;
   keyPoints?: string[];
+  marketSlug?: string;
   businessContext?: {
     launchDate?: string;
     discountDeadline?: string;
@@ -43,6 +44,14 @@ export interface EmailGenerationContext {
   };
 }
 
+/** Resolve the brand config for a given market slug, falling back to build-time BRAND */
+function resolveBrand(marketSlug?: string): MarketBrand {
+  if (marketSlug && MARKET_CONFIG[marketSlug]) {
+    return MARKET_CONFIG[marketSlug];
+  }
+  return BRAND;
+}
+
 export interface GeneratedEmail {
   subject: string;
   previewText: string;
@@ -52,26 +61,27 @@ export interface GeneratedEmail {
   ctaUrl: string;
 }
 
-// System prompts for different objectives
-const SYSTEM_PROMPTS: Record<EmailObjective, string> = {
-  launch_countdown: `You are an expert email marketer for ${BRAND.name}, a mobile app that helps people discover local restaurants, happy hours, events, and specials in ${BRAND.countyShort}, ${BRAND.state}. You're writing countdown emails to build excitement for the app launch.
+// System prompts for different objectives (market-aware)
+function getSystemPrompt(objective: EmailObjective, brand: MarketBrand): string {
+  const prompts: Record<EmailObjective, string> = {
+    launch_countdown: `You are an expert email marketer for ${brand.name}, a mobile app that helps people discover local restaurants, happy hours, events, and specials in ${brand.countyShort}, ${brand.state}. You're writing countdown emails to build excitement for the app launch.
 
 Key value propositions:
 - Discover happy hours, events, and daily specials
 - Get personalized recommendations
 - Earn rewards at local restaurants
-- AI assistant "${BRAND.aiName}" helps find perfect dining spots
-- Support local ${BRAND.countyShort} businesses`,
+- AI assistant "${brand.aiName}" helps find perfect dining spots
+- Support local ${brand.countyShort} businesses`,
 
-  waitlist_reminder: `You are an expert email marketer for ${BRAND.name}. You're writing friendly reminder emails to waitlist members about the upcoming launch.
+    waitlist_reminder: `You are an expert email marketer for ${brand.name}. You're writing friendly reminder emails to waitlist members about the upcoming launch.
 
 Key value propositions:
-- Be among the first to try ${BRAND.name} when we launch
+- Be among the first to try ${brand.name} when we launch
 - Early access members get special pricing
 - Exclusive features and rewards for waitlist members
-- Help shape the future of ${BRAND.countyShort} dining discovery`,
+- Help shape the future of ${brand.countyShort} dining discovery`,
 
-  feature_announcement: `You are an expert email marketer for ${BRAND.name}. You're announcing an exciting new feature to waitlist members.
+    feature_announcement: `You are an expert email marketer for ${brand.name}. You're announcing an exciting new feature to waitlist members.
 
 Key value propositions:
 - Innovative features that make dining discovery easier
@@ -79,23 +89,23 @@ Key value propositions:
 - Real-time updates on specials and events
 - Community-driven restaurant insights`,
 
-  partnership_announcement: `You are an expert email marketer for ${BRAND.name}. You're announcing a new restaurant partnership to get users excited.
+    partnership_announcement: `You are an expert email marketer for ${brand.name}. You're announcing a new restaurant partnership to get users excited.
 
 Key value propositions:
 - More amazing local restaurants joining
 - Exclusive deals from partners
-- Support local ${BRAND.countyShort} businesses
+- Support local ${brand.countyShort} businesses
 - Growing community of food lovers`,
 
-  welcome: `You are an expert email marketer for ${BRAND.name}. You're writing welcome emails for new waitlist signups. Be warm, friendly, and make them feel special for being early adopters.
+    welcome: `You are an expert email marketer for ${brand.name}. You're writing welcome emails for new waitlist signups. Be warm, friendly, and make them feel special for being early adopters.
 
 Key value propositions:
 - They're part of an exclusive early access group
 - They'll be first to experience the app
-- They're supporting local ${BRAND.countyShort} businesses
+- They're supporting local ${brand.countyShort} businesses
 - Great perks await them`,
 
-  follow_up: `You are an expert email marketer for ${BRAND.name}. You're writing follow-up emails to keep waitlist members engaged and excited.
+    follow_up: `You are an expert email marketer for ${brand.name}. You're writing follow-up emails to keep waitlist members engaged and excited.
 
 Key value propositions:
 - Keep them updated on progress
@@ -103,7 +113,7 @@ Key value propositions:
 - Remind them why they signed up
 - Create a sense of community`,
 
-  b2b_cold_outreach: `You are a professional business development representative for ${BRAND.name}. You're writing cold outreach emails to restaurant owners and managers in ${BRAND.countyShort}, ${BRAND.state}.
+    b2b_cold_outreach: `You are a professional business development representative for ${brand.name}. You're writing cold outreach emails to restaurant owners and managers in ${brand.countyShort}, ${brand.state}.
 
 Key value propositions for restaurants:
 - Free marketing to local food lovers
@@ -113,20 +123,24 @@ Key value propositions for restaurants:
 - Easy-to-use platform with no upfront costs
 - Analytics and insights on customer engagement
 
-Tone should be professional but warm, focusing on how ${BRAND.name} helps THEIR business succeed.`,
+Tone should be professional but warm, focusing on how ${brand.name} helps THEIR business succeed.`,
 
-  b2b_follow_up: `You are a professional business development representative for ${BRAND.name}. You're writing follow-up emails to restaurants who haven't responded to your initial outreach.
+    b2b_follow_up: `You are a professional business development representative for ${brand.name}. You're writing follow-up emails to restaurants who haven't responded to your initial outreach.
 
 Be respectful of their time, provide additional value, and make it easy for them to learn more without pressure.`,
 
-  general: `You are an expert email marketer for ${BRAND.name}, a mobile app that helps people discover local restaurants, happy hours, events, and specials in ${BRAND.countyShort}, ${BRAND.state}.
+    general: `You are an expert email marketer for ${brand.name}, a mobile app that helps people discover local restaurants, happy hours, events, and specials in ${brand.countyShort}, ${brand.state}.
 
 Write engaging, effective marketing emails that drive action while maintaining authenticity.`,
-};
+  };
+
+  return prompts[objective];
+}
 
 // Generate a complete email
 export async function generateEmail(context: EmailGenerationContext): Promise<GeneratedEmail> {
-  const systemPrompt = SYSTEM_PROMPTS[context.objective];
+  const brand = resolveBrand(context.marketSlug);
+  const systemPrompt = getSystemPrompt(context.objective, brand);
 
   let userPrompt = `Generate a marketing email with the following context:
 
@@ -166,7 +180,7 @@ Please generate the email in the following JSON format (and nothing else):
   "headline": "Main headline in email (max 80 chars, attention-grabbing)",
   "body": "Email body content. Use \\n\\n for paragraph breaks. Keep it concise but persuasive. 2-4 paragraphs max.",
   "ctaText": "Call-to-action button text (2-4 words, action-oriented)",
-  "ctaUrl": "https://${BRAND.domain}"
+  "ctaUrl": "https://${brand.domain}"
 }
 
 Important:
@@ -203,10 +217,10 @@ Important:
     const email = JSON.parse(jsonStr) as GeneratedEmail;
 
     // Set default CTA URL based on audience type if not provided
-    if (!email.ctaUrl || email.ctaUrl === `https://${BRAND.domain}`) {
+    if (!email.ctaUrl || email.ctaUrl === `https://${brand.domain}`) {
       email.ctaUrl = context.audienceType === 'b2b'
-        ? `https://${BRAND.domain}/for-restaurants`
-        : `https://${BRAND.domain}`;
+        ? `https://${brand.domain}/for-restaurants`
+        : `https://${brand.domain}`;
     }
 
     return email;
@@ -221,7 +235,8 @@ export async function generateSubjectLines(
   context: EmailGenerationContext,
   count: number = 5
 ): Promise<string[]> {
-  const systemPrompt = SYSTEM_PROMPTS[context.objective];
+  const brand = resolveBrand(context.marketSlug);
+  const systemPrompt = getSystemPrompt(context.objective, brand);
 
   let userPrompt = `Generate ${count} different email subject line variations for a ${context.objective.replace(/_/g, ' ')} email.
 
@@ -274,16 +289,18 @@ Return ONLY a JSON array of strings, nothing else:
 export async function improveEmail(
   currentContent: string,
   instruction: string,
-  audienceType: AudienceType = 'consumer'
+  audienceType: AudienceType = 'consumer',
+  marketSlug?: string
 ): Promise<string> {
-  const systemPrompt = `You are an expert email copywriter for ${BRAND.name}, a local restaurant discovery app. Help improve email content while maintaining brand voice.
+  const brand = resolveBrand(marketSlug);
+  const systemPrompt = `You are an expert email copywriter for ${brand.name}, a local restaurant discovery app. Help improve email content while maintaining brand voice.
 
-${BRAND.name} brand voice:
+${brand.name} brand voice:
 - Friendly and approachable
 - Excited about local food scene
 - Supportive of local businesses
 - Authentic, not corporate
-- ${BRAND.countyShort}, ${BRAND.state} proud`;
+- ${brand.countyShort}, ${brand.state} proud`;
 
   const userPrompt = `Here is the current email content:
 
@@ -343,37 +360,45 @@ export const emailPresets = {
   }),
 
   // Waitlist reminder
-  waitlistReminder: () => generateEmail({
-    objective: 'waitlist_reminder',
-    audienceType: 'consumer',
-    tone: 'friendly',
-    businessContext: {
-      discountDetails: 'Early access pricing for waitlist members',
-    },
-    keyPoints: [
-      `Be the first to try ${BRAND.name} when we launch`,
-      'Early access members get special pricing',
-      'Join the waitlist to unlock exclusive perks',
-    ],
-  }),
+  waitlistReminder: (marketSlug?: string) => {
+    const brand = resolveBrand(marketSlug);
+    return generateEmail({
+      objective: 'waitlist_reminder',
+      audienceType: 'consumer',
+      tone: 'friendly',
+      marketSlug,
+      businessContext: {
+        discountDetails: 'Early access pricing for waitlist members',
+      },
+      keyPoints: [
+        `Be the first to try ${brand.name} when we launch`,
+        'Early access members get special pricing',
+        'Join the waitlist to unlock exclusive perks',
+      ],
+    });
+  },
 
   // B2B cold outreach
-  coldOutreach: (businessName?: string, contactName?: string) => generateEmail({
-    objective: 'b2b_cold_outreach',
-    audienceType: 'b2b',
-    tone: 'professional',
-    recipientContext: {
-      businessName,
-      contactName,
-      city: BRAND.countyShort,
-    },
-    keyPoints: [
-      'Free marketing to local food lovers',
-      'Increase visibility during happy hours',
-      `Join growing network of ${BRAND.countyShort} restaurants`,
-      'Easy setup, no commitment required',
-    ],
-  }),
+  coldOutreach: (businessName?: string, contactName?: string, marketSlug?: string) => {
+    const brand = resolveBrand(marketSlug);
+    return generateEmail({
+      objective: 'b2b_cold_outreach',
+      audienceType: 'b2b',
+      tone: 'professional',
+      marketSlug,
+      recipientContext: {
+        businessName,
+        contactName,
+        city: brand.countyShort,
+      },
+      keyPoints: [
+        'Free marketing to local food lovers',
+        'Increase visibility during happy hours',
+        `Join growing network of ${brand.countyShort} restaurants`,
+        'Easy setup, no commitment required',
+      ],
+    });
+  },
 
   // Welcome email
   welcome: () => generateEmail({

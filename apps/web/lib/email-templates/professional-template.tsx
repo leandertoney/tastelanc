@@ -11,7 +11,7 @@
  * CTA should be conversational ("reply to this email") not a link.
  */
 
-import { BRAND } from '@/config/market';
+import { BRAND, MARKET_CONFIG, type MarketBrand } from '@/config/market';
 
 export interface ProfessionalEmailProps {
   headline: string;
@@ -26,6 +26,13 @@ export interface ProfessionalEmailProps {
   // Sender
   senderName?: string;
   senderTitle?: string;
+  // Market
+  marketSlug?: string;
+}
+
+function resolveBrand(marketSlug?: string): MarketBrand {
+  if (marketSlug && MARKET_CONFIG[marketSlug]) return MARKET_CONFIG[marketSlug];
+  return BRAND;
 }
 
 export function renderProfessionalEmail({
@@ -34,6 +41,7 @@ export function renderProfessionalEmail({
   contactName,
   senderName,
   senderTitle,
+  marketSlug,
 }: ProfessionalEmailProps): string {
   // Replace placeholders in body
   let personalizedBody = body;
@@ -57,8 +65,9 @@ export function renderProfessionalEmail({
     ? `Hi ${contactName},`
     : 'Hello,';
 
+  const brand = resolveBrand(marketSlug);
   const signatureName = senderName || 'The Team';
-  const titleLine = senderTitle ? `${senderTitle}, ${BRAND.name}` : BRAND.name;
+  const titleLine = senderTitle ? `${senderTitle}, ${brand.name}` : brand.name;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -72,7 +81,7 @@ export function renderProfessionalEmail({
 
 ${formattedBody}
 
-<p style="margin:28px 0 0 0;font-size:13px;color:#666666;">—<br><strong>${signatureName}</strong><br>${titleLine}<br>${BRAND.countyShort}, ${BRAND.state}</p>
+<p style="margin:28px 0 0 0;font-size:13px;color:#666666;">—<br><strong>${signatureName}</strong><br>${titleLine}<br>${brand.countyShort}, ${brand.state}</p>
 
 </body>
 </html>`;
@@ -89,6 +98,7 @@ export function renderProfessionalEmailPlainText({
   contactName,
   senderName,
   senderTitle,
+  marketSlug,
 }: ProfessionalEmailProps): string {
   let personalizedBody = body;
   if (businessName) {
@@ -98,13 +108,14 @@ export function renderProfessionalEmailPlainText({
     personalizedBody = personalizedBody.replace(/\{contact_name\}/g, contactName);
   }
 
+  const brand = resolveBrand(marketSlug);
   const greeting = contactName ? `Hi ${contactName},` : 'Hello,';
   const signatureName = senderName || 'The Team';
-  const titleLine = senderTitle ? `${senderTitle}, ${BRAND.name}` : BRAND.name;
+  const titleLine = senderTitle ? `${senderTitle}, ${brand.name}` : brand.name;
 
   let text = `${greeting}\n\n${personalizedBody}`;
 
-  text += `\n\n--\n${signatureName}\n${titleLine}\n${BRAND.countyShort}, ${BRAND.state}`;
+  text += `\n\n--\n${signatureName}\n${titleLine}\n${brand.countyShort}, ${brand.state}`;
 
   return text;
 }

@@ -13,7 +13,8 @@ import {
   Wand2,
 } from 'lucide-react';
 import { SENDER_IDENTITIES, type SenderIdentity } from '@/config/sender-identities';
-import { B2B_TEMPLATES } from '@/lib/email-templates/b2b-outreach-template';
+import { getB2BTemplates } from '@/lib/email-templates/b2b-outreach-template';
+import { BRAND, MARKET_CONFIG } from '@/config/market';
 import { toast } from 'sonner';
 
 interface Lead {
@@ -23,6 +24,7 @@ interface Lead {
   email: string | null;
   city: string | null;
   status: string;
+  markets?: { slug: string } | null;
 }
 
 interface EmailComposerProps {
@@ -57,6 +59,9 @@ const TEMPLATE_OPTIONS: { key: TemplateKey; label: string }[] = [
 
 export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailComposerProps) {
   const isReply = !!replyTo;
+  const marketSlug = lead.markets?.slug;
+  const brand = marketSlug && MARKET_CONFIG[marketSlug] ? MARKET_CONFIG[marketSlug] : BRAND;
+  const B2B_TEMPLATES = getB2BTemplates(marketSlug);
   const [step, setStep] = useState<Step>('compose');
 
   // Sender
@@ -147,6 +152,7 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
           action: 'generate',
           objective,
           tone: 'professional',
+          marketSlug,
           recipientContext: {
             businessName: lead.business_name,
             contactName: lead.contact_name,
@@ -189,6 +195,7 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
           objective,
           tone: 'professional',
           count: 5,
+          marketSlug,
           recipientContext: {
             businessName: lead.business_name,
             contactName: lead.contact_name,
@@ -226,6 +233,7 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
           content: body,
           instruction,
           audienceType: 'b2b',
+          marketSlug,
         }),
       });
 
@@ -293,7 +301,7 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
               <div>
                 <span className="text-xs text-gray-500 uppercase tracking-wider">From</span>
                 <p className="text-sm text-white mt-1">
-                  {selectedSender.name} from TasteLanc &lt;{selectedSender.email}&gt;
+                  {selectedSender.name} from {brand.name} &lt;{selectedSender.email}&gt;
                 </p>
               </div>
 

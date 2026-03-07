@@ -52,10 +52,10 @@ export async function POST(
       );
     }
 
-    // Fetch lead
+    // Fetch lead with market
     const { data: lead, error: leadError } = await serviceClient
       .from('business_leads')
-      .select('id, email, business_name, contact_name')
+      .select('id, email, business_name, contact_name, markets(slug)')
       .eq('id', id)
       .single();
 
@@ -86,6 +86,7 @@ export async function POST(
 
     // Render HTML + plain text (multipart). Resend tracking is DISABLED on tastelanc.com
     // so no tracking markup is injected — clean HTML lands in Gmail Primary.
+    const marketSlug = (lead as any).markets?.slug as string | undefined;
     const emailProps = {
       headline,
       body: emailBody,
@@ -93,6 +94,7 @@ export async function POST(
       contactName: lead.contact_name || undefined,
       senderName: senderName || BRAND.name,
       senderTitle: validSender?.title || undefined,
+      marketSlug,
     };
     const html = renderProfessionalEmail(emailProps);
     const text = renderProfessionalEmailPlainText(emailProps);

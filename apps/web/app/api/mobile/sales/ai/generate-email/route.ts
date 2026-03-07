@@ -36,6 +36,7 @@ export async function POST(request: Request) {
           audienceType: (params.audienceType as AudienceType) || 'b2b',
           tone: params.tone as EmailTone,
           keyPoints: params.keyPoints,
+          marketSlug: params.marketSlug,
           businessContext: params.businessContext,
           recipientContext: params.recipientContext,
         };
@@ -57,6 +58,7 @@ export async function POST(request: Request) {
           audienceType: (params.audienceType as AudienceType) || 'b2b',
           tone: params.tone as EmailTone,
           keyPoints: params.keyPoints,
+          marketSlug: params.marketSlug,
           businessContext: params.businessContext,
           recipientContext: params.recipientContext,
         };
@@ -74,7 +76,7 @@ export async function POST(request: Request) {
       }
 
       case 'improve': {
-        const { content, instruction, audienceType } = params;
+        const { content, instruction, audienceType, marketSlug } = params;
 
         if (!content || !instruction) {
           return NextResponse.json(
@@ -83,7 +85,7 @@ export async function POST(request: Request) {
           );
         }
 
-        const improved = await improveEmail(content, instruction, audienceType || 'b2b');
+        const improved = await improveEmail(content, instruction, audienceType || 'b2b', marketSlug);
         return NextResponse.json({ improved });
       }
 

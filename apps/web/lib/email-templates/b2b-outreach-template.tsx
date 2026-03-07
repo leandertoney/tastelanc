@@ -130,16 +130,25 @@ export function renderB2BEmail({
   });
 }
 
-// Pre-built B2B templates
-export const B2B_TEMPLATES = {
-  coldOutreach: {
-    name: "Cold Outreach - Introduction",
-    subject: `Partner with ${BRAND.name} - Free marketing for {business_name}`,
-    previewText: "Reach more local customers with zero upfront cost",
-    headline: `Grow Your Business with ${BRAND.name}`,
-    body: `I'm reaching out because {business_name} caught our attention as one of ${BRAND.countyShort}'s great local spots.
+// Pre-built B2B templates (market-aware)
+import { MARKET_CONFIG, type MarketBrand } from '@/config/market';
 
-${BRAND.name} is a new app launching this month that helps locals discover restaurants, happy hours, events, and daily specials in ${BRAND.countyShort}, ${BRAND.state}.
+function getBrand(marketSlug?: string): MarketBrand {
+  if (marketSlug && MARKET_CONFIG[marketSlug]) return MARKET_CONFIG[marketSlug];
+  return BRAND;
+}
+
+export function getB2BTemplates(marketSlug?: string) {
+  const brand = getBrand(marketSlug);
+  return {
+    coldOutreach: {
+      name: "Cold Outreach - Introduction",
+      subject: `Partner with ${brand.name} - Free marketing for {business_name}`,
+      previewText: "Reach more local customers with zero upfront cost",
+      headline: `Grow Your Business with ${brand.name}`,
+      body: `I'm reaching out because {business_name} caught our attention as one of ${brand.countyShort}'s great local spots.
+
+${brand.name} is an app that helps locals discover restaurants, happy hours, events, and daily specials in ${brand.countyShort}, ${brand.state}.
 
 Here's what we offer restaurant partners:
 
@@ -148,40 +157,38 @@ Here's what we offer restaurant partners:
 • **Analytics dashboard** to track customer engagement
 • **Featured placement** for early partners
 
-We're launching December 13th and building our founding restaurant network now. Early partners get priority placement and founding member perks.
+Would you be open to a quick 10-minute call to learn more? I'd love to show you how ${brand.name} can help bring more customers through your doors.`,
+      ctaText: "Schedule a Call",
+      ctaUrl: `https://${brand.domain}/for-restaurants`,
+    },
+    followUp: {
+      name: "Follow Up - Second Touch",
+      subject: `Quick follow-up: ${brand.name} partnership for {business_name}`,
+      previewText: "Just checking in - free marketing opportunity",
+      headline: `Following Up on ${brand.name} Partnership`,
+      body: `I wanted to follow up on my previous email about partnering with ${brand.name}.
 
-Would you be open to a quick 10-minute call to learn more? I'd love to show you how ${BRAND.name} can help bring more customers through your doors.`,
-    ctaText: "Schedule a Call",
-    ctaUrl: `https://${BRAND.domain}/for-restaurants`,
-  },
-  followUp: {
-    name: "Follow Up - Second Touch",
-    subject: `Quick follow-up: ${BRAND.name} partnership for {business_name}`,
-    previewText: "Just checking in - free marketing opportunity",
-    headline: `Following Up on ${BRAND.name} Partnership`,
-    body: `I wanted to follow up on my previous email about partnering with ${BRAND.name}.
-
-We're launching in just a few days, and I didn't want {business_name} to miss out on being part of our founding restaurant network.
+I didn't want {business_name} to miss out on being part of our restaurant network.
 
 Quick reminder of what you get:
 • Free listing and promotion in our app
 • Reach thousands of local food lovers
 • No contracts or commitments
 
-Several ${BRAND.countyShort} restaurants have already joined, and I'd love to add {business_name} to the list.
+Several ${brand.countyShort} restaurants have already joined, and I'd love to add {business_name} to the list.
 
 Would it help if I sent over more details about how it works? Happy to answer any questions.`,
-    ctaText: "Learn More",
-    ctaUrl: `https://${BRAND.domain}/for-restaurants`,
-  },
-  valueProposition: {
-    name: "Value Focused - Benefits Heavy",
-    subject: "Free marketing for {business_name} - no catch",
-    previewText: "Promote your happy hours and specials to thousands of locals",
-    headline: "Let's Help Fill Your Seats",
-    body: `Running a restaurant is hard. Marketing it shouldn't be.
+      ctaText: "Learn More",
+      ctaUrl: `https://${brand.domain}/for-restaurants`,
+    },
+    valueProposition: {
+      name: "Value Focused - Benefits Heavy",
+      subject: "Free marketing for {business_name} - no catch",
+      previewText: "Promote your happy hours and specials to thousands of locals",
+      headline: "Let's Help Fill Your Seats",
+      body: `Running a restaurant is hard. Marketing it shouldn't be.
 
-${BRAND.name} is launching a free app that helps ${BRAND.countyShort} locals discover where to eat, drink, and enjoy happy hours. And we want {business_name} to be part of it.
+${brand.name} is a free app that helps ${brand.countyShort} locals discover where to eat, drink, and enjoy happy hours. And we want {business_name} to be part of it.
 
 What's in it for you?
 
@@ -189,14 +196,18 @@ What's in it for you?
 
 **Happy Hour Promotion** - Showcase your specials exactly when people are deciding where to go.
 
-**Local Focus** - We're 100% focused on ${BRAND.countyShort}. Your customers are our users.
+**Local Focus** - We're 100% focused on ${brand.countyShort}. Your customers are our users.
 
 **Easy Management** - Update your specials, hours, and events anytime through a simple dashboard.
 
 No contracts. No fees. Just more customers discovering {business_name}.
 
 Ready to get started?`,
-    ctaText: "Join Free",
-    ctaUrl: `https://${BRAND.domain}/for-restaurants`,
-  },
-};
+      ctaText: "Join Free",
+      ctaUrl: `https://${brand.domain}/for-restaurants`,
+    },
+  };
+}
+
+/** @deprecated Use getB2BTemplates(marketSlug) instead for market-aware templates */
+export const B2B_TEMPLATES = getB2BTemplates();
