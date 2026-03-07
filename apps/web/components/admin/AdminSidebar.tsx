@@ -21,8 +21,6 @@ import {
   Globe,
   Inbox,
   HeadphonesIcon,
-  PanelLeftClose,
-  PanelLeftOpen,
   Smartphone,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -66,10 +64,11 @@ interface AdminSidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
   collapsed?: boolean;
-  onToggleCollapse?: () => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }
 
-export default function AdminSidebar({ isOpen, onClose, collapsed, onToggleCollapse }: AdminSidebarProps) {
+export default function AdminSidebar({ isOpen, onClose, collapsed, onMouseEnter, onMouseLeave }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -147,12 +146,14 @@ export default function AdminSidebar({ isOpen, onClose, collapsed, onToggleColla
 
       {/* Sidebar */}
       <aside
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
         className={`
-          fixed md:static inset-y-0 left-0 z-50
-          ${collapsed ? 'md:w-[68px]' : 'w-64'} bg-tastelanc-surface border-r border-tastelanc-surface-light
+          fixed inset-y-0 left-0 z-50
+          ${collapsed ? 'md:w-[68px]' : 'md:w-64'} w-64 bg-tastelanc-surface border-r border-tastelanc-surface-light
           min-h-screen flex flex-col
-          transform transition-all duration-300 ease-in-out
-          ${isOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0'}
+          transform transition-all duration-200 ease-in-out
+          ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
       >
         {/* Logo + collapse toggle */}
@@ -168,14 +169,6 @@ export default function AdminSidebar({ isOpen, onClose, collapsed, onToggleColla
               </div>
             )}
           </Link>
-          {/* Collapse toggle for desktop */}
-          <button
-            onClick={onToggleCollapse}
-            className="hidden md:block text-gray-400 hover:text-white p-1 transition-colors"
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {collapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
-          </button>
           {/* Close button for mobile */}
           <button
             onClick={onClose}

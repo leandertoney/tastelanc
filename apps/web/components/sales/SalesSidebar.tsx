@@ -14,8 +14,6 @@ import {
   Inbox,
   X,
   Plus,
-  PanelLeftClose,
-  PanelLeftOpen,
   CalendarDays,
   DollarSign,
   Settings,
@@ -51,12 +49,13 @@ interface SalesSidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
   collapsed?: boolean;
-  onToggleCollapse?: () => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
   isAdmin?: boolean;
   brandName?: string;
 }
 
-export default function SalesSidebar({ isOpen, onClose, collapsed, onToggleCollapse, isAdmin, brandName }: SalesSidebarProps) {
+export default function SalesSidebar({ isOpen, onClose, collapsed, onMouseEnter, onMouseLeave, isAdmin, brandName }: SalesSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -120,9 +119,11 @@ export default function SalesSidebar({ isOpen, onClose, collapsed, onToggleColla
 
       {/* Sidebar */}
       <aside
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
         className={`
-          fixed md:static inset-y-0 left-0 z-50
-          ${collapsed ? 'md:w-16' : 'md:w-64'} w-64
+          fixed inset-y-0 left-0 z-50
+          ${collapsed ? 'md:w-[68px]' : 'md:w-64'} w-64
           bg-tastelanc-surface border-r border-tastelanc-surface-light
           min-h-screen flex flex-col
           transform transition-all duration-200 ease-in-out
@@ -140,27 +141,13 @@ export default function SalesSidebar({ isOpen, onClose, collapsed, onToggleColla
               <span className="block text-xs text-tastelanc-accent">Sales CRM</span>
             </div>
           </Link>
-          <div className="flex items-center gap-1">
-            {/* Collapse toggle — desktop only */}
-            <button
-              onClick={onToggleCollapse}
-              className="hidden md:flex items-center justify-center p-1.5 rounded-lg text-gray-400 hover:bg-tastelanc-surface-light hover:text-white transition-colors"
-              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {collapsed ? (
-                <PanelLeftOpen className="w-4 h-4" />
-              ) : (
-                <PanelLeftClose className="w-4 h-4" />
-              )}
-            </button>
-            <button
-              onClick={onClose}
-              className="md:hidden text-gray-400 hover:text-white p-1"
-              aria-label="Close menu"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="md:hidden text-gray-400 hover:text-white p-1"
+            aria-label="Close menu"
+          >
+            <X className="w-6 h-6" />
+          </button>
         </div>
 
         {/* Navigation */}

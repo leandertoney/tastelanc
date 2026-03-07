@@ -33,6 +33,7 @@ function PromoterLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [user, setUser] = useState<{ email?: string; user_metadata?: { full_name?: string } } | null>(null);
 
@@ -123,38 +124,44 @@ function PromoterLayoutContent({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed ${adminMode ? 'top-10' : 'top-0'} left-0 z-50 h-full w-64 bg-tastelanc-surface border-r border-tastelanc-surface-light transform transition-transform lg:translate-x-0 ${
+        onMouseEnter={() => setSidebarCollapsed(false)}
+        onMouseLeave={() => setSidebarCollapsed(true)}
+        className={`fixed ${adminMode ? 'top-10' : 'top-0'} left-0 z-50 h-full ${sidebarCollapsed ? 'lg:w-[68px]' : 'lg:w-64'} w-64 bg-tastelanc-surface border-r border-tastelanc-surface-light transform transition-all duration-200 ease-in-out lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{ height: adminMode ? 'calc(100% - 2.5rem)' : '100%' }}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="p-4 border-b border-tastelanc-surface-light">
-            <Link href="/" className="text-xl font-bold text-tastelanc-accent">
-              TasteLanc
+          <div className={`${sidebarCollapsed ? 'lg:p-3 lg:flex lg:justify-center' : ''} p-4 border-b border-tastelanc-surface-light`}>
+            <Link href="/" className="text-xl font-bold text-tastelanc-accent" title={sidebarCollapsed ? 'TasteLanc' : undefined}>
+              {sidebarCollapsed ? <span className="hidden lg:block text-lg">T</span> : null}
+              <span className={sidebarCollapsed ? 'lg:hidden' : ''}>TasteLanc</span>
             </Link>
-            <p className="text-xs text-gray-500 mt-1">
-              {adminMode ? 'Admin Editing Mode' : 'Self-Promoter Dashboard'}
-            </p>
+            {!sidebarCollapsed && (
+              <p className="text-xs text-gray-500 mt-1">
+                {adminMode ? 'Admin Editing Mode' : 'Self-Promoter Dashboard'}
+              </p>
+            )}
           </div>
 
           {/* Profile Selector */}
-          <div className="p-4 border-b border-tastelanc-surface-light">
+          <div className={`${sidebarCollapsed ? 'lg:p-2' : 'p-4'} p-4 border-b border-tastelanc-surface-light`}>
             <button
-              onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-              className="w-full flex items-center justify-between p-3 bg-tastelanc-bg rounded-lg hover:bg-tastelanc-surface-light transition-colors"
+              onClick={() => !sidebarCollapsed && setProfileMenuOpen(!profileMenuOpen)}
+              className={`w-full flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:p-2' : ''} justify-between p-3 bg-tastelanc-bg rounded-lg hover:bg-tastelanc-surface-light transition-colors`}
               disabled={isLoading}
+              title={sidebarCollapsed ? artistName : undefined}
             >
               <div className="flex items-center gap-3">
                 {selfPromoter?.profile_image_url ? (
                   <img
                     src={selfPromoter.profile_image_url}
                     alt={artistName}
-                    className="w-8 h-8 rounded-full object-cover"
+                    className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                   />
                 ) : (
-                  <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
                     {isLoading ? (
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (
@@ -162,11 +169,11 @@ function PromoterLayoutContent({ children }: { children: React.ReactNode }) {
                     )}
                   </div>
                 )}
-                <span className="text-white text-sm font-medium truncate max-w-[120px]">
+                <span className={`text-white text-sm font-medium truncate max-w-[120px] ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
                   {isLoading ? 'Loading...' : artistName}
                 </span>
               </div>
-              {!adminMode && (
+              {!adminMode && !sidebarCollapsed && (
                 <ChevronDown
                   className={`w-4 h-4 text-gray-400 transition-transform ${
                     profileMenuOpen ? 'rotate-180' : ''
@@ -174,13 +181,13 @@ function PromoterLayoutContent({ children }: { children: React.ReactNode }) {
                 />
               )}
             </button>
-            {error && (
+            {error && !sidebarCollapsed && (
               <p className="text-xs text-red-400 mt-2 px-3">{error}</p>
             )}
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 overflow-y-auto">
+          <nav className={`flex-1 ${sidebarCollapsed ? 'lg:p-2' : ''} p-4 overflow-y-auto`}>
             <ul className="space-y-1">
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
@@ -190,14 +197,15 @@ function PromoterLayoutContent({ children }: { children: React.ReactNode }) {
                     <Link
                       href={buildNavHref(item.href)}
                       onClick={() => setSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                      title={sidebarCollapsed ? item.label : undefined}
+                      className={`flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 rounded-lg transition-colors ${
                         isActive
                           ? 'bg-purple-500 text-white'
                           : 'text-gray-400 hover:text-white hover:bg-tastelanc-surface-light'
                       }`}
                     >
-                      <Icon className="w-5 h-5" />
-                      <span>{item.label}</span>
+                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <span className={sidebarCollapsed ? 'lg:hidden' : ''}>{item.label}</span>
                     </Link>
                   </li>
                 );
@@ -206,12 +214,12 @@ function PromoterLayoutContent({ children }: { children: React.ReactNode }) {
           </nav>
 
           {/* User Info */}
-          <div className="p-4 border-t border-tastelanc-surface-light">
-            <div className="flex items-center gap-3 mb-4 px-3">
-              <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
+          <div className={`${sidebarCollapsed ? 'lg:p-2' : ''} p-4 border-t border-tastelanc-surface-light`}>
+            <div className={`flex items-center gap-3 mb-4 ${sidebarCollapsed ? 'lg:justify-center lg:px-0 lg:mb-2' : ''} px-3`}>
+              <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0" title={sidebarCollapsed ? displayName : undefined}>
                 <User className="w-4 h-4 text-white" />
               </div>
-              <div className="flex-1 min-w-0">
+              <div className={`flex-1 min-w-0 ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
                 <p className="text-sm text-white truncate">{displayName}</p>
                 <p className="text-xs text-gray-500 truncate">{user?.email}</p>
               </div>
@@ -219,27 +227,30 @@ function PromoterLayoutContent({ children }: { children: React.ReactNode }) {
             {selfPromoter?.slug && (
               <Link
                 href={`/artists/${selfPromoter.slug}`}
-                className="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors"
+                title={sidebarCollapsed ? 'View Public Page' : undefined}
+                className={`flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors`}
               >
-                <ExternalLink className="w-5 h-5" />
-                <span>View Public Page</span>
+                <ExternalLink className="w-5 h-5 flex-shrink-0" />
+                <span className={sidebarCollapsed ? 'lg:hidden' : ''}>View Public Page</span>
               </Link>
             )}
             {adminMode ? (
               <button
                 onClick={handleBackToAdmin}
-                className="w-full flex items-center gap-3 px-3 py-2 text-purple-400 hover:text-purple-300 transition-colors"
+                title={sidebarCollapsed ? 'Back to Admin' : undefined}
+                className={`w-full flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 text-purple-400 hover:text-purple-300 transition-colors`}
               >
-                <ArrowLeft className="w-5 h-5" />
-                <span>Back to Admin</span>
+                <ArrowLeft className="w-5 h-5 flex-shrink-0" />
+                <span className={sidebarCollapsed ? 'lg:hidden' : ''}>Back to Admin</span>
               </button>
             ) : (
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-red-400 transition-colors"
+                title={sidebarCollapsed ? 'Sign Out' : undefined}
+                className={`w-full flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 text-gray-400 hover:text-red-400 transition-colors`}
               >
-                <LogOut className="w-5 h-5" />
-                <span>Sign Out</span>
+                <LogOut className="w-5 h-5 flex-shrink-0" />
+                <span className={sidebarCollapsed ? 'lg:hidden' : ''}>Sign Out</span>
               </button>
             )}
           </div>
@@ -247,7 +258,7 @@ function PromoterLayoutContent({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main content */}
-      <div className={`lg:pl-64 ${adminMode ? 'pt-10' : ''}`}>
+      <div className={`lg:pl-[68px] ${adminMode ? 'pt-10' : ''}`}>
         {/* Top bar */}
         <header className="sticky top-0 z-30 bg-tastelanc-bg border-b border-tastelanc-surface-light" style={{ top: adminMode ? '2.5rem' : 0 }}>
           <div className="flex items-center justify-between px-4 py-3">

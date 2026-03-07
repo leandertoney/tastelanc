@@ -57,6 +57,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [restaurantMenuOpen, setRestaurantMenuOpen] = useState(false);
   const [user, setUser] = useState<{ email?: string; user_metadata?: { full_name?: string } } | null>(null);
 
@@ -202,37 +203,43 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed ${hasBanner ? 'top-10' : 'top-0'} left-0 z-50 h-full w-64 bg-tastelanc-surface border-r border-tastelanc-surface-light transform transition-transform lg:translate-x-0 ${
+        onMouseEnter={() => setSidebarCollapsed(false)}
+        onMouseLeave={() => setSidebarCollapsed(true)}
+        className={`fixed ${hasBanner ? 'top-10' : 'top-0'} left-0 z-50 h-full ${sidebarCollapsed ? 'lg:w-[68px]' : 'lg:w-64'} w-64 bg-tastelanc-surface border-r border-tastelanc-surface-light transform transition-all duration-200 ease-in-out lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{ height: hasBanner ? 'calc(100% - 2.5rem)' : '100%' }}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="p-4 border-b border-tastelanc-surface-light">
-            <Link href="/" className="text-xl font-bold text-tastelanc-accent">
-              TasteLanc
+          <div className={`${sidebarCollapsed ? 'lg:p-3 lg:flex lg:justify-center' : ''} p-4 border-b border-tastelanc-surface-light`}>
+            <Link href="/" className="text-xl font-bold text-tastelanc-accent" title={sidebarCollapsed ? 'TasteLanc' : undefined}>
+              {sidebarCollapsed ? <span className="hidden lg:block text-lg">T</span> : null}
+              <span className={sidebarCollapsed ? 'lg:hidden' : ''}>TasteLanc</span>
             </Link>
-            <p className="text-xs text-gray-500 mt-1">
-              {subtitleText}
-            </p>
+            {!sidebarCollapsed && (
+              <p className="text-xs text-gray-500 mt-1">
+                {subtitleText}
+              </p>
+            )}
           </div>
 
           {/* Restaurant Selector */}
-          <div className="p-4 border-b border-tastelanc-surface-light" ref={restaurantDropdownRef}>
+          <div className={`${sidebarCollapsed ? 'lg:p-2' : 'p-4'} p-4 border-b border-tastelanc-surface-light`} ref={restaurantDropdownRef}>
             <button
               onClick={() => {
-                if (showRestaurantSwitcher) {
+                if (showRestaurantSwitcher && !sidebarCollapsed) {
                   setRestaurantMenuOpen(!restaurantMenuOpen);
                 }
               }}
-              className={`w-full flex items-center justify-between p-3 bg-tastelanc-bg rounded-lg transition-colors ${
+              className={`w-full flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:p-2' : ''} justify-between p-3 bg-tastelanc-bg rounded-lg transition-colors ${
                 showRestaurantSwitcher ? 'hover:bg-tastelanc-surface-light cursor-pointer' : 'cursor-default'
               }`}
               disabled={isLoading}
+              title={sidebarCollapsed ? restaurantName : undefined}
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-tastelanc-accent rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-tastelanc-accent rounded-full flex items-center justify-center flex-shrink-0">
                   {isLoading ? (
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
@@ -241,11 +248,11 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                     </span>
                   )}
                 </div>
-                <span className="text-white text-sm font-medium truncate max-w-[120px]">
+                <span className={`text-white text-sm font-medium truncate max-w-[120px] ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
                   {isLoading ? 'Loading...' : restaurantName}
                 </span>
               </div>
-              {showRestaurantSwitcher && (
+              {showRestaurantSwitcher && !sidebarCollapsed && (
                 <ChevronDown
                   className={`w-4 h-4 text-gray-400 transition-transform ${
                     restaurantMenuOpen ? 'rotate-180' : ''
@@ -255,7 +262,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             </button>
 
             {/* Restaurant Dropdown */}
-            {restaurantMenuOpen && showRestaurantSwitcher && (
+            {restaurantMenuOpen && showRestaurantSwitcher && !sidebarCollapsed && (
               <div className="mt-2 bg-tastelanc-surface-light rounded-lg border border-gray-700 overflow-hidden">
                 {restaurants.map((r) => {
                   const isSelected = r.id === restaurant?.id;
@@ -295,7 +302,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 overflow-y-auto">
+          <nav className={`flex-1 ${sidebarCollapsed ? 'lg:p-2' : ''} p-4 overflow-y-auto`}>
             <ul className="space-y-1">
               {filteredNavItems.map((item) => {
                 const isActive = pathname === item.href;
@@ -307,16 +314,17 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                         href={buildNavHref(item.href)}
                         data-onboarding={item.href.split('/').pop() || 'overview'}
                         onClick={() => setSidebarOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors flex-1 ${
+                        title={sidebarCollapsed ? item.label : undefined}
+                        className={`flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 rounded-lg transition-colors flex-1 ${
                           isActive
                             ? 'bg-tastelanc-accent text-white'
                             : 'text-gray-400 hover:text-white hover:bg-tastelanc-surface-light'
                         }`}
                       >
-                        <Icon className="w-5 h-5" />
-                        <span>{item.label}</span>
+                        <Icon className="w-5 h-5 flex-shrink-0" />
+                        <span className={sidebarCollapsed ? 'lg:hidden' : ''}>{item.label}</span>
                       </Link>
-                      {item.hint && (
+                      {item.hint && !sidebarCollapsed && (
                         <Tooltip content={item.hint} position="right">
                           <span className="absolute right-2 opacity-0 group-hover/nav:opacity-100 transition-opacity cursor-help">
                             <HelpCircle className="w-3.5 h-3.5 text-gray-600 hover:text-gray-400" />
@@ -331,12 +339,12 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           </nav>
 
           {/* User Info */}
-          <div className="p-4 border-t border-tastelanc-surface-light">
-            <div className="flex items-center gap-3 mb-4 px-3">
-              <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
+          <div className={`${sidebarCollapsed ? 'lg:p-2' : ''} p-4 border-t border-tastelanc-surface-light`}>
+            <div className={`flex items-center gap-3 mb-4 ${sidebarCollapsed ? 'lg:justify-center lg:px-0 lg:mb-2' : ''} px-3`}>
+              <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0" title={sidebarCollapsed ? displayName : undefined}>
                 <User className="w-4 h-4 text-white" />
               </div>
-              <div className="flex-1 min-w-0">
+              <div className={`flex-1 min-w-0 ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
                 <p className="text-sm text-white truncate">{displayName}</p>
                 <p className="text-xs text-gray-500 truncate">{user?.email}</p>
               </div>
@@ -344,35 +352,39 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             {restaurant?.slug && (
               <Link
                 href={`/restaurants/${restaurant.slug}`}
-                className="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors"
+                title={sidebarCollapsed ? 'View Public Page' : undefined}
+                className={`flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors`}
               >
-                <Store className="w-5 h-5" />
-                <span>View Public Page</span>
+                <Store className="w-5 h-5 flex-shrink-0" />
+                <span className={sidebarCollapsed ? 'lg:hidden' : ''}>View Public Page</span>
               </Link>
             )}
             {adminMode ? (
               <button
                 onClick={handleBackToAdmin}
-                className="w-full flex items-center gap-3 px-3 py-2 text-amber-400 hover:text-amber-300 transition-colors"
+                title={sidebarCollapsed ? 'Back to Admin' : undefined}
+                className={`w-full flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 text-amber-400 hover:text-amber-300 transition-colors`}
               >
-                <ArrowLeft className="w-5 h-5" />
-                <span>Back to Admin</span>
+                <ArrowLeft className="w-5 h-5 flex-shrink-0" />
+                <span className={sidebarCollapsed ? 'lg:hidden' : ''}>Back to Admin</span>
               </button>
             ) : salesMode ? (
               <button
                 onClick={handleBackToSales}
-                className="w-full flex items-center gap-3 px-3 py-2 text-blue-400 hover:text-blue-300 transition-colors"
+                title={sidebarCollapsed ? 'Back to Sales' : undefined}
+                className={`w-full flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 text-blue-400 hover:text-blue-300 transition-colors`}
               >
-                <ArrowLeft className="w-5 h-5" />
-                <span>Back to Sales</span>
+                <ArrowLeft className="w-5 h-5 flex-shrink-0" />
+                <span className={sidebarCollapsed ? 'lg:hidden' : ''}>Back to Sales</span>
               </button>
             ) : (
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-red-400 transition-colors"
+                title={sidebarCollapsed ? 'Sign Out' : undefined}
+                className={`w-full flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 text-gray-400 hover:text-red-400 transition-colors`}
               >
-                <LogOut className="w-5 h-5" />
-                <span>Sign Out</span>
+                <LogOut className="w-5 h-5 flex-shrink-0" />
+                <span className={sidebarCollapsed ? 'lg:hidden' : ''}>Sign Out</span>
               </button>
             )}
           </div>
@@ -380,7 +392,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main content */}
-      <div className={`lg:pl-64 ${hasBanner ? 'pt-10' : ''}`}>
+      <div className={`lg:pl-[68px] ${hasBanner ? 'pt-10' : ''}`}>
         {/* Top bar */}
         <header className="sticky top-0 z-30 bg-tastelanc-bg border-b border-tastelanc-surface-light" style={{ top: hasBanner ? '2.5rem' : 0 }}>
           <div className="flex items-center justify-between px-4 py-3">
