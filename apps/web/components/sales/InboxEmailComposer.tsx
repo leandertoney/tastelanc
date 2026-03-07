@@ -36,10 +36,7 @@ interface InboxEmailComposerProps {
     recipientEmail?: string;
     recipientName?: string;
     subject?: string;
-    headline?: string;
     body?: string;
-    ctaText?: string;
-    ctaUrl?: string;
     attachments?: Array<{ url?: string; filename: string; size: number; contentType?: string; content_type?: string }>;
   };
   embedded?: boolean;
@@ -72,10 +69,7 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
   const [subject, setSubject] = useState(
     initialDraft?.subject || (replyTo ? (replyTo.subject.startsWith('Re: ') ? replyTo.subject : `Re: ${replyTo.subject}`) : '')
   );
-  const [headline, setHeadline] = useState(initialDraft?.headline || '');
   const [body, setBody] = useState(initialDraft?.body || '');
-  const [ctaText, setCtaText] = useState(initialDraft?.ctaText || '');
-  const [ctaUrl, setCtaUrl] = useState(initialDraft?.ctaUrl || '');
 
   // Draft
   const [currentDraftId, setCurrentDraftId] = useState<string | undefined>(initialDraftId);
@@ -119,10 +113,7 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
           recipient_email: recipientEmail || null,
           recipient_name: recipientName || null,
           subject: subject || null,
-          headline: headline || null,
           body: body || null,
-          cta_text: ctaText || null,
-          cta_url: ctaUrl || null,
           sender_email: selectedSender?.email || null,
           sender_name: selectedSender?.name || null,
           in_reply_to_message_id: replyTo?.inReplyToMessageId || null,
@@ -140,7 +131,7 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
     } finally {
       setIsSavingDraft(false);
     }
-  }, [currentDraftId, isReply, recipientEmail, recipientName, subject, headline, body, ctaText, ctaUrl, selectedSender, replyTo, attachments]);
+  }, [currentDraftId, isReply, recipientEmail, recipientName, subject, body, selectedSender, replyTo, attachments]);
 
   // Trigger auto-save on changes
   useEffect(() => {
@@ -148,7 +139,7 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
     if (!recipientEmail.trim() && !subject.trim() && !body.trim()) return;
     autoSaveTimerRef.current = setTimeout(saveDraft, 3000);
     return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
-  }, [recipientEmail, recipientName, subject, headline, body, ctaText, ctaUrl, attachments, saveDraft]);
+  }, [recipientEmail, recipientName, subject, body, attachments, saveDraft]);
 
   // Delete draft after successful send
   const deleteDraft = async () => {
@@ -191,10 +182,7 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
 
       const email = data.email;
       if (!subject) setSubject(email.subject);
-      if (!headline) setHeadline(email.headline);
       setBody(email.body);
-      if (email.ctaText) setCtaText(email.ctaText);
-      if (email.ctaUrl) setCtaUrl(email.ctaUrl);
       setSuggestedSubjects([]);
       toast.success('AI generated email content');
     } catch (error) {
@@ -282,10 +270,8 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
           recipientEmail,
           recipientName: recipientName || undefined,
           subject,
-          headline: headline || subject,
+          headline: subject,
           emailBody: body,
-          ctaText: ctaText || undefined,
-          ctaUrl: ctaUrl || undefined,
           senderName: selectedSender.name,
           senderEmail: selectedSender.email,
           ...(replyTo?.inReplyToMessageId && {
@@ -536,20 +522,6 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
             )}
           </div>
 
-          {/* Headline */}
-          <div>
-            <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
-              Headline <span className="text-gray-600">(shown in email header)</span>
-            </label>
-            <input
-              type="text"
-              value={headline}
-              onChange={(e) => setHeadline(e.target.value)}
-              placeholder="Main headline in email..."
-              className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
           {/* Body with AI enhance chips */}
           <div>
             <label className="text-xs text-gray-500 uppercase tracking-wider mb-1.5 block">Body</label>
@@ -580,34 +552,6 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
                 )}
               </div>
             )}
-          </div>
-
-          {/* CTA (optional) */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
-                CTA Text <span className="text-gray-600">(optional)</span>
-              </label>
-              <input
-                type="text"
-                value={ctaText}
-                onChange={(e) => setCtaText(e.target.value)}
-                placeholder="e.g. Schedule a Call"
-                className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
-                CTA URL <span className="text-gray-600">(optional)</span>
-              </label>
-              <input
-                type="text"
-                value={ctaUrl}
-                onChange={(e) => setCtaUrl(e.target.value)}
-                placeholder="https://..."
-                className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
           </div>
 
           {/* Attachments */}

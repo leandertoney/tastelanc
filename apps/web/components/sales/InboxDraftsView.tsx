@@ -217,10 +217,7 @@ export default function InboxDraftsView({ isAdmin, defaultSender, onDraftSent }:
                   recipientEmail: selectedDraft.recipient_email || '',
                   recipientName: selectedDraft.recipient_name || '',
                   subject: selectedDraft.subject || '',
-                  headline: selectedDraft.headline || '',
                   body: selectedDraft.body || '',
-                  ctaText: selectedDraft.cta_text || '',
-                  ctaUrl: selectedDraft.cta_url || '',
                   attachments: selectedDraft.attachments || [],
                 }}
                 replyTo={selectedDraft.draft_type === 'reply' && selectedDraft.recipient_email ? {
