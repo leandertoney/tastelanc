@@ -34,16 +34,11 @@ export async function GET(
       .from('email_sends')
       .select(`
         id,
-        campaign_id,
         status,
         sent_at,
         opened_at,
         clicked_at,
-        email_campaigns (
-          id,
-          name,
-          subject
-        )
+        subject
       `)
       .eq('recipient_email', lead.email)
       .order('sent_at', { ascending: false })

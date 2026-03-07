@@ -11,7 +11,6 @@ import {
   LogOut,
   Shield,
   CreditCard,
-  Mail,
   X,
   Briefcase,
   Lightbulb,
@@ -51,9 +50,8 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/team', icon: Users, label: 'Team', highlight: true, section: 'Team' },
   // CONTENT - Restaurant management
   { href: '/admin/restaurants', icon: Store, label: 'All Restaurants', section: 'Content' },
-  // MARKETING - Campaigns and outreach
-  { href: '/admin/email-campaigns', icon: Mail, label: 'Campaigns', highlight: true, section: 'Marketing' },
-  { href: '/admin/instagram-posts', icon: Instagram, label: 'Instagram Posts', highlight: true },
+  // MARKETING
+  { href: '/admin/instagram-posts', icon: Instagram, label: 'Instagram Posts', highlight: true, section: 'Marketing' },
   // INSIGHTS - Analytics and feedback
   { href: '/admin/analytics', icon: BarChart3, label: 'Analytics', section: 'Insights' },
   { href: '/admin/app-users', icon: Smartphone, label: 'App Users', highlight: true },
