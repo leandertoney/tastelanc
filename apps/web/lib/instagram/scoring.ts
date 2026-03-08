@@ -353,7 +353,8 @@ export async function fetchTonightCandidates(
       return false;
     })
     .map((s: any) => {
-      const detail = (s.name || '').length > 35 ? s.name.slice(0, 32) + '...' : (s.name || 'Special');
+      const descText = s.description || s.name || 'Special';
+      const detail = descText.length > 35 ? descText.slice(0, 32) + '...' : descText;
       return scoreCandidate({
         restaurant_id: s.restaurant.id,
         restaurant_name: s.restaurant.name,
