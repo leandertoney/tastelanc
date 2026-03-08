@@ -311,6 +311,28 @@ export default function InstagramPostsPage() {
             setSelectedPost(null);
             fetchPosts();
           }}
+          onPublishNow={async (post) => {
+            // Approve first if still draft
+            if (post.status === 'draft') {
+              await fetch(`/api/admin/instagram-posts/${post.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'approved' }),
+              });
+            }
+            // Trigger publish immediately
+            await fetch('/api/instagram/publish-approved', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                source: 'pg_cron',
+                market_slug: 'lancaster-pa',
+                post_slot: post.post_slot,
+              }),
+            });
+            setSelectedPost(null);
+            fetchPosts();
+          }}
         />
       )}
     </div>
@@ -515,10 +537,11 @@ function PostSlotCard({ post, slot, dateKey, generating, onClick }: {
   );
 }
 
-function PostDetailModal({ post, onClose, onStatusChange }: {
+function PostDetailModal({ post, onClose, onStatusChange, onPublishNow }: {
   post: Post;
   onClose: () => void;
   onStatusChange: (id: string, status: string) => void;
+  onPublishNow: (post: Post) => void;
 }) {
   const statusBadge =
     post.status === 'published'
@@ -615,6 +638,15 @@ function PostDetailModal({ post, onClose, onStatusChange }: {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {(post.status === 'draft' || post.status === 'approved') && (
+              <button
+                onClick={() => onPublishNow(post)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg transition-colors text-sm font-semibold"
+              >
+                <Zap className="w-4 h-4" />
+                Publish Now
+              </button>
+            )}
             {post.status === 'draft' && (
               <button
                 onClick={() => onStatusChange(post.id, 'approved')}
