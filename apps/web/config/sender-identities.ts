@@ -34,9 +34,9 @@ export const SENDER_IDENTITIES: SenderIdentity[] = [
     title: 'Business Development',
   },
   {
-    name: 'Jamie',
-    email: `jamie@${BRAND.domain}`,
-    replyEmail: `jamie@${BRAND.replyDomain}`,
+    name: 'Kush',
+    email: `kush@${BRAND.domain}`,
+    replyEmail: `kush@${BRAND.replyDomain}`,
     title: 'Partnership Manager',
   },
   {
