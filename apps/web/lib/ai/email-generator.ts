@@ -312,7 +312,7 @@ Please improve this content according to this instruction: ${instruction}
 
 Audience: ${audienceType === 'consumer' ? 'Waitlist members (consumers)' : 'Business owners/restaurant managers'}
 
-Return ONLY the improved content, nothing else. Maintain the same general structure but make the requested improvements.`;
+Return ONLY the improved content as plain text, nothing else. Do NOT wrap the output in quotation marks. Do NOT add quotes around the text. Maintain the same general structure but make the requested improvements.`;
 
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
@@ -329,7 +329,15 @@ Return ONLY the improved content, nothing else. Maintain the same general struct
     throw new Error('No response from OpenAI');
   }
 
-  return content.trim();
+  // Strip wrapping quotation marks if the model added them
+  let result = content.trim();
+  if (
+    (result.startsWith('"') && result.endsWith('"')) ||
+    (result.startsWith('\u201c') && result.endsWith('\u201d'))
+  ) {
+    result = result.slice(1, -1).trim();
+  }
+  return result;
 }
 
 // Calculate days until a date
