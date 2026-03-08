@@ -22,6 +22,7 @@ import {
   HeadphonesIcon,
   Smartphone,
   Instagram,
+  Activity,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -56,6 +57,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/analytics', icon: BarChart3, label: 'Analytics', section: 'Insights' },
   { href: '/admin/app-users', icon: Smartphone, label: 'App Users', highlight: true },
   { href: '/admin/feature-requests', icon: Lightbulb, label: 'Feature Requests', highlight: true },
+  { href: '/admin/system-health', icon: Activity, label: 'System Health', highlight: true },
   // GROWTH - Expansion
   { href: '/admin/expansion', icon: Globe, label: 'Expansion', highlight: true, section: 'Growth', superOnly: true },
 ];
