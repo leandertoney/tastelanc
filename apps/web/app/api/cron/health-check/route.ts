@@ -18,7 +18,7 @@ import { renderHealthAlertEmail, renderHealthAlertPlainText } from '@/lib/email-
 const CRON_SECRET = process.env.CRON_SECRET;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const ALERT_EMAIL = process.env.HEALTH_ALERT_EMAIL || 'leander@tastelanc.com';
+const ALERT_EMAIL = process.env.HEALTH_ALERT_EMAIL || 'leandertoney@gmail.com';
 const DASHBOARD_URL = process.env.NEXT_PUBLIC_APP_URL
   ? `${process.env.NEXT_PUBLIC_APP_URL}/admin/system-health`
   : 'https://tastelanc.com/admin/system-health';
