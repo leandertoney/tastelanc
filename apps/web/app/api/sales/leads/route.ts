@@ -253,11 +253,12 @@ export async function POST(request: Request) {
       }
     }
 
-    // If restaurant_id provided, verify it exists
+    // If restaurant_id provided, verify it exists and capture contact_name for direct contact check
+    let linkedRestaurantContactName: string | null = null;
     if (restaurant_id) {
       const { data: restaurant } = await serviceClient
         .from('restaurants')
-        .select('id')
+        .select('id, contact_name')
         .eq('id', restaurant_id)
         .single();
 
@@ -267,26 +268,38 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
+      linkedRestaurantContactName = restaurant.contact_name || null;
     }
 
     // Determine source based on linking
     const source = restaurant_id ? 'directory' : google_place_id ? 'google_places' : 'manual';
 
-    // Enforce per-rep limit on directory (direct contact) leads
+    // Enforce per-rep limit on direct contact leads only — restaurants with a named contact from the enriched scrape
     const MAX_DIRECT_CONTACT_LEADS_PER_REP = 10;
-    if (source === 'directory' && access.isSalesRep && !access.isAdmin && access.userId) {
-      const { count } = await serviceClient
+    if (source === 'directory' && linkedRestaurantContactName && access.isSalesRep && !access.isAdmin && access.userId) {
+      // Get active directory leads for this rep
+      const { data: existingLeads } = await serviceClient
         .from('business_leads')
-        .select('id', { count: 'exact', head: true })
+        .select('restaurant_id')
         .eq('assigned_to', access.userId)
         .eq('source', 'directory')
-        .in('status', ['new', 'contacted', 'interested']);
+        .in('status', ['new', 'contacted', 'interested'])
+        .not('restaurant_id', 'is', null);
 
-      if (count !== null && count >= MAX_DIRECT_CONTACT_LEADS_PER_REP) {
-        return NextResponse.json(
-          { error: `You can work up to ${MAX_DIRECT_CONTACT_LEADS_PER_REP} direct contact leads at a time. Close or convert existing ones to claim more.` },
-          { status: 429 }
-        );
+      if (existingLeads && existingLeads.length > 0) {
+        const rIds = existingLeads.map((l: { restaurant_id: string }) => l.restaurant_id);
+        const { count: directCount } = await serviceClient
+          .from('restaurants')
+          .select('id', { count: 'exact', head: true })
+          .in('id', rIds)
+          .not('contact_name', 'is', null);
+
+        if (directCount !== null && directCount >= MAX_DIRECT_CONTACT_LEADS_PER_REP) {
+          return NextResponse.json(
+            { error: `You can work up to ${MAX_DIRECT_CONTACT_LEADS_PER_REP} direct contact leads at a time. Close or convert existing ones to claim more.` },
+            { status: 429 }
+          );
+        }
       }
     }
 
