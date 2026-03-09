@@ -188,6 +188,7 @@ Important:
 - End with a clear call-to-action
 - Don't use excessive exclamation marks
 - Be genuine and authentic, not salesy
+- CRITICAL: The "body" field must NOT include the subject line, headline, or any label like "Subject:" — those are separate fields. The body must start directly with the opening line of the email (e.g. a greeting or first paragraph).
 - For B2B: Focus on their business benefits, not just features
 - CRITICAL for B2B: Never mention pricing, costs, or plans. Never say happy hours, specials, or featured placement are free — only the basic listing is. If those features are relevant, frame them as things to "explore together on a call," not as something they're already getting. The goal is a meeting, not a transaction.`;
 
