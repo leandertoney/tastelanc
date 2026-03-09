@@ -90,13 +90,15 @@ export async function getUserIdentity(
 
 /**
  * Get the list of email addresses a rep can see in inbox queries.
- * Admins see all known identities; reps see only their own (both domains).
+ * By default, both admins and reps see only their own sender identity.
+ * Pass viewAll=true (admin-only) to see all reps' conversations (team oversight mode).
  */
 export async function getRepSenderEmails(
   serviceClient: ServiceClient,
   access: AccessContext,
+  viewAll: boolean = false,
 ): Promise<string[]> {
-  if (access.isAdmin) {
+  if (access.isAdmin && viewAll) {
     return getAllSenderEmails();
   }
 

@@ -54,13 +54,15 @@ export interface InboxResponse {
 export async function fetchConversations(params?: {
   search?: string;
   filter?: 'all' | 'unread';
-  inbox?: 'crm' | 'info';
+  inbox?: 'crm' | 'info' | 'team';
+  repEmail?: string;
 }): Promise<InboxResponse> {
   const headers = await getAuthHeaders();
   const searchParams = new URLSearchParams();
   if (params?.search) searchParams.set('search', params.search);
   if (params?.filter) searchParams.set('filter', params.filter);
   if (params?.inbox) searchParams.set('inbox', params.inbox);
+  if (params?.repEmail) searchParams.set('rep_email', params.repEmail);
 
   const qs = searchParams.toString();
   const response = await fetch(`${API_BASE}/inbox${qs ? `?${qs}` : ''}`, { headers });
@@ -80,7 +82,7 @@ export async function fetchConversations(params?: {
 export async function bulkAction(params: {
   action: 'mark_read' | 'mark_unread' | 'delete';
   emails: string[];
-  inbox?: 'crm' | 'info';
+  inbox?: 'crm' | 'info' | 'team';
 }): Promise<{ success: boolean; action: string; count: number }> {
   const headers = await getAuthHeaders();
   const response = await fetch(`${API_BASE}/inbox/bulk`, {

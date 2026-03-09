@@ -100,7 +100,7 @@ function ConversationRow({
   );
 }
 
-type InboxType = 'crm' | 'info';
+type InboxType = 'crm' | 'info' | 'team';
 
 export default function InboxListView({ search }: Props) {
   const navigation = useNavigation<NavigationProp>();
@@ -201,19 +201,19 @@ export default function InboxListView({ search }: Props) {
       {/* Admin inbox switcher */}
       {isAdmin && (
         <View style={styles.inboxSwitcher}>
-          {(['crm', 'info'] as const).map(type => (
+          {(['crm', 'info', 'team'] as const).map(type => (
             <TouchableOpacity
               key={type}
               style={[styles.inboxTab, inbox === type && styles.inboxTabActive]}
               onPress={() => { setInbox(type); clearSelection(); }}
             >
               <Ionicons
-                name={type === 'crm' ? 'briefcase-outline' : 'information-circle-outline'}
+                name={type === 'crm' ? 'briefcase-outline' : type === 'info' ? 'information-circle-outline' : 'people-outline'}
                 size={16}
                 color={inbox === type ? colors.text : colors.textMuted}
               />
               <Text style={[styles.inboxTabText, inbox === type && styles.inboxTabTextActive]}>
-                {type === 'crm' ? 'CRM' : 'Info@'}
+                {type === 'crm' ? 'CRM' : type === 'info' ? 'Info@' : 'Team'}
               </Text>
             </TouchableOpacity>
           ))}

@@ -116,12 +116,11 @@ Key value propositions:
     b2b_cold_outreach: `You are a professional business development representative for ${brand.name}. You're writing cold outreach emails to restaurant owners and managers in ${brand.countyShort}, ${brand.state}.
 
 Key value propositions for restaurants:
-- Free marketing to local food lovers
-- Increase foot traffic during slow hours
-- Promote happy hours and specials effectively
-- Join a growing network of local restaurants
-- Easy-to-use platform with no upfront costs
-- Analytics and insights on customer engagement
+- Their restaurant is likely already listed on ${brand.name} — a free basic profile includes their hours, address, phone, and a photo, making them discoverable to locals searching the app
+- The goal of this email is to get a meeting or call — NOT to explain features or pricing. Keep it brief, warm, and curiosity-driven.
+- NEVER mention pricing, costs, plans, or tiers of any kind. Pricing is discussed only in meetings.
+- NEVER say that happy hours, specials, events, or featured placement are free — only the basic listing is free. Do not mention these features at all unless framed as things to "explore together."
+- The CTA should be to book a quick call or reply to learn more — not to sign up or see pricing.
 
 Tone should be professional but warm, focusing on how ${brand.name} helps THEIR business succeed.`,
 
@@ -189,7 +188,8 @@ Important:
 - End with a clear call-to-action
 - Don't use excessive exclamation marks
 - Be genuine and authentic, not salesy
-- For B2B: Focus on their business benefits, not just features`;
+- For B2B: Focus on their business benefits, not just features
+- CRITICAL for B2B: Never mention pricing, costs, or plans. Never say happy hours, specials, or featured placement are free — only the basic listing is. If those features are relevant, frame them as things to "explore together on a call," not as something they're already getting. The goal is a meeting, not a transaction.`;
 
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
@@ -400,10 +400,10 @@ export const emailPresets = {
         city: brand.countyShort,
       },
       keyPoints: [
-        'Free marketing to local food lovers',
-        'Increase visibility during happy hours',
-        `Join growing network of ${brand.countyShort} restaurants`,
-        'Easy setup, no commitment required',
+        'Your restaurant is likely already listed — claim your free profile',
+        'Help locals find you when they search for food in the area',
+        `Join the growing network of ${brand.countyShort} restaurants`,
+        'Quick 15-minute call to show you what it looks like',
       ],
     });
   },

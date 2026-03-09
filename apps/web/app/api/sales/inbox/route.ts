@@ -33,10 +33,21 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const filter = searchParams.get('filter') || 'all'; // all | unread
-    const inbox = searchParams.get('inbox') || 'crm'; // crm | info
+    const inbox = searchParams.get('inbox') || 'crm'; // crm | info | team
+    const repEmailFilter = searchParams.get('rep_email') || null; // team view: filter to one rep
 
     // Determine which sender emails this user can see
-    const repEmails = await getRepSenderEmails(serviceClient, access);
+    // team view = admin oversight mode (all reps); crm = personal inbox only
+    const isTeamView = inbox === 'team' && access.isAdmin;
+    let repEmails = await getRepSenderEmails(serviceClient, access, isTeamView);
+
+    // If team view with a specific rep filter, narrow to that rep's emails
+    if (isTeamView && repEmailFilter) {
+      const localPart = repEmailFilter.split('@')[0].toLowerCase();
+      repEmails = repEmails.filter(e =>
+        e === repEmailFilter || e.toLowerCase().startsWith(localPart + '@')
+      );
+    }
 
     if (repEmails.length === 0 && inbox !== 'info') {
       return NextResponse.json({ conversations: [] });
