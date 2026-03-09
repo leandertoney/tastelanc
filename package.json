@@ -6,7 +6,6 @@
     "packages/*"
   ],
   "scripts": {
-    "eas-build-pre-install": "node -e \"const fs=require('fs'); const p=JSON.parse(fs.readFileSync('./package.json','utf8')); p.workspaces=p.workspaces.filter(w=>!w.includes('web')); fs.writeFileSync('./package.json',JSON.stringify(p,null,2)+'\\n'); console.log('EAS: excluded apps/web from workspaces to skip sharp/netlify-cli install');\"",
     "postinstall": "npx patch-package || true",
     "dev:web": "npm run dev --workspace=@tastelanc/web",
     "dev:mobile": "npm run start --workspace=@tastelanc/mobile",
