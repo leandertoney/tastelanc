@@ -1,0 +1,20 @@
+# Exclude per-app node_modules — EAS reinstalls from root lockfile
+apps/mobile-fayetteville/node_modules
+apps/mobile/node_modules
+apps/mobile-cumberland/node_modules
+apps/web/node_modules
+packages/mobile-shared/node_modules
+packages/shared/node_modules
+
+# Exclude web app build artifacts
+apps/web/.next
+apps/web/dist
+apps/web/fayetteville-import-report.json
+
+# Exclude other apps' large assets (not needed for Fayetteville build)
+apps/mobile/assets/app-store-screenshots
+apps/mobile-cumberland/assets/app-store-screenshots
+apps/mobile-cumberland/assets/google-play
+
+# Exclude dist/build outputs from Fayetteville
+apps/mobile-fayetteville/dist
