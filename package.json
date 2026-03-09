@@ -27,5 +27,9 @@
   "overrides": {
     "react": "19.1.0",
     "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "node-addon-api": "^8.6.0",
+    "react-refresh": "^0.18.0"
   }
 }
