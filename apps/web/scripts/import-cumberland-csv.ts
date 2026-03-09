@@ -215,10 +215,10 @@ const CHAIN_PATTERNS: string[] = [
 ];
 
 // Franchise indicator patterns
+// NOTE: "inc" and "llc" removed — local small businesses frequently incorporate
+// and these suffixes don't reliably indicate a chain franchise.
 const FRANCHISE_PATTERNS = [
   /\s#\d{2,}/,               // Store numbers like #1234
-  /\bllc\b/i,                // LLC
-  /\binc\.?\b/i,             // Inc or Inc.
   /\bcorp\.?\b/i,            // Corp or Corp.
   /\bfranchise\b/i,          // Franchise
   /\bstore\s*#?\d+/i,        // Store 123, Store #123
