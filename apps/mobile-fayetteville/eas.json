@@ -33,8 +33,7 @@
       "autoIncrement": true,
       "channel": "production",
       "ios": {
-        "resourceClass": "m-medium",
-        "image": "latest"
+        "resourceClass": "m-medium"
       },
       "android": {
         "buildType": "app-bundle",
