@@ -106,6 +106,7 @@ export default function CalendarPage() {
   const [formRestaurantSearch, setFormRestaurantSearch] = useState('');
   const [showRestaurantDropdown, setShowRestaurantDropdown] = useState(false);
   const [formAssignedTo, setFormAssignedTo] = useState('');
+  const [restaurantSearchLoading, setRestaurantSearchLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
@@ -143,18 +144,6 @@ export default function CalendarPage() {
         }
       } catch { /* ignore */ }
     };
-    const fetchRestaurants = async () => {
-      try {
-        const res = await fetch('/api/sales/restaurants?limit=100');
-        if (res.ok) {
-          const data = await res.json();
-          setRestaurants((data.restaurants || []).map((r: { id: string; name: string }) => ({
-            id: r.id,
-            name: r.name,
-          })));
-        }
-      } catch { /* ignore */ }
-    };
     const fetchReps = async () => {
       try {
         const res = await fetch('/api/sales/reps');
@@ -168,9 +157,34 @@ export default function CalendarPage() {
       } catch { /* ignore */ }
     };
     fetchLeads();
-    fetchRestaurants();
     fetchReps();
   }, []);
+
+  // Search-as-you-type restaurant lookup (server-side, debounced)
+  useEffect(() => {
+    if (!formRestaurantSearch.trim() || formRestaurantId) {
+      setRestaurants([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setRestaurantSearchLoading(true);
+      try {
+        const res = await fetch(
+          `/api/sales/restaurants?search=${encodeURIComponent(formRestaurantSearch.trim())}&limit=20&active=true&skip_claimed=1`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setRestaurants((data.restaurants || []).map((r: { id: string; name: string }) => ({
+            id: r.id,
+            name: r.name,
+          })));
+        }
+      } catch { /* ignore */ } finally {
+        setRestaurantSearchLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [formRestaurantSearch, formRestaurantId]);
 
   // Calendar grid
   const calendarDays = useMemo(() => {
@@ -702,10 +716,10 @@ export default function CalendarPage() {
                   </div>
                   {showRestaurantDropdown && formRestaurantSearch && !formRestaurantId && (
                     <div className="absolute z-10 mt-1 w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg shadow-lg max-h-40 overflow-y-auto">
-                      {restaurants
-                        .filter((r) => r.name.toLowerCase().includes(formRestaurantSearch.toLowerCase()))
-                        .slice(0, 10)
-                        .map((r) => (
+                      {restaurantSearchLoading ? (
+                        <p className="px-3 py-2 text-sm text-gray-500">Searching…</p>
+                      ) : restaurants.length > 0 ? (
+                        restaurants.map((r) => (
                           <button
                             key={r.id}
                             onClick={() => {
@@ -718,8 +732,8 @@ export default function CalendarPage() {
                             <Store className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
                             {r.name}
                           </button>
-                        ))}
-                      {restaurants.filter((r) => r.name.toLowerCase().includes(formRestaurantSearch.toLowerCase())).length === 0 && (
+                        ))
+                      ) : (
                         <p className="px-3 py-2 text-sm text-gray-500">No restaurants found</p>
                       )}
                     </div>

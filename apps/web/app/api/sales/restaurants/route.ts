@@ -20,6 +20,7 @@ export async function GET(request: Request) {
     const tier = searchParams.get('tier');
     const active = searchParams.get('active');
     const hasContact = searchParams.get('has_contact');
+    const skipClaimed = searchParams.get('skip_claimed') === '1';
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '10', 10)));
     const sortBy = searchParams.get('sort_by') || 'name';
@@ -38,8 +39,9 @@ export async function GET(request: Request) {
     };
 
     // For non-admin reps: get restaurant IDs claimed by OTHER reps (hide from search)
+    // Skip this filter when skip_claimed=1 (e.g. meeting creation — linking ≠ claiming)
     let claimedRestaurantIds: string[] = [];
-    if (!access.isAdmin && access.userId) {
+    if (!access.isAdmin && !skipClaimed && access.userId) {
       const { data: claimedLeads } = await serviceClient
         .from('business_leads')
         .select('restaurant_id')
@@ -63,12 +65,15 @@ export async function GET(request: Request) {
       return q;
     };
 
+    // Normalize search for apostrophe/hyphen-tolerant matching
+    const normalizedSearch = search ? search.toLowerCase().replace(/['''\-]/g, '') : null;
+
     // Build count query with same filters
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let countQ: any = serviceClient.from('restaurants').select('id', { count: 'exact', head: true });
     countQ = applyMarketScope(countQ);
     countQ = applyClaimedFilter(countQ);
-    if (search) countQ = countQ.or(`name.ilike.%${search}%,city.ilike.%${search}%`);
+    if (search) countQ = countQ.or(`name.ilike.%${search}%,city.ilike.%${search}%,name_normalized.ilike.%${normalizedSearch}%`);
     if (active === 'true') countQ = countQ.eq('is_active', true);
     if (active === 'false') countQ = countQ.eq('is_active', false);
     if (hasContact === 'true') countQ = countQ.not('contact_name', 'is', null);
@@ -77,7 +82,7 @@ export async function GET(request: Request) {
     // Build paginated data query
     let query = serviceClient
       .from('restaurants')
-      .select('id, name, city, state, phone, website, is_active, tier_id, tiers(name), contact_name, contact_phone, contact_email, contact_title, address, zip_code, categories, market_id')
+      .select('id, name, city, state, phone, website, is_active, tier_id, tiers(name), contact_name, contact_phone, contact_email, contact_title, address, zip_code, categories, market_id, business_email')
       .order(safeSortBy, { ascending: sortDir === 'asc' })
       .range((page - 1) * limit, page * limit - 1);
 
@@ -85,7 +90,7 @@ export async function GET(request: Request) {
     query = applyClaimedFilter(query);
 
     if (search) {
-      query = query.or(`name.ilike.%${search}%,city.ilike.%${search}%`);
+      query = query.or(`name.ilike.%${search}%,city.ilike.%${search}%,name_normalized.ilike.%${normalizedSearch}%`);
     }
 
     if (active === 'true') {
