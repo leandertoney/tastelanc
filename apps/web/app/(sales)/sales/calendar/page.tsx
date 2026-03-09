@@ -52,6 +52,8 @@ interface Meeting {
 interface LeadOption {
   id: string;
   business_name: string;
+  restaurant_id: string | null;
+  restaurant_name: string | null;
 }
 
 interface RestaurantOption {
@@ -171,9 +173,11 @@ export default function CalendarPage() {
             seen.add(l.id);
             return true;
           });
-          setLeads(unique.map((l: { id: string; business_name: string }) => ({
+          setLeads(unique.map((l: { id: string; business_name: string; restaurant_id?: string | null; restaurants?: { name: string } | null }) => ({
             id: l.id,
             business_name: l.business_name,
+            restaurant_id: l.restaurant_id || null,
+            restaurant_name: l.restaurants?.name || null,
           })));
         }
       } catch { /* ignore */ } finally {
@@ -741,6 +745,11 @@ export default function CalendarPage() {
                               setFormLeadId(l.id);
                               setFormLeadSearch(l.business_name);
                               setShowLeadDropdown(false);
+                              // Auto-link restaurant if lead has one
+                              if (l.restaurant_id && l.restaurant_name) {
+                                setFormRestaurantId(l.restaurant_id);
+                                setFormRestaurantSearch(l.restaurant_name);
+                              }
                             }}
                             className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-tastelanc-surface-light hover:text-white transition-colors flex items-center gap-2"
                           >

@@ -48,10 +48,10 @@ export async function GET(request: Request) {
     if (search) countQ = countQ.or(`business_name.ilike.%${search}%,contact_name.ilike.%${search}%,email.ilike.%${search}%`);
     const { count: totalCount } = await countQ;
 
-    // Build paginated query
+    // Build paginated query — always join restaurants so callers can use restaurant name
     let query = serviceClient
       .from('business_leads')
-      .select('*')
+      .select('*, restaurants(id, name)')
       .order(safeSortBy, { ascending: sortDir === 'asc' })
       .range((page - 1) * limit, page * limit - 1);
 
