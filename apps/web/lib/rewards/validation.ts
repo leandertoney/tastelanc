@@ -6,10 +6,8 @@ export const RATE_LIMITS: Record<RewardActionType, { limit: number; period: 'day
   trivia: { limit: 1, period: 'day' },
   checkin: { limit: 1, period: 'per_entity' }, // 1 per restaurant per day
   review: { limit: 1, period: 'ever' }, // 1 per restaurant ever
-  photo: { limit: 3, period: 'per_entity' }, // 3 per restaurant per day
-  share: { limit: 1, period: 'per_entity' }, // 1 per restaurant per day
   event: { limit: 1, period: 'per_entity' }, // 1 per event
-  referral: { limit: 1, period: 'per_entity' }, // 1 per referred user
+  video_recommendation: { limit: 1, period: 'per_entity' }, // 1 per restaurant per day
 };
 
 export interface ValidationResult {
@@ -88,47 +86,6 @@ export async function validateRewardAction(
       return { isValid: true };
     }
 
-    case 'photo': {
-      if (!restaurantId) {
-        return { isValid: false, reason: 'Restaurant ID is required for photo uploads' };
-      }
-
-      // Check how many photos user uploaded to this restaurant today
-      const { count } = await supabase
-        .from('point_transactions')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .eq('action_type', 'photo')
-        .eq('restaurant_id', restaurantId)
-        .gte('created_at', `${today}T00:00:00`);
-
-      if (count && count >= rateLimit.limit) {
-        return { isValid: false, reason: 'You have reached the maximum photo uploads for this restaurant today' };
-      }
-      return { isValid: true };
-    }
-
-    case 'share': {
-      if (!restaurantId) {
-        return { isValid: false, reason: 'Restaurant ID is required for social shares' };
-      }
-
-      // Check if user already shared this restaurant today
-      const { data: existing } = await supabase
-        .from('point_transactions')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('action_type', 'share')
-        .eq('restaurant_id', restaurantId)
-        .gte('created_at', `${today}T00:00:00`)
-        .single();
-
-      if (existing) {
-        return { isValid: false, reason: 'You have already shared this restaurant today' };
-      }
-      return { isValid: true };
-    }
-
     case 'event': {
       const eventId = metadata?.event_id as string;
       if (!eventId) {
@@ -150,23 +107,23 @@ export async function validateRewardAction(
       return { isValid: true };
     }
 
-    case 'referral': {
-      const referredUserId = metadata?.referred_user_id as string;
-      if (!referredUserId) {
-        return { isValid: false, reason: 'Referred user ID is required' };
+    case 'video_recommendation': {
+      if (!restaurantId) {
+        return { isValid: false, reason: 'Restaurant ID is required for video recommendations' };
       }
 
-      // Check if referral already credited
-      const { data: existing } = await supabase
+      // Check if user already posted a video recommendation for this restaurant today
+      const { data: existingVideo } = await supabase
         .from('point_transactions')
         .select('id')
         .eq('user_id', userId)
-        .eq('action_type', 'referral')
-        .contains('metadata', { referred_user_id: referredUserId })
+        .eq('action_type', 'video_recommendation')
+        .eq('restaurant_id', restaurantId)
+        .gte('created_at', `${today}T00:00:00`)
         .single();
 
-      if (existing) {
-        return { isValid: false, reason: 'You have already received points for this referral' };
+      if (existingVideo) {
+        return { isValid: false, reason: 'You have already earned points for a video recommendation at this restaurant today' };
       }
       return { isValid: true };
     }

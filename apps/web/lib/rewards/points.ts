@@ -5,14 +5,12 @@ export const BASE_POINTS: Record<RewardActionType, number> = {
   trivia: 1, // DEFERRED: Daily trivia/challenge is "Coming Soon"
   checkin: 5,
   review: 5,
-  photo: 3,
-  share: 3,
   event: 5,
-  referral: 20,
+  video_recommendation: 15,
 };
 
 // Actions that are currently active (excludes deferred features)
-export const ACTIVE_ACTIONS: RewardActionType[] = ['checkin', 'review', 'photo', 'share', 'event', 'referral'];
+export const ACTIVE_ACTIONS: RewardActionType[] = ['checkin', 'review', 'event', 'video_recommendation'];
 
 // Premium multiplier (2.5x for premium users)
 export const PREMIUM_MULTIPLIER = 2.5;
@@ -22,10 +20,8 @@ export const ACTION_DISPLAY_NAMES: Record<RewardActionType, string> = {
   trivia: 'Daily Trivia',
   checkin: 'Restaurant Check-in',
   review: 'Leave a Review',
-  photo: 'Upload a Photo',
-  share: 'Share to Social Media',
   event: 'Attend Event/Special',
-  referral: 'Referral Sign-up',
+  video_recommendation: 'Video Recommendation',
 };
 
 /**

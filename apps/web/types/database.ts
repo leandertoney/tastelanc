@@ -349,7 +349,7 @@ export interface ConsumerSubscription {
 }
 
 // Rewards System Types
-export type RewardActionType = 'trivia' | 'checkin' | 'review' | 'photo' | 'share' | 'event' | 'referral';
+export type RewardActionType = 'trivia' | 'checkin' | 'review' | 'event' | 'video_recommendation';
 
 export interface UserPoints {
   id: string;
