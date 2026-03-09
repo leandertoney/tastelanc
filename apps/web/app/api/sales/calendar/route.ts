@@ -50,8 +50,15 @@ export async function GET(request: Request) {
       } else {
         query = query.in('market_id', access.marketIds);
       }
+    } else if (access.marketIds && access.marketIds.length > 0) {
+      // Sales rep — all meetings in their market (so they can attend for support/practice)
+      if (access.marketIds.length === 1) {
+        query = query.eq('market_id', access.marketIds[0]);
+      } else {
+        query = query.in('market_id', access.marketIds);
+      }
     } else {
-      // Sales rep — own meetings only (created by or assigned to them)
+      // Fallback: own meetings only if no market assigned
       query = query.or(`created_by.eq.${access.userId},assigned_to.eq.${access.userId}`);
     }
 
