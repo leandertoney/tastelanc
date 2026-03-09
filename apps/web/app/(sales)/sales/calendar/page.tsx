@@ -18,6 +18,7 @@ import {
   Store,
   Search,
   User,
+  UserCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Card, Tooltip } from '@/components/ui';
@@ -33,7 +34,9 @@ interface Meeting {
   lead_id: string | null;
   restaurant_id: string | null;
   created_by: string;
+  assigned_to: string | null;
   creator_name: string | null;
+  assigned_to_name: string | null;
   created_at: string;
   business_leads: {
     id: string;
@@ -54,6 +57,12 @@ interface LeadOption {
 interface RestaurantOption {
   id: string;
   name: string;
+}
+
+interface SalesRepOption {
+  id: string;
+  name: string;
+  email: string;
 }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -78,6 +87,8 @@ export default function CalendarPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [leads, setLeads] = useState<LeadOption[]>([]);
   const [restaurants, setRestaurants] = useState<RestaurantOption[]>([]);
+  const [salesReps, setSalesReps] = useState<SalesRepOption[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -94,6 +105,7 @@ export default function CalendarPage() {
   const [formRestaurantId, setFormRestaurantId] = useState('');
   const [formRestaurantSearch, setFormRestaurantSearch] = useState('');
   const [showRestaurantDropdown, setShowRestaurantDropdown] = useState(false);
+  const [formAssignedTo, setFormAssignedTo] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
@@ -117,7 +129,7 @@ export default function CalendarPage() {
     fetchMeetings();
   }, [fetchMeetings]);
 
-  // Fetch leads and restaurants for dropdowns (once)
+  // Fetch leads, restaurants, and sales reps for dropdowns (once)
   useEffect(() => {
     const fetchLeads = async () => {
       try {
@@ -143,8 +155,21 @@ export default function CalendarPage() {
         }
       } catch { /* ignore */ }
     };
+    const fetchReps = async () => {
+      try {
+        const res = await fetch('/api/sales/reps');
+        if (res.ok) {
+          const data = await res.json();
+          setSalesReps(data.reps || []);
+          setCurrentUserId(data.currentUserId || '');
+          // Default assign to self
+          setFormAssignedTo(data.currentUserId || '');
+        }
+      } catch { /* ignore */ }
+    };
     fetchLeads();
     fetchRestaurants();
+    fetchReps();
   }, []);
 
   // Calendar grid
@@ -155,7 +180,6 @@ export default function CalendarPage() {
 
     const days: Array<{ date: number; month: 'prev' | 'current' | 'next'; dateStr: string }> = [];
 
-    // Previous month days
     for (let i = firstDay - 1; i >= 0; i--) {
       const d = daysInPrevMonth - i;
       const m = currentMonth === 0 ? 12 : currentMonth;
@@ -163,7 +187,6 @@ export default function CalendarPage() {
       days.push({ date: d, month: 'prev', dateStr: `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}` });
     }
 
-    // Current month days
     for (let i = 1; i <= daysInMonth; i++) {
       days.push({
         date: i,
@@ -172,7 +195,6 @@ export default function CalendarPage() {
       });
     }
 
-    // Next month days to fill grid
     const remaining = 42 - days.length;
     for (let i = 1; i <= remaining; i++) {
       const m = currentMonth === 11 ? 1 : currentMonth + 2;
@@ -183,7 +205,6 @@ export default function CalendarPage() {
     return days;
   }, [currentMonth, currentYear]);
 
-  // Meetings grouped by date
   const meetingsByDate = useMemo(() => {
     const map: Record<string, Meeting[]> = {};
     for (const m of meetings) {
@@ -197,21 +218,13 @@ export default function CalendarPage() {
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
   const prevMonth = () => {
-    if (currentMonth === 0) {
-      setCurrentMonth(11);
-      setCurrentYear((y) => y - 1);
-    } else {
-      setCurrentMonth((m) => m - 1);
-    }
+    if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear((y) => y - 1); }
+    else setCurrentMonth((m) => m - 1);
   };
 
   const nextMonth = () => {
-    if (currentMonth === 11) {
-      setCurrentMonth(0);
-      setCurrentYear((y) => y + 1);
-    } else {
-      setCurrentMonth((m) => m + 1);
-    }
+    if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear((y) => y + 1); }
+    else setCurrentMonth((m) => m + 1);
   };
 
   const goToToday = () => {
@@ -231,6 +244,7 @@ export default function CalendarPage() {
     setFormRestaurantId('');
     setFormRestaurantSearch('');
     setShowRestaurantDropdown(false);
+    setFormAssignedTo(currentUserId); // default to self
     setShowModal(true);
   };
 
@@ -246,6 +260,7 @@ export default function CalendarPage() {
     setFormRestaurantId(meeting.restaurant_id || '');
     setFormRestaurantSearch(meeting.restaurants?.name || '');
     setShowRestaurantDropdown(false);
+    setFormAssignedTo(meeting.assigned_to || '');
     setShowModal(true);
   };
 
@@ -264,6 +279,7 @@ export default function CalendarPage() {
         end_time: formEndTime || null,
         lead_id: formLeadId || null,
         restaurant_id: formRestaurantId || null,
+        assigned_to: formAssignedTo || null,
       };
 
       const url = editingMeeting
@@ -281,9 +297,29 @@ export default function CalendarPage() {
         throw new Error(data.error || 'Failed to save');
       }
 
-      toast.success(editingMeeting ? 'Meeting updated' : 'Meeting created');
+      const wasNewMeeting = !editingMeeting;
+      const hadAssignee = !!formAssignedTo;
+      const hadRestaurant = !!formRestaurantId;
+
+      toast.success(
+        editingMeeting
+          ? 'Meeting updated'
+          : hadAssignee && hadRestaurant && !formLeadId
+          ? 'Meeting created and lead auto-assigned'
+          : 'Meeting created'
+      );
       setShowModal(false);
       fetchMeetings();
+
+      // If a new meeting was created with an assignment, nudge user to check leads
+      if (wasNewMeeting && hadAssignee && hadRestaurant) {
+        setTimeout(() => {
+          toast('Lead created and assigned', {
+            description: 'Check the Leads tab to see the new lead.',
+            action: { label: 'View Leads', onClick: () => window.location.href = '/sales/leads' },
+          });
+        }, 800);
+      }
     } catch (error) {
       console.error('Save error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to save meeting');
@@ -304,7 +340,6 @@ export default function CalendarPage() {
     }
   };
 
-  // Meetings for selected date (sidebar)
   const selectedDateMeetings = selectedDate ? meetingsByDate[selectedDate] || [] : [];
 
   return (
@@ -318,7 +353,7 @@ export default function CalendarPage() {
           </h1>
           <div className="flex items-center gap-2 mt-1">
             <p className="text-gray-400">Schedule and track meetings</p>
-            <Tooltip content="Click any date to add a meeting. Link meetings to leads to keep your pipeline organized. Click the + button or any calendar date to get started." position="bottom">
+            <Tooltip content="Click any date to add a meeting. Assign meetings to team members to auto-create leads. Double-click a date or use + to get started." position="bottom">
               <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
             </Tooltip>
           </div>
@@ -364,7 +399,6 @@ export default function CalendarPage() {
             </div>
           ) : (
             <>
-              {/* Day headers */}
               <div className="grid grid-cols-7 mb-2">
                 {DAYS.map((day) => (
                   <div key={day} className="text-center text-xs font-semibold text-gray-500 uppercase tracking-wider py-2">
@@ -373,7 +407,6 @@ export default function CalendarPage() {
                 ))}
               </div>
 
-              {/* Calendar cells */}
               <div className="grid grid-cols-7 gap-px bg-tastelanc-surface-light rounded-lg overflow-hidden">
                 {calendarDays.map((day, idx) => {
                   const dayMeetings = meetingsByDate[day.dateStr] || [];
@@ -383,9 +416,7 @@ export default function CalendarPage() {
                   return (
                     <button
                       key={idx}
-                      onClick={() => {
-                        setSelectedDate(day.dateStr);
-                      }}
+                      onClick={() => setSelectedDate(day.dateStr)}
                       onDoubleClick={() => openCreateModal(day.dateStr)}
                       className={`min-h-[80px] p-1.5 text-left transition-colors relative ${
                         day.month === 'current'
@@ -405,15 +436,11 @@ export default function CalendarPage() {
                         {day.date}
                       </span>
 
-                      {/* Meeting indicators */}
                       <div className="mt-0.5 space-y-0.5">
                         {dayMeetings.slice(0, 2).map((m) => (
                           <div
                             key={m.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openEditModal(m);
-                            }}
+                            onClick={(e) => { e.stopPropagation(); openEditModal(m); }}
                             className={`text-[10px] leading-tight px-1 py-0.5 rounded truncate cursor-pointer transition-colors ${
                               m.restaurants && !m.business_leads
                                 ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30'
@@ -444,9 +471,7 @@ export default function CalendarPage() {
               <h3 className="text-sm font-semibold text-white">
                 {selectedDate
                   ? new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      month: 'long',
-                      day: 'numeric',
+                      weekday: 'long', month: 'long', day: 'numeric',
                     })
                   : 'Select a day'}
               </h3>
@@ -484,6 +509,12 @@ export default function CalendarPage() {
                           {formatTime(m.start_time)}
                           {m.end_time ? ` – ${formatTime(m.end_time)}` : ''}
                         </span>
+                      </div>
+                    )}
+                    {m.assigned_to_name && (
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <UserCheck className="w-3 h-3 text-purple-400" />
+                        <span className="text-xs text-purple-400">{m.assigned_to_name}</span>
                       </div>
                     )}
                     {m.business_leads && (
@@ -598,6 +629,34 @@ export default function CalendarPage() {
                   </div>
                 </div>
 
+                {/* Assign To — full width, prominent */}
+                <div className="md:col-span-2">
+                  <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
+                    Assign To <span className="text-gray-600 normal-case">(creates a lead for this rep)</span>
+                  </label>
+                  <div className="relative">
+                    <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <select
+                      value={formAssignedTo}
+                      onChange={(e) => setFormAssignedTo(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent appearance-none"
+                    >
+                      <option value="">Unassigned</option>
+                      {salesReps.map((rep) => (
+                        <option key={rep.id} value={rep.id}>
+                          {rep.name}{rep.id === currentUserId ? ' (me)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {formAssignedTo && formRestaurantId && !formLeadId && (
+                    <p className="mt-1.5 text-xs text-purple-400 flex items-center gap-1">
+                      <UserCheck className="w-3 h-3" />
+                      A lead will be auto-created for this restaurant and assigned to this rep
+                    </p>
+                  )}
+                </div>
+
                 <div>
                   <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
                     Link to Lead <span className="text-gray-600">(optional)</span>
@@ -626,9 +685,7 @@ export default function CalendarPage() {
                       onChange={(e) => {
                         setFormRestaurantSearch(e.target.value);
                         setShowRestaurantDropdown(true);
-                        if (!e.target.value) {
-                          setFormRestaurantId('');
-                        }
+                        if (!e.target.value) setFormRestaurantId('');
                       }}
                       onFocus={() => setShowRestaurantDropdown(true)}
                       placeholder="Search restaurants..."

@@ -20,7 +20,7 @@ export async function GET(request: Request) {
 
     let query = serviceClient
       .from('sales_meetings')
-      .select('*, business_leads(id, business_name, contact_name), restaurants(id, name)')
+      .select('*, business_leads(id, business_name, contact_name), restaurants(id, name), assigned_to')
       .order('meeting_date', { ascending: true })
       .order('start_time', { ascending: true });
 
@@ -51,8 +51,8 @@ export async function GET(request: Request) {
         query = query.in('market_id', access.marketIds);
       }
     } else {
-      // Sales rep — own meetings only
-      query = query.eq('created_by', access.userId);
+      // Sales rep — own meetings only (created by or assigned to them)
+      query = query.or(`created_by.eq.${access.userId},assigned_to.eq.${access.userId}`);
     }
 
     const { data: meetings, error } = await query;
@@ -62,21 +62,22 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch meetings' }, { status: 500 });
     }
 
-    // Resolve creator names from sales_reps
-    const creatorIds = Array.from(new Set((meetings || []).map((m: { created_by: string }) => m.created_by).filter(Boolean)));
-    const creatorNameMap: Record<string, string> = {};
-    if (creatorIds.length > 0) {
+    // Resolve user names (creators + assignees) from sales_reps then profiles
+    const allUserIds = Array.from(new Set(
+      (meetings || []).flatMap((m: { created_by: string; assigned_to: string | null }) =>
+        [m.created_by, m.assigned_to].filter(Boolean) as string[]
+      )
+    ));
+    const nameMap: Record<string, string> = {};
+    if (allUserIds.length > 0) {
       const { data: reps } = await serviceClient
         .from('sales_reps')
         .select('id, name')
-        .in('id', creatorIds);
+        .in('id', allUserIds);
       if (reps) {
-        for (const r of reps) {
-          creatorNameMap[r.id] = r.name;
-        }
+        for (const r of reps) nameMap[r.id] = r.name;
       }
-      // Fallback to profiles for anyone not in sales_reps
-      const missingIds = creatorIds.filter(id => !creatorNameMap[id]);
+      const missingIds = allUserIds.filter(id => !nameMap[id]);
       if (missingIds.length > 0) {
         const { data: profiles } = await serviceClient
           .from('profiles')
@@ -84,15 +85,16 @@ export async function GET(request: Request) {
           .in('id', missingIds);
         if (profiles) {
           for (const p of profiles) {
-            creatorNameMap[p.id] = p.display_name || p.email || 'Unknown';
+            nameMap[p.id] = p.display_name || p.email || 'Unknown';
           }
         }
       }
     }
 
-    const enrichedMeetings = (meetings || []).map((m: { created_by: string; [key: string]: unknown }) => ({
+    const enrichedMeetings = (meetings || []).map((m: { created_by: string; assigned_to: string | null; [key: string]: unknown }) => ({
       ...m,
-      creator_name: creatorNameMap[m.created_by] || null,
+      creator_name: nameMap[m.created_by] || null,
+      assigned_to_name: m.assigned_to ? (nameMap[m.assigned_to] || null) : null,
     }));
 
     return NextResponse.json({ meetings: enrichedMeetings });
@@ -115,7 +117,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { title, description, meeting_date, start_time, end_time, lead_id, restaurant_id } = body;
+    const { title, description, meeting_date, start_time, end_time, lead_id, restaurant_id, assigned_to } = body;
 
     if (!title || !title.trim()) {
       return NextResponse.json(
@@ -150,6 +152,57 @@ export async function POST(request: Request) {
       resolvedMarketId = market?.id || null;
     }
 
+    // Auto-lead creation: when a meeting is assigned to a rep, ensure a lead exists
+    let resolvedLeadId: string | null = lead_id || null;
+    if (assigned_to) {
+      if (lead_id) {
+        // Lead already exists — make sure it's assigned to this rep
+        await serviceClient
+          .from('business_leads')
+          .update({ assigned_to, updated_at: new Date().toISOString() })
+          .eq('id', lead_id);
+      } else if (restaurant_id) {
+        // Check if a lead already exists for this restaurant
+        const { data: existingLead } = await serviceClient
+          .from('business_leads')
+          .select('id')
+          .eq('restaurant_id', restaurant_id)
+          .maybeSingle();
+
+        if (existingLead) {
+          // Assign the existing lead to the rep
+          resolvedLeadId = existingLead.id;
+          await serviceClient
+            .from('business_leads')
+            .update({ assigned_to, updated_at: new Date().toISOString() })
+            .eq('id', existingLead.id);
+        } else {
+          // Fetch the restaurant name for the lead
+          const { data: restaurant } = await serviceClient
+            .from('restaurants')
+            .select('name')
+            .eq('id', restaurant_id)
+            .single();
+
+          // Create a new lead for this restaurant, assigned to the rep
+          const { data: newLead } = await serviceClient
+            .from('business_leads')
+            .insert({
+              business_name: restaurant?.name || title.trim(),
+              restaurant_id,
+              assigned_to,
+              source: 'meeting',
+              status: 'new',
+              market_id: resolvedMarketId,
+            })
+            .select('id')
+            .single();
+
+          if (newLead) resolvedLeadId = newLead.id;
+        }
+      }
+    }
+
     const { data: meeting, error } = await serviceClient
       .from('sales_meetings')
       .insert({
@@ -158,12 +211,13 @@ export async function POST(request: Request) {
         meeting_date,
         start_time: start_time || null,
         end_time: end_time || null,
-        lead_id: lead_id || null,
+        lead_id: resolvedLeadId,
         restaurant_id: restaurant_id || null,
         created_by: access.userId,
+        assigned_to: assigned_to || null,
         market_id: resolvedMarketId,
       })
-      .select('*, business_leads(id, business_name, contact_name), restaurants(id, name)')
+      .select('*, business_leads(id, business_name, contact_name), restaurants(id, name), assigned_to')
       .single();
 
     if (error) {

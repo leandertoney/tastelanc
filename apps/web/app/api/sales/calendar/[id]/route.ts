@@ -20,22 +20,14 @@ export async function PUT(
 
     const serviceClient = createServiceRoleClient();
     const body = await request.json();
-    const { title, description, meeting_date, start_time, end_time, lead_id, restaurant_id } = body;
+    const { title, description, meeting_date, start_time, end_time, lead_id, restaurant_id, assigned_to } = body;
 
-    // Validate title if provided
     if (title !== undefined && (!title || !title.trim())) {
-      return NextResponse.json(
-        { error: 'title cannot be empty' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'title cannot be empty' }, { status: 400 });
     }
 
-    // Validate meeting_date if provided
     if (meeting_date !== undefined && (!meeting_date || isNaN(Date.parse(meeting_date)))) {
-      return NextResponse.json(
-        { error: 'Invalid meeting_date (use YYYY-MM-DD)' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid meeting_date (use YYYY-MM-DD)' }, { status: 400 });
     }
 
     const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -46,13 +38,21 @@ export async function PUT(
     if (end_time !== undefined) updateData.end_time = end_time || null;
     if (lead_id !== undefined) updateData.lead_id = lead_id || null;
     if (restaurant_id !== undefined) updateData.restaurant_id = restaurant_id || null;
+    if (assigned_to !== undefined) updateData.assigned_to = assigned_to || null;
+
+    // Sync the linked lead's assigned_to when assignment changes
+    if (assigned_to && lead_id) {
+      await serviceClient
+        .from('business_leads')
+        .update({ assigned_to, updated_at: new Date().toISOString() })
+        .eq('id', lead_id);
+    }
 
     let query = serviceClient
       .from('sales_meetings')
       .update(updateData)
       .eq('id', id);
 
-    // Scope: super_admin/co_founder can update any, market_admin can update their market's, sales reps only own
     if (access.isSuperAdmin) {
       // No restriction
     } else if (access.isMarketAdmin && access.marketIds) {
@@ -62,7 +62,7 @@ export async function PUT(
     }
 
     const { data: meeting, error } = await query
-      .select('*, business_leads(id, business_name, contact_name), restaurants(id, name)')
+      .select('*, business_leads(id, business_name, contact_name), restaurants(id, name), assigned_to')
       .maybeSingle();
 
     if (error) {
@@ -99,7 +99,6 @@ export async function DELETE(
 
     const serviceClient = createServiceRoleClient();
 
-    // First verify the meeting exists and the user has access
     let checkQuery = serviceClient
       .from('sales_meetings')
       .select('id')
