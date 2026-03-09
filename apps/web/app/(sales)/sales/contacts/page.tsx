@@ -91,13 +91,23 @@ export default function SalesContactsPage() {
     }
   };
 
-  const handleMarkRead = (contactId: string) => {
-    // Mark as read locally (no API endpoint yet — visual only)
+  const handleMarkRead = async (contactId: string) => {
+    const readAt = new Date().toISOString();
+    // Optimistic update
     setContacts((prev) =>
       prev.map((c) =>
-        c.id === contactId && !c.read_at ? { ...c, read_at: new Date().toISOString() } : c
+        c.id === contactId && !c.read_at ? { ...c, read_at: readAt } : c
       )
     );
+    try {
+      await fetch(`/api/sales/contacts/${contactId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ read_at: readAt }),
+      });
+    } catch {
+      // Non-critical — UI already updated
+    }
   };
 
   const handleBulkConvert = async () => {

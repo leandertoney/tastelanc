@@ -21,6 +21,15 @@ export async function GET() {
       .select('*')
       .order('created_at', { ascending: false });
 
+    // Market scoping — each user only sees contacts from their market(s)
+    if (access.marketIds !== null && access.marketIds.length > 0) {
+      if (access.marketIds.length === 1) {
+        query = query.eq('market_id', access.marketIds[0]);
+      } else {
+        query = query.in('market_id', access.marketIds);
+      }
+    }
+
     // Sales reps only see inquiries from 2026-02-28 onward (pre-existing ones are admin-only)
     if (!access.isAdmin) {
       query = query.gte('created_at', '2026-02-28T00:00:00Z');

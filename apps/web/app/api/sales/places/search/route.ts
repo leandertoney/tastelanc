@@ -40,13 +40,34 @@ export async function GET(request: Request) {
     const serviceClient = createServiceRoleClient();
     const results: SearchResult[] = [];
 
-    // 1. Search existing restaurant directory first
-    const { data: directoryResults } = await serviceClient
+    // Resolve market location for context-aware Google Places search
+    let marketLocation = 'Lancaster PA'; // fallback default
+    if (access.marketIds && access.marketIds.length > 0) {
+      const { data: market } = await serviceClient
+        .from('markets')
+        .select('name, county, state')
+        .eq('id', access.marketIds[0])
+        .single();
+      if (market) {
+        marketLocation = `${market.county} ${market.state}`;
+      }
+    }
+
+    // 1. Search existing restaurant directory first (scoped to user's market)
+    let dirQuery = serviceClient
       .from('restaurants')
       .select('id, name, address, city, state, zip_code, phone, website, google_place_id, categories, is_active, tiers(name)')
       .ilike('name', `%${query}%`)
       .order('name', { ascending: true })
       .limit(5);
+    if (access.marketIds !== null && access.marketIds.length > 0) {
+      if (access.marketIds.length === 1) {
+        dirQuery = dirQuery.eq('market_id', access.marketIds[0]);
+      } else {
+        dirQuery = dirQuery.in('market_id', access.marketIds);
+      }
+    }
+    const { data: directoryResults } = await dirQuery;
 
     const directoryPlaceIds = new Set<string>();
 
@@ -87,7 +108,7 @@ export async function GET(request: Request) {
               'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.addressComponents,places.types',
             },
             body: JSON.stringify({
-              textQuery: `${query} Lancaster PA`,
+              textQuery: `${query} ${marketLocation}`,
               pageSize: remaining + 3, // fetch extra to account for deduplication
             }),
           });

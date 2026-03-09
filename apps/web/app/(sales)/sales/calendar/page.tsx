@@ -102,6 +102,9 @@ export default function CalendarPage() {
   const [formStartTime, setFormStartTime] = useState('');
   const [formEndTime, setFormEndTime] = useState('');
   const [formLeadId, setFormLeadId] = useState('');
+  const [formLeadSearch, setFormLeadSearch] = useState('');
+  const [showLeadDropdown, setShowLeadDropdown] = useState(false);
+  const [leadSearchLoading, setLeadSearchLoading] = useState(false);
   const [formRestaurantId, setFormRestaurantId] = useState('');
   const [formRestaurantSearch, setFormRestaurantSearch] = useState('');
   const [showRestaurantDropdown, setShowRestaurantDropdown] = useState(false);
@@ -130,20 +133,8 @@ export default function CalendarPage() {
     fetchMeetings();
   }, [fetchMeetings]);
 
-  // Fetch leads, restaurants, and sales reps for dropdowns (once)
+  // Fetch sales reps for dropdown (once on mount)
   useEffect(() => {
-    const fetchLeads = async () => {
-      try {
-        const res = await fetch('/api/sales/leads?limit=200');
-        if (res.ok) {
-          const data = await res.json();
-          setLeads((data.leads || []).map((l: { id: string; business_name: string }) => ({
-            id: l.id,
-            business_name: l.business_name,
-          })));
-        }
-      } catch { /* ignore */ }
-    };
     const fetchReps = async () => {
       try {
         const res = await fetch('/api/sales/reps');
@@ -156,9 +147,41 @@ export default function CalendarPage() {
         }
       } catch { /* ignore */ }
     };
-    fetchLeads();
     fetchReps();
   }, []);
+
+  // Search-as-you-type lead lookup (debounced)
+  useEffect(() => {
+    if (!formLeadSearch.trim() || formLeadId) {
+      setLeads([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setLeadSearchLoading(true);
+      try {
+        const res = await fetch(
+          `/api/sales/leads?search=${encodeURIComponent(formLeadSearch.trim())}&limit=20`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          // Deduplicate by id in case of DB duplicates
+          const seen = new Set<string>();
+          const unique = (data.leads || []).filter((l: { id: string }) => {
+            if (seen.has(l.id)) return false;
+            seen.add(l.id);
+            return true;
+          });
+          setLeads(unique.map((l: { id: string; business_name: string }) => ({
+            id: l.id,
+            business_name: l.business_name,
+          })));
+        }
+      } catch { /* ignore */ } finally {
+        setLeadSearchLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [formLeadSearch, formLeadId]);
 
   // Search-as-you-type restaurant lookup (server-side, debounced)
   useEffect(() => {
@@ -170,7 +193,7 @@ export default function CalendarPage() {
       setRestaurantSearchLoading(true);
       try {
         const res = await fetch(
-          `/api/sales/restaurants?search=${encodeURIComponent(formRestaurantSearch.trim())}&limit=20&active=true&skip_claimed=1`
+          `/api/sales/restaurants?search=${encodeURIComponent(formRestaurantSearch.trim())}&limit=20&skip_claimed=1`
         );
         if (res.ok) {
           const data = await res.json();
@@ -255,9 +278,13 @@ export default function CalendarPage() {
     setFormStartTime('');
     setFormEndTime('');
     setFormLeadId('');
+    setFormLeadSearch('');
+    setShowLeadDropdown(false);
+    setLeads([]);
     setFormRestaurantId('');
     setFormRestaurantSearch('');
     setShowRestaurantDropdown(false);
+    setRestaurants([]);
     setFormAssignedTo(currentUserId); // default to self
     setShowModal(true);
   };
@@ -271,9 +298,13 @@ export default function CalendarPage() {
     setFormStartTime(meeting.start_time?.substring(0, 5) || '');
     setFormEndTime(meeting.end_time?.substring(0, 5) || '');
     setFormLeadId(meeting.lead_id || '');
+    setFormLeadSearch(meeting.business_leads?.business_name || '');
+    setShowLeadDropdown(false);
+    setLeads([]);
     setFormRestaurantId(meeting.restaurant_id || '');
     setFormRestaurantSearch(meeting.restaurants?.name || '');
     setShowRestaurantDropdown(false);
+    setRestaurants([]);
     setFormAssignedTo(meeting.assigned_to || '');
     setShowModal(true);
   };
@@ -671,20 +702,57 @@ export default function CalendarPage() {
                   )}
                 </div>
 
-                <div>
+                <div className="relative">
                   <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
                     Link to Lead <span className="text-gray-600">(optional)</span>
                   </label>
-                  <select
-                    value={formLeadId}
-                    onChange={(e) => setFormLeadId(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
-                  >
-                    <option value="">No lead linked</option>
-                    {leads.map((l) => (
-                      <option key={l.id} value={l.id}>{l.business_name}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <input
+                      type="text"
+                      value={formLeadSearch}
+                      onChange={(e) => {
+                        setFormLeadSearch(e.target.value);
+                        setShowLeadDropdown(true);
+                        if (!e.target.value) setFormLeadId('');
+                      }}
+                      onFocus={() => setShowLeadDropdown(true)}
+                      placeholder="Search leads..."
+                      className="w-full pl-9 pr-8 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                    />
+                    {formLeadId && (
+                      <button
+                        onClick={() => { setFormLeadId(''); setFormLeadSearch(''); setLeads([]); }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-500 hover:text-white"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  {showLeadDropdown && formLeadSearch && !formLeadId && (
+                    <div className="absolute z-10 mt-1 w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                      {leadSearchLoading ? (
+                        <p className="px-3 py-2 text-sm text-gray-500">Searching…</p>
+                      ) : leads.length > 0 ? (
+                        leads.map((l) => (
+                          <button
+                            key={l.id}
+                            onClick={() => {
+                              setFormLeadId(l.id);
+                              setFormLeadSearch(l.business_name);
+                              setShowLeadDropdown(false);
+                            }}
+                            className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-tastelanc-surface-light hover:text-white transition-colors flex items-center gap-2"
+                          >
+                            <Briefcase className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+                            {l.business_name}
+                          </button>
+                        ))
+                      ) : (
+                        <p className="px-3 py-2 text-sm text-gray-500">No leads found</p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="relative">
