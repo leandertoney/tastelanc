@@ -4,7 +4,7 @@
 
 set -e
 
-MONOREPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+MONOREPO_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 echo "EAS pre-install: monorepo root = $MONOREPO_ROOT"
 
 # Step 1: Rewrite root package.json workspaces without apps/web
