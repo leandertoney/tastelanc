@@ -54,11 +54,17 @@ export async function GET(request: Request) {
       : repEmails;
 
     // Fetch sent emails to this counterparty
+    // Use sent_by (user ID) OR sender_email to catch all messages regardless of identity mismatch
+    const userId = access.userId;
+    const sentFilter = userId
+      ? `sent_by.eq.${userId}${repEmails.length > 0 ? `,sender_email.in.(${repEmails.join(',')})` : ''}`
+      : repEmails.length > 0 ? `sender_email.in.(${repEmails.join(',')})` : 'id.is.null';
+
     const { data: sentEmails } = await serviceClient
       .from('email_sends')
       .select('id, subject, sender_name, sender_email, recipient_email, body_text, headline, resend_id, sent_at, lead_id, status, opened_at, clicked_at, attachments')
       .eq('recipient_email', counterpartyEmail)
-      .in('sender_email', repEmails)
+      .or(sentFilter)
       .order('sent_at', { ascending: true });
 
     // Fetch received emails from this counterparty

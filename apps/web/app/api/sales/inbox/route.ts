@@ -58,10 +58,18 @@ export async function GET(request: Request) {
     const inboundFilterEmails = isInfoInbox ? INFO_INBOX_EMAILS : repEmails;
 
     // Fetch outbound emails (skip for info@ inbox — no outbound from info@)
+    // Use sent_by (user ID) as primary filter for personal views — more reliable than sender_email.
+    const userId = access.userId;
+    const sentEmailFilter = isTeamView
+      ? `sender_email.in.(${repEmails.join(',')})`
+      : userId
+        ? `sent_by.eq.${userId}${repEmails.length > 0 ? `,sender_email.in.(${repEmails.join(',')})` : ''}`
+        : repEmails.length > 0 ? `sender_email.in.(${repEmails.join(',')})` : 'id.is.null';
+
     const sentEmails = isInfoInbox ? [] : (await serviceClient
       .from('email_sends')
       .select('recipient_email, subject, body_text, sender_email, sender_name, sent_at, lead_id')
-      .in('sender_email', repEmails)
+      .or(sentEmailFilter)
       .not('recipient_email', 'is', null)
       .order('sent_at', { ascending: false })).data;
 

@@ -19,15 +19,19 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
 
+    // Use sent_by (user ID) as primary filter — more reliable than sender_email string matching.
+    // Fallback to sender_email for cases where sent_by may be null (legacy records).
     const repEmails = await getRepSenderEmails(serviceClient, access);
-    if (repEmails.length === 0) {
-      return NextResponse.json({ emails: [] });
-    }
+    const userId = access.userId;
 
     let query = serviceClient
       .from('email_sends')
       .select('id, recipient_email, subject, body_text, headline, sender_name, sender_email, sent_at, status, opened_at, clicked_at, lead_id, attachments')
-      .in('sender_email', repEmails)
+      .or(
+        userId
+          ? `sent_by.eq.${userId}${repEmails.length > 0 ? `,sender_email.in.(${repEmails.join(',')})` : ''}`
+          : repEmails.length > 0 ? `sender_email.in.(${repEmails.join(',')})` : 'id.is.null'
+      )
       .not('recipient_email', 'is', null)
       .order('sent_at', { ascending: false })
       .limit(200);

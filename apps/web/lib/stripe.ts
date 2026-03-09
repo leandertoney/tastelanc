@@ -8,7 +8,7 @@ export function getStripe() {
     throw new Error('STRIPE_SECRET_KEY is not set');
   }
   stripeClient = new Stripe(key, {
-    apiVersion: '2025-12-15.clover',
+    apiVersion: '2026-02-25.clover',
     typescript: true,
   });
   return stripeClient;
