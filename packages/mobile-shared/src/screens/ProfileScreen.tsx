@@ -21,7 +21,6 @@ import { useAuth } from '../hooks/useAuth';
 import { useSignUpModal } from '../context/SignUpModalContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMarket } from '../context/MarketContext';
-import { useVoteBalance, useCurrentMonthVotes } from '../hooks';
 import { useRewardsBalance } from '../hooks/useRewards';
 import { useUploadAvatar } from '../hooks/useProfile';
 import type { RootStackParamList } from '../navigation/types';
@@ -88,7 +87,7 @@ function useProfileHeader() {
 
 interface ActivityItem {
   id: string;
-  type: 'checkin' | 'vote' | 'video_recommendation' | 'review';
+  type: 'checkin' | 'video_recommendation' | 'review';
   label: string;
   sublabel: string;
   icon: string;
@@ -113,13 +112,6 @@ function useRecentActivity(limit = 10) {
         .order('created_at', { ascending: false })
         .limit(limit);
 
-      let votesQuery = supabase
-        .from('votes')
-        .select('id, category, restaurant_name, created_at, restaurants!inner(market_id)')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(limit);
-
       let pointsQuery = supabase
         .from('point_transactions')
         .select('id, action_type, points, restaurant_id, created_at, restaurants!inner(name, market_id)')
@@ -130,13 +122,11 @@ function useRecentActivity(limit = 10) {
 
       if (marketId) {
         checkinsQuery = checkinsQuery.eq('restaurants.market_id', marketId);
-        votesQuery = votesQuery.eq('restaurants.market_id', marketId);
         pointsQuery = pointsQuery.eq('restaurants.market_id', marketId);
       }
 
-      const [checkinsRes, votesRes, pointsRes] = await Promise.all([
+      const [checkinsRes, pointsRes] = await Promise.all([
         checkinsQuery,
-        votesQuery,
         pointsQuery,
       ]);
 
@@ -151,18 +141,6 @@ function useRecentActivity(limit = 10) {
           icon: 'location',
           points: c.points_earned || 5,
           date: c.created_at,
-        });
-      });
-
-      (votesRes.data || []).forEach((v: any) => {
-        items.push({
-          id: `vote-${v.id}`,
-          type: 'vote',
-          label: 'Vote',
-          sublabel: v.restaurant_name || v.category || 'Category',
-          icon: 'trophy',
-          points: null,
-          date: v.created_at,
         });
       });
 
@@ -211,13 +189,8 @@ export default function ProfileScreen() {
   const queryClient = useQueryClient();
   const uploadAvatarMutation = useUploadAvatar(userId);
 
-  const voteBalanceData = useVoteBalance();
-  const monthVotesData = useCurrentMonthVotes();
   const { refetch: refetchBalance } = useRewardsBalance();
   const { data: activityItems = [], isLoading: isLoadingActivity, refetch: refetchActivity } = useRecentActivity();
-
-  const votesAvailable = voteBalanceData.votesAvailable;
-  const monthVotesCount = monthVotesData.votes.length;
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -373,13 +346,6 @@ export default function ProfileScreen() {
           contentContainerStyle={styles.featuresRow}
         >
           <LockedFeatureCard
-            title="Vote"
-            description="Vote for the Best"
-            icon="trophy"
-            isLocked={false}
-            onPress={() => navigation.navigate('VoteCenter')}
-          />
-          <LockedFeatureCard
             title="Exclusive Deals"
             description="Member-only discounts"
             icon="pricetag"
@@ -396,29 +362,6 @@ export default function ProfileScreen() {
             onPress={() => {}}
           />
         </ScrollView>
-
-        {/* Voting Summary */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Your Votes</Text>
-        </View>
-        <View style={styles.votingSummary}>
-          <View style={styles.voteStat}>
-            <Text style={styles.voteStatNumber}>{votesAvailable}</Text>
-            <Text style={styles.voteStatLabel}>Votes Left</Text>
-          </View>
-          <View style={styles.voteDivider} />
-          <View style={styles.voteStat}>
-            <Text style={styles.voteStatNumber}>{monthVotesCount}</Text>
-            <Text style={styles.voteStatLabel}>Cast This Month</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.viewVotesButton}
-            onPress={() => navigation.navigate('VoteCenter')}
-          >
-            <Text style={styles.viewVotesText}>Vote Now</Text>
-            <Ionicons name="chevron-forward" size={16} color={colors.accent} />
-          </TouchableOpacity>
-        </View>
 
         {/* Recent Activity */}
         <View style={styles.sectionHeader}>
@@ -552,27 +495,6 @@ const useStyles = createLazyStyles((colors) => ({
   },
   quickLinkDivider: { width: 1, backgroundColor: colors.border },
   featuresRow: { paddingHorizontal: spacing.md, gap: 12 },
-  votingSummary: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    backgroundColor: colors.cardBg,
-    borderRadius: radius.lg,
-    marginHorizontal: spacing.md,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  voteStat: { alignItems: 'center' as const, flex: 1 },
-  voteStatNumber: { fontSize: 28, fontWeight: '700' as const, color: colors.text },
-  voteStatLabel: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
-  voteDivider: { width: 1, height: 40, backgroundColor: colors.border },
-  viewVotesButton: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    paddingHorizontal: 12,
-    gap: 4,
-  },
-  viewVotesText: { fontSize: 14, fontWeight: '600' as const, color: colors.accent },
   historyContainer: { paddingHorizontal: spacing.md },
   activityRow: {
     flexDirection: 'row' as const,
