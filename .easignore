@@ -6,10 +6,9 @@ apps/web/node_modules
 packages/mobile-shared/node_modules
 packages/shared/node_modules
 
-# Exclude web app build artifacts
-apps/web/.next
-apps/web/dist
-apps/web/fayetteville-import-report.json
+# Exclude entire web app — not needed for mobile builds, and it pulls in
+# netlify-cli -> ipx -> sharp which fails to install on EAS iOS builders
+apps/web
 
 # Exclude other apps' large assets (not needed for Fayetteville build)
 apps/mobile/assets/app-store-screenshots

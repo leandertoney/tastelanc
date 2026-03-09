@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "eas-build-pre-install": "node -e \"const fs=require('fs'),path=require('path'); const root=path.resolve(__dirname,'../..'); const p=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8')); p.workspaces=p.workspaces.filter(w=>!w.includes('web')); fs.writeFileSync(path.join(root,'package.json'),JSON.stringify(p,null,2)+'\\n'); console.log('EAS pre-install: excluded apps/web from workspaces');\"",
+    "eas-build-pre-install": "node -e \"const fs=require('fs'),path=require('path'); const root=path.resolve(__dirname,'../..'); const p=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8')); p.workspaces=['apps/mobile','apps/mobile-cumberland','apps/mobile-fayetteville','packages/mobile-shared','packages/shared']; fs.writeFileSync(path.join(root,'package.json'),JSON.stringify(p,null,2)+'\\n'); console.log('EAS pre-install: set explicit workspaces, excluded apps/web');\"",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
