@@ -17,7 +17,7 @@ import { supabase } from '../lib/supabase';
 import { env } from '../lib/env';
 import { requestReviewIfEligible } from '../lib/reviewPrompts';
 import { ONBOARDING_DATA_KEY, OnboardingData } from '../types/onboarding';
-import { MARKET_SLUG } from '../config/market';
+import { BRAND } from '../config/brand';
 
 // Rosie assets
 const rosieImage = require('../../assets/images/rosie_121212.png');
@@ -45,7 +45,7 @@ interface QuickActionConfig {
 
 const QUICK_ACTIONS: QuickActionConfig[][] = [
   [
-    { icon: 'restaurant', label: 'Best dinner spots', prompt: 'What are the best dinner spots in Lancaster?' },
+    { icon: 'restaurant', label: 'Best dinner spots', prompt: BRAND.mollieSamplePrompt },
     { icon: 'beer', label: 'Happy hour deals', prompt: 'Where can I find happy hour deals?' },
   ],
   [
@@ -175,7 +175,7 @@ export default function RosieChat({ visible, onClose, onNavigateToRestaurant }: 
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: "Hi! I'm Rosie, your TasteLanc AI assistant. I can help you discover restaurants, find deals, and plan your next dining experience. What are you in the mood for today?",
+      text: BRAND.mollieGreeting,
       isUser: false,
       timestamp: new Date(),
     },
@@ -240,7 +240,7 @@ export default function RosieChat({ visible, onClose, onNavigateToRestaurant }: 
       // Fetch user preferences and call Rosie AI edge function
       const preferences = await getUserPreferences();
       const { data, error } = await supabase.functions.invoke('rosie-chat', {
-        body: { message: messageText, preferences, marketSlug: MARKET_SLUG },
+        body: { message: messageText, preferences, marketSlug: BRAND.marketSlug },
         headers: { Authorization: `Bearer ${env.SUPABASE_ANON_KEY}` },
       });
 
@@ -389,7 +389,7 @@ export default function RosieChat({ visible, onClose, onNavigateToRestaurant }: 
       // Fetch user preferences and call Rosie AI edge function
       const preferences = await getUserPreferences();
       const { data, error } = await supabase.functions.invoke('rosie-chat', {
-        body: { message: text.trim(), preferences, marketSlug: MARKET_SLUG },
+        body: { message: text.trim(), preferences, marketSlug: BRAND.marketSlug },
         headers: { Authorization: `Bearer ${env.SUPABASE_ANON_KEY}` },
       });
 
@@ -452,8 +452,8 @@ export default function RosieChat({ visible, onClose, onNavigateToRestaurant }: 
               />
             </View>
             <View>
-              <Text style={styles.headerTitle}>Rosie</Text>
-              <Text style={styles.headerSubtitle}>Your AI Concierge</Text>
+              <Text style={styles.headerTitle}>{BRAND.aiName}</Text>
+              <Text style={styles.headerSubtitle}>{BRAND.mollieSubtitle}</Text>
             </View>
           </View>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
@@ -507,7 +507,7 @@ export default function RosieChat({ visible, onClose, onNavigateToRestaurant }: 
         <View style={styles.inputContainer}>
           <BottomSheetTextInput
             style={styles.input}
-            placeholder="Ask Rosie anything..."
+            placeholder={`Ask ${BRAND.aiName} anything...`}
             placeholderTextColor={colors.textSecondary}
             value={inputText}
             onChangeText={setInputText}
@@ -527,7 +527,7 @@ export default function RosieChat({ visible, onClose, onNavigateToRestaurant }: 
             <Ionicons
               name="send"
               size={20}
-              color={inputText.trim() ? colors.text : colors.textSecondary}
+              color={inputText.trim() ? colors.textOnAccent : colors.textSecondary}
             />
           </TouchableOpacity>
         </View>
@@ -625,7 +625,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
   },
   aiBubble: {
-    backgroundColor: colors.cardBgElevated,
+    backgroundColor: colors.cardBg,
     borderBottomLeftRadius: 4,
   },
   messageText: {
@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   userMessageText: {
-    color: colors.text,
+    color: colors.textOnAccent,
   },
   aiMessageText: {
     color: colors.text,

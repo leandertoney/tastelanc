@@ -119,6 +119,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to create sales rep profile' }, { status: 500 });
     }
 
+    // Sync profiles.role so mobile useSalesRole() correctly detects CRM access
+    await serviceClient.from('profiles').upsert({
+      id: userId,
+      email: email.toLowerCase(),
+      display_name: name,
+      role: 'sales_rep',
+    }, { onConflict: 'id' });
+
     // Send welcome email
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
 

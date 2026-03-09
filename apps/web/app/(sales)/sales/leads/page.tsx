@@ -34,6 +34,20 @@ import { Card, Badge, Tooltip } from '@/components/ui';
 import { toast } from 'sonner';
 import { getLeadAge } from '@/lib/utils/lead-aging';
 
+function formatCategory(raw: string | null): string {
+  if (!raw) return '';
+  let val = raw.trim();
+  if (val.startsWith('[')) {
+    try { val = JSON.parse(val)[0] || val; } catch { /* use as-is */ }
+  }
+  if (val.startsWith('{') && val.endsWith('}')) {
+    val = val.slice(1, -1).split(',')[0] || val;
+  }
+  val = val.replace(/[[\]"{}]/g, '').trim();
+  if (!val) return '';
+  return val.charAt(0).toUpperCase() + val.slice(1).replace(/_/g, ' ');
+}
+
 interface BusinessLead {
   id: string;
   business_name: string;
@@ -239,7 +253,7 @@ export default function SalesLeadsPage() {
       escapeCSV(lead.email || ''),
       escapeCSV(lead.phone || ''),
       escapeCSV(lead.city || ''),
-      escapeCSV(lead.category || ''),
+      escapeCSV(formatCategory(lead.category)),
       escapeCSV(STATUS_CONFIG[lead.status]?.label || lead.status),
       escapeCSV((lead.activity_types || []).map((t) => ACTIVITY_ICONS[t]?.label || t).join(', ')),
       escapeCSV(lead.assigned_to_name || 'Unassigned'),

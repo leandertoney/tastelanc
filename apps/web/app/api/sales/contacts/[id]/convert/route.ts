@@ -63,7 +63,7 @@ export async function POST(
         status: 'new',
         notes: contact.message || null,
         tags: contact.interested_plan ? [contact.interested_plan] : [],
-        assigned_to: access.isSalesRep ? access.userId : null,
+        assigned_to: access.userId || null,
         market_id: resolvedMarketId,
       })
       .select()

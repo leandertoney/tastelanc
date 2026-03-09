@@ -321,6 +321,7 @@ export interface BrandProposal {
   seo_keywords: string[];
   market_config_json: Record<string, unknown>;
   avatar_image_url?: string;  // DALL-E generated mascot image URL
+  app_icon_url?: string;      // DALL-E generated app icon URL
   name_story?: string;        // Story behind the mascot name
   color_story?: string;       // Story behind the brand colors
 }

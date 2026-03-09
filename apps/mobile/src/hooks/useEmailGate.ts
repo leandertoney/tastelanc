@@ -1,1 +1,1 @@
-export { useEmailGate } from '../context/EmailGateContext';
+export * from '@tastelanc/mobile-shared/src/hooks/useEmailGate';

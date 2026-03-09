@@ -14,8 +14,13 @@ CREATE INDEX IF NOT EXISTS idx_notification_logs_throttle
 
 -- ── 2. Replace Today's Pick cron schedule ────────────────────────────────────
 
--- Remove the old single job (fires at 21:00 UTC = 4 PM EST)
-SELECT cron.unschedule('todays-pick-notification');
+-- Remove the old single job if it exists (fires at 21:00 UTC = 4 PM EST)
+DO $$ BEGIN
+  PERFORM cron.unschedule('todays-pick-notification');
+EXCEPTION WHEN OTHERS THEN
+  -- Job may not exist, that's fine
+  NULL;
+END $$;
 
 -- Create per-market trigger functions that pass market_slug in the request body
 

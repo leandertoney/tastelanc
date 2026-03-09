@@ -2,6 +2,7 @@ import { QueryClient } from '@tanstack/react-query';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { reportError } from './sentry';
+import { queryKeys } from '@tastelanc/mobile-shared/src/lib/queryKeys';
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,71 +41,5 @@ export const asyncStoragePersister = createAsyncStoragePersister({
   throttleTime: 1000,
 });
 
-// Query keys for type safety and consistency
-export const queryKeys = {
-  restaurants: {
-    all: ['restaurants'] as const,
-    list: (category?: string) => ['restaurants', 'list', category] as const,
-    detail: (id: string) => ['restaurants', 'detail', id] as const,
-    search: (query: string, category?: string) => ['restaurants', 'search', query, category] as const,
-    recommendations: ['restaurants', 'recommendations'] as const,
-  },
-  happyHours: {
-    all: ['happyHours'] as const,
-    byRestaurant: (restaurantId: string) => ['happyHours', restaurantId] as const,
-  },
-  specials: {
-    all: ['specials'] as const,
-    byRestaurant: (restaurantId: string) => ['specials', restaurantId] as const,
-    today: ['specials', 'today'] as const,
-  },
-  events: {
-    all: ['events'] as const,
-    byRestaurant: (restaurantId: string) => ['events', restaurantId] as const,
-    upcoming: ['events', 'upcoming'] as const,
-  },
-  hours: {
-    byRestaurant: (restaurantId: string) => ['hours', restaurantId] as const,
-  },
-  openStatus: {
-    today: (dayOfWeek: string) => ['openStatus', dayOfWeek] as const,
-  },
-  favorites: ['favorites'] as const,
-  voting: {
-    balance: ['voting', 'balance'] as const,
-    userVotes: ['voting', 'userVotes'] as const,
-    monthVotes: ['voting', 'monthVotes'] as const,
-    leaderboard: (category?: string) => ['voting', 'leaderboard', category] as const,
-    winners: ['voting', 'winners'] as const,
-    eligibility: (restaurantIds?: string[]) =>
-      ['voting', 'eligibility', restaurantIds?.sort().join(',')] as const,
-  },
-  user: {
-    preferences: ['user', 'preferences'] as const,
-    subscription: ['user', 'subscription'] as const,
-    profile: (userId: string) => ['user', 'profile', userId] as const,
-  },
-  itineraries: {
-    all: ['itineraries'] as const,
-    detail: (id: string) => ['itineraries', 'detail', id] as const,
-  },
-  blog: {
-    all: ['blog'] as const,
-    list: ['blog', 'list'] as const,
-    detail: (slug: string) => ['blog', 'detail', slug] as const,
-  },
-  sales: {
-    inbox: (search?: string, filter?: string, inbox?: string) => ['sales', 'inbox', search, filter, inbox] as const,
-    thread: (email: string) => ['sales', 'thread', email] as const,
-    senderIdentity: ['sales', 'senderIdentity'] as const,
-    unreadCount: ['sales', 'unreadCount'] as const,
-    leads: (status?: string, search?: string, page?: number) => ['sales', 'leads', status, search, page] as const,
-    leadDetail: (id: string) => ['sales', 'lead', id] as const,
-  },
-  visits: {
-    all: (userId: string) => ['visits', userId] as const,
-    list: (userId: string, limit?: number) => ['visits', userId, 'list', limit] as const,
-    counts: (userId: string) => ['visits', userId, 'counts'] as const,
-    recent: (userId: string, days?: number) => ['visits', userId, 'recent', days] as const,
-  },
-};
+// Re-export queryKeys from shared package so existing imports still work
+export { queryKeys };

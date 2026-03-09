@@ -36,6 +36,23 @@ import { toast } from 'sonner';
 import EmailComposer from '@/components/sales/EmailComposer';
 import { AlertTriangle, Lock, Unlock } from 'lucide-react';
 
+function formatCategory(raw: string | null): string | null {
+  if (!raw) return null;
+  let val = raw.trim();
+  // Handle JSON array strings like '["restaurant","bar"]'
+  if (val.startsWith('[')) {
+    try { val = JSON.parse(val)[0] || val; } catch { /* use as-is */ }
+  }
+  // Handle Postgres array strings like '{restaurant,bar}'
+  if (val.startsWith('{') && val.endsWith('}')) {
+    val = val.slice(1, -1).split(',')[0] || val;
+  }
+  // Remove stray quotes/brackets
+  val = val.replace(/[[\]"{}]/g, '').trim();
+  if (!val) return null;
+  return val.charAt(0).toUpperCase() + val.slice(1).replace(/_/g, ' ');
+}
+
 interface Lead {
   id: string;
   business_name: string;
@@ -471,8 +488,8 @@ export default function LeadDetailPage({
           <div>
             <h1 className="text-2xl font-bold text-white">{lead.business_name}</h1>
             <div className="flex items-center gap-3 mt-1">
-              {lead.category && (
-                <span className="text-sm text-gray-400 capitalize">{lead.category.replace('_', ' ')}</span>
+              {formatCategory(lead.category) && (
+                <span className="text-sm text-gray-400">{formatCategory(lead.category)}</span>
               )}
               <span className="text-gray-600">|</span>
               <span className="text-sm text-gray-500">Source: {lead.source}</span>
@@ -860,7 +877,7 @@ export default function LeadDetailPage({
                   </span>
                 ) : null}
               </Field>
-              <Field label="Category" value={lead.category ? lead.category.charAt(0).toUpperCase() + lead.category.slice(1).replace('_', ' ') : null} />
+              <Field label="Category" value={formatCategory(lead.category)} />
               <Field label="Last Contacted" value={lead.last_contacted_at ? new Date(lead.last_contacted_at).toLocaleDateString() : null} />
               <Field label="Assigned To" value={lead.assigned_to_name || 'Unassigned'} />
             </div>

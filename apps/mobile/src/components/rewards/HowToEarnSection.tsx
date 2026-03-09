@@ -6,10 +6,8 @@ import { POINT_VALUES, ACTION_ICONS, ACTION_LABELS, type RewardActionType } from
 const EARN_ACTIONS: RewardActionType[] = [
   'checkin',
   'review',
-  'photo',
-  'share',
   'event',
-  'referral',
+  'video_recommendation',
 ];
 
 function EarnItem({ action }: { action: RewardActionType }) {

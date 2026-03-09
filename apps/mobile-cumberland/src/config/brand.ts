@@ -1,4 +1,6 @@
-export const BRAND = {
+import type { AppBrand } from '@tastelanc/mobile-shared';
+
+export const BRAND: AppBrand = {
   // Core identity
   appName: 'TasteCumberland',
   cityName: 'Cumberland County',
@@ -21,8 +23,8 @@ export const BRAND = {
   privacyUrl: 'https://tastelanc.com/privacy',
   termsUrl: 'https://tastelanc.com/terms',
   websiteUrl: 'https://tastelanc.com',
-  appStoreUrl: '', // TODO: set after App Store listing created
-  playStoreUrl: '', // TODO: set after Play Store listing created
+  appStoreUrl: 'https://apps.apple.com/us/app/tastecumberland/id6759233248',
+  playStoreUrl: 'https://play.google.com/store/apps/details?id=com.tastelanc.cumberland',
 
   // Defaults
   defaultItineraryTitle: 'My Cumberland Day',
@@ -43,4 +45,4 @@ export const BRAND = {
     gold: '#C9A227',        // muted heritage gold
     green: '#2E7D32',       // grass green
   },
-} as const;
+};

@@ -1,4 +1,6 @@
-export const BRAND = {
+import type { AppBrand } from '@tastelanc/mobile-shared';
+
+export const BRAND: AppBrand = {
   // Core identity
   appName: 'TasteLanc',
   cityName: 'Lancaster',
@@ -43,4 +45,4 @@ export const BRAND = {
     gold: '#C9A227',          // heritage gold
     green: '#2E7D32',         // grass green
   },
-} as const;
+};

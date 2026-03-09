@@ -1,20 +1,9 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { useState, useCallback, ReactNode } from 'react';
 import { SignUpModal } from '../components';
+import { SignUpModalContext } from '@tastelanc/mobile-shared/src/context/SignUpModalContext';
 
-interface SignUpModalContextType {
-  showSignUpModal: (options?: { action?: string; onSuccess?: () => void }) => void;
-  hideSignUpModal: () => void;
-}
-
-const SignUpModalContext = createContext<SignUpModalContextType | null>(null);
-
-export function useSignUpModal() {
-  const context = useContext(SignUpModalContext);
-  if (!context) {
-    throw new Error('useSignUpModal must be used within a SignUpModalProvider');
-  }
-  return context;
-}
+// Re-export the shared hook so existing imports work
+export { useSignUpModal } from '@tastelanc/mobile-shared/src/context/SignUpModalContext';
 
 interface SignUpModalProviderProps {
   children: ReactNode;
@@ -30,7 +19,6 @@ export function SignUpModalProvider({ children }: SignUpModalProviderProps) {
       setAction(options.action);
     }
     if (options?.onSuccess) {
-      // Wrap in a function to store the callback properly
       setOnSuccessCallback(() => options.onSuccess);
     }
     setVisible(true);

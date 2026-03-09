@@ -10,6 +10,7 @@ import {
   Mail,
   Phone,
   Briefcase,
+  MapPin,
 } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 import { toast } from 'sonner';
@@ -25,8 +26,15 @@ interface SalesRep {
   lead_count: number;
 }
 
+interface Market {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export default function AdminSalesRepsPage() {
   const [reps, setReps] = useState<SalesRep[]>([]);
+  const [markets, setMarkets] = useState<Market[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,6 +44,7 @@ export default function AdminSalesRepsPage() {
     name: '',
     email: '',
     phone: '',
+    market_id: '',
   });
 
   const fetchReps = async () => {
@@ -52,6 +61,10 @@ export default function AdminSalesRepsPage() {
 
   useEffect(() => {
     fetchReps();
+    fetch('/api/admin/markets')
+      .then((r) => r.json())
+      .then((d) => setMarkets(d.markets || []))
+      .catch(() => {});
   }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -69,7 +82,10 @@ export default function AdminSalesRepsPage() {
       const res = await fetch('/api/admin/sales-reps', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          market_ids: form.market_id ? [form.market_id] : [],
+        }),
       });
 
       const data = await res.json();
@@ -80,7 +96,7 @@ export default function AdminSalesRepsPage() {
 
       toast.success(`Sales rep "${form.name}" created`);
       setMessage({ type: 'success', text: `Sales rep "${form.name}" created! Welcome email sent to ${form.email}.` });
-      setForm({ name: '', email: '', phone: '' });
+      setForm({ name: '', email: '', phone: '', market_id: '' });
       setShowForm(false);
       fetchReps();
     } catch (err) {
@@ -158,7 +174,7 @@ export default function AdminSalesRepsPage() {
         <Card className="p-6 mb-6">
           <h2 className="text-lg font-semibold text-white mb-4">Create Sales Rep Account</h2>
           <form onSubmit={handleCreate} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">Name *</label>
                 <input
@@ -188,6 +204,20 @@ export default function AdminSalesRepsPage() {
                   placeholder="(717) 555-0123"
                   className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Market *</label>
+                <select
+                  value={form.market_id}
+                  onChange={(e) => setForm({ ...form, market_id: e.target.value })}
+                  required
+                  className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                >
+                  <option value="">Select a market…</option>
+                  {markets.map((m) => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="flex gap-3">
@@ -257,6 +287,12 @@ export default function AdminSalesRepsPage() {
                     <span className="flex items-center gap-1">
                       <Briefcase className="w-3 h-3" /> {rep.lead_count} leads
                     </span>
+                    {rep.market_ids?.length > 0 && (
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        {rep.market_ids.map((mid) => markets.find((m) => m.id === mid)?.name || 'Unknown').join(', ')}
+                      </span>
+                    )}
                     <span className="text-gray-600">
                       Joined {new Date(rep.created_at).toLocaleDateString()}
                     </span>

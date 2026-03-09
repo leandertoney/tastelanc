@@ -1,6 +1,5 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { RestaurantCategory, CuisineType } from '../types/database';
-import type { VoteCategory } from '../types/voting';
 import type { ApiEvent } from '../lib/events';
 import type { ItineraryItemWithReason, ItineraryMood } from '../types/itinerary';
 
@@ -26,7 +25,6 @@ export type OnboardingStackParamList = {
   // Phase 4: Summary & Conversion
   OnboardingPremium: undefined;
   OnboardingRosieAsk: undefined;
-  OnboardingVoting: undefined;
   OnboardingReviewAsk: undefined;
   OnboardingPremiumIntro: undefined;
   // OnboardingTrialOffer removed - replaced with automatic 3-day trial
@@ -65,12 +63,6 @@ export type RootStackParamList = {
   CuisineDetail: { cuisine: CuisineType };
   // Event detail
   EventDetail: { event: ApiEvent };
-  // Voting screens
-  VoteCenter: undefined;
-  VoteCategory: undefined;
-  VoteRestaurant: { category: VoteCategory };
-  VoteHistory: undefined;
-  VoteLeaderboard: { category?: VoteCategory };
   // Feature request
   FeatureRequest: undefined;
   // Itinerary

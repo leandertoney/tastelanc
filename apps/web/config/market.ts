@@ -146,7 +146,7 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
 
     appStoreUrls: {
       ios: 'https://apps.apple.com/us/app/tastecumberland/id6759233248',
-      android: '',
+      android: 'https://play.google.com/store/apps/details?id=com.tastelanc.cumberland',
     },
 
     colors: {

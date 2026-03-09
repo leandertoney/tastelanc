@@ -18,6 +18,7 @@ import {
   CheckCircle,
   Settings,
   User,
+  Mail,
 } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 import { toast } from 'sonner';
@@ -41,6 +42,7 @@ interface Restaurant {
   zip_code: string | null;
   categories: string | null;
   market_id: string | null;
+  business_email: string | null;
 }
 
 interface Stats {
@@ -85,7 +87,7 @@ export default function SalesRestaurantsPage() {
           state: r.state || 'PA',
           address: r.address || null,
           zip_code: r.zip_code || null,
-          category: r.categories || 'restaurant',
+          category: Array.isArray(r.categories) ? r.categories[0] || 'restaurant' : r.categories || 'restaurant',
           email: r.contact_email || null,
           restaurant_id: r.id,
           contact_phone: r.contact_phone || undefined,
@@ -317,7 +319,12 @@ export default function SalesRestaurantsPage() {
                                 <Globe className="w-3.5 h-3.5" />
                               </a>
                             )}
-                            {!r.phone && !r.website && !r.contact_name && <span className="text-sm text-gray-600">—</span>}
+                            {r.business_email && (
+                              <a href={`mailto:${r.business_email}`} className="text-blue-400 hover:text-blue-300 transition-colors" title={r.business_email}>
+                                <Mail className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                            {!r.phone && !r.website && !r.contact_name && !r.business_email && <span className="text-sm text-gray-600">—</span>}
                           </div>
                           {r.contact_name && (
                             <div className="flex items-center gap-1" title={`${r.contact_name}${r.contact_title ? ` — ${r.contact_title}` : ''}${r.contact_phone ? ` | ${r.contact_phone}` : ''}`}>

@@ -389,6 +389,62 @@ async function sendBrandedWelcomeEmailWithToken(
 }
 
 // Handle multi-restaurant checkout completion
+async function handleEventPromotionPayment(
+  session: Stripe.Checkout.Session,
+  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>
+) {
+  const draftId = session.metadata?.draft_id;
+  const scannerUserId = session.metadata?.scanner_user_id;
+
+  if (!draftId) {
+    console.error('Missing draft_id in event promotion checkout');
+    return;
+  }
+
+  console.log('Processing event promotion payment:', { draftId, scannerUserId });
+
+  // Fetch the draft
+  const { data: draft, error: draftError } = await supabaseAdmin
+    .from('event_drafts')
+    .select('*')
+    .eq('id', draftId)
+    .single();
+
+  if (draftError || !draft) {
+    console.error('Draft not found for event promotion:', draftId);
+    return;
+  }
+
+  // Publish the event
+  const { publishEventFromDraft } = await import('@/lib/flyer/publish-event');
+  const result = await publishEventFromDraft(supabaseAdmin, draft);
+
+  if (!result.success) {
+    console.error('Failed to publish event from draft:', result.error);
+    return;
+  }
+
+  console.log('Event published from flyer draft:', { draftId, eventId: result.event_id });
+
+  // Award scanner credits if this was a send_to_organizer claim
+  if (draft.publishing_path === 'send_to_organizer' && scannerUserId) {
+    const { error: rewardError } = await supabaseAdmin
+      .from('scanner_rewards')
+      .update({
+        status: 'earned',
+        event_id: result.event_id,
+      })
+      .eq('draft_id', draftId)
+      .eq('status', 'pending');
+
+    if (rewardError) {
+      console.error('Failed to award scanner credits:', rewardError);
+    } else {
+      console.log('Scanner credits awarded:', { scannerUserId, draftId });
+    }
+  }
+}
+
 async function handleMultiRestaurantCheckout(
   session: Stripe.Checkout.Session,
   supabaseAdmin: ReturnType<typeof getSupabaseAdmin>
@@ -764,6 +820,12 @@ export async function POST(request: Request) {
         // Handle multi-restaurant checkout (payment mode - no subscription ID)
         if (isAdminSale && isMultiRestaurant) {
           await handleMultiRestaurantCheckout(session, supabaseAdmin);
+          break;
+        }
+
+        // Handle flyer-scanned event promotion (one-time payment, no subscription)
+        if (session.metadata?.type === 'event_promotion') {
+          await handleEventPromotionPayment(session, supabaseAdmin);
           break;
         }
 

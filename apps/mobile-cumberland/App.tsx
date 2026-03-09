@@ -6,15 +6,28 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Updates from 'expo-updates';
+import { initTheme } from '@tastelanc/mobile-shared/src/config/theme';
 import Navigation from './src/navigation';
 import { ErrorBoundary } from './src/components';
 import { queryClient } from './src/lib/queryClient';
 import { initSentry, Sentry } from './src/lib/sentry';
 import { saveCrash, getAndClearLastCrash } from './src/lib/crashLog';
 import { colors } from './src/constants/colors';
+import { BRAND } from './src/config/brand';
+import { supabase } from './src/lib/supabase';
+import { env } from './src/lib/env';
 
 // Initialize Sentry as early as possible (before React renders)
 initSentry();
+
+// Initialize shared theme singleton so shared components can access brand/colors/assets
+initTheme(BRAND, colors, {
+  aiAvatar: require('./assets/images/mollie_avatar.png'),
+  aiAnimated: require('./assets/animations/mollie_animated.mp4'),
+  appIcon: require('./assets/icon.png'),
+  splashVideo: require('./assets/animation/tastelanc_dark_spin.mp4'),
+  onboardingHero: require('./assets/images/onboarding/soundfamiliar.png'),
+}, supabase, env.SUPABASE_ANON_KEY);
 
 // Global JS error handler — catches errors that escape React tree
 const originalHandler = ErrorUtils.getGlobalHandler();

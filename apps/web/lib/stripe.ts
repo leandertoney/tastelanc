@@ -51,6 +51,10 @@ export const SELF_PROMOTER_PRICES = {
   monthly: 50,
 } as const;
 
+// Event Promotion - One-time $50 payment for flyer-scanned events
+export const EVENT_PROMOTION_PRICE_ID = process.env.STRIPE_PRICE_EVENT_PROMOTION || 'price_event_promotion_50';
+export const EVENT_PROMOTION_PRICE = 50;
+
 // All consumer price IDs (both regular and early access)
 export const ALL_CONSUMER_PRICE_IDS = [
   CONSUMER_PRICE_IDS.premium_monthly,

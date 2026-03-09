@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, createContext, useContext, useCallb
 import { View, Animated, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NavigationActionsProvider } from '@tastelanc/mobile-shared/src/context/NavigationActionsContext';
 import RootNavigator from './RootNavigator';
 import OnboardingNavigator from './OnboardingNavigator';
 import SplashVideoScreen from '../screens/SplashVideoScreen';
@@ -9,7 +10,7 @@ import { AuthProvider } from '../context/AuthContext';
 import { MarketProvider } from '../context/MarketContext';
 import { OnboardingProvider } from '../context/OnboardingContext';
 import { SignUpModalProvider } from '../context/SignUpModalContext';
-import { EmailGateProvider } from '../context/EmailGateContext';
+import { EmailGateProvider } from '@tastelanc/mobile-shared/src/context/EmailGateContext';
 import { ErrorBoundary } from '../components';
 import { ONBOARDING_STORAGE_KEY, ONBOARDING_DATA_KEY } from '../types/onboarding';
 import { env } from '../lib/env';
@@ -179,6 +180,7 @@ export default function Navigation() {
             <EmailGateProvider>
               <SignUpModalProvider>
                 <NavigationContext.Provider value={{ restartOnboarding, finishOnboarding }}>
+                  <NavigationActionsProvider value={{ restartOnboarding, finishOnboarding }}>
                   <OnboardingProvider>
                     <ErrorBoundary
                       level="section"
@@ -190,6 +192,7 @@ export default function Navigation() {
                       />
                     </ErrorBoundary>
                   </OnboardingProvider>
+                  </NavigationActionsProvider>
                 </NavigationContext.Provider>
               </SignUpModalProvider>
             </EmailGateProvider>

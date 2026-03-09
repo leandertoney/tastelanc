@@ -34,7 +34,8 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "TasteLanc uses your location to find restaurants near you.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "TasteLanc uses your location to find restaurants near you.",
-        "NSCameraUsageDescription": "TasteLanc uses the camera for check-in verification.",
+        "NSCameraUsageDescription": "TasteLanc uses the camera for check-in verification and recording video recommendations.",
+        "NSMicrophoneUsageDescription": "TasteLanc uses the microphone to record audio for video recommendations.",
         "NSMotionUsageDescription": "TasteLanc uses motion data to improve location accuracy for check-ins and visit insights.",
         "UIBackgroundModes": [
           "remote-notification"
@@ -97,7 +98,15 @@
       ],
       "./plugins/withAndroidSdk35.js",
       "expo-video",
-      "react-native-radar"
+      "expo-camera",
+      "react-native-radar",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow TasteLanc to access your photos to upload event flyers.",
+          "cameraPermission": "Allow TasteLanc to use your camera to scan event flyers."
+        }
+      ]
     ],
     "extra": {
       "marketSlug": "lancaster-pa",

@@ -188,7 +188,8 @@ Art style requirements (MUST match exactly):
 - Simple flat color fills, minimal shading
 - The character should incorporate a LOCAL CULTURAL ELEMENT from ${regionName}: ${localCulture}. This element should be worked into the character as a hat, headpiece, or surrounding motif (similar to how a rose forms the hair/hat of another character in this series).
 - Primary color palette should feature ${accentColor} as the dominant color
-- Dark background (#121212)
+- PLAIN SOLID COLOR BACKGROUND ONLY — NO background images, patterns, textures, scenery, gradients, or decorative elements behind the character. Just the character on a flat solid background (#121212).
+- NOTHING behind or around the character except the solid background color. No cityscape, no food, no buildings, no decorations.
 - Square composition, centered
 - Style reference: cute Japanese chibi mascot meets bold American logo design, similar to a friendly app mascot icon`;
 
@@ -241,6 +242,91 @@ Art style requirements (MUST match exactly):
     return publicUrl.publicUrl;
   } catch (error) {
     console.error(`[avatar-gen] Failed to generate avatar for ${aiName}:`, error);
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// App icon generation (DALL-E 3)
+// ─────────────────────────────────────────────────────────
+
+export async function generateAppIcon(
+  appName: string,
+  accentColor: string,
+  headerBgColor: string,
+  regionName: string,
+  slug: string,
+  variant: number
+): Promise<string | null> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.warn('[icon-gen] Missing Supabase credentials, skipping icon generation');
+    return null;
+  }
+
+  try {
+    const prompt = `A mobile app icon for "${appName}", a local dining discovery app for ${regionName}.
+
+Design requirements (MUST follow exactly — match the existing brand series):
+- A LOCATION MAP PIN / DROP PIN as the main shape, centered on the icon
+- A FORK integrated into the pin — the fork handle extends below the pin as the pin's pointer/tail
+- The text "${appName.replace('Taste', 'Taste ')}" written inside the pin in two lines: "Taste" on top, "${regionName}" below
+- The pin color should be ${accentColor}
+- The fork color should be a contrasting accent (gold/green/complementary to the pin)
+- Background: solid flat ${headerBgColor} — NO gradients, NO patterns, NO scenery
+- Clean, flat vector-style design — NO 3D effects, NO shadows, NO bevels, NO photorealism
+- NOTHING else in the image — just the pin+fork logo on the solid background
+- Square composition (1024x1024), icon centered
+- This must look like it belongs in the SAME app series as "TasteLanc" (dark red pin, green fork, dark bg) and "TasteCumberland" (navy blue pin, gold fork, cream bg)`;
+
+    const response = await openai.images.generate({
+      model: 'dall-e-3',
+      prompt,
+      n: 1,
+      size: '1024x1024',
+      quality: 'standard',
+    });
+
+    const imageUrl = response.data?.[0]?.url;
+    if (!imageUrl) {
+      console.error('[icon-gen] No image URL returned from DALL-E');
+      return null;
+    }
+
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      console.error('[icon-gen] Failed to download generated image');
+      return null;
+    }
+
+    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+    const fileName = `expansion-icons/${slug}-v${variant}.png`;
+
+    const { createClient } = await import('@supabase/supabase-js');
+    const storageClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { error: uploadError } = await storageClient.storage
+      .from('images')
+      .upload(fileName, imageBuffer, {
+        contentType: 'image/png',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('[icon-gen] Upload failed:', uploadError.message);
+      return null;
+    }
+
+    const { data: publicUrl } = storageClient.storage
+      .from('images')
+      .getPublicUrl(fileName);
+
+    console.log(`[icon-gen] Generated app icon for ${appName}: ${publicUrl.publicUrl}`);
+    return publicUrl.publicUrl;
+  } catch (error) {
+    console.error(`[icon-gen] Failed to generate app icon for ${appName}:`, error);
     return null;
   }
 }
@@ -666,6 +752,7 @@ Return ONLY a JSON object with a "proposals" key containing an array of ${count}
         city.dining_scene_description,
       ].filter(Boolean).join('. ').slice(0, 300) || `the ${regionName} area`;
 
+      // Generate avatars and app icons in parallel for each proposal
       const avatarPromises = proposals.map((proposal, index) =>
         generateAvatarImage(
           proposal.ai_assistant_name,
@@ -677,15 +764,38 @@ Return ONLY a JSON object with a "proposals" key containing an array of ${count}
         )
       );
 
-      const avatarUrls = await Promise.allSettled(avatarPromises);
+      const iconPromises = proposals.map((proposal, index) =>
+        generateAppIcon(
+          proposal.app_name,
+          proposal.colors?.accent || '#4A90D9',
+          proposal.colors?.headerBg || '#1A1A1A',
+          regionName,
+          slug,
+          index + 1
+        )
+      );
+
+      const [avatarUrls, iconUrls] = await Promise.all([
+        Promise.allSettled(avatarPromises),
+        Promise.allSettled(iconPromises),
+      ]);
 
       for (let i = 0; i < proposals.length; i++) {
-        const result = avatarUrls[i];
-        const avatarUrl = result?.status === 'fulfilled' ? result.value : null;
+        const avatarResult = avatarUrls[i];
+        const avatarUrl = avatarResult?.status === 'fulfilled' ? avatarResult.value : null;
         if (avatarUrl) {
           proposals[i].avatar_image_url = avatarUrl;
           if (proposals[i].market_config_json) {
             (proposals[i].market_config_json as Record<string, unknown>).aiAvatarImage = avatarUrl;
+          }
+        }
+
+        const iconResult = iconUrls[i];
+        const iconUrl = iconResult?.status === 'fulfilled' ? iconResult.value : null;
+        if (iconUrl) {
+          proposals[i].app_icon_url = iconUrl;
+          if (proposals[i].market_config_json) {
+            (proposals[i].market_config_json as Record<string, unknown>).appIconImage = iconUrl;
           }
         }
       }
