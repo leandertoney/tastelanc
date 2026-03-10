@@ -66,11 +66,13 @@ async function loadSuggestions(
   const { data: restaurants } = await q.limit(100);
   const all = (restaurants || []) as Array<SuggestedRestaurant & { score?: number }>;
 
-  // 2. Get active happy-hour restaurant IDs
-  const { data: happyHours } = await supabase
+  // 2. Get active happy-hour restaurant IDs (scoped to market via restaurant join)
+  let hhQuery = supabase
     .from('happy_hours')
-    .select('restaurant_id')
+    .select('restaurant_id, restaurant:restaurants!inner(market_id)')
     .eq('is_active', true);
+  if (marketId) hhQuery = hhQuery.eq('restaurant.market_id', marketId);
+  const { data: happyHours } = await hhQuery;
   const happyHourIds = new Set(
     (happyHours || []).map((h: { restaurant_id: string }) => h.restaurant_id)
   );

@@ -188,7 +188,7 @@ export default function HomeScreen() {
       {/* Plan Your Day CTA */}
       <ErrorBoundary level="section">
         <View style={styles.ctaWrapper}>
-          <PlanYourDayCard />
+          <PlanYourDayCard onPress={() => navigation.navigate('ItineraryBuilder', {})} />
         </View>
       </ErrorBoundary>
 

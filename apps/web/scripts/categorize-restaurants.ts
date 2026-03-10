@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { readFileSync } from 'fs';
 
 // Read .env.local
@@ -14,8 +14,8 @@ envContent.split('\n').forEach((line) => {
 
 const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
-const anthropic = new Anthropic({
-  apiKey: env.ANTHROPIC_API_KEY,
+const openai = new OpenAI({
+  apiKey: env.OPENAI_API_KEY,
 });
 
 // All valid categories
@@ -46,7 +46,7 @@ interface Restaurant {
   google_types: string[] | null;
 }
 
-const SYSTEM_PROMPT = `You are a restaurant categorization expert for Lancaster, PA. Your job is to analyze restaurant information and assign appropriate categories.
+const SYSTEM_PROMPT = `You are a restaurant categorization expert. Your job is to analyze restaurant information and assign appropriate categories.
 
 Given a restaurant's name, description, location, and Google Place types (when available), select ALL applicable categories from the list below. Be thorough but accurate.
 
@@ -97,22 +97,21 @@ Current categories: ${restaurant.categories?.join(', ') || 'None'}
 Based on all available information, assign all applicable categories:`;
 
   try {
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
       max_tokens: 256,
       temperature: 0.3,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userPrompt }],
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userPrompt },
+      ],
     });
 
-    const content = response.content[0];
-    if (content.type !== 'text') {
-      console.error(`Unexpected response type for ${restaurant.name}`);
+    const text = (response.choices[0]?.message?.content || '').trim();
+    if (!text) {
+      console.error(`Empty response for ${restaurant.name}`);
       return restaurant.categories || [];
     }
-
-    // Parse JSON array from response
-    const text = content.text.trim();
     const jsonMatch = text.match(/\[.*\]/s);
     if (!jsonMatch) {
       console.error(`Could not parse JSON for ${restaurant.name}: ${text}`);
@@ -137,11 +136,32 @@ async function main() {
   const dryRun = process.argv.includes('--dry-run');
   const limit = process.argv.find((arg) => arg.startsWith('--limit='));
   const maxRestaurants = limit ? parseInt(limit.split('=')[1], 10) : undefined;
+  const marketArg = process.argv.find((arg) => arg.startsWith('--market='));
+  const marketSlug = marketArg ? marketArg.split('=')[1] : undefined;
+  const uncategorizedOnly = process.argv.includes('--uncategorized-only');
 
   console.log('=== RESTAURANT CATEGORIZATION ===\n');
   console.log(`Mode: ${dryRun ? 'DRY RUN (no changes)' : 'LIVE'}`);
   if (maxRestaurants) console.log(`Limit: ${maxRestaurants} restaurants`);
+  if (marketSlug) console.log(`Market: ${marketSlug}`);
+  if (uncategorizedOnly) console.log(`Filter: uncategorized only`);
   console.log('');
+
+  // Resolve market_id from slug if provided
+  let marketId: string | undefined;
+  if (marketSlug) {
+    const { data: market, error: marketError } = await supabase
+      .from('markets')
+      .select('id, name')
+      .eq('slug', marketSlug)
+      .single();
+    if (marketError || !market) {
+      console.error(`Market "${marketSlug}" not found.`);
+      return;
+    }
+    marketId = market.id;
+    console.log(`Resolved market: ${market.name} (${marketId})\n`);
+  }
 
   // Fetch restaurants
   let query = supabase
@@ -150,6 +170,12 @@ async function main() {
     .eq('is_active', true)
     .order('name');
 
+  if (marketId) {
+    query = query.eq('market_id', marketId);
+  }
+  if (uncategorizedOnly) {
+    query = query.eq('categories', '{}');
+  }
   if (maxRestaurants) {
     query = query.limit(maxRestaurants);
   }

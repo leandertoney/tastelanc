@@ -263,7 +263,7 @@ export async function fetchTonightCandidates(
 }> {
   const memory = await loadRecencyMemory(supabase, marketId);
 
-  // Events: recurring on this day OR one-time on this date
+  // Events: recurring on this day OR one-time on this date (scoped to market)
   const { data: events } = await supabase
     .from('events')
     .select(`
@@ -273,10 +273,11 @@ export async function fetchTonightCandidates(
       )
     `)
     .eq('is_active', true)
+    .eq('restaurant.market_id', marketId)
     .or(`and(is_recurring.eq.true,days_of_week.cs.{${dayOfWeek}}),and(is_recurring.eq.false,event_date.eq.${todayDate})`);
 
   const scoredEvents = (events || [])
-    .filter((e: any) => e.restaurant?.market_id === marketId && e.restaurant?.is_active)
+    .filter((e: any) => e.restaurant?.is_active)
     .map((e: any) => {
       const timeStr = formatTimeShort(e.start_time);
       const eventLabel = EVENT_TYPE_LABELS[e.event_type] || e.name;
@@ -297,7 +298,7 @@ export async function fetchTonightCandidates(
       }, memory);
     });
 
-  // Happy hours active today
+  // Happy hours active today (scoped to market)
   const { data: happyHours } = await supabase
     .from('happy_hours')
     .select(`
@@ -307,10 +308,11 @@ export async function fetchTonightCandidates(
       )
     `)
     .eq('is_active', true)
+    .eq('restaurant.market_id', marketId)
     .contains('days_of_week', [dayOfWeek]);
 
   const scoredHappyHours = (happyHours || [])
-    .filter((h: any) => h.restaurant?.market_id === marketId && h.restaurant?.is_active)
+    .filter((h: any) => h.restaurant?.is_active)
     .map((h: any) => {
       const start = formatTimeShort(h.start_time);
       const end = formatTimeShort(h.end_time);
@@ -331,7 +333,7 @@ export async function fetchTonightCandidates(
       }, memory);
     });
 
-  // Specials active today
+  // Specials active today (scoped to market)
   const { data: specials } = await supabase
     .from('specials')
     .select(`
@@ -340,11 +342,12 @@ export async function fetchTonightCandidates(
         tier:tiers(name)
       )
     `)
-    .eq('is_active', true);
+    .eq('is_active', true)
+    .eq('restaurant.market_id', marketId);
 
   const scoredSpecials = (specials || [])
     .filter((s: any) => {
-      if (s.restaurant?.market_id !== marketId || !s.restaurant?.is_active) return false;
+      if (!s.restaurant?.is_active) return false;
       if (s.is_recurring && s.days_of_week?.includes(dayOfWeek)) return true;
       if (!s.is_recurring && s.start_date && s.end_date) {
         return todayDate >= s.start_date && todayDate <= s.end_date;
@@ -384,7 +387,7 @@ export async function fetchWeekendCandidates(
   const memory = await loadRecencyMemory(supabase, marketId);
   const weekendDays = ['friday', 'saturday', 'sunday'];
 
-  // Events on fri/sat/sun
+  // Events on fri/sat/sun (scoped to market)
   const { data: events } = await supabase
     .from('events')
     .select(`
@@ -393,11 +396,12 @@ export async function fetchWeekendCandidates(
         tier:tiers(name)
       )
     `)
-    .eq('is_active', true);
+    .eq('is_active', true)
+    .eq('restaurant.market_id', marketId);
 
   const scoredEvents = (events || [])
     .filter((e: any) => {
-      if (e.restaurant?.market_id !== marketId || !e.restaurant?.is_active) return false;
+      if (!e.restaurant?.is_active) return false;
       if (e.is_recurring && e.days_of_week?.some((d: string) => weekendDays.includes(d))) return true;
       if (!e.is_recurring && e.event_date) {
         return [fridayDate, saturdayDate, sundayDate].includes(e.event_date);
@@ -487,11 +491,12 @@ export async function fetchUpcomingEventsCandidates(
         tier:tiers(name)
       )
     `)
-    .eq('is_active', true);
+    .eq('is_active', true)
+    .eq('restaurant.market_id', marketId);
 
   const scored = (events || [])
     .filter((e: any) => {
-      if (e.restaurant?.market_id !== marketId || !e.restaurant?.is_active) return false;
+      if (!e.restaurant?.is_active) return false;
       if (e.is_recurring && e.days_of_week?.some((d: string) => remainingDays.includes(d))) return true;
       if (!e.is_recurring && e.event_date && remainingDates.includes(e.event_date)) return true;
       return false;

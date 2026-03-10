@@ -58,14 +58,25 @@ npx supabase link --project-ref kufcxxynjvyharhtfptd
 |---|---|---|
 | `lancaster-pa` | `tastelanc` | `.eq('app_slug', 'tastelanc')` |
 | `cumberland-pa` | `taste-cumberland` | `.eq('app_slug', 'taste-cumberland')` |
+| `fayetteville-nc` | `taste-fayetteville` | `.eq('app_slug', 'taste-fayetteville')` |
 
 ### Rules
 1. **Push notifications**: Query data with `market_id` filter AND send only to that market's `app_slug` tokens
 2. **Cron jobs / scheduled functions**: MUST iterate over each market independently — never query all markets then send one notification
-3. **Database queries**: `restaurants`, `happy_hours`, `events`, `specials` queries MUST filter by `market_id`
+3. **Database queries**: `restaurants`, `happy_hours`, `events`, `specials`, `checkins`, `restaurant_hours` queries MUST filter by `market_id`. Child tables without `market_id` column MUST use `restaurants!inner` join: `.select('*, restaurant:restaurants!inner(market_id)').eq('restaurant.market_id', marketId)`
 4. **New notification types**: Use the `sendTodaysPickForMarket` / `sendHappyHourAlertsForMarket` per-market pattern
 5. **Runtime guard**: Use `validateMarketScope()` from `apps/web/lib/notifications/market-guard.ts` before sending any push notification
 6. **Audit script**: Run `npx tsx scripts/audit-notifications.ts` to verify all notification code is market-scoped
+7. **NEVER write a `.from()` query on a restaurant-child table without market scoping** — if the table doesn't have `market_id`, join through restaurants
+
+### New Market Launch Checklist (MANDATORY)
+Before declaring any new market app "ready", ALL of the following must be verified:
+1. **Restaurant categorization**: Run `cd apps/web && npx tsx scripts/categorize-restaurants.ts --market=<slug> --uncategorized-only` — zero uncategorized restaurants
+2. **Every feature works**: Open each screen (Home, Explore, Plan Your Day, Happy Hours, Events, Specials, Profile) and verify data appears
+3. **Market isolation**: No data from other markets visible anywhere
+4. **All queries scoped**: Search the codebase for any new `.from()` calls on child tables and verify market filtering
+5. **Assets complete**: AI avatar, animated logo, splash video, onboarding hero — no placeholders from other apps
+6. **Push notifications**: Capability enabled on Apple Developer Portal, provisioning profile includes push
 
 ### Reference Files
 - Edge function: `supabase/functions/send-notifications/index.ts` (MARKET_INFO mapping)

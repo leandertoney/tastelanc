@@ -158,23 +158,33 @@ async function getCuisineFeaturedRestaurants(): Promise<Record<CuisineType, Cuis
 
 // ========== Social Proof Query Functions ==========
 
-async function getPlatformSocialProof() {
+async function getPlatformSocialProof(marketId: string | null) {
   const supabase = getSupabase();
   const brand = getBrand();
-  const { data, error } = await supabase.rpc('get_social_proof_stats');
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  if (error || !data) {
-    return {
-      checkinsToday: 0,
-      checkinsThisWeek: 0,
-      checkinBannerText: 'Check in at restaurants to earn points',
-      communityText: `Join the ${brand.cityName} dining community`,
-    };
+  let checkinsToday = 0;
+  let checkinsThisWeek = 0;
+  try {
+    const [todayRes, weekRes] = await Promise.all([
+      supabase
+        .from('checkins')
+        .select('*, restaurant:restaurants!inner(market_id)', { count: 'exact', head: true })
+        .eq('restaurant.market_id', marketId)
+        .gte('created_at', todayStart),
+      supabase
+        .from('checkins')
+        .select('*, restaurant:restaurants!inner(market_id)', { count: 'exact', head: true })
+        .eq('restaurant.market_id', marketId)
+        .gte('created_at', oneWeekAgo),
+    ]);
+    checkinsToday = todayRes.count || 0;
+    checkinsThisWeek = weekRes.count || 0;
+  } catch {
+    // Ignore
   }
-
-  const stats = Array.isArray(data) ? data[0] : data;
-  const checkinsToday = stats?.checkins_today || 0;
-  const checkinsThisWeek = stats?.checkins_this_week || 0;
 
   return {
     checkinsToday,
@@ -186,15 +196,17 @@ async function getPlatformSocialProof() {
   };
 }
 
-async function getTrendingRestaurants(): Promise<string[]> {
+async function getTrendingRestaurants(marketId: string | null): Promise<string[]> {
   const supabase = getSupabase();
   const trendingIds = new Set<string>();
 
   try {
-    const { data } = await supabase
+    let query = supabase
       .from('restaurant_activity')
-      .select('restaurant_id')
+      .select('restaurant_id, restaurant:restaurants!inner(market_id)')
       .eq('is_trending', true);
+    if (marketId) query = query.eq('restaurant.market_id', marketId);
+    const { data } = await query;
     data?.forEach((row: { restaurant_id: string }) => trendingIds.add(row.restaurant_id));
   } catch {
     // Ignore
@@ -235,7 +247,7 @@ export async function prefetchHomeScreenData(
       // Trending restaurants
       qc.prefetchQuery({
         queryKey: ['socialProof', 'trending', marketId],
-        queryFn: getTrendingRestaurants,
+        queryFn: () => getTrendingRestaurants(marketId),
         staleTime: 5 * 60 * 1000,
       }),
 
@@ -249,7 +261,7 @@ export async function prefetchHomeScreenData(
       // Platform social proof
       qc.prefetchQuery({
         queryKey: ['socialProof', 'platform', marketId],
-        queryFn: getPlatformSocialProof,
+        queryFn: () => getPlatformSocialProof(marketId),
         staleTime: 5 * 60 * 1000,
       }),
 
@@ -281,15 +293,17 @@ export async function prefetchHomeScreenData(
         staleTime: 5 * 60 * 1000,
       }),
 
-      // Open status (today's hours for all restaurants -- powers Open/Closed badges)
+      // Open status (today's hours for this market's restaurants -- powers Open/Closed badges)
       qc.prefetchQuery({
         queryKey: queryKeys.openStatus.today(getCurrentDay()),
         queryFn: async () => {
           const today = getCurrentDay();
-          const { data, error } = await supabase
+          let query = supabase
             .from('restaurant_hours')
-            .select('restaurant_id, open_time, close_time, is_closed')
+            .select('restaurant_id, open_time, close_time, is_closed, restaurant:restaurants!inner(market_id)')
             .eq('day_of_week', today);
+          if (marketId) query = query.eq('restaurant.market_id', marketId);
+          const { data, error } = await query;
           if (error) return {};
           const map: Record<string, { open_time: string | null; close_time: string | null; is_closed: boolean }> = {};
           for (const row of data || []) {

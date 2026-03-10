@@ -137,6 +137,9 @@ function passesFitnessTest(
   hasHappyHour: boolean,
   hasEvent: boolean,
 ): boolean {
+  // Uncategorized restaurants pass by default — don't exclude just because data is missing
+  if (restaurant.categories.length === 0 && !restaurant.cuisine) return true;
+
   const fitnessCategories = SLOT_FITNESS_CATEGORIES[slot];
   const fitnessCuisines = SLOT_FITNESS_CUISINES[slot];
 

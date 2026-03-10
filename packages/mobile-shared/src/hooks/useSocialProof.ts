@@ -90,9 +90,10 @@ export interface PersonalStats {
  */
 export function usePersonalStats() {
   const { userId } = useAuth();
+  const { marketId } = useMarket();
 
   return useQuery({
-    queryKey: ['personalStats', userId],
+    queryKey: ['personalStats', userId, marketId],
     queryFn: async (): Promise<PersonalStats> => {
       if (!userId) return {
         checkinsThisMonth: 0,
@@ -104,16 +105,19 @@ export function usePersonalStats() {
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
+      // Filter checkins through restaurant join to scope to current market
       const [checkinRes, lastVisitRes] = await Promise.all([
         supabase
           .from('checkins')
-          .select('*', { count: 'exact', head: true })
+          .select('*, restaurant:restaurants!inner(market_id)', { count: 'exact', head: true })
           .eq('user_id', userId)
+          .eq('restaurant.market_id', marketId)
           .gte('created_at', monthStart),
         supabase
           .from('checkins')
-          .select('restaurant_name, created_at')
+          .select('restaurant_name, created_at, restaurant:restaurants!inner(market_id)')
           .eq('user_id', userId)
+          .eq('restaurant.market_id', marketId)
           .order('created_at', { ascending: false })
           .limit(1),
       ]);
@@ -152,10 +156,7 @@ export function usePlatformSocialProof() {
     queryFn: async (): Promise<PlatformSocialProof> => {
       const supabase = getSupabase();
 
-      // Stub: pass p_market_id to RPC when it's updated in a future phase
-      const { data, error } = await supabase.rpc('get_social_proof_stats');
-
-      // Get live counts for happy hours and specials
+      // Get live counts for happy hours and specials (scoped to market via restaurant join)
       const now = new Date();
       const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
       const currentTime = now.toTimeString().slice(0, 5); // HH:MM
@@ -164,16 +165,18 @@ export function usePlatformSocialProof() {
       const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
       const twoHoursTime = twoHoursLater.toTimeString().slice(0, 5);
 
-      // Calculate one week ago
+      // Calculate one week ago and today start
       const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
 
-      // Query upcoming happy hours (starting within 2 hours)
+      // Query upcoming happy hours (starting within 2 hours) — filtered by market
       let upcomingHappyHoursCount = 0;
       try {
         const { count } = await supabase
           .from('happy_hours')
-          .select('*', { count: 'exact', head: true })
+          .select('*, restaurant:restaurants!inner(market_id)', { count: 'exact', head: true })
           .eq('is_active', true)
+          .eq('restaurant.market_id', marketId)
           .contains('days_of_week', [dayOfWeek])
           .gt('start_time', currentTime)
           .lte('start_time', twoHoursTime);
@@ -182,17 +185,40 @@ export function usePlatformSocialProof() {
         // Ignore - will show 0
       }
 
-      // Query new specials added this week
+      // Query new specials added this week — filtered by market
       let newSpecialsCount = 0;
       try {
         const { count } = await supabase
           .from('specials')
-          .select('*', { count: 'exact', head: true })
+          .select('*, restaurant:restaurants!inner(market_id)', { count: 'exact', head: true })
           .eq('is_active', true)
+          .eq('restaurant.market_id', marketId)
           .gte('created_at', oneWeekAgo);
         newSpecialsCount = count || 0;
       } catch {
         // Ignore - will show 0
+      }
+
+      // Query checkins for this market today/this week via restaurant join
+      let checkinsToday = 0;
+      let checkinsThisWeek = 0;
+      try {
+        const [todayRes, weekRes] = await Promise.all([
+          supabase
+            .from('checkins')
+            .select('*, restaurant:restaurants!inner(market_id)', { count: 'exact', head: true })
+            .eq('restaurant.market_id', marketId)
+            .gte('created_at', todayStart),
+          supabase
+            .from('checkins')
+            .select('*, restaurant:restaurants!inner(market_id)', { count: 'exact', head: true })
+            .eq('restaurant.market_id', marketId)
+            .gte('created_at', oneWeekAgo),
+        ]);
+        checkinsToday = todayRes.count || 0;
+        checkinsThisWeek = weekRes.count || 0;
+      } catch {
+        // Ignore
       }
 
       // Format banner text for happy hours and specials
@@ -203,23 +229,6 @@ export function usePlatformSocialProof() {
         ? `\u2728 ${newSpecialsCount} new special${newSpecialsCount > 1 ? 's' : ''} added this week`
         : null;
 
-      if (error || !data) {
-        return {
-          checkinsToday: 0,
-          checkinsThisWeek: 0,
-          upcomingHappyHoursCount,
-          newSpecialsCount,
-          checkinBannerText: 'Check in at restaurants to earn points',
-          communityText: 'Join the local dining community',
-          happyHoursBannerText,
-          specialsBannerText,
-        };
-      }
-
-      const stats = Array.isArray(data) ? data[0] : data;
-
-      const checkinsToday = stats?.checkins_today || 0;
-      const checkinsThisWeek = stats?.checkins_this_week || 0;
       const checkinText = getCheckinDisplayText(checkinsToday, 'today');
 
       return {
@@ -344,8 +353,9 @@ export function useTrendingRestaurants() {
       try {
         const { data } = await supabase
           .from('restaurant_activity')
-          .select('restaurant_id')
-          .eq('is_trending', true);
+          .select('restaurant_id, restaurant:restaurants!inner(market_id)')
+          .eq('is_trending', true)
+          .eq('restaurant.market_id', marketId);
         data?.forEach((row: { restaurant_id: string }) => trendingIds.add(row.restaurant_id));
       } catch {
         // Ignore

@@ -93,9 +93,11 @@ function useAllRestaurantHours(marketId: string | null) {
   return useQuery<Record<string, RestaurantHours[]>>({
     queryKey: ['itinerary', 'allHours', marketId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('restaurant_hours')
-        .select('*');
+        .select('*, restaurant:restaurants!inner(market_id)');
+      if (marketId) query = query.eq('restaurant.market_id', marketId);
+      const { data, error } = await query;
       if (error) {
         console.warn('useAllRestaurantHours query failed:', error.message);
         return {};
@@ -119,10 +121,12 @@ function useAllHappyHours(marketId: string | null) {
   return useQuery<HappyHour[]>({
     queryKey: ['itinerary', 'allHappyHours', marketId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('happy_hours')
-        .select('*')
+        .select('*, restaurant:restaurants!inner(market_id)')
         .eq('is_active', true);
+      if (marketId) query = query.eq('restaurant.market_id', marketId);
+      const { data, error } = await query;
       if (error) {
         console.warn('useAllHappyHours query failed:', error.message);
         return [];
@@ -136,7 +140,7 @@ function useAllHappyHours(marketId: string | null) {
 function useAllEvents(marketId: string | null) {
   return useQuery<ApiEvent[]>({
     queryKey: ['itinerary', 'allEvents', marketId],
-    queryFn: () => fetchEvents({ paid_only: false, limit: 100 }),
+    queryFn: () => fetchEvents({ paid_only: false, limit: 100, market_id: marketId }),
     staleTime: 10 * 60 * 1000,
   });
 }
@@ -393,8 +397,8 @@ const useStyles = createLazyStyles((colors) => ({
     shadowRadius: 16,
     elevation: 10,
     // Accent border
-    borderWidth: 1,
-    borderColor: 'rgba(164, 30, 34, 0.3)',
+    borderWidth: 1.5,
+    borderColor: colors.accent + '50',
   },
 
   // --- Logo ---
@@ -483,15 +487,15 @@ const useStyles = createLazyStyles((colors) => ({
     gap: 6,
     width: '48%' as any,
     paddingHorizontal: spacing.sm + 4,
-    paddingVertical: spacing.sm + 2,
+    paddingVertical: spacing.sm + 4,
     borderRadius: radius.md,
     backgroundColor: colors.cardBg,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
   },
   moodChipSelected: {
     borderColor: colors.accent,
-    backgroundColor: 'rgba(164, 30, 34, 0.15)',
+    backgroundColor: colors.accent + '26',
   },
   moodText: {
     fontSize: typography.subhead,
@@ -510,15 +514,15 @@ const useStyles = createLazyStyles((colors) => ({
   stopPill: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: spacing.sm + 2,
+    paddingVertical: spacing.sm + 4,
     borderRadius: radius.md,
     backgroundColor: colors.cardBg,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
   },
   stopPillSelected: {
     borderColor: colors.accent,
-    backgroundColor: 'rgba(164, 30, 34, 0.15)',
+    backgroundColor: colors.accent + '26',
   },
   stopText: {
     fontSize: typography.subhead,
