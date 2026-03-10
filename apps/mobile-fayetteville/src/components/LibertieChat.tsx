@@ -19,9 +19,9 @@ import { requestReviewIfEligible } from '../lib/reviewPrompts';
 import { ONBOARDING_DATA_KEY, OnboardingData } from '../types/onboarding';
 import { BRAND } from '../config/brand';
 
-// Dreamie assets
-const dreamieImage = require('../../assets/images/dreamie_avatar.png');
-const dreamieAnimated = require('../../assets/animations/dreamie_animated.mp4');
+// Libertie assets
+const libertieImage = require('../../assets/images/libertie_avatar.png');
+const libertieAnimated = require('../../assets/animations/libertie_animated.mp4');
 
 interface Message {
   id: string;
@@ -30,7 +30,7 @@ interface Message {
   timestamp: Date;
 }
 
-interface DreamieChatProps {
+interface LibertieChatProps {
   visible: boolean;
   onClose: () => void;
   onNavigateToRestaurant?: (restaurantId: string) => void;
@@ -137,22 +137,22 @@ function TypingDots() {
   );
 }
 
-export default function DreamieChat({ visible, onClose, onNavigateToRestaurant }: DreamieChatProps) {
+export default function LibertieChat({ visible, onClose, onNavigateToRestaurant }: LibertieChatProps) {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const flatListRef = useRef<any>(null);
 
-  const dreamiePlayer = useVideoPlayer(dreamieAnimated, player => {
+  const libertiePlayer = useVideoPlayer(libertieAnimated, player => {
     player.loop = true;
     player.muted = true;
   });
 
   useEffect(() => {
     if (visible) {
-      dreamiePlayer.play();
+      libertiePlayer.play();
     } else {
-      dreamiePlayer.pause();
+      libertiePlayer.pause();
     }
-  }, [visible, dreamiePlayer]);
+  }, [visible, libertiePlayer]);
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -237,7 +237,7 @@ export default function DreamieChat({ visible, onClose, onNavigateToRestaurant }
           try { errorDetail = await error.context.text(); } catch { /* fallback */ }
         }
       }
-      console.error('Dreamie chat error detail:', errorDetail);
+      console.error('Libertie chat error detail:', errorDetail);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: "I'm having a little trouble connecting right now. Please try again in a moment!",
@@ -296,7 +296,7 @@ export default function DreamieChat({ visible, onClose, onNavigateToRestaurant }
     >
       {!item.isUser && (
         <View style={styles.avatarContainer}>
-          <Image source={dreamieImage} style={styles.dreamieAvatar} />
+          <Image source={libertieImage} style={styles.libertieAvatar} />
         </View>
       )}
       <View style={[styles.messageBubble, item.isUser ? styles.userBubble : styles.aiBubble]}>
@@ -348,7 +348,7 @@ export default function DreamieChat({ visible, onClose, onNavigateToRestaurant }
       setMessages((prev) => [...prev, aiMessage]);
       requestReviewIfEligible('mollie_interaction');
     } catch (error) {
-      console.error('Dreamie chat error:', error);
+      console.error('Libertie chat error:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: "I'm having a little trouble connecting right now. Please try again in a moment!",
@@ -383,10 +383,10 @@ export default function DreamieChat({ visible, onClose, onNavigateToRestaurant }
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <View style={styles.dreamieHeaderAvatar}>
+            <View style={styles.libertieHeaderAvatar}>
               <VideoView
-                player={dreamiePlayer}
-                style={styles.dreamieHeaderImage}
+                player={libertiePlayer}
+                style={styles.libertieHeaderImage}
                 contentFit="cover"
                 nativeControls={false}
               />
@@ -414,7 +414,7 @@ export default function DreamieChat({ visible, onClose, onNavigateToRestaurant }
             isTyping ? (
               <View style={styles.typingContainer}>
                 <View style={styles.avatarContainer}>
-                  <Image source={dreamieImage} style={styles.dreamieAvatar} />
+                  <Image source={libertieImage} style={styles.libertieAvatar} />
                 </View>
                 <View style={styles.typingBubble}>
                   <TypingDots />
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  dreamieHeaderAvatar: {
+  libertieHeaderAvatar: {
     width: 48,
     height: 48,
     borderRadius: 24,
@@ -500,7 +500,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.accent,
   },
-  dreamieHeaderImage: { width: 48, height: 48 },
+  libertieHeaderImage: { width: 48, height: 48 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
   headerSubtitle: { fontSize: 12, color: colors.textMuted },
   closeButton: { padding: 8 },
@@ -510,7 +510,7 @@ const styles = StyleSheet.create({
   userMessageContainer: { justifyContent: 'flex-end' },
   aiMessageContainer: { justifyContent: 'flex-start' },
   avatarContainer: { marginRight: 8 },
-  dreamieAvatar: { width: 32, height: 32, borderRadius: 16 },
+  libertieAvatar: { width: 32, height: 32, borderRadius: 16 },
   messageBubble: { maxWidth: '75%', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 20 },
   userBubble: { backgroundColor: colors.accent, borderBottomRightRadius: 4 },
   aiBubble: { backgroundColor: colors.cardBg, borderBottomLeftRadius: 4 },

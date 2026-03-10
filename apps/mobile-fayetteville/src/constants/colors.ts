@@ -1,6 +1,6 @@
 // Theme colors derived from BRAND.palette
 // All UI tokens flow from the 4 brand colors defined in brand.ts
-// Dark theme — Dreamville-inspired navy color system
+// Dark theme — Fayetteville navy color system
 
 import { BRAND } from '../config/brand';
 
@@ -9,8 +9,8 @@ const { background, navy: accentBlue, gold: red, green: blueAccent } = BRAND.pal
 export const colors = {
   // Primary background - dark navy
   primary: background,
-  primaryLight: '#2A4060',
-  primaryDark: '#111E2F',
+  primaryLight: '#1E3044',
+  primaryDark: '#050E1A',
 
   // Accent color - light blue (pin/highlight)
   accent: accentBlue,
@@ -25,14 +25,14 @@ export const colors = {
   textAccent: accentBlue,
 
   // Card backgrounds (elevated surfaces on dark background)
-  cardBg: '#253650',
-  cardBgElevated: '#2C3F5C',
-  cardBgSelected: '#334B6A',
-  cardBgHover: '#2A4060',
+  cardBg: '#162638',
+  cardBgElevated: '#1E3044',
+  cardBgSelected: '#253650',
+  cardBgHover: '#1A2D40',
 
   // Surface colors for layering
-  surface: '#1E3044',
-  surfaceElevated: '#253650',
+  surface: '#0F1E2F',
+  surfaceElevated: '#162638',
   surfaceBorder: 'rgba(147,181,207,0.15)',
 
   // Utility colors (semantic)
@@ -64,17 +64,17 @@ export const colors = {
   tabInactive: 'rgba(255,255,255,0.4)',
 
   // Input fields
-  inputBg: '#253650',
+  inputBg: '#162638',
   inputBorder: 'rgba(147,181,207,0.2)',
   inputPlaceholder: 'rgba(255,255,255,0.35)',
 
   // Overlay/Modal
   overlay: 'rgba(0,0,0,0.7)',
-  modalBg: '#253650',
+  modalBg: '#162638',
 
   // Legacy support
   background: background,
-  backgroundAlt: '#253650',
+  backgroundAlt: '#162638',
 };
 
 // Spacing, typography, and radius are shared across all market apps

@@ -21,8 +21,8 @@ initSentry();
 
 // Initialize shared theme singleton so shared components can access brand/colors/assets
 initTheme(BRAND, colors, {
-  aiAvatar: require('./assets/images/dreamie_avatar.png'),
-  aiAnimated: require('./assets/animations/dreamie_animated.mp4'),
+  aiAvatar: require('./assets/images/libertie_avatar.png'),
+  aiAnimated: require('./assets/animations/libertie_animated.mp4'),
   appIcon: require('./assets/icon.png'),
   splashVideo: require('./assets/animation/tastefayetteville_splash.mp4'),
   onboardingHero: require('./assets/images/onboarding/soundfamiliar.png'),
