@@ -186,10 +186,20 @@ export function scoreRestaurant(
   }
 
   // 4. Budget match: onboarding budget → restaurant.price_range
-  if (preferences.budget && restaurant.price_range) {
-    const acceptablePrices = BUDGET_TO_PRICE[preferences.budget] || [];
-    if (acceptablePrices.includes(restaurant.price_range)) {
+  if (preferences.budgetPreferences && preferences.budgetPreferences.length > 0 && restaurant.price_range) {
+    if (preferences.budgetPreferences.includes('All of the above')) {
       score += SCORING.BUDGET_MATCH;
+    } else {
+      const acceptablePrices: string[] = [];
+      for (const bp of preferences.budgetPreferences) {
+        const prices = BUDGET_TO_PRICE[bp] || [];
+        for (const p of prices) {
+          if (!acceptablePrices.includes(p)) acceptablePrices.push(p);
+        }
+      }
+      if (acceptablePrices.includes(restaurant.price_range)) {
+        score += SCORING.BUDGET_MATCH;
+      }
     }
   }
 

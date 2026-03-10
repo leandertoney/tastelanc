@@ -16,12 +16,11 @@ import { EVENT_OPTIONS } from '../../types/onboarding';
 import { getColors } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { duration, spring, reveal } from '../../constants/animations';
-import { MultiSelectGrid } from '../../components/Onboarding';
+import { MultiSelectGrid, ContinueButton } from '../../components/Onboarding';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingEventSeeking'>;
 
 const MAX_SELECTIONS = 3;
-const AUTO_PROCEED_DELAY = 2000;
 
 const EVENT_GRID_OPTIONS = EVENT_OPTIONS.map((option) => ({
   id: option,
@@ -33,17 +32,16 @@ export default function OnboardingEventSeekingScreen({ navigation }: Props) {
   const styles = useStyles();
   const colors = getColors();
   const { data, toggleEventPreference } = useOnboarding();
-  const autoProceedTimer = useRef<NodeJS.Timeout | null>(null);
   const hasNavigated = useRef(false);
 
   const titleOpacity = useSharedValue(0);
   const titleTranslate = useSharedValue(-20);
   const contentOpacity = useSharedValue(0);
+  const buttonOpacity = useSharedValue(0);
 
   const handleContinue = useCallback(() => {
     if (hasNavigated.current) return;
     hasNavigated.current = true;
-    if (autoProceedTimer.current) clearTimeout(autoProceedTimer.current);
     navigation.navigate('OnboardingBudget');
   }, [navigation]);
 
@@ -53,12 +51,18 @@ export default function OnboardingEventSeekingScreen({ navigation }: Props) {
     contentOpacity.value = withDelay(reveal.content, withTiming(1, { duration: duration.normal }));
   }, []);
 
+  // Auto-advance at 3 selections, show button at 2+
   useEffect(() => {
     const selectionCount = data.eventPreferences.length;
-    if (autoProceedTimer.current) { clearTimeout(autoProceedTimer.current); autoProceedTimer.current = null; }
-    if (selectionCount >= MAX_SELECTIONS) { handleContinue(); return; }
-    if (selectionCount === 2) { autoProceedTimer.current = setTimeout(() => { handleContinue(); }, AUTO_PROCEED_DELAY); }
-    return () => { if (autoProceedTimer.current) clearTimeout(autoProceedTimer.current); };
+    if (selectionCount >= MAX_SELECTIONS) {
+      handleContinue();
+      return;
+    }
+    if (selectionCount >= 1) {
+      buttonOpacity.value = withTiming(1, { duration: 300 });
+    } else {
+      buttonOpacity.value = withTiming(0, { duration: 200 });
+    }
   }, [data.eventPreferences.length, handleContinue]);
 
   useEffect(() => {
@@ -68,11 +72,14 @@ export default function OnboardingEventSeekingScreen({ navigation }: Props) {
 
   const titleAnimatedStyle = useAnimatedStyle(() => ({ opacity: titleOpacity.value, transform: [{ translateY: titleTranslate.value }] }));
   const contentAnimatedStyle = useAnimatedStyle(() => ({ opacity: contentOpacity.value }));
+  const buttonAnimatedStyle = useAnimatedStyle(() => ({ opacity: buttonOpacity.value }));
 
   const handleToggle = (option: string) => {
     const isCurrentlySelected = data.eventPreferences.includes(option);
     if (isCurrentlySelected || data.eventPreferences.length < MAX_SELECTIONS) toggleEventPreference(option);
   };
+
+  const showButton = data.eventPreferences.length >= 1;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -88,16 +95,22 @@ export default function OnboardingEventSeekingScreen({ navigation }: Props) {
           <MultiSelectGrid options={EVENT_GRID_OPTIONS} selected={data.eventPreferences} onToggle={handleToggle} maxSelections={MAX_SELECTIONS} baseDelay={reveal.items} columns={2} />
         </Animated.View>
       </View>
+      {showButton && (
+        <Animated.View style={[styles.footer, buttonAnimatedStyle]}>
+          <ContinueButton onPress={handleContinue} />
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 }
 
 const useStyles = createLazyStyles((colors) => ({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1, backgroundColor: colors.primary },
   backButton: { padding: 16 },
   content: { flex: 1, paddingHorizontal: 24 },
-  headerSection: { marginBottom: 24 },
+  headerSection: { marginBottom: 32 },
   headline: { fontSize: 28, fontWeight: '700' as const, color: colors.text, marginBottom: 8 },
   subheadline: { fontSize: 16, color: colors.textMuted },
-  gridContainer: { flex: 1, justifyContent: 'center' as const },
+  gridContainer: {},
+  footer: { paddingHorizontal: 24, paddingBottom: 24 },
 }));

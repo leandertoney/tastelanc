@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +16,7 @@ import { BUDGET_OPTIONS } from '../../types/onboarding';
 import { getColors } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { radius } from '../../constants/spacing';
+import { ContinueButton } from '../../components/Onboarding';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingBudget'>;
 
@@ -23,21 +24,20 @@ const BUDGET_DESCRIPTIONS: Record<string, string> = {
   '$': 'Quick bites & casual spots',
   '$$': 'Mid-range dining',
   '$$$': 'Fine dining & upscale',
+  'All of the above': 'Show me everything',
 };
 
 export default function OnboardingBudgetScreen({ navigation }: Props) {
   const styles = useStyles();
   const colors = getColors();
-  const { data, setBudget } = useOnboarding();
-  const hasNavigated = useRef(false);
+  const { data, toggleBudget } = useOnboarding();
 
   const titleOpacity = useSharedValue(0);
   const titleTranslate = useSharedValue(-20);
   const cardsOpacity = useSharedValue(0);
+  const buttonOpacity = useSharedValue(0);
 
   const handleContinue = useCallback(() => {
-    if (hasNavigated.current) return;
-    hasNavigated.current = true;
     navigation.navigate('OnboardingEntertainment');
   }, [navigation]);
 
@@ -47,18 +47,20 @@ export default function OnboardingBudgetScreen({ navigation }: Props) {
     cardsOpacity.value = withDelay(200, withTiming(1, { duration: 400 }));
   }, []);
 
+  // Show button when 1+ selected
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => { hasNavigated.current = false; });
-    return unsubscribe;
-  }, [navigation]);
+    if (data.budgetPreferences.length >= 1) {
+      buttonOpacity.value = withTiming(1, { duration: 300 });
+    } else {
+      buttonOpacity.value = withTiming(0, { duration: 200 });
+    }
+  }, [data.budgetPreferences.length]);
 
   const titleAnimatedStyle = useAnimatedStyle(() => ({ opacity: titleOpacity.value, transform: [{ translateY: titleTranslate.value }] }));
   const cardsAnimatedStyle = useAnimatedStyle(() => ({ opacity: cardsOpacity.value }));
+  const buttonAnimatedStyle = useAnimatedStyle(() => ({ opacity: buttonOpacity.value }));
 
-  const handleSelect = (option: string) => {
-    setBudget(option);
-    setTimeout(() => { handleContinue(); }, 300);
-  };
+  const showButton = data.budgetPreferences.length >= 1;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -68,15 +70,15 @@ export default function OnboardingBudgetScreen({ navigation }: Props) {
       <View style={styles.content}>
         <Animated.View style={[styles.headerSection, titleAnimatedStyle]}>
           <Text style={styles.headline}>What's your budget?</Text>
-          <Text style={styles.subheadline}>Choose one</Text>
+          <Text style={styles.subheadline}>Select all that apply</Text>
         </Animated.View>
         <Animated.View style={[styles.cardsContainer, cardsAnimatedStyle]}>
           {BUDGET_OPTIONS.map((option) => {
-            const isSelected = data.budget === option;
+            const isSelected = data.budgetPreferences.includes(option);
             return (
-              <TouchableOpacity key={option} style={[styles.budgetCard, isSelected && styles.budgetCardSelected]} onPress={() => handleSelect(option)} activeOpacity={0.8}>
+              <TouchableOpacity key={option} style={[styles.budgetCard, isSelected && styles.budgetCardSelected]} onPress={() => toggleBudget(option)} activeOpacity={0.8}>
                 <View style={styles.cardContent}>
-                  <Text style={[styles.budgetSymbol, isSelected && styles.budgetSymbolSelected]}>{option}</Text>
+                  <Text style={[option.startsWith('$') ? styles.budgetSymbol : styles.budgetLabel, isSelected && styles.budgetSymbolSelected]}>{option}</Text>
                   <Text style={[styles.budgetDescription, isSelected && styles.budgetDescriptionSelected]}>{BUDGET_DESCRIPTIONS[option]}</Text>
                 </View>
                 {isSelected && <View style={styles.checkmark}><Ionicons name="checkmark" size={20} color={colors.text} /></View>}
@@ -85,24 +87,31 @@ export default function OnboardingBudgetScreen({ navigation }: Props) {
           })}
         </Animated.View>
       </View>
+      {showButton && (
+        <Animated.View style={[styles.footer, buttonAnimatedStyle]}>
+          <ContinueButton onPress={handleContinue} />
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 }
 
 const useStyles = createLazyStyles((colors) => ({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1, backgroundColor: colors.primary },
   backButton: { padding: 16 },
   content: { flex: 1, paddingHorizontal: 24 },
   headerSection: { marginBottom: 32 },
   headline: { fontSize: 28, fontWeight: '700' as const, color: colors.text, marginBottom: 8 },
   subheadline: { fontSize: 16, color: colors.textMuted },
   cardsContainer: { gap: 12 },
-  budgetCard: { flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: colors.cardBg, borderRadius: radius.lg, padding: 20, borderWidth: 2, borderColor: 'transparent' },
+  budgetCard: { flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: colors.cardBg, borderRadius: radius.lg, padding: 16, borderWidth: 2, borderColor: 'transparent' },
   budgetCardSelected: { borderColor: colors.accent, backgroundColor: colors.cardBgSelected },
   cardContent: { flex: 1 },
-  budgetSymbol: { fontSize: 32, fontWeight: '700' as const, color: colors.accent, marginBottom: 4 },
+  budgetSymbol: { fontSize: 28, fontWeight: '700' as const, color: colors.accent, marginBottom: 2 },
+  budgetLabel: { fontSize: 18, fontWeight: '700' as const, color: colors.accent, marginBottom: 2 },
   budgetSymbolSelected: { color: colors.text },
   budgetDescription: { fontSize: 15, color: colors.textMuted },
   budgetDescriptionSelected: { color: colors.textMuted },
   checkmark: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.accent, justifyContent: 'center' as const, alignItems: 'center' as const },
+  footer: { paddingHorizontal: 24, paddingBottom: 24 },
 }));

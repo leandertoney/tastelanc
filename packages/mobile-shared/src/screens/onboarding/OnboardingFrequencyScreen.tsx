@@ -48,7 +48,7 @@ export default function OnboardingFrequencyScreen({ navigation }: Props) {
 }
 
 const useStyles = createLazyStyles((colors) => ({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1, backgroundColor: colors.primary },
   backButton: { padding: 16 },
   content: { flex: 1, paddingHorizontal: 24 },
   headline: { fontSize: 24, fontWeight: '700' as const, color: colors.text, marginBottom: 8 },

@@ -60,7 +60,7 @@ export default function OnboardingDiscoveryScreen({ navigation }: Props) {
 }
 
 const useStyles = createLazyStyles((colors) => ({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1, backgroundColor: colors.primary },
   backButton: { padding: 16 },
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: 24, paddingBottom: 24 },

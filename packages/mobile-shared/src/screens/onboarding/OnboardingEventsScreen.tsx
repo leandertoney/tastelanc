@@ -92,7 +92,7 @@ export default function OnboardingEventsScreen({ navigation }: Props) {
 }
 
 const useStyles = createLazyStyles((colors) => ({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1, backgroundColor: colors.primary },
   safeArea: { flex: 1 },
   content: { flex: 1, justifyContent: 'center' as const, alignItems: 'center' as const, paddingHorizontal: 32 },
   iconSection: { width: SCREEN_WIDTH * 0.7, height: SCREEN_WIDTH * 0.7, justifyContent: 'center' as const, alignItems: 'center' as const, marginBottom: 48 },

@@ -2,6 +2,7 @@
  * VideoRecommendPreviewScreen — preview the recorded video,
  * add an optional caption with positive suggestion chips, and post.
  *
+ * Supports multi-segment playback: clips play sequentially in a loop.
  * Positive framing: suggestion chips like "Must-try dish", "Best vibes"
  * guide users toward positive language without rules or restrictions.
  */
@@ -54,17 +55,41 @@ export default function VideoRecommendPreviewScreen({ route, navigation }: Props
   const { showSignUpModal } = useSignUpModal();
   const queryClient = useQueryClient();
 
-  const { videoUri, restaurantId, restaurantName, durationSeconds } = route.params as {
-    videoUri: string;
+  const { clips, restaurantId, restaurantName, durationSeconds } = route.params as {
+    clips: { uri: string; duration: number }[];
     restaurantId: string;
     restaurantName: string;
     durationSeconds: number;
   };
 
-  const previewPlayer = useVideoPlayer(videoUri, (p) => {
+  // Continuous looping playback — always loops so video never stops
+  const previewPlayer = useVideoPlayer(clips[0].uri, (p) => {
     p.loop = true;
     p.play();
   });
+
+  // For multi-clip: rotate through clips on a duration-based timer
+  useEffect(() => {
+    if (clips.length <= 1) return;
+
+    let clipIdx = 0;
+    let timerId: ReturnType<typeof setTimeout>;
+
+    const scheduleNext = () => {
+      timerId = setTimeout(() => {
+        clipIdx = (clipIdx + 1) % clips.length;
+        try {
+          previewPlayer.replace(clips[clipIdx].uri);
+          previewPlayer.play();
+        } catch {}
+        scheduleNext();
+      }, clips[clipIdx].duration * 1000);
+    };
+    scheduleNext();
+
+    return () => clearTimeout(timerId);
+  }, [clips, previewPlayer]);
+
   const [caption, setCaption] = useState('');
   const [selectedTag, setSelectedTag] = useState<CaptionTag | null>(null);
   const [isPosting, setIsPosting] = useState(false);
@@ -112,11 +137,11 @@ export default function VideoRecommendPreviewScreen({ route, navigation }: Props
     setIsPosting(true);
 
     try {
-      // 1. Generate thumbnail from video
+      // 1. Generate thumbnail from first clip
       let thumbnailUrl: string | null = null;
       try {
-        const thumbResult = await VideoThumbnails.getThumbnailAsync(videoUri, {
-          time: 1000, // 1 second in
+        const thumbResult = await VideoThumbnails.getThumbnailAsync(clips[0].uri, {
+          time: 1000,
         });
         if (thumbResult.uri) {
           thumbnailUrl = await uploadRecommendationThumbnail(userId, thumbResult.uri);
@@ -125,15 +150,19 @@ export default function VideoRecommendPreviewScreen({ route, navigation }: Props
         console.warn('[VideoPreview] Thumbnail generation failed:', thumbErr);
       }
 
-      // 2. Upload video
-      const videoUrl = await uploadRecommendationVideo(userId, videoUri);
+      // 2. Upload all clip segments
+      const videoUrls: string[] = [];
+      for (const clip of clips) {
+        const url = await uploadRecommendationVideo(userId, clip.uri);
+        videoUrls.push(url);
+      }
 
       // 3. Create database record
       await createRecommendation({
         userId,
         restaurantId,
         marketId: market.id,
-        videoUrl,
+        videoUrls,
         thumbnailUrl,
         caption: caption.trim() || null,
         captionTag: selectedTag,
@@ -168,7 +197,6 @@ export default function VideoRecommendPreviewScreen({ route, navigation }: Props
           {
             text: 'OK',
             onPress: () => {
-              // Pop back to restaurant detail — capture used replace so only preview is on stack above it
               navigation.goBack();
             },
           },
@@ -181,7 +209,7 @@ export default function VideoRecommendPreviewScreen({ route, navigation }: Props
       setIsPosting(false);
     }
   }, [
-    userId, isAnonymous, market, videoUri, restaurantId,
+    userId, isAnonymous, market, clips, restaurantId,
     restaurantName, caption, selectedTag, durationSeconds,
     navigation, queryClient, showSignUpModal,
   ]);
@@ -216,6 +244,13 @@ export default function VideoRecommendPreviewScreen({ route, navigation }: Props
             contentFit="cover"
             nativeControls={false}
           />
+          {/* Segment indicator for multi-clip */}
+          {clips.length > 1 && (
+            <View style={styles.segmentBadge}>
+              <Ionicons name="layers-outline" size={14} color="#FFF" />
+              <Text style={styles.segmentBadgeText}>{clips.length} clips</Text>
+            </View>
+          )}
         </View>
 
         {/* Restaurant Name */}
@@ -296,14 +331,14 @@ export default function VideoRecommendPreviewScreen({ route, navigation }: Props
           )}
         </TouchableOpacity>
 
-        {/* Re-record option */}
+        {/* Back to camera option */}
         <TouchableOpacity
           style={styles.reRecordButton}
           onPress={() => navigation.goBack()}
           disabled={isPosting}
         >
-          <Ionicons name="refresh-outline" size={18} color={colors.textMuted} />
-          <Text style={styles.reRecordText}>Re-record</Text>
+          <Ionicons name="camera-outline" size={18} color={colors.textMuted} />
+          <Text style={styles.reRecordText}>Back to camera</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -352,6 +387,23 @@ const useStyles = createLazyStyles((colors) => ({
   video: {
     width: '100%' as const,
     height: '100%' as const,
+  },
+  segmentBadge: {
+    position: 'absolute' as const,
+    top: 12,
+    right: 12,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  segmentBadgeText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '600' as const,
   },
   restaurantRow: {
     flexDirection: 'row' as const,

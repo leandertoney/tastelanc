@@ -15,7 +15,7 @@ interface OnboardingContextType {
   setFrequency: (frequency: string) => void;
   setDiscoverySource: (source: string) => void;
   toggleEventPreference: (event: string) => void;
-  setBudget: (budget: string) => void;
+  toggleBudget: (budget: string) => void;
   toggleEntertainment: (entertainment: string) => void;
   toggleFood: (food: string) => void;
   completeOnboarding: () => Promise<void>;
@@ -28,7 +28,7 @@ const defaultData: OnboardingData = {
   frequency: null,
   discoverySource: null,
   eventPreferences: [],
-  budget: null,
+  budgetPreferences: [],
   entertainmentPreferences: [],
   foodPreferences: [],
 };
@@ -63,8 +63,13 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     }));
   };
 
-  const setBudget = (budget: string) => {
-    setData((prev) => ({ ...prev, budget }));
+  const toggleBudget = (budget: string) => {
+    setData((prev) => ({
+      ...prev,
+      budgetPreferences: prev.budgetPreferences.includes(budget)
+        ? prev.budgetPreferences.filter((b) => b !== budget)
+        : [...prev.budgetPreferences, budget],
+    }));
   };
 
   const toggleEntertainment = (entertainment: string) => {
@@ -122,7 +127,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         setFrequency,
         setDiscoverySource,
         toggleEventPreference,
-        setBudget,
+        toggleBudget,
         toggleEntertainment,
         toggleFood,
         completeOnboarding,

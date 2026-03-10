@@ -111,7 +111,7 @@ export default function OnboardingSolutionScreen({ navigation }: Props) {
 const useStyles = createLazyStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: colors.primary,
   },
   safeArea: {
     flex: 1,

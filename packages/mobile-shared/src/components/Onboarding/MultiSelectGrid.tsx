@@ -104,7 +104,7 @@ function GridItem({
           ) : (
             <Ionicons
               name={option.icon as any}
-              size={28}
+              size={24}
               color={isSelected ? colors.text : colors.accent}
             />
           )}
@@ -137,8 +137,8 @@ const useStyles = createLazyStyles((colors) => ({
   gridItem: {
     backgroundColor: colors.cardBg,
     borderRadius: radius.lg,
-    padding: 20,
-    height: 150,
+    padding: 14,
+    height: 120,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
     borderWidth: 2,
@@ -164,13 +164,13 @@ const useStyles = createLazyStyles((colors) => ({
     alignItems: 'center' as const,
   },
   iconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.cardBgElevated,
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   iconCircleSelected: {
     backgroundColor: colors.accent,

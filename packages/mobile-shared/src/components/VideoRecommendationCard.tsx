@@ -24,6 +24,7 @@ import { getColors, getBrand, getAssets } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius } from '../constants/spacing';
 import { CAPTION_TAG_LABELS } from '../types/database';
+import { parseVideoUrls } from '../lib/videoRecommendations';
 import type { VideoRecommendationWithUser, CaptionTag } from '../types/database';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -64,7 +65,9 @@ export default function VideoRecommendationCard({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hasCountedView, setHasCountedView] = useState(false);
 
-  const player = useVideoPlayer(recommendation.video_url, (p) => {
+  // Parse video_url — handles both plain URL and JSON array (multi-segment)
+  const videoUrls = parseVideoUrls(recommendation.video_url);
+  const player = useVideoPlayer(videoUrls[0], (p) => {
     p.loop = true;
     p.muted = false;
   });

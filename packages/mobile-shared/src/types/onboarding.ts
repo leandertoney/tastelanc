@@ -6,7 +6,7 @@ export interface OnboardingData {
   frequency: string | null;
   discoverySource: string | null;
   eventPreferences: string[];
-  budget: string | null;
+  budgetPreferences: string[];
   entertainmentPreferences: string[];
   foodPreferences: string[];
 }
@@ -33,7 +33,7 @@ export const DISCOVERY_OPTIONS = [
   'Other',
 ];
 
-export const BUDGET_OPTIONS = ['$', '$$', '$$$'];
+export const BUDGET_OPTIONS = ['$', '$$', '$$$', 'All of the above'];
 
 export const ENTERTAINMENT_OPTIONS = [
   'Date night',

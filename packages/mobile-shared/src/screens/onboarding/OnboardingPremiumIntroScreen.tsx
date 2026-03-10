@@ -78,7 +78,7 @@ export default function OnboardingPremiumIntroScreen({ navigation }: Props) {
 }
 
 const useStyles = createLazyStyles((colors) => ({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1, backgroundColor: colors.primary },
   backButton: { padding: 16 },
   content: { flex: 1, paddingHorizontal: 24, justifyContent: 'center' as const, alignItems: 'center' as const },
   videoContainer: { width: 160, height: 160, alignItems: 'center' as const, justifyContent: 'center' as const, marginBottom: 32 },

@@ -8,7 +8,7 @@ import { getSupabase } from '../config/theme';
 import type { CaptionTag, VideoRecommendation } from '../types/database';
 
 const BUCKET = 'recommendation-videos';
-const MAX_DURATION_SECONDS = 30;
+const MAX_DURATION_SECONDS = 60;
 const MAX_CAPTION_LENGTH = 120;
 
 export { MAX_DURATION_SECONDS, MAX_CAPTION_LENGTH };
@@ -84,7 +84,7 @@ export async function createRecommendation(params: {
   userId: string;
   restaurantId: string;
   marketId: string;
-  videoUrl: string;
+  videoUrls: string[];
   thumbnailUrl: string | null;
   caption: string | null;
   captionTag: CaptionTag | null;
@@ -92,13 +92,18 @@ export async function createRecommendation(params: {
 }): Promise<VideoRecommendation> {
   const supabase = getSupabase();
 
+  // Store as JSON array for multi-segment support; single clips also stored as array
+  const videoUrlValue = params.videoUrls.length === 1
+    ? params.videoUrls[0]
+    : JSON.stringify(params.videoUrls);
+
   const { data, error } = await supabase
     .from('restaurant_recommendations')
     .insert({
       user_id: params.userId,
       restaurant_id: params.restaurantId,
       market_id: params.marketId,
-      video_url: params.videoUrl,
+      video_url: videoUrlValue,
       thumbnail_url: params.thumbnailUrl,
       caption: params.caption?.trim().slice(0, MAX_CAPTION_LENGTH) || null,
       caption_tag: params.captionTag,
@@ -109,6 +114,16 @@ export async function createRecommendation(params: {
 
   if (error) throw new Error(`Failed to create recommendation: ${error.message}`);
   return data as VideoRecommendation;
+}
+
+/**
+ * Parse video_url field — handles both plain URL (legacy) and JSON array (multi-segment).
+ */
+export function parseVideoUrls(videoUrl: string): string[] {
+  if (videoUrl.startsWith('[')) {
+    try { return JSON.parse(videoUrl); } catch { return [videoUrl]; }
+  }
+  return [videoUrl];
 }
 
 /**

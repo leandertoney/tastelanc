@@ -76,7 +76,7 @@ export default function OnboardingPremiumScreen({ navigation }: Props) {
 }
 
 const useStyles = createLazyStyles((colors) => ({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1, backgroundColor: colors.primary },
   backButton: { padding: 16 },
   content: { flex: 1, paddingHorizontal: 24, justifyContent: 'center' as const, alignItems: 'center' as const },
   videoContainer: { width: 200, height: 200, marginBottom: 24, alignItems: 'center' as const, justifyContent: 'center' as const, borderRadius: 100, borderWidth: 3, borderColor: colors.accent, overflow: 'hidden' as const, shadowColor: colors.accent, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 20, elevation: 10 },

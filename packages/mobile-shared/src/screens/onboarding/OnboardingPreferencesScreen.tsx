@@ -13,7 +13,7 @@ type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingPrefere
 export default function OnboardingPreferencesScreen({ navigation }: Props) {
   const styles = useStyles();
   const colors = getColors();
-  const { data, setBudget, toggleEntertainment, toggleFood } = useOnboarding();
+  const { data, toggleBudget, toggleEntertainment, toggleFood } = useOnboarding();
 
   const handleContinue = () => { navigation.navigate('OnboardingPremium'); };
 
@@ -33,7 +33,7 @@ export default function OnboardingPreferencesScreen({ navigation }: Props) {
         <Text style={styles.subheadline}>Select all that apply</Text>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Budget</Text>
-          <View style={styles.chipContainer}>{BUDGET_OPTIONS.map((option) => renderChip(option, data.budget === option, () => setBudget(option)))}</View>
+          <View style={styles.chipContainer}>{BUDGET_OPTIONS.map((option) => renderChip(option, data.budgetPreferences.includes(option), () => toggleBudget(option)))}</View>
         </View>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Entertainment</Text>
@@ -54,7 +54,7 @@ export default function OnboardingPreferencesScreen({ navigation }: Props) {
 }
 
 const useStyles = createLazyStyles((colors) => ({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1, backgroundColor: colors.primary },
   backButton: { padding: 16 },
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: 24, paddingBottom: 24 },

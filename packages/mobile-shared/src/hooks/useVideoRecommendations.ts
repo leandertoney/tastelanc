@@ -6,6 +6,7 @@ import { Alert } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSupabase } from '../config/theme';
 import { useAuth } from './useAuth';
+import { useMarket } from '../context/MarketContext';
 import { useSignUpModal } from '../context/SignUpModalContext';
 import { queryKeys } from '../lib/queryKeys';
 import { toggleLike, flagRecommendation, deleteRecommendation } from '../lib/videoRecommendations';
@@ -16,11 +17,12 @@ import type { VideoRecommendationWithUser, ReviewerStats } from '../types/databa
  * Pinned recommendations appear first, then by newest.
  */
 export function useRestaurantRecommendations(restaurantId: string) {
+  const { market } = useMarket();
   return useQuery({
     queryKey: queryKeys.recommendations.byRestaurant(restaurantId),
     queryFn: async (): Promise<VideoRecommendationWithUser[]> => {
       const supabase = getSupabase();
-      const { data, error } = await supabase
+      let query = supabase
         .from('restaurant_recommendations')
         .select('*, profiles:user_id(display_name, avatar_url)')
         .eq('restaurant_id', restaurantId)
@@ -28,6 +30,11 @@ export function useRestaurantRecommendations(restaurantId: string) {
         .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false });
 
+      if (market?.id) {
+        query = query.eq('market_id', market.id);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return (data || []) as VideoRecommendationWithUser[];
     },
@@ -39,18 +46,24 @@ export function useRestaurantRecommendations(restaurantId: string) {
  * Fetch all recommendations by a specific user.
  */
 export function useUserRecommendations(userId: string | null) {
+  const { market } = useMarket();
   return useQuery({
     queryKey: queryKeys.recommendations.byUser(userId || ''),
     queryFn: async (): Promise<VideoRecommendationWithUser[]> => {
       if (!userId) return [];
       const supabase = getSupabase();
-      const { data, error } = await supabase
+      let query = supabase
         .from('restaurant_recommendations')
         .select('*, profiles:user_id(display_name, avatar_url)')
         .eq('user_id', userId)
         .eq('is_visible', true)
         .order('created_at', { ascending: false });
 
+      if (market?.id) {
+        query = query.eq('market_id', market.id);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return (data || []) as VideoRecommendationWithUser[];
     },

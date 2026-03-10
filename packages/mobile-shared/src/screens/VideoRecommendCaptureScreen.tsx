@@ -1,8 +1,9 @@
 /**
  * VideoRecommendCaptureScreen — camera screen for recording a video recommendation.
  *
+ * Supports multi-segment recording: users can stop, flip the camera, and record
+ * again. Total time across all clips accumulates toward the 60-second max.
  * Positive framing: "Show us what you love about this place"
- * 30-second max recording with countdown timer.
  */
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
@@ -25,6 +26,11 @@ import { MAX_DURATION_SECONDS } from '../lib/videoRecommendations';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VideoRecommendCapture'>;
 
+interface Clip {
+  uri: string;
+  duration: number;
+}
+
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const OVERLAY_FADE_DURATION = 2000;
 
@@ -45,9 +51,17 @@ export default function VideoRecommendCaptureScreen({ route, navigation }: Props
   const [showOverlay, setShowOverlay] = useState(true);
   const overlayOpacity = useRef(new Animated.Value(1)).current;
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Ref to track elapsed time without stale closures
   const elapsedRef = useRef(0);
   const isRecordingRef = useRef(false);
+
+  // Multi-segment clip state (ref + state to avoid stale closures)
+  const [clips, setClips] = useState<Clip[]>([]);
+  const clipsRef = useRef<Clip[]>([]);
+
+  const previousDuration = clips.reduce((sum, c) => sum + c.duration, 0);
+  const remainingTime = MAX_DURATION_SECONDS - previousDuration;
+  const totalElapsed = previousDuration + elapsedSeconds;
+  const totalProgress = totalElapsed / MAX_DURATION_SECONDS;
 
   // Request permissions on mount
   useEffect(() => {
@@ -69,17 +83,17 @@ export default function VideoRecommendCaptureScreen({ route, navigation }: Props
     }
   }, [showOverlay]);
 
-  // Timer during recording — uses refs to avoid stale closures
+  // Timer during recording — auto-stops at remaining time for this segment
   useEffect(() => {
     if (isRecording) {
       elapsedRef.current = 0;
+      const maxForSegment = MAX_DURATION_SECONDS - clipsRef.current.reduce((s, c) => s + c.duration, 0);
       timerRef.current = setInterval(() => {
         elapsedRef.current += 1;
         const newVal = elapsedRef.current;
         setElapsedSeconds(newVal);
 
-        // Auto-stop at max duration (side effect outside state updater)
-        if (newVal >= MAX_DURATION_SECONDS) {
+        if (newVal >= maxForSegment) {
           if (cameraRef.current) {
             try { cameraRef.current.stopRecording(); } catch {}
           }
@@ -95,26 +109,41 @@ export default function VideoRecommendCaptureScreen({ route, navigation }: Props
     };
   }, [isRecording]);
 
+  const navigateToPreview = useCallback((clipList: Clip[]) => {
+    const total = clipList.reduce((s, c) => s + c.duration, 0);
+    navigation.navigate('VideoRecommendPreview', {
+      clips: clipList,
+      restaurantId,
+      restaurantName,
+      durationSeconds: total,
+    });
+  }, [navigation, restaurantId, restaurantName]);
+
   const startRecording = useCallback(async () => {
     if (!cameraRef.current || isRecordingRef.current) return;
+    const currentRemaining = MAX_DURATION_SECONDS - clipsRef.current.reduce((s, c) => s + c.duration, 0);
+    if (currentRemaining <= 0) return;
+
     isRecordingRef.current = true;
     setIsRecording(true);
 
     try {
       const video = await cameraRef.current.recordAsync({
-        maxDuration: MAX_DURATION_SECONDS,
+        maxDuration: currentRemaining,
       });
 
-      // Read duration from ref (updated by interval, no stale closure)
-      const actualDuration = elapsedRef.current || MAX_DURATION_SECONDS;
+      const actualDuration = elapsedRef.current || currentRemaining;
 
       if (video?.uri) {
-        navigation.replace('VideoRecommendPreview', {
-          videoUri: video.uri,
-          restaurantId,
-          restaurantName,
-          durationSeconds: actualDuration,
-        });
+        const newClips = [...clipsRef.current, { uri: video.uri, duration: actualDuration }];
+        clipsRef.current = newClips;
+        setClips(newClips);
+
+        // Auto-navigate to preview if max duration reached
+        const newTotal = newClips.reduce((s, c) => s + c.duration, 0);
+        if (newTotal >= MAX_DURATION_SECONDS) {
+          navigateToPreview(newClips);
+        }
       }
     } catch (err) {
       console.error('[VideoCapture] Recording error:', err);
@@ -122,7 +151,7 @@ export default function VideoRecommendCaptureScreen({ route, navigation }: Props
       isRecordingRef.current = false;
       setIsRecording(false);
     }
-  }, [restaurantId, restaurantName, navigation]);
+  }, [navigateToPreview]);
 
   const stopRecording = useCallback(() => {
     if (!cameraRef.current) return;
@@ -136,6 +165,10 @@ export default function VideoRecommendCaptureScreen({ route, navigation }: Props
   const toggleFacing = useCallback(() => {
     setFacing((prev) => (prev === 'back' ? 'front' : 'back'));
   }, []);
+
+  const handleNext = useCallback(() => {
+    navigateToPreview(clipsRef.current);
+  }, [navigateToPreview]);
 
   // Permission not granted
   if (!cameraPermission?.granted || !micPermission?.granted) {
@@ -166,7 +199,8 @@ export default function VideoRecommendCaptureScreen({ route, navigation }: Props
     );
   }
 
-  const progress = elapsedSeconds / MAX_DURATION_SECONDS;
+  const hasClips = clips.length > 0;
+  const showTimer = isRecording || hasClips;
 
   return (
     <View style={styles.container}>
@@ -185,21 +219,30 @@ export default function VideoRecommendCaptureScreen({ route, navigation }: Props
           >
             <Ionicons name="close" size={28} color="#FFF" />
           </TouchableOpacity>
-          {isRecording && (
+
+          {showTimer && (
             <View style={styles.timerContainer}>
-              <View style={styles.recordingDot} />
+              {isRecording && <View style={styles.recordingDot} />}
               <Text style={styles.timerText}>
-                {Math.floor(elapsedSeconds / 60)}:
-                {String(elapsedSeconds % 60).padStart(2, '0')}
+                {Math.floor(totalElapsed / 60)}:
+                {String(totalElapsed % 60).padStart(2, '0')}
+                {' / '}
+                {Math.floor(MAX_DURATION_SECONDS / 60)}:
+                {String(MAX_DURATION_SECONDS % 60).padStart(2, '0')}
               </Text>
             </View>
           )}
-          <TouchableOpacity
-            style={styles.topButton}
-            onPress={toggleFacing}
-          >
-            <Ionicons name="camera-reverse-outline" size={26} color="#FFF" />
-          </TouchableOpacity>
+
+          {!isRecording ? (
+            <TouchableOpacity
+              style={styles.topButton}
+              onPress={toggleFacing}
+            >
+              <Ionicons name="camera-reverse-outline" size={26} color="#FFF" />
+            </TouchableOpacity>
+          ) : (
+            <View style={{ width: 44 }} />
+          )}
         </View>
 
         {/* Positive Framing Overlay */}
@@ -216,17 +259,25 @@ export default function VideoRecommendCaptureScreen({ route, navigation }: Props
 
         {/* Bottom Controls */}
         <View style={styles.bottomBar}>
+          {/* Clip counter badge */}
+          {hasClips && !isRecording && (
+            <View style={styles.clipBadge}>
+              <Text style={styles.clipBadgeText}>
+                {clips.length} clip{clips.length !== 1 ? 's' : ''} · {previousDuration}s recorded
+              </Text>
+            </View>
+          )}
+
           {/* Progress ring around record button */}
           <View style={styles.recordButtonOuter}>
-            {isRecording && (
+            {(isRecording || hasClips) && (
               <View style={styles.progressRing}>
                 <View
                   style={[
                     styles.progressFill,
                     {
                       borderColor: '#ef4444',
-                      // Simple visual progress — full ring approach
-                      opacity: progress,
+                      opacity: totalProgress,
                     },
                   ]}
                 />
@@ -236,22 +287,45 @@ export default function VideoRecommendCaptureScreen({ route, navigation }: Props
               style={[
                 styles.recordButton,
                 isRecording && styles.recordButtonActive,
+                (!isRecording && remainingTime <= 0) && styles.recordButtonDisabled,
               ]}
               onPress={isRecording ? stopRecording : startRecording}
               activeOpacity={0.7}
+              disabled={!isRecording && remainingTime <= 0}
             >
               {isRecording ? (
                 <View style={styles.stopSquare} />
               ) : (
-                <View style={styles.recordCircle} />
+                <View style={[
+                  styles.recordCircle,
+                  remainingTime <= 0 && { opacity: 0.3 },
+                ]} />
               )}
             </TouchableOpacity>
           </View>
 
-          {!isRecording && (
+          {!isRecording && !hasClips && (
             <Text style={styles.hintText}>
               Tap to record · {MAX_DURATION_SECONDS}s max
             </Text>
+          )}
+
+          {!isRecording && hasClips && remainingTime > 0 && (
+            <Text style={styles.hintText}>
+              {remainingTime}s remaining · tap to add another clip
+            </Text>
+          )}
+
+          {/* Next button — visible when we have clips and not recording */}
+          {!isRecording && hasClips && (
+            <TouchableOpacity
+              style={styles.nextButton}
+              onPress={handleNext}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.nextButtonText}>Next</Text>
+              <Ionicons name="arrow-forward" size={18} color="#FFF" />
+            </TouchableOpacity>
           )}
         </View>
       </CameraView>
@@ -377,6 +451,18 @@ const useStyles = createLazyStyles((colors) => ({
     alignItems: 'center' as const,
     paddingBottom: Platform.OS === 'ios' ? 50 : 32,
   },
+  clipBadge: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+    marginBottom: 12,
+  },
+  clipBadgeText: {
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: '500' as const,
+  },
   recordButtonOuter: {
     width: 80,
     height: 80,
@@ -411,6 +497,9 @@ const useStyles = createLazyStyles((colors) => ({
   recordButtonActive: {
     borderColor: '#ef4444',
   },
+  recordButtonDisabled: {
+    opacity: 0.4,
+  },
   recordCircle: {
     width: 52,
     height: 52,
@@ -428,5 +517,20 @@ const useStyles = createLazyStyles((colors) => ({
     fontSize: 13,
     marginTop: 12,
     fontWeight: '500' as const,
+  },
+  nextButton: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    backgroundColor: colors.accent,
+    paddingHorizontal: 28,
+    paddingVertical: 12,
+    borderRadius: radius.full,
+    marginTop: 16,
+    gap: 6,
+  },
+  nextButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700' as const,
   },
 }));

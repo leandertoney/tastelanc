@@ -194,7 +194,7 @@ export default function OnboardingSlidesScreen({ navigation }: Props) {
 const useStyles = createLazyStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: colors.primary,
   },
   safeArea: {
     flex: 1,
@@ -214,8 +214,8 @@ const useStyles = createLazyStyles((colors) => ({
     backgroundColor: 'transparent',
   },
   logo: {
-    width: SCREEN_WIDTH * 0.65,
-    height: SCREEN_HEIGHT * 0.25,
+    width: SCREEN_WIDTH * 0.55,
+    height: SCREEN_WIDTH * 0.55,
     backgroundColor: 'transparent',
   },
 

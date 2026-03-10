@@ -69,6 +69,7 @@ function AnimatedPainPoint({ text, delay }: { text: string; delay: number }) {
 export default function OnboardingProblemsScreen({ navigation }: Props) {
   const styles = useStyles();
   const assets = getAssets();
+  const colors = getColors();
 
   const imageOpacity = useSharedValue(0);
   const headerOpacity = useSharedValue(0);
@@ -139,7 +140,7 @@ export default function OnboardingProblemsScreen({ navigation }: Props) {
           <Image source={assets.onboardingHero} style={styles.heroImage} resizeMode="cover" />
         )}
         <LinearGradient
-          colors={['transparent', 'rgba(18,18,18,0.6)', '#121212']}
+          colors={['transparent', `${colors.primary}99`, colors.primary]}
           locations={[0, 0.5, 1]}
           style={styles.heroGradient}
         />
@@ -181,7 +182,7 @@ export default function OnboardingProblemsScreen({ navigation }: Props) {
 const useStyles = createLazyStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: colors.primary,
   },
   heroSection: {
     height: HERO_HEIGHT,

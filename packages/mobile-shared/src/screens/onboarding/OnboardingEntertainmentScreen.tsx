@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,12 +16,11 @@ import { ENTERTAINMENT_OPTIONS } from '../../types/onboarding';
 import { getColors } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { duration, spring, reveal } from '../../constants/animations';
-import { MultiSelectGrid } from '../../components/Onboarding';
+import { MultiSelectGrid, ContinueButton } from '../../components/Onboarding';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingEntertainment'>;
 
 const MAX_SELECTIONS = 3;
-const AUTO_PROCEED_DELAY = 2000;
 
 const ENTERTAINMENT_GRID_OPTIONS = ENTERTAINMENT_OPTIONS.map((option) => ({
   id: option,
@@ -33,17 +32,13 @@ export default function OnboardingEntertainmentScreen({ navigation }: Props) {
   const styles = useStyles();
   const colors = getColors();
   const { data, toggleEntertainment } = useOnboarding();
-  const autoProceedTimer = useRef<NodeJS.Timeout | null>(null);
-  const hasNavigated = useRef(false);
 
   const titleOpacity = useSharedValue(0);
   const titleTranslate = useSharedValue(-20);
   const contentOpacity = useSharedValue(0);
+  const buttonOpacity = useSharedValue(0);
 
   const handleContinue = useCallback(() => {
-    if (hasNavigated.current) return;
-    hasNavigated.current = true;
-    if (autoProceedTimer.current) clearTimeout(autoProceedTimer.current);
     navigation.navigate('OnboardingFood');
   }, [navigation]);
 
@@ -53,26 +48,25 @@ export default function OnboardingEntertainmentScreen({ navigation }: Props) {
     contentOpacity.value = withDelay(reveal.content, withTiming(1, { duration: duration.normal }));
   }, []);
 
+  // Show button when 1+ selected
   useEffect(() => {
-    const selectionCount = data.entertainmentPreferences.length;
-    if (autoProceedTimer.current) { clearTimeout(autoProceedTimer.current); autoProceedTimer.current = null; }
-    if (selectionCount >= MAX_SELECTIONS) { handleContinue(); return; }
-    if (selectionCount === 2) { autoProceedTimer.current = setTimeout(() => { handleContinue(); }, AUTO_PROCEED_DELAY); }
-    return () => { if (autoProceedTimer.current) clearTimeout(autoProceedTimer.current); };
-  }, [data.entertainmentPreferences.length, handleContinue]);
-
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => { hasNavigated.current = false; });
-    return unsubscribe;
-  }, [navigation]);
+    if (data.entertainmentPreferences.length >= 1) {
+      buttonOpacity.value = withTiming(1, { duration: 300 });
+    } else {
+      buttonOpacity.value = withTiming(0, { duration: 200 });
+    }
+  }, [data.entertainmentPreferences.length]);
 
   const titleAnimatedStyle = useAnimatedStyle(() => ({ opacity: titleOpacity.value, transform: [{ translateY: titleTranslate.value }] }));
   const contentAnimatedStyle = useAnimatedStyle(() => ({ opacity: contentOpacity.value }));
+  const buttonAnimatedStyle = useAnimatedStyle(() => ({ opacity: buttonOpacity.value }));
 
   const handleToggle = (option: string) => {
     const isCurrentlySelected = data.entertainmentPreferences.includes(option);
     if (isCurrentlySelected || data.entertainmentPreferences.length < MAX_SELECTIONS) toggleEntertainment(option);
   };
+
+  const showButton = data.entertainmentPreferences.length >= 1;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -88,16 +82,22 @@ export default function OnboardingEntertainmentScreen({ navigation }: Props) {
           <MultiSelectGrid options={ENTERTAINMENT_GRID_OPTIONS} selected={data.entertainmentPreferences} onToggle={handleToggle} maxSelections={MAX_SELECTIONS} baseDelay={reveal.items} columns={2} />
         </Animated.View>
       </View>
+      {showButton && (
+        <Animated.View style={[styles.footer, buttonAnimatedStyle]}>
+          <ContinueButton onPress={handleContinue} />
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 }
 
 const useStyles = createLazyStyles((colors) => ({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1, backgroundColor: colors.primary },
   backButton: { padding: 16 },
   content: { flex: 1, paddingHorizontal: 24 },
-  headerSection: { marginBottom: 24 },
+  headerSection: { marginBottom: 32 },
   headline: { fontSize: 28, fontWeight: '700' as const, color: colors.text, marginBottom: 8 },
   subheadline: { fontSize: 16, color: colors.textMuted },
-  gridContainer: { flex: 1, justifyContent: 'center' as const },
+  gridContainer: {},
+  footer: { paddingHorizontal: 24, paddingBottom: 24 },
 }));

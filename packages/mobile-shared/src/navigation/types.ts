@@ -64,7 +64,7 @@ export type RootStackParamList = {
   // Video Recommendations
   VideoRecommendCapture: { restaurantId: string; restaurantName: string };
   VideoRecommendPreview: {
-    videoUri: string;
+    clips: { uri: string; duration: number }[];
     restaurantId: string;
     restaurantName: string;
     durationSeconds: number;
