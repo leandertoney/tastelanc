@@ -37,7 +37,7 @@ export default async function handler(req: Request, context: Context) {
   }
 }
 
-// Run every 15 minutes, 24/7
+// Run every 2 hours
 export const config: Config = {
-  schedule: '*/15 * * * *',
+  schedule: '0 */2 * * *',
 };

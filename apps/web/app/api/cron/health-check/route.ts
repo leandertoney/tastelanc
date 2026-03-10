@@ -23,8 +23,8 @@ const DASHBOARD_URL = process.env.NEXT_PUBLIC_APP_URL
   ? `${process.env.NEXT_PUBLIC_APP_URL}/admin/system-health`
   : 'https://tastelanc.com/admin/system-health';
 
-// Alert cooldown: don't re-alert for the same service within 30 minutes
-const ALERT_COOLDOWN_MINUTES = 30;
+// Alert cooldown: don't re-alert for the same service within 6 hours
+const ALERT_COOLDOWN_MINUTES = 360;
 
 interface CheckResult {
   name: string;
@@ -255,7 +255,7 @@ async function wasServicePreviouslyDown(
     .limit(1);
 
   if (!data || data.length === 0) return false;
-  return data[0].alert_type === 'down' || data[0].alert_type === 'degraded';
+  return data[0].alert_type === 'down';
 }
 
 async function sendAlertEmail(
@@ -332,7 +332,7 @@ export async function POST(request: Request) {
     });
 
     // Handle alerts
-    const failedChecks = checks.filter((c) => c.status === 'error' || c.status === 'warning');
+    const failedChecks = checks.filter((c) => c.status === 'error');
     const okChecks = checks.filter((c) => c.status === 'ok');
     let alertsSent = false;
 
