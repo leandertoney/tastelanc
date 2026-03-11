@@ -528,7 +528,7 @@ export default function SalesLeadsPage() {
                           )}
                           {lead.email && (
                             <Link
-                              href={`/sales/inbox?compose=true&to=${encodeURIComponent(lead.email)}&name=${encodeURIComponent(lead.contact_name || '')}&business=${encodeURIComponent(lead.business_name)}`}
+                              href={`/sales/inbox?compose=true&cold=true&to=${encodeURIComponent(lead.email)}&name=${encodeURIComponent(lead.contact_name || '')}&business=${encodeURIComponent(lead.business_name)}`}
                               className="text-xs text-blue-400 hover:text-blue-300 truncate block transition-colors"
                               title={`Email ${lead.email}`}
                             >
@@ -636,7 +636,7 @@ export default function SalesLeadsPage() {
                         <div className="flex items-center justify-end gap-1">
                           {lead.email && (
                             <Link
-                              href={`/sales/inbox?compose=true&to=${encodeURIComponent(lead.email)}&name=${encodeURIComponent(lead.contact_name || '')}&business=${encodeURIComponent(lead.business_name)}`}
+                              href={`/sales/inbox?compose=true&cold=true&to=${encodeURIComponent(lead.email)}&name=${encodeURIComponent(lead.contact_name || '')}&business=${encodeURIComponent(lead.business_name)}`}
                               className="p-1 text-blue-500 hover:text-blue-400 rounded transition-colors"
                               title="Send Email"
                             >

@@ -169,9 +169,12 @@ function InboxPage() {
   const composeName = searchParams.get('name');
   const composeBusiness = searchParams.get('business');
   const [showCompose, setShowCompose] = useState(false);
+  const composeCold = searchParams.get('cold');
   const [composeInitialDraft, setComposeInitialDraft] = useState<{
     recipientEmail?: string;
     recipientName?: string;
+    subject?: string;
+    body?: string;
   } | undefined>(undefined);
   const composeParamHandled = useRef(false);
 
@@ -179,10 +182,16 @@ function InboxPage() {
   useEffect(() => {
     if (composeParam === 'true' && composeTo && !composeParamHandled.current) {
       composeParamHandled.current = true;
-      setComposeInitialDraft({
+      const draft: typeof composeInitialDraft = {
         recipientEmail: composeTo,
         recipientName: composeName || composeBusiness || undefined,
-      });
+      };
+      // Pre-fill cold outreach template
+      if (composeCold === 'true') {
+        draft.subject = 'Local Restaurant Spotlight';
+        draft.body = `Hey! We run TasteLanc, a Lancaster-focused app highlighting real-time restaurant activity — happy hours, events, menus, specials, and more.\n\nIf you're interested in being featured, happy to share how it works and what's included.`;
+      }
+      setComposeInitialDraft(draft);
       setShowCompose(true);
       // Clean up URL params without navigation
       router.replace('/sales/inbox', { scroll: false });
