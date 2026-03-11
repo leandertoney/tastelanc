@@ -71,6 +71,12 @@ function addDays(d: Date, n: number) {
   return result;
 }
 
+const MARKETS = [
+  { slug: 'lancaster-pa', label: 'Lancaster' },
+  { slug: 'cumberland-pa', label: 'Cumberland' },
+  { slug: 'fayetteville-nc', label: 'Fayetteville' },
+];
+
 export default function InstagramPostsPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -79,6 +85,7 @@ export default function InstagramPostsPage() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [generatingDay, setGeneratingDay] = useState<string | null>(null);
   const [generatingWeek, setGeneratingWeek] = useState(false);
+  const [marketSlug, setMarketSlug] = useState('lancaster-pa');
 
   // Show 2 weeks: 14 days
   const periodEnd = addDays(weekStart, 13);
@@ -87,7 +94,7 @@ export default function InstagramPostsPage() {
 
   const fetchPosts = useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/instagram-posts?start=${weekStartKey}&end=${periodEndKey}`);
+      const res = await fetch(`/api/admin/instagram-posts?start=${weekStartKey}&end=${periodEndKey}&market=${marketSlug}`);
       const data = await res.json();
       setPosts(data.posts || []);
       setStats(data.stats || null);
@@ -96,7 +103,7 @@ export default function InstagramPostsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [weekStartKey, periodEndKey]);
+  }, [weekStartKey, periodEndKey, marketSlug]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -115,7 +122,7 @@ export default function InstagramPostsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          market_slug: 'lancaster-pa',
+          market_slug: marketSlug,
           force_type: contentType,
           post_slot: slot,
           preview_only: true,
@@ -152,7 +159,7 @@ export default function InstagramPostsPage() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              market_slug: 'lancaster-pa',
+              market_slug: marketSlug,
               force_type: 'tonight_today',
               post_slot: 'am',
               preview_only: true,
@@ -165,7 +172,7 @@ export default function InstagramPostsPage() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              market_slug: 'lancaster-pa',
+              market_slug: marketSlug,
               force_type: 'upcoming_events',
               post_slot: 'pm',
               preview_only: true,
@@ -229,6 +236,21 @@ export default function InstagramPostsPage() {
             <Instagram className="w-5 h-5 text-pink-400" />
             Instagram Posts
           </h1>
+          <div className="flex items-center bg-tastelanc-surface-light rounded-lg p-0.5">
+            {MARKETS.map((m) => (
+              <button
+                key={m.slug}
+                onClick={() => { setMarketSlug(m.slug); setIsLoading(true); }}
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                  marketSlug === m.slug
+                    ? 'bg-tastelanc-accent text-white'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
           <div className="flex items-center gap-3 text-xs text-gray-400">
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> {stats?.published || 0} published</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500 inline-block" /> {stats?.drafts || 0} drafts</span>
@@ -326,7 +348,7 @@ export default function InstagramPostsPage() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 source: 'pg_cron',
-                market_slug: 'lancaster-pa',
+                market_slug: marketSlug,
                 post_slot: post.post_slot,
               }),
             });
