@@ -134,13 +134,15 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
       }
 
       // If sales mode with specific restaurant ID
+      // Admins viewing via sales CRM also use sales_mode — treat them like admin_mode
       const userIsSalesRep = profile?.role === 'sales_rep' || user.user_metadata?.role === 'sales_rep';
-      if (salesMode && adminRestaurantId && userIsSalesRep) {
+      if (salesMode && adminRestaurantId && (userIsSalesRep || userIsAdmin)) {
+        const isSuperAdminOrCofounder = profile?.role === 'super_admin' || profile?.role === 'co_founder';
         let salesQuery = supabase
           .from('restaurants')
           .select('*, tiers(*)')
           .eq('id', adminRestaurantId);
-        if (marketId) salesQuery = salesQuery.eq('market_id', marketId);
+        if (marketId && !isSuperAdminOrCofounder) salesQuery = salesQuery.eq('market_id', marketId);
         const { data: restaurantData, error: restaurantError } = await salesQuery.single();
 
         if (restaurantError || !restaurantData) {
@@ -154,7 +156,7 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
         setRestaurants([]);
         setTier(tierData as Tier || null);
         setIsOwner(false);
-        setIsSalesRep(true);
+        setIsSalesRep(!userIsAdmin);
         setIsLoading(false);
         return;
       }
