@@ -191,8 +191,8 @@ export default function VideoRecommendPreviewScreen({ route, navigation }: Props
       hasPosted.current = true;
       const pointsMsg = pointsEarned > 0 ? ` You earned ${pointsEarned} points!` : '';
       Alert.alert(
-        'Recommendation Posted!',
-        `Your recommendation for ${restaurantName} is now live.${pointsMsg}`,
+        'Recommendation Submitted!',
+        `Your recommendation for ${restaurantName} is being reviewed and will be live shortly.${pointsMsg}`,
         [
           {
             text: 'OK',

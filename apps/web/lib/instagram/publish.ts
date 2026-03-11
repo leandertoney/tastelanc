@@ -38,6 +38,76 @@ export async function publishToInstagram(
   }
 }
 
+/**
+ * Publish a Reel (video) to Instagram via the Graph API.
+ * Flow:
+ *   1. Create media container with media_type=REELS (POST /{ig-user-id}/media)
+ *   2. Wait for video processing (poll status — videos take longer than images)
+ *   3. Publish container (POST /{ig-user-id}/media_publish)
+ */
+export async function publishReelToInstagram(
+  account: InstagramAccount,
+  caption: string,
+  videoUrl: string,
+  coverUrl?: string
+): Promise<PublishResult> {
+  const { instagram_business_account_id: igUserId, access_token_encrypted: accessToken } = account;
+
+  try {
+    // Step 1: Create Reel container
+    const body: Record<string, string> = {
+      media_type: 'REELS',
+      video_url: videoUrl,
+      caption,
+      access_token: accessToken,
+    };
+    if (coverUrl) {
+      body.cover_url = coverUrl;
+    }
+
+    const containerRes = await fetch(`${GRAPH_API_BASE}/${igUserId}/media`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    const containerData = await containerRes.json();
+    if (containerData.error) {
+      throw new Error(`Reel container creation failed: ${containerData.error.message}`);
+    }
+
+    const containerId = containerData.id;
+
+    // Step 2: Wait for video processing (videos take longer — up to 60s)
+    await waitForMediaReady(containerId, accessToken, 20);
+
+    // Step 3: Publish
+    const publishRes = await fetch(`${GRAPH_API_BASE}/${igUserId}/media_publish`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        creation_id: containerId,
+        access_token: accessToken,
+      }),
+    });
+
+    const publishData = await publishRes.json();
+    if (publishData.error) {
+      throw new Error(`Reel publish failed: ${publishData.error.message}`);
+    }
+
+    const permalink = await getPermalink(publishData.id, accessToken);
+
+    return {
+      success: true,
+      instagram_media_id: publishData.id,
+      permalink,
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
 async function publishSingleImage(
   igUserId: string,
   accessToken: string,

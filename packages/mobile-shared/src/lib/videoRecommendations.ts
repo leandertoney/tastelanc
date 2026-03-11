@@ -4,7 +4,7 @@
  * Videos are stored in Supabase Storage under `recommendation-videos/{user_id}/{uuid}.mp4`.
  * Thumbnails stored under `recommendation-videos/{user_id}/{uuid}_thumb.jpg`.
  */
-import { getSupabase } from '../config/theme';
+import { getSupabase, getAnonKey } from '../config/theme';
 import type { CaptionTag, VideoRecommendation } from '../types/database';
 
 const BUCKET = 'recommendation-videos';
@@ -108,12 +108,39 @@ export async function createRecommendation(params: {
       caption: params.caption?.trim().slice(0, MAX_CAPTION_LENGTH) || null,
       caption_tag: params.captionTag,
       duration_seconds: Math.min(params.durationSeconds, MAX_DURATION_SECONDS),
+      is_visible: false, // Hidden until AI review approves
     })
     .select()
     .single();
 
   if (error) throw new Error(`Failed to create recommendation: ${error.message}`);
+
+  // Fire-and-forget: trigger AI review for Instagram posting pipeline
+  triggerAIReview((data as VideoRecommendation).id);
+
   return data as VideoRecommendation;
+}
+
+/**
+ * Trigger AI review of a recommendation caption (fire-and-forget).
+ * This calls the web API which runs OpenAI moderation and sets ig_status.
+ */
+function triggerAIReview(recommendationId: string): void {
+  try {
+    const anonKey = getAnonKey();
+    fetch('https://tastelanc.com/api/instagram/review-recommendation', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${anonKey}`,
+      },
+      body: JSON.stringify({ recommendation_id: recommendationId }),
+    }).catch((err) => {
+      console.warn('[VideoRecommendations] AI review trigger failed:', err);
+    });
+  } catch (err) {
+    console.warn('[VideoRecommendations] AI review trigger error:', err);
+  }
 }
 
 /**

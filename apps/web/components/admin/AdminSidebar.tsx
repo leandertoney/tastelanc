@@ -23,6 +23,8 @@ import {
   Smartphone,
   Instagram,
   Activity,
+  Film,
+  Clover,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -52,7 +54,9 @@ const NAV_ITEMS: NavItem[] = [
   // CONTENT - Restaurant management
   { href: '/admin/restaurants', icon: Store, label: 'All Restaurants', section: 'Content' },
   // MARKETING
-  { href: '/admin/instagram-posts', icon: Instagram, label: 'Instagram Posts', highlight: true, section: 'Marketing' },
+  { href: '/admin/st-patricks-day', icon: Clover, label: "St. Pat's Day", highlight: true, section: 'Marketing' },
+  { href: '/admin/instagram-posts', icon: Instagram, label: 'Instagram Posts', highlight: true },
+  { href: '/admin/recommendation-queue', icon: Film, label: 'Reel Queue', highlight: true },
   // INSIGHTS - Analytics and feedback
   { href: '/admin/analytics', icon: BarChart3, label: 'Analytics', section: 'Insights' },
   { href: '/admin/app-users', icon: Smartphone, label: 'App Users', highlight: true },
