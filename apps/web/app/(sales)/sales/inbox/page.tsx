@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Inbox,
   Search,
@@ -139,7 +140,17 @@ function extractReplyFromHtml(html: string, plainText: string | null): string {
   return stripQuotedReply(cleaned);
 }
 
-export default function InboxPage() {
+export default function InboxPageWrapper() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>}>
+      <InboxPage />
+    </Suspense>
+  );
+}
+
+function InboxPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [activeView, setActiveView] = useState<'all' | 'unread' | 'sent' | 'drafts'>('all');
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -152,8 +163,31 @@ export default function InboxPage() {
   const [threadMessages, setThreadMessages] = useState<ThreadMessage[]>([]);
   const [isLoadingThread, setIsLoadingThread] = useState(false);
 
-  // Compose
+  // Compose — auto-open from URL params (e.g. from CRM leads page)
+  const composeParam = searchParams.get('compose');
+  const composeTo = searchParams.get('to');
+  const composeName = searchParams.get('name');
+  const composeBusiness = searchParams.get('business');
   const [showCompose, setShowCompose] = useState(false);
+  const [composeInitialDraft, setComposeInitialDraft] = useState<{
+    recipientEmail?: string;
+    recipientName?: string;
+  } | undefined>(undefined);
+  const composeParamHandled = useRef(false);
+
+  // Auto-open compose modal if URL has ?compose=true&to=...
+  useEffect(() => {
+    if (composeParam === 'true' && composeTo && !composeParamHandled.current) {
+      composeParamHandled.current = true;
+      setComposeInitialDraft({
+        recipientEmail: composeTo,
+        recipientName: composeName || composeBusiness || undefined,
+      });
+      setShowCompose(true);
+      // Clean up URL params without navigation
+      router.replace('/sales/inbox', { scroll: false });
+    }
+  }, [composeParam, composeTo, composeName, composeBusiness, router]);
 
   // Reply
   const [replyBody, setReplyBody] = useState('');
@@ -896,13 +930,18 @@ export default function InboxPage() {
       {/* Compose modal */}
       {showCompose && (
         <InboxEmailComposer
-          onClose={() => setShowCompose(false)}
+          onClose={() => {
+            setShowCompose(false);
+            setComposeInitialDraft(undefined);
+          }}
           onSent={() => {
             setShowCompose(false);
+            setComposeInitialDraft(undefined);
             fetchConversations();
           }}
           isAdmin={isAdmin}
           defaultSender={selectedSender || undefined}
+          initialDraft={composeInitialDraft}
         />
       )}
 

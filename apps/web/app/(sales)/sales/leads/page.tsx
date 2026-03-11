@@ -527,7 +527,13 @@ export default function SalesLeadsPage() {
                             <span className="text-white" title={lead.contact_name}>{lead.contact_name}</span>
                           )}
                           {lead.email && (
-                            <div className="text-xs text-gray-500 truncate" title={lead.email}>{lead.email}</div>
+                            <Link
+                              href={`/sales/inbox?compose=true&to=${encodeURIComponent(lead.email)}&name=${encodeURIComponent(lead.contact_name || '')}&business=${encodeURIComponent(lead.business_name)}`}
+                              className="text-xs text-blue-400 hover:text-blue-300 truncate block transition-colors"
+                              title={`Email ${lead.email}`}
+                            >
+                              {lead.email}
+                            </Link>
                           )}
                           {!lead.contact_name && !lead.email && (
                             <span className="text-gray-600">—</span>
@@ -628,6 +634,15 @@ export default function SalesLeadsPage() {
                       {/* Actions */}
                       <td className={`${tdClass} text-right overflow-hidden`}>
                         <div className="flex items-center justify-end gap-1">
+                          {lead.email && (
+                            <Link
+                              href={`/sales/inbox?compose=true&to=${encodeURIComponent(lead.email)}&name=${encodeURIComponent(lead.contact_name || '')}&business=${encodeURIComponent(lead.business_name)}`}
+                              className="p-1 text-blue-500 hover:text-blue-400 rounded transition-colors"
+                              title="Send Email"
+                            >
+                              <Mail className="w-3.5 h-3.5" />
+                            </Link>
+                          )}
                           {lead.phone && (
                             <a
                               href={`tel:${lead.phone}`}
