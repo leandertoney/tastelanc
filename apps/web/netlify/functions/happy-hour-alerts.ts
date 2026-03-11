@@ -3,11 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { validateMarketScope } from '../../lib/notifications/market-guard';
 import { sendNotification } from '../../lib/notifications/gateway';
 
-// Market slug → app_slug mapping for push token filtering
-const MARKET_APP_SLUG: Record<string, string> = {
-  'lancaster-pa': 'tastelanc',
-  'cumberland-pa': 'taste-cumberland',
-};
+// Market app_slug is now read from the `markets` table instead of hardcoded here.
 
 // Tier IDs that get push notification features
 const PAID_TIER_IDS = [
@@ -34,7 +30,7 @@ export default async function handler(req: Request, context: Context) {
     // Resolve market
     const marketSlug = process.env.NEXT_PUBLIC_MARKET_SLUG || 'lancaster-pa';
     const { data: marketRow } = await supabase
-      .from('markets').select('id').eq('slug', marketSlug).eq('is_active', true).single();
+      .from('markets').select('id, app_slug').eq('slug', marketSlug).eq('is_active', true).single();
     if (!marketRow) {
       console.error(`[Happy Hour Alerts] Market "${marketSlug}" not found`);
       return new Response(
@@ -134,7 +130,7 @@ export default async function handler(req: Request, context: Context) {
     }
 
     // Only send to push tokens for this market's app
-    const targetAppSlug = MARKET_APP_SLUG[marketSlug] || 'tastelanc';
+    const targetAppSlug = marketRow.app_slug || 'tastelanc';
     console.log(`[Happy Hour Alerts] Targeting app_slug: ${targetAppSlug} for market: ${marketSlug}`);
 
     const { data: tokenData, error: tokenError } = await supabase
@@ -153,7 +149,7 @@ export default async function handler(req: Request, context: Context) {
     const tokens = tokenData.map(t => t.token);
 
     // Market guard: validate scoping before sending
-    const guard = validateMarketScope(marketSlug, targetAppSlug, tokens.length, 'happy_hour_daily_digest');
+    const guard = await validateMarketScope(marketSlug, targetAppSlug, tokens.length, 'happy_hour_daily_digest');
     if (!guard.valid) {
       console.error(`[Happy Hour Alerts] ${guard.error}`);
       return new Response(

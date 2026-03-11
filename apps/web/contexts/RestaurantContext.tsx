@@ -198,7 +198,7 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
       const allRestaurants = [...(ownedRestaurants || []), ...memberRestaurants];
 
       if (allRestaurants.length === 0) {
-        if (userIsAdmin && !adminMode) {
+        if (userIsAdmin && !adminMode && !salesMode) {
           window.location.href = '/admin';
           return;
         }

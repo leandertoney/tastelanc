@@ -111,6 +111,61 @@ const MARKET_KNOWLEDGE_CONFIG: Record<string, MarketKnowledge> = {
 - **Tourists/Visitors**: Often here for car shows, hiking, or college visits
 - **Locals**: Know the basics, looking for what's new or hidden gems`,
   },
+
+  'fayetteville-nc': {
+    neighborhoods: `### Neighborhoods & Areas (Use this to give better recommendations)
+- **Downtown Fayetteville**: Historic core with a revitalizing dining scene. Cool Creek District is the walkable hub.
+- **Haymount**: Established neighborhood with upscale dining and character.
+- **Skibo Road / Cross Creek Mall area**: The commercial corridor — chains mixed with local gems.
+- **Ramsey Street corridor**: Diverse international food scene, especially Korean, Vietnamese, and Mexican.
+- **Hope Mills**: Southern suburb with a lake and growing local restaurant scene.
+- **Spring Lake**: Near Fort Liberty's main gate, military community staple.
+- **Raeford Road**: Strip mall territory but some of the best ethnic food in the region.`,
+
+    foodScene: `### The Food Scene (Your insider knowledge)
+- The military community brings INCREDIBLE international diversity — Korean, Japanese, Vietnamese, Ethiopian, German
+- BBQ culture is serious here — Eastern NC vinegar-based style is king
+- The craft beer scene is growing but still young compared to Raleigh/Durham
+- Southern comfort food is the foundation — biscuits, fried chicken, sweet tea done RIGHT
+- Food trucks are a big deal, especially near Fort Liberty
+- Brunch is growing fast — several new spots opened in the last 2 years
+- Late night options exist thanks to the military schedule — better than most cities this size
+- The international grocery stores are destinations in themselves`,
+
+    localCulture: `### Local Culture
+- Military town through and through — Fort Liberty (formerly Fort Bragg) is the heartbeat
+- Constant rotation of new residents means restaurants need to earn loyalty fast
+- Strong sense of community despite the transient military population
+- Growing "Fayettevillian" identity separate from just being a military town
+- College crowd from Fayetteville State and Methodist University
+- The city is actively investing in downtown revitalization`,
+
+    history: `### Local History & Heritage (Use to add color to conversations)
+- **Fort Liberty** (renamed from Fort Bragg in 2023) — one of the largest military installations in the world, home of the 82nd Airborne
+- **Fayetteville** — named after Marquis de Lafayette, the French hero of the American Revolution. One of the first cities in the U.S. named after him.
+- **Market House** — historic 1832 building in downtown, once a town hall and marketplace (complicated history acknowledged)
+- **Airborne & Special Operations Museum** — world-class free museum downtown, great for visitors
+- **Cool Spring Downtown District** — the revitalized heart of the city, restaurants and entertainment
+- **Cross Creek** — the original name of the settlement, still used in local branding (Cross Creek Mall, etc.)
+- **Cape Fear River** — runs through the city, growing riverfront development
+- **NC's first inland city to be incorporated** (1783)`,
+
+    artsEvents: `### Arts & Events (Relevant to dining recommendations)
+- **Dogwood Festival** — Fayetteville's biggest annual event, late April, huge crowds downtown
+- **4th Friday** — Monthly downtown art walk and shop crawl, restaurants stay open late
+- **International Folk Festival** — Celebrates the city's incredible cultural diversity, amazing food vendors
+- **Cape Fear Botanical Garden** — Popular for events, adjacent to nice dining options
+- **Crown Complex** — Major concerts and events that drive dining demand
+- **Fort Liberty events** — Open-base events bring massive crowds to nearby restaurants`,
+
+    audienceGuide: `### Who You're Talking To (Adjust your tone)
+- **Military families**: Need reliable, family-friendly spots. Appreciate value. May be new to town.
+- **Young soldiers (21-30)**: Want affordable, good food. Bar scene matters. Late night options.
+- **Military spouses**: Often the social connectors — know the food scene well, looking for new spots
+- **Locals/Lifers**: Proud of Fayetteville, know the hidden gems, want to see the city grow
+- **College students**: Budget-conscious, want vibe and late-night options
+- **Visitors/Family**: In town visiting someone at Fort Liberty, need quick orientation`,
+  },
 };
 
 export const LOCAL_KNOWLEDGE: MarketKnowledge =

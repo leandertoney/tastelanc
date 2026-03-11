@@ -82,6 +82,7 @@ export async function PUT(
       status,
       notes,
       tags,
+      assigned_to,
     } = body;
 
     // Build update object (only include fields that were provided)
@@ -99,6 +100,7 @@ export async function PUT(
     if (status !== undefined) updateData.status = status;
     if (notes !== undefined) updateData.notes = notes;
     if (tags !== undefined) updateData.tags = tags;
+    if (assigned_to !== undefined) updateData.assigned_to = assigned_to;
 
     // Update last_contacted_at if status is changing to 'contacted'
     if (status === 'contacted') {

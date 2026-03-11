@@ -175,6 +175,57 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
       ],
     },
   },
+
+  'fayetteville-nc': {
+    name: 'TasteFayetteville',
+    tagline: "Discover Fayetteville's Best Dining & Nightlife",
+    county: 'Cumberland County',
+    countyShort: 'Fayetteville',
+    state: 'NC',
+    premiumName: 'TasteFayetteville+',
+
+    aiName: 'Libertie',
+    aiAvatarVideo: '/images/libertie_animated.mp4',
+    aiAvatarImage: '/images/libertie_avatar.png',
+
+    domain: 'fayetteville.tastelanc.com',
+    replyDomain: 'in.tastelanc.com',
+    socialHandle: '@tastefayetteville',
+    instagramUrl: 'https://www.instagram.com/tastefayetteville/',
+
+    logoPath: '/images/tastefayetteville_logo.png',
+
+    appStoreUrls: {
+      ios: '',
+      android: '',
+    },
+
+    colors: {
+      accent: '#93B5CF',
+      accentHover: '#7A9BB5',
+      gold: '#C9A227',
+      bg: '#040F1A',
+      card: '#0A1929',
+      surface: '#071422',
+      surfaceLight: '#0D1F33',
+      headerBg: '#040F1A',
+      headerText: '#FFFFFF',
+    },
+
+    seo: {
+      title: "TasteFayetteville - Discover Fayetteville's Best Dining & Nightlife",
+      description:
+        'Find the best restaurants, happy hours, events, and nightlife in Fayetteville, NC. TasteFayetteville is your guide to local dining and entertainment.',
+      keywords: [
+        'Fayetteville NC restaurants',
+        'Fort Liberty dining',
+        'Fayetteville happy hours',
+        'Fayetteville NC events',
+        'Fayetteville nightlife',
+        'dining Fayetteville NC',
+      ],
+    },
+  },
 };
 
 // ─────────────────────────────────────────────────────────

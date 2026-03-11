@@ -4,15 +4,43 @@
  * Runtime validation to prevent cross-market notification leaks.
  * Every push notification MUST pass through validateMarketScope() before sending.
  *
- * Created after a critical bug where TasteLanc users received notifications
- * counting happy hours from ALL markets instead of just Lancaster.
+ * Market → app_slug mappings are loaded from the `markets` table at runtime.
+ * No code changes needed when adding new markets.
  */
 
-// Canonical market → app_slug mapping. Update when adding new markets.
-const VALID_MARKET_APP_SLUGS: Record<string, string> = {
-  'lancaster-pa': 'tastelanc',
-  'cumberland-pa': 'taste-cumberland',
-};
+import { createClient } from '@supabase/supabase-js';
+
+// Cached market → app_slug mapping, loaded once from DB per process
+let _cachedMarketAppSlugs: Record<string, string> | null = null;
+
+/**
+ * Load market → app_slug mappings from the database.
+ * Cached per process so it only queries once.
+ */
+async function loadMarketAppSlugs(): Promise<Record<string, string>> {
+  if (_cachedMarketAppSlugs) return _cachedMarketAppSlugs;
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+
+  const { data: markets } = await supabase
+    .from('markets')
+    .select('slug, app_slug')
+    .eq('is_active', true);
+
+  _cachedMarketAppSlugs = {};
+  if (markets) {
+    for (const m of markets) {
+      if (m.slug && m.app_slug) {
+        _cachedMarketAppSlugs[m.slug] = m.app_slug;
+      }
+    }
+  }
+
+  return _cachedMarketAppSlugs;
+}
 
 export interface MarketScopeValidation {
   valid: boolean;
@@ -34,17 +62,18 @@ export interface MarketScopeValidation {
  * @param tokenCount - Number of tokens about to be sent to (for logging)
  * @param context - Description of the notification type (for error messages)
  */
-export function validateMarketScope(
+export async function validateMarketScope(
   marketSlug: string,
   targetAppSlug: string,
   tokenCount: number,
   context: string,
-): MarketScopeValidation {
-  const expectedAppSlug = VALID_MARKET_APP_SLUGS[marketSlug];
+): Promise<MarketScopeValidation> {
+  const marketAppSlugs = await loadMarketAppSlugs();
+  const expectedAppSlug = marketAppSlugs[marketSlug];
 
   // Unknown market
   if (!expectedAppSlug) {
-    const error = `[MARKET GUARD] BLOCKED: Unknown market "${marketSlug}" for ${context}. Known markets: ${Object.keys(VALID_MARKET_APP_SLUGS).join(', ')}`;
+    const error = `[MARKET GUARD] BLOCKED: Unknown market "${marketSlug}" for ${context}. Known markets: ${Object.keys(marketAppSlugs).join(', ')}`;
     console.error(error);
     return { valid: false, marketSlug, appSlug: targetAppSlug, error };
   }
@@ -57,7 +86,7 @@ export function validateMarketScope(
   }
 
   // Suspiciously high token count — may indicate unfiltered tokens
-  const allAppSlugs = Object.values(VALID_MARKET_APP_SLUGS);
+  const allAppSlugs = Object.values(marketAppSlugs);
   if (allAppSlugs.length > 1 && tokenCount > 500) {
     console.warn(
       `[MARKET GUARD] WARNING: ${context} is sending to ${tokenCount} tokens for ${targetAppSlug}. Verify tokens are filtered by app_slug.`,
@@ -75,13 +104,15 @@ export function validateMarketScope(
  * Get the expected app_slug for a market.
  * Returns null for unknown markets.
  */
-export function getAppSlugForMarket(marketSlug: string): string | null {
-  return VALID_MARKET_APP_SLUGS[marketSlug] || null;
+export async function getAppSlugForMarket(marketSlug: string): Promise<string | null> {
+  const marketAppSlugs = await loadMarketAppSlugs();
+  return marketAppSlugs[marketSlug] || null;
 }
 
 /**
  * Get all known market slugs.
  */
-export function getKnownMarketSlugs(): string[] {
-  return Object.keys(VALID_MARKET_APP_SLUGS);
+export async function getKnownMarketSlugs(): Promise<string[]> {
+  const marketAppSlugs = await loadMarketAppSlugs();
+  return Object.keys(marketAppSlugs);
 }

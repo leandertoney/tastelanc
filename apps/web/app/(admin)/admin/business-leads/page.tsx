@@ -6,12 +6,10 @@ import {
   Briefcase,
   Plus,
   Search,
-  Filter,
   Mail,
   Phone,
   Globe,
   MapPin,
-  MoreVertical,
   Loader2,
   Upload,
   RefreshCw,
@@ -21,6 +19,7 @@ import {
   Clock,
   MessageSquare,
   ShoppingCart,
+  User,
 } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 import { toast } from 'sonner';
@@ -40,6 +39,8 @@ interface BusinessLead {
   notes: string | null;
   last_contacted_at: string | null;
   created_at: string;
+  assigned_to: string | null;
+  assigned_rep: { id: string; full_name: string } | null;
 }
 
 interface Stats {
@@ -49,6 +50,17 @@ interface Stats {
   interested: number;
   notInterested: number;
   converted: number;
+}
+
+interface MarketOption {
+  id: string;
+  slug: string;
+  name: string;
+}
+
+interface RepOption {
+  id: string;
+  name: string;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof CheckCircle }> = {
@@ -64,10 +76,15 @@ const CATEGORIES = ['restaurant', 'bar', 'cafe', 'brewery', 'bakery', 'food_truc
 export default function BusinessLeadsPage() {
   const [leads, setLeads] = useState<BusinessLead[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [markets, setMarkets] = useState<MarketOption[]>([]);
+  const [reps, setReps] = useState<RepOption[]>([]);
+  const [isScopedAdmin, setIsScopedAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [marketFilter, setMarketFilter] = useState('all');
+  const [repFilter, setRepFilter] = useState('all');
   const [isConverting, setIsConverting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -77,11 +94,16 @@ export default function BusinessLeadsPage() {
       if (search) params.set('search', search);
       if (statusFilter !== 'all') params.set('status', statusFilter);
       if (categoryFilter !== 'all') params.set('category', categoryFilter);
+      if (marketFilter !== 'all') params.set('market', marketFilter);
+      if (repFilter !== 'all') params.set('rep', repFilter);
 
       const res = await fetch(`/api/admin/business-leads?${params}`);
       const data = await res.json();
       setLeads(data.leads || []);
       setStats(data.stats || null);
+      if (data.markets) setMarkets(data.markets);
+      if (data.reps) setReps(data.reps);
+      if (data.isScopedAdmin !== undefined) setIsScopedAdmin(data.isScopedAdmin);
     } catch (error) {
       console.error('Error fetching leads:', error);
     } finally {
@@ -91,7 +113,7 @@ export default function BusinessLeadsPage() {
 
   useEffect(() => {
     fetchLeads();
-  }, [statusFilter, categoryFilter]);
+  }, [statusFilter, categoryFilter, marketFilter, repFilter]);
 
   // Debounced search
   useEffect(() => {
@@ -152,7 +174,6 @@ export default function BusinessLeadsPage() {
         throw new Error('Failed to update status');
       }
 
-      // Update local state
       setLeads((prev) =>
         prev.map((lead) =>
           lead.id === leadId ? { ...lead, status: newStatus } : lead
@@ -164,6 +185,45 @@ export default function BusinessLeadsPage() {
       toast.error('Failed to update status');
     }
   };
+
+  const handleRepAssign = async (leadId: string, repId: string) => {
+    try {
+      const assignedTo = repId === 'unassigned' ? null : repId;
+      const res = await fetch(`/api/admin/business-leads/${leadId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assigned_to: assignedTo }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to reassign lead');
+      }
+
+      const repName = repId === 'unassigned' ? null : reps.find((r) => r.id === repId)?.name || 'Unknown';
+      setLeads((prev) =>
+        prev.map((lead) =>
+          lead.id === leadId
+            ? {
+                ...lead,
+                assigned_to: assignedTo,
+                assigned_rep: assignedTo ? { id: assignedTo, full_name: repName! } : null,
+              }
+            : lead
+        )
+      );
+      toast.success(repId === 'unassigned' ? 'Lead unassigned' : `Lead assigned to ${repName}`);
+    } catch (error) {
+      console.error('Error reassigning lead:', error);
+      toast.error('Failed to reassign lead');
+    }
+  };
+
+  const activeFilterCount = [
+    statusFilter !== 'all',
+    categoryFilter !== 'all',
+    marketFilter !== 'all',
+    repFilter !== 'all',
+  ].filter(Boolean).length;
 
   return (
     <div>
@@ -256,18 +316,39 @@ export default function BusinessLeadsPage() {
 
       {/* Filters */}
       <Card className="p-4 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search leads..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
-            />
+        <div className="flex flex-col gap-4">
+          {/* Search row */}
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search leads..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              />
+            </div>
           </div>
-          <div className="flex gap-3">
+
+          {/* Filter row */}
+          <div className="flex flex-wrap gap-3">
+            {/* Market filter — only shown to super_admin/co_founder */}
+            {!isScopedAdmin && markets.length > 0 && (
+              <select
+                value={marketFilter}
+                onChange={(e) => setMarketFilter(e.target.value)}
+                className="px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              >
+                <option value="all">All Markets</option>
+                {markets.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            )}
+
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -280,6 +361,7 @@ export default function BusinessLeadsPage() {
               <option value="not_interested">Not Interested</option>
               <option value="converted">Converted</option>
             </select>
+
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
@@ -292,6 +374,39 @@ export default function BusinessLeadsPage() {
                 </option>
               ))}
             </select>
+
+            {/* Rep filter */}
+            {reps.length > 0 && (
+              <select
+                value={repFilter}
+                onChange={(e) => setRepFilter(e.target.value)}
+                className="px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              >
+                <option value="all">All Reps</option>
+                <option value="unassigned">Unassigned</option>
+                {reps.map((rep) => (
+                  <option key={rep.id} value={rep.id}>
+                    {rep.name}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {/* Clear filters */}
+            {activeFilterCount > 0 && (
+              <button
+                onClick={() => {
+                  setStatusFilter('all');
+                  setCategoryFilter('all');
+                  setMarketFilter('all');
+                  setRepFilter('all');
+                  setSearch('');
+                }}
+                className="px-4 py-2.5 text-sm text-gray-400 hover:text-white transition-colors"
+              >
+                Clear filters ({activeFilterCount})
+              </button>
+            )}
           </div>
         </div>
       </Card>
@@ -306,11 +421,11 @@ export default function BusinessLeadsPage() {
           <Users className="w-12 h-12 text-gray-500 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-white mb-2">No leads found</h3>
           <p className="text-gray-400 mb-4">
-            {search || statusFilter !== 'all' || categoryFilter !== 'all'
+            {search || statusFilter !== 'all' || categoryFilter !== 'all' || marketFilter !== 'all' || repFilter !== 'all'
               ? 'Try adjusting your filters'
               : 'Add your first business lead to get started'}
           </p>
-          {!search && statusFilter === 'all' && categoryFilter === 'all' && (
+          {!search && statusFilter === 'all' && categoryFilter === 'all' && marketFilter === 'all' && repFilter === 'all' && (
             <div className="flex justify-center gap-3">
               <Link
                 href="/admin/business-leads/new"
@@ -391,6 +506,12 @@ export default function BusinessLeadsPage() {
                           Website
                         </a>
                       )}
+                      {lead.assigned_rep && (
+                        <span className="flex items-center gap-1 text-tastelanc-accent">
+                          <User className="w-3 h-3" />
+                          {lead.assigned_rep.full_name}
+                        </span>
+                      )}
                     </div>
                     {lead.notes && (
                       <p className="mt-2 text-sm text-gray-500 line-clamp-1">
@@ -413,6 +534,20 @@ export default function BusinessLeadsPage() {
                       <option value="not_interested">Not Interested</option>
                       <option value="converted">Converted</option>
                     </select>
+                    {reps.length > 0 && (
+                      <select
+                        value={lead.assigned_to || 'unassigned'}
+                        onChange={(e) => handleRepAssign(lead.id, e.target.value)}
+                        className="px-3 py-1.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent max-w-[140px]"
+                      >
+                        <option value="unassigned">Unassigned</option>
+                        {reps.map((rep) => (
+                          <option key={rep.id} value={rep.id}>
+                            {rep.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                     <a
                       href={`mailto:${lead.email}`}
                       className="p-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface rounded-lg transition-colors"

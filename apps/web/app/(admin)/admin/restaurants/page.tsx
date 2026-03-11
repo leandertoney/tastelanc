@@ -12,8 +12,9 @@ async function getRestaurants(scopedMarketId: string | null) {
     .select(`
       *,
       tiers(name, display_name)
-    `)
-    .order('name', { ascending: true });
+    `, { count: 'exact' })
+    .order('name', { ascending: true })
+    .range(0, 2999);
 
   if (scopedMarketId) {
     query = query.eq('market_id', scopedMarketId);

@@ -16,6 +16,12 @@ export async function GET(request: Request) {
     const status = searchParams.get('status');
     const category = searchParams.get('category');
     const search = searchParams.get('search');
+    const marketFilter = searchParams.get('market');
+    const repFilter = searchParams.get('rep');
+
+    // Determine effective market scope
+    // market_admin can only see their market; super_admin can filter or see all
+    const effectiveMarketId = admin.scopedMarketId || (marketFilter && marketFilter !== 'all' ? marketFilter : null);
 
     // Build query
     let query = supabase
@@ -23,12 +29,24 @@ export async function GET(request: Request) {
       .select('*')
       .order('created_at', { ascending: false });
 
+    if (effectiveMarketId) {
+      query = query.eq('market_id', effectiveMarketId);
+    }
+
     if (status && status !== 'all') {
       query = query.eq('status', status);
     }
 
     if (category && category !== 'all') {
       query = query.eq('category', category);
+    }
+
+    if (repFilter && repFilter !== 'all') {
+      if (repFilter === 'unassigned') {
+        query = query.is('assigned_to', null);
+      } else {
+        query = query.eq('assigned_to', repFilter);
+      }
     }
 
     if (search) {
@@ -47,10 +65,35 @@ export async function GET(request: Request) {
       );
     }
 
-    // Get stats
-    const { data: allLeads } = await supabase
+    // Enrich leads with assigned rep names
+    const assignedIds = Array.from(new Set((leads || []).filter((l: any) => l.assigned_to).map((l: any) => l.assigned_to)));
+    let repNameMap: Record<string, string> = {};
+    if (assignedIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', assignedIds);
+      if (profiles) {
+        for (const p of profiles) {
+          repNameMap[p.id] = p.full_name || 'Unknown';
+        }
+      }
+    }
+    const enrichedLeads = (leads || []).map((lead: any) => ({
+      ...lead,
+      assigned_rep: lead.assigned_to ? { id: lead.assigned_to, full_name: repNameMap[lead.assigned_to] || 'Unknown' } : null,
+    }));
+
+    // Get stats scoped to the same market filter
+    let statsQuery = supabase
       .from('business_leads')
       .select('status');
+
+    if (effectiveMarketId) {
+      statsQuery = statsQuery.eq('market_id', effectiveMarketId);
+    }
+
+    const { data: allLeads } = await statsQuery;
 
     const stats = {
       total: allLeads?.length || 0,
@@ -61,7 +104,38 @@ export async function GET(request: Request) {
       converted: allLeads?.filter((l) => l.status === 'converted').length || 0,
     };
 
-    return NextResponse.json({ leads: leads || [], stats });
+    // Fetch available markets for the filter dropdown (super_admin only)
+    let markets: { id: string; slug: string; name: string }[] = [];
+    if (!admin.scopedMarketId) {
+      const { data: marketRows } = await supabase
+        .from('markets')
+        .select('id, slug, name')
+        .eq('is_active', true)
+        .order('name');
+      markets = marketRows || [];
+    }
+
+    // Fetch reps for the filter dropdown (scoped to effective market if applicable)
+    let repsQuery = supabase
+      .from('sales_reps')
+      .select('user_id, profiles(id, full_name)')
+      .eq('is_active', true);
+
+    const { data: repRows } = await repsQuery;
+    const reps = (repRows || [])
+      .map((r: any) => ({
+        id: r.user_id,
+        name: r.profiles?.full_name || 'Unknown',
+      }))
+      .sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+    return NextResponse.json({
+      leads: enrichedLeads,
+      stats,
+      markets,
+      reps,
+      isScopedAdmin: !!admin.scopedMarketId,
+    });
   } catch (error) {
     console.error('Error in business leads API:', error);
     return NextResponse.json(

@@ -334,7 +334,7 @@ async function sendHappyHourAlerts(supabase: ReturnType<typeof createClient>): P
 }> {
   const { data: markets } = await supabase
     .from('markets')
-    .select('id, slug')
+    .select('id, slug, name, app_slug, ai_name')
     .eq('is_active', true);
 
   if (!markets?.length) return { sent: 0, restaurants: [] };
@@ -343,11 +343,11 @@ async function sendHappyHourAlerts(supabase: ReturnType<typeof createClient>): P
   const allRestaurants: string[] = [];
 
   for (const market of markets) {
-    const info = MARKET_INFO[market.slug];
-    if (!info) {
-      console.log(`No app info for market ${market.slug}, skipping happy hour alerts`);
+    if (!market.app_slug) {
+      console.log(`No app_slug for market ${market.slug}, skipping happy hour alerts`);
       continue;
     }
+    const info = { appSlug: market.app_slug, aiName: market.ai_name || market.name, label: market.name };
 
     const result = await sendHappyHourAlertsForMarket(supabase, market.id, market.slug, info);
     totalSent += result.sent;
@@ -621,11 +621,8 @@ const PICK_STRATEGIES_BY_DAY: Record<string, PickStrategy> = {
  * Rotates pick categories by day of week. Uses day-of-month as a
  * deterministic seed so everyone gets the same pick, but it varies day-to-day.
  */
-// Map market slugs to their app slug and AI name for Today's Pick
-const MARKET_INFO: Record<string, { appSlug: string; aiName: string; label: string }> = {
-  'lancaster-pa': { appSlug: 'tastelanc', aiName: 'Rosie', label: 'Lancaster' },
-  'cumberland-pa': { appSlug: 'taste-cumberland', aiName: 'Mollie', label: 'Cumberland' },
-};
+// Market info is now read from the `markets` table (app_slug, ai_name columns)
+// instead of being hardcoded here. No code changes needed when adding new markets.
 
 async function sendTodaysPick(supabase: ReturnType<typeof createClient>, targetMarketSlug?: string): Promise<{
   sent: number;
@@ -634,7 +631,7 @@ async function sendTodaysPick(supabase: ReturnType<typeof createClient>, targetM
   reason?: string;
 }> {
   // Run Today's Pick independently for each active market
-  let query = supabase.from('markets').select('id, slug').eq('is_active', true);
+  let query = supabase.from('markets').select('id, slug, name, app_slug, ai_name').eq('is_active', true);
 
   // If a specific market is requested, only process that one
   if (targetMarketSlug) {
@@ -650,11 +647,11 @@ async function sendTodaysPick(supabase: ReturnType<typeof createClient>, targetM
   let lastStrategy = '';
 
   for (const market of markets) {
-    const info = MARKET_INFO[market.slug];
-    if (!info) {
-      console.log(`No app info for market ${market.slug}, skipping`);
+    if (!market.app_slug) {
+      console.log(`No app_slug for market ${market.slug}, skipping`);
       continue;
     }
+    const info = { appSlug: market.app_slug, aiName: market.ai_name || market.name, label: market.name };
 
     const result = await sendTodaysPickForMarket(supabase, market.id, market.slug, info);
     totalSent += result.sent;
