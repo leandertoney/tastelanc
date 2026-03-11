@@ -4,7 +4,7 @@
 
 import { NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
-import { publishToInstagram, updatePostAfterPublish } from '@/lib/instagram/publish';
+import { publishToInstagram, publishToFacebook, updatePostAfterPublish } from '@/lib/instagram/publish';
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
@@ -111,11 +111,26 @@ export async function POST(request: Request) {
     }, { status: 500 });
   }
 
+  // Cross-post to Facebook Page
+  let facebookPostId: string | undefined;
+  try {
+    const fbResult = await publishToFacebook(account, post.caption, post.media_urls);
+    if (fbResult.success) {
+      facebookPostId = fbResult.facebook_post_id;
+      console.log(`[Instagram Publish] Cross-posted to Facebook: ${facebookPostId}`);
+    } else {
+      console.error(`[Instagram Publish] Facebook cross-post failed: ${fbResult.error}`);
+    }
+  } catch (err: any) {
+    console.error(`[Instagram Publish] Facebook cross-post error: ${err.message}`);
+  }
+
   console.log(`[Instagram Publish] Published! ${publishResult.permalink}`);
   return NextResponse.json({
     success: true,
     post_id: post.id,
     content_type: post.content_type,
     permalink: publishResult.permalink,
+    facebook_post_id: facebookPostId,
   });
 }

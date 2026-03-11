@@ -6,7 +6,7 @@
 import { NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { generateInstagramPost } from '@/lib/instagram/generate';
-import { publishToInstagram, updatePostAfterPublish } from '@/lib/instagram/publish';
+import { publishToInstagram, publishToFacebook, updatePostAfterPublish } from '@/lib/instagram/publish';
 import { MarketConfig } from '@/lib/instagram/types';
 import { cleanupOldSlides } from '@/lib/instagram/overlay';
 
@@ -151,6 +151,20 @@ export async function POST(request: Request) {
     }, { status: 500 });
   }
 
+  // Cross-post to Facebook Page (fire-and-forget — don't block on failure)
+  let facebookPostId: string | undefined;
+  try {
+    const fbResult = await publishToFacebook(account, genResult.caption!, genResult.media_urls);
+    if (fbResult.success) {
+      facebookPostId = fbResult.facebook_post_id;
+      console.log(`[Instagram Cron] Cross-posted to Facebook: ${facebookPostId}`);
+    } else {
+      console.error(`[Instagram Cron] Facebook cross-post failed: ${fbResult.error}`);
+    }
+  } catch (err: any) {
+    console.error(`[Instagram Cron] Facebook cross-post error: ${err.message}`);
+  }
+
   // Fire-and-forget: clean up old composited slides
   cleanupOldSlides(supabase, marketSlug).catch(err =>
     console.error(`[Instagram Cron] Slide cleanup failed: ${err.message}`)
@@ -163,5 +177,6 @@ export async function POST(request: Request) {
     content_type: genResult.content_type,
     instagram_media_id: publishResult.instagram_media_id,
     permalink: publishResult.permalink,
+    facebook_post_id: facebookPostId,
   });
 }

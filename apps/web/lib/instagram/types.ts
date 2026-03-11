@@ -13,6 +13,8 @@ export interface InstagramAccount {
   post_time: string;
   timezone: string;
   is_active: boolean;
+  meta_app_id: string | null;
+  meta_app_secret: string | null;
 }
 
 export interface InstagramPost {
