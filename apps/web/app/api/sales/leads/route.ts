@@ -21,6 +21,7 @@ export async function GET(request: Request) {
     const category = searchParams.get('category');
     const search = searchParams.get('search');
     const assignedTo = searchParams.get('assigned_to');
+    const marketFilter = searchParams.get('market');
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '10', 10)));
     const sortBy = searchParams.get('sort_by') || 'created_at';
@@ -29,18 +30,41 @@ export async function GET(request: Request) {
     const ALLOWED_SORT_COLUMNS = ['business_name', 'contact_name', 'status', 'category', 'city', 'created_at', 'last_contacted_at'];
     const safeSortBy = ALLOWED_SORT_COLUMNS.includes(sortBy) ? sortBy : 'created_at';
 
+    // Fetch markets list for super_admin dropdown
+    const { data: marketsData } = await serviceClient
+      .from('markets')
+      .select('id, name, slug')
+      .eq('is_active', true)
+      .order('name', { ascending: true });
+    const marketsList = marketsData || [];
+
+    // Helper: apply market scoping to a query
+    // Combines role-based scoping (access.marketIds) with optional UI filter (marketFilter)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const applyMarketScope = (q: any) => {
+      // If a specific market is selected in the UI filter, use that (if allowed)
+      if (marketFilter && marketFilter !== 'all') {
+        // For scoped users, verify they have access to this market
+        if (access.marketIds === null || access.marketIds.includes(marketFilter)) {
+          return q.eq('market_id', marketFilter);
+        }
+        // If they don't have access, fall through to role-based scoping
+      }
+      // Default role-based scoping
+      if (access.marketIds !== null && access.marketIds.length > 0) {
+        if (access.marketIds.length === 1) {
+          return q.eq('market_id', access.marketIds[0]);
+        }
+        return q.in('market_id', access.marketIds);
+      }
+      return q;
+    };
+
     // Get total count for pagination (with same filters + market scope)
     // Sales reps can see ALL leads in their market (for transparency / incentivization)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let countQ: any = serviceClient.from('business_leads').select('id', { count: 'exact', head: true });
-    // Market scoping — market_admins and sales reps only see their market(s)
-    if (access.marketIds !== null && access.marketIds.length > 0) {
-      if (access.marketIds.length === 1) {
-        countQ = countQ.eq('market_id', access.marketIds[0]);
-      } else {
-        countQ = countQ.in('market_id', access.marketIds);
-      }
-    }
+    countQ = applyMarketScope(countQ);
     if (status && status !== 'all') countQ = countQ.eq('status', status);
     if (category && category !== 'all') countQ = countQ.eq('category', category);
     if (assignedTo === 'unassigned') countQ = countQ.is('assigned_to', null);
@@ -55,15 +79,8 @@ export async function GET(request: Request) {
       .order(safeSortBy, { ascending: sortDir === 'asc' })
       .range((page - 1) * limit, page * limit - 1);
 
-    // Sales reps can see ALL leads in their market (for transparency / incentivization)
-    // Market scoping
-    if (access.marketIds !== null && access.marketIds.length > 0) {
-      if (access.marketIds.length === 1) {
-        query = query.eq('market_id', access.marketIds[0]);
-      } else {
-        query = query.in('market_id', access.marketIds);
-      }
-    }
+    // Market scoping (role-based + UI filter)
+    query = applyMarketScope(query);
 
     if (status && status !== 'all') {
       query = query.eq('status', status);
@@ -92,17 +109,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch leads' }, { status: 500 });
     }
 
-    // Get stats — scoped to market for sales reps, global for admins
+    // Get stats — scoped to market filter + role
     let statsQuery = serviceClient
       .from('business_leads')
       .select('status');
-    if (access.marketIds !== null && access.marketIds.length > 0) {
-      if (access.marketIds.length === 1) {
-        statsQuery = statsQuery.eq('market_id', access.marketIds[0]);
-      } else {
-        statsQuery = statsQuery.in('market_id', access.marketIds);
-      }
-    }
+    statsQuery = applyMarketScope(statsQuery);
     const { data: allLeads } = await statsQuery;
 
     const stats = {
@@ -119,10 +130,16 @@ export async function GET(request: Request) {
     const { data: allReps } = await serviceClient
       .from('sales_reps')
       .select('id, name, market_ids');
-    // Filter reps by market overlap (super admins see all)
+    // Filter reps by market: if a market is selected in UI, show only reps in that market
+    // Otherwise fall back to role-based scoping
     const reps = allReps?.filter((rep) => {
-      if (!access.marketIds) return true; // super admin sees all
       if (!rep.market_ids || rep.market_ids.length === 0) return false;
+      // If specific market selected in UI, filter reps to that market
+      if (marketFilter && marketFilter !== 'all') {
+        return rep.market_ids.includes(marketFilter);
+      }
+      // Role-based: super admins see all, scoped users see their market's reps
+      if (!access.marketIds) return true;
       return rep.market_ids.some((mid: string) => access.marketIds!.includes(mid));
     }) || [];
     const repNameMap: Record<string, string> = {};
@@ -186,8 +203,10 @@ export async function GET(request: Request) {
       stats,
       currentUserId: access.userId,
       isAdmin: access.isAdmin,
+      isSuperAdmin: access.marketIds === null,
       pagination: { page, limit, total, totalPages },
       reps: repsList,
+      markets: marketsList,
     });
   } catch (error) {
     console.error('Error in sales leads API:', error);
