@@ -52,6 +52,7 @@
     "typescript": "^5.7.2"
   },
   "optionalDependencies": {
+    "@img/sharp-linux-x64": "^0.34.5",
     "@rollup/rollup-linux-x64-gnu": "^4.59.0"
   }
 }
