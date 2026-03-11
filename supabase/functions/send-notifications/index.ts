@@ -18,6 +18,23 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
+/**
+ * Check if current time is within quiet hours (before 10 AM or after 9 PM ET).
+ * All scheduled notifications MUST check this before sending.
+ */
+function isQuietHours(): { quiet: boolean; timeET: string } {
+  const now = new Date();
+  const timeET = now.toLocaleTimeString('en-US', {
+    timeZone: 'America/New_York',
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+  const hour = parseInt(timeET.split(':')[0], 10);
+  return { quiet: hour < 10 || hour >= 21, timeET };
+}
+
 // Tier IDs that get push notification features
 const PAID_TIER_IDS = [
   '00000000-0000-0000-0000-000000000002', // premium
@@ -40,15 +57,23 @@ interface ExpoPushResponse {
   }>;
 }
 
+// ─── Notification types exempt from quiet hours ─────────────────────────────
+// These are transactional/internal notifications that should send at any hour.
+const QUIET_HOURS_EXEMPT = new Set([
+  'sales_team_alert',
+]);
+
+// Throttle cooldown in minutes (matches apps/web/lib/notifications/throttle.ts)
+const THROTTLE_COOLDOWN_MINUTES = 90;
+
 /**
- * Send push notifications via Expo Push API
+ * Low-level Expo Push API sender. NEVER call this directly — use sendViaGateway().
  */
-async function sendPushNotifications(messages: PushMessage[]): Promise<ExpoPushResponse> {
+async function _sendToExpo(messages: PushMessage[]): Promise<ExpoPushResponse> {
   if (messages.length === 0) {
     return { data: [] };
   }
 
-  // Expo recommends batching in chunks of 100
   const chunks: PushMessage[][] = [];
   for (let i = 0; i < messages.length; i += 100) {
     chunks.push(messages.slice(i, i + 100));
@@ -77,6 +102,128 @@ async function sendPushNotifications(messages: PushMessage[]): Promise<ExpoPushR
 }
 
 /**
+ * Gateway response returned by sendViaGateway().
+ */
+interface GatewayResponse {
+  sent: number;
+  total: number;
+  blocked: boolean;
+  blockReason?: string;
+}
+
+/**
+ * NOTIFICATION GATEWAY — the single enforcement point for ALL push notifications.
+ *
+ * Every notification in the system MUST go through this function. It enforces:
+ * 1. Quiet hours (10 AM – 9 PM ET, unless exempt)
+ * 2. Dedup (atomic via unique dedup_key in notification_logs)
+ * 3. Throttle (90-min cooldown per market)
+ * 4. Logging (every send is recorded for audit)
+ *
+ * New notification types automatically get all protections for free.
+ */
+async function sendViaGateway(
+  supabase: ReturnType<typeof createClient>,
+  params: {
+    notificationType: string;
+    marketSlug: string | null;
+    messages: PushMessage[];
+    dedupKey?: string;
+    skipThrottle?: boolean;
+    details?: Record<string, unknown>;
+  },
+): Promise<GatewayResponse> {
+  const { notificationType, marketSlug, messages, dedupKey, skipThrottle, details } = params;
+
+  if (messages.length === 0) {
+    return { sent: 0, total: 0, blocked: false };
+  }
+
+  // 1. Quiet hours check (unless exempt)
+  if (!QUIET_HOURS_EXEMPT.has(notificationType)) {
+    const qh = isQuietHours();
+    if (qh.quiet) {
+      console.log(`[Gateway] BLOCKED ${notificationType}: quiet hours (${qh.timeET} ET)`);
+      return { sent: 0, total: messages.length, blocked: true, blockReason: `Quiet hours: ${qh.timeET} ET` };
+    }
+  }
+
+  // 2. Dedup check (atomic via unique index on dedup_key)
+  if (dedupKey) {
+    const { error: dedupError } = await supabase
+      .from('notification_logs')
+      .insert({
+        job_type: notificationType,
+        status: 'completed',
+        market_slug: marketSlug,
+        dedup_key: dedupKey,
+        details: { ...details, placeholder: true },
+      });
+
+    if (dedupError) {
+      // Unique constraint violation = already sent
+      if (dedupError.code === '23505') {
+        console.log(`[Gateway] BLOCKED ${notificationType}: duplicate (${dedupKey})`);
+        return { sent: 0, total: messages.length, blocked: true, blockReason: `Duplicate: ${dedupKey}` };
+      }
+      // Other DB error — log but don't block (fail open)
+      console.warn(`[Gateway] Dedup insert warning for ${notificationType}:`, dedupError.message);
+    }
+  }
+
+  // 3. Throttle check (skip for transactional notifications)
+  if (marketSlug && !skipThrottle) {
+    const cooldownAgo = new Date(Date.now() - THROTTLE_COOLDOWN_MINUTES * 60 * 1000).toISOString();
+    const { data: recentLogs } = await supabase
+      .from('notification_logs')
+      .select('job_type, created_at')
+      .eq('status', 'completed')
+      .eq('market_slug', marketSlug)
+      .gte('created_at', cooldownAgo)
+      .neq('job_type', notificationType) // Don't throttle against yourself (dedup handles that)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (recentLogs && recentLogs.length > 0) {
+      const last = recentLogs[0];
+      const minAgo = Math.round((Date.now() - new Date(last.created_at).getTime()) / 60000);
+      console.log(`[Gateway] BLOCKED ${notificationType}: throttled (${last.job_type} sent ${minAgo}min ago)`);
+
+      // Clean up the dedup placeholder if we inserted one
+      if (dedupKey) {
+        await supabase.from('notification_logs').delete().eq('dedup_key', dedupKey).eq('details->>placeholder', 'true');
+      }
+
+      return { sent: 0, total: messages.length, blocked: true, blockReason: `Throttled: ${last.job_type} sent ${minAgo}min ago` };
+    }
+  }
+
+  // 4. Send via Expo Push API
+  console.log(`[Gateway] Sending ${messages.length} messages for ${notificationType} (market: ${marketSlug || 'all'})`);
+  const result = await _sendToExpo(messages);
+  const sent = result.data.filter(r => r.status === 'ok').length;
+
+  // 5. Log the send (update placeholder if dedup was used, otherwise insert new)
+  if (dedupKey) {
+    await supabase
+      .from('notification_logs')
+      .update({
+        details: { ...details, sent, total: messages.length },
+      })
+      .eq('dedup_key', dedupKey);
+  } else {
+    await supabase.from('notification_logs').insert({
+      job_type: notificationType,
+      status: 'completed',
+      market_slug: marketSlug,
+      details: { ...details, sent, total: messages.length },
+    });
+  }
+
+  return { sent, total: messages.length, blocked: false };
+}
+
+/**
  * Get all push tokens from the database, grouped by Expo project (app_slug).
  * Expo Push API rejects batch sends containing tokens from multiple projects
  * (PUSH_TOO_MANY_EXPERIENCE_IDS), so callers must send separate batches per group.
@@ -102,25 +249,30 @@ async function getAllPushTokensGrouped(supabase: ReturnType<typeof createClient>
 
 /**
  * Send push notifications to all tokens, automatically batching by Expo project.
- * Takes a function that builds messages for a given set of tokens.
+ * Routes through the gateway for quiet hours/throttle/dedup enforcement.
  */
-async function sendToAllTokens(
+async function sendToAllTokensViaGateway(
   supabase: ReturnType<typeof createClient>,
-  buildMessages: (tokens: string[]) => PushMessage[]
-): Promise<{ sent: number; total: number }> {
+  notificationType: string,
+  buildMessages: (tokens: string[]) => PushMessage[],
+  opts?: { dedupKey?: string; details?: Record<string, unknown> },
+): Promise<GatewayResponse> {
   const groups = await getAllPushTokensGrouped(supabase);
-  let sent = 0;
-  let total = 0;
+  const allMessages: PushMessage[] = [];
 
   for (const [slug, tokens] of groups) {
     const messages = buildMessages(tokens);
-    total += messages.length;
-    console.log(`Sending ${messages.length} messages for project ${slug}`);
-    const result = await sendPushNotifications(messages);
-    sent += result.data.filter(r => r.status === 'ok').length;
+    console.log(`Building ${messages.length} messages for project ${slug}`);
+    allMessages.push(...messages);
   }
 
-  return { sent, total };
+  return sendViaGateway(supabase, {
+    notificationType,
+    marketSlug: null,
+    messages: allMessages,
+    dedupKey: opts?.dedupKey,
+    details: opts?.details,
+  });
 }
 
 /**
@@ -283,29 +435,37 @@ async function sendHappyHourAlertsForMarket(
     body = `${preview} + ${count - 2} more have happy hours right now`;
   }
 
-  // Send ONLY to tokens for this market's app
+  // Send ONLY to tokens for this market's app — via gateway
   const groups = await getAllPushTokensGrouped(supabase);
   const tokens = groups.get(marketInfo.appSlug) || [];
   console.log(`Happy Hour Alerts (${marketInfo.label}): sending to ${tokens.length} tokens for ${marketInfo.appSlug}`);
 
-  let successCount = 0;
-  if (tokens.length > 0) {
-    const messages = tokens.map(token => ({
-      to: token,
-      sound: 'default' as const,
-      title,
-      body,
-      data: {
-        screen: count === 1 ? 'RestaurantDetail' : 'HappyHours',
-        // @ts-ignore - Supabase join typing
-        restaurantId: count === 1 ? happyHours[0].restaurant.id : undefined,
-      },
-    }));
-    const result = await sendPushNotifications(messages);
-    successCount = result.data.filter(r => r.status === 'ok').length;
-  }
+  if (tokens.length === 0) return { sent: 0, restaurants: restaurantNames };
 
-  return { sent: successCount, restaurants: restaurantNames };
+  const now2 = new Date();
+  const etDateStr = now2.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+
+  const messages = tokens.map(token => ({
+    to: token,
+    sound: 'default' as const,
+    title,
+    body,
+    data: {
+      screen: count === 1 ? 'RestaurantDetail' : 'HappyHours',
+      // @ts-ignore - Supabase join typing
+      restaurantId: count === 1 ? happyHours[0].restaurant.id : undefined,
+    },
+  }));
+
+  const gw = await sendViaGateway(supabase, {
+    notificationType: 'happy_hour_alerts',
+    marketSlug,
+    messages,
+    dedupKey: `hh_alerts:${marketSlug}:${etDateStr}`,
+    details: { restaurants: restaurantNames, app_slug: marketInfo.appSlug },
+  });
+
+  return { sent: gw.sent, restaurants: restaurantNames };
 }
 
 /**
@@ -365,31 +525,27 @@ async function sendGeofenceAlert(
     body = `${restaurant.name} has ${happyHour.description} right now!`;
   }
 
-  // Group by project and send separate batches
-  const groups = new Map<string, string[]>();
-  for (const t of tokenData) {
-    const slug = t.app_slug || 'tastelanc';
-    if (!groups.has(slug)) groups.set(slug, []);
-    groups.get(slug)!.push(t.token);
-  }
+  // Build messages from all tokens and send via gateway
+  const messages: PushMessage[] = tokenData.map(t => ({
+    to: t.token,
+    sound: 'default',
+    title: happyHour ? 'Happy Hour Nearby!' : 'Check This Out!',
+    body,
+    data: {
+      screen: 'RestaurantDetail',
+      restaurantId,
+    },
+  }));
 
-  let anySent = false;
-  for (const [, tokens] of groups) {
-    const messages: PushMessage[] = tokens.map(token => ({
-      to: token,
-      sound: 'default',
-      title: happyHour ? 'Happy Hour Nearby!' : 'Check This Out!',
-      body,
-      data: {
-        screen: 'RestaurantDetail',
-        restaurantId,
-      },
-    }));
-    const result = await sendPushNotifications(messages);
-    if (result.data.some(r => r.status === 'ok')) anySent = true;
-  }
+  const gw = await sendViaGateway(supabase, {
+    notificationType: 'geofence_alert',
+    marketSlug: null,
+    messages,
+    skipThrottle: true,
+    details: { userId, restaurantId, restaurantName: restaurant.name },
+  });
 
-  return { sent: anySent };
+  return { sent: gw.sent > 0 };
 }
 
 /**
@@ -418,32 +574,28 @@ async function sendAreaEntryNotification(
     ? `Check out ${restaurantCount} restaurant${restaurantCount === 1 ? '' : 's'} nearby`
     : 'Discover restaurants nearby';
 
-  // Group by project and send separate batches
-  const groups = new Map<string, string[]>();
-  for (const t of tokenData) {
-    const slug = t.app_slug || 'tastelanc';
-    if (!groups.has(slug)) groups.set(slug, []);
-    groups.get(slug)!.push(t.token);
-  }
+  // Build messages from all tokens and send via gateway
+  const messages: PushMessage[] = tokenData.map(t => ({
+    to: t.token,
+    sound: 'default',
+    title: `You're in ${areaName}!`,
+    body: countText,
+    data: {
+      screen: 'AreaRestaurants',
+      areaId,
+      areaName,
+    },
+  }));
 
-  let anySent = false;
-  for (const [, tokens] of groups) {
-    const messages: PushMessage[] = tokens.map(token => ({
-      to: token,
-      sound: 'default',
-      title: `You're in ${areaName}!`,
-      body: countText,
-      data: {
-        screen: 'AreaRestaurants',
-        areaId,
-        areaName,
-      },
-    }));
-    const result = await sendPushNotifications(messages);
-    if (result.data.some(r => r.status === 'ok')) anySent = true;
-  }
+  const gw = await sendViaGateway(supabase, {
+    notificationType: 'area_entry',
+    marketSlug: null,
+    messages,
+    skipThrottle: true,
+    details: { userId, areaId, areaName },
+  });
 
-  return { sent: anySent };
+  return { sent: gw.sent > 0 };
 }
 
 // ─── Pick strategy config ────────────────────────────────────────────────────
@@ -801,35 +953,41 @@ async function sendTodaysPickForMarket(
 
   if (!restaurantId) return { sent: 0, reason: 'No restaurant selected' };
 
-  // ── Send only to tokens for this market's app ──────────────
+  // ── Send only to tokens for this market's app — via gateway ──────────────
 
   const title = `${strategy.emoji} ${strategy.title}`;
   const groups = await getAllPushTokensGrouped(supabase);
   const tokens = groups.get(marketInfo.appSlug) || [];
   console.log(`Today's Pick (${marketInfo.label}): sending to ${tokens.length} tokens for app ${marketInfo.appSlug}`);
 
-  let successCount = 0;
-  if (tokens.length > 0) {
-    const messages = tokens.map(token => ({
-      to: token,
-      sound: 'default' as const,
-      title,
-      body: notifBody,
-      data: {
-        screen: 'RestaurantDetail',
-        restaurantId,
-      },
-    }));
-    const result = await sendPushNotifications(messages);
-    successCount = result.data.filter(r => r.status === 'ok').length;
-  }
-
   if (tokens.length === 0) return { sent: 0, reason: `No push tokens for ${marketInfo.appSlug}` };
 
+  const etDateStr2 = now.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+
+  const messages = tokens.map(token => ({
+    to: token,
+    sound: 'default' as const,
+    title,
+    body: notifBody,
+    data: {
+      screen: 'RestaurantDetail',
+      restaurantId,
+    },
+  }));
+
+  const gw = await sendViaGateway(supabase, {
+    notificationType: 'todays_pick',
+    marketSlug,
+    messages,
+    dedupKey: `todays_pick:${marketSlug}:${etDateStr2}`,
+    details: { restaurant: restaurantName, strategy: strategy.type, app_slug: marketInfo.appSlug },
+  });
+
   return {
-    sent: successCount,
+    sent: gw.sent,
     restaurant: restaurantName,
     strategy: strategy.type,
+    reason: gw.blocked ? gw.blockReason : undefined,
   };
 }
 
@@ -846,6 +1004,9 @@ Deno.serve(async (req) => {
 
     // Handle different endpoints
     switch (path) {
+      // All endpoints below route through sendViaGateway() which enforces
+      // quiet hours, dedup, and throttle automatically.
+
       case 'happy-hour-alerts': {
         const result = await sendHappyHourAlerts(supabase);
         return new Response(JSON.stringify(result), {
@@ -871,7 +1032,6 @@ Deno.serve(async (req) => {
       }
 
       case 'area-entry': {
-        // Send notification when user enters an area for the first time
         const body = await req.json();
         const { userId, areaId, areaName, restaurantCount } = body;
 
@@ -895,7 +1055,6 @@ Deno.serve(async (req) => {
       }
 
       case 'new-blog-post': {
-        // Send notification to users of a specific app about a new blog post
         const body = await req.json();
         const { title, summary, slug, app_slug, ai_name } = body;
 
@@ -910,28 +1069,32 @@ Deno.serve(async (req) => {
         const aiDisplayName = ai_name || 'Rosie';
         const truncatedSummary = summary.length > 120 ? summary.substring(0, 117) + '...' : summary;
 
-        // Only send to tokens for the target app
         const groups = await getAllPushTokensGrouped(supabase);
         const tokens = groups.get(targetAppSlug) || [];
-        console.log(`Blog notification: sending to ${tokens.length} tokens for app ${targetAppSlug}`);
 
-        let sent = 0;
-        if (tokens.length > 0) {
-          const messages = tokens.map(token => ({
-            to: token,
-            sound: 'default' as const,
-            title: `New from ${aiDisplayName}: ${title}`,
-            body: truncatedSummary,
-            data: {
-              screen: 'BlogDetail',
-              blogSlug: slug,
-            },
-          }));
-          const result = await sendPushNotifications(messages);
-          sent = result.data.filter(r => r.status === 'ok').length;
-        }
+        const messages = tokens.map(token => ({
+          to: token,
+          sound: 'default' as const,
+          title: `New from ${aiDisplayName}: ${title}`,
+          body: truncatedSummary,
+          data: {
+            screen: 'BlogDetail',
+            blogSlug: slug,
+          },
+        }));
 
-        return new Response(JSON.stringify({ sent, total: tokens.length }), {
+        const blogNow = new Date();
+        const blogDateStr = blogNow.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+
+        const gw = await sendViaGateway(supabase, {
+          notificationType: 'new_blog_post',
+          marketSlug: null,
+          messages,
+          dedupKey: `blog:${targetAppSlug}:${blogDateStr}:${slug}`,
+          details: { title, slug, app_slug: targetAppSlug },
+        });
+
+        return new Response(JSON.stringify({ sent: gw.sent, total: gw.total, blocked: gw.blocked, reason: gw.blockReason }), {
           headers: { 'Content-Type': 'application/json' },
         });
       }
@@ -951,7 +1114,6 @@ Deno.serve(async (req) => {
       }
 
       case 'broadcast': {
-        // Admin-only broadcast to all users
         const body = await req.json();
         const { title, message, data } = body;
 
@@ -962,17 +1124,45 @@ Deno.serve(async (req) => {
           });
         }
 
-        const broadcastResult = await sendToAllTokens(supabase, (tokens) =>
-          tokens.map(token => ({
+        const broadcastResult = await sendToAllTokensViaGateway(
+          supabase,
+          'broadcast',
+          (tokens) => tokens.map(token => ({
             to: token,
             sound: 'default' as const,
             title,
             body: message,
             data: data || {},
-          }))
+          })),
         );
 
         return new Response(JSON.stringify(broadcastResult), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'gateway': {
+        // Direct gateway endpoint for Node.js callers
+        const body = await req.json();
+        const { notificationType, marketSlug: gwMarket, messages: gwMessages, dedupKey: gwDedup, skipThrottle: gwSkip, details: gwDetails } = body;
+
+        if (!notificationType || !gwMessages?.length) {
+          return new Response(JSON.stringify({ error: 'Missing notificationType or messages' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+
+        const gwResult = await sendViaGateway(supabase, {
+          notificationType,
+          marketSlug: gwMarket || null,
+          messages: gwMessages,
+          dedupKey: gwDedup,
+          skipThrottle: gwSkip,
+          details: gwDetails,
+        });
+
+        return new Response(JSON.stringify(gwResult), {
           headers: { 'Content-Type': 'application/json' },
         });
       }

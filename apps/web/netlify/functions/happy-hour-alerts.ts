@@ -1,9 +1,7 @@
 import type { Config, Context } from '@netlify/functions';
 import { createClient } from '@supabase/supabase-js';
 import { validateMarketScope } from '../../lib/notifications/market-guard';
-import { checkNotificationThrottle } from '../../lib/notifications/throttle';
-
-const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
+import { sendNotification } from '../../lib/notifications/gateway';
 
 // Market slug → app_slug mapping for push token filtering
 const MARKET_APP_SLUG: Record<string, string> = {
@@ -17,57 +15,12 @@ const PAID_TIER_IDS = [
   '00000000-0000-0000-0000-000000000003', // elite
 ];
 
-interface PushMessage {
-  to: string;
-  sound?: string;
-  title: string;
-  body: string;
-  data?: Record<string, unknown>;
-}
-
-/**
- * Send push notifications via Expo Push API
- */
-async function sendPushNotifications(messages: PushMessage[]) {
-  if (messages.length === 0) {
-    return { data: [] };
-  }
-
-  // Expo recommends batching in chunks of 100
-  const chunks: PushMessage[][] = [];
-  for (let i = 0; i < messages.length; i += 100) {
-    chunks.push(messages.slice(i, i + 100));
-  }
-
-  const results: Array<{ status: string; id?: string; message?: string }> = [];
-
-  for (const chunk of chunks) {
-    const response = await fetch(EXPO_PUSH_URL, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Accept-encoding': 'gzip, deflate',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(chunk),
-    });
-
-    const result = await response.json();
-    if (result.data) {
-      results.push(...result.data);
-    }
-  }
-
-  return { data: results };
-}
-
 /**
  * Happy Hour Alerts Netlify Scheduled Function
  *
- * Sends a single daily digest push notification listing ALL happy hours
- * happening today at premium/elite restaurants. The digest fires 30 minutes
- * before the earliest happy hour of the day. Runs every 30 minutes to check,
- * but only sends once per day (dedup via notification_logs).
+ * Queries happy hours for the day, checks the trigger window, builds messages,
+ * and sends through the centralized gateway (which handles quiet hours, dedup,
+ * throttle, and logging automatically).
  */
 export default async function handler(req: Request, context: Context) {
   console.log('[Happy Hour Alerts] Checking for daily digest...');
@@ -106,38 +59,6 @@ export default async function handler(req: Request, context: Context) {
     });
 
     console.log(`[Happy Hour Alerts] Day: ${dayOfWeek}, Time ET: ${currentTimeET}`);
-
-    // Deduplicate: check if we already sent a daily digest today
-    const startOfDayET = new Date(
-      now.toLocaleDateString('en-US', { timeZone: 'America/New_York' })
-    );
-    const { data: recentLogs } = await supabase
-      .from('notification_logs')
-      .select('id')
-      .eq('job_type', 'happy_hour_daily_digest')
-      .eq('status', 'completed')
-      .gte('created_at', startOfDayET.toISOString())
-      .limit(1);
-
-    if (recentLogs && recentLogs.length > 0) {
-      console.log('[Happy Hour Alerts] Daily digest already sent today');
-      return new Response(
-        JSON.stringify({ sent: 0, message: 'Daily digest already sent today' }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Throttle check: skip if another notification was sent recently to this market
-    const throttle = await checkNotificationThrottle(supabase, marketSlug);
-    if (throttle.throttled) {
-      console.log(
-        `[Happy Hour Alerts] Throttled for ${marketSlug}: last ${throttle.lastJobType} was ${throttle.minutesSinceLast}min ago`,
-      );
-      return new Response(
-        JSON.stringify({ sent: 0, message: `Throttled: ${throttle.lastJobType} sent ${throttle.minutesSinceLast}min ago` }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
 
     // Find ALL happy hours for today for paid tier restaurants (scoped to market)
     const { data: happyHours, error: hhError } = await supabase
@@ -194,11 +115,20 @@ export default async function handler(req: Request, context: Context) {
       `current: ${currentTimeET}`
     );
 
-    // Only send if we've reached the trigger time (30 min before earliest HH)
+    // Only send within the trigger window: 30 min before earliest HH to 2 hours after
     if (currentMinutes < triggerMinutes) {
       console.log('[Happy Hour Alerts] Too early, waiting for trigger time');
       return new Response(
         JSON.stringify({ sent: 0, message: 'Waiting for trigger time' }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const maxTriggerMinutes = triggerMinutes + 120; // 2-hour send window
+    if (currentMinutes > maxTriggerMinutes) {
+      console.log(`[Happy Hour Alerts] Past send window (trigger was ${Math.floor(triggerMinutes / 60)}:${String(triggerMinutes % 60).padStart(2, '0')}, now ${currentTimeET})`);
+      return new Response(
+        JSON.stringify({ sent: 0, message: 'Past send window' }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -249,8 +179,11 @@ export default async function handler(req: Request, context: Context) {
       body = "Tap to see what's happening near you";
     }
 
-    // Send to all tokens for this market's app
-    const messages: PushMessage[] = tokens.map((token) => ({
+    // Build messages and send through the gateway
+    // Gateway enforces: quiet hours, dedup (via dedupKey), throttle, and logging
+    const etDateStr = now.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+
+    const messages = tokens.map((token) => ({
       to: token,
       sound: 'default' as const,
       title,
@@ -258,19 +191,14 @@ export default async function handler(req: Request, context: Context) {
       data: { screen: 'HappyHours' },
     }));
 
-    const totalMessages = messages.length;
-    console.log(`[Happy Hour Alerts] Sending ${totalMessages} messages for ${targetAppSlug}`);
-    const result = await sendPushNotifications(messages);
-    const successCount = result.data.filter((r) => r.status === 'ok').length;
+    console.log(`[Happy Hour Alerts] Sending ${messages.length} messages via gateway for ${targetAppSlug}`);
 
-    // Log the run as daily digest
-    await supabase.from('notification_logs').insert({
-      job_type: 'happy_hour_daily_digest',
-      status: 'completed',
-      market_slug: marketSlug,
+    const gw = await sendNotification({
+      notificationType: 'happy_hour_daily_digest',
+      marketSlug,
+      messages,
+      dedupKey: `hh_digest:${marketSlug}:${etDateStr}`,
       details: {
-        sent: successCount,
-        total: totalMessages,
         market_slug: marketSlug,
         app_slug: targetAppSlug,
         restaurants: restaurantNames,
@@ -280,10 +208,18 @@ export default async function handler(req: Request, context: Context) {
       },
     });
 
-    console.log(`[Happy Hour Alerts] Sent ${successCount}/${totalMessages} notifications`);
+    if (gw.blocked) {
+      console.log(`[Happy Hour Alerts] Blocked by gateway: ${gw.blockReason}`);
+      return new Response(
+        JSON.stringify({ sent: 0, message: gw.blockReason }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`[Happy Hour Alerts] Sent ${gw.sent}/${gw.total} notifications`);
 
     return new Response(
-      JSON.stringify({ sent: successCount, restaurants: restaurantNames }),
+      JSON.stringify({ sent: gw.sent, restaurants: restaurantNames }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
