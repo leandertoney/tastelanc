@@ -9,11 +9,12 @@ import HeaderLogo from '../components/HeaderLogo';
 import HeaderGreeting from '../components/HeaderGreeting';
 import { withScreenErrorBoundary } from '../components/ErrorBoundary';
 import { useSalesRole } from '../hooks/useSalesRole';
+import TheMoveTabLabel from '../components/TheMoveTabLabel';
 
 import HomeScreen from '../screens/HomeScreen';
 import SearchScreen from '../screens/SearchScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
-import PulseScreen from '../screens/PulseScreen';
+import SceneScreen from '../screens/SceneScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import SalesDashboardScreen from '../screens/sales/SalesDashboardScreen';
 
@@ -21,7 +22,7 @@ import SalesDashboardScreen from '../screens/sales/SalesDashboardScreen';
 const SafeHomeScreen = withScreenErrorBoundary(HomeScreen, 'HomeScreen');
 const SafeSearchScreen = withScreenErrorBoundary(SearchScreen, 'SearchScreen');
 const SafeFavoritesScreen = withScreenErrorBoundary(FavoritesScreen, 'FavoritesScreen');
-const SafePulseScreen = withScreenErrorBoundary(PulseScreen, 'PulseScreen');
+const SafeSceneScreen = withScreenErrorBoundary(SceneScreen, 'SceneScreen');
 const SafeProfileScreen = withScreenErrorBoundary(ProfileScreen, 'ProfileScreen');
 const SafeSalesDashboard = withScreenErrorBoundary(SalesDashboardScreen, 'SalesDashboard');
 
@@ -34,7 +35,7 @@ const getTabIcon = (routeName: keyof BottomTabParamList, focused: boolean): Icon
     Home: { active: 'home', inactive: 'home-outline' },
     Search: { active: 'search', inactive: 'search-outline' },
     Favorites: { active: 'heart', inactive: 'heart-outline' },
-    Pulse: { active: 'pulse', inactive: 'pulse-outline' },
+    Move: { active: 'compass', inactive: 'compass-outline' },
     Profile: { active: 'person', inactive: 'person-outline' },
     Sales: { active: 'briefcase', inactive: 'briefcase-outline' },
   };
@@ -100,9 +101,12 @@ export default function BottomTabNavigator() {
         options={{ headerShown: false, title: 'Search' }}
       />
       <Tab.Screen
-        name="Pulse"
-        component={SafePulseScreen}
-        options={{ title: 'Pulse' }}
+        name="Move"
+        component={SafeSceneScreen}
+        options={{
+          title: 'Move',
+          tabBarLabel: ({ focused, color }) => <TheMoveTabLabel focused={focused} color={color} />,
+        }}
       />
       <Tab.Screen
         name="Favorites"

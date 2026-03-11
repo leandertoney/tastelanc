@@ -174,7 +174,7 @@ export default function ItineraryCardScreen() {
     navigation.goBack();
   }, [navigation]);
 
-  const handleShareToPulse = useCallback(async () => {
+  const handleShareToMove = useCallback(async () => {
     if (items.length === 0) return;
     setIsSharing(true);
     try {
@@ -193,9 +193,9 @@ export default function ItineraryCardScreen() {
         .from('itineraries')
         .update({ is_shared: true, shared_at: new Date().toISOString() })
         .eq('id', saved.id);
-      // Refresh Pulse feed
+      // Refresh Move feed
       queryClient.invalidateQueries({ queryKey: ['pulseFeed'] });
-      Alert.alert('Live on Pulse! 🎉', 'Your day plan is now visible in the community feed.');
+      Alert.alert('You\'re Live! 🎉', 'Your day plan is now visible in the community feed.');
     } catch {
       Alert.alert('Error', 'Failed to share. Please try again.');
     } finally {
@@ -373,20 +373,20 @@ export default function ItineraryCardScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Share to Pulse */}
+        {/* Share to Move */}
         <TouchableOpacity
           style={[styles.pulseCta, isSharing && { opacity: 0.6 }]}
-          onPress={handleShareToPulse}
+          onPress={handleShareToMove}
           activeOpacity={0.8}
           disabled={isSharing || saveItineraryMutation.isPending}
         >
           {isSharing ? (
             <ActivityIndicator size="small" color={colors.text} />
           ) : (
-            <Ionicons name="pulse" size={18} color={colors.text} />
+            <Ionicons name="compass" size={18} color={colors.text} />
           )}
           <Text style={styles.pulseCtaText}>
-            {isSharing ? 'Sharing...' : 'Share to Pulse'}
+            {isSharing ? 'Sharing...' : 'Share to Move'}
           </Text>
         </TouchableOpacity>
       </ScrollView>

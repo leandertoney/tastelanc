@@ -32,8 +32,8 @@ interface BannerMessage {
 const FALLBACK_MESSAGE: BannerMessage = {
   text: 'See what\'s happening in your city',
   subtext: null,
-  cta: 'Pulse',
-  target: { tab: 'Pulse' },
+  cta: 'Move',
+  target: { tab: 'Move' },
 };
 
 /**
@@ -163,7 +163,7 @@ export default function SocialProofBanner() {
         navigation.navigate(target.screen as any);
       }
     } catch {
-      navigation.navigate('MainTabs', { screen: 'Pulse' } as any);
+      navigation.navigate('MainTabs', { screen: 'Move' } as any);
     }
   };
 

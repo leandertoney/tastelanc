@@ -17,6 +17,8 @@ import { getColors, getBrand, getSupabase } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
 import { useMarket } from '../context/MarketContext';
+import { usePlatformSocialProof, usePersonalStats } from '../hooks';
+import { useAuth } from '../hooks/useAuth';
 import type { RootStackParamList } from '../navigation/types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -583,6 +585,53 @@ function ReelsShelf({ item, onPress }: { item: ReelsShelfItem; onPress: (restaur
   );
 }
 
+// ─── Social proof header ──────────────────────────────────────────────────────
+
+function SceneStatsHeader() {
+  const styles = useStyles();
+  const colors = getColors();
+  const brand = getBrand();
+  const { userId, isAnonymous } = useAuth();
+  const { data: platformData } = usePlatformSocialProof();
+  const { data: personal } = usePersonalStats();
+
+  const hasPersonalHistory = !isAnonymous && userId && (
+    (personal?.checkinsThisMonth ?? 0) > 0 ||
+    personal?.lastVisitedName != null
+  );
+
+  // Build stat pills from live data
+  const stats: string[] = [];
+
+  if (hasPersonalHistory && personal) {
+    if (personal.checkinsThisMonth > 0) {
+      stats.push(`${personal.checkinsThisMonth} visited this month`);
+    }
+  }
+
+  if (platformData) {
+    if (platformData.checkinsToday > 0) {
+      stats.push(`${platformData.checkinsToday} check-ins today`);
+    }
+    if (platformData.upcomingHappyHoursCount > 0) {
+      stats.push(`${platformData.upcomingHappyHoursCount} happy hours live`);
+    }
+    if (platformData.newSpecialsCount > 0) {
+      stats.push(`${platformData.newSpecialsCount} new specials`);
+    }
+  }
+
+  if (stats.length === 0) return null;
+
+  return (
+    <View style={styles.statsHeader}>
+      <Text style={styles.statsText} numberOfLines={1}>
+        {stats.join('  ·  ')}
+      </Text>
+    </View>
+  );
+}
+
 // ─── Filter bar ───────────────────────────────────────────────────────────────
 
 const FILTERS: { key: FilterType; label: string }[] = [
@@ -594,7 +643,7 @@ const FILTERS: { key: FilterType; label: string }[] = [
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
-export default function PulseScreen() {
+export default function SceneScreen() {
   const styles = useStyles();
   const colors = getColors();
   const brand = getBrand();
@@ -672,7 +721,7 @@ export default function PulseScreen() {
         </View>
       ) : filteredItems.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="pulse" size={52} color={colors.textMuted} />
+          <Ionicons name="compass-outline" size={52} color={colors.textMuted} />
           <Text style={styles.emptyTitle}>Nothing yet</Text>
           <Text style={styles.emptyText}>
             {activeFilter === 'photos'
@@ -689,6 +738,7 @@ export default function PulseScreen() {
           data={filteredItems}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
+          ListHeaderComponent={<SceneStatsHeader />}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -722,6 +772,21 @@ const useStyles = createLazyStyles((colors) => ({
   filterChipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
   filterChipText: { fontSize: 13, fontWeight: '600' as const, color: colors.textMuted },
   filterChipTextActive: { color: colors.textOnAccent },
+
+  // Stats header
+  statsHeader: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.cardBg,
+  },
+  statsText: {
+    fontSize: 12,
+    color: colors.textMuted,
+    fontWeight: '500' as const,
+    textAlign: 'center' as const,
+  },
 
   // Feed
   listContent: { paddingTop: spacing.sm, paddingBottom: 40 },
