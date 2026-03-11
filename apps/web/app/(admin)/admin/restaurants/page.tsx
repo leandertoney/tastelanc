@@ -3,8 +3,9 @@ import { Card } from '@/components/ui';
 import { Store, CheckCircle } from 'lucide-react';
 import RestaurantList from '@/components/admin/RestaurantList';
 import { verifyAdminAccess } from '@/lib/auth/admin-access';
+import AdminMarketFilter from '@/components/admin/AdminMarketFilter';
 
-async function getRestaurants(scopedMarketId: string | null) {
+async function getRestaurants(marketId: string | null) {
   const supabase = await createClient();
 
   let query = supabase
@@ -14,26 +15,49 @@ async function getRestaurants(scopedMarketId: string | null) {
       tiers(name, display_name)
     `, { count: 'exact' })
     .order('name', { ascending: true })
-    .range(0, 2999);
+    .range(0, 4999);
 
-  if (scopedMarketId) {
-    query = query.eq('market_id', scopedMarketId);
+  if (marketId) {
+    query = query.eq('market_id', marketId);
   }
 
-  const { data: restaurants, error } = await query;
+  const { data: restaurants, count, error } = await query;
 
   if (error) {
     console.error('Error fetching restaurants:', error);
-    return [];
+    return { restaurants: [], count: 0 };
   }
 
-  return restaurants || [];
+  return { restaurants: restaurants || [], count: count ?? (restaurants?.length || 0) };
 }
 
-export default async function AdminRestaurantsPage() {
+async function getMarkets() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('markets')
+    .select('id, name, slug')
+    .eq('is_active', true)
+    .order('name', { ascending: true });
+  return data || [];
+}
+
+export default async function AdminRestaurantsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ market?: string }>;
+}) {
   const supabase = await createClient();
   const admin = await verifyAdminAccess(supabase);
-  const restaurants = await getRestaurants(admin.scopedMarketId);
+  const params = await searchParams;
+
+  // Market scoping: admin.scopedMarketId for market_admins, or URL param for super_admins
+  const effectiveMarketId = admin.scopedMarketId || (params.market && params.market !== 'all' ? params.market : null);
+
+  const [{ restaurants, count }, markets] = await Promise.all([
+    getRestaurants(effectiveMarketId),
+    admin.scopedMarketId ? Promise.resolve([]) : getMarkets(),
+  ]);
+
   const activeCount = restaurants.filter((r) => r.is_active).length;
   const verifiedCount = restaurants.filter((r) => r.is_verified).length;
   const paidCount = restaurants.filter((r) => r.stripe_subscription_id).length;
@@ -45,9 +69,13 @@ export default async function AdminRestaurantsPage() {
           <div>
             <h1 className="text-3xl font-bold text-white">All Restaurants</h1>
             <p className="text-gray-400 mt-1">
-              {restaurants.length} total • {activeCount} active • {verifiedCount} verified • {paidCount} paid
+              {count} total • {activeCount} active • {verifiedCount} verified • {paidCount} paid
             </p>
           </div>
+          {/* Market filter for super admins */}
+          {!admin.scopedMarketId && markets.length > 1 && (
+            <AdminMarketFilter markets={markets} currentMarket={params.market || 'all'} basePath="/admin/restaurants" />
+          )}
         </div>
       </div>
 
@@ -58,7 +86,7 @@ export default async function AdminRestaurantsPage() {
             <Store className="w-5 h-5 text-blue-500" />
             <span className="text-gray-400 text-sm">Total</span>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">{restaurants.length}</p>
+          <p className="text-2xl md:text-3xl font-bold text-white">{count}</p>
         </Card>
 
         <Card className="p-4 md:p-6">

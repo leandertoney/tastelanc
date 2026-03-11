@@ -109,20 +109,32 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch leads' }, { status: 500 });
     }
 
-    // Get stats — scoped to market filter + role
-    let statsQuery = serviceClient
-      .from('business_leads')
-      .select('status');
-    statsQuery = applyMarketScope(statsQuery);
-    const { data: allLeads } = await statsQuery;
+    // Get stats — use count queries to avoid Supabase 1000-row default limit
+    const statuses = ['new', 'contacted', 'interested', 'not_interested', 'converted'] as const;
+    const statusCounts: Record<string, number> = {};
+    let totalLeads = 0;
+
+    // Run all count queries in parallel
+    const countResults = await Promise.all(
+      statuses.map(async (s) => {
+        let q = serviceClient.from('business_leads').select('id', { count: 'exact', head: true }).eq('status', s);
+        q = applyMarketScope(q);
+        const { count } = await q;
+        return { status: s, count: count ?? 0 };
+      })
+    );
+    for (const r of countResults) {
+      statusCounts[r.status] = r.count;
+      totalLeads += r.count;
+    }
 
     const stats = {
-      total: allLeads?.length || 0,
-      new: allLeads?.filter((l) => l.status === 'new').length || 0,
-      contacted: allLeads?.filter((l) => l.status === 'contacted').length || 0,
-      interested: allLeads?.filter((l) => l.status === 'interested').length || 0,
-      notInterested: allLeads?.filter((l) => l.status === 'not_interested').length || 0,
-      converted: allLeads?.filter((l) => l.status === 'converted').length || 0,
+      total: totalLeads,
+      new: statusCounts['new'] || 0,
+      contacted: statusCounts['contacted'] || 0,
+      interested: statusCounts['interested'] || 0,
+      notInterested: statusCounts['not_interested'] || 0,
+      converted: statusCounts['converted'] || 0,
     };
 
     // Fetch sales rep names for assigned_to lookup

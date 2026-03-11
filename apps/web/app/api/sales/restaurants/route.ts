@@ -21,6 +21,7 @@ export async function GET(request: Request) {
     const active = searchParams.get('active');
     const hasContact = searchParams.get('has_contact');
     const skipClaimed = searchParams.get('skip_claimed') === '1';
+    const marketFilterParam = searchParams.get('market');
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '10', 10)));
     const sortBy = searchParams.get('sort_by') || 'name';
@@ -29,8 +30,24 @@ export async function GET(request: Request) {
     const ALLOWED_SORT_COLUMNS = ['name', 'city', 'is_active', 'created_at'];
     const safeSortBy = ALLOWED_SORT_COLUMNS.includes(sortBy) ? sortBy : 'name';
 
-    // Market scoping helper
+    // Fetch markets list for super_admin dropdown
+    const { data: marketsData } = await serviceClient
+      .from('markets')
+      .select('id, name, slug')
+      .eq('is_active', true)
+      .order('name', { ascending: true });
+    const marketsList = marketsData || [];
+
+    // Market scoping helper — combines role-based + UI filter
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const applyMarketScope = (q: any) => {
+      // UI market filter takes priority (if user has access)
+      if (marketFilterParam && marketFilterParam !== 'all') {
+        if (access.marketIds === null || access.marketIds.includes(marketFilterParam)) {
+          return q.eq('market_id', marketFilterParam);
+        }
+      }
+      // Default role-based scoping
       if (access.marketIds !== null && access.marketIds.length > 0) {
         if (access.marketIds.length === 1) return q.eq('market_id', access.marketIds[0]);
         return q.in('market_id', access.marketIds);
@@ -117,19 +134,32 @@ export async function GET(request: Request) {
       filtered = filtered.filter((r: any) => r.tiers?.name === tier);
     }
 
-    // Get stats — scoped same as main query
-    let statsQuery = serviceClient
-      .from('restaurants')
-      .select('is_active, contact_name');
-    statsQuery = applyMarketScope(statsQuery);
-    const { data: allRestaurants } = await statsQuery;
+    // Get stats — use count queries to avoid Supabase 1000-row default limit
+    const [totalRes, activeRes, contactRes] = await Promise.all([
+      (async () => {
+        let q = serviceClient.from('restaurants').select('id', { count: 'exact', head: true });
+        q = applyMarketScope(q);
+        const { count } = await q;
+        return count ?? 0;
+      })(),
+      (async () => {
+        let q = serviceClient.from('restaurants').select('id', { count: 'exact', head: true }).eq('is_active', true);
+        q = applyMarketScope(q);
+        const { count } = await q;
+        return count ?? 0;
+      })(),
+      (async () => {
+        let q = serviceClient.from('restaurants').select('id', { count: 'exact', head: true }).not('contact_name', 'is', null);
+        q = applyMarketScope(q);
+        const { count } = await q;
+        return count ?? 0;
+      })(),
+    ]);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const allR: any[] = allRestaurants || [];
     const stats = {
-      total: allR.length,
-      active: allR.filter((r) => r.is_active).length,
-      direct_contacts: allR.filter((r) => r.contact_name).length,
+      total: totalRes,
+      active: activeRes,
+      direct_contacts: contactRes,
     };
 
     // Check which restaurants already have leads
@@ -159,7 +189,9 @@ export async function GET(request: Request) {
       restaurants: restaurantsWithLeadStatus,
       stats,
       isAdmin: access.isAdmin,
+      isSuperAdmin: access.marketIds === null,
       pagination: { page, limit, total, totalPages },
+      markets: marketsList,
     });
   } catch (error) {
     console.error('Error in restaurants API:', error);

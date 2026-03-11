@@ -24,10 +24,12 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch sales reps' }, { status: 500 });
     }
 
-    // Get lead counts per rep
+    // Get lead counts per rep — use range to avoid Supabase 1000-row default limit
     const { data: leadCounts } = await serviceClient
       .from('business_leads')
-      .select('assigned_to');
+      .select('assigned_to')
+      .not('assigned_to', 'is', null)
+      .range(0, 49999);
 
     const repLeadCounts: Record<string, number> = {};
     (leadCounts || []).forEach((lead) => {

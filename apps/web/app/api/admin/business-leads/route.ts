@@ -23,11 +23,12 @@ export async function GET(request: Request) {
     // market_admin can only see their market; super_admin can filter or see all
     const effectiveMarketId = admin.scopedMarketId || (marketFilter && marketFilter !== 'all' ? marketFilter : null);
 
-    // Build query
+    // Build query — use range to avoid Supabase 1000-row default limit
     let query = supabase
       .from('business_leads')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(0, 4999);
 
     if (effectiveMarketId) {
       query = query.eq('market_id', effectiveMarketId);
@@ -84,24 +85,31 @@ export async function GET(request: Request) {
       assigned_rep: lead.assigned_to ? { id: lead.assigned_to, full_name: repNameMap[lead.assigned_to] || 'Unknown' } : null,
     }));
 
-    // Get stats scoped to the same market filter
-    let statsQuery = supabase
-      .from('business_leads')
-      .select('status');
+    // Get stats — use count queries to avoid Supabase 1000-row default limit
+    const statuses = ['new', 'contacted', 'interested', 'not_interested', 'converted'] as const;
+    const statusCounts: Record<string, number> = {};
+    let totalLeads = 0;
 
-    if (effectiveMarketId) {
-      statsQuery = statsQuery.eq('market_id', effectiveMarketId);
+    const countResults = await Promise.all(
+      statuses.map(async (s) => {
+        let q = supabase.from('business_leads').select('id', { count: 'exact', head: true }).eq('status', s);
+        if (effectiveMarketId) q = q.eq('market_id', effectiveMarketId);
+        const { count } = await q;
+        return { status: s, count: count ?? 0 };
+      })
+    );
+    for (const r of countResults) {
+      statusCounts[r.status] = r.count;
+      totalLeads += r.count;
     }
 
-    const { data: allLeads } = await statsQuery;
-
     const stats = {
-      total: allLeads?.length || 0,
-      new: allLeads?.filter((l) => l.status === 'new').length || 0,
-      contacted: allLeads?.filter((l) => l.status === 'contacted').length || 0,
-      interested: allLeads?.filter((l) => l.status === 'interested').length || 0,
-      notInterested: allLeads?.filter((l) => l.status === 'not_interested').length || 0,
-      converted: allLeads?.filter((l) => l.status === 'converted').length || 0,
+      total: totalLeads,
+      new: statusCounts['new'] || 0,
+      contacted: statusCounts['contacted'] || 0,
+      interested: statusCounts['interested'] || 0,
+      notInterested: statusCounts['not_interested'] || 0,
+      converted: statusCounts['converted'] || 0,
     };
 
     // Fetch available markets for the filter dropdown (super_admin only)

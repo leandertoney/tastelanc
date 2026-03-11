@@ -71,6 +71,9 @@ export default function SalesRestaurantsPage() {
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [contactFilter, setContactFilter] = useState(false);
   const [creatingLeadId, setCreatingLeadId] = useState<string | null>(null);
+  const [marketFilter, setMarketFilter] = useState('all');
+  const [markets, setMarkets] = useState<{ id: string; name: string; slug: string }[]>([]);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const createLeadFromRestaurant = async (r: Restaurant) => {
     setCreatingLeadId(r.id);
@@ -112,6 +115,7 @@ export default function SalesRestaurantsPage() {
     try {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
+      if (marketFilter !== 'all') params.set('market', marketFilter);
       params.set('active', 'true');
       if (contactFilter) params.set('has_contact', 'true');
       params.set('page', String(pageOverride ?? pagination?.page ?? 1));
@@ -124,6 +128,8 @@ export default function SalesRestaurantsPage() {
       setRestaurants(data.restaurants || []);
       setStats(data.stats || null);
       setPagination(data.pagination || null);
+      if (data.isSuperAdmin) setIsSuperAdmin(data.isSuperAdmin);
+      if (data.markets) setMarkets(data.markets);
     } catch (error) {
       console.error('Error fetching restaurants:', error);
       toast.error('Failed to load restaurants');
@@ -134,7 +140,7 @@ export default function SalesRestaurantsPage() {
 
   useEffect(() => {
     fetchRestaurants(1);
-  }, [contactFilter, sortBy, sortDir]);
+  }, [contactFilter, marketFilter, sortBy, sortDir]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -223,17 +229,33 @@ export default function SalesRestaurantsPage() {
               className="w-full pl-10 pr-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
             />
           </div>
-          <button
-            onClick={() => setContactFilter((v) => !v)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-              contactFilter
-                ? 'bg-emerald-600 text-white'
-                : 'bg-tastelanc-surface-light text-gray-400 hover:text-white'
-            }`}
-          >
-            <User className="w-3.5 h-3.5" />
-            Direct Contacts
-          </button>
+          <div className="flex gap-3">
+            {isSuperAdmin && markets.length > 1 && (
+              <select
+                value={marketFilter}
+                onChange={(e) => setMarketFilter(e.target.value)}
+                className="px-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              >
+                <option value="all">All Markets</option>
+                {markets.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            <button
+              onClick={() => setContactFilter((v) => !v)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                contactFilter
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-tastelanc-surface-light text-gray-400 hover:text-white'
+              }`}
+            >
+              <User className="w-3.5 h-3.5" />
+              Direct Contacts
+            </button>
+          </div>
         </div>
       </Card>
 
