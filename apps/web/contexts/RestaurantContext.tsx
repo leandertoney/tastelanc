@@ -108,14 +108,13 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
 
       // If admin mode with specific restaurant ID
       if (adminMode && adminRestaurantId && userIsAdmin) {
-        // super_admin and co_founder can access restaurants across all markets
-        const isSuperAdmin = profile?.role === 'super_admin' || profile?.role === 'co_founder';
-        let adminQuery = supabase
+        // When accessing a specific restaurant by ID, don't filter by market —
+        // the restaurant_id is already specific enough, and the user explicitly chose it.
+        const { data: restaurantData, error: restaurantError } = await supabase
           .from('restaurants')
           .select('*, tiers(*)')
-          .eq('id', adminRestaurantId);
-        if (marketId && !isSuperAdmin) adminQuery = adminQuery.eq('market_id', marketId);
-        const { data: restaurantData, error: restaurantError } = await adminQuery.single();
+          .eq('id', adminRestaurantId)
+          .single();
 
         if (restaurantError || !restaurantData) {
           setError('Restaurant not found');
@@ -137,13 +136,14 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
       // Admins viewing via sales CRM also use sales_mode — treat them like admin_mode
       const userIsSalesRep = profile?.role === 'sales_rep' || user.user_metadata?.role === 'sales_rep';
       if (salesMode && adminRestaurantId && (userIsSalesRep || userIsAdmin)) {
-        const isSuperAdminOrCofounder = profile?.role === 'super_admin' || profile?.role === 'co_founder';
-        let salesQuery = supabase
+        // When accessing a specific restaurant by ID, don't filter by market —
+        // the restaurant_id is already specific enough, and the user explicitly chose it.
+        // Sales reps may manage restaurants in any market they're assigned to.
+        const { data: restaurantData, error: restaurantError } = await supabase
           .from('restaurants')
           .select('*, tiers(*)')
-          .eq('id', adminRestaurantId);
-        if (marketId && !isSuperAdminOrCofounder) salesQuery = salesQuery.eq('market_id', marketId);
-        const { data: restaurantData, error: restaurantError } = await salesQuery.single();
+          .eq('id', adminRestaurantId)
+          .single();
 
         if (restaurantError || !restaurantData) {
           setError('Restaurant not found');

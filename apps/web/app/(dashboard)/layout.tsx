@@ -173,7 +173,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Sales Mode Banner */}
-      {salesMode && isSalesRep && (
+      {salesMode && (isSalesRep || isAdmin) && (
         <div className="fixed top-0 left-0 right-0 z-[60] bg-blue-600 text-white px-4 py-2">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <div className="flex items-center gap-2 min-w-0">
