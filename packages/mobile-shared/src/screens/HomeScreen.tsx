@@ -30,13 +30,13 @@ import {
   HappyHourSection,
   EventsSection,
   EntertainmentSection,
-  SocialProofBanner,
   PromoCard,
   PlanYourDayCard,
   BlogSection,
   RecommendedSection,
   TrendingRecommendationsSection,
   ErrorBoundary,
+  StPatricksDayBanner,
 } from '../components';
 import CuisinesSection from '../components/CuisinesSection';
 import { getColors, getBrand, getAssets } from '../config/theme';
@@ -123,7 +123,6 @@ export default function HomeScreen() {
 
   const onRefresh = useCallback(async () => {
     queryClient.invalidateQueries({ queryKey: ['featuredRestaurants', marketId] });
-    queryClient.invalidateQueries({ queryKey: ['socialProof'] });
     queryClient.invalidateQueries({ queryKey: ['activeHappyHours', marketId] });
     queryClient.invalidateQueries({ queryKey: ['entertainmentEvents', marketId] });
     queryClient.invalidateQueries({ queryKey: ['upcomingEvents', marketId] });
@@ -161,9 +160,9 @@ export default function HomeScreen() {
     <View>
       <Spacer size="sm" />
 
-      {/* Social Proof Banner */}
+      {/* St. Patrick's Day Banner (auto-hides outside March 10-18) */}
       <ErrorBoundary level="section">
-        <SocialProofBanner />
+        <StPatricksDayBanner />
       </ErrorBoundary>
 
       <Spacer size="lg" />

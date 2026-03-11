@@ -45,6 +45,9 @@ export { default as SquadVoteScreen } from './SquadVoteScreen';
 export { default as ItineraryBuilderScreen } from './ItineraryBuilderScreen';
 export { default as ItineraryCardScreen } from './ItineraryCardScreen';
 
+// Holiday / Seasonal
+export { default as StPatricksDayScreen } from './StPatricksDayScreen';
+
 // Splash
 export { default as SplashVideoScreen } from './SplashVideoScreen';
 

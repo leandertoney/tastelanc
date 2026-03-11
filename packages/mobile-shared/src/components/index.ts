@@ -34,3 +34,4 @@ export { default as VideoRecommendationCard } from './VideoRecommendationCard';
 export { default as VideoRecommendationFeed } from './VideoRecommendationFeed';
 export { default as TrendingRecommendationsSection } from './TrendingRecommendationsSection';
 export { default as TierLockedEmptyState } from './TierLockedEmptyState';
+export { default as StPatricksDayBanner } from './StPatricksDayBanner';

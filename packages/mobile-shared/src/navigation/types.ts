@@ -12,7 +12,7 @@ export type BottomTabParamList = {
   Home: undefined;
   Search: undefined;
   Favorites: undefined;
-  Pulse: undefined;
+  Move: undefined;
   Profile: undefined;
   Sales: undefined;
 };
@@ -69,6 +69,8 @@ export type RootStackParamList = {
     restaurantName: string;
     durationSeconds: number;
   };
+  // Holiday / Seasonal
+  StPatricksDay: undefined;
   // Squad
   SquadVote: { pollId: string };
   // Itinerary

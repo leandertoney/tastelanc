@@ -35,6 +35,7 @@ import EmailThreadScreen from '../screens/sales/EmailThreadScreen';
 import ComposeEmailScreen from '../screens/sales/ComposeEmailScreen';
 import LeadDetailScreen from '../screens/sales/LeadDetailScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import StPatricksDayScreen from '../screens/StPatricksDayScreen';
 
 // Wrap each screen so crashes show inline error instead of killing the app
 const SafeRestaurantDetail = withScreenErrorBoundary(RestaurantDetailScreen, 'RestaurantDetail');
@@ -69,6 +70,7 @@ const SafeEmailThread = withScreenErrorBoundary(EmailThreadScreen, 'EmailThread'
 const SafeComposeEmail = withScreenErrorBoundary(ComposeEmailScreen, 'ComposeEmail');
 const SafeLeadDetail = withScreenErrorBoundary(LeadDetailScreen, 'LeadDetail');
 const SafeSettings = withScreenErrorBoundary(SettingsScreen, 'Settings');
+const SafeStPatricksDay = withScreenErrorBoundary(StPatricksDayScreen, 'StPatricksDay');
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -242,6 +244,12 @@ export default function RootNavigator() {
       <Stack.Screen
         name="VideoRecommendPreview"
         component={SafeVideoRecommendPreview}
+        options={{ headerShown: false }}
+      />
+      {/* Holiday / Seasonal */}
+      <Stack.Screen
+        name="StPatricksDay"
+        component={SafeStPatricksDay}
         options={{ headerShown: false }}
       />
       {/* Settings */}
