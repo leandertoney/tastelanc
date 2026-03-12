@@ -39,7 +39,7 @@ import {
   StPatricksDayBanner,
 } from '../components';
 import CuisinesSection from '../components/CuisinesSection';
-import { getColors, getBrand, getAssets } from '../config/theme';
+import { getColors, getBrand, getAssets, hasFeature } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
 import type { BadgeType } from '../components/TrendingBadge';
@@ -123,7 +123,7 @@ export default function HomeScreen() {
 
   const onRefresh = useCallback(async () => {
     queryClient.invalidateQueries({ queryKey: ['featuredRestaurants', marketId] });
-    queryClient.invalidateQueries({ queryKey: ['activeHappyHours', marketId] });
+    queryClient.invalidateQueries({ queryKey: hasFeature('happyHours') ? ['activeHappyHours', marketId] : ['activeDailySpecials', marketId] });
     queryClient.invalidateQueries({ queryKey: ['entertainmentEvents', marketId] });
     queryClient.invalidateQueries({ queryKey: ['upcomingEvents', marketId] });
     queryClient.invalidateQueries({ queryKey: ['blog'] });
@@ -167,7 +167,7 @@ export default function HomeScreen() {
 
       <Spacer size="lg" />
 
-      {/* Section 1: Happy Hour Specials (Banners) */}
+      {/* Section 1: Happy Hours or Daily Specials (market-dependent) */}
       <ErrorBoundary level="section">
         <HappyHourSection />
       </ErrorBoundary>

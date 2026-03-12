@@ -9,6 +9,7 @@ export { default as SectionHeader } from './SectionHeader';
 export { default as Spacer } from './Spacer';
 export { default as FeaturedSection } from './FeaturedSection';
 export { default as HappyHourSection } from './HappyHourSection';
+export { default as DailySpecialsSection } from './DailySpecialsSection';
 export { default as EventsSection } from './EventsSection';
 export { default as EntertainmentSection } from './EntertainmentSection';
 export { default as SocialProofBanner } from './SocialProofBanner';

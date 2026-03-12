@@ -17,30 +17,54 @@ export default function TabBar({ tabs, activeTab, onTabPress }: TabBarProps) {
   const styles = useStyles();
   const colors = getColors();
 
+  // When 4 or fewer tabs, distribute evenly; otherwise scroll
+  const evenlySpaced = tabs.length <= 4;
+
   return (
     <View style={styles.container}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.key;
-          return (
-            <TouchableOpacity
-              key={tab.key}
-              style={[styles.tab, isActive && styles.tabActive]}
-              onPress={() => onTabPress(tab.key)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
-                {tab.label}
-              </Text>
-              {isActive && <View style={styles.activeIndicator} />}
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+      {evenlySpaced ? (
+        <View style={styles.evenContent}>
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                style={[styles.tab, styles.tabEven, isActive && styles.tabActive]}
+                onPress={() => onTabPress(tab.key)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
+                  {tab.label}
+                </Text>
+                {isActive && <View style={styles.activeIndicator} />}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                style={[styles.tab, isActive && styles.tabActive]}
+                onPress={() => onTabPress(tab.key)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
+                  {tab.label}
+                </Text>
+                {isActive && <View style={styles.activeIndicator} />}
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -51,13 +75,20 @@ const useStyles = createLazyStyles((colors) => ({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
+  evenContent: {
+    flexDirection: 'row' as const,
+  },
   scrollContent: {
     paddingHorizontal: 8,
   },
   tab: {
-    paddingVertical: 14,
+    paddingTop: 14,
+    paddingBottom: 10,
     paddingHorizontal: 16,
-    position: 'relative' as const,
+  },
+  tabEven: {
+    flex: 1,
+    alignItems: 'center' as const,
   },
   tabActive: {},
   tabText: {
@@ -70,11 +101,10 @@ const useStyles = createLazyStyles((colors) => ({
     color: colors.accent,
   },
   activeIndicator: {
-    position: 'absolute' as const,
-    bottom: 0,
-    left: 16,
-    right: 16,
+    marginTop: 4,
     height: 2,
+    alignSelf: 'center' as const,
+    width: '60%' as unknown as number,
     backgroundColor: colors.accent,
     borderRadius: 1,
   },

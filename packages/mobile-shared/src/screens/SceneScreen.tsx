@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getColors, getBrand, getSupabase } from '../config/theme';
+import { getColors, getBrand, getSupabase, hasFeature } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
 import { useMarket } from '../context/MarketContext';
@@ -613,7 +613,7 @@ function SceneStatsHeader() {
     if (platformData.checkinsToday > 0) {
       stats.push(`${platformData.checkinsToday} check-ins today`);
     }
-    if (platformData.upcomingHappyHoursCount > 0) {
+    if (hasFeature('happyHours') && platformData.upcomingHappyHoursCount > 0) {
       stats.push(`${platformData.upcomingHappyHoursCount} happy hours live`);
     }
     if (platformData.newSpecialsCount > 0) {

@@ -6,7 +6,7 @@
  * React code should prefer useAppConfig() from context.tsx for reactivity.
  */
 
-import type { AppBrand, ColorTokens, AppAssets } from '../types/config';
+import type { AppBrand, ColorTokens, AppAssets, MarketFeatures } from '../types/config';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 let _brand: AppBrand | null = null;
@@ -61,6 +61,17 @@ export function getSupabase(): SupabaseClient {
 export function getAnonKey(): string {
   if (!_anonKey) throw new Error('[mobile-shared] initTheme() must be called with anonKey before getAnonKey()');
   return _anonKey;
+}
+
+const FEATURE_DEFAULTS: Record<keyof MarketFeatures, boolean> = {
+  happyHours: true,
+  dailySpecialsCarousel: false,
+};
+
+/** Check if a market feature is enabled. Uses defaults when not explicitly set. */
+export function hasFeature(feature: keyof MarketFeatures): boolean {
+  const brand = getBrand();
+  return brand.features?.[feature] ?? FEATURE_DEFAULTS[feature];
 }
 
 /** Check if theme has been initialized (safe check without throwing). */

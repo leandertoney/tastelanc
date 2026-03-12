@@ -48,6 +48,16 @@ export interface AppBrand {
 
   // Brand palette
   palette: BrandPalette;
+
+  // Market-specific feature toggles (unset fields use defaults)
+  features?: MarketFeatures;
+}
+
+export interface MarketFeatures {
+  /** Show happy hours section on HomeScreen and restaurant detail. Defaults to true. */
+  happyHours?: boolean;
+  /** Show daily specials carousel on HomeScreen (replaces happy hours slot). Defaults to false. */
+  dailySpecialsCarousel?: boolean;
 }
 
 export interface ColorTokens {

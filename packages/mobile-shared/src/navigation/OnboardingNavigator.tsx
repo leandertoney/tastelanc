@@ -30,6 +30,7 @@ import {
   OnboardingPreferencesScreen,
 } from '../screens/onboarding';
 import RootNavigator from './RootNavigator';
+import { hasFeature } from '../config/theme';
 
 const Stack = createNativeStackNavigator<OnboardingStackParamList>();
 
@@ -47,7 +48,9 @@ export default function OnboardingNavigator() {
       <Stack.Screen name="OnboardingProblems" component={OnboardingProblemsScreen} />
       <Stack.Screen name="OnboardingSolution" component={OnboardingSolutionScreen} />
       {/* Feature Discovery */}
-      <Stack.Screen name="OnboardingHappyHours" component={OnboardingHappyHoursScreen} />
+      {hasFeature('happyHours') && (
+        <Stack.Screen name="OnboardingHappyHours" component={OnboardingHappyHoursScreen} />
+      )}
       <Stack.Screen name="OnboardingEvents" component={OnboardingEventsScreen} />
       <Stack.Screen name="OnboardingSpecials" component={OnboardingSpecialsScreen} />
 

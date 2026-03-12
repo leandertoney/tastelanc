@@ -37,6 +37,12 @@ export const BRAND: AppBrand = {
   mollieSubtitle: 'Your AI Concierge',
   mollieSamplePrompt: 'What are the best dinner spots in Fayetteville?',
 
+  // Market features — NC bans happy hour drink specials
+  features: {
+    happyHours: false,
+    dailySpecialsCarousel: true,
+  },
+
   // Brand palette — the 4 colors that define the visual identity
   // Change ONLY these when launching a new market app
   palette: {

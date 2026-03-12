@@ -8,8 +8,9 @@ import { Ionicons } from '@expo/vector-icons';
 import HappyHourBanner from './HappyHourBanner';
 import PartnerContactModal from './PartnerContactModal';
 import Spacer from './Spacer';
-import { getSupabase } from '../config/theme';
+import { getSupabase, hasFeature } from '../config/theme';
 import { paidFairRotate, getTierName, eliteFirstStableSort } from '../lib/fairRotation';
+import { getActiveDailySpecials, SpecialWithRestaurant } from '../lib/specials';
 import type { HappyHour, HappyHourItem, Restaurant, Tier } from '../types/database';
 import type { RootStackParamList } from '../navigation/types';
 import { getColors } from '../config/theme';
@@ -149,39 +150,70 @@ export default function HappyHourSection() {
   const { marketId } = useMarket();
   const colors = getColors();
 
-  const { data: happyHours = [], isLoading, isFetching } = useQuery({
+  // Fayetteville (and any market without happy hours) shows daily specials instead
+  const useSpecials = !hasFeature('happyHours');
+
+  const { data: happyHours = [], isLoading: hhLoading, isFetching: hhFetching } = useQuery({
     queryKey: ['activeHappyHours', marketId],
     queryFn: () => getActiveHappyHours(marketId),
     staleTime: 5 * 60 * 1000,
+    enabled: !useSpecials,
   });
 
+  const { data: specials = [], isLoading: spLoading, isFetching: spFetching } = useQuery({
+    queryKey: ['activeDailySpecials', marketId],
+    queryFn: () => getActiveDailySpecials(marketId),
+    staleTime: 5 * 60 * 1000,
+    enabled: useSpecials,
+  });
+
+  const isLoading = useSpecials ? spLoading : hhLoading;
+  const isFetching = useSpecials ? spFetching : hhFetching;
+
   const handleBannerPress = (restaurantId: string) => {
-    trackClick('happy_hour', restaurantId);
+    trackClick(useSpecials ? 'daily_special' : 'happy_hour', restaurantId);
     navigation.navigate('RestaurantDetail', { id: restaurantId });
   };
 
   const { requireEmailGate } = useEmailGate();
 
   const handleViewAll = () => {
-    requireEmailGate(() => navigation.navigate('HappyHoursViewAll'));
+    requireEmailGate(() => navigation.navigate(useSpecials ? 'SpecialsViewAll' : 'HappyHoursViewAll'));
   };
 
   const handlePartnerCTA = () => {
     setContactModalVisible(true);
   };
 
+  // Map specials to display format when in specials mode
+  const mappedSpecials: DisplayHappyHour[] = useSpecials
+    ? specials
+        .filter((s) => s.restaurant?.name)
+        .map((s) => ({
+          id: s.id,
+          deals: [s.discount_description ? `${s.discount_description} — ${s.name}` : s.special_price ? `$${s.special_price} ${s.name}` : s.description || s.name],
+          restaurantName: s.restaurant.name,
+          restaurantId: s.restaurant.id,
+          timeWindow: s.start_time && s.end_time ? formatTimeWindow(s.start_time, s.end_time) : 'All Day',
+          imageUrl: s.image_url || s.restaurant.cover_image_url || undefined,
+          isElite: s.restaurant.tiers?.name === 'elite',
+        }))
+    : [];
+
   // Map real happy hours to display format (filter out entries with missing restaurant data)
-  const mappedHappyHours: DisplayHappyHour[] = happyHours
-    .filter((hh) => hh.restaurant?.name)
-    .map((hh) => ({
-      id: hh.id,
-      deals: formatDealTexts(hh),
-      restaurantName: hh.restaurant.name,
-      restaurantId: hh.restaurant.id,
-      timeWindow: formatTimeWindow(hh.start_time, hh.end_time),
-      imageUrl: hh.image_url || hh.restaurant.cover_image_url || undefined,
-      isElite: hh.restaurant.tiers?.name === 'elite',
-    }));
+  const mappedHappyHours: DisplayHappyHour[] = useSpecials
+    ? mappedSpecials
+    : happyHours
+        .filter((hh) => hh.restaurant?.name)
+        .map((hh) => ({
+          id: hh.id,
+          deals: formatDealTexts(hh),
+          restaurantName: hh.restaurant.name,
+          restaurantId: hh.restaurant.id,
+          timeWindow: formatTimeWindow(hh.start_time, hh.end_time),
+          imageUrl: hh.image_url || hh.restaurant.cover_image_url || undefined,
+          isElite: hh.restaurant.tiers?.name === 'elite',
+        }));
 
   // Elite first, then remaining — cap at 5 banners for the home screen rotation
   const prioritized = [...mappedHappyHours]
@@ -215,7 +247,7 @@ export default function HappyHourSection() {
     // Track impression for the currently visible banner
     const banner = displayData[safeIndex];
     if (banner?.restaurantId) {
-      trackImpression(banner.restaurantId, 'happy_hours', safeIndex);
+      trackImpression(banner.restaurantId, useSpecials ? 'daily_specials' : 'happy_hours', safeIndex);
     }
   }, [safeIndex, dealFadeAnim, displayData]);
 
@@ -294,7 +326,7 @@ export default function HappyHourSection() {
       {/* Custom header with prominent day indicator */}
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          <Text style={styles.title}>Happy Hour Specials</Text>
+          <Text style={styles.title}>{useSpecials ? 'Daily Specials' : 'Happy Hour Specials'}</Text>
           <View style={styles.dayBadge}>
             <Text style={styles.dayText}>{dayOfWeek}</Text>
           </View>
@@ -355,7 +387,7 @@ export default function HappyHourSection() {
       <PartnerContactModal
         visible={contactModalVisible}
         onClose={() => setContactModalVisible(false)}
-        category="happy_hour"
+        category={useSpecials ? 'special' : 'happy_hour'}
       />
     </View>
   );

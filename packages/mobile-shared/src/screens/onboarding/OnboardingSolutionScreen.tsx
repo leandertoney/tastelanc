@@ -16,7 +16,7 @@ import Animated, {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/types';
 import { ContinueButton } from '../../components/Onboarding';
-import { getColors, getBrand, getAssets } from '../../config/theme';
+import { getColors, getBrand, getAssets, hasFeature } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { duration, spring, reveal } from '../../constants/animations';
 
@@ -73,7 +73,7 @@ export default function OnboardingSolutionScreen({ navigation }: Props) {
   }));
 
   const handleContinue = () => {
-    navigation.navigate('OnboardingHappyHours');
+    navigation.navigate(hasFeature('happyHours') ? 'OnboardingHappyHours' : 'OnboardingEvents');
   };
 
   return (

@@ -4,11 +4,12 @@
  */
 
 import type { QueryClient } from '@tanstack/react-query';
-import { getSupabase, getBrand } from '../config/theme';
+import { getSupabase, getBrand, hasFeature } from '../config/theme';
 import { getFeaturedRestaurants, getOtherRestaurants, getRecommendations, getUserPreferences } from './recommendations';
 import { getActiveAds } from './ads';
 import { fetchEntertainmentEvents, fetchEvents, ENTERTAINMENT_TYPES, ApiEvent } from './events';
 import { getFavorites } from './favorites';
+import { getActiveDailySpecials } from './specials';
 import { queryKeys } from './queryKeys';
 import type { HappyHour, HappyHourItem, Restaurant, DayOfWeek } from '../types/database';
 import { ALL_CUISINES, CuisineType } from '../types/database';
@@ -251,12 +252,20 @@ export async function prefetchHomeScreenData(
         staleTime: 5 * 60 * 1000,
       }),
 
-      // Active happy hours
-      qc.prefetchQuery({
-        queryKey: ['activeHappyHours', marketId],
-        queryFn: () => getActiveHappyHours(marketId),
-        staleTime: 5 * 60 * 1000,
-      }),
+      // Active happy hours or daily specials (market-dependent)
+      hasFeature('happyHours')
+        ? qc.prefetchQuery({
+            queryKey: ['activeHappyHours', marketId],
+            queryFn: () => getActiveHappyHours(marketId),
+            staleTime: 5 * 60 * 1000,
+          })
+        : hasFeature('dailySpecialsCarousel')
+          ? qc.prefetchQuery({
+              queryKey: ['activeDailySpecials', marketId],
+              queryFn: () => getActiveDailySpecials(marketId),
+              staleTime: 5 * 60 * 1000,
+            })
+          : Promise.resolve(),
 
       // Platform social proof
       qc.prefetchQuery({

@@ -25,7 +25,7 @@ import type {
   Tier,
   Menu,
 } from '../types/database';
-import { getColors, getBrand, getSupabase } from '../config/theme';
+import { getColors, getBrand, getSupabase, hasFeature } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius } from '../constants/spacing';
 import { fetchEvents } from '../lib/events';
@@ -77,14 +77,16 @@ const getCurrentDay = () => {
   return days[new Date().getDay()];
 };
 
-// Tab configuration
-const BASE_TABS: Tab[] = [
-  { key: 'recommendations', label: 'Recs' },
-  { key: 'happy_hours', label: 'Happy Hours' },
-  { key: 'specials', label: 'Specials' },
-  { key: 'events', label: 'Events' },
-  { key: 'menu', label: 'Menu' },
-];
+// Tab configuration (function to avoid module-level theme access)
+function getBaseTabs(): Tab[] {
+  return [
+    { key: 'recommendations', label: 'Recs' },
+    ...(hasFeature('happyHours') ? [{ key: 'happy_hours' as const, label: 'Happy Hours' }] : []),
+    { key: 'specials', label: 'Specials' },
+    { key: 'events', label: 'Events' },
+    { key: 'menu', label: 'Menu' },
+  ];
+}
 
 export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const styles = useStyles();
@@ -314,10 +316,11 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   // Build tabs dynamically — must be before early returns to respect hooks rules
   const hasFeatures = restaurant?.features && restaurant.features.length > 0;
   const tabs: Tab[] = useMemo(() => {
+    const baseTabs = getBaseTabs();
     if (hasFeatures) {
-      return [...BASE_TABS, { key: 'features', label: 'Features' }];
+      return [...baseTabs, { key: 'features', label: 'Features' }];
     }
-    return BASE_TABS;
+    return baseTabs;
   }, [hasFeatures]);
 
   if (loading) {
