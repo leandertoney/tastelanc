@@ -41,7 +41,7 @@ export async function verifySalesAccess(
     .from('profiles')
     .select('role, admin_market_id')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
   const profileRole = profile?.role as string | null;
   const isSuperAdmin = profileRole === 'super_admin' || profileRole === 'co_founder';

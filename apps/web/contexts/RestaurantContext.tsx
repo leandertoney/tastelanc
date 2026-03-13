@@ -101,7 +101,7 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
         .from('profiles')
         .select('role, admin_market_id')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
       const userIsAdmin = profile?.role === 'super_admin' || profile?.role === 'co_founder' ||
         (profile?.role === 'market_admin' && profile?.admin_market_id === marketId);
       setIsAdmin(userIsAdmin);

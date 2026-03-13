@@ -45,7 +45,7 @@ export async function verifyAdminAccess(
     .from('profiles')
     .select('role, admin_market_id')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
   const role = profile?.role as 'super_admin' | 'co_founder' | 'market_admin' | null;
 
@@ -82,7 +82,7 @@ export async function isUserAdmin(supabase: SupabaseClient): Promise<boolean> {
     .from('profiles')
     .select('role, admin_market_id')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
   if (!profile?.role) return false;
   if (profile.role === 'super_admin' || profile.role === 'co_founder') return true;
