@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, Beer, UtensilsCrossed, Music, Package, Search } from 'lucide-react';
+import { Plus, Trash2, Beer, UtensilsCrossed, Music, Package, Search, Pencil, X } from 'lucide-react';
 
 interface HolidaySpecial {
   id: string;
@@ -47,23 +47,27 @@ const CATEGORY_LABELS: Record<string, string> = {
   combo: 'Combo Deal',
 };
 
+const EMPTY_FORM = {
+  name: '',
+  description: '',
+  category: 'drink',
+  event_date: '2026-03-17',
+  start_time: '',
+  end_time: '',
+  original_price: '',
+  special_price: '',
+  discount_description: '',
+};
+
 export default function StPatricksDayPage() {
   const [specials, setSpecials] = useState<HolidaySpecial[]>([]);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [restaurantSearch, setRestaurantSearch] = useState('');
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    category: 'drink',
-    start_time: '',
-    end_time: '',
-    original_price: '',
-    special_price: '',
-    discount_description: '',
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
 
   const fetchSpecials = useCallback(async () => {
@@ -96,39 +100,85 @@ export default function StPatricksDayPage() {
     r.name.toLowerCase().includes(restaurantSearch.toLowerCase())
   );
 
+  const resetForm = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setFormData(EMPTY_FORM);
+    setSelectedRestaurant(null);
+    setRestaurantSearch('');
+  };
+
+  const handleEdit = (special: HolidaySpecial) => {
+    setEditingId(special.id);
+    setSelectedRestaurant({ id: special.restaurant.id, name: special.restaurant.name, market_id: special.restaurant.market_id });
+    setFormData({
+      name: special.name,
+      description: special.description || '',
+      category: special.category,
+      event_date: special.event_date,
+      start_time: special.start_time?.slice(0, 5) || '',
+      end_time: special.end_time?.slice(0, 5) || '',
+      original_price: special.original_price != null ? String(special.original_price) : '',
+      special_price: special.special_price != null ? String(special.special_price) : '',
+      discount_description: special.discount_description || '',
+    });
+    setShowForm(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedRestaurant || !formData.name.trim()) return;
 
     setSubmitting(true);
     try {
-      const res = await fetch('/api/admin/holiday-specials', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          restaurant_id: selectedRestaurant.id,
-          holiday_tag: 'st-patricks-2026',
-          name: formData.name,
-          description: formData.description || null,
-          category: formData.category,
-          event_date: '2026-03-17',
-          start_time: formData.start_time || null,
-          end_time: formData.end_time || null,
-          original_price: formData.original_price ? parseFloat(formData.original_price) : null,
-          special_price: formData.special_price ? parseFloat(formData.special_price) : null,
-          discount_description: formData.discount_description || null,
-        }),
-      });
-
-      if (res.ok) {
-        setShowForm(false);
-        setFormData({ name: '', description: '', category: 'drink', start_time: '', end_time: '', original_price: '', special_price: '', discount_description: '' });
-        setSelectedRestaurant(null);
-        setRestaurantSearch('');
-        fetchSpecials();
+      if (editingId) {
+        // Update existing
+        const res = await fetch('/api/admin/holiday-specials', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: editingId,
+            name: formData.name,
+            description: formData.description || null,
+            category: formData.category,
+            event_date: formData.event_date,
+            start_time: formData.start_time || null,
+            end_time: formData.end_time || null,
+            original_price: formData.original_price ? parseFloat(formData.original_price) : null,
+            special_price: formData.special_price ? parseFloat(formData.special_price) : null,
+            discount_description: formData.discount_description || null,
+          }),
+        });
+        if (res.ok) {
+          resetForm();
+          fetchSpecials();
+        }
+      } else {
+        // Create new
+        const res = await fetch('/api/admin/holiday-specials', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            restaurant_id: selectedRestaurant.id,
+            holiday_tag: 'st-patricks-2026',
+            name: formData.name,
+            description: formData.description || null,
+            category: formData.category,
+            event_date: formData.event_date,
+            start_time: formData.start_time || null,
+            end_time: formData.end_time || null,
+            original_price: formData.original_price ? parseFloat(formData.original_price) : null,
+            special_price: formData.special_price ? parseFloat(formData.special_price) : null,
+            discount_description: formData.discount_description || null,
+          }),
+        });
+        if (res.ok) {
+          resetForm();
+          fetchSpecials();
+        }
       }
     } catch (err) {
-      console.error('Failed to create special:', err);
+      console.error('Failed to save special:', err);
     } finally {
       setSubmitting(false);
     }
@@ -144,6 +194,19 @@ export default function StPatricksDayPage() {
     }
   };
 
+  // Build date range subtitle from actual specials
+  const dateSubtitle = (() => {
+    if (!specials.length) return 'March 17, 2026';
+    const days = Array.from(new Set(specials.map(s => s.event_date))).sort();
+    if (days.length === 1) {
+      const d = new Date(days[0] + 'T12:00:00');
+      return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+    const first = new Date(days[0] + 'T12:00:00');
+    const last = new Date(days[days.length - 1] + 'T12:00:00');
+    return `${first.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} – ${last.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+  })();
+
   return (
     <div className="min-h-screen bg-[#0A3D0A] text-white p-6">
       {/* Header */}
@@ -156,93 +219,97 @@ export default function StPatricksDayPage() {
               <span className="text-4xl">&#9752;</span>
             </h1>
             <p className="text-emerald-300 mt-1">
-              March 17, 2026 &middot; {specials.length} specials from {new Set(specials.map(s => s.restaurant_id)).size} bars
+              {dateSubtitle} &middot; {specials.length} specials from {new Set(specials.map(s => s.restaurant_id)).size} bars
             </p>
           </div>
           <button
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => { if (showForm) { resetForm(); } else { setShowForm(true); } }}
             className="flex items-center gap-2 px-4 py-2 bg-[#D4AF37] text-black font-semibold rounded-lg hover:bg-[#C9A227] transition-colors"
           >
-            <Plus className="w-5 h-5" />
-            Add Special
+            {showForm ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+            {showForm ? 'Close' : 'Add Special'}
           </button>
         </div>
 
         {/* Example Card Preview — shows what it looks like in the app */}
-        <div className="mb-8">
-          <h2 className="text-sm font-semibold text-emerald-400 uppercase tracking-wider mb-3">
-            &#9752; How it looks in the app
-          </h2>
-          <div className="max-w-sm mx-auto">
-            <div className="relative bg-[#0F2B0F] border-2 border-[#D4AF37] rounded-2xl p-5 py-6 overflow-hidden shadow-[0_0_12px_rgba(212,175,55,0.15)]">
-              {/* Corner decorations */}
-              <span className="absolute top-1 left-1.5 text-lg text-[#D4AF37]/50 font-light">&#9556;</span>
-              <span className="absolute top-1 right-1.5 text-lg text-[#D4AF37]/50 font-light">&#9559;</span>
-              <span className="absolute bottom-1 left-1.5 text-lg text-[#D4AF37]/50 font-light">&#9562;</span>
-              <span className="absolute bottom-1 right-1.5 text-lg text-[#D4AF37]/50 font-light">&#9565;</span>
+        {!showForm && (
+          <div className="mb-8">
+            <h2 className="text-sm font-semibold text-emerald-400 uppercase tracking-wider mb-3">
+              &#9752; How it looks in the app
+            </h2>
+            <div className="max-w-sm mx-auto">
+              <div className="relative bg-[#0F2B0F] border-2 border-[#D4AF37] rounded-2xl p-5 py-6 overflow-hidden shadow-[0_0_12px_rgba(212,175,55,0.15)]">
+                {/* Corner decorations */}
+                <span className="absolute top-1 left-1.5 text-lg text-[#D4AF37]/50 font-light">&#9556;</span>
+                <span className="absolute top-1 right-1.5 text-lg text-[#D4AF37]/50 font-light">&#9559;</span>
+                <span className="absolute bottom-1 left-1.5 text-lg text-[#D4AF37]/50 font-light">&#9562;</span>
+                <span className="absolute bottom-1 right-1.5 text-lg text-[#D4AF37]/50 font-light">&#9565;</span>
 
-              {/* Background shamrocks */}
-              <span className="absolute top-5 right-4 text-6xl opacity-[0.04] rotate-[15deg]">&#9752;</span>
-              <span className="absolute bottom-4 left-3 text-5xl opacity-[0.03] -rotate-[25deg]">&#9752;</span>
+                {/* Background shamrocks */}
+                <span className="absolute top-5 right-4 text-6xl opacity-[0.04] rotate-[15deg]">&#9752;</span>
+                <span className="absolute bottom-4 left-3 text-5xl opacity-[0.03] -rotate-[25deg]">&#9752;</span>
 
-              {/* Holiday label */}
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex-1 h-px bg-[#D4AF37]/30" />
-                <span className="text-[10px] font-bold text-[#D4AF37]/40 tracking-[3px]">ST. PATRICK&apos;S DAY 2026</span>
-                <div className="flex-1 h-px bg-[#D4AF37]/30" />
-              </div>
+                {/* Holiday label */}
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex-1 h-px bg-[#D4AF37]/30" />
+                  <span className="text-[10px] font-bold text-[#D4AF37]/40 tracking-[3px]">ST. PATRICK&apos;S DAY 2026</span>
+                  <div className="flex-1 h-px bg-[#D4AF37]/30" />
+                </div>
 
-              {/* Bar name */}
-              <h3 className="text-2xl font-black text-[#D4AF37] text-center uppercase tracking-tight leading-tight">
-                Restaurant Name
-              </h3>
+                {/* Bar name */}
+                <h3 className="text-2xl font-black text-[#D4AF37] text-center uppercase tracking-tight leading-tight">
+                  Restaurant Name
+                </h3>
 
-              {/* Gold rule */}
-              <div className="flex items-center gap-2 my-2.5 px-1">
-                <div className="flex-1 h-px bg-[#D4AF37]/30" />
-                <span className="text-[10px] text-[#D4AF37]/40">&#9752;</span>
-                <div className="flex-1 h-px bg-[#D4AF37]/30" />
-              </div>
+                {/* Gold rule */}
+                <div className="flex items-center gap-2 my-2.5 px-1">
+                  <div className="flex-1 h-px bg-[#D4AF37]/30" />
+                  <span className="text-[10px] text-[#D4AF37]/40">&#9752;</span>
+                  <div className="flex-1 h-px bg-[#D4AF37]/30" />
+                </div>
 
-              {/* Example specials */}
-              <div className="text-center py-2">
-                <div className="flex items-center justify-center gap-2.5">
-                  <span className="text-3xl font-black text-[#D4AF37] leading-none" style={{ textShadow: '0 1px 4px rgba(212,175,55,0.3)' }}>$3</span>
-                  <span className="text-lg font-bold text-[#E8F5E8] uppercase tracking-wide">Green Beer</span>
+                {/* Example specials */}
+                <div className="text-center py-2">
+                  <div className="flex items-center justify-center gap-2.5">
+                    <span className="text-3xl font-black text-[#D4AF37] leading-none" style={{ textShadow: '0 1px 4px rgba(212,175,55,0.3)' }}>$3</span>
+                    <span className="text-lg font-bold text-[#E8F5E8] uppercase tracking-wide">Green Beer</span>
+                  </div>
+                </div>
+
+                <div className="h-px bg-[#2ECC40]/10 my-1" />
+
+                <div className="text-center py-2">
+                  <span className="text-lg font-extrabold text-[#E8F5E8] uppercase tracking-wider">Corned Beef &amp; Cabbage</span>
+                  <p className="text-[11px] text-[#5A8A5A] italic tracking-wide mt-1">Traditional Irish dinner plate</p>
+                </div>
+
+                {/* Gold rule */}
+                <div className="flex items-center gap-2 my-2.5 px-1">
+                  <div className="flex-1 h-px bg-[#D4AF37]/30" />
+                  <span className="text-[10px] text-[#D4AF37]/40">&#9752;</span>
+                  <div className="flex-1 h-px bg-[#D4AF37]/30" />
+                </div>
+
+                {/* Branding */}
+                <div className="flex items-center justify-center gap-1.5">
+                  <span className="text-[10px] font-semibold text-[#D4AF37]/40 uppercase tracking-[2px]">TasteLanc</span>
+                  <span className="text-[10px] text-[#D4AF37]/40">&middot;</span>
+                  <span className="text-[10px] font-semibold text-[#D4AF37]/40 uppercase tracking-[2px]">March 17th</span>
                 </div>
               </div>
-
-              <div className="h-px bg-[#2ECC40]/10 my-1" />
-
-              <div className="text-center py-2">
-                <span className="text-lg font-extrabold text-[#E8F5E8] uppercase tracking-wider">Corned Beef &amp; Cabbage</span>
-                <p className="text-[11px] text-[#5A8A5A] italic tracking-wide mt-1">Traditional Irish dinner plate</p>
-              </div>
-
-              {/* Gold rule */}
-              <div className="flex items-center gap-2 my-2.5 px-1">
-                <div className="flex-1 h-px bg-[#D4AF37]/30" />
-                <span className="text-[10px] text-[#D4AF37]/40">&#9752;</span>
-                <div className="flex-1 h-px bg-[#D4AF37]/30" />
-              </div>
-
-              {/* Branding */}
-              <div className="flex items-center justify-center gap-1.5">
-                <span className="text-[10px] font-semibold text-[#D4AF37]/40 uppercase tracking-[2px]">TasteLanc</span>
-                <span className="text-[10px] text-[#D4AF37]/40">&middot;</span>
-                <span className="text-[10px] font-semibold text-[#D4AF37]/40 uppercase tracking-[2px]">March 17th</span>
-              </div>
+              <p className="text-xs text-emerald-500/60 text-center mt-2 italic">
+                Each restaurant&apos;s specials appear as a poster card like this in the app
+              </p>
             </div>
-            <p className="text-xs text-emerald-500/60 text-center mt-2 italic">
-              Each restaurant&apos;s specials appear as a poster card like this in the app
-            </p>
           </div>
-        </div>
+        )}
 
-        {/* Add Special Form */}
+        {/* Add / Edit Special Form */}
         {showForm && (
           <form onSubmit={handleSubmit} className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 mb-8">
-            <h2 className="text-lg font-semibold text-zinc-200 mb-4">Add St. Patrick&apos;s Day Special</h2>
+            <h2 className="text-lg font-semibold text-zinc-200 mb-4">
+              {editingId ? 'Edit Special' : 'Add St. Patrick\u2019s Day Special'}
+            </h2>
 
             {/* Restaurant Search */}
             <div className="mb-4">
@@ -250,13 +317,15 @@ export default function StPatricksDayPage() {
               {selectedRestaurant ? (
                 <div className="flex items-center justify-between bg-zinc-800 px-4 py-2 rounded-lg">
                   <span className="font-medium">{selectedRestaurant.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => { setSelectedRestaurant(null); setRestaurantSearch(''); }}
-                    className="text-zinc-400 hover:text-white text-sm"
-                  >
-                    Change
-                  </button>
+                  {!editingId && (
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedRestaurant(null); setRestaurantSearch(''); }}
+                      className="text-zinc-400 hover:text-white text-sm"
+                    >
+                      Change
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="relative">
@@ -286,7 +355,7 @@ export default function StPatricksDayPage() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               {/* Special Name */}
               <div>
                 <label className="block text-sm text-zinc-400 mb-1">Special Name</label>
@@ -313,6 +382,18 @@ export default function StPatricksDayPage() {
                   <option value="combo">Combo Deal</option>
                   <option value="entertainment">Entertainment</option>
                 </select>
+              </div>
+
+              {/* Event Date */}
+              <div>
+                <label className="block text-sm text-zinc-400 mb-1">Event Date</label>
+                <input
+                  type="date"
+                  value={formData.event_date}
+                  onChange={e => setFormData(f => ({ ...f, event_date: e.target.value }))}
+                  required
+                  className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-zinc-400 focus:outline-none"
+                />
               </div>
             </div>
 
@@ -388,11 +469,11 @@ export default function StPatricksDayPage() {
                 disabled={submitting || !selectedRestaurant || !formData.name.trim()}
                 className="px-6 py-2 bg-[#D4AF37] text-black font-semibold rounded-lg hover:bg-[#C9A227] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {submitting ? 'Adding...' : 'Add Special'}
+                {submitting ? 'Saving...' : editingId ? 'Save Changes' : 'Add Special'}
               </button>
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
+                onClick={resetForm}
                 className="px-6 py-2 bg-zinc-700 text-zinc-300 rounded-lg hover:bg-zinc-600 transition-colors"
               >
                 Cancel
@@ -430,12 +511,22 @@ export default function StPatricksDayPage() {
                         </span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleDelete(special.id)}
-                      className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all p-1"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                      <button
+                        onClick={() => handleEdit(special)}
+                        className="text-zinc-400 hover:text-white p-1"
+                        title="Edit"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(special.id)}
+                        className="text-red-400 hover:text-red-300 p-1"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
 
                   <h3 className="text-lg font-bold text-white mb-1">{special.name}</h3>
@@ -447,7 +538,10 @@ export default function StPatricksDayPage() {
                     <p className="text-sm text-zinc-500 mb-2">{special.description}</p>
                   )}
 
-                  <div className="flex items-center gap-3 text-sm">
+                  <div className="flex items-center gap-3 text-sm flex-wrap">
+                    <span className="text-emerald-400 text-xs font-medium">
+                      {new Date(special.event_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
                     {special.special_price && (
                       <span className="text-[#D4AF37] font-bold">
                         ${Number(special.special_price).toFixed(2)}
