@@ -72,6 +72,33 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <style dangerouslySetInnerHTML={{ __html: brandCssVars }} />
+        {/* Smart App Banner — Safari on iOS auto-shows "Open in App" */}
+        {BRAND.appStoreUrls.ios && (
+          <meta name="apple-itunes-app" content={`app-id=${BRAND.iosAppId}`} />
+        )}
+        {/* SoftwareApplication schema — enables app install cards in search results */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'SoftwareApplication',
+              name: BRAND.name,
+              description: BRAND.seo.description,
+              url: siteUrl,
+              operatingSystem: 'iOS, Android',
+              applicationCategory: 'LifestyleApplication',
+              ...(BRAND.appStoreUrls.ios && {
+                installUrl: BRAND.appStoreUrls.ios,
+              }),
+              offers: {
+                '@type': 'Offer',
+                price: '0',
+                priceCurrency: 'USD',
+              },
+            }),
+          }}
+        />
       </head>
       <body className="min-h-screen font-sans">
         <Providers>{children}</Providers>

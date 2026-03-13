@@ -1,4 +1,6 @@
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
+import { BRAND } from '@/config/market';
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
 const DEFAULT_OG_IMAGE = `${siteUrl}/icons/icon-512.png`;
 
 type BaseMeta = {

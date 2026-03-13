@@ -4,15 +4,18 @@ import { Search, SlidersHorizontal } from 'lucide-react';
 import type { Restaurant } from '@/types/database';
 import type { Metadata } from 'next';
 import { CATEGORIES_BY_GROUP, CATEGORY_GROUPS, getCategoryLabel } from '@/lib/constants/categories';
-import { MARKET_SLUG } from '@/config/market';
+import { BRAND, MARKET_SLUG } from '@/config/market';
+import { buildMeta } from '@/lib/seo/meta';
 
-export const metadata: Metadata = {
-  title: 'Restaurants | TasteLanc',
-  description: 'Browse restaurants, bars, and dining spots in Lancaster, PA. Filter by category, cuisine, and more.',
-  alternates: {
-    canonical: 'https://tastelanc.com/restaurants',
-  },
-};
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
+
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMeta({
+    title: `Restaurants in ${BRAND.countyShort}, ${BRAND.state} | ${BRAND.name}`,
+    description: `Browse restaurants, bars, and dining spots in ${BRAND.countyShort}, ${BRAND.state}. Filter by category, cuisine, and more.`,
+    url: `${siteUrl}/restaurants`,
+  });
+}
 
 interface PageProps {
   searchParams: Promise<{ category?: string; q?: string }>;
@@ -60,7 +63,7 @@ export default async function RestaurantsPage({ searchParams }: PageProps) {
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">Restaurants</h1>
           <p className="text-gray-400">
-            Discover the best dining spots in Lancaster, PA
+            Discover the best dining spots in {BRAND.countyShort}, {BRAND.state}
           </p>
         </div>
 

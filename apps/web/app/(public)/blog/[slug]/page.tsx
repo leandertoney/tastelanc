@@ -7,6 +7,7 @@ import { articleJsonLd, breadcrumbJsonLd } from '@/lib/seo/structured';
 import { ROSIE_AUTHOR_BIO } from '@/lib/rosie/blog-system-prompt';
 import { BRAND } from '@/config/market';
 import { Clock, ArrowLeft, ArrowRight, Instagram, Sparkles } from 'lucide-react';
+import { BlogAppCTA } from '@/components/seo/BlogAppCTA';
 
 const authorBio = ROSIE_AUTHOR_BIO; // Uses BRAND.aiName dynamically
 
@@ -332,6 +333,9 @@ export default async function BlogPostPage({ params }: PageProps) {
               "
               dangerouslySetInnerHTML={{ __html: post.body_html }}
             />
+
+            {/* Inline App CTA — after article body */}
+            <BlogAppCTA />
 
             {/* Author Bio Box */}
             <div className="mt-12 p-6 bg-tastelanc-surface">

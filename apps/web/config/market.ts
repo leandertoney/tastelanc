@@ -43,6 +43,9 @@ export interface MarketBrand {
     android: string;
   };
 
+  // Apple App Store ID (for Smart App Banner in Safari)
+  iosAppId: string;
+
   // Web theme colors (dark theme)
   colors: {
     accent: string;
@@ -99,6 +102,8 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
       android: 'https://play.google.com/store/apps/details?id=com.tastelanc.app',
     },
 
+    iosAppId: '6755852717',
+
     colors: {
       accent: '#A41E22',
       accentHover: '#8B1A1D',
@@ -148,6 +153,8 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
       ios: 'https://apps.apple.com/us/app/tastecumberland/id6759233248',
       android: 'https://play.google.com/store/apps/details?id=com.tastelanc.cumberland',
     },
+
+    iosAppId: '6759233248',
 
     colors: {
       accent: '#3B7A57',
@@ -199,6 +206,8 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
       ios: '',
       android: '',
     },
+
+    iosAppId: '6760276128',
 
     colors: {
       accent: '#93B5CF',

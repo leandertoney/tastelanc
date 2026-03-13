@@ -59,6 +59,19 @@ export async function fetchRestaurantBySlug(slug: string) {
   return (data || null) as Restaurant | null;
 }
 
+export async function fetchRestaurantsByCategory(category: string) {
+  const marketId = await resolveMarketId();
+  const { data, error } = await supabase()
+    .from('restaurants')
+    .select('*')
+    .eq('market_id', marketId)
+    .eq('is_active', true)
+    .contains('categories', [category])
+    .order('name');
+  if (error) throw error;
+  return (data || []) as Restaurant[];
+}
+
 // ── Happy Hours ─────────────────────────────────────────
 
 export async function fetchHappyHours() {
@@ -70,6 +83,22 @@ export async function fetchHappyHours() {
     .eq('is_active', true);
   if (error) throw error;
   return (data || []) as HappyHour[];
+}
+
+export async function fetchHappyHoursWithRestaurants(day?: string) {
+  const marketId = await resolveMarketId();
+  let q = supabase()
+    .from('happy_hours')
+    .select('*, restaurant:restaurants!inner(*), happy_hour_items(*)')
+    .eq('restaurant.market_id', marketId)
+    .eq('is_active', true)
+    .order('start_time');
+  if (day) {
+    q = q.contains('days_of_week', [day]);
+  }
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data || []) as Array<HappyHour & { restaurant: Restaurant; happy_hour_items: HappyHourItem[] }>;
 }
 
 export async function fetchHappyHourItems(ids: string[]) {

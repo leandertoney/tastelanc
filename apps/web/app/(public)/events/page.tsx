@@ -6,15 +6,19 @@ import { Badge } from '@/components/ui';
 import { formatTime, capitalizeWords } from '@/lib/utils';
 import type { Metadata } from 'next';
 import type { EventType } from '@/types/database';
-import { MARKET_SLUG } from '@/config/market';
+import { BRAND, MARKET_SLUG } from '@/config/market';
+import { buildMeta } from '@/lib/seo/meta';
+import { AppGateCTA } from '@/components/seo/AppGateCTA';
 
-export const metadata: Metadata = {
-  title: 'Events | TasteLanc',
-  description: 'Discover live music, trivia nights, karaoke, and more events at Lancaster PA restaurants and bars.',
-  alternates: {
-    canonical: 'https://tastelanc.com/events',
-  },
-};
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
+
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMeta({
+    title: `Events in ${BRAND.countyShort}, ${BRAND.state} | ${BRAND.name}`,
+    description: `Discover live music, trivia nights, karaoke, and more events at ${BRAND.countyShort}, ${BRAND.state} restaurants and bars.`,
+    url: `${siteUrl}/events`,
+  });
+}
 
 interface PageProps {
   searchParams: Promise<{ type?: string }>;
@@ -80,6 +84,79 @@ export default async function EventsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const events = await getEvents(params.type);
 
+  const VISIBLE_COUNT = 6;
+  const visible = events.slice(0, VISIBLE_COUNT);
+  const blurredPreview = events.slice(VISIBLE_COUNT, VISIBLE_COUNT + 3);
+  const hiddenCount = Math.max(0, events.length - VISIBLE_COUNT);
+
+  function renderCard(event: (typeof events)[number]) {
+    return (
+      <Link
+        key={event.id}
+        href={`/restaurants/${event.restaurant?.slug}`}
+        className="bg-tastelanc-card rounded-xl overflow-hidden hover:ring-2 hover:ring-tastelanc-accent transition-all"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={event.image_url || `/images/events/${event.event_type}.png`}
+          alt={event.name}
+          className="w-full h-40 object-cover"
+          referrerPolicy="no-referrer"
+        />
+        <div className="p-6">
+          <div className="flex items-start justify-between mb-3">
+            <Badge variant="accent" className="flex items-center gap-1">
+              {getEventIcon(String(event.event_type))}
+              {capitalizeWords(String(event.event_type).replace('_', ' '))}
+            </Badge>
+            <span className="text-tastelanc-accent text-sm font-medium">
+              {formatTime(event.start_time)}
+            </span>
+          </div>
+
+          <h3 className="font-semibold text-white text-lg mb-1">{event.name}</h3>
+
+          <p className="text-gray-400 text-sm flex items-center gap-1 mb-2">
+            <MapPin className="w-3 h-3" />
+            {event.restaurant?.name}
+          </p>
+
+          {event.performer_name && (
+            <p className="text-sm text-gray-300 mb-2">
+              Featuring: {event.performer_name}
+            </p>
+          )}
+
+          {event.description && (
+            <p className="text-gray-500 text-sm line-clamp-2">{event.description}</p>
+          )}
+
+          <div className="mt-3 pt-3 border-t border-tastelanc-surface-light">
+            {event.is_recurring ? (
+              <p className="text-sm text-gray-400">
+                Every {event.days_of_week.map((d: string) => capitalizeWords(d)).join(', ')}
+              </p>
+            ) : event.event_date ? (
+              <p className="text-sm text-gray-400">
+                {new Date(event.event_date).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </p>
+            ) : null}
+
+            {event.cover_charge && (
+              <p className="text-sm text-lancaster-gold mt-1">
+                Cover: ${event.cover_charge}
+              </p>
+            )}
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
   return (
     <div className="py-8 px-4">
       <div className="max-w-7xl mx-auto">
@@ -90,7 +167,7 @@ export default async function EventsPage({ searchParams }: PageProps) {
             Events
           </h1>
           <p className="text-gray-400">
-            Discover live entertainment in Lancaster
+            Discover live entertainment in {BRAND.countyShort}
           </p>
         </div>
 
@@ -128,74 +205,21 @@ export default async function EventsPage({ searchParams }: PageProps) {
           {params.type && ` in ${capitalizeWords(params.type.replace('_', ' '))}`}
         </p>
 
-        {events.length > 0 ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {events.map((event) => (
-              <Link
-                key={event.id}
-                href={`/restaurants/${event.restaurant?.slug}`}
-                className="bg-tastelanc-card rounded-xl overflow-hidden hover:ring-2 hover:ring-tastelanc-accent transition-all"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={event.image_url || `/images/events/${event.event_type}.png`}
-                  alt={event.name}
-                  className="w-full h-40 object-cover"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <Badge variant="accent" className="flex items-center gap-1">
-                      {getEventIcon(String(event.event_type))}
-                      {capitalizeWords(String(event.event_type).replace('_', ' '))}
-                    </Badge>
-                    <span className="text-tastelanc-accent text-sm font-medium">
-                      {formatTime(event.start_time)}
-                    </span>
-                  </div>
+        {visible.length > 0 ? (
+          <>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {visible.map((event) => renderCard(event))}
+            </div>
 
-                  <h3 className="font-semibold text-white text-lg mb-1">{event.name}</h3>
-
-                  <p className="text-gray-400 text-sm flex items-center gap-1 mb-2">
-                    <MapPin className="w-3 h-3" />
-                    {event.restaurant?.name}
-                  </p>
-
-                  {event.performer_name && (
-                    <p className="text-sm text-gray-300 mb-2">
-                      Featuring: {event.performer_name}
-                    </p>
-                  )}
-
-                  {event.description && (
-                    <p className="text-gray-500 text-sm line-clamp-2">{event.description}</p>
-                  )}
-
-                  <div className="mt-3 pt-3 border-t border-tastelanc-surface-light">
-                    {event.is_recurring ? (
-                      <p className="text-sm text-gray-400">
-                        Every {event.days_of_week.map((d: string) => capitalizeWords(d)).join(', ')}
-                      </p>
-                    ) : event.event_date ? (
-                      <p className="text-sm text-gray-400">
-                        {new Date(event.event_date).toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </p>
-                    ) : null}
-
-                    {event.cover_charge && (
-                      <p className="text-sm text-lancaster-gold mt-1">
-                        Cover: ${event.cover_charge}
-                      </p>
-                    )}
-                  </div>
+            {/* Content Gate */}
+            <AppGateCTA hiddenCount={hiddenCount} contentType="events">
+              {blurredPreview.length > 0 && (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {blurredPreview.map((event) => renderCard(event))}
                 </div>
-              </Link>
-            ))}
-          </div>
+              )}
+            </AppGateCTA>
+          </>
         ) : (
           <div className="text-center py-16">
             <Calendar className="w-16 h-16 text-gray-600 mx-auto mb-4" />

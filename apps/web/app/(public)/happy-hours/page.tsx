@@ -5,15 +5,19 @@ import { Badge } from '@/components/ui';
 import { formatTime, getCurrentDayOfWeek, capitalizeWords } from '@/lib/utils';
 import type { Metadata } from 'next';
 import type { DayOfWeek } from '@/types/database';
-import { MARKET_SLUG } from '@/config/market';
+import { BRAND, MARKET_SLUG } from '@/config/market';
+import { buildMeta } from '@/lib/seo/meta';
+import { AppGateCTA } from '@/components/seo/AppGateCTA';
 
-export const metadata: Metadata = {
-  title: 'Happy Hours | TasteLanc',
-  description: 'Find the best happy hour deals in Lancaster, PA. Discover drink specials, food deals, and more at local restaurants and bars.',
-  alternates: {
-    canonical: 'https://tastelanc.com/happy-hours',
-  },
-};
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
+
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMeta({
+    title: `Best Happy Hours in ${BRAND.countyShort}, ${BRAND.state} | ${BRAND.name}`,
+    description: `Find the best happy hour deals in ${BRAND.countyShort}, ${BRAND.state}. Discover drink specials, food deals, and more at local restaurants and bars.`,
+    url: `${siteUrl}/happy-hours`,
+  });
+}
 
 interface PageProps {
   searchParams: Promise<{ day?: string }>;
@@ -54,6 +58,74 @@ export default async function HappyHoursPage({ searchParams }: PageProps) {
   const currentDay = params.day || getCurrentDayOfWeek();
   const happyHours = await getHappyHours(currentDay);
 
+  const VISIBLE_COUNT = 6;
+  const visible = happyHours.slice(0, VISIBLE_COUNT);
+  const blurredPreview = happyHours.slice(VISIBLE_COUNT, VISIBLE_COUNT + 3);
+  const hiddenCount = Math.max(0, happyHours.length - VISIBLE_COUNT);
+
+  function renderCard(hh: (typeof happyHours)[number]) {
+    return (
+      <Link
+        key={hh.id}
+        href={`/restaurants/${hh.restaurant?.slug}`}
+        className="bg-tastelanc-card rounded-xl overflow-hidden hover:ring-2 hover:ring-lancaster-gold transition-all"
+      >
+        {(hh.image_url || hh.restaurant?.cover_image_url) && (
+          <div className="aspect-video relative">
+            <img
+              src={hh.image_url || hh.restaurant?.cover_image_url}
+              alt={hh.name}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute top-3 right-3">
+              <Badge variant="gold">
+                {formatTime(hh.start_time)} - {formatTime(hh.end_time)}
+              </Badge>
+            </div>
+          </div>
+        )}
+        <div className="p-6">
+          <div className="flex justify-between items-start mb-3">
+            <div>
+              <h3 className="font-semibold text-white text-lg">{hh.restaurant?.name}</h3>
+              <p className="text-gray-400 text-sm flex items-center gap-1 mt-1">
+                <MapPin className="w-3 h-3" />
+                {hh.restaurant?.address}
+              </p>
+            </div>
+            {!(hh.image_url || hh.restaurant?.cover_image_url) && (
+              <Badge variant="gold">
+                {formatTime(hh.start_time)} - {formatTime(hh.end_time)}
+              </Badge>
+            )}
+          </div>
+
+          <h4 className="text-white font-medium mb-2">{hh.name}</h4>
+
+          {hh.description && (
+            <p className="text-gray-400 text-sm mb-3">{hh.description}</p>
+          )}
+
+          {hh.happy_hour_items && hh.happy_hour_items.length > 0 && (
+            <div className="border-t border-tastelanc-surface-light pt-3 mt-3">
+              <p className="text-sm text-gray-500 mb-2">Deals:</p>
+              <div className="flex flex-wrap gap-2">
+                {hh.happy_hour_items.slice(0, 4).map((item: { id: string; name: string; discounted_price: number | null }) => (
+                  <span key={item.id} className="text-sm text-lancaster-gold">
+                    {item.name} {item.discounted_price && `$${item.discounted_price}`}
+                  </span>
+                ))}
+                {hh.happy_hour_items.length > 4 && (
+                  <span className="text-sm text-gray-500">+{hh.happy_hour_items.length - 4} more</span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </Link>
+    );
+  }
+
   return (
     <div className="py-8 px-4">
       <div className="max-w-7xl mx-auto">
@@ -64,7 +136,7 @@ export default async function HappyHoursPage({ searchParams }: PageProps) {
             Happy Hours
           </h1>
           <p className="text-gray-400">
-            Find the best happy hour deals in Lancaster
+            Find the best happy hour deals in {BRAND.countyShort}
           </p>
         </div>
 
@@ -90,70 +162,21 @@ export default async function HappyHoursPage({ searchParams }: PageProps) {
           {happyHours.length} happy hour{happyHours.length !== 1 ? 's' : ''} on {capitalizeWords(currentDay)}
         </p>
 
-        {happyHours.length > 0 ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {happyHours.map((hh) => (
-              <Link
-                key={hh.id}
-                href={`/restaurants/${hh.restaurant?.slug}`}
-                className="bg-tastelanc-card rounded-xl overflow-hidden hover:ring-2 hover:ring-lancaster-gold transition-all"
-              >
-                {/* Image */}
-                {(hh.image_url || hh.restaurant?.cover_image_url) && (
-                  <div className="aspect-video relative">
-                    <img
-                      src={hh.image_url || hh.restaurant?.cover_image_url}
-                      alt={hh.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-3 right-3">
-                      <Badge variant="gold">
-                        {formatTime(hh.start_time)} - {formatTime(hh.end_time)}
-                      </Badge>
-                    </div>
-                  </div>
-                )}
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="font-semibold text-white text-lg">{hh.restaurant?.name}</h3>
-                      <p className="text-gray-400 text-sm flex items-center gap-1 mt-1">
-                        <MapPin className="w-3 h-3" />
-                        {hh.restaurant?.address}
-                      </p>
-                    </div>
-                    {!(hh.image_url || hh.restaurant?.cover_image_url) && (
-                      <Badge variant="gold">
-                        {formatTime(hh.start_time)} - {formatTime(hh.end_time)}
-                      </Badge>
-                    )}
-                  </div>
+        {visible.length > 0 ? (
+          <>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {visible.map((hh) => renderCard(hh))}
+            </div>
 
-                  <h4 className="text-white font-medium mb-2">{hh.name}</h4>
-
-                  {hh.description && (
-                    <p className="text-gray-400 text-sm mb-3">{hh.description}</p>
-                  )}
-
-                  {hh.happy_hour_items && hh.happy_hour_items.length > 0 && (
-                    <div className="border-t border-tastelanc-surface-light pt-3 mt-3">
-                      <p className="text-sm text-gray-500 mb-2">Deals:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {hh.happy_hour_items.slice(0, 4).map((item: { id: string; name: string; discounted_price: number | null }) => (
-                          <span key={item.id} className="text-sm text-lancaster-gold">
-                            {item.name} {item.discounted_price && `$${item.discounted_price}`}
-                          </span>
-                        ))}
-                        {hh.happy_hour_items.length > 4 && (
-                          <span className="text-sm text-gray-500">+{hh.happy_hour_items.length - 4} more</span>
-                        )}
-                      </div>
-                    </div>
-                  )}
+            {/* Content Gate */}
+            <AppGateCTA hiddenCount={hiddenCount} contentType="happy hours">
+              {blurredPreview.length > 0 && (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {blurredPreview.map((hh) => renderCard(hh))}
                 </div>
-              </Link>
-            ))}
-          </div>
+              )}
+            </AppGateCTA>
+          </>
         ) : (
           <div className="text-center py-16">
             <Clock className="w-16 h-16 text-gray-600 mx-auto mb-4" />
