@@ -128,6 +128,7 @@ export default function HomeScreen() {
     queryClient.invalidateQueries({ queryKey: ['upcomingEvents', marketId] });
     queryClient.invalidateQueries({ queryKey: ['blog'] });
     queryClient.invalidateQueries({ queryKey: ['featuredAds', marketId] });
+    queryClient.invalidateQueries({ queryKey: ['stPatricksDates'] });
     refetch();
   }, [queryClient, refetch, marketId]);
 
