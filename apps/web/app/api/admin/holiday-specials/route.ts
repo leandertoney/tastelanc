@@ -28,6 +28,18 @@ export async function GET(request: Request) {
     }
 
     const svc = createServiceRoleClient();
+
+    // If market_id is a slug (not a UUID), look up the actual UUID
+    let marketUuid = marketId;
+    if (marketId && !marketId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+      const { data: market } = await svc
+        .from('markets')
+        .select('id')
+        .eq('slug', marketId)
+        .single();
+      marketUuid = market?.id || null;
+    }
+
     let query = svc
       .from('holiday_specials')
       .select(`
@@ -37,8 +49,8 @@ export async function GET(request: Request) {
       .eq('holiday_tag', holidayTag)
       .order('created_at', { ascending: false });
 
-    if (marketId) {
-      query = query.eq('restaurant.market_id', marketId);
+    if (marketUuid) {
+      query = query.eq('restaurant.market_id', marketUuid);
     }
 
     const { data, error } = await query;
