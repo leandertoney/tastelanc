@@ -43,8 +43,8 @@ export const PLANS: PlanConfig[] = [
   {
     name: 'Elite',
     pricing: [
-      { cost: 350, lengthLabel: '3 month', lengthMonths: 3, payout15: 53, payout20: 60, renewal15: 27, renewal20: 30 },
-      { cost: 650, lengthLabel: '6 month', lengthMonths: 6, payout15: 98, payout20: 130, renewal15: 49, renewal20: 60 },
+      { cost: 350, lengthLabel: '3 month', lengthMonths: 3, payout15: 53, payout20: 70, renewal15: 27, renewal20: 35 },
+      { cost: 600, lengthLabel: '6 month', lengthMonths: 6, payout15: 90, payout20: 120, renewal15: 45, renewal20: 60 },
       { cost: 1100, lengthLabel: '1 year',  lengthMonths: 12, payout15: 165, payout20: 220, renewal15: 83, renewal20: 110 },
     ],
   },

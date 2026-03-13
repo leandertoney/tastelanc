@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
-import { getPayPeriod, getCommissionPayout, getCurrentTier, TIER_RESET_DAYS } from '@/config/commission';
+import { getPayPeriod, getCurrentTier, TIER_RESET_DAYS } from '@/config/commission';
 
 export async function GET(request: Request) {
   try {
@@ -152,14 +152,11 @@ export async function POST(request: Request) {
 
     // Current signup count (including this one if it's not a renewal)
     const totalSignups = (signupsIn30Days || 0) + (is_renewal ? 0 : 1);
-    const commissionAmount = getCommissionPayout({
-      planName: plan_name,
-      lengthMonths: length_months,
-      isRenewal: is_renewal || false,
-      signupsInPeriod: totalSignups,
-    });
-
     const tier = getCurrentTier(totalSignups);
+
+    // Commission = actual sale amount × tier rate (renewals pay 50% of tier rate)
+    const effectiveRate = is_renewal ? tier.rate * 0.5 : tier.rate;
+    const commissionAmount = Math.round(Number(sale_amount) * effectiveRate);
 
     const { data: commission, error } = await serviceClient
       .from('sales_commissions')
