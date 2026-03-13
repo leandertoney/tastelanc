@@ -13,8 +13,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { LinearGradient } from 'expo-linear-gradient';
 import { getColors, getBrand, getSupabase, hasFeature } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
+import { withAlpha } from '../utils/colorUtils';
 import { radius, spacing } from '../constants/spacing';
 import { useMarket } from '../context/MarketContext';
 import { usePlatformSocialProof, usePersonalStats } from '../hooks';
@@ -22,12 +24,14 @@ import { useAuth } from '../hooks/useAuth';
 import type { RootStackParamList } from '../navigation/types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-type FilterType = 'all' | 'photos' | 'itineraries' | 'trending';
+type FilterType = 'all' | 'photos' | 'itineraries' | 'trending' | 'deals' | 'events';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const VIDEO_HEIGHT = Math.round(SCREEN_WIDTH * 0.56);
 const PHOTO_HEIGHT = Math.round(SCREEN_WIDTH * 0.85);
 const AD_HEIGHT = Math.round(SCREEN_WIDTH * 0.52);
+const EVENT_IMAGE_HEIGHT = Math.round(SCREEN_WIDTH * 0.5);
+const BLOG_IMAGE_HEIGHT = Math.round(SCREEN_WIDTH * 0.48);
 
 const CAPTION_TAG_LABELS: Record<string, string> = {
   must_try_dish: 'Must Try',
@@ -36,6 +40,34 @@ const CAPTION_TAG_LABELS: Record<string, string> = {
   hidden_gem: 'Hidden Gem',
   amazing_service: 'Great Service',
   go_to_spot: 'Go-To Spot',
+};
+
+const EVENT_TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  live_music: 'musical-notes',
+  dj: 'disc',
+  trivia: 'bulb',
+  karaoke: 'mic',
+  comedy: 'happy',
+  sports: 'football',
+  bingo: 'grid',
+  music_bingo: 'musical-notes',
+  poker: 'diamond',
+  promotion: 'megaphone',
+  other: 'calendar',
+};
+
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  live_music: 'Live Music',
+  dj: 'DJ Night',
+  trivia: 'Trivia',
+  karaoke: 'Karaoke',
+  comedy: 'Comedy',
+  sports: 'Sports',
+  bingo: 'Bingo',
+  music_bingo: 'Music Bingo',
+  poker: 'Poker',
+  promotion: 'Promo',
+  other: 'Event',
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -105,13 +137,77 @@ interface ReelsShelfItem {
   videos: VideoItem[];
 }
 
-type PulseItem = VideoItem | PhotoItem | ItineraryItem | BuzzItem | AdItem | ReelsShelfItem;
+interface SpecialItem {
+  kind: 'special';
+  id: string;
+  restaurantId: string;
+  restaurantName: string;
+  restaurantImage: string | null;
+  specialName: string;
+  description: string | null;
+  originalPrice: number | null;
+  specialPrice: number | null;
+  imageUrl: string | null;
+  date: string;
+}
+
+interface HappyHourItem {
+  kind: 'happy_hour';
+  id: string;
+  restaurantId: string;
+  restaurantName: string;
+  restaurantImage: string | null;
+  happyHourName: string;
+  startTime: string;
+  endTime: string;
+  dealPreview: string[];
+  date: string;
+}
+
+interface EventItem {
+  kind: 'event';
+  id: string;
+  restaurantId: string;
+  restaurantName: string;
+  eventName: string;
+  eventType: string;
+  performerName: string | null;
+  imageUrl: string | null;
+  startTime: string;
+  endTime: string | null;
+  date: string;
+}
+
+interface NewRestaurantItem {
+  kind: 'new_restaurant';
+  id: string;
+  restaurantId: string;
+  restaurantName: string;
+  coverImage: string | null;
+  category: string | null;
+  date: string;
+}
+
+interface BlogItem {
+  kind: 'blog';
+  id: string;
+  slug: string;
+  title: string;
+  summary: string;
+  coverImageUrl: string | null;
+  date: string;
+}
+
+type PulseItem =
+  | VideoItem | PhotoItem | ItineraryItem | BuzzItem | AdItem | ReelsShelfItem
+  | SpecialItem | HappyHourItem | EventItem | NewRestaurantItem | BlogItem;
 
 // ─── Data fetching ─────────────────────────────────────────────────────────────
 
 function usePulseFeed() {
   const { marketId } = useMarket();
   const supabase = getSupabase();
+  const includeHappyHours = hasFeature('happyHours');
 
   return useQuery({
     queryKey: ['pulseFeed', marketId],
@@ -136,17 +232,72 @@ function usePulseFeed() {
         .eq('is_active', true)
         .limit(4);
 
+      // ── New queries
+      let specialsQuery = supabase
+        .from('specials')
+        .select('id, name, description, original_price, special_price, image_url, days_of_week, created_at, restaurant:restaurants!inner(id, name, cover_image_url, market_id)')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      let eventsQuery = supabase
+        .from('events')
+        .select('id, name, event_type, performer_name, image_url, start_time, end_time, event_date, created_at, restaurant:restaurants!inner(id, name, market_id)')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      const twoWeeksAgo = new Date(Date.now() - 14 * 86400000).toISOString();
+      let newRestaurantsQuery = supabase
+        .from('restaurants')
+        .select('id, name, cover_image_url, categories, created_at, market_id')
+        .gte('created_at', twoWeeksAgo)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(8);
+
+      let blogQuery = supabase
+        .from('blog_posts')
+        .select('id, slug, title, summary, cover_image_url, published_at')
+        .eq('status', 'published')
+        .not('cover_image_url', 'is', null)
+        .order('published_at', { ascending: false, nullsFirst: false })
+        .limit(5);
+
+      // Market scoping
       if (marketId) {
         videosQuery = videosQuery.eq('restaurants.market_id', marketId);
         adsQuery = adsQuery.or(`market_id.is.null,market_id.eq.${marketId}`);
+        specialsQuery = specialsQuery.eq('restaurant.market_id', marketId);
+        eventsQuery = eventsQuery.eq('restaurant.market_id', marketId);
+        newRestaurantsQuery = newRestaurantsQuery.eq('market_id', marketId);
+        blogQuery = blogQuery.eq('market_id', marketId);
       }
 
       const buzzPromise = marketId
         ? supabase.rpc('get_restaurant_buzz', { p_market_id: marketId })
         : Promise.resolve({ data: [], error: null });
 
-      const [videosRes, adsRes, buzzRes, itinerariesRes] = await Promise.all([
+      // Happy hours (conditional)
+      const happyHoursPromise = includeHappyHours
+        ? supabase
+            .from('happy_hours')
+            .select('id, name, start_time, end_time, days_of_week, created_at, restaurant:restaurants!inner(id, name, cover_image_url, market_id), happy_hour_items(name)')
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
+            .limit(10)
+            .then((res) => {
+              // Apply market filter (can't chain .eq on already-built query in then)
+              if (marketId && res.data) {
+                res.data = res.data.filter((h: any) => h.restaurant?.market_id === marketId);
+              }
+              return res;
+            })
+        : Promise.resolve({ data: [], error: null });
+
+      const [videosRes, adsRes, buzzRes, itinerariesRes, specialsRes, eventsRes, newRestaurantsRes, blogRes, happyHoursRes] = await Promise.all([
         videosQuery, adsQuery, buzzPromise, itinerariesQuery,
+        specialsQuery, eventsQuery, newRestaurantsQuery, blogQuery, happyHoursPromise,
       ]);
 
       const items: PulseItem[] = [];
@@ -223,6 +374,83 @@ function usePulseFeed() {
         });
       });
 
+      // ── Specials
+      (specialsRes.data || []).slice(0, 6).forEach((s: any) => {
+        items.push({
+          kind: 'special',
+          id: `special-${s.id}`,
+          restaurantId: s.restaurant?.id,
+          restaurantName: s.restaurant?.name || 'Restaurant',
+          restaurantImage: s.restaurant?.cover_image_url || null,
+          specialName: s.name,
+          description: s.description || null,
+          originalPrice: s.original_price ? Number(s.original_price) : null,
+          specialPrice: s.special_price ? Number(s.special_price) : null,
+          imageUrl: s.image_url || null,
+          date: s.created_at,
+        });
+      });
+
+      // ── Happy Hours
+      (happyHoursRes.data || []).slice(0, 6).forEach((h: any) => {
+        const dealNames = (h.happy_hour_items || []).slice(0, 3).map((i: any) => i.name);
+        items.push({
+          kind: 'happy_hour',
+          id: `hh-${h.id}`,
+          restaurantId: h.restaurant?.id,
+          restaurantName: h.restaurant?.name || 'Restaurant',
+          restaurantImage: h.restaurant?.cover_image_url || null,
+          happyHourName: h.name || 'Happy Hour',
+          startTime: h.start_time,
+          endTime: h.end_time,
+          dealPreview: dealNames,
+          date: h.created_at,
+        });
+      });
+
+      // ── Events
+      (eventsRes.data || []).slice(0, 8).forEach((e: any) => {
+        items.push({
+          kind: 'event',
+          id: `event-${e.id}`,
+          restaurantId: e.restaurant?.id,
+          restaurantName: e.restaurant?.name || 'Venue',
+          eventName: e.name,
+          eventType: e.event_type || 'other',
+          performerName: e.performer_name || null,
+          imageUrl: e.image_url || null,
+          startTime: e.start_time,
+          endTime: e.end_time || null,
+          date: e.event_date || e.created_at,
+        });
+      });
+
+      // ── New Restaurants
+      (newRestaurantsRes.data || []).slice(0, 4).forEach((r: any) => {
+        items.push({
+          kind: 'new_restaurant',
+          id: `new-${r.id}`,
+          restaurantId: r.id,
+          restaurantName: r.name,
+          coverImage: r.cover_image_url || null,
+          category: Array.isArray(r.categories) && r.categories.length > 0 ? r.categories[0] : null,
+          date: r.created_at,
+        });
+      });
+
+      // ── Blog Posts
+      (blogRes.data || []).slice(0, 3).forEach((b: any) => {
+        items.push({
+          kind: 'blog',
+          id: `blog-${b.id}`,
+          slug: b.slug,
+          title: b.title,
+          summary: b.summary || '',
+          coverImageUrl: b.cover_image_url || null,
+          date: b.published_at || b.created_at,
+        });
+      });
+
       // Sort newest first
       items.sort((a, b) => {
         const aDate = 'date' in a ? a.date : '';
@@ -289,11 +517,20 @@ function formatTimeAgo(dateStr: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+function formatHHTime(time: string): string {
+  const [hours, minutes] = time.split(':');
+  const h = parseInt(hours, 10);
+  const suffix = h >= 12 ? 'PM' : 'AM';
+  const displayHour = h > 12 ? h - 12 : h === 0 ? 12 : h;
+  return minutes === '00' ? `${displayHour}${suffix}` : `${displayHour}:${minutes}${suffix}`;
+}
+
 // ─── Shared sub-components ────────────────────────────────────────────────────
 
 function PostHeader({
   avatarUri,
   avatarEmoji,
+  avatarIcon,
   avatarBg,
   title,
   subtitle,
@@ -301,6 +538,7 @@ function PostHeader({
 }: {
   avatarUri?: string | null;
   avatarEmoji?: string;
+  avatarIcon?: keyof typeof Ionicons.glyphMap;
   avatarBg?: string;
   title: string;
   subtitle: string;
@@ -315,6 +553,10 @@ function PostHeader({
       {avatarUri ? (
         <View style={styles.avatarCircle}>
           <Image source={{ uri: avatarUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+        </View>
+      ) : avatarIcon ? (
+        <View style={[styles.avatarCircle, styles.avatarEmojiCircle, { backgroundColor: avatarBg || colors.cardBgElevated }]}>
+          <Ionicons name={avatarIcon} size={18} color={colors.accent} />
         </View>
       ) : (
         <View style={[styles.avatarCircle, styles.avatarEmojiCircle, { backgroundColor: avatarBg || colors.cardBgElevated }]}>
@@ -585,6 +827,189 @@ function ReelsShelf({ item, onPress }: { item: ReelsShelfItem; onPress: (restaur
   );
 }
 
+// ─── NEW: Special Card ───────────────────────────────────────────────────────
+
+function SpecialCard({ item, onPress }: { item: SpecialItem; onPress: () => void }) {
+  const styles = useStyles();
+  const colors = getColors();
+
+  const priceText = item.specialPrice != null
+    ? `$${item.specialPrice}`
+    : null;
+  const originalText = item.originalPrice != null && item.specialPrice != null
+    ? `$${item.originalPrice}`
+    : null;
+
+  return (
+    <View style={styles.card}>
+      <PostHeader
+        avatarUri={item.restaurantImage}
+        avatarIcon={!item.restaurantImage ? 'pricetag' : undefined}
+        avatarBg={!item.restaurantImage ? withAlpha(colors.accent, 0.15) : undefined}
+        title={item.restaurantName}
+        subtitle={`New Special · ${formatTimeAgo(item.date)}`}
+      />
+      {item.imageUrl && (
+        <TouchableOpacity onPress={onPress} activeOpacity={0.95}>
+          <Image
+            source={{ uri: item.imageUrl }}
+            style={{ width: '100%', height: VIDEO_HEIGHT }}
+            resizeMode="cover"
+          />
+        </TouchableOpacity>
+      )}
+      <View style={styles.specialBody}>
+        <Text style={styles.specialName} numberOfLines={2}>{item.specialName}</Text>
+        {(priceText || originalText) && (
+          <View style={styles.priceRow}>
+            {originalText && (
+              <Text style={styles.originalPrice}>{originalText}</Text>
+            )}
+            {priceText && (
+              <Text style={[styles.specialPrice, { color: colors.accent }]}>{priceText}</Text>
+            )}
+          </View>
+        )}
+        {item.description && (
+          <Text style={styles.specialDesc} numberOfLines={2}>{item.description}</Text>
+        )}
+      </View>
+      <ActionBar onPress={onPress} ctaLabel="View Special" />
+    </View>
+  );
+}
+
+// ─── NEW: Happy Hour Card ────────────────────────────────────────────────────
+
+function HappyHourCard({ item, onPress }: { item: HappyHourItem; onPress: () => void }) {
+  const styles = useStyles();
+  const colors = getColors();
+
+  const timeRange = `${formatHHTime(item.startTime)} - ${formatHHTime(item.endTime)}`;
+
+  return (
+    <View style={styles.card}>
+      <PostHeader
+        avatarUri={item.restaurantImage}
+        avatarIcon={!item.restaurantImage ? 'beer' : undefined}
+        avatarBg={!item.restaurantImage ? withAlpha(colors.accent, 0.15) : undefined}
+        title={item.restaurantName}
+        subtitle={`Happy Hour · ${timeRange}`}
+      />
+      {item.dealPreview.length > 0 && (
+        <View style={styles.dealChipsRow}>
+          {item.dealPreview.map((deal, i) => (
+            <View key={i} style={[styles.dealChip, { backgroundColor: withAlpha(colors.accent, 0.12) }]}>
+              <Text style={[styles.dealChipText, { color: colors.accent }]} numberOfLines={1}>{deal}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+      <ActionBar onPress={onPress} ctaLabel="View Happy Hour" />
+    </View>
+  );
+}
+
+// ─── NEW: Event Card ─────────────────────────────────────────────────────────
+
+function EventCard({ item, onPress }: { item: EventItem; onPress: () => void }) {
+  const styles = useStyles();
+  const colors = getColors();
+
+  const icon = EVENT_TYPE_ICONS[item.eventType] || EVENT_TYPE_ICONS.other;
+  const typeLabel = EVENT_TYPE_LABELS[item.eventType] || 'Event';
+  const performerAt = item.performerName
+    ? `${item.performerName} at ${item.restaurantName}`
+    : item.restaurantName;
+  const timeStr = formatHHTime(item.startTime);
+
+  return (
+    <View style={styles.card}>
+      <PostHeader
+        avatarIcon={icon}
+        avatarBg={withAlpha(colors.accent, 0.15)}
+        title={item.eventName}
+        subtitle={`${typeLabel} · ${timeStr}`}
+        time={formatTimeAgo(item.date)}
+      />
+      {item.imageUrl && (
+        <TouchableOpacity onPress={onPress} activeOpacity={0.95}>
+          <Image
+            source={{ uri: item.imageUrl }}
+            style={{ width: '100%', height: EVENT_IMAGE_HEIGHT }}
+            resizeMode="cover"
+          />
+        </TouchableOpacity>
+      )}
+      <Text style={styles.postCaption} numberOfLines={1}>{performerAt}</Text>
+      <ActionBar onPress={onPress} ctaLabel="View Event" />
+    </View>
+  );
+}
+
+// ─── NEW: New Restaurant Row ─────────────────────────────────────────────────
+
+function NewRestaurantRow({ item, onPress }: { item: NewRestaurantItem; onPress: () => void }) {
+  const styles = useStyles();
+  const colors = getColors();
+
+  const subtitle = item.category
+    ? `Just added · ${item.category}`
+    : 'Just added';
+
+  return (
+    <TouchableOpacity style={styles.compactRow} onPress={onPress} activeOpacity={0.85}>
+      <PostHeader
+        avatarUri={item.coverImage}
+        avatarIcon={!item.coverImage ? 'sparkles' : undefined}
+        avatarBg={!item.coverImage ? withAlpha(colors.accent, 0.15) : undefined}
+        title={item.restaurantName}
+        subtitle={subtitle}
+        time={formatTimeAgo(item.date)}
+      />
+    </TouchableOpacity>
+  );
+}
+
+// ─── NEW: Blog Card ──────────────────────────────────────────────────────────
+
+function BlogCard({ item, onPress }: { item: BlogItem; onPress: () => void }) {
+  const styles = useStyles();
+  const brand = getBrand();
+
+  return (
+    <View style={styles.card}>
+      <PostHeader
+        avatarEmoji="📝"
+        avatarBg="rgba(130, 100, 220, 0.18)"
+        title="From the Editor"
+        subtitle={`${brand.aiName} · ${formatTimeAgo(item.date)}`}
+      />
+      {item.coverImageUrl && (
+        <TouchableOpacity onPress={onPress} activeOpacity={0.95}>
+          <View style={{ width: '100%', height: BLOG_IMAGE_HEIGHT }}>
+            <Image
+              source={{ uri: item.coverImageUrl }}
+              style={{ width: '100%', height: '100%' }}
+              resizeMode="cover"
+            />
+            <LinearGradient
+              colors={['transparent', 'rgba(0,0,0,0.75)']}
+              style={styles.blogGradient}
+            >
+              <Text style={styles.blogOverlayTitle} numberOfLines={2}>{item.title}</Text>
+            </LinearGradient>
+          </View>
+        </TouchableOpacity>
+      )}
+      {!item.coverImageUrl && (
+        <Text style={styles.postCaption} numberOfLines={2}>{item.title}</Text>
+      )}
+      <ActionBar onPress={onPress} ctaLabel="Read More" />
+    </View>
+  );
+}
+
 // ─── Social proof header ──────────────────────────────────────────────────────
 
 function SceneStatsHeader() {
@@ -636,9 +1061,11 @@ function SceneStatsHeader() {
 
 const FILTERS: { key: FilterType; label: string }[] = [
   { key: 'all', label: 'All' },
-  { key: 'trending', label: '🔥 Trending' },
-  { key: 'photos', label: '📸 Photos' },
-  { key: 'itineraries', label: '🗓️ Plans' },
+  { key: 'trending', label: 'Trending' },
+  { key: 'deals', label: 'Deals' },
+  { key: 'events', label: 'Events' },
+  { key: 'photos', label: 'Photos' },
+  { key: 'itineraries', label: 'Plans' },
 ];
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -656,9 +1083,12 @@ export default function SceneScreen() {
   const { data: allItems = [], isLoading, refetch } = usePulseFeed();
 
   const filteredItems = allItems.filter((item) => {
+    if (item.kind === 'ad') return true; // Ads always show
     if (item.kind === 'reels_shelf') return activeFilter === 'all' || activeFilter === 'photos';
     if (activeFilter === 'all') return true;
-    if (activeFilter === 'trending') return item.kind === 'buzz';
+    if (activeFilter === 'trending') return item.kind === 'buzz' || item.kind === 'new_restaurant';
+    if (activeFilter === 'deals') return item.kind === 'special' || item.kind === 'happy_hour';
+    if (activeFilter === 'events') return item.kind === 'event';
     if (activeFilter === 'photos') return item.kind === 'video' || item.kind === 'photo';
     if (activeFilter === 'itineraries') return item.kind === 'itinerary';
     return true;
@@ -689,8 +1119,29 @@ export default function SceneScreen() {
         return <BuzzRow item={item} onPress={() => handleItemPress(item.restaurantId)} />;
       case 'ad':
         return <AdCard item={item} onPress={() => handleItemPress(item.restaurantId)} />;
+      case 'special':
+        return <SpecialCard item={item} onPress={() => handleItemPress(item.restaurantId)} />;
+      case 'happy_hour':
+        return <HappyHourCard item={item} onPress={() => handleItemPress(item.restaurantId)} />;
+      case 'event':
+        return <EventCard item={item} onPress={() => handleItemPress(item.restaurantId)} />;
+      case 'new_restaurant':
+        return <NewRestaurantRow item={item} onPress={() => handleItemPress(item.restaurantId)} />;
+      case 'blog':
+        return <BlogCard item={item} onPress={() => navigation.navigate('BlogDetail', { slug: item.slug })} />;
     }
   };
+
+  const emptyMessage = (() => {
+    switch (activeFilter) {
+      case 'photos': return 'No photos or videos yet. Be the first!';
+      case 'itineraries': return 'No shared day plans yet. Plan your day and share it!';
+      case 'trending': return 'No trending spots right now — check back soon.';
+      case 'deals': return 'No specials or happy hours yet — check back soon.';
+      case 'events': return 'No events posted yet — check back soon.';
+      default: return `Be the first to contribute in ${brand.cityName}!`;
+    }
+  })();
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -723,15 +1174,7 @@ export default function SceneScreen() {
         <View style={styles.emptyContainer}>
           <Ionicons name="compass-outline" size={52} color={colors.textMuted} />
           <Text style={styles.emptyTitle}>Nothing yet</Text>
-          <Text style={styles.emptyText}>
-            {activeFilter === 'photos'
-              ? 'No photos or videos yet. Be the first!'
-              : activeFilter === 'itineraries'
-              ? 'No shared day plans yet. Plan your day and share it!'
-              : activeFilter === 'trending'
-              ? 'No trending spots right now — check back soon.'
-              : `Be the first to contribute in ${brand.cityName}!`}
-          </Text>
+          <Text style={styles.emptyText}>{emptyMessage}</Text>
         </View>
       ) : (
         <FlatList
@@ -916,7 +1359,7 @@ const useStyles = createLazyStyles((colors) => ({
     textTransform: 'capitalize' as const,
   },
 
-  // ── Compact notification rows (buzz)
+  // ── Compact notification rows (buzz, new restaurant)
   compactRow: {
     backgroundColor: colors.cardBg,
     borderTopWidth: 1, borderBottomWidth: 1,
@@ -972,6 +1415,73 @@ const useStyles = createLazyStyles((colors) => ({
   },
   reelName: {
     fontSize: 11, color: colors.textMuted, lineHeight: 15,
+  },
+
+  // ── Special card
+  specialBody: {
+    paddingHorizontal: spacing.md,
+    paddingTop: 4,
+    paddingBottom: 4,
+  },
+  specialName: {
+    fontSize: 16, fontWeight: '700' as const,
+    color: colors.text,
+    marginBottom: 4,
+  },
+  priceRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+    marginBottom: 4,
+  },
+  originalPrice: {
+    fontSize: 14,
+    color: colors.textMuted,
+    textDecorationLine: 'line-through' as const,
+  },
+  specialPrice: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+  },
+  specialDesc: {
+    fontSize: 13,
+    color: colors.textMuted,
+    lineHeight: 18,
+  },
+
+  // ── Happy hour card
+  dealChipsRow: {
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    paddingHorizontal: spacing.md,
+    gap: 6,
+    paddingBottom: 4,
+  },
+  dealChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: radius.full,
+  },
+  dealChipText: {
+    fontSize: 12,
+    fontWeight: '600' as const,
+  },
+
+  // ── Blog card
+  blogGradient: {
+    position: 'absolute' as const,
+    bottom: 0, left: 0, right: 0,
+    paddingHorizontal: spacing.md,
+    paddingTop: 40,
+    paddingBottom: 14,
+  },
+  blogOverlayTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
 
   // ── Empty state

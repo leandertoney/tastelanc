@@ -37,10 +37,6 @@ export { default as VisitInsightsScreen } from './VisitInsightsScreen';
 // Feature request
 export { default as FeatureRequestScreen } from './FeatureRequestScreen';
 
-// Squad screens
-export { default as SquadBuilderScreen } from './SquadBuilderScreen';
-export { default as SquadVoteScreen } from './SquadVoteScreen';
-
 // Itinerary screens
 export { default as ItineraryBuilderScreen } from './ItineraryBuilderScreen';
 export { default as ItineraryCardScreen } from './ItineraryCardScreen';

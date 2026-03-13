@@ -54,7 +54,6 @@ export { default as TrendingBadge } from './TrendingBadge';
 export type { BadgeType } from './TrendingBadge';
 export { default as PromoCard } from './PromoCard';
 export { default as PlanYourDayCard } from './PlanYourDayCard';
-export { default as SquadPickerCard } from './SquadPickerCard';
 export { default as ItineraryTimeline } from './ItineraryTimeline';
 export { default as ItineraryTimeSlotCard } from './ItineraryTimeSlotCard';
 export { default as PersonalityDescription } from './PersonalityDescription';

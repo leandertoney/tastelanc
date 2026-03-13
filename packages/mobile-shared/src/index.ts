@@ -190,7 +190,6 @@ export type { EventWithRestaurant } from './components/EntertainmentListItem';
 export { default as MapRestaurantCard } from './components/MapRestaurantCard';
 export { default as SpotifyStyleListItem } from './components/SpotifyStyleListItem';
 export { default as EventFlyerCard } from './components/EventFlyerCard';
-export { default as SquadPickerCard } from './components/SquadPickerCard';
 export { default as PartnerCTACard } from './components/PartnerCTACard';
 export type { ContactCategory } from './components/PartnerCTACard';
 export { default as PlanYourDayCard } from './components/PlanYourDayCard';

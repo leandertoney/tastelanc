@@ -16,8 +16,6 @@ import EventDetailScreen from '../screens/EventDetailScreen';
 import FeatureRequestScreen from '../screens/FeatureRequestScreen';
 import ItineraryBuilderScreen from '../screens/ItineraryBuilderScreen';
 import ItineraryCardScreen from '../screens/ItineraryCardScreen';
-import SquadBuilderScreen from '../screens/SquadBuilderScreen';
-import SquadVoteScreen from '../screens/SquadVoteScreen';
 import MyRestaurantsScreen from '../screens/MyRestaurantsScreen';
 import WishlistScreen from '../screens/WishlistScreen';
 import BlogViewAllScreen from '../screens/BlogViewAllScreen';
@@ -51,8 +49,6 @@ const SafeEventDetail = withScreenErrorBoundary(EventDetailScreen, 'EventDetail'
 const SafeFeatureRequest = withScreenErrorBoundary(FeatureRequestScreen, 'FeatureRequest');
 const SafeItineraryBuilder = withScreenErrorBoundary(ItineraryBuilderScreen, 'ItineraryBuilder');
 const SafeItineraryCard = withScreenErrorBoundary(ItineraryCardScreen, 'ItineraryCard');
-const SafeSquadBuilder = withScreenErrorBoundary(SquadBuilderScreen, 'SquadBuilder');
-const SafeSquadVote = withScreenErrorBoundary(SquadVoteScreen, 'SquadVote');
 const SafeMyRestaurants = withScreenErrorBoundary(MyRestaurantsScreen, 'MyRestaurants');
 const SafeWishlist = withScreenErrorBoundary(WishlistScreen, 'Wishlist');
 const SafeBlogViewAll = withScreenErrorBoundary(BlogViewAllScreen, 'BlogViewAll');
@@ -166,17 +162,6 @@ export default function RootNavigator() {
       <Stack.Screen
         name="ItineraryCard"
         component={SafeItineraryCard}
-        options={{ headerShown: false }}
-      />
-      {/* Squad Picker */}
-      <Stack.Screen
-        name="SquadBuilder"
-        component={SafeSquadBuilder}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="SquadVote"
-        component={SafeSquadVote}
         options={{ headerShown: false }}
       />
       {/* Blog */}

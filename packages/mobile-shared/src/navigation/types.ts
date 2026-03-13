@@ -71,8 +71,6 @@ export type RootStackParamList = {
   };
   // Holiday / Seasonal
   StPatricksDay: undefined;
-  // Squad
-  SquadVote: { pollId: string };
   // Itinerary
   ItineraryBuilder: { date?: string };
   ItineraryCard: {
