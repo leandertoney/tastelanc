@@ -2,6 +2,36 @@
 
 This file contains important context for AI coding assistants working on the TasteLanc project.
 
+## Git Workflow Rules (MANDATORY)
+
+**COMMIT but DO NOT PUSH unless the user explicitly says "push" or "push to main".**
+
+- When asked to "commit", create the commit locally only — never push
+- When asked to "commit and push", then push
+- This allows multiple agents to work in parallel without triggering redundant deploys
+- The user will push manually or ask one agent to push all accumulated commits
+
+## Domain Isolation (MANDATORY)
+
+At the start of every task, identify which domain the task falls into and declare it. Then **strictly** stay within that domain for the entire conversation.
+
+**Domains and their file boundaries:**
+
+| Domain | Directories | Description |
+|---|---|---|
+| Mobile Apps | `apps/mobile/`, `apps/mobile-cumberland/`, `apps/mobile-fayetteville/`, `packages/mobile-shared/` | All three mobile apps and shared mobile code |
+| Dashboard & CRM | `apps/web/app/(sales)/`, `apps/web/app/(dashboard)/`, `apps/web/app/api/sales/`, `apps/web/app/api/dashboard/`, `apps/web/config/commission.ts` | Sales CRM, restaurant dashboard, commissions |
+| Admin Panel | `apps/web/app/(admin)/`, `apps/web/app/api/admin/` | Admin-only pages and routes |
+| Backend / Infra | `supabase/`, `apps/web/lib/notifications/`, `apps/web/netlify/` | Migrations, edge functions, cron jobs, notifications |
+| New Features | New directories only (e.g., `apps/web/app/(game)/`) | Greenfield work that doesn't touch existing code |
+| Shared / Auth | `apps/web/lib/auth/`, `apps/web/contexts/`, `packages/shared/` | Shared utilities, auth, contexts — **only one agent at a time** |
+
+**Rules:**
+1. At the start of your task, state: "This task is in the **[Domain]** domain. I will only modify files in [directories]."
+2. If the task requires files outside your domain, **STOP and tell the user** — do not silently cross boundaries
+3. If the user's request spans multiple domains, ask them to split it into separate tasks
+4. **Shared / Auth is a protected domain** — never modify these files as a side effect of another domain's task without explicit user approval
+
 ## Database & Credentials
 
 **IMPORTANT: Before asking for database passwords or credentials, check here first!**
