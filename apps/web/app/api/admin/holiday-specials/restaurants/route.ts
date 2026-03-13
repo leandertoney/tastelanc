@@ -14,7 +14,8 @@ export async function GET() {
       .from('restaurants')
       .select('id, name, market_id')
       .eq('is_active', true)
-      .order('name');
+      .order('name')
+      .limit(10000);
 
     if (error) {
       return NextResponse.json({ error: 'Failed to fetch restaurants' }, { status: 500 });
