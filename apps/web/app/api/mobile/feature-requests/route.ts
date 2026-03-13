@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createMobileClient } from '@/lib/supabase/mobile-auth';
 import { sendEmail } from '@/lib/resend';
 
 export async function POST(request: Request) {
@@ -30,7 +30,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = createMobileClient(request);
+    if (!supabase) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     // Store in Supabase
     const { data, error } = await supabase

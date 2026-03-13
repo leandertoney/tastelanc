@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createMobileClient } from '@/lib/supabase/mobile-auth';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
 
@@ -24,7 +24,10 @@ export async function GET(request: Request) {
     const marketId = searchParams.get('market_id');
     const limit = parseInt(searchParams.get('limit') || '50', 10);
 
-    const supabase = await createClient();
+    const supabase = createMobileClient(request);
+    if (!supabase) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const today = new Date().toISOString().split('T')[0];
 
     // Build separate queries for restaurant events and self-promoter events

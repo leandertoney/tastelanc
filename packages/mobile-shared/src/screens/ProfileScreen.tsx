@@ -23,10 +23,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMarket } from '../context/MarketContext';
 import { useRewardsBalance } from '../hooks/useRewards';
 import { useUploadAvatar } from '../hooks/useProfile';
+import { useUserRecommendations } from '../hooks/useVideoRecommendations';
 import type { RootStackParamList } from '../navigation/types';
 import ProfileStatsRow from '../components/ProfileStatsRow';
-import LockedFeatureCard from '../components/LockedFeatureCard';
 import HowToEarnSection from '../components/rewards/HowToEarnSection';
+import { CAPTION_TAG_LABELS } from '../types/database';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -191,6 +192,7 @@ export default function ProfileScreen() {
 
   const { refetch: refetchBalance } = useRewardsBalance();
   const { data: activityItems = [], isLoading: isLoadingActivity, refetch: refetchActivity } = useRecentActivity();
+  const { data: myRecs = [], refetch: refetchRecs } = useUserRecommendations(userId ?? null);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -199,12 +201,13 @@ export default function ProfileScreen() {
     await Promise.all([
       refetchBalance(),
       refetchActivity(),
+      refetchRecs(),
       queryClient.invalidateQueries({ queryKey: ['profileStats'] }),
       queryClient.invalidateQueries({ queryKey: ['checkinCount'] }),
       queryClient.invalidateQueries({ queryKey: ['displayName'] }),
     ]);
     setIsRefreshing(false);
-  }, [refetchBalance, refetchActivity]);
+  }, [refetchBalance, refetchActivity, refetchRecs]);
 
   const handleAvatarPress = useCallback(async () => {
     if (isAnonymous) {
@@ -336,32 +339,57 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Your Perks */}
+        {/* Your Recs */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Your Perks</Text>
+          <Text style={styles.sectionTitle}>Your Recs</Text>
         </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.featuresRow}
-        >
-          <LockedFeatureCard
-            title="Exclusive Deals"
-            description="Member-only discounts"
-            icon="pricetag"
-            isLocked={false}
-            comingSoon
-            onPress={() => {}}
-          />
-          <LockedFeatureCard
-            title="Early Access"
-            description="First to know about events"
-            icon="flash"
-            isLocked={false}
-            comingSoon
-            onPress={() => {}}
-          />
-        </ScrollView>
+        {myRecs.length === 0 ? (
+          <View style={styles.recsEmpty}>
+            <Ionicons name="videocam-outline" size={32} color={colors.textMuted} />
+            <Text style={styles.recsEmptyTitle}>No Recs Yet</Text>
+            <Text style={styles.recsEmptyText}>
+              Record a 60-second video rec at any restaurant to see it here!
+            </Text>
+          </View>
+        ) : (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.recsRow}
+          >
+            {myRecs.map((rec) => (
+              <TouchableOpacity
+                key={rec.id}
+                style={styles.recCard}
+                activeOpacity={0.85}
+                onPress={() => navigation.navigate('RestaurantDetail', { id: rec.restaurant_id })}
+              >
+                {rec.thumbnail_url ? (
+                  <Image source={{ uri: rec.thumbnail_url }} style={styles.recThumb} resizeMode="cover" />
+                ) : (
+                  <View style={[styles.recThumb, styles.recThumbPlaceholder]}>
+                    <Ionicons name="videocam" size={28} color={colors.textMuted} />
+                  </View>
+                )}
+                <View style={styles.recOverlay}>
+                  {rec.caption_tag && (
+                    <View style={styles.recTagBadge}>
+                      <Text style={styles.recTagText}>
+                        {CAPTION_TAG_LABELS[rec.caption_tag] || rec.caption_tag}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={styles.recStats}>
+                    <Ionicons name="eye" size={11} color="#fff" />
+                    <Text style={styles.recStatText}>{rec.view_count || 0}</Text>
+                    <Ionicons name="heart" size={11} color="#fff" style={{ marginLeft: 6 }} />
+                    <Text style={styles.recStatText}>{rec.like_count || 0}</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
 
         {/* Recent Activity */}
         <View style={styles.sectionHeader}>
@@ -494,7 +522,58 @@ const useStyles = createLazyStyles((colors) => ({
     color: colors.text,
   },
   quickLinkDivider: { width: 1, backgroundColor: colors.border },
-  featuresRow: { paddingHorizontal: spacing.md, gap: 12 },
+  recsRow: { paddingHorizontal: spacing.md, gap: 12 },
+  recsEmpty: {
+    alignItems: 'center' as const,
+    paddingVertical: 24,
+    paddingHorizontal: spacing.lg,
+    gap: 8,
+  },
+  recsEmptyTitle: { fontSize: 15, fontWeight: '600' as const, color: colors.text },
+  recsEmptyText: { fontSize: 13, color: colors.textMuted, textAlign: 'center' as const },
+  recCard: {
+    width: 120,
+    height: 170,
+    borderRadius: radius.md,
+    overflow: 'hidden' as const,
+    backgroundColor: colors.cardBg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  recThumb: {
+    width: '100%' as const,
+    height: '100%' as const,
+  },
+  recThumbPlaceholder: {
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    backgroundColor: colors.primaryLight,
+  },
+  recOverlay: {
+    position: 'absolute' as const,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 6,
+    paddingBottom: 6,
+    paddingTop: 20,
+    background: 'transparent',
+  },
+  recTagBadge: {
+    alignSelf: 'flex-start' as const,
+    backgroundColor: colors.accent,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  recTagText: { fontSize: 9, fontWeight: '700' as const, color: colors.textOnAccent },
+  recStats: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 3,
+  },
+  recStatText: { fontSize: 10, fontWeight: '600' as const, color: '#fff' },
   historyContainer: { paddingHorizontal: spacing.md },
   activityRow: {
     flexDirection: 'row' as const,
