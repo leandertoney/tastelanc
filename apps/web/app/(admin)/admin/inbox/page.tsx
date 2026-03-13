@@ -52,6 +52,7 @@ interface ThreadMessage {
   to_email: string;
   subject: string | null;
   body_text: string | null;
+  body_html: string | null;
   headline: string | null;
   timestamp: string;
   lead_id: string | null;
@@ -87,6 +88,46 @@ function formatTimestamp(dateStr: string) {
     minute: '2-digit',
     hour12: true,
   });
+}
+
+/** Strip quoted reply content from an email, returning only the new message */
+function stripQuotedReply(text: string): string {
+  const lines = text.split('\n');
+  const cutLines: number[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (/^On .+ wrote:$/i.test(line)) { cutLines.push(i); break; }
+    if (/^-{2,}\s*(Forwarded|Original) Message/i.test(line)) { cutLines.push(i); break; }
+    if (/^_{5,}/.test(line) || /^-{5,}$/.test(line)) { cutLines.push(i); break; }
+    if (/^From:\s/.test(line) && i + 1 < lines.length && /^(Sent|Date):\s/.test(lines[i + 1].trim())) { cutLines.push(i); break; }
+  }
+
+  const result = cutLines.length > 0
+    ? lines.slice(0, cutLines[0]).join('\n')
+    : text;
+
+  return result.replace(/(\n\s*>.*)+\s*$/, '').trim();
+}
+
+/** Extract just the reply text from an HTML email body */
+function extractReplyFromHtml(html: string, plainText: string | null): string {
+  if (plainText) return stripQuotedReply(plainText);
+
+  const cleaned = html
+    .replace(/<blockquote[\s\S]*?<\/blockquote>/gi, '')
+    .replace(/<div class="gmail_quote"[\s\S]*$/gi, '')
+    .replace(/<div id="(appendonsend|divRplyFwdMsg)"[\s\S]*$/gi, '')
+    .replace(/<hr[\s/>][\s\S]*$/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return stripQuotedReply(cleaned);
 }
 
 export default function AdminInboxPage() {
@@ -723,11 +764,16 @@ export default function AdminInboxPage() {
                         {msg.subject && (
                           <p className="text-xs font-medium text-gray-300 mb-1">{msg.subject}</p>
                         )}
-                        {msg.body_text && (
-                          <p className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">
-                            {msg.body_text}
-                          </p>
-                        )}
+                        {(() => {
+                          const cleanText = msg.direction === 'received'
+                            ? extractReplyFromHtml(msg.body_html || '', msg.body_text)
+                            : msg.body_text ? stripQuotedReply(msg.body_text) : '';
+                          return cleanText ? (
+                            <p className={`text-sm whitespace-pre-wrap leading-relaxed ${msg.direction === 'received' ? 'text-white' : 'text-gray-200'}`}>
+                              {cleanText}
+                            </p>
+                          ) : null;
+                        })()}
                         {msg.attachments && msg.attachments.length > 0 && (
                           <ReadonlyAttachmentChips attachments={msg.attachments} />
                         )}

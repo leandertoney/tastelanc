@@ -18,6 +18,34 @@ const CATEGORY_CONFIG: Record<string, { label: string; className: string }> = {
   other: { label: 'Other', className: 'bg-gray-500/20 text-gray-400' },
 };
 
+/** Strip quoted reply content from an email */
+function stripQuotedReply(text: string): string {
+  const lines = text.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (/^On .+ wrote:$/i.test(line)) return lines.slice(0, i).join('\n').replace(/(\n\s*>.*)+\s*$/, '').trim();
+    if (/^-{2,}\s*(Forwarded|Original) Message/i.test(line)) return lines.slice(0, i).join('\n').replace(/(\n\s*>.*)+\s*$/, '').trim();
+    if (/^_{5,}/.test(line) || /^-{5,}$/.test(line)) return lines.slice(0, i).join('\n').replace(/(\n\s*>.*)+\s*$/, '').trim();
+    if (/^From:\s/.test(line) && i + 1 < lines.length && /^(Sent|Date):\s/.test(lines[i + 1].trim())) return lines.slice(0, i).join('\n').replace(/(\n\s*>.*)+\s*$/, '').trim();
+  }
+  return text.replace(/(\n\s*>.*)+\s*$/, '').trim();
+}
+
+/** Extract just the reply text from an HTML email body */
+function extractCleanBody(bodyText: string | null, bodyHtml: string | null): string {
+  if (bodyText) return stripQuotedReply(bodyText);
+  if (!bodyHtml) return '';
+  const cleaned = bodyHtml
+    .replace(/<blockquote[\s\S]*?<\/blockquote>/gi, '')
+    .replace(/<div class="gmail_quote"[\s\S]*$/gi, '')
+    .replace(/<div id="(appendonsend|divRplyFwdMsg)"[\s\S]*$/gi, '')
+    .replace(/<hr[\s/>][\s\S]*$/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ').trim();
+  return stripQuotedReply(cleaned);
+}
+
 function getRelativeTime(dateStr: string): string {
   const now = Date.now();
   const then = new Date(dateStr).getTime();
@@ -96,7 +124,7 @@ export default function InboxEmailCard({
 
           {!expanded && email.body_text && (
             <p className="text-xs text-gray-500 truncate mt-0.5">
-              {email.body_text.slice(0, 120)}
+              {extractCleanBody(email.body_text, email.body_html).slice(0, 120)}
             </p>
           )}
         </div>
@@ -121,7 +149,7 @@ export default function InboxEmailCard({
           </div>
 
           <div className="bg-tastelanc-surface-light rounded-lg p-4 text-sm text-gray-300 whitespace-pre-wrap max-h-80 overflow-y-auto">
-            {email.body_text || email.body_html || '(empty body)'}
+            {extractCleanBody(email.body_text, email.body_html) || '(empty body)'}
           </div>
 
           {hasAttachments && (

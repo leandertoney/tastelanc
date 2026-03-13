@@ -757,16 +757,18 @@ function InboxPage() {
                         {msg.subject && (
                           <p className="text-xs font-medium text-gray-300 mb-1">{msg.subject}</p>
                         )}
-                        {msg.direction === 'received' ? (
-                          // Received: strip quoted reply, show only new content as plain text
-                          <p className="text-sm text-white whitespace-pre-wrap leading-relaxed">
-                            {extractReplyFromHtml(msg.body_html || '', msg.body_text) || '(empty message)'}
-                          </p>
-                        ) : msg.body_text ? (
-                          <p className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">
-                            {msg.body_text}
-                          </p>
-                        ) : null}
+                        {(() => {
+                          const cleanText = msg.direction === 'received'
+                            ? extractReplyFromHtml(msg.body_html || '', msg.body_text)
+                            : msg.body_text ? stripQuotedReply(msg.body_text) : '';
+                          return cleanText ? (
+                            <p className={`text-sm whitespace-pre-wrap leading-relaxed ${msg.direction === 'received' ? 'text-white' : 'text-gray-200'}`}>
+                              {cleanText}
+                            </p>
+                          ) : (
+                            <p className="text-sm text-gray-500">(empty message)</p>
+                          );
+                        })()}
                         {msg.attachments && msg.attachments.length > 0 && (
                           <ReadonlyAttachmentChips attachments={msg.attachments} />
                         )}
