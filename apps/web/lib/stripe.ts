@@ -125,5 +125,46 @@ export const DURATION_LABELS: Record<string, string> = {
   'yearly': '1 Year',
 };
 
+// Per-market Stripe clients for admin dashboard (queries all accounts)
+// Each market has its own Stripe account with its own secret key.
+// The primary market uses STRIPE_SECRET_KEY, additional markets use STRIPE_SECRET_KEY_<SLUG>.
+const MARKET_STRIPE_ENV_KEYS: Record<string, string> = {
+  'cumberland-pa': 'STRIPE_SECRET_KEY_CUMBERLAND',
+  'fayetteville-nc': 'STRIPE_SECRET_KEY_FAYETTEVILLE',
+};
+
+export interface MarketStripeClient {
+  marketSlug: string;
+  stripe: Stripe;
+}
+
+/** Returns Stripe clients for all markets that have a configured secret key. */
+export function getAllStripeClients(): MarketStripeClient[] {
+  const clients: MarketStripeClient[] = [];
+
+  // Primary market (from STRIPE_SECRET_KEY)
+  try {
+    clients.push({ marketSlug: 'lancaster-pa', stripe: getStripe() });
+  } catch {
+    // No primary key configured
+  }
+
+  // Additional markets
+  for (const [slug, envKey] of Object.entries(MARKET_STRIPE_ENV_KEYS)) {
+    const key = process.env[envKey];
+    if (key) {
+      clients.push({
+        marketSlug: slug,
+        stripe: new Stripe(key, {
+          apiVersion: '2026-02-25.clover' as Stripe.LatestApiVersion,
+          typescript: true,
+        }),
+      });
+    }
+  }
+
+  return clients;
+}
+
 // Legacy support - keep for existing code
 export const PRICE_IDS = RESTAURANT_PRICE_IDS;

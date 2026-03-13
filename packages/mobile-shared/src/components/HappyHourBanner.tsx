@@ -31,24 +31,29 @@ export default function HappyHourBanner({
   const brand = getBrand();
   const styles = useStyles();
 
+  // On image banners, text sits on a dark overlay — always use white for legibility
+  const hasImage = !!imageUrl;
+  const dealColor = hasImage ? '#FFFFFF' : colors.text;
+  const nameColor = hasImage ? 'rgba(255,255,255,0.8)' : colors.textMuted;
+
   const DealText = dealOpacity ? (
     <Animated.View style={{ opacity: dealOpacity }}>
-      <Text style={[styles.deal, fullWidth && styles.dealLarge]} numberOfLines={1}>
+      <Text style={[styles.deal, fullWidth && styles.dealLarge, { color: dealColor }]} numberOfLines={1}>
         {deal}
       </Text>
       {deal2 && (
-        <Text style={[styles.deal, fullWidth && styles.dealLarge]} numberOfLines={1}>
+        <Text style={[styles.deal, fullWidth && styles.dealLarge, { color: dealColor }]} numberOfLines={1}>
           {deal2}
         </Text>
       )}
     </Animated.View>
   ) : (
     <View>
-      <Text style={[styles.deal, fullWidth && styles.dealLarge]} numberOfLines={1}>
+      <Text style={[styles.deal, fullWidth && styles.dealLarge, { color: dealColor }]} numberOfLines={1}>
         {deal}
       </Text>
       {deal2 && (
-        <Text style={[styles.deal, fullWidth && styles.dealLarge]} numberOfLines={1}>
+        <Text style={[styles.deal, fullWidth && styles.dealLarge, { color: dealColor }]} numberOfLines={1}>
           {deal2}
         </Text>
       )}
@@ -64,16 +69,16 @@ export default function HappyHourBanner({
             <>
               <Ionicons name="star" size={9} color={colors.gold} />
               <Text style={styles.pickLabel}>{brand.pickBadgeLabel}</Text>
-              <Text style={styles.pickDot}>·</Text>
+              <Text style={[styles.pickDot, hasImage && { color: 'rgba(255,255,255,0.6)' }]}>·</Text>
             </>
           )}
-          <Text style={styles.restaurantName} numberOfLines={1}>
+          <Text style={[styles.restaurantName, { color: nameColor }]} numberOfLines={1}>
             {restaurantName}
           </Text>
         </View>
       </View>
       <View style={styles.rightSection}>
-        <Ionicons name="time-outline" size={14} color={colors.text} />
+        <Ionicons name="time-outline" size={14} color={colors.textOnAccent} />
         <Text style={styles.timeWindow}>{timeWindow}</Text>
       </View>
     </View>
@@ -204,6 +209,6 @@ const useStyles = createLazyStyles((colors) => ({
   timeWindow: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.textOnAccent,
   },
 }));

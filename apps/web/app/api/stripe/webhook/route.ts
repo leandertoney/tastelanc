@@ -23,7 +23,11 @@ import {
   markSubscriptionMatched,
   type StripeCustomerInfo,
 } from '@/lib/subscription-matching';
-import { BRAND, MARKET_SLUG } from '@/config/market';
+import { BRAND, MARKET_SLUG, MARKET_CONFIG, type MarketBrand } from '@/config/market';
+
+// All emails send from the parent domain (tastelanc.com) regardless of market.
+// The display name can be market-specific (e.g., "TasteCumberland") but the domain is always tastelanc.com.
+const EMAIL_SENDER_DOMAIN = 'tastelanc.com';
 
 // Generate a secure setup token for password setup with personalization
 interface SetupTokenOptions {
@@ -54,12 +58,38 @@ async function generateSetupToken(
   return token;
 }
 
+// Look up the correct market brand for a restaurant
+async function getMarketBrandForRestaurant(
+  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>,
+  restaurantId: string
+): Promise<MarketBrand> {
+  try {
+    const { data } = await supabaseAdmin
+      .from('restaurants')
+      .select('market_id, markets!inner(slug)')
+      .eq('id', restaurantId)
+      .single();
+
+    if (data) {
+      const market = data.markets as unknown as { slug: string };
+      const marketSlug = market?.slug;
+      if (marketSlug && MARKET_CONFIG[marketSlug]) {
+        return MARKET_CONFIG[marketSlug];
+      }
+    }
+  } catch (err) {
+    console.error('Failed to look up market brand for restaurant:', err);
+  }
+  return BRAND; // fallback to current deployment's brand
+}
+
 // Generate branded welcome email HTML with restaurant cover image
 function generateBrandedWelcomeEmail(
   setupLink: string,
   contactName: string,
   restaurantName: string,
-  coverImageUrl?: string
+  coverImageUrl?: string,
+  marketBrand: MarketBrand = BRAND
 ): string {
   const firstName = contactName?.split(' ')[0] || '';
 
@@ -90,7 +120,7 @@ function generateBrandedWelcomeEmail(
                 <tr>
                   <td style="padding: 40px;">
                     <!-- Logo -->
-                    <img src="https://${BRAND.domain}${BRAND.logoPath}" alt="${BRAND.name}" height="36" style="margin-bottom: 24px;" />
+                    <img src="https://${marketBrand.domain}${marketBrand.logoPath}" alt="${marketBrand.name}" height="36" style="margin-bottom: 24px;" />
 
                     <!-- Restaurant Name Badge -->
                     <div style="background-color: #2563eb; color: white; display: inline-block; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-bottom: 20px;">
@@ -102,7 +132,7 @@ function generateBrandedWelcomeEmail(
                     </h1>
 
                     <p style="color: #a3a3a3; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
-                      Welcome to ${BRAND.name}! Your <strong style="color: #ffffff;">${restaurantName}</strong> dashboard is ready and waiting for you.
+                      Welcome to ${marketBrand.name}! Your <strong style="color: #ffffff;">${restaurantName}</strong> dashboard is ready and waiting for you.
                     </p>
 
                     <p style="color: #a3a3a3; font-size: 16px; line-height: 1.6; margin: 0 0 32px 0;">
@@ -127,7 +157,7 @@ function generateBrandedWelcomeEmail(
                       <li>Update your restaurant profile & photos</li>
                       <li>Post specials and happy hours</li>
                       <li>See your analytics and engagement</li>
-                      <li>Connect with ${BRAND.countyShort} foodies</li>
+                      <li>Connect with ${marketBrand.countyShort} foodies</li>
                     </ul>
 
                     <p style="color: #737373; font-size: 14px; margin: 0;">
@@ -138,8 +168,8 @@ function generateBrandedWelcomeEmail(
                     <hr style="border: none; border-top: 1px solid #333; margin: 32px 0;" />
 
                     <p style="color: #525252; font-size: 12px; text-align: center; margin: 0;">
-                      ${BRAND.name} — ${BRAND.countyShort}'s Local Food Guide<br/>
-                      <a href="https://${BRAND.domain}" style="color: #6b7280;">${BRAND.domain}</a>
+                      ${marketBrand.name} — ${marketBrand.countyShort}'s Local Food Guide<br/>
+                      <a href="https://${marketBrand.domain}" style="color: #6b7280;">${marketBrand.domain}</a>
                     </p>
                   </td>
                 </tr>
@@ -168,7 +198,7 @@ function generateBrandedWelcomeEmail(
               <tr>
                 <td style="padding: 40px;">
                   <!-- Logo -->
-                  <img src="https://${BRAND.domain}${BRAND.logoPath}" alt="${BRAND.name}" height="36" style="margin-bottom: 24px;" />
+                  <img src="https://${marketBrand.domain}${marketBrand.logoPath}" alt="${marketBrand.name}" height="36" style="margin-bottom: 24px;" />
 
                   <!-- Restaurant Name Badge -->
                   <div style="background-color: #2563eb; color: white; display: inline-block; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-bottom: 20px;">
@@ -180,7 +210,7 @@ function generateBrandedWelcomeEmail(
                   </h1>
 
                   <p style="color: #a3a3a3; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
-                    Welcome to ${BRAND.name}! Your <strong style="color: #ffffff;">${restaurantName}</strong> dashboard is ready and waiting for you.
+                    Welcome to ${marketBrand.name}! Your <strong style="color: #ffffff;">${restaurantName}</strong> dashboard is ready and waiting for you.
                   </p>
 
                   <p style="color: #a3a3a3; font-size: 16px; line-height: 1.6; margin: 0 0 32px 0;">
@@ -205,7 +235,7 @@ function generateBrandedWelcomeEmail(
                     <li>Update your restaurant profile & photos</li>
                     <li>Post specials and happy hours</li>
                     <li>See your analytics and engagement</li>
-                    <li>Connect with ${BRAND.countyShort} foodies</li>
+                    <li>Connect with ${marketBrand.countyShort} foodies</li>
                   </ul>
 
                   <p style="color: #737373; font-size: 14px; margin: 0;">
@@ -216,8 +246,8 @@ function generateBrandedWelcomeEmail(
                   <hr style="border: none; border-top: 1px solid #333; margin: 32px 0;" />
 
                   <p style="color: #525252; font-size: 12px; text-align: center; margin: 0;">
-                    ${BRAND.name} — ${BRAND.countyShort}'s Local Food Guide<br/>
-                    <a href="https://${BRAND.domain}" style="color: #6b7280;">${BRAND.domain}</a>
+                    ${marketBrand.name} — ${marketBrand.countyShort}'s Local Food Guide<br/>
+                    <a href="https://${marketBrand.domain}" style="color: #6b7280;">${marketBrand.domain}</a>
                   </p>
                 </td>
               </tr>
@@ -311,7 +341,7 @@ async function findOrCreateUser(
   contactName: string,
   businessNames: string[],
   phone: string,
-  stripeCustomerId: string,
+  _stripeCustomerId: string,
   supabaseAdmin: ReturnType<typeof getSupabaseAdmin>,
 ): Promise<FindOrCreateUserResult> {
   // Check if user already exists by email
@@ -351,9 +381,8 @@ async function findOrCreateUser(
   await supabaseAdmin.from('profiles').upsert({
     id: userId,
     email,
-    full_name: displayName,
+    display_name: displayName,
     role: 'restaurant_owner',
-    stripe_customer_id: stripeCustomerId,
   }, {
     onConflict: 'id',
   });
@@ -369,6 +398,7 @@ async function sendBrandedWelcomeEmailWithToken(
   restaurantName: string,
   coverImageUrl?: string,
   userId?: string,
+  marketBrand: MarketBrand = BRAND,
 ): Promise<void> {
   if (!userId) return;
 
@@ -377,15 +407,15 @@ async function sendBrandedWelcomeEmailWithToken(
     restaurantName,
     coverImageUrl,
   });
-  const setupLink = `https://${BRAND.domain}/setup-account?token=${setupToken}`;
+  const setupLink = `https://${marketBrand.domain}/setup-account?token=${setupToken}`;
 
   await resend.emails.send({
-    from: `${BRAND.name} <hello@${BRAND.domain}>`,
+    from: `${marketBrand.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
     to: email,
-    subject: `Welcome to ${BRAND.name}! Set Up Your ${restaurantName} Account`,
-    html: generateBrandedWelcomeEmail(setupLink, contactName, restaurantName, coverImageUrl),
+    subject: `Welcome to ${marketBrand.name}! Set Up Your ${restaurantName} Account`,
+    html: generateBrandedWelcomeEmail(setupLink, contactName, restaurantName, coverImageUrl, marketBrand),
   });
-  console.log(`Branded welcome email sent to ${email}`);
+  console.log(`Branded welcome email sent to ${email} (market: ${marketBrand.name})`);
 }
 
 // Handle multi-restaurant checkout completion
@@ -693,16 +723,22 @@ async function handleMultiRestaurantCheckout(
 
   // Send welcome email AFTER all restaurants are linked (only for new users)
   if (isNewUser && allSucceeded) {
-    // Determine email branding from primary restaurant
+    // Determine email branding from primary restaurant's market
     const businessNamesList = businessNames.length > 1
       ? businessNames.slice(0, -1).join(', ') + ' and ' + businessNames[businessNames.length - 1]
       : businessNames[0];
     const emailRestaurantName = primaryRestaurant?.restaurantName || businessNamesList;
     const emailCoverImage = primaryRestaurant?.coverImageUrl;
 
+    // Look up market brand from primary restaurant
+    let multiMarketBrand: MarketBrand = BRAND;
+    if (primaryRestaurant?.restaurantId) {
+      multiMarketBrand = await getMarketBrandForRestaurant(supabaseAdmin, primaryRestaurant.restaurantId);
+    }
+
     try {
       await sendBrandedWelcomeEmailWithToken(
-        supabaseAdmin, email, contactName, emailRestaurantName, emailCoverImage, userId
+        supabaseAdmin, email, contactName, emailRestaurantName, emailCoverImage, userId, multiMarketBrand
       );
     } catch (emailError) {
       console.error('Failed to send welcome email (restaurants are linked, email failed):', emailError);
@@ -722,7 +758,7 @@ async function handleMultiRestaurantCheckout(
 
   try {
     await resend.emails.send({
-      from: `${BRAND.name} <hello@${BRAND.domain}>`,
+      from: `${BRAND.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
       to: 'admin@tastelanc.com',
       subject: `Multi-Restaurant Payment: ${orderItems.length} restaurants - $${amountPaid}`,
       html: `
@@ -855,9 +891,10 @@ export async function POST(request: Request) {
             break;
           }
 
-          // Step 0: Fetch restaurant data FIRST (for branded email)
+          // Step 0: Fetch restaurant data FIRST (for branded email) + market brand
           let restaurantCoverImage: string | null = null;
           let restaurantDisplayName = businessName;
+          let saleMarketBrand: MarketBrand = BRAND;
 
           if (restaurantId) {
             const { data: restaurantData } = await supabaseAdmin
@@ -871,6 +908,9 @@ export async function POST(request: Request) {
               restaurantDisplayName = restaurantData.name || businessName;
               console.log(`Fetched restaurant data: ${restaurantDisplayName}, cover: ${restaurantCoverImage ? 'yes' : 'no'}`);
             }
+
+            // Look up market brand for correct email branding
+            saleMarketBrand = await getMarketBrandForRestaurant(supabaseAdmin, restaurantId);
           }
 
           // Step 1: Find or create user account (does NOT send welcome email)
@@ -913,9 +953,8 @@ export async function POST(request: Request) {
             await supabaseAdmin.from('profiles').upsert({
               id: userId,
               email,
-              full_name: contactName || businessName,
+              display_name: contactName || businessName,
               role: 'restaurant_owner',
-              stripe_customer_id: session.customer as string,
             }, {
               onConflict: 'id',
             });
@@ -965,8 +1004,8 @@ export async function POST(request: Request) {
                 phone,
                 is_active: true,
                 is_verified: false,
-                city: 'Lancaster',
-                state: 'PA',
+                city: saleMarketBrand.countyShort,
+                state: saleMarketBrand.state,
               })
               .select('id')
               .single();
@@ -1006,7 +1045,7 @@ export async function POST(request: Request) {
             try {
               await sendBrandedWelcomeEmailWithToken(
                 supabaseAdmin, email, contactName, restaurantDisplayName,
-                restaurantCoverImage || undefined, userId || undefined
+                restaurantCoverImage || undefined, userId || undefined, saleMarketBrand
               );
             } catch (emailError) {
               console.error('Failed to send welcome email (restaurant is linked, email failed):', emailError);
@@ -1021,9 +1060,9 @@ export async function POST(request: Request) {
           const amountPaid = session.amount_total ? (session.amount_total / 100).toFixed(2) : 'N/A';
           try {
             await resend.emails.send({
-              from: `${BRAND.name} <hello@${BRAND.domain}>`,
+              from: `${saleMarketBrand.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
               to: 'admin@tastelanc.com',
-              subject: `New Restaurant Payment: ${businessName} - $${amountPaid}`,
+              subject: `New Restaurant Payment (${saleMarketBrand.name}): ${businessName} - $${amountPaid}`,
               html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
                   <h2 style="color: #1a1a1a; border-bottom: 2px solid #3b82f6; padding-bottom: 10px;">New Restaurant Payment</h2>
@@ -1137,9 +1176,8 @@ export async function POST(request: Request) {
             await supabaseAdmin.from('profiles').upsert({
               id: selfPromoterUserId,
               email,
-              full_name: contactName || artistName,
+              display_name: contactName || artistName,
               role: 'self_promoter',
-              stripe_customer_id: session.customer as string,
             }, {
               onConflict: 'id',
             });
@@ -1149,7 +1187,7 @@ export async function POST(request: Request) {
             const setupLink = `https://${BRAND.domain}/setup-account?token=${selfPromoterSetupToken}`;
 
             await resend.emails.send({
-              from: `${BRAND.name} <hello@${BRAND.domain}>`,
+              from: `${BRAND.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
               to: email,
               subject: `Welcome to ${BRAND.name}! Set Up Your ${artistName} Account`,
               html: `
@@ -1240,7 +1278,7 @@ export async function POST(request: Request) {
           const amountPaid = session.amount_total ? (session.amount_total / 100).toFixed(2) : 'N/A';
           try {
             await resend.emails.send({
-              from: `${BRAND.name} <hello@${BRAND.domain}>`,
+              from: `${BRAND.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
               to: 'admin@tastelanc.com',
               subject: `New Self-Promoter: ${artistName} - $${amountPaid}/month`,
               html: `
@@ -1357,13 +1395,7 @@ export async function POST(request: Request) {
           }
 
           // Also update profile to mark as premium
-          await supabaseAdmin
-            .from('profiles')
-            .update({
-              is_premium: true,
-              stripe_customer_id: session.customer as string,
-            })
-            .eq('id', userId);
+          // Note: consumer premium status tracked in consumer_subscriptions table, not profiles
 
           console.log(`Consumer subscription activated for user ${userId}`);
         } else {
@@ -1511,13 +1543,7 @@ export async function POST(request: Request) {
                   current_period_end: new Date(subItem.current_period_end * 1000).toISOString(),
                 });
 
-                await supabaseAdmin
-                  .from('profiles')
-                  .update({
-                    is_premium: true,
-                    stripe_customer_id: customerId,
-                  })
-                  .eq('id', profile.id);
+                // Note: consumer premium status tracked in consumer_subscriptions table, not profiles
 
                 console.log(`Created consumer subscription for user ${profile.id} (from Stripe-created subscription)`);
                 break;
@@ -1542,13 +1568,7 @@ export async function POST(request: Request) {
               .eq('user_id', consumerSub.user_id);
 
             // Update premium status on profile
-            await supabaseAdmin
-              .from('profiles')
-              .update({
-                is_premium: subscription.status === 'active' || subscription.status === 'trialing',
-                stripe_customer_id: customerId,
-              })
-              .eq('id', consumerSub.user_id);
+            // Note: consumer premium status tracked in consumer_subscriptions table, not profiles
 
             console.log(`Consumer subscription updated for user ${consumerSub.user_id}`);
           } else {
@@ -1641,14 +1661,95 @@ export async function POST(request: Request) {
 
               console.log(`Restaurant ${matchResult.restaurantName} updated: tier=${tier}, subscription=${subscriptionId}, method=${matchResult.matchMethod}, confidence=${matchResult.confidence}%`);
 
-              // Send admin notification for new subscriptions (but NOT for admin-created ones - they already notified)
+              // Send admin notification + welcome email for new subscriptions (but NOT for admin-created ones - they already notified)
               const isAdminCreated = subscription.metadata?.admin_sale === 'true';
               if (event.type === 'customer.subscription.created' && !isAdminCreated) {
+                // Look up market brand for correct email branding
+                const matchMarketBrand = await getMarketBrandForRestaurant(supabaseAdmin, matchResult.restaurantId);
+
+                // Send welcome email to restaurant owner if they need account setup
+                if (customerEmail) {
+                  try {
+                    // Check if user exists and if they need a setup email
+                    const { data: ownerProfile } = await supabaseAdmin
+                      .from('restaurants')
+                      .select('owner_id, name, cover_image_url')
+                      .eq('id', matchResult.restaurantId)
+                      .single();
+
+                    let welcomeUserId: string | null = ownerProfile?.owner_id || null;
+
+                    // If restaurant has no owner, find or create user by email
+                    if (!welcomeUserId) {
+                      const { data: profileByEmail } = await supabaseAdmin
+                        .from('profiles')
+                        .select('id')
+                        .eq('email', customerEmail.toLowerCase())
+                        .single();
+
+                      if (profileByEmail) {
+                        welcomeUserId = profileByEmail.id;
+                        // Link restaurant to this user
+                        await supabaseAdmin
+                          .from('restaurants')
+                          .update({ owner_id: welcomeUserId })
+                          .eq('id', matchResult.restaurantId);
+                        console.log(`Linked restaurant ${matchResult.restaurantName} to existing user ${welcomeUserId}`);
+                      } else {
+                        // Create new user account
+                        const tempPassword = crypto.randomUUID().slice(0, 12);
+                        const { data: newUser } = await supabaseAdmin.auth.admin.createUser({
+                          email: customerEmail,
+                          password: tempPassword,
+                          email_confirm: true,
+                          user_metadata: {
+                            full_name: customerName || matchResult.restaurantName || 'Restaurant Owner',
+                            role: 'restaurant_owner',
+                          },
+                        });
+
+                        if (newUser?.user) {
+                          welcomeUserId = newUser.user.id;
+                          await supabaseAdmin.from('profiles').upsert({
+                            id: welcomeUserId,
+                            email: customerEmail,
+                            display_name: customerName || matchResult.restaurantName || 'Restaurant Owner',
+                            role: 'restaurant_owner',
+                          }, { onConflict: 'id' });
+
+                          // Link restaurant to new user
+                          await supabaseAdmin
+                            .from('restaurants')
+                            .update({ owner_id: welcomeUserId })
+                            .eq('id', matchResult.restaurantId);
+                          console.log(`Created user ${welcomeUserId} and linked to ${matchResult.restaurantName}`);
+                        }
+                      }
+                    }
+
+                    // Send welcome email
+                    if (welcomeUserId) {
+                      await sendBrandedWelcomeEmailWithToken(
+                        supabaseAdmin,
+                        customerEmail,
+                        customerName || '',
+                        ownerProfile?.name || matchResult.restaurantName || '',
+                        ownerProfile?.cover_image_url || undefined,
+                        welcomeUserId,
+                        matchMarketBrand
+                      );
+                    }
+                  } catch (welcomeError) {
+                    console.error('Failed to send welcome email for auto-matched subscription:', welcomeError);
+                  }
+                }
+
+                // Send admin sync notification
                 try {
                   await resend.emails.send({
-                    from: `${BRAND.name} <hello@${BRAND.domain}>`,
+                    from: `${matchMarketBrand.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
                     to: 'admin@tastelanc.com',
-                    subject: `✅ Subscription Synced: ${matchResult.restaurantName}`,
+                    subject: `✅ Subscription Synced (${matchMarketBrand.name}): ${matchResult.restaurantName}`,
                     html: `
                       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
                         <h2 style="color: #22c55e; border-bottom: 2px solid #22c55e; padding-bottom: 10px;">Subscription Auto-Matched</h2>
@@ -1712,7 +1813,7 @@ export async function POST(request: Request) {
                 ).join('');
 
                 await resend.emails.send({
-                  from: `${BRAND.name} <hello@${BRAND.domain}>`,
+                  from: `${BRAND.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
                   to: 'admin@tastelanc.com',
                   subject: `🚨 UNMATCHED Subscription: $${(amountCents / 100).toFixed(2)}/${billingInterval} - Needs Manual Review`,
                   html: `
@@ -1800,11 +1901,7 @@ export async function POST(request: Request) {
               })
               .eq('user_id', consumerSub.user_id);
 
-            // Remove premium status
-            await supabaseAdmin
-              .from('profiles')
-              .update({ is_premium: false })
-              .eq('id', consumerSub.user_id);
+            // Note: consumer premium status tracked in consumer_subscriptions table, not profiles
 
             console.log(`Consumer subscription canceled for user ${consumerSub.user_id}`);
           }
@@ -1841,7 +1938,7 @@ export async function POST(request: Request) {
               // Send admin notification about cancellation
               try {
                 await resend.emails.send({
-                  from: `${BRAND.name} <hello@${BRAND.domain}>`,
+                  from: `${BRAND.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
                   to: 'admin@tastelanc.com',
                   subject: `Subscription Canceled: ${restaurant.name}`,
                   html: `
@@ -1915,7 +2012,7 @@ export async function POST(request: Request) {
           if (restaurant) {
             try {
               await resend.emails.send({
-                from: `${BRAND.name} <hello@${BRAND.domain}>`,
+                from: `${BRAND.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
                 to: 'admin@tastelanc.com',
                 subject: `Payment Failed: ${restaurant.name}`,
                 html: `

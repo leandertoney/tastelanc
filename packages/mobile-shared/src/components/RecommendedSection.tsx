@@ -152,7 +152,7 @@ export default function RecommendedSection({
                   <Ionicons
                     name={favorites.includes(restaurant.id) ? 'heart' : 'heart-outline'}
                     size={18}
-                    color={favorites.includes(restaurant.id) ? colors.accent : colors.text}
+                    color={favorites.includes(restaurant.id) ? colors.accent : '#FFFFFF'}
                   />
                 </TouchableOpacity>
                 {reason && (
@@ -271,7 +271,7 @@ const useStyles = createLazyStyles((colors) => ({
     borderRadius: 10,
   },
   reasonText: {
-    color: colors.text,
+    color: colors.textOnAccent,
     fontSize: 10,
     fontWeight: '600',
   },

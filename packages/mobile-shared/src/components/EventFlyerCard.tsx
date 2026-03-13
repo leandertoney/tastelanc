@@ -70,7 +70,7 @@ export default function EventFlyerCard({ event, width, height, onPress, onRestau
           <View style={styles.topRow}>
             {/* Time badge - top left */}
             <View style={styles.timeBadge}>
-              <Ionicons name="time-outline" size={14} color={colors.text} />
+              <Ionicons name="time-outline" size={14} color="#FFFFFF" />
               <Text style={styles.timeBadgeText}>
                 {formatEventTime(event.start_time, event.end_time)}
               </Text>
@@ -110,12 +110,12 @@ export default function EventFlyerCard({ event, width, height, onPress, onRestau
                 <Ionicons
                   name={isFromSelfPromoter ? 'person' : 'location'}
                   size={16}
-                  color={colors.accent}
+                  color="#FFFFFF"
                 />
                 <Text style={styles.restaurantName}>
                   {isFromSelfPromoter ? `by ${venueName}` : `@ ${venueName}`}
                 </Text>
-                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.7)" />
               </TouchableOpacity>
             ) : null}
           </View>
@@ -154,7 +154,7 @@ const useStyles = createLazyStyles((colors) => ({
     borderRadius: radius.md,
   },
   timeBadgeText: {
-    color: colors.text,
+    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -165,7 +165,7 @@ const useStyles = createLazyStyles((colors) => ({
     borderRadius: radius.sm,
   },
   typeBadgeText: {
-    color: colors.text,
+    color: colors.textOnAccent,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -179,7 +179,7 @@ const useStyles = createLazyStyles((colors) => ({
   eventName: {
     fontSize: 28,
     fontWeight: '800',
-    color: colors.text,
+    color: '#FFFFFF',
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
@@ -187,7 +187,7 @@ const useStyles = createLazyStyles((colors) => ({
   performerName: {
     fontSize: 16,
     fontWeight: '500',
-    color: colors.accent,
+    color: 'rgba(255,255,255,0.85)',
     marginTop: 6,
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 0, height: 1 },
@@ -207,6 +207,6 @@ const useStyles = createLazyStyles((colors) => ({
   restaurantName: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
+    color: '#FFFFFF',
   },
 }));

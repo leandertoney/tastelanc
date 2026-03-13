@@ -40,6 +40,6 @@ const useStyles = createLazyStyles((colors) => ({
     color: colors.textMuted,
   },
   labelSelected: {
-    color: colors.text,
+    color: colors.textOnAccent,
   },
 }));

@@ -119,7 +119,7 @@ const useStyles = createLazyStyles((colors) => ({
   dateBadgeText: {
     fontSize: 12,
     fontWeight: '600' as const,
-    color: colors.text,
+    color: '#FFFFFF',
   },
   bottomContainer: {
     backgroundColor: 'rgba(0,0,0,0.7)',
@@ -129,7 +129,7 @@ const useStyles = createLazyStyles((colors) => ({
   name: {
     fontSize: 18,
     fontWeight: '700' as const,
-    color: colors.text,
+    color: '#FFFFFF',
     lineHeight: 22,
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 0, height: 1 },

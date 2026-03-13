@@ -1,10 +1,11 @@
 import { createClient } from '@/lib/supabase/server';
-import { getStripe, ALL_CONSUMER_PRICE_IDS, SELF_PROMOTER_PRICE_IDS } from '@/lib/stripe';
+import { getAllStripeClients, ALL_CONSUMER_PRICE_IDS, SELF_PROMOTER_PRICE_IDS } from '@/lib/stripe';
 import { BRAND } from '@/config/market';
 import { Card, Badge } from '@/components/ui';
-import { Store, CheckCircle, CreditCard, Calendar, ExternalLink, Users, Clock, Gift, ArrowRight } from 'lucide-react';
+import { Store, CheckCircle, CreditCard, Calendar, ExternalLink, Users, Clock, Gift, ArrowRight, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { verifyAdminAccess } from '@/lib/auth/admin-access';
+import AdminMarketFilter from '@/components/admin/AdminMarketFilter';
 
 interface PromotionalRestaurant {
   id: string;
@@ -13,6 +14,7 @@ interface PromotionalRestaurant {
   state: string | null;
   tier_name: string;
   created_at: string;
+  market_id: string | null;
 }
 
 interface StripeSubscription {
@@ -28,6 +30,8 @@ interface StripeSubscription {
   customerId: string;
   priceId: string;
   plan?: string;
+  marketId?: string | null;
+  marketName?: string | null;
 }
 
 // Helper to check if price ID is a consumer subscription
@@ -44,36 +48,78 @@ function isSelfPromoterPrice(priceId: string): boolean {
 function getPlanFromPrice(priceId: string, amount: number): string {
   if (isConsumerPrice(priceId)) return BRAND.premiumName;
   if (isSelfPromoterPrice(priceId)) return 'Self-Promoter';
-  // Restaurant tiers based on price
   if (amount >= 1000) return 'Elite';
+  if (amount <= 49) return 'Coffee Shop';
   return 'Premium';
 }
 
-async function getStripeSubscriptions() {
-  try {
-    const stripe = getStripe();
+// Build market lookup maps from Supabase restaurant data
+async function getMarketLookupMaps() {
+  const supabase = await createClient();
 
-    // Fetch both active AND trialing subscriptions
-    const [activeSubscriptions, trialingSubscriptions] = await Promise.all([
-      stripe.subscriptions.list({
-        status: 'active',
-        limit: 100,
-        expand: ['data.customer'],
-      }),
-      stripe.subscriptions.list({
-        status: 'trialing',
-        limit: 100,
-        expand: ['data.customer'],
-      }),
-    ]);
+  const { data: restaurants } = await supabase
+    .from('restaurants')
+    .select('id, stripe_subscription_id, stripe_customer_id, market_id, markets(id, name, slug)')
+    .not('stripe_subscription_id', 'is', null);
 
-    const allSubscriptions = [...activeSubscriptions.data, ...trialingSubscriptions.data];
+  const subIdToMarket: Record<string, { marketId: string; marketName: string }> = {};
+  const customerIdToMarket: Record<string, { marketId: string; marketName: string }> = {};
 
-    const restaurants: StripeSubscription[] = [];
-    const consumers: StripeSubscription[] = [];
-    const selfPromoters: StripeSubscription[] = [];
+  for (const r of restaurants || []) {
+    if (!r.market_id) continue;
+    const market = r.markets as unknown as { id: string; name: string; slug: string } | null;
+    const marketInfo = { marketId: r.market_id, marketName: market?.name || 'Unknown' };
 
-    for (const sub of allSubscriptions) {
+    if (r.stripe_subscription_id) {
+      subIdToMarket[r.stripe_subscription_id] = marketInfo;
+    }
+    if (r.stripe_customer_id) {
+      customerIdToMarket[r.stripe_customer_id] = marketInfo;
+    }
+  }
+
+  return { subIdToMarket, customerIdToMarket };
+}
+
+async function getStripeSubscriptions(
+  subIdToMarket: Record<string, { marketId: string; marketName: string }>,
+  customerIdToMarket: Record<string, { marketId: string; marketName: string }>,
+  markets: { id: string; name: string; slug: string }[]
+) {
+  const restaurants: StripeSubscription[] = [];
+  const consumers: StripeSubscription[] = [];
+  const selfPromoters: StripeSubscription[] = [];
+
+  // Build slug → market lookup for Stripe account → market mapping
+  const slugToMarket: Record<string, { marketId: string; marketName: string }> = {};
+  for (const m of markets) {
+    slugToMarket[m.slug] = { marketId: m.id, marketName: m.name };
+  }
+
+  const stripeClients = getAllStripeClients();
+
+  // Query all Stripe accounts in parallel
+  const results = await Promise.allSettled(
+    stripeClients.map(async ({ marketSlug, stripe }) => {
+      const [activeSubs, trialingSubs] = await Promise.all([
+        stripe.subscriptions.list({ status: 'active', limit: 100, expand: ['data.customer'] }),
+        stripe.subscriptions.list({ status: 'trialing', limit: 100, expand: ['data.customer'] }),
+      ]);
+      return { marketSlug, subscriptions: [...activeSubs.data, ...trialingSubs.data] };
+    })
+  );
+
+  for (const result of results) {
+    if (result.status === 'rejected') {
+      console.error('Error fetching Stripe subscriptions:', result.reason);
+      continue;
+    }
+
+    const { marketSlug, subscriptions } = result.value;
+    // Default market for subscriptions from this Stripe account
+    const accountMarket = slugToMarket[marketSlug] || null;
+
+    for (const sub of subscriptions) {
       const customer = sub.customer;
       if (typeof customer !== 'object' || customer.deleted) continue;
 
@@ -84,12 +130,24 @@ async function getStripeSubscriptions() {
       const interval = sub.items.data[0]?.price?.recurring?.interval || 'month';
       const intervalCount = sub.items.data[0]?.price?.recurring?.interval_count || 1;
 
-      // Calculate MRR based on interval
       let mrr = amount;
       if (interval === 'year') {
         mrr = amount / 12;
       } else if (interval === 'month' && intervalCount > 1) {
         mrr = amount / intervalCount;
+      }
+
+      // Look up market: DB match first, then fall back to the Stripe account's market
+      const marketInfo = subIdToMarket[sub.id] || customerIdToMarket[customer.id] || accountMarket;
+
+      // Determine plan from Stripe product name (most reliable) or price amount
+      let plan = getPlanFromPrice(priceId, amount);
+      const productName = sub.items.data[0]?.price?.product;
+      if (typeof productName === 'object' && 'name' in productName) {
+        const pName = (productName as { name: string }).name.toLowerCase();
+        if (pName.includes('elite')) plan = 'Elite';
+        else if (pName.includes('coffee')) plan = 'Coffee Shop';
+        else if (pName.includes('premium') && !pName.includes('consumer')) plan = 'Premium';
       }
 
       const subData: StripeSubscription = {
@@ -104,10 +162,11 @@ async function getStripeSubscriptions() {
         createdAt: new Date(sub.created * 1000).toISOString(),
         customerId: customer.id,
         priceId,
-        plan: getPlanFromPrice(priceId, amount),
+        plan,
+        marketId: marketInfo?.marketId || null,
+        marketName: marketInfo?.marketName || null,
       };
 
-      // Classify by price ID (more reliable than customer metadata)
       if (isConsumerPrice(priceId)) {
         consumers.push(subData);
       } else if (isSelfPromoterPrice(priceId)) {
@@ -116,27 +175,21 @@ async function getStripeSubscriptions() {
         restaurants.push(subData);
       }
     }
-
-    return { restaurants, consumers, selfPromoters };
-  } catch (error) {
-    console.error('Error fetching Stripe subscriptions:', error);
-    return { restaurants: [], consumers: [], selfPromoters: [] };
   }
+
+  return { restaurants, consumers, selfPromoters };
 }
 
-// Format interval display
 function formatInterval(interval: string, intervalCount: number): string {
   if (interval === 'year') return 'year';
   if (intervalCount === 1) return 'month';
   return `${intervalCount}mo`;
 }
 
-// Get promotional restaurants (premium/elite tier but no subscription)
 async function getPromotionalRestaurants(scopedMarketId: string | null): Promise<PromotionalRestaurant[]> {
   try {
     const supabase = await createClient();
 
-    // Get restaurants with premium/elite tier but no stripe_subscription_id
     let query = supabase
       .from('restaurants')
       .select(`
@@ -145,6 +198,7 @@ async function getPromotionalRestaurants(scopedMarketId: string | null): Promise
         city,
         state,
         created_at,
+        market_id,
         tiers!inner(name)
       `)
       .in('tier_id', [
@@ -170,6 +224,7 @@ async function getPromotionalRestaurants(scopedMarketId: string | null): Promise
       name: r.name,
       city: r.city,
       state: r.state,
+      market_id: r.market_id,
       tier_name: Array.isArray(r.tiers) ? r.tiers[0]?.name : (r.tiers as { name: string })?.name || 'unknown',
       created_at: r.created_at,
     }));
@@ -179,28 +234,81 @@ async function getPromotionalRestaurants(scopedMarketId: string | null): Promise
   }
 }
 
-export default async function AdminPaidMembersPage() {
+async function getMarkets() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('markets')
+    .select('id, name, slug')
+    .eq('is_active', true)
+    .order('name', { ascending: true });
+  return data || [];
+}
+
+export default async function AdminPaidMembersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ market?: string }>;
+}) {
   const supabase = await createClient();
   const admin = await verifyAdminAccess(supabase);
+  const params = await searchParams;
 
-  const [{ restaurants, consumers, selfPromoters }, promotionalRestaurants] = await Promise.all([
-    getStripeSubscriptions(),
-    getPromotionalRestaurants(admin.scopedMarketId),
+  // Determine effective market filter
+  const selectedMarket = admin.scopedMarketId || params.market || 'all';
+
+  const [{ subIdToMarket, customerIdToMarket }, markets, promotionalRestaurants] = await Promise.all([
+    getMarketLookupMaps(),
+    getMarkets(),
+    getPromotionalRestaurants(admin.scopedMarketId || (selectedMarket !== 'all' ? selectedMarket : null)),
   ]);
+
+  const { restaurants: allRestaurants, consumers, selfPromoters } = await getStripeSubscriptions(
+    subIdToMarket,
+    customerIdToMarket,
+    markets
+  );
+
+  // Filter restaurants by market if a market is selected
+  const restaurants = selectedMarket === 'all'
+    ? allRestaurants
+    : allRestaurants.filter(r => r.marketId === selectedMarket);
+
+  // Filter promotional restaurants by market too
+  const filteredPromotional = selectedMarket === 'all'
+    ? promotionalRestaurants
+    : promotionalRestaurants.filter(r => r.market_id === selectedMarket);
+
+  // Calculate per-market restaurant counts for tab badges
+  const marketCounts: Record<string, { count: number; mrr: number }> = {};
+  for (const r of allRestaurants) {
+    const mId = r.marketId || 'unknown';
+    if (!marketCounts[mId]) marketCounts[mId] = { count: 0, mrr: 0 };
+    marketCounts[mId].count++;
+    marketCounts[mId].mrr += r.mrr;
+  }
 
   const restaurantMRR = restaurants.reduce((sum, r) => sum + r.mrr, 0);
   const consumerMRR = consumers.reduce((sum, c) => sum + c.mrr, 0);
   const selfPromoterMRR = selfPromoters.reduce((sum, s) => sum + s.mrr, 0);
-  const totalMRR = restaurantMRR + consumerMRR + selfPromoterMRR;
-  const totalCount = restaurants.length + consumers.length + selfPromoters.length;
+  const totalMRR = (selectedMarket === 'all' ? allRestaurants.reduce((s, r) => s + r.mrr, 0) : restaurantMRR) + consumerMRR + selfPromoterMRR;
+  const totalCount = (selectedMarket === 'all' ? allRestaurants.length : restaurants.length) + consumers.length + selfPromoters.length;
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">Paid Members</h1>
-        <p className="text-gray-400 mt-1">
-          {totalCount} subscriptions from Stripe (active + trialing)
-        </p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-white">Paid Members</h1>
+          <p className="text-gray-400 mt-1">
+            {totalCount} subscriptions from Stripe (active + trialing)
+          </p>
+        </div>
+        {!admin.scopedMarketId && markets.length > 1 && (
+          <AdminMarketFilter
+            markets={markets}
+            currentMarket={selectedMarket}
+            basePath="/admin/paid-members"
+          />
+        )}
       </div>
 
       {/* Revenue Stats */}
@@ -208,7 +316,7 @@ export default async function AdminPaidMembersPage() {
         <Card className="p-6 bg-gradient-to-br from-green-500/10 to-transparent border-green-500/30">
           <div className="flex items-center gap-3 mb-2">
             <CreditCard className="w-5 h-5 text-green-400" />
-            <span className="text-gray-400">Total MRR</span>
+            <span className="text-gray-400">{selectedMarket === 'all' ? 'Total' : ''} MRR</span>
           </div>
           <p className="text-3xl font-bold text-green-400">${totalMRR.toFixed(0)}</p>
           <p className="text-xs text-gray-500 mt-1">ARR: ${(totalMRR * 12).toLocaleString()}</p>
@@ -243,13 +351,13 @@ export default async function AdminPaidMembersPage() {
           </Card>
         )}
 
-        {promotionalRestaurants.length > 0 && (
+        {filteredPromotional.length > 0 && (
           <Card className="p-6 border-yellow-500/30">
             <div className="flex items-center gap-3 mb-2">
               <Gift className="w-5 h-5 text-yellow-500" />
               <span className="text-gray-400">Demo/Free</span>
             </div>
-            <p className="text-3xl font-bold text-yellow-400">{promotionalRestaurants.length}</p>
+            <p className="text-3xl font-bold text-yellow-400">{filteredPromotional.length}</p>
             <p className="text-xs text-gray-500 mt-1">$0/mo (promotional)</p>
           </Card>
         )}
@@ -264,6 +372,47 @@ export default async function AdminPaidMembersPage() {
         </Card>
       </div>
 
+      {/* Per-Market Breakdown (only show when viewing all markets) */}
+      {selectedMarket === 'all' && markets.length > 1 && Object.keys(marketCounts).length > 0 && (
+        <div className="grid md:grid-cols-3 gap-4 mb-8">
+          {markets.map(m => {
+            const mc = marketCounts[m.id];
+            if (!mc) return null;
+            return (
+              <Link
+                key={m.id}
+                href={`/admin/paid-members?market=${m.id}`}
+                className="block"
+              >
+                <Card className="p-4 hover:border-blue-500/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <MapPin className="w-4 h-4 text-blue-400" />
+                    <span className="text-white font-medium">{m.name}</span>
+                    <Badge variant="default" className="ml-auto bg-blue-500/20 text-blue-400">
+                      {mc.count} restaurant{mc.count !== 1 ? 's' : ''}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-green-400 mt-2 ml-7">${mc.mrr.toFixed(0)}/mo MRR</p>
+                </Card>
+              </Link>
+            );
+          })}
+          {/* Show unmatched subscriptions count */}
+          {marketCounts['unknown'] && (
+            <Card className="p-4 border-yellow-500/30">
+              <div className="flex items-center gap-3">
+                <MapPin className="w-4 h-4 text-yellow-400" />
+                <span className="text-yellow-400 font-medium">Unlinked</span>
+                <Badge variant="default" className="ml-auto bg-yellow-500/20 text-yellow-400">
+                  {marketCounts['unknown'].count}
+                </Badge>
+              </div>
+              <p className="text-xs text-gray-500 mt-2 ml-7">Not matched to a market</p>
+            </Card>
+          )}
+        </div>
+      )}
+
       {/* Restaurant Subscriptions */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
@@ -273,7 +422,9 @@ export default async function AdminPaidMembersPage() {
         {restaurants.length === 0 ? (
           <Card className="p-8 text-center">
             <Store className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-400">No restaurant subscriptions yet</p>
+            <p className="text-gray-400">
+              {selectedMarket === 'all' ? 'No restaurant subscriptions yet' : 'No subscriptions in this market yet'}
+            </p>
           </Card>
         ) : (
           <div className="grid gap-4">
@@ -297,6 +448,11 @@ export default async function AdminPaidMembersPage() {
                         <Badge variant="default" className={`text-xs ${sub.plan === 'Elite' ? 'bg-purple-500/20 text-purple-400' : 'bg-lancaster-gold/20 text-lancaster-gold'}`}>
                           {sub.plan}
                         </Badge>
+                        {selectedMarket === 'all' && sub.marketName && (
+                          <Badge variant="default" className="text-xs bg-blue-500/10 text-blue-400">
+                            {sub.marketName}
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-sm text-gray-400">{sub.email}</p>
                       <p className="text-xs text-gray-500 mt-1 font-mono">{sub.id}</p>
@@ -329,20 +485,20 @@ export default async function AdminPaidMembersPage() {
       </div>
 
       {/* Promotional/Demo Accounts */}
-      {promotionalRestaurants.length > 0 && (
+      {filteredPromotional.length > 0 && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
             <Gift className="w-5 h-5 text-yellow-500" />
             Demo / Promotional Accounts
             <Badge variant="default" className="bg-yellow-500/20 text-yellow-400 ml-2">
-              {promotionalRestaurants.length} free
+              {filteredPromotional.length} free
             </Badge>
           </h2>
           <p className="text-gray-400 text-sm mb-4">
             These restaurants have premium/elite access without a subscription. Click &quot;Convert to Paid&quot; to create a checkout.
           </p>
           <div className="grid gap-4">
-            {promotionalRestaurants.map((restaurant) => (
+            {filteredPromotional.map((restaurant) => (
               <Card key={restaurant.id} className="p-6 border-yellow-500/30 hover:border-yellow-500/50 transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">

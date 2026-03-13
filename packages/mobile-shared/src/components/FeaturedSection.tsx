@@ -312,7 +312,7 @@ export default function FeaturedSection({ onRestaurantPress }: FeaturedSectionPr
         statusBarTranslucent
       >
         {overlayAd && (
-          <View style={overlayStylesStatic.backdrop}>
+          <View style={[overlayStylesStatic.backdrop, { backgroundColor: getColors().overlay }]}>
             {/* Invisible full-screen press target for backdrop dismiss */}
             <TouchableOpacity
               style={StyleSheet.absoluteFill}

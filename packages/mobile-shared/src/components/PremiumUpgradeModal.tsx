@@ -82,7 +82,7 @@ export default function PremiumUpgradeModal({
 const useStyles = createLazyStyles((colors) => ({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: colors.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,

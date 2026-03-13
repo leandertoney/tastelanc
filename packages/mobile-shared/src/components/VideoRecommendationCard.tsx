@@ -419,7 +419,7 @@ const useStyles = createLazyStyles((colors) => ({
     height: '100%' as const,
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primaryDark,
   },
   playOverlay: {
     ...({ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 } as any),
