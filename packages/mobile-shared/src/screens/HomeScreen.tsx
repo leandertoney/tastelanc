@@ -185,13 +185,6 @@ export default function HomeScreen() {
         <EventsSection />
       </ErrorBoundary>
 
-      {/* Plan Your Day CTA */}
-      <ErrorBoundary level="section">
-        <View style={styles.ctaWrapper}>
-          <PlanYourDayCard onPress={() => navigation.navigate('ItineraryBuilder', {})} />
-        </View>
-      </ErrorBoundary>
-
       {/* Section 4: Featured for You (PAID) */}
       <ErrorBoundary level="section">
         <FeaturedSection onRestaurantPress={handleRestaurantPress} />
@@ -209,6 +202,15 @@ export default function HomeScreen() {
       {/* Section 6: Recommended for You */}
       <ErrorBoundary level="section">
         <RecommendedSection onRestaurantPress={handleRestaurantPress} />
+      </ErrorBoundary>
+
+      <Spacer size="md" />
+
+      {/* Plan Your Day CTA */}
+      <ErrorBoundary level="section">
+        <View style={styles.ctaWrapper}>
+          <PlanYourDayCard onPress={() => navigation.navigate('ItineraryBuilder', {})} />
+        </View>
       </ErrorBoundary>
 
       <Spacer size="md" />
