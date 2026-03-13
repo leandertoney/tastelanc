@@ -10,18 +10,33 @@ export async function GET() {
     }
 
     const svc = createServiceRoleClient();
-    const { data, error } = await svc
-      .from('restaurants')
-      .select('id, name, market_id')
-      .eq('is_active', true)
-      .order('name')
-      .limit(10000);
 
-    if (error) {
-      return NextResponse.json({ error: 'Failed to fetch restaurants' }, { status: 500 });
+    // Fetch ALL active restaurants with no row limit.
+    // Supabase caps individual queries at 1000 rows by default,
+    // so we paginate until every restaurant is loaded.
+    const PAGE_SIZE = 1000;
+    let allRestaurants: { id: string; name: string; market_id: string }[] = [];
+    let from = 0;
+
+    while (true) {
+      const { data, error } = await svc
+        .from('restaurants')
+        .select('id, name, market_id')
+        .eq('is_active', true)
+        .order('name')
+        .range(from, from + PAGE_SIZE - 1);
+
+      if (error) {
+        return NextResponse.json({ error: 'Failed to fetch restaurants' }, { status: 500 });
+      }
+
+      allRestaurants = allRestaurants.concat(data || []);
+
+      if (!data || data.length < PAGE_SIZE) break;
+      from += PAGE_SIZE;
     }
 
-    return NextResponse.json({ restaurants: data || [] });
+    return NextResponse.json({ restaurants: allRestaurants });
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

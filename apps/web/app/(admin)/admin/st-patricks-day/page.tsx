@@ -94,7 +94,7 @@ export default function StPatricksDayPage() {
 
   const filteredRestaurants = restaurants.filter(r =>
     r.name.toLowerCase().includes(restaurantSearch.toLowerCase())
-  ).slice(0, 20);
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
