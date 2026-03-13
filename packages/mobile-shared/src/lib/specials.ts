@@ -3,7 +3,7 @@ import { paidFairRotate, getTierName, eliteFirstStableSort } from './fairRotatio
 import type { Special, Restaurant, Tier } from '../types/database';
 
 export interface SpecialWithRestaurant extends Special {
-  restaurant: Pick<Restaurant, 'id' | 'name' | 'cover_image_url' | 'tier_id' | 'market_id'> & {
+  restaurant: Pick<Restaurant, 'id' | 'name' | 'cover_image_url' | 'tier_id'> & {
     tiers: Pick<Tier, 'name'> | null;
   };
 }
@@ -32,13 +32,11 @@ export async function getActiveDailySpecials(marketId: string | null = null): Pr
     return [];
   }
 
-  const paidRotated = paidFairRotate(
-    data || [],
-    (s) => getTierName({ restaurant: s.restaurant }),
-  );
-
+  // Unlike happy hours, daily specials show ALL restaurants (not just paid).
+  // Paid partners still get priority positioning at the top.
+  const all = data || [];
   return eliteFirstStableSort(
-    paidRotated,
+    all,
     (s) => getTierName({ restaurant: s.restaurant }),
   ).slice(0, 15);
 }
