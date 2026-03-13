@@ -17,6 +17,7 @@ import type { RootStackParamList } from '../../navigation/types';
 import { createDraft, createCheckout } from '../../lib/flyer';
 import { getColors } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
+import { withAlpha } from '../../utils/colorUtils';
 import { spacing, radius, typography } from '../../constants/spacing';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'FlyerPublishChoice'>;
@@ -217,7 +218,7 @@ const useStyles = createLazyStyles((colors) => ({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(164, 30, 34, 0.1)',
+    backgroundColor: withAlpha(colors.accent, 0.1),
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
     marginRight: spacing.md,

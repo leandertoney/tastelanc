@@ -1,6 +1,7 @@
 import { View, Text } from 'react-native';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
+import { withAlpha } from '../utils/colorUtils';
 import { radius } from '../constants/spacing';
 
 export type BadgeType = 'trending' | 'top_pick' | 'rising' | 'popular' | 'new_votes';
@@ -55,8 +56,8 @@ export default function TrendingBadge({ type = 'trending', text, size = 'small' 
         return {
           emoji: '',
           label: text || 'Popular',
-          bgColor: 'rgba(164, 30, 34, 0.15)',
-          borderColor: 'rgba(164, 30, 34, 0.3)',
+          bgColor: withAlpha(colors.accent, 0.15),
+          borderColor: withAlpha(colors.accent, 0.3),
           textColor: colors.accent,
         };
       case 'new_votes':

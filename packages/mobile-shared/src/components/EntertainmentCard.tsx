@@ -144,7 +144,7 @@ const useStyles = createLazyStyles((colors) => ({
   },
   badge: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(164, 30, 34, 0.85)',
+    backgroundColor: colors.accent,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: radius.sm,

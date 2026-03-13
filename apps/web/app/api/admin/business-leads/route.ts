@@ -72,11 +72,11 @@ export async function GET(request: Request) {
     if (assignedIds.length > 0) {
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, full_name')
+        .select('id, display_name')
         .in('id', assignedIds);
       if (profiles) {
         for (const p of profiles) {
-          repNameMap[p.id] = p.full_name || 'Unknown';
+          repNameMap[p.id] = p.display_name || 'Unknown';
         }
       }
     }
@@ -126,14 +126,14 @@ export async function GET(request: Request) {
     // Fetch reps for the filter dropdown (scoped to effective market if applicable)
     let repsQuery = supabase
       .from('sales_reps')
-      .select('user_id, profiles(id, full_name)')
+      .select('user_id, profiles(id, display_name)')
       .eq('is_active', true);
 
     const { data: repRows } = await repsQuery;
     const reps = (repRows || [])
       .map((r: any) => ({
         id: r.user_id,
-        name: r.profiles?.full_name || 'Unknown',
+        name: r.profiles?.display_name || 'Unknown',
       }))
       .sort((a: any, b: any) => a.name.localeCompare(b.name));
 

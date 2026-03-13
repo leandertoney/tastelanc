@@ -11,6 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
+import { withAlpha } from '../utils/colorUtils';
 import { spacing, radius, typography } from '../constants/spacing';
 import { usePlatformSocialProof, usePersonalStats } from '../hooks';
 import { useAuth } from '../hooks/useAuth';
@@ -197,8 +198,8 @@ const useStyles = createLazyStyles((colors) => ({
     paddingHorizontal: spacing.md,
     borderRadius: radius.md,
     borderWidth: 1,
-    backgroundColor: 'rgba(164, 30, 34, 0.15)',
-    borderColor: 'rgba(164, 30, 34, 0.3)',
+    backgroundColor: withAlpha(colors.accent, 0.15),
+    borderColor: withAlpha(colors.accent, 0.3),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
+import { withAlpha } from '../utils/colorUtils';
 import { radius, spacing } from '../constants/spacing';
 
 type ContactCategory = 'restaurant' | 'happy_hour' | 'entertainment' | 'event';
@@ -36,7 +37,7 @@ export default function PartnerCTACard({
       activeOpacity={0.9}
     >
       <LinearGradient
-        colors={['#1A1A1A', '#2A2A2A', '#1A1A1A']}
+        colors={[colors.primaryDark, colors.surface, colors.primaryDark]}
         style={styles.gradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -85,7 +86,7 @@ const useStyles = createLazyStyles((colors) => ({
     bottom: 0,
     borderRadius: radius.lg - 1,
     borderWidth: 1,
-    borderColor: 'rgba(164, 30, 34, 0.3)',
+    borderColor: withAlpha(colors.accent, 0.3),
   },
   content: {
     flex: 1,
@@ -97,7 +98,7 @@ const useStyles = createLazyStyles((colors) => ({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: 'rgba(164, 30, 34, 0.15)',
+    backgroundColor: withAlpha(colors.accent, 0.15),
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.md,
@@ -128,6 +129,6 @@ const useStyles = createLazyStyles((colors) => ({
   ctaText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.textOnAccent,
   },
 }));

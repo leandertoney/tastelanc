@@ -13,6 +13,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
 import { getColors } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
+import { withAlpha } from '../../utils/colorUtils';
 import { spacing, radius, typography } from '../../constants/spacing';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'FlyerCapture'>;
@@ -127,7 +128,7 @@ const useStyles = createLazyStyles((colors) => ({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(164, 30, 34, 0.1)',
+    backgroundColor: withAlpha(colors.accent, 0.1),
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
     marginBottom: spacing.md,

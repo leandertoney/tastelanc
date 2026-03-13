@@ -27,6 +27,7 @@ import type { Restaurant } from '../types/database';
 import { getSupabase, getColors } from '../config/theme';
 import { useAuth } from '../hooks/useAuth';
 import { createLazyStyles } from '../utils/lazyStyles';
+import { withAlpha } from '../utils/colorUtils';
 import { radius, spacing, typography } from '../constants/spacing';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SquadVote'>;
@@ -483,7 +484,7 @@ const useStyles = createLazyStyles((colors) => ({
     color: colors.text,
   },
   myPickBadge: {
-    backgroundColor: 'rgba(164, 30, 34, 0.15)',
+    backgroundColor: withAlpha(colors.accent, 0.15),
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,

@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
+import { withAlpha } from '../utils/colorUtils';
 import { getBrand } from '../config/theme';
 
 interface FallbackProps {
@@ -247,7 +248,7 @@ const useStyles = createLazyStyles((colors) => ({
     transform: [{ rotate: '45deg' }],
   },
   loadingErrorIcon: {
-    backgroundColor: 'rgba(164, 30, 34, 0.1)',
+    backgroundColor: withAlpha(colors.accent, 0.1),
   },
   searchIcon: {
     backgroundColor: '#f0f0f0',
@@ -258,7 +259,7 @@ const useStyles = createLazyStyles((colors) => ({
   title: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#1a1a1a',
+    color: colors.text,
     marginBottom: 8,
     textAlign: 'center',
   },

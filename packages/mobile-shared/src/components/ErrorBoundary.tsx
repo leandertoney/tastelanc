@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getColors } from '../config/theme';
+import { withAlpha } from '../utils/colorUtils';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -181,7 +182,7 @@ function ScreenErrorFallback({
     return (
       <View style={styles.screenError}>
         <View style={styles.screenErrorContent}>
-          <View style={styles.errorIconContainer}>
+          <View style={[styles.errorIconContainer, { backgroundColor: withAlpha(colors.accent, 0.1) }]}>
             <Ionicons name="sad-outline" size={64} color={colors.accent} />
           </View>
 
@@ -207,7 +208,7 @@ function ScreenErrorFallback({
   return (
     <View style={styles.screenError}>
       <View style={styles.screenErrorContent}>
-        <View style={styles.errorIconContainer}>
+        <View style={[styles.errorIconContainer, { backgroundColor: withAlpha(colors.accent, 0.1) }]}>
           <Ionicons name="sad-outline" size={64} color={colors.primary} />
         </View>
 

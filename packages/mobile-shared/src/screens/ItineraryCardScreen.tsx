@@ -31,6 +31,7 @@ import { useSaveItinerary } from '../hooks/useItineraries';
 import { useQueryClient } from '@tanstack/react-query';
 import { getColors, getBrand, getAssets, getSupabase } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
+import { withAlpha } from '../utils/colorUtils';
 import { radius, spacing, typography } from '../constants/spacing';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ItineraryCard'>;
@@ -436,7 +437,7 @@ const useStyles = createLazyStyles((colors) => ({
     elevation: 10,
     // Accent border
     borderWidth: 1,
-    borderColor: 'rgba(164, 30, 34, 0.3)',
+    borderColor: withAlpha(colors.accent, 0.3),
   },
 
   // --- Logo ---
