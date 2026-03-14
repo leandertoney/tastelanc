@@ -386,7 +386,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
             </View>
           )}
           <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.4)', colors.primary]}
+            colors={['transparent', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.85)']}
             style={[styles.heroGradient, { height: heroHeight * 0.7 }]}
           >
             <View style={styles.heroContent}>
@@ -419,7 +419,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
+            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
 
           {/* Bookmark / Bucket List Button */}
@@ -430,7 +430,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
             <Ionicons
               name={isWishlisted ? 'bookmark' : 'bookmark-outline'}
               size={22}
-              color={isWishlisted ? colors.accent : colors.text}
+              color="#FFFFFF"
             />
           </TouchableOpacity>
         </View>
@@ -826,7 +826,7 @@ const useStyles = createLazyStyles((colors) => ({
   heroGradient: { position: 'absolute' as const, bottom: 0, left: 0, right: 0, justifyContent: 'flex-end' as const, paddingHorizontal: 16, paddingBottom: 16 },
   heroContent: { alignItems: 'flex-start' as const },
   tagsContainer: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 6, marginTop: 8 },
-  heroTitle: { fontSize: 32, fontWeight: '700' as const, color: colors.text, textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
+  heroTitle: { fontSize: 32, fontWeight: '700' as const, color: '#FFFFFF', textShadowColor: 'rgba(0,0,0,0.7)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 },
   pickBadge: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 5, backgroundColor: 'rgba(0,0,0,0.5)', borderWidth: 1, borderColor: colors.goldBorder, paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.sm, marginBottom: 8 },
   pickBadgeText: { color: '#FFF', fontSize: 12, fontWeight: '700' as const, letterSpacing: 0.3 },
   heroTitleElite: { textShadowColor: 'rgba(255, 215, 0, 0.15)' },

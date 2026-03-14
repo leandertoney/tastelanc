@@ -52,7 +52,7 @@
       },
       "package": "com.tastelanc.app",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 3,
+      "versionCode": 28,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",

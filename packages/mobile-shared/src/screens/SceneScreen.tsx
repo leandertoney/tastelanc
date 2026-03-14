@@ -1145,13 +1145,6 @@ export default function SceneScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      {/* Subtitle */}
-      <View style={styles.sceneHeader}>
-        <Text style={styles.sceneSubtitle}>
-          See what's happening right now — trending spots, live deals, and what everyone's checking out.
-        </Text>
-      </View>
-
       {/* Filter bar */}
       <FlatList
         data={FILTERS}
@@ -1209,18 +1202,6 @@ export default function SceneScreen() {
 
 const useStyles = createLazyStyles((colors) => ({
   container: { flex: 1, backgroundColor: colors.primary },
-
-  // Scene header subtitle
-  sceneHeader: {
-    paddingHorizontal: spacing.md,
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  sceneSubtitle: {
-    fontSize: 13,
-    color: colors.textMuted,
-    lineHeight: 18,
-  },
 
   // Filter bar
   filterBar: { borderBottomWidth: 1, borderBottomColor: colors.border, flexGrow: 0 },

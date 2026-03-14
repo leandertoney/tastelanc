@@ -56,7 +56,7 @@ export function TheMoveHeaderTitle() {
           lineHeight: 12,
           letterSpacing: 0.3,
           position: 'absolute',
-          top: -2,
+          top: -3,
           left: -6,
         }}
       >
