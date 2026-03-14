@@ -25,7 +25,7 @@ export default function PlanYourDayCard({ onPress }: PlanYourDayCardProps) {
       activeOpacity={0.85}
     >
       <View style={styles.iconCircle}>
-        <Ionicons name="calendar" size={20} color={colors.text} />
+        <Ionicons name="calendar" size={20} color={colors.textOnAccent} />
       </View>
 
       <View style={styles.textBlock}>

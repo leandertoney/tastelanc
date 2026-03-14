@@ -302,7 +302,7 @@ export default function ItineraryBuilderScreen() {
                   <Ionicons
                     name={mood.icon as any}
                     size={15}
-                    color={isSelected ? colors.text : colors.textMuted}
+                    color={isSelected ? colors.accent : colors.textMuted}
                   />
                   <Text style={[styles.moodText, isSelected && styles.moodTextSelected]}>
                     {mood.label}
@@ -327,7 +327,7 @@ export default function ItineraryBuilderScreen() {
             activeOpacity={0.7}
           >
             <Text style={[styles.stopText, stopCount === 2 && styles.stopTextSelected]}>
-              2 \u2014 Quick outing
+              {'2 — Quick outing'}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -336,7 +336,7 @@ export default function ItineraryBuilderScreen() {
             activeOpacity={0.7}
           >
             <Text style={[styles.stopText, stopCount === 3 && styles.stopTextSelected]}>
-              3 \u2014 Full experience
+              {'3 — Full experience'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -503,7 +503,7 @@ const useStyles = createLazyStyles((colors) => ({
     color: colors.textMuted,
   },
   moodTextSelected: {
-    color: colors.text,
+    color: colors.accent,
   },
 
   // --- Stop Count ---
@@ -522,7 +522,7 @@ const useStyles = createLazyStyles((colors) => ({
   },
   stopPillSelected: {
     borderColor: colors.accent,
-    backgroundColor: colors.accent + '26',
+    backgroundColor: colors.accentSoft || (colors.accent + '26'),
   },
   stopText: {
     fontSize: typography.subhead,
@@ -530,7 +530,7 @@ const useStyles = createLazyStyles((colors) => ({
     color: colors.textMuted,
   },
   stopTextSelected: {
-    color: colors.text,
+    color: colors.accent,
   },
 
   // --- Generate Button ---
