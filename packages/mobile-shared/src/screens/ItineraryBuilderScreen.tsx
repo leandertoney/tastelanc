@@ -354,9 +354,9 @@ export default function ItineraryBuilderScreen() {
           disabled={isLoadingData || isGenerating}
         >
           {isGenerating || isLoadingData ? (
-            <ActivityIndicator size="small" color={colors.text} />
+            <ActivityIndicator size="small" color={colors.textOnAccent} />
           ) : (
-            <Ionicons name="sparkles" size={20} color={colors.text} />
+            <Ionicons name="sparkles" size={20} color={colors.textOnAccent} />
           )}
           <Text style={styles.generateButtonText}>
             {isLoadingData
@@ -471,7 +471,7 @@ const useStyles = createLazyStyles((colors) => ({
     color: colors.textMuted,
   },
   datePillTextSelected: {
-    color: colors.text,
+    color: colors.textOnAccent,
   },
 
   // --- Mood Grid ---
@@ -558,6 +558,6 @@ const useStyles = createLazyStyles((colors) => ({
   generateButtonText: {
     fontSize: typography.headline,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.textOnAccent,
   },
 }));

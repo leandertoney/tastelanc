@@ -469,6 +469,6 @@ const useStyles = createLazyStyles((colors) => ({
   retryText: {
     fontSize: typography.subhead,
     fontWeight: '600' as const,
-    color: colors.text,
+    color: colors.textOnAccent,
   },
 }));

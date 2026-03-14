@@ -156,7 +156,7 @@ const useStyles = createLazyStyles((colors) => ({
     color: colors.textMuted,
   },
   segmentTextActive: {
-    color: colors.text,
+    color: colors.textOnAccent,
   },
   badge: {
     backgroundColor: colors.error,

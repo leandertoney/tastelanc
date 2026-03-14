@@ -306,7 +306,7 @@ export default function FlyerPreviewScreen() {
             activeOpacity={0.7}
           >
             {isSubmitting ? (
-              <ActivityIndicator color={colors.text} />
+              <ActivityIndicator color={colors.textOnAccent} />
             ) : (
               <Text style={styles.continueButtonText}>Continue</Text>
             )}
@@ -457,7 +457,7 @@ const useStyles = createLazyStyles((colors) => ({
     fontWeight: '500' as const,
   },
   pillTextActive: {
-    color: colors.text,
+    color: colors.textOnAccent,
   },
   footer: {
     paddingHorizontal: spacing.lg,
@@ -477,7 +477,7 @@ const useStyles = createLazyStyles((colors) => ({
   continueButtonText: {
     fontSize: typography.headline,
     fontWeight: '600' as const,
-    color: colors.text,
+    color: colors.textOnAccent,
   },
   // Bottom Sheet
   sheetBg: {

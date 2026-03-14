@@ -71,13 +71,13 @@ export default function OnboardingReviewAskScreen({ navigation }: Props) {
             <View style={[styles.iconCircle, selectedOption === 'positive' && styles.iconCircleSelected]}><Text style={styles.emoji}>❤️</Text></View>
             <Text style={styles.cardTitle}>Yes, I'm excited!</Text>
             <Text style={styles.cardDescription}>{`Can't wait to explore ${brand.cityName}`}</Text>
-            {selectedOption === 'positive' && <View style={styles.checkmark}><Ionicons name="checkmark" size={20} color={colors.text} /></View>}
+            {selectedOption === 'positive' && <View style={styles.checkmark}><Ionicons name="checkmark" size={20} color={colors.textOnAccent} /></View>}
           </AnimatedTouchable>
           <AnimatedTouchable style={[styles.card, card2AnimatedStyle, selectedOption === 'neutral' && styles.cardSelected]} onPress={() => handleSelect('neutral')} activeOpacity={0.8}>
             <View style={[styles.iconCircle, selectedOption === 'neutral' && styles.iconCircleSelected]}><Text style={styles.emoji}>🤔</Text></View>
             <Text style={styles.cardTitle}>Not sure yet</Text>
             <Text style={styles.cardDescription}>I'll explore first</Text>
-            {selectedOption === 'neutral' && <View style={styles.checkmark}><Ionicons name="checkmark" size={20} color={colors.text} /></View>}
+            {selectedOption === 'neutral' && <View style={styles.checkmark}><Ionicons name="checkmark" size={20} color={colors.textOnAccent} /></View>}
           </AnimatedTouchable>
         </View>
         <Animated.View style={[styles.skipContainer, skipAnimatedStyle]}>

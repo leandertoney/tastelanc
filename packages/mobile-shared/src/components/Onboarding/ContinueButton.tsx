@@ -23,7 +23,7 @@ const useStyles = createLazyStyles((colors) => ({
   text: {
     fontSize: 17,
     fontWeight: '600' as const,
-    color: colors.text,
+    color: colors.textOnAccent,
     letterSpacing: 0.3,
   },
 }));

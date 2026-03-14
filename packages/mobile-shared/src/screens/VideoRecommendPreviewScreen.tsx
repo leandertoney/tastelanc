@@ -322,10 +322,10 @@ export default function VideoRecommendPreviewScreen({ route, navigation }: Props
           activeOpacity={0.8}
         >
           {isPosting ? (
-            <ActivityIndicator size="small" color={colors.text} />
+            <ActivityIndicator size="small" color={colors.textOnAccent} />
           ) : (
             <>
-              <Ionicons name="heart" size={20} color={colors.text} />
+              <Ionicons name="heart" size={20} color={colors.textOnAccent} />
               <Text style={styles.postButtonText}>Post Recommendation</Text>
             </>
           )}
@@ -497,7 +497,7 @@ const useStyles = createLazyStyles((colors) => ({
     opacity: 0.6,
   },
   postButtonText: {
-    color: colors.text,
+    color: colors.textOnAccent,
     fontSize: 17,
     fontWeight: '700' as const,
   },

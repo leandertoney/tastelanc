@@ -213,11 +213,11 @@ export default function SantaStumbleModal({
                   onPress={handleTicketPress}
                   activeOpacity={0.9}
                 >
-                  <Ionicons name="ticket-outline" size={18} color={palette?.textOnCta || colors.text} />
-                  <Text style={[styles.ctaText, palette && { color: palette.textOnCta || colors.text }]}>
+                  <Ionicons name="ticket-outline" size={18} color={palette?.textOnCta || colors.textOnAccent} />
+                  <Text style={[styles.ctaText, palette && { color: palette.textOnCta || colors.textOnAccent }]}>
                     CLICK HERE TO PURCHASE TICKETS
                   </Text>
-                  <Ionicons name="open-outline" size={16} color={palette?.textOnCta || colors.text} />
+                  <Ionicons name="open-outline" size={16} color={palette?.textOnCta || colors.textOnAccent} />
                 </TouchableOpacity>
 
                 <Text style={styles.description}>{data.description}</Text>
@@ -416,7 +416,7 @@ const useStyles = createLazyStyles((colors) => ({
     shadowRadius: 12,
   },
   ctaText: {
-    color: colors.text,
+    color: colors.textOnAccent,
     fontWeight: '700' as const,
     flex: 1,
   },
@@ -549,7 +549,7 @@ const useStyles = createLazyStyles((colors) => ({
     backgroundColor: colors.gold,
   },
   flyerBadgeText: {
-    color: colors.text,
+    color: colors.textOnAccent,
     fontWeight: '700' as const,
     fontSize: 12,
     letterSpacing: 0.3,

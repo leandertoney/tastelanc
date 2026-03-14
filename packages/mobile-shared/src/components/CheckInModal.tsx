@@ -442,11 +442,11 @@ const useStyles = createLazyStyles((colors) => ({
   pointsText: {
     fontSize: 28,
     fontWeight: '700' as const,
-    color: colors.text,
+    color: colors.textOnAccent,
   },
   pointsLabel: {
     fontSize: 14,
-    color: colors.text,
+    color: colors.textOnAccent,
     marginLeft: 4,
   },
   retryButton: {
@@ -457,7 +457,7 @@ const useStyles = createLazyStyles((colors) => ({
     marginTop: 20,
   },
   retryButtonText: {
-    color: colors.text,
+    color: colors.textOnAccent,
     fontSize: 16,
     fontWeight: '600' as const,
   },

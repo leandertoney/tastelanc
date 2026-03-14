@@ -291,7 +291,7 @@ const useStyles = createLazyStyles((colors) => ({
   dayText: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.text,
+    color: colors.textOnAccent,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },

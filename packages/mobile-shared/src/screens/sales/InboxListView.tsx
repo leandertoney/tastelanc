@@ -210,7 +210,7 @@ export default function InboxListView({ search }: Props) {
               <Ionicons
                 name={type === 'crm' ? 'briefcase-outline' : type === 'info' ? 'information-circle-outline' : 'people-outline'}
                 size={16}
-                color={inbox === type ? colors.text : colors.textMuted}
+                color={inbox === type ? colors.textOnAccent : colors.textMuted}
               />
               <Text style={[styles.inboxTabText, inbox === type && styles.inboxTabTextActive]}>
                 {type === 'crm' ? 'CRM' : type === 'info' ? 'Info@' : 'Team'}
@@ -354,7 +354,7 @@ const useStyles = createLazyStyles((colors) => ({
     color: colors.textMuted,
   },
   inboxTabTextActive: {
-    color: colors.text,
+    color: colors.textOnAccent,
   },
   // Toolbar row
   toolbarRow: {
@@ -425,7 +425,7 @@ const useStyles = createLazyStyles((colors) => ({
     color: colors.textMuted,
   },
   filterTextActive: {
-    color: colors.text,
+    color: colors.textOnAccent,
   },
   centered: {
     flex: 1,
@@ -536,6 +536,6 @@ const useStyles = createLazyStyles((colors) => ({
   retryText: {
     fontSize: typography.subhead,
     fontWeight: '600' as const,
-    color: colors.text,
+    color: colors.textOnAccent,
   },
 }));

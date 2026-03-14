@@ -351,7 +351,7 @@ export default function MenuViewer({ menuUrl, restaurantName, menus, loading }: 
           Tap below to view {restaurantName}'s menu
         </Text>
         <TouchableOpacity style={styles.openButton} onPress={handleOpenExternal}>
-          <Ionicons name="open-outline" size={20} color={colors.text} />
+          <Ionicons name="open-outline" size={20} color={colors.textOnAccent} />
           <Text style={styles.openButtonText}>Open Menu</Text>
         </TouchableOpacity>
       </View>
@@ -477,7 +477,7 @@ const useMenuStyles = createLazyStyles((colors) => ({
     color: colors.textMuted,
   },
   sectionTabTextActive: {
-    color: colors.text,
+    color: colors.textOnAccent,
     fontWeight: '600',
   },
   pagesContainer: {
@@ -706,7 +706,7 @@ const useMenuStyles = createLazyStyles((colors) => ({
     marginTop: 12,
   },
   openButtonText: {
-    color: colors.text,
+    color: colors.textOnAccent,
     fontSize: 16,
     fontWeight: '600',
   },

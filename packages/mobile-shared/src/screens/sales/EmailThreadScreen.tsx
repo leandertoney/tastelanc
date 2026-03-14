@@ -43,9 +43,9 @@ function MessageBubble({ message, styles, colors }: { message: ThreadMessage; st
     <View style={[styles.bubbleContainer, isSent ? styles.bubbleSent : styles.bubbleReceived]}>
       <View style={[styles.bubble, isSent ? styles.bubbleBgSent : styles.bubbleBgReceived]}>
         {message.subject && (
-          <Text style={styles.bubbleSubject}>{message.subject}</Text>
+          <Text style={[styles.bubbleSubject, isSent && styles.bubbleTextSent]}>{message.subject}</Text>
         )}
-        <Text style={styles.bubbleText}>
+        <Text style={[styles.bubbleText, isSent && styles.bubbleTextSent]}>
           {message.body_text || '(No content)'}
         </Text>
         <View style={styles.bubbleMeta}>
@@ -208,9 +208,9 @@ export default function EmailThreadScreen() {
               disabled={!replyText.trim() || sendMutation.isPending}
             >
               {sendMutation.isPending ? (
-                <ActivityIndicator size="small" color={colors.text} />
+                <ActivityIndicator size="small" color={colors.textOnAccent} />
               ) : (
-                <Ionicons name="send" size={20} color={colors.text} />
+                <Ionicons name="send" size={20} color={colors.textOnAccent} />
               )}
             </TouchableOpacity>
           </View>
@@ -283,6 +283,9 @@ const useStyles = createLazyStyles((colors) => ({
     fontSize: typography.subhead,
     color: colors.text,
     lineHeight: 22,
+  },
+  bubbleTextSent: {
+    color: colors.textOnAccent,
   },
   bubbleMeta: {
     flexDirection: 'row' as const,
@@ -360,6 +363,6 @@ const useStyles = createLazyStyles((colors) => ({
   retryText: {
     fontSize: typography.subhead,
     fontWeight: '600' as const,
-    color: colors.text,
+    color: colors.textOnAccent,
   },
 }));

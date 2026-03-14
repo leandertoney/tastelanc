@@ -78,10 +78,10 @@ export default function OnboardingDiningHabitsScreen({ navigation }: Props) {
               return (
                 <TouchableOpacity key={option} style={[styles.optionCard, isSelected && styles.optionCardSelected]} onPress={() => handleSelect(option)} activeOpacity={0.8}>
                   <View style={[styles.iconContainer, isSelected && styles.iconContainerSelected]}>
-                    <Ionicons name={OPTION_ICONS[option] || 'restaurant'} size={24} color={isSelected ? colors.text : colors.accent} />
+                    <Ionicons name={OPTION_ICONS[option] || 'restaurant'} size={24} color={isSelected ? colors.textOnAccent : colors.accent} />
                   </View>
                   <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>{option}</Text>
-                  {isSelected && <View style={styles.checkmark}><Ionicons name="checkmark" size={20} color={colors.text} /></View>}
+                  {isSelected && <View style={styles.checkmark}><Ionicons name="checkmark" size={20} color={colors.textOnAccent} /></View>}
                 </TouchableOpacity>
               );
             })}

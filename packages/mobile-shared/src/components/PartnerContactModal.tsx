@@ -234,10 +234,10 @@ export default function PartnerContactModal({
               disabled={!isFormValid || isSubmitting}
             >
               {isSubmitting ? (
-                <ActivityIndicator color={colors.text} />
+                <ActivityIndicator color={colors.textOnAccent} />
               ) : (
                 <>
-                  <Ionicons name="send" size={18} color={colors.text} />
+                  <Ionicons name="send" size={18} color={colors.textOnAccent} />
                   <Text style={styles.submitButtonText}>Send Message</Text>
                 </>
               )}
@@ -345,7 +345,7 @@ const useStyles = createLazyStyles((colors) => ({
     opacity: 0.5,
   },
   submitButtonText: {
-    color: colors.text,
+    color: colors.textOnAccent,
     fontSize: 16,
     fontWeight: '600' as const,
   },
@@ -384,7 +384,7 @@ const useStyles = createLazyStyles((colors) => ({
     paddingHorizontal: spacing.xl * 2,
   },
   doneButtonText: {
-    color: colors.text,
+    color: colors.textOnAccent,
     fontSize: 16,
     fontWeight: '600' as const,
   },

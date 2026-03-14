@@ -121,7 +121,7 @@ const useStyles = createLazyStyles((colors) => ({
   lockText: {
     fontSize: 10,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.textOnAccent,
   },
   comingSoonBadge: {
     backgroundColor: colors.primaryLight,

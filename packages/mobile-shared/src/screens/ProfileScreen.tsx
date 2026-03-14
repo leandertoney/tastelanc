@@ -486,7 +486,7 @@ const useStyles = createLazyStyles((colors) => ({
     paddingHorizontal: 24,
     borderRadius: radius.full,
   },
-  signInButtonText: { fontSize: 15, fontWeight: '600' as const, color: colors.text },
+  signInButtonText: { fontSize: 15, fontWeight: '600' as const, color: colors.textOnAccent },
   sectionHeader: {
     paddingHorizontal: spacing.md,
     paddingTop: 28,

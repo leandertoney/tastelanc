@@ -302,7 +302,7 @@ const useStyles = createLazyStyles((colors) => ({
     color: colors.textMuted,
   },
   tabTextSelected: {
-    color: colors.text,
+    color: colors.textOnAccent,
   },
   todayDot: {
     position: 'absolute',

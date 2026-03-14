@@ -355,9 +355,9 @@ export default function ItineraryCardScreen() {
             disabled={saveItineraryMutation.isPending}
           >
             {saveItineraryMutation.isPending ? (
-              <ActivityIndicator size="small" color={colors.text} />
+              <ActivityIndicator size="small" color={colors.textOnAccent} />
             ) : (
-              <Ionicons name="bookmark" size={20} color={colors.text} />
+              <Ionicons name="bookmark" size={20} color={colors.textOnAccent} />
             )}
             <Text style={[styles.actionButtonText, styles.saveButtonText]}>
               {saveItineraryMutation.isPending ? 'Saving...' : 'Save Plan'}
@@ -541,7 +541,7 @@ const useStyles = createLazyStyles((colors) => ({
   stopBadgeText: {
     fontSize: typography.caption1,
     fontWeight: '700',
-    color: colors.text,
+    color: colors.textOnAccent,
   },
 
   // --- Walk Connector ---
@@ -622,7 +622,7 @@ const useStyles = createLazyStyles((colors) => ({
     borderColor: colors.accent,
   },
   saveButtonText: {
-    color: colors.text,
+    color: colors.textOnAccent,
   },
   pulseCta: {
     flexDirection: 'row',

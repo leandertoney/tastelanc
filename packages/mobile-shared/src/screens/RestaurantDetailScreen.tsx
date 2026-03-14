@@ -798,7 +798,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
         onPress={() => setCheckInModalVisible(true)}
         activeOpacity={0.9}
       >
-        <Ionicons name="gift" size={24} color={colors.text} />
+        <Ionicons name="gift" size={24} color={colors.textOnAccent} />
         <Text style={styles.checkInFabText}>Check In</Text>
       </TouchableOpacity>
 
@@ -870,7 +870,7 @@ const useStyles = createLazyStyles((colors) => ({
   recommendFab: { position: 'absolute' as const, bottom: 80, right: 16, flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: colors.cardBgElevated, paddingVertical: 12, paddingHorizontal: 16, borderRadius: radius.full, borderWidth: 1, borderColor: colors.accent, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6, gap: 6 },
   recommendFabText: { color: colors.text, fontSize: 14, fontWeight: '600' as const },
   checkInFab: { position: 'absolute' as const, bottom: 24, right: 16, flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: colors.accent, paddingVertical: 14, paddingHorizontal: 20, borderRadius: radius.full, shadowColor: colors.accent, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8, gap: 8 },
-  checkInFabText: { color: colors.text, fontSize: 16, fontWeight: '600' as const },
+  checkInFabText: { color: colors.textOnAccent, fontSize: 16, fontWeight: '600' as const },
   imHereFab: { position: 'absolute' as const, bottom: 24, left: 16, flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: colors.cardBgElevated, paddingVertical: 12, paddingHorizontal: 16, borderRadius: radius.full, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6, gap: 6 },
   imHereFabRecorded: { backgroundColor: `${colors.success}30`, borderColor: colors.success },
   imHereFabText: { color: colors.text, fontSize: 14, fontWeight: '600' as const },

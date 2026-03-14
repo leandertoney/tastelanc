@@ -163,7 +163,7 @@ const useStyles = createLazyStyles((colors) => ({
   upgradeButtonText: {
     fontSize: 16,
     fontWeight: '600' as const,
-    color: colors.text,
+    color: colors.textOnAccent,
   },
   dismissButton: {
     paddingVertical: 8,

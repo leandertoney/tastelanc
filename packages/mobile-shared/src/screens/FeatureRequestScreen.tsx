@@ -180,10 +180,10 @@ export default function FeatureRequestScreen() {
             disabled={!canSubmit || isSubmitting}
           >
             {isSubmitting ? (
-              <ActivityIndicator color={colors.text} />
+              <ActivityIndicator color={colors.textOnAccent} />
             ) : (
               <>
-                <Ionicons name="send" size={20} color={colors.text} />
+                <Ionicons name="send" size={20} color={colors.textOnAccent} />
                 <Text style={styles.submitButtonText}>Submit Suggestion</Text>
               </>
             )}
@@ -295,7 +295,7 @@ const useStyles = createLazyStyles((colors) => ({
   submitButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.textOnAccent,
   },
   successContainer: {
     flex: 1,
@@ -328,6 +328,6 @@ const useStyles = createLazyStyles((colors) => ({
   doneButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.textOnAccent,
   },
 }));

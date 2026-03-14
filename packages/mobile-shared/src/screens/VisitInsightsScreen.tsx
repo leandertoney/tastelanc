@@ -286,7 +286,7 @@ const useStyles = createLazyStyles((colors) => ({
   retryButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.textOnAccent,
   },
   emptyState: {
     alignItems: 'center',

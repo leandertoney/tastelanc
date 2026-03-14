@@ -197,7 +197,7 @@ const useStyles = createLazyStyles((colors) => ({
     alignItems: 'center' as const,
   },
   signInButtonText: {
-    color: colors.text,
+    color: colors.textOnAccent,
     fontSize: 15,
     fontWeight: '600' as const,
   },

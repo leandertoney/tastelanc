@@ -331,7 +331,7 @@ const useStyles = createLazyStyles((colors) => ({
     alignItems: 'center',
   },
   continueButtonText: {
-    color: colors.text,
+    color: colors.textOnAccent,
     fontSize: 16,
     fontWeight: '600' as const,
   },
@@ -372,7 +372,7 @@ const useStyles = createLazyStyles((colors) => ({
     marginTop: 20,
   },
   retryButtonText: {
-    color: colors.text,
+    color: colors.textOnAccent,
     fontSize: 16,
     fontWeight: '600' as const,
   },

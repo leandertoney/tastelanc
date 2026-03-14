@@ -196,6 +196,6 @@ const useStyles = createLazyStyles((colors) => ({
   doneButtonText: {
     fontSize: typography.headline,
     fontWeight: '600' as const,
-    color: colors.text,
+    color: colors.textOnAccent,
   },
 }));

@@ -234,7 +234,7 @@ const useStyles = createLazyStyles((colors) => ({
     color: colors.textMuted,
   },
   filterTextActive: {
-    color: colors.text,
+    color: colors.textOnAccent,
   },
   centered: {
     flex: 1,
@@ -333,6 +333,6 @@ const useStyles = createLazyStyles((colors) => ({
   retryText: {
     fontSize: typography.subhead,
     fontWeight: '600' as const,
-    color: colors.text,
+    color: colors.textOnAccent,
   },
 }));

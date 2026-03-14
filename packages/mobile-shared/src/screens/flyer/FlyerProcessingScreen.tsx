@@ -202,6 +202,6 @@ const useStyles = createLazyStyles((colors) => ({
   retryButtonText: {
     fontSize: typography.callout,
     fontWeight: '600' as const,
-    color: colors.text,
+    color: colors.textOnAccent,
   },
 }));
