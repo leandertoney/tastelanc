@@ -13,6 +13,7 @@ import { getSupabase, getColors, getBrand } from '../config/theme';
 const MARKET_TO_APP_SLUG: Record<string, string> = {
   'lancaster-pa': 'tastelanc',
   'cumberland-pa': 'taste-cumberland',
+  'fayetteville-nc': 'taste-fayetteville',
 };
 
 function getAppSlug(): string {

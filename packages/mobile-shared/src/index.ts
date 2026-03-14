@@ -15,7 +15,7 @@ export type { Spacing, Typography, Radius } from './constants/spacing';
 export { stagger, duration, spring, reveal, easing, pulse, transforms, animationConfigs } from './constants/animations';
 
 // Theme singleton
-export { initTheme, getColors, getBrand, getAssets, getSupabase, isThemeInitialized } from './config/theme';
+export { initTheme, getColors, getBrand, getAssets, getSupabase, getNeighborhoodBoundaries, isThemeInitialized } from './config/theme';
 
 // React Context
 export { AppConfigProvider, useAppConfig, useColors, useBrand, useAssets } from './config/context';
@@ -160,8 +160,8 @@ export { OnboardingProvider, useOnboarding } from './context/OnboardingContext';
 export { pointInPolygon } from './utils/pointInPolygon';
 
 // Data
-export { NEIGHBORHOOD_BOUNDARIES } from './data/neighborhoodBoundaries';
 export type { NeighborhoodBoundary } from './data/neighborhoodBoundaries';
+// Neighborhood boundaries are now per-app — use getNeighborhoodBoundaries() from theme singleton
 
 // Components
 export { default as Spacer } from './components/Spacer';

@@ -16,6 +16,8 @@ import { colors } from './src/constants/colors';
 import { BRAND } from './src/config/brand';
 import { supabase } from './src/lib/supabase';
 import { env } from './src/lib/env';
+import { NEIGHBORHOOD_BOUNDARIES } from './src/data/neighborhoodBoundaries';
+import { MARKET_CENTER } from './src/config/market';
 
 // Initialize Sentry as early as possible (before React renders)
 initSentry();
@@ -27,7 +29,7 @@ initTheme(BRAND, colors, {
   appIcon: require('./assets/icon.png'),
   splashVideo: require('./assets/animation/tastelanc_dark_spin.mp4'),
   onboardingHero: require('./assets/images/onboarding/soundfamiliar.png'),
-}, supabase, env.SUPABASE_ANON_KEY);
+}, supabase, env.SUPABASE_ANON_KEY, NEIGHBORHOOD_BOUNDARIES, MARKET_CENTER);
 
 // Global JS error handler — catches errors that escape React tree
 const originalHandler = ErrorUtils.getGlobalHandler();

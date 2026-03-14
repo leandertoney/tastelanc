@@ -15,7 +15,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../../navigation/types';
 import { createDraft, createCheckout } from '../../lib/flyer';
-import { getColors } from '../../config/theme';
+import { getColors, getBrand } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { withAlpha } from '../../utils/colorUtils';
 import { spacing, radius, typography } from '../../constants/spacing';
@@ -81,7 +81,7 @@ export default function FlyerPublishChoiceScreen() {
         if (claimUrl) {
           try {
             await Share.share({
-              message: `Your event "${draftData.eventName}" can be listed on TasteLanc. Claim and publish it here: ${claimUrl}`,
+              message: `Your event "${draftData.eventName}" can be listed on ${getBrand().appName}. Claim and publish it here: ${claimUrl}`,
             });
           } catch {
             // User cancelled share, still navigate to success

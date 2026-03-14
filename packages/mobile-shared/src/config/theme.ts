@@ -7,6 +7,7 @@
  */
 
 import type { AppBrand, ColorTokens, AppAssets, MarketFeatures } from '../types/config';
+import type { NeighborhoodBoundary } from '../data/neighborhoodBoundaries';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 let _brand: AppBrand | null = null;
@@ -14,6 +15,8 @@ let _colors: ColorTokens | null = null;
 let _assets: AppAssets | null = null;
 let _supabase: SupabaseClient | null = null;
 let _anonKey: string | null = null;
+let _neighborhoodBoundaries: NeighborhoodBoundary[] = [];
+let _marketCenter: { latitude: number; longitude: number } | null = null;
 
 /**
  * Initialize the theme singleton. Call this once at app startup,
@@ -24,13 +27,17 @@ export function initTheme(
   colors: ColorTokens,
   assets: AppAssets,
   supabaseClient: SupabaseClient,
-  anonKey?: string
+  anonKey?: string,
+  neighborhoodBoundaries?: NeighborhoodBoundary[],
+  marketCenter?: { latitude: number; longitude: number }
 ): void {
   _brand = brand;
   _colors = colors;
   _assets = assets;
   _supabase = supabaseClient;
   _anonKey = anonKey || null;
+  _neighborhoodBoundaries = neighborhoodBoundaries || [];
+  _marketCenter = marketCenter || null;
 }
 
 /** Get the current color tokens. Throws if initTheme() hasn't been called. */
@@ -72,6 +79,21 @@ const FEATURE_DEFAULTS: Record<keyof MarketFeatures, boolean> = {
 export function hasFeature(feature: keyof MarketFeatures): boolean {
   const brand = getBrand();
   return brand.features?.[feature] ?? FEATURE_DEFAULTS[feature];
+}
+
+/** Get the neighborhood boundaries for the current market. Returns empty array if none configured. */
+export function getNeighborhoodBoundaries(): NeighborhoodBoundary[] {
+  return _neighborhoodBoundaries;
+}
+
+/**
+ * Get the market center coordinates for the current app.
+ * Falls back to Lancaster, PA if not set via initTheme().
+ */
+export function getMarketCenter(): { latitude: number; longitude: number } {
+  if (_marketCenter) return _marketCenter;
+  // Ultimate fallback — Lancaster, PA
+  return { latitude: 40.0379, longitude: -76.3055 };
 }
 
 /** Check if theme has been initialized (safe check without throwing). */

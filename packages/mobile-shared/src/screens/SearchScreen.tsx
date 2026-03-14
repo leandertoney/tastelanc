@@ -23,7 +23,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import MapView, { Marker, Polygon, Region, PROVIDER_GOOGLE } from 'react-native-maps';
 import ClusteredMapView from 'react-native-map-clustering';
-import { getColors, getSupabase, getAssets } from '../config/theme';
+import { getColors, getSupabase, getAssets, getNeighborhoodBoundaries, getMarketCenter } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius } from '../constants/spacing';
 import { getFavorites, toggleFavorite } from '../lib/favorites';
@@ -32,7 +32,6 @@ import { useAuth } from '../hooks/useAuth';
 import { useMarket } from '../context/MarketContext';
 import {
   useUserLocation,
-  LANCASTER_CENTER,
   calculateDistance,
   isNearMarketCenter,
 } from '../hooks/useUserLocation';
@@ -41,7 +40,6 @@ import type { RootStackParamList } from '../navigation/types';
 import { SearchBar, CategoryChip, CompactRestaurantCard, MapRestaurantCard } from '../components';
 import FeatureFilterModal from '../components/FeatureFilterModal';
 import { trackImpression } from '../lib/impressions';
-import { NEIGHBORHOOD_BOUNDARIES } from '../data/neighborhoodBoundaries';
 import { pointInPolygon } from '../utils/pointInPolygon';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -83,15 +81,17 @@ export default function SearchScreen() {
   const colors = getColors();
   const supabase = getSupabase();
   const assets = getAssets();
+  const NEIGHBORHOOD_BOUNDARIES = getNeighborhoodBoundaries();
   const navigation = useNavigation<NavigationProp>();
   const { userId } = useAuth();
   const { market, marketId } = useMarket();
   const { location, permissionStatus, requestPermission } = useUserLocation();
 
-  // Derive map center from selected market, falling back to Lancaster
+  // Derive map center from selected market, falling back to theme market center
+  const themeCenter = getMarketCenter();
   const mapCenter = useMemo(() => ({
-    latitude: market?.center_latitude ?? LANCASTER_CENTER.latitude,
-    longitude: market?.center_longitude ?? LANCASTER_CENTER.longitude,
+    latitude: market?.center_latitude ?? themeCenter.latitude,
+    longitude: market?.center_longitude ?? themeCenter.longitude,
   }), [market]);
 
   const initialRegion: Region = useMemo(() => ({

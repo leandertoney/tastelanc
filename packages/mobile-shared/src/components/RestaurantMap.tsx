@@ -12,12 +12,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RestaurantWithTier } from '../types/database';
-import { getColors, getAssets } from '../config/theme';
+import { getColors, getAssets, getMarketCenter } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
 import {
   useUserLocation,
-  LANCASTER_CENTER,
   calculateDistance,
   formatDistance,
   isNearMarketCenter,
@@ -39,7 +38,7 @@ const RADIUS_OPTIONS = [
 ];
 
 const INITIAL_REGION: Region = {
-  ...LANCASTER_CENTER,
+  ...getMarketCenter(),
   latitudeDelta: 0.05,
   longitudeDelta: 0.05,
 };
@@ -74,8 +73,9 @@ export default function RestaurantMap({
   }, [location, mapReady]);
 
   const filteredRestaurants = useMemo(() => {
-    const userLat = location?.latitude ?? LANCASTER_CENTER.latitude;
-    const userLng = location?.longitude ?? LANCASTER_CENTER.longitude;
+    const center = getMarketCenter();
+    const userLat = location?.latitude ?? center.latitude;
+    const userLng = location?.longitude ?? center.longitude;
 
     return restaurants
       .filter((r) => r.latitude && r.longitude)

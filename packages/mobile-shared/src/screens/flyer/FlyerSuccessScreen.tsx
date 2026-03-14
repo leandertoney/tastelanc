@@ -11,7 +11,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../../navigation/types';
-import { getColors } from '../../config/theme';
+import { getColors, getBrand } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { spacing, radius, typography } from '../../constants/spacing';
 
@@ -53,7 +53,7 @@ export default function FlyerSuccessScreen() {
     if (!claimUrl) return;
     try {
       await Share.share({
-        message: `Check out this event on TasteLanc: ${claimUrl}`,
+        message: `Check out this event on ${getBrand().appName}: ${claimUrl}`,
       });
     } catch {
       // User cancelled

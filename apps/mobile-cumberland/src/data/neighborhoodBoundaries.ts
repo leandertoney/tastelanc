@@ -1,11 +1,4 @@
-export interface NeighborhoodBoundary {
-  slug: string;
-  name: string;
-  labelCoordinate: { latitude: number; longitude: number };
-  coordinates: { latitude: number; longitude: number }[];
-  fillColor: string;
-  strokeColor: string;
-}
+import type { NeighborhoodBoundary } from '@tastelanc/mobile-shared/src/data/neighborhoodBoundaries';
 
 export const NEIGHBORHOOD_BOUNDARIES: NeighborhoodBoundary[] = [
   {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as Location from 'expo-location';
-import { useMarket } from '../context/MarketContext';
+import { getMarketCenter } from '../config/theme';
 
 interface LocationCoords {
   latitude: number;
@@ -17,26 +17,13 @@ interface UseUserLocationResult {
 }
 
 /**
- * Default market center used as fallback when MarketContext data hasn't loaded yet.
- * The actual center comes from the market record in Supabase via MarketContext.
+ * @deprecated Use `getMarketCenter()` from `../config/theme` instead.
+ * Kept for backward compatibility with existing imports.
  */
-const DEFAULT_MARKET_CENTER: LocationCoords = {
+export const LANCASTER_CENTER: LocationCoords = {
   latitude: 40.0379,
   longitude: -76.3055,
 };
-
-/**
- * Get the market center from context data, with a static fallback.
- */
-function getMarketCenter(market: { center_latitude: number | null; center_longitude: number | null } | null): LocationCoords {
-  if (market?.center_latitude != null && market?.center_longitude != null) {
-    return { latitude: market.center_latitude, longitude: market.center_longitude };
-  }
-  return DEFAULT_MARKET_CENTER;
-}
-
-// Re-export so existing imports keep working (consumers can import LANCASTER_CENTER)
-export const LANCASTER_CENTER: LocationCoords = DEFAULT_MARKET_CENTER;
 
 /**
  * Hook to get user's current location with permission handling
@@ -133,16 +120,16 @@ const MARKET_RADIUS_MILES = 10;
 
 /**
  * Check if coordinates are within the market area.
- * Uses the default market center for a non-hook context.
- * For market-aware checks, use useIsNearMarket() hook instead.
+ * Uses the market center from theme config (set via initTheme).
  */
 export function isNearMarketCenter(coords: LocationCoords): boolean {
+  const center = getMarketCenter();
   return (
     calculateDistance(
       coords.latitude,
       coords.longitude,
-      LANCASTER_CENTER.latitude,
-      LANCASTER_CENTER.longitude
+      center.latitude,
+      center.longitude
     ) <= MARKET_RADIUS_MILES
   );
 }
