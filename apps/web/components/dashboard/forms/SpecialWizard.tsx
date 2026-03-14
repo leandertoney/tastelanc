@@ -136,7 +136,7 @@ export default function SpecialWizard({ restaurantId, onClose, onSubmit }: Speci
     setError(null);
     try {
       await onSubmit(formData);
-      setIsSuccess(true);
+      onClose();
     } catch (err) {
       console.error('Failed to create special:', err);
       setError(err instanceof Error ? err.message : 'Failed to create special. Please try again.');

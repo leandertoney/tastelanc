@@ -24,7 +24,10 @@ export async function GET(request: Request) {
       );
     }
 
-    const { data: specials, error } = await supabase
+    // Use service role client for admin/sales to bypass RLS
+    const dbClient = (accessResult.isAdmin || accessResult.isSalesRep) ? createServiceRoleClient() : supabase;
+
+    const { data: specials, error } = await dbClient
       .from('specials')
       .select('*')
       .eq('restaurant_id', restaurantId)

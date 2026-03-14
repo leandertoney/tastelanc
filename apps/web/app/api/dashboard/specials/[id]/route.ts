@@ -9,9 +9,11 @@ export async function PUT(
   try {
     const { id } = await params;
     const supabase = await createClient();
+    const serviceClient = createServiceRoleClient();
 
     // First, get the special to find its restaurant_id
-    const { data: existingSpecial, error: fetchError } = await supabase
+    // Use service role client for lookup to avoid RLS blocking admin reads
+    const { data: existingSpecial, error: fetchError } = await serviceClient
       .from('specials')
       .select('restaurant_id')
       .eq('id', id)
@@ -66,8 +68,8 @@ export async function PUT(
     if (is_active !== undefined) updateData.is_active = is_active;
     updateData.updated_at = new Date().toISOString();
 
-    // Use service role client for admin operations to bypass RLS
-    const dbClient = (accessResult.isAdmin || accessResult.isSalesRep) ? createServiceRoleClient() : supabase;
+    // Use service role client for admin/sales operations to bypass RLS
+    const dbClient = (accessResult.isAdmin || accessResult.isSalesRep) ? serviceClient : supabase;
 
     const { data: special, error } = await dbClient
       .from('specials')
@@ -101,9 +103,11 @@ export async function DELETE(
   try {
     const { id } = await params;
     const supabase = await createClient();
+    const serviceClient = createServiceRoleClient();
 
     // First, get the special to find its restaurant_id
-    const { data: existingSpecial, error: fetchError } = await supabase
+    // Use service role client for lookup to avoid RLS blocking admin reads
+    const { data: existingSpecial, error: fetchError } = await serviceClient
       .from('specials')
       .select('restaurant_id')
       .eq('id', id)
@@ -125,8 +129,8 @@ export async function DELETE(
       );
     }
 
-    // Use service role client for admin operations to bypass RLS
-    const dbClient = (accessResult.isAdmin || accessResult.isSalesRep) ? createServiceRoleClient() : supabase;
+    // Use service role client for admin/sales operations to bypass RLS
+    const dbClient = (accessResult.isAdmin || accessResult.isSalesRep) ? serviceClient : supabase;
 
     const { error } = await dbClient
       .from('specials')
