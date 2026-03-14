@@ -9,7 +9,7 @@ import HeaderLogo from '../components/HeaderLogo';
 import HeaderGreeting from '../components/HeaderGreeting';
 import { withScreenErrorBoundary } from '../components/ErrorBoundary';
 import { useSalesRole } from '../hooks/useSalesRole';
-import TheMoveTabLabel from '../components/TheMoveTabLabel';
+import TheMoveTabLabel, { TheMoveHeaderTitle } from '../components/TheMoveTabLabel';
 
 import HomeScreen from '../screens/HomeScreen';
 import SearchScreen from '../screens/SearchScreen';
@@ -105,6 +105,7 @@ export default function BottomTabNavigator() {
         component={SafeSceneScreen}
         options={{
           title: 'Move',
+          headerTitle: () => <TheMoveHeaderTitle />,
           tabBarLabel: ({ focused, color }) => <TheMoveTabLabel focused={focused} color={color} />,
         }}
       />

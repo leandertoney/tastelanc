@@ -4,18 +4,6 @@ import { getColors } from '../config/theme';
 /**
  * Custom tab bar label for "the Move" tab.
  * Renders a tiny italic "the" stacked above "Move" for a branded feel.
- *
- * Usage in BottomTabNavigator:
- *   import TheMoveTabLabel from '../components/TheMoveTabLabel';
- *   ...
- *   <Tab.Screen
- *     name="Move"
- *     component={SafeSceneScreen}
- *     options={{
- *       title: 'Move',
- *       tabBarLabel: ({ focused, color }) => <TheMoveTabLabel focused={focused} color={color} />,
- *     }}
- *   />
  */
 export default function TheMoveTabLabel({ focused, color }: { focused: boolean; color: string }) {
   const colors = getColors();
@@ -43,6 +31,43 @@ export default function TheMoveTabLabel({ focused, color }: { focused: boolean; 
           fontWeight: '600',
           color,
           lineHeight: 13,
+        }}
+      >
+        Move
+      </Text>
+    </View>
+  );
+}
+
+/**
+ * Custom header title for the Move screen nav bar.
+ * Same "the Move" styling as the tab label, scaled up for the header.
+ */
+export function TheMoveHeaderTitle() {
+  const colors = getColors();
+
+  return (
+    <View style={{ alignItems: 'center', justifyContent: 'center', height: 24 }}>
+      <Text
+        style={{
+          fontSize: 11,
+          fontStyle: 'italic',
+          color: colors.textMuted,
+          lineHeight: 12,
+          letterSpacing: 0.3,
+          position: 'absolute',
+          top: -2,
+          left: -6,
+        }}
+      >
+        the
+      </Text>
+      <Text
+        style={{
+          fontSize: 17,
+          fontWeight: '600',
+          color: colors.text,
+          lineHeight: 22,
         }}
       >
         Move
