@@ -327,7 +327,9 @@ export default function HomeScreen() {
           onPress={() => setRosieChatVisible(true)}
           activeOpacity={0.9}
         >
-          <Image source={assets.aiAvatar} style={styles.rosieAvatar} />
+          <View style={styles.rosieAvatarBg}>
+            <Image source={assets.aiAvatar} style={styles.rosieAvatar} />
+          </View>
           <Text style={styles.rosieFabText}>{`Ask ${brand.aiName}`}</Text>
         </TouchableOpacity>
 
@@ -382,6 +384,14 @@ const useStyles = createLazyStyles((colors) => ({
     shadowRadius: 12,
     elevation: 8,
     gap: 10,
+  },
+  rosieAvatarBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
   rosieAvatar: { width: 36, height: 36, borderRadius: 18 },
   rosieFabText: { color: colors.textOnAccent, fontSize: 15, fontWeight: '600' as const },
