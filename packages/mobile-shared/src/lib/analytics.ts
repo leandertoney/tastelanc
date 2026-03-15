@@ -18,6 +18,7 @@ const PAGE_TYPE_MAP: Record<string, string> = {
   RestaurantSpecials: 'specials',
   RestaurantEvents: 'events',
   RestaurantMenu: 'menu',
+  StPatricksDay: 'holiday_specials',
 };
 
 async function getVisitorId(): Promise<string> {

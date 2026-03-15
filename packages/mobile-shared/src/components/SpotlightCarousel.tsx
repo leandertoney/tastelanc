@@ -20,27 +20,6 @@ const AUTO_SCROLL_INTERVAL = 4000;
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-// Mock data for when specials array is empty
-const MOCK_SPECIALS: SpotlightSpecial[] = [
-  {
-    title: '$2 Off All Drafts',
-    restaurantName: 'Your Restaurant Here',
-    timeWindow: '5-7 PM',
-    isPremium: true,
-  },
-  {
-    title: 'Half-Price Appetizers Tonight',
-    restaurantName: 'Your Restaurant Here',
-    timeWindow: '4-6 PM',
-    isPremium: false,
-  },
-  {
-    title: 'Late-Night Happy Hour - $8 Cocktails',
-    restaurantName: 'Your Restaurant Here',
-    timeWindow: '9-11 PM',
-    isPremium: true,
-  },
-];
 
 interface SpotlightCarouselProps {
   specials?: SpotlightSpecial[];
@@ -53,8 +32,7 @@ export default function SpotlightCarousel({ specials = [] }: SpotlightCarouselPr
   const [isUserScrolling, setIsUserScrolling] = useState(false);
   const autoScrollTimer = useRef<NodeJS.Timeout | null>(null);
 
-  // Use mock data if specials array is empty
-  const displaySpecials = specials.length > 0 ? specials : MOCK_SPECIALS;
+  const displaySpecials = specials;
 
   const handleCardPress = useCallback(
     (special: SpotlightSpecial) => {
@@ -138,13 +116,15 @@ export default function SpotlightCarousel({ specials = [] }: SpotlightCarouselPr
 
   const styles = useStyles();
 
+  if (displaySpecials.length === 0) return null;
+
   return (
     <View style={styles.container}>
       <FlatList
         ref={flatListRef}
         data={displaySpecials}
         renderItem={renderItem}
-        keyExtractor={(item, index) => item.id || `mock-${index}`}
+        keyExtractor={(item, index) => item.id || `special-${index}`}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}

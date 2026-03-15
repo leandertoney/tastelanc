@@ -12,7 +12,7 @@ import { eliteFirstStableSort } from '../lib/fairRotation';
 import type { RootStackParamList } from '../navigation/types';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { spacing } from '../constants/spacing';
-import { ENABLE_MOCK_DATA, MOCK_EVENTS } from '../config/mockData';
+
 import type { DayOfWeek } from '../types/database';
 import { useEmailGate } from '../hooks';
 import { useMarket } from '../context/MarketContext';
@@ -39,17 +39,6 @@ interface DisplayEvent {
   originalEvent?: ApiEvent; // Keep reference to original event for navigation
 }
 
-// Convert centralized mock data to DisplayEvent format
-const MOCK_DISPLAY_EVENTS: DisplayEvent[] = MOCK_EVENTS.map((e) => ({
-  id: e.id,
-  name: e.name,
-  date: e.date,
-  time: e.time,
-  venue: e.venue,
-  isCityWide: e.isCityWide,
-  imageUrl: e.imageUrl,
-  restaurantId: e.restaurantId,
-}));
 
 interface EventsResult {
   events: ApiEvent[];
@@ -174,8 +163,7 @@ export default function EventsSection() {
     originalEvent: event, // Keep original for EventDetail navigation
   }));
 
-  // Use real events, or mock events if enabled and no real data
-  const displayData = events.length > 0 ? mappedEvents : ENABLE_MOCK_DATA ? MOCK_DISPLAY_EVENTS : [];
+  const displayData = mappedEvents;
 
   // Add CTA item at the end
   const dataWithCTA = [...displayData, { id: CTA_ITEM_ID } as DisplayEvent];

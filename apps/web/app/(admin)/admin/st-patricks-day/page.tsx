@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, Beer, UtensilsCrossed, Music, Package, Search, Pencil, X } from 'lucide-react';
+import { Plus, Trash2, Beer, UtensilsCrossed, Music, Package, Search, Pencil, X, Eye, Users, MousePointer, BarChart3 } from 'lucide-react';
 
 interface HolidaySpecial {
   id: string;
@@ -47,6 +47,24 @@ const CATEGORY_LABELS: Record<string, string> = {
   combo: 'Combo Deal',
 };
 
+interface AnalyticsData {
+  summary: {
+    totalImpressions: number;
+    uniqueVisitors: number;
+    screenViews: number;
+    uniqueScreenVisitors: number;
+    teaserClicks: number;
+  };
+  perRestaurant: {
+    restaurantId: string;
+    restaurantName: string;
+    impressions: number;
+    uniqueViewers: number;
+    avgPosition: number | null;
+  }[];
+  dailyTrend: { date: string; count: number }[];
+}
+
 const EMPTY_FORM = {
   name: '',
   description: '',
@@ -69,6 +87,30 @@ export default function StPatricksDayPage() {
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<'specials' | 'analytics'>('specials');
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
+  const fetchAnalytics = useCallback(async () => {
+    setAnalyticsLoading(true);
+    try {
+      const res = await fetch('/api/admin/holiday-specials/analytics?section_name=st_patricks_day');
+      if (res.ok) {
+        const data = await res.json();
+        setAnalytics(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch analytics:', err);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'analytics' && !analytics) {
+      fetchAnalytics();
+    }
+  }, [activeTab, analytics, fetchAnalytics]);
 
   const fetchSpecials = useCallback(async () => {
     try {
@@ -222,14 +264,155 @@ export default function StPatricksDayPage() {
               {dateSubtitle} &middot; {specials.length} specials from {new Set(specials.map(s => s.restaurant_id)).size} bars
             </p>
           </div>
+          {activeTab === 'specials' && (
+            <button
+              onClick={() => { if (showForm) { resetForm(); } else { setShowForm(true); } }}
+              className="flex items-center gap-2 px-4 py-2 bg-[#D4AF37] text-black font-semibold rounded-lg hover:bg-[#C9A227] transition-colors"
+            >
+              {showForm ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+              {showForm ? 'Close' : 'Add Special'}
+            </button>
+          )}
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex gap-1 mb-8 bg-zinc-900/50 rounded-lg p-1 w-fit">
           <button
-            onClick={() => { if (showForm) { resetForm(); } else { setShowForm(true); } }}
-            className="flex items-center gap-2 px-4 py-2 bg-[#D4AF37] text-black font-semibold rounded-lg hover:bg-[#C9A227] transition-colors"
+            onClick={() => setActiveTab('specials')}
+            className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'specials'
+                ? 'bg-[#D4AF37] text-black'
+                : 'text-zinc-400 hover:text-white'
+            }`}
           >
-            {showForm ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-            {showForm ? 'Close' : 'Add Special'}
+            &#9752; Specials
+          </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`px-5 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+              activeTab === 'analytics'
+                ? 'bg-[#D4AF37] text-black'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            Analytics
           </button>
         </div>
+
+        {/* ═══ ANALYTICS TAB ═══ */}
+        {activeTab === 'analytics' && (
+          <div>
+            {analyticsLoading ? (
+              <div className="text-center py-12 text-zinc-400">Loading analytics...</div>
+            ) : !analytics ? (
+              <div className="text-center py-12 text-zinc-500">No analytics data available yet.</div>
+            ) : (
+              <>
+                {/* Summary Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                  <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-zinc-400 mb-2">
+                      <Eye className="w-4 h-4" />
+                      <span className="text-xs uppercase tracking-wider font-medium">Impressions</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{analytics.summary.totalImpressions.toLocaleString()}</p>
+                    <p className="text-xs text-zinc-500 mt-1">Restaurant views in the app</p>
+                  </div>
+                  <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-zinc-400 mb-2">
+                      <Users className="w-4 h-4" />
+                      <span className="text-xs uppercase tracking-wider font-medium">Unique Visitors</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{analytics.summary.uniqueVisitors.toLocaleString()}</p>
+                    <p className="text-xs text-zinc-500 mt-1">Distinct users who viewed</p>
+                  </div>
+                  <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-zinc-400 mb-2">
+                      <Eye className="w-4 h-4" />
+                      <span className="text-xs uppercase tracking-wider font-medium">Screen Views</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{analytics.summary.screenViews.toLocaleString()}</p>
+                    <p className="text-xs text-zinc-500 mt-1">Times specials page opened</p>
+                  </div>
+                  <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-zinc-400 mb-2">
+                      <MousePointer className="w-4 h-4" />
+                      <span className="text-xs uppercase tracking-wider font-medium">Teaser Taps</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{analytics.summary.teaserClicks.toLocaleString()}</p>
+                    <p className="text-xs text-zinc-500 mt-1">Taps from the Move tab</p>
+                  </div>
+                </div>
+
+                {/* Daily Trend */}
+                {analytics.dailyTrend.length > 0 && (
+                  <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-5 mb-8">
+                    <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider mb-4">Daily Impressions</h3>
+                    <div className="flex items-end gap-1 h-32">
+                      {(() => {
+                        const maxCount = Math.max(...analytics.dailyTrend.map(d => d.count), 1);
+                        return analytics.dailyTrend.slice(-14).map((day) => (
+                          <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
+                            <div
+                              className="w-full bg-[#2ECC40]/60 rounded-t hover:bg-[#2ECC40] transition-colors"
+                              style={{ height: `${Math.max((day.count / maxCount) * 100, 4)}%` }}
+                              title={`${day.date}: ${day.count} impressions`}
+                            />
+                            <span className="text-[9px] text-zinc-600 rotate-[-45deg] whitespace-nowrap origin-top-left translate-y-2">
+                              {new Date(day.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </span>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+                )}
+
+                {/* Per-Restaurant Table */}
+                {analytics.perRestaurant.length > 0 && (
+                  <div className="bg-zinc-900 border border-zinc-700 rounded-xl overflow-hidden">
+                    <div className="p-4 border-b border-zinc-700">
+                      <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider">Performance by Restaurant</h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-zinc-500 text-xs uppercase tracking-wider border-b border-zinc-800">
+                            <th className="text-left px-4 py-3 font-medium">Restaurant</th>
+                            <th className="text-right px-4 py-3 font-medium">Impressions</th>
+                            <th className="text-right px-4 py-3 font-medium">Unique Viewers</th>
+                            <th className="text-right px-4 py-3 font-medium">Avg Position</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {analytics.perRestaurant.map((r) => (
+                            <tr key={r.restaurantId} className="border-b border-zinc-800/50 hover:bg-zinc-800/30">
+                              <td className="px-4 py-3 font-medium text-white">{r.restaurantName}</td>
+                              <td className="px-4 py-3 text-right text-zinc-300">{r.impressions.toLocaleString()}</td>
+                              <td className="px-4 py-3 text-right text-zinc-400">{r.uniqueViewers.toLocaleString()}</td>
+                              <td className="px-4 py-3 text-right text-zinc-500">{r.avgPosition != null ? `#${r.avgPosition}` : '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {analytics.perRestaurant.length === 0 && (
+                  <div className="text-center py-12">
+                    <div className="text-4xl mb-3">&#9752;</div>
+                    <p className="text-zinc-400">No impression data yet. Data will appear once users view specials in the app.</p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ═══ SPECIALS TAB ═══ */}
+        {activeTab === 'specials' && <>
 
         {/* Example Card Preview — shows what it looks like in the app */}
         {!showForm && (
@@ -568,6 +751,8 @@ export default function StPatricksDayPage() {
             })}
           </div>
         )}
+
+        </>}
       </div>
     </div>
   );

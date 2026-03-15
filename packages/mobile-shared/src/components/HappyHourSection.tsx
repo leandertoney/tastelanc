@@ -16,7 +16,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
-import { ENABLE_MOCK_DATA, MOCK_HAPPY_HOURS } from '../config/mockData';
+
 import { usePlatformSocialProof, useEmailGate } from '../hooks';
 import { useMarket } from '../context/MarketContext';
 import { trackClick } from '../lib/analytics';
@@ -47,15 +47,6 @@ interface DisplayHappyHour {
   isElite?: boolean;
 }
 
-// Convert centralized mock data to display format
-const MOCK_DISPLAY_HAPPY_HOURS: DisplayHappyHour[] = MOCK_HAPPY_HOURS.map((hh) => ({
-  id: hh.id,
-  deals: [hh.deal], // Mock data has single deal
-  restaurantName: hh.restaurantName,
-  timeWindow: hh.timeWindow,
-  imageUrl: hh.imageUrl,
-  restaurantId: hh.restaurantId,
-}));
 
 function getDayOfWeek(): string {
   return new Date().toLocaleDateString('en-US', { weekday: 'long' });
@@ -220,9 +211,7 @@ export default function HappyHourSection() {
     .sort((a, b) => (a.isElite === b.isElite ? 0 : a.isElite ? -1 : 1))
     .slice(0, 5);
 
-  // Use real data, or mock data if enabled and no real data
-  const displayData: DisplayHappyHour[] =
-    prioritized.length > 0 ? prioritized : ENABLE_MOCK_DATA ? MOCK_DISPLAY_HAPPY_HOURS : [];
+  const displayData: DisplayHappyHour[] = prioritized;
 
   // Ensure currentIndex is valid when displayData changes
   const safeIndex = displayData.length > 0 ? currentIndex % displayData.length : 0;

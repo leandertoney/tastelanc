@@ -27,7 +27,7 @@ import type { Restaurant, FeaturedAd } from '../types/database';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
-import { ENABLE_MOCK_DATA, MOCK_FEATURED_RESTAURANTS } from '../config/mockData';
+
 import { trackImpression } from '../lib/impressions';
 import { trackAdImpression, trackAdClick } from '../lib/ads';
 import { injectAdsIntoCarousel, type CarouselItem } from '../lib/carouselUtils';
@@ -96,11 +96,7 @@ export default function FeaturedSection({ onRestaurantPress }: FeaturedSectionPr
 
   // Inject ads into the restaurant list (every 3rd card)
   const displayItems = useMemo<CarouselItem[]>(() => {
-    const source = restaurants.length > 0
-      ? restaurants
-      : ENABLE_MOCK_DATA
-        ? MOCK_FEATURED_RESTAURANTS
-        : [];
+    const source = restaurants;
     if (source.length === 0) return [];
     return injectAdsIntoCarousel(source, activeAds, 3);
   }, [restaurants, activeAds]);

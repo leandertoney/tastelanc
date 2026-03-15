@@ -22,6 +22,7 @@ import { useMarket } from '../context/MarketContext';
 import { usePlatformSocialProof, usePersonalStats } from '../hooks';
 import { useAuth } from '../hooks/useAuth';
 import type { RootStackParamList } from '../navigation/types';
+import { trackClick } from '../lib/analytics';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type FilterType = 'all' | 'photos' | 'itineraries' | 'trending' | 'deals' | 'events';
@@ -69,6 +70,42 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
   promotion: 'Promo',
   other: 'Event',
 };
+
+// ─── Holiday metadata ─────────────────────────────────────────────────────────
+
+const HOLIDAY_META: Record<string, { label: string; emoji: string; accent: string; bg: string }> = {
+  'st-patricks':    { label: "St. Patrick's Day", emoji: '☘️',  accent: '#2ECC40', bg: '#0A3D0A' },
+  'cinco-de-mayo':  { label: 'Cinco de Mayo',     emoji: '🎉', accent: '#E84142', bg: '#1A0A0A' },
+  'easter':         { label: 'Easter',             emoji: '🐣', accent: '#9B59B6', bg: '#1A0F20' },
+  'valentines':     { label: "Valentine's Day",    emoji: '💕', accent: '#E74C8B', bg: '#1A0A12' },
+  'fourth-of-july': { label: '4th of July',        emoji: '🇺🇸', accent: '#3498DB', bg: '#0A1520' },
+  'halloween':      { label: 'Halloween',          emoji: '🎃', accent: '#E67E22', bg: '#1A120A' },
+  'christmas':      { label: 'Christmas',          emoji: '🎄', accent: '#C0392B', bg: '#1A0A0A' },
+  'new-years':      { label: "New Year's",         emoji: '🥂', accent: '#F1C40F', bg: '#1A180A' },
+};
+
+function getHolidayMeta(tag: string) {
+  const base = tag.replace(/-\d{4}$/, '');
+  return HOLIDAY_META[base] || { label: 'Holiday Special', emoji: '🎊', accent: '#F39C12', bg: '#1A150A' };
+}
+
+function buildHolidayDateLabel(dates: string[]): string {
+  if (!dates.length) return '';
+  const sorted = [...dates].sort();
+  const first = new Date(sorted[0] + 'T00:00:00');
+  const last = new Date(sorted[sorted.length - 1] + 'T00:00:00');
+  const month = first.toLocaleDateString('en-US', { month: 'long' });
+  const suffix = (n: number) => {
+    if (n === 1 || n === 21 || n === 31) return 'st';
+    if (n === 2 || n === 22) return 'nd';
+    if (n === 3 || n === 23) return 'rd';
+    return 'th';
+  };
+  const d1 = first.getDate();
+  const d2 = last.getDate();
+  if (d1 === d2) return `${month} ${d1}${suffix(d1)}`;
+  return `${month} ${d1}${suffix(d1)}–${d2}${suffix(d2)}`;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -198,9 +235,25 @@ interface BlogItem {
   date: string;
 }
 
+interface HolidayTeaserItem {
+  kind: 'holiday_teaser';
+  id: string;
+  holidayTag: string;
+  holidayLabel: string;
+  holidayEmoji: string;
+  holidayAccent: string;
+  holidayBg: string;
+  specialCount: number;
+  restaurantCount: number;
+  dateLabel: string;
+  previewNames: string[];
+  date: string;
+}
+
 type PulseItem =
   | VideoItem | PhotoItem | ItineraryItem | BuzzItem | AdItem | ReelsShelfItem
-  | SpecialItem | HappyHourItem | EventItem | NewRestaurantItem | BlogItem;
+  | SpecialItem | HappyHourItem | EventItem | NewRestaurantItem | BlogItem
+  | HolidayTeaserItem;
 
 // ─── Data fetching ─────────────────────────────────────────────────────────────
 
@@ -264,6 +317,19 @@ function usePulseFeed() {
         .order('published_at', { ascending: false, nullsFirst: false })
         .limit(5);
 
+      // Holiday specials — teaser only, within ±3 days of today
+      const today = new Date();
+      const threeDaysAgo = new Date(today.getTime() - 3 * 86400000).toISOString().split('T')[0];
+      const threeDaysAhead = new Date(today.getTime() + 3 * 86400000).toISOString().split('T')[0];
+      let holidayQuery = supabase
+        .from('holiday_specials')
+        .select('id, name, holiday_tag, event_date, restaurant_id, restaurant:restaurants!inner(id, name, market_id)')
+        .eq('is_active', true)
+        .gte('event_date', threeDaysAgo)
+        .lte('event_date', threeDaysAhead)
+        .order('event_date', { ascending: true })
+        .limit(20);
+
       // Market scoping
       if (marketId) {
         videosQuery = videosQuery.eq('restaurants.market_id', marketId);
@@ -272,6 +338,7 @@ function usePulseFeed() {
         eventsQuery = eventsQuery.eq('restaurant.market_id', marketId);
         newRestaurantsQuery = newRestaurantsQuery.eq('market_id', marketId);
         blogQuery = blogQuery.eq('market_id', marketId);
+        holidayQuery = holidayQuery.eq('restaurant.market_id', marketId);
       }
 
       const buzzPromise = marketId
@@ -295,9 +362,9 @@ function usePulseFeed() {
             })
         : Promise.resolve({ data: [], error: null });
 
-      const [videosRes, adsRes, buzzRes, itinerariesRes, specialsRes, eventsRes, newRestaurantsRes, blogRes, happyHoursRes] = await Promise.all([
+      const [videosRes, adsRes, buzzRes, itinerariesRes, specialsRes, eventsRes, newRestaurantsRes, blogRes, happyHoursRes, holidayRes] = await Promise.all([
         videosQuery, adsQuery, buzzPromise, itinerariesQuery,
-        specialsQuery, eventsQuery, newRestaurantsQuery, blogQuery, happyHoursPromise,
+        specialsQuery, eventsQuery, newRestaurantsQuery, blogQuery, happyHoursPromise, holidayQuery,
       ]);
 
       const items: PulseItem[] = [];
@@ -451,12 +518,53 @@ function usePulseFeed() {
         });
       });
 
+      // ── Holiday teasers (one per active holiday tag)
+      const holidayRows = holidayRes.data || [];
+      if (holidayRows.length > 0) {
+        const byTag: Record<string, { names: string[]; dates: string[]; restaurantIds: Set<string> }> = {};
+        holidayRows.forEach((hs: any) => {
+          const tag = hs.holiday_tag;
+          if (!byTag[tag]) byTag[tag] = { names: [], dates: [], restaurantIds: new Set() };
+          byTag[tag].names.push(hs.name);
+          if (hs.event_date) byTag[tag].dates.push(hs.event_date);
+          if (hs.restaurant?.id) byTag[tag].restaurantIds.add(hs.restaurant.id);
+        });
+        Object.entries(byTag).forEach(([tag, data]) => {
+          const meta = getHolidayMeta(tag);
+          items.push({
+            kind: 'holiday_teaser',
+            id: `holiday-teaser-${tag}`,
+            holidayTag: tag,
+            holidayLabel: meta.label,
+            holidayEmoji: meta.emoji,
+            holidayAccent: meta.accent,
+            holidayBg: meta.bg,
+            specialCount: data.names.length,
+            restaurantCount: data.restaurantIds.size,
+            dateLabel: buildHolidayDateLabel([...new Set(data.dates)]),
+            previewNames: data.names.slice(0, 3),
+            date: new Date().toISOString(), // show near top
+          });
+        });
+      }
+
       // Sort newest first
       items.sort((a, b) => {
         const aDate = 'date' in a ? a.date : '';
         const bDate = 'date' in b ? b.date : '';
         return new Date(bDate).getTime() - new Date(aDate).getTime();
       });
+
+      // ── Insert holiday teasers at position 2 (high visibility)
+      const teasers = items.filter((i): i is HolidayTeaserItem => i.kind === 'holiday_teaser');
+      if (teasers.length > 0) {
+        // Remove from sorted position, insert at position 2
+        teasers.forEach((t) => {
+          const idx = items.indexOf(t);
+          if (idx !== -1) items.splice(idx, 1);
+        });
+        items.splice(Math.min(2, items.length), 0, ...teasers);
+      }
 
       // ── Build Reels shelf from first 6 videos, insert at position 3
       const videoItems = items.filter((i): i is VideoItem => i.kind === 'video').slice(0, 8);
@@ -1010,6 +1118,95 @@ function BlogCard({ item, onPress }: { item: BlogItem; onPress: () => void }) {
   );
 }
 
+// ─── Holiday Teaser Card ──────────────────────────────────────────────────────
+
+function HolidayTeaserCard({ item, onPress }: { item: HolidayTeaserItem; onPress: () => void }) {
+  const colors = getColors();
+
+  const previewText = (() => {
+    const names = item.previewNames;
+    const remaining = item.specialCount - names.length;
+    if (names.length === 0) return `${item.specialCount} deals from ${item.restaurantCount} bars`;
+    const preview = names.join(', ');
+    if (remaining > 0) return `${preview}, and ${remaining} more from ${item.restaurantCount} bars`;
+    return `${preview} from ${item.restaurantCount} bars`;
+  })();
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={() => {
+        trackClick('holiday_teaser');
+        onPress();
+      }}
+      style={{
+        marginHorizontal: spacing.md,
+        marginVertical: spacing.sm,
+        backgroundColor: item.holidayBg,
+        borderRadius: radius.lg,
+        borderWidth: 1.5,
+        borderColor: withAlpha(item.holidayAccent, 0.35),
+        padding: spacing.md,
+        overflow: 'hidden',
+      }}
+    >
+      {/* Background emoji watermarks */}
+      <Text style={{ position: 'absolute', right: 10, top: -5, fontSize: 40, opacity: 0.08 }}>
+        {item.holidayEmoji}
+      </Text>
+      <Text style={{ position: 'absolute', right: 55, bottom: -8, fontSize: 28, opacity: 0.06 }}>
+        {item.holidayEmoji}
+      </Text>
+
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Text style={{ fontSize: 28 }}>{item.holidayEmoji}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 17, fontWeight: '800', color: '#F0F0F0', letterSpacing: -0.3 }}>
+            {item.holidayLabel} Specials
+          </Text>
+          <Text style={{ fontSize: 13, color: item.holidayAccent, fontWeight: '500', marginTop: 1 }}>
+            {item.dateLabel}
+          </Text>
+        </View>
+      </View>
+
+      <Text
+        style={{
+          fontSize: 14,
+          color: withAlpha('#FFFFFF', 0.7),
+          marginTop: spacing.sm,
+          lineHeight: 20,
+        }}
+        numberOfLines={2}
+      >
+        {previewText}
+      </Text>
+
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        marginTop: spacing.sm,
+        gap: 6,
+      }}>
+        <Text style={{ fontSize: 14, fontWeight: '700', color: item.holidayAccent }}>
+          See All Specials
+        </Text>
+        <View style={{
+          width: 24,
+          height: 24,
+          borderRadius: 12,
+          backgroundColor: withAlpha(item.holidayAccent, 0.15),
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}>
+          <Ionicons name="chevron-forward" size={14} color={item.holidayAccent} />
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
 // ─── Social proof header ──────────────────────────────────────────────────────
 
 function SceneStatsHeader() {
@@ -1087,7 +1284,7 @@ export default function SceneScreen() {
     if (item.kind === 'reels_shelf') return activeFilter === 'all' || activeFilter === 'photos';
     if (activeFilter === 'all') return true;
     if (activeFilter === 'trending') return item.kind === 'buzz' || item.kind === 'new_restaurant';
-    if (activeFilter === 'deals') return item.kind === 'special' || item.kind === 'happy_hour';
+    if (activeFilter === 'deals') return item.kind === 'special' || item.kind === 'happy_hour' || item.kind === 'holiday_teaser';
     if (activeFilter === 'events') return item.kind === 'event';
     if (activeFilter === 'photos') return item.kind === 'video' || item.kind === 'photo';
     if (activeFilter === 'itineraries') return item.kind === 'itinerary';
@@ -1129,6 +1326,8 @@ export default function SceneScreen() {
         return <NewRestaurantRow item={item} onPress={() => handleItemPress(item.restaurantId)} />;
       case 'blog':
         return <BlogCard item={item} onPress={() => navigation.navigate('BlogDetail', { slug: item.slug })} />;
+      case 'holiday_teaser':
+        return <HolidayTeaserCard item={item} onPress={() => navigation.navigate('StPatricksDay')} />;
     }
   };
 

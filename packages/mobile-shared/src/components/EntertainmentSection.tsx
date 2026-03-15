@@ -12,8 +12,8 @@ import { eliteFirstStableSort } from '../lib/fairRotation';
 import type { RootStackParamList } from '../navigation/types';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { spacing } from '../constants/spacing';
-import { ENABLE_MOCK_DATA, MOCK_ENTERTAINMENT, type MockEntertainment } from '../config/mockData';
-import type { DayOfWeek } from '../types/database';
+
+import type { DayOfWeek, EventType } from '../types/database';
 import { useEmailGate } from '../hooks';
 import { useMarket } from '../context/MarketContext';
 import { trackClick } from '../lib/analytics';
@@ -22,6 +22,17 @@ import { trackImpression } from '../lib/impressions';
 const CTA_ITEM_ID = '__partner_cta__';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+interface EntertainmentDisplayItem {
+  id: string;
+  name: string;
+  eventType: EventType;
+  time: string;
+  venue?: string;
+  imageUrl?: string;
+  restaurantId?: string;
+  originalEvent?: ApiEvent;
+}
 
 interface EntertainmentResult {
   events: ApiEvent[];
@@ -109,14 +120,12 @@ export default function EntertainmentSection() {
     eventType: event.event_type,
     time: formatEventTime(event.start_time, event.end_time),
     venue: getEventVenueName(event),
-    imageUrl: event.image_url,
+    imageUrl: event.image_url ?? undefined,
     restaurantId: event.restaurant?.id,
     originalEvent: event,
   }));
 
-  // Use real events if available, otherwise use mock data if enabled
-  const displayData: MockEntertainment[] =
-    mappedEvents.length > 0 ? mappedEvents : ENABLE_MOCK_DATA ? MOCK_ENTERTAINMENT : [];
+  const displayData = mappedEvents;
 
   const { requireEmailGate } = useEmailGate();
 
@@ -136,17 +145,17 @@ export default function EntertainmentSection() {
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     for (const token of viewableItems) {
-      const item = token.item as MockEntertainment;
+      const item = token.item as EntertainmentDisplayItem;
       if (item?.restaurantId && item.id !== CTA_ITEM_ID) {
         trackImpression(item.restaurantId, 'entertainment', token.index ?? 0);
       }
     }
   }).current;
 
-  const finalDisplayData = displayData.length > 0 ? displayData : ENABLE_MOCK_DATA ? MOCK_ENTERTAINMENT : [];
+  const finalDisplayData = displayData;
 
   // Add CTA item at the end
-  const dataWithCTA = [...finalDisplayData, { id: CTA_ITEM_ID } as MockEntertainment];
+  const dataWithCTA = [...finalDisplayData, { id: CTA_ITEM_ID } as EntertainmentDisplayItem];
 
   const styles = useStyles();
 
