@@ -7,7 +7,9 @@ import {
   LayoutDashboard,
   Store,
   UtensilsCrossed,
-  Sparkles,
+  Beer,
+  Tag,
+  Film,
   Calendar,
   CreditCard,
   Menu,
@@ -26,31 +28,72 @@ import {
   ListChecks,
   Megaphone,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { signOut } from '@/lib/supabase/auth';
 import { RestaurantProvider, useRestaurant } from '@/contexts/RestaurantContext';
 import { OnboardingProvider, OnboardingWizard } from '@/components/dashboard/onboarding';
+import { ModalProvider } from '@/components/dashboard/ModalProvider';
 import { Tooltip } from '@/components/ui';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
-const navItems = [
-  { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, hint: 'Your restaurant performance summary and quick stats' },
-  { href: '/dashboard/profile', label: 'Profile', icon: Store, hint: 'Update your name, description, photos, hours, and contact info' },
-  { href: '/dashboard/happy-hours', label: 'Happy Hours', icon: Sparkles, hint: 'Manage your happy hour deals — these show prominently in the app' },
-  { href: '/dashboard/entertainment', label: 'Entertainment', icon: Music, hint: 'Add live music, trivia nights, and other entertainment listings' },
-  { href: '/dashboard/events', label: 'Events', icon: Calendar, hint: 'Create and promote special events at your restaurant' },
-  { href: '/dashboard/specials', label: 'Specials', icon: Sparkles, hint: 'Post daily specials, limited-time offers, and promotions' },
-  { href: '/dashboard/features', label: 'Features', icon: ListChecks, hint: 'Toggle amenities like private dining, live piano, and more — helps diners find you' },
-  { href: '/dashboard/menu', label: 'Menu', icon: UtensilsCrossed, hint: 'Build and maintain your digital menu with sections and items' },
-  { href: '/dashboard/insights', label: 'Market Insights', icon: Lightbulb, hint: 'See how your restaurant compares in your local market' },
-  { href: '/dashboard/marketing', label: 'Marketing', icon: Megaphone, hint: 'Send email campaigns and push notifications to your audience' },
-  { href: '/dashboard/team', label: 'Team', icon: Users, hint: 'Invite and manage team members who can edit your content' },
-  { href: '/dashboard/subscription', label: 'Subscription', icon: CreditCard, hint: 'View your plan details, billing, and upgrade options' },
+interface NavItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  hint: string;
+}
+
+interface NavSection {
+  key: string;
+  label: string;
+  items: NavItem[];
+}
+
+const navSections: NavSection[] = [
+  {
+    key: 'home',
+    label: 'Home',
+    items: [
+      { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, hint: 'Your restaurant performance summary and quick stats' },
+    ],
+  },
+  {
+    key: 'content',
+    label: 'Content',
+    items: [
+      { href: '/dashboard/profile', label: 'Profile', icon: Store, hint: 'Update your name, description, photos, hours, and contact info' },
+      { href: '/dashboard/menu', label: 'Menu', icon: UtensilsCrossed, hint: 'Build and maintain your digital menu with sections and items' },
+      { href: '/dashboard/happy-hours', label: 'Happy Hours', icon: Beer, hint: 'Manage your happy hour deals — these show prominently in the app' },
+      { href: '/dashboard/specials', label: 'Specials', icon: Tag, hint: 'Post daily specials, limited-time offers, and promotions' },
+      { href: '/dashboard/events', label: 'Events', icon: Calendar, hint: 'Create and promote special events at your restaurant' },
+      { href: '/dashboard/entertainment', label: 'Entertainment', icon: Music, hint: 'Add live music, trivia nights, and other entertainment listings' },
+    ],
+  },
+  {
+    key: 'growth',
+    label: 'Growth',
+    items: [
+      { href: '/dashboard/insights', label: 'Market Insights', icon: Lightbulb, hint: 'See how your restaurant compares in your local market' },
+      { href: '/dashboard/marketing', label: 'Marketing', icon: Megaphone, hint: 'Send email campaigns and push notifications to your audience' },
+      { href: '/dashboard/recommendations', label: 'Recommendations', icon: Film, hint: 'See community video recommendations and engagement analytics' },
+    ],
+  },
+  {
+    key: 'settings',
+    label: 'Settings',
+    items: [
+      { href: '/dashboard/features', label: 'Features', icon: ListChecks, hint: 'Toggle amenities like private dining, live piano, and more — helps diners find you' },
+      { href: '/dashboard/team', label: 'Team', icon: Users, hint: 'Invite and manage team members who can edit your content' },
+      { href: '/dashboard/subscription', label: 'Subscription', icon: CreditCard, hint: 'View your plan details, billing, and upgrade options' },
+    ],
+  },
 ];
 
 // Nav items hidden from sales reps (non-content management)
 const SALES_HIDDEN_HREFS = new Set([
   '/dashboard',
   '/dashboard/insights',
+  '/dashboard/recommendations',
   '/dashboard/team',
   '/dashboard/subscription',
 ]);
@@ -75,12 +118,16 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const hasBanner = adminMode || salesMode;
   const showRestaurantSwitcher = !adminMode && !salesMode && restaurants.length > 1;
 
-  // Filter nav items for sales reps
-  const filteredNavItems = useMemo(() => {
-    if (salesMode) {
-      return navItems.filter((item) => !SALES_HIDDEN_HREFS.has(item.href));
-    }
-    return navItems;
+  // Filter nav items for sales reps, dropping empty sections
+  const filteredNavSections = useMemo(() => {
+    return navSections
+      .map((section) => ({
+        ...section,
+        items: salesMode
+          ? section.items.filter((item) => !SALES_HIDDEN_HREFS.has(item.href))
+          : section.items,
+      }))
+      .filter((section) => section.items.length > 0);
   }, [salesMode]);
 
   // Close restaurant dropdown when clicking outside
@@ -306,39 +353,58 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
           {/* Navigation */}
           <nav className={`flex-1 ${sidebarCollapsed ? 'lg:p-2' : ''} p-4 overflow-y-auto scrollbar-hide`}>
-            <ul className="space-y-1">
-              {filteredNavItems.map((item) => {
-                const isActive = pathname === item.href;
-                const Icon = item.icon;
-                return (
-                  <li key={item.href}>
-                    <div className="group/nav relative flex items-center">
-                      <Link
-                        href={buildNavHref(item.href)}
-                        data-onboarding={item.href.split('/').pop() || 'overview'}
-                        onClick={() => setSidebarOpen(false)}
-                        title={sidebarCollapsed ? item.label : undefined}
-                        className={`flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 rounded-lg transition-colors flex-1 ${
-                          isActive
-                            ? 'bg-tastelanc-accent text-white'
-                            : 'text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light'
-                        }`}
-                      >
-                        <Icon className="w-5 h-5 flex-shrink-0" />
-                        <span className={sidebarCollapsed ? 'lg:hidden' : ''}>{item.label}</span>
-                      </Link>
-                      {item.hint && !sidebarCollapsed && (
-                        <Tooltip content={item.hint} position="right">
-                          <span className="absolute right-2 opacity-0 group-hover/nav:opacity-100 transition-opacity cursor-help">
-                            <HelpCircle className="w-3.5 h-3.5 text-tastelanc-text-faint hover:text-tastelanc-text-muted" />
-                          </span>
-                        </Tooltip>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+            {filteredNavSections.map((section, sectionIdx) => (
+              <div key={section.key} className={sectionIdx > 0 ? 'mt-3' : ''}>
+                {/* Section header: divider when collapsed, text label when expanded */}
+                {sectionIdx > 0 && sidebarCollapsed && (
+                  <div className="hidden lg:block border-t border-tastelanc-surface-light my-2 mx-2" />
+                )}
+                {!sidebarCollapsed && (
+                  <h3 className="text-[10px] font-semibold uppercase tracking-wider text-tastelanc-text-faint px-3 mb-1.5 mt-1">
+                    {section.label}
+                  </h3>
+                )}
+                {/* Mobile: always show label even if sidebar uses collapsed state */}
+                {sidebarCollapsed && (
+                  <h3 className="lg:hidden text-[10px] font-semibold uppercase tracking-wider text-tastelanc-text-faint px-3 mb-1.5 mt-1">
+                    {section.label}
+                  </h3>
+                )}
+                <ul className="space-y-1">
+                  {section.items.map((item) => {
+                    const isActive = pathname === item.href;
+                    const Icon = item.icon;
+                    return (
+                      <li key={item.href}>
+                        <div className="group/nav relative flex items-center">
+                          <Link
+                            href={buildNavHref(item.href)}
+                            data-onboarding={item.href.split('/').pop() || 'overview'}
+                            onClick={() => setSidebarOpen(false)}
+                            title={sidebarCollapsed ? item.label : undefined}
+                            className={`flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 rounded-lg transition-colors flex-1 ${
+                              isActive
+                                ? 'bg-tastelanc-accent text-white'
+                                : 'text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light'
+                            }`}
+                          >
+                            <Icon className="w-5 h-5 flex-shrink-0" />
+                            <span className={sidebarCollapsed ? 'lg:hidden' : ''}>{item.label}</span>
+                          </Link>
+                          {item.hint && !sidebarCollapsed && (
+                            <Tooltip content={item.hint} position="right">
+                              <span className="absolute right-2 opacity-0 group-hover/nav:opacity-100 transition-opacity cursor-help">
+                                <HelpCircle className="w-3.5 h-3.5 text-tastelanc-text-faint hover:text-tastelanc-text-muted" />
+                              </span>
+                            </Tooltip>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
           </nav>
 
           {/* User Info */}
@@ -407,7 +473,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             </button>
             <div className="flex-1 lg:ml-0 ml-4">
               <h1 className="text-lg font-semibold text-tastelanc-text-primary">
-                {filteredNavItems.find((item) => item.href === pathname)?.label || 'Dashboard'}
+                {filteredNavSections.flatMap(s => s.items).find((item) => item.href === pathname)?.label || 'Dashboard'}
               </h1>
             </div>
             <div className="flex items-center gap-2">
@@ -441,10 +507,12 @@ export default function DashboardLayout({
       </div>
     }>
       <RestaurantProvider>
-        <OnboardingProvider>
-          <DashboardLayoutContent>{children}</DashboardLayoutContent>
-          <OnboardingWizard />
-        </OnboardingProvider>
+        <ModalProvider>
+          <OnboardingProvider>
+            <DashboardLayoutContent>{children}</DashboardLayoutContent>
+            <OnboardingWizard />
+          </OnboardingProvider>
+        </ModalProvider>
       </RestaurantProvider>
     </Suspense>
   );
