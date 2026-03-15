@@ -29,6 +29,7 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
+
 interface NavItem {
   href: string;
   icon: typeof LayoutDashboard;
@@ -170,7 +171,7 @@ export default function AdminSidebar({ isOpen, onClose, collapsed, onMouseEnter,
             </div>
             {!collapsed && (
               <div>
-                <span className="text-xl font-bold text-white">{BRAND.name}</span>
+                <span className="text-xl font-bold text-tastelanc-text-primary">{BRAND.name}</span>
                 <span className="block text-xs text-tastelanc-accent">Admin Panel</span>
               </div>
             )}
@@ -178,7 +179,7 @@ export default function AdminSidebar({ isOpen, onClose, collapsed, onMouseEnter,
           {/* Close button for mobile */}
           <button
             onClick={onClose}
-            className="md:hidden text-gray-400 hover:text-white p-1"
+            className="md:hidden text-tastelanc-text-muted hover:text-tastelanc-text-primary p-1"
             aria-label="Close menu"
           >
             <X className="w-6 h-6" />
@@ -195,7 +196,7 @@ export default function AdminSidebar({ isOpen, onClose, collapsed, onMouseEnter,
               return (
                 <li key={item.href}>
                   {item.section && !collapsed && (
-                    <p className={`text-[10px] uppercase tracking-wider text-gray-500 px-4 ${index > 0 ? 'mt-4' : ''} mb-2`}>
+                    <p className={`text-[10px] uppercase tracking-wider text-tastelanc-text-faint px-4 ${index > 0 ? 'mt-4' : ''} mb-2`}>
                       {item.section}
                     </p>
                   )}
@@ -211,7 +212,7 @@ export default function AdminSidebar({ isOpen, onClose, collapsed, onMouseEnter,
                         ? 'bg-tastelanc-accent text-white'
                         : item.highlight
                         ? 'text-lancaster-gold hover:bg-lancaster-gold/10'
-                        : 'text-gray-400 hover:bg-tastelanc-surface-light hover:text-white'
+                        : 'text-tastelanc-text-muted hover:bg-tastelanc-surface-light hover:text-tastelanc-text-primary'
                     }`}
                   >
                     <item.icon className={`w-5 h-5 flex-shrink-0 ${item.highlight && !isActive ? 'text-lancaster-gold' : ''}`} />
@@ -239,7 +240,7 @@ export default function AdminSidebar({ isOpen, onClose, collapsed, onMouseEnter,
           <button
             onClick={handleLogout}
             title={collapsed ? 'Sign Out' : undefined}
-            className={`flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-lg text-gray-400 hover:bg-tastelanc-surface-light hover:text-white transition-colors w-full`}
+            className={`flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-lg text-tastelanc-text-muted hover:bg-tastelanc-surface-light hover:text-tastelanc-text-primary transition-colors w-full`}
           >
             <LogOut className="w-5 h-5" />
             {!collapsed && 'Sign Out'}

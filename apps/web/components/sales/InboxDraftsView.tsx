@@ -112,9 +112,9 @@ export default function InboxDraftsView({ isAdmin, defaultSender, onDraftSent }:
             </div>
           ) : drafts.length === 0 ? (
             <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-8 text-center">
-              <FileEdit className="w-10 h-10 text-gray-500 mx-auto mb-3" />
-              <h3 className="text-sm font-semibold text-white mb-1">No drafts</h3>
-              <p className="text-xs text-gray-400">
+              <FileEdit className="w-10 h-10 text-tastelanc-text-faint mx-auto mb-3" />
+              <h3 className="text-sm font-semibold text-tastelanc-text-primary mb-1">No drafts</h3>
+              <p className="text-xs text-tastelanc-text-muted">
                 Drafts are auto-saved when you compose or reply to emails
               </p>
             </div>
@@ -133,35 +133,35 @@ export default function InboxDraftsView({ isAdmin, defaultSender, onDraftSent }:
                 >
                   <div className="flex items-start gap-2">
                     <div className="pt-1 w-3 flex-shrink-0">
-                      <FileEdit className="w-3 h-3 text-gray-500" />
+                      <FileEdit className="w-3 h-3 text-tastelanc-text-faint" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm text-gray-300 truncate">
+                        <span className="text-sm text-tastelanc-text-secondary truncate">
                           {draft.recipient_email ? `To: ${draft.recipient_email}` : '(No recipient)'}
                         </span>
-                        <span className="text-[10px] text-gray-500 flex-shrink-0">
+                        <span className="text-[10px] text-tastelanc-text-faint flex-shrink-0">
                           {formatRelativeDate(draft.updated_at)}
                         </span>
                       </div>
                       {draft.subject && (
-                        <p className="text-xs text-gray-500 truncate mt-0.5">{draft.subject}</p>
+                        <p className="text-xs text-tastelanc-text-faint truncate mt-0.5">{draft.subject}</p>
                       )}
-                      <p className="text-xs text-gray-600 truncate mt-0.5">
+                      <p className="text-xs text-tastelanc-text-faint truncate mt-0.5">
                         {draft.body?.substring(0, 100) || 'Empty draft'}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
                           draft.draft_type === 'reply'
                             ? 'bg-blue-500/15 text-blue-400'
-                            : 'bg-gray-500/15 text-gray-400'
+                            : 'bg-tastelanc-surface-light text-tastelanc-text-muted'
                         }`}>
                           {draft.draft_type === 'reply' ? 'Reply' : 'New'}
                         </span>
                         <button
                           onClick={(e) => handleDelete(e, draft.id)}
                           disabled={deletingId === draft.id}
-                          className="text-gray-600 hover:text-red-400 transition-colors p-0.5"
+                          className="text-tastelanc-text-faint hover:text-red-400 transition-colors p-0.5"
                           title="Delete draft"
                         >
                           {deletingId === draft.id ? (
@@ -185,8 +185,8 @@ export default function InboxDraftsView({ isAdmin, defaultSender, onDraftSent }:
         {!selectedDraft ? (
           <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light flex-1 flex items-center justify-center">
             <div className="text-center">
-              <Inbox className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-500 text-sm">Select a draft to continue editing</p>
+              <Inbox className="w-12 h-12 text-tastelanc-text-faint mx-auto mb-3" />
+              <p className="text-tastelanc-text-faint text-sm">Select a draft to continue editing</p>
             </div>
           </div>
         ) : (
@@ -194,7 +194,7 @@ export default function InboxDraftsView({ isAdmin, defaultSender, onDraftSent }:
             {/* Mobile back button */}
             <button
               onClick={() => setSelectedDraft(null)}
-              className="md:hidden flex items-center gap-1 text-gray-400 hover:text-white mb-2 text-sm"
+              className="md:hidden flex items-center gap-1 text-tastelanc-text-muted hover:text-tastelanc-text-primary mb-2 text-sm"
             >
               <ArrowLeft className="w-4 h-4" /> Back to drafts
             </button>

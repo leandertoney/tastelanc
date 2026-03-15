@@ -93,7 +93,7 @@ export default function ChatMessage({
 
       {/* Message Bubble */}
       <div className="bg-tastelanc-card rounded-2xl rounded-tl-sm px-4 py-3 max-w-[80%]">
-        <p className="text-sm text-white whitespace-pre-wrap">
+        <p className="text-sm text-tastelanc-text-primary whitespace-pre-wrap">
           {parseRestaurantLinks(message.content)}
           {isStreaming && (
             <span className="inline-block w-1.5 h-4 bg-tastelanc-accent ml-0.5 animate-pulse" />

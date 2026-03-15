@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { OnboardingStep as StepType } from './types';
 import { Button } from '@/components/ui';
@@ -29,6 +29,7 @@ export default function OnboardingStepCard({
   onSkip,
 }: OnboardingStepProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [position, setPosition] = useState<Position | null>(null);
   const Icon = step.icon;
 
@@ -84,7 +85,17 @@ export default function OnboardingStepCard({
 
   const handleAction = () => {
     if (step.action?.href) {
-      router.push(step.action.href);
+      // Preserve admin_mode/sales_mode/restaurant_id params during navigation
+      const adminMode = searchParams.get('admin_mode');
+      const salesMode = searchParams.get('sales_mode');
+      const restaurantId = searchParams.get('restaurant_id');
+      let href = step.action.href;
+      if (adminMode && restaurantId) {
+        href += `?admin_mode=true&restaurant_id=${restaurantId}`;
+      } else if (salesMode && restaurantId) {
+        href += `?sales_mode=true&restaurant_id=${restaurantId}`;
+      }
+      router.push(href);
     }
     onNext();
   };
@@ -118,15 +129,15 @@ export default function OnboardingStepCard({
             <Icon className="w-5 h-5 text-lancaster-gold" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-white">{step.title}</h3>
-            <p className="text-xs text-gray-500">
+            <h3 className="text-lg font-semibold text-tastelanc-text-primary">{step.title}</h3>
+            <p className="text-xs text-tastelanc-text-faint">
               Step {currentIndex + 1} of {totalSteps}
             </p>
           </div>
         </div>
         <button
           onClick={onSkip}
-          className="p-1 text-gray-400 hover:text-white transition-colors"
+          className="p-1 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
           aria-label="Skip tour"
         >
           <X className="w-5 h-5" />
@@ -135,7 +146,7 @@ export default function OnboardingStepCard({
 
       {/* Content */}
       <div className="p-4">
-        <p className="text-gray-300 text-sm leading-relaxed">{step.description}</p>
+        <p className="text-tastelanc-text-secondary text-sm leading-relaxed">{step.description}</p>
       </div>
 
       {/* Footer */}
@@ -161,7 +172,7 @@ export default function OnboardingStepCard({
           {!isFirstStep && (
             <button
               onClick={onPrev}
-              className="p-2 text-gray-400 hover:text-white transition-colors"
+              className="p-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
               aria-label="Previous step"
             >
               <ChevronLeft className="w-5 h-5" />

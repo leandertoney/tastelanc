@@ -164,14 +164,14 @@ export default function AIEmailComposer({
             <Wand2 className="w-5 h-5 text-white" />
           </div>
           <div className="text-left">
-            <h3 className="font-semibold text-white">AI Email Generator</h3>
-            <p className="text-xs text-gray-400">Generate emails with Claude AI</p>
+            <h3 className="font-semibold text-tastelanc-text-primary">AI Email Generator</h3>
+            <p className="text-xs text-tastelanc-text-muted">Generate emails with Claude AI</p>
           </div>
         </div>
         {isExpanded ? (
-          <ChevronUp className="w-5 h-5 text-gray-400" />
+          <ChevronUp className="w-5 h-5 text-tastelanc-text-muted" />
         ) : (
-          <ChevronDown className="w-5 h-5 text-gray-400" />
+          <ChevronDown className="w-5 h-5 text-tastelanc-text-muted" />
         )}
       </button>
 
@@ -182,15 +182,15 @@ export default function AIEmailComposer({
           <div className="mb-4 p-3 bg-tastelanc-surface-light/50 rounded-lg">
             <div className="flex items-center gap-4 text-sm">
               <div>
-                <span className="text-gray-400">Launch:</span>
-                <span className="ml-2 text-white font-medium">Coming Soon</span>
+                <span className="text-tastelanc-text-muted">Launch:</span>
+                <span className="ml-2 text-tastelanc-text-primary font-medium">Coming Soon</span>
               </div>
             </div>
           </div>
 
           {/* Objective Selection */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
               Email Objective
             </label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -204,8 +204,8 @@ export default function AIEmailComposer({
                       : 'bg-tastelanc-surface-light hover:bg-tastelanc-surface border-2 border-transparent'
                   }`}
                 >
-                  <p className="text-sm font-medium text-white">{obj.label}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{obj.description}</p>
+                  <p className="text-sm font-medium text-tastelanc-text-primary">{obj.label}</p>
+                  <p className="text-xs text-tastelanc-text-muted mt-0.5">{obj.description}</p>
                 </button>
               ))}
             </div>
@@ -213,7 +213,7 @@ export default function AIEmailComposer({
 
           {/* Tone Selection */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
               Tone
             </label>
             <div className="flex flex-wrap gap-2">
@@ -224,7 +224,7 @@ export default function AIEmailComposer({
                   className={`px-4 py-2 rounded-full text-sm transition-all flex items-center gap-2 ${
                     tone === t.value
                       ? 'bg-tastelanc-accent text-white'
-                      : 'bg-tastelanc-surface-light text-gray-300 hover:bg-tastelanc-surface'
+                      : 'bg-tastelanc-surface-light text-tastelanc-text-secondary hover:bg-tastelanc-surface'
                   }`}
                 >
                   <span>{t.emoji}</span>
@@ -236,7 +236,7 @@ export default function AIEmailComposer({
 
           {/* Key Points */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
               Key Points to Include (optional)
             </label>
             <div className="space-y-2">
@@ -245,10 +245,10 @@ export default function AIEmailComposer({
                   key={index}
                   className="flex items-center gap-2 bg-tastelanc-surface-light rounded-lg px-3 py-2"
                 >
-                  <span className="text-sm text-white flex-1">{point}</span>
+                  <span className="text-sm text-tastelanc-text-primary flex-1">{point}</span>
                   <button
                     onClick={() => removeKeyPoint(index)}
-                    className="text-gray-400 hover:text-red-400"
+                    className="text-tastelanc-text-muted hover:text-red-400"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -262,14 +262,14 @@ export default function AIEmailComposer({
                     onChange={(e) => setNewKeyPoint(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && addKeyPoint()}
                     placeholder="Add a key point..."
-                    className="flex-1 px-3 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent text-sm"
+                    className="flex-1 px-3 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent text-sm"
                   />
                   <button
                     onClick={addKeyPoint}
                     disabled={!newKeyPoint.trim()}
                     className="px-3 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface disabled:opacity-50 rounded-lg transition-colors"
                   >
-                    <Plus className="w-4 h-4 text-white" />
+                    <Plus className="w-4 h-4 text-tastelanc-text-primary" />
                   </button>
                 </div>
               )}
@@ -306,14 +306,14 @@ export default function AIEmailComposer({
           {generatedEmail && (
             <div className="mt-4 p-4 bg-tastelanc-surface-light rounded-lg">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="font-semibold text-white flex items-center gap-2">
+                <h4 className="font-semibold text-tastelanc-text-primary flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-lancaster-gold" />
                   Generated Email
                 </h4>
                 <button
                   onClick={handleGenerate}
                   disabled={isGenerating}
-                  className="text-gray-400 hover:text-white text-sm flex items-center gap-1"
+                  className="text-tastelanc-text-muted hover:text-tastelanc-text-primary text-sm flex items-center gap-1"
                 >
                   <RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
                   Regenerate
@@ -322,36 +322,36 @@ export default function AIEmailComposer({
 
               <div className="space-y-3 text-sm">
                 <div>
-                  <span className="text-gray-400">Subject:</span>
-                  <p className="text-white mt-1 font-medium">{generatedEmail.subject}</p>
+                  <span className="text-tastelanc-text-muted">Subject:</span>
+                  <p className="text-tastelanc-text-primary mt-1 font-medium">{generatedEmail.subject}</p>
                 </div>
                 <div>
-                  <span className="text-gray-400">Preview:</span>
-                  <p className="text-gray-300 mt-1">{generatedEmail.previewText}</p>
+                  <span className="text-tastelanc-text-muted">Preview:</span>
+                  <p className="text-tastelanc-text-secondary mt-1">{generatedEmail.previewText}</p>
                 </div>
                 <div>
-                  <span className="text-gray-400">Headline:</span>
-                  <p className="text-white mt-1 font-medium">{generatedEmail.headline}</p>
+                  <span className="text-tastelanc-text-muted">Headline:</span>
+                  <p className="text-tastelanc-text-primary mt-1 font-medium">{generatedEmail.headline}</p>
                 </div>
                 <div>
-                  <span className="text-gray-400">Body:</span>
-                  <p className="text-gray-300 mt-1 whitespace-pre-wrap">{generatedEmail.body}</p>
+                  <span className="text-tastelanc-text-muted">Body:</span>
+                  <p className="text-tastelanc-text-secondary mt-1 whitespace-pre-wrap">{generatedEmail.body}</p>
                 </div>
                 <div className="flex gap-4">
                   <div>
-                    <span className="text-gray-400">CTA:</span>
+                    <span className="text-tastelanc-text-muted">CTA:</span>
                     {generatedEmail.ctaText ? (
                       <p className="text-tastelanc-accent mt-1">{generatedEmail.ctaText}</p>
                     ) : (
-                      <p className="text-gray-400 mt-1 italic">No CTA button</p>
+                      <p className="text-tastelanc-text-muted mt-1 italic">No CTA button</p>
                     )}
                   </div>
                   <div className="flex-1">
-                    <span className="text-gray-400">URL:</span>
+                    <span className="text-tastelanc-text-muted">URL:</span>
                     {generatedEmail.ctaUrl ? (
-                      <p className="text-gray-300 mt-1 truncate">{generatedEmail.ctaUrl}</p>
+                      <p className="text-tastelanc-text-secondary mt-1 truncate">{generatedEmail.ctaUrl}</p>
                     ) : (
-                      <p className="text-gray-400 mt-1 italic">No link</p>
+                      <p className="text-tastelanc-text-muted mt-1 italic">No link</p>
                     )}
                   </div>
                 </div>

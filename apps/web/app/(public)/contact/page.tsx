@@ -55,8 +55,8 @@ export default function ContactPage() {
           <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-8 h-8 text-green-500" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Thank You!</h2>
-          <p className="text-gray-400 mb-6">
+          <h2 className="text-2xl font-bold text-tastelanc-text-primary mb-2">Thank You!</h2>
+          <p className="text-tastelanc-text-muted mb-6">
             We&apos;ve received your message and will get back to you within 24-48 hours.
           </p>
           <a
@@ -76,10 +76,10 @@ export default function ContactPage() {
         {/* Header */}
         <div className="text-center mb-12">
           <Badge variant="accent" className="mb-4">For Restaurants</Badge>
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-tastelanc-text-primary mb-4">
             Partner With TasteLanc
           </h1>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          <p className="text-xl text-tastelanc-text-muted max-w-2xl mx-auto">
             Ready to showcase your restaurant to thousands of Lancaster diners?
             Get in touch and we&apos;ll help you find the perfect plan.
           </p>
@@ -89,8 +89,8 @@ export default function ContactPage() {
           {/* Contact Info */}
           <div className="md:col-span-2 space-y-6">
             <Card className="p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Why Partner With Us?</h3>
-              <ul className="space-y-3 text-gray-400 text-sm">
+              <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-4">Why Partner With Us?</h3>
+              <ul className="space-y-3 text-tastelanc-text-muted text-sm">
                 <li className="flex items-start gap-2">
                   <span className="text-tastelanc-accent mt-1">&#10003;</span>
                   Reach thousands of local diners
@@ -115,14 +115,14 @@ export default function ContactPage() {
             </Card>
 
             <Card className="p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Flexible Plans</h3>
-              <p className="text-gray-400 text-sm mb-4">
+              <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-4">Flexible Plans</h3>
+              <p className="text-tastelanc-text-muted text-sm mb-4">
                 We offer plans for every budget, starting completely free. Get in touch and we&apos;ll find the perfect fit for your restaurant.
               </p>
               <div className="flex items-center gap-2">
                 <span className="text-green-400 font-semibold">Starts Free</span>
-                <span className="text-gray-500">•</span>
-                <span className="text-gray-400 text-sm">No commitment required</span>
+                <span className="text-tastelanc-text-faint">•</span>
+                <span className="text-tastelanc-text-muted text-sm">No commitment required</span>
               </div>
             </Card>
           </div>
@@ -130,7 +130,7 @@ export default function ContactPage() {
           {/* Contact Form */}
           <Card className="md:col-span-3 p-6">
             <form onSubmit={handleSubmit} className="space-y-5">
-              <h3 className="text-xl font-semibold text-white mb-4">Get In Touch</h3>
+              <h3 className="text-xl font-semibold text-tastelanc-text-primary mb-4">Get In Touch</h3>
 
               {error && (
                 <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm">
@@ -140,7 +140,7 @@ export default function ContactPage() {
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">
+                  <label htmlFor="name" className="block text-sm font-medium text-tastelanc-text-secondary mb-1">
                     Your Name *
                   </label>
                   <div className="relative">
@@ -151,15 +151,15 @@ export default function ContactPage() {
                       required
                       value={formData.name}
                       onChange={handleChange}
-                      className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 pl-10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent"
+                      className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 pl-10 text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent"
                       placeholder="John Smith"
                     />
-                    <MessageSquare className="absolute left-3 top-3.5 w-4 h-4 text-gray-500" />
+                    <MessageSquare className="absolute left-3 top-3.5 w-4 h-4 text-tastelanc-text-faint" />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+                  <label htmlFor="email" className="block text-sm font-medium text-tastelanc-text-secondary mb-1">
                     Email Address *
                   </label>
                   <div className="relative">
@@ -170,17 +170,17 @@ export default function ContactPage() {
                       required
                       value={formData.email}
                       onChange={handleChange}
-                      className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 pl-10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent"
+                      className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 pl-10 text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent"
                       placeholder="john@restaurant.com"
                     />
-                    <Mail className="absolute left-3 top-3.5 w-4 h-4 text-gray-500" />
+                    <Mail className="absolute left-3 top-3.5 w-4 h-4 text-tastelanc-text-faint" />
                   </div>
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-300 mb-1">
+                  <label htmlFor="phone" className="block text-sm font-medium text-tastelanc-text-secondary mb-1">
                     Phone Number
                   </label>
                   <div className="relative">
@@ -190,15 +190,15 @@ export default function ContactPage() {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 pl-10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent"
+                      className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 pl-10 text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent"
                       placeholder="(717) 555-0123"
                     />
-                    <Phone className="absolute left-3 top-3.5 w-4 h-4 text-gray-500" />
+                    <Phone className="absolute left-3 top-3.5 w-4 h-4 text-tastelanc-text-faint" />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="business_name" className="block text-sm font-medium text-gray-300 mb-1">
+                  <label htmlFor="business_name" className="block text-sm font-medium text-tastelanc-text-secondary mb-1">
                     Business Name
                   </label>
                   <div className="relative">
@@ -208,16 +208,16 @@ export default function ContactPage() {
                       name="business_name"
                       value={formData.business_name}
                       onChange={handleChange}
-                      className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 pl-10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent"
+                      className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 pl-10 text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent"
                       placeholder="Your Restaurant Name"
                     />
-                    <Building2 className="absolute left-3 top-3.5 w-4 h-4 text-gray-500" />
+                    <Building2 className="absolute left-3 top-3.5 w-4 h-4 text-tastelanc-text-faint" />
                   </div>
                 </div>
               </div>
 
               <div>
-                <label htmlFor="interested_plan" className="block text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="interested_plan" className="block text-sm font-medium text-tastelanc-text-secondary mb-1">
                   Interested Plan
                 </label>
                 <select
@@ -225,7 +225,7 @@ export default function ContactPage() {
                   name="interested_plan"
                   value={formData.interested_plan}
                   onChange={handleChange}
-                  className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent"
+                  className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent"
                 >
                   <option value="">Select a plan (optional)</option>
                   <option value="basic">Basic (Free)</option>
@@ -236,7 +236,7 @@ export default function ContactPage() {
               </div>
 
               <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="message" className="block text-sm font-medium text-tastelanc-text-secondary mb-1">
                   Message *
                 </label>
                 <textarea
@@ -246,7 +246,7 @@ export default function ContactPage() {
                   rows={4}
                   value={formData.message}
                   onChange={handleChange}
-                  className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent resize-none"
+                  className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent resize-none"
                   placeholder="Tell us about your restaurant and what you're looking for..."
                 />
               </div>
@@ -269,7 +269,7 @@ export default function ContactPage() {
                 )}
               </button>
 
-              <p className="text-xs text-gray-500 text-center">
+              <p className="text-xs text-tastelanc-text-faint text-center">
                 By submitting, you agree to our{' '}
                 <a href="/privacy" className="text-tastelanc-accent hover:underline">Privacy Policy</a>
                 {' '}and{' '}

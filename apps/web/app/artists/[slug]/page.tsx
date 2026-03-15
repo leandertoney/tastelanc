@@ -123,7 +123,7 @@ export default async function ArtistPage({
           </Link>
           <Link
             href="/events"
-            className="text-sm text-gray-400 hover:text-white transition-colors"
+            className="text-sm text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
           >
             All Events
           </Link>
@@ -146,12 +146,12 @@ export default async function ArtistPage({
           )}
 
           <div className="flex-1">
-            <h1 className="text-3xl font-bold text-white mb-2">{artist.name}</h1>
+            <h1 className="text-3xl font-bold text-tastelanc-text-primary mb-2">{artist.name}</h1>
             {artist.genre && (
               <p className="text-purple-400 mb-3">{artist.genre}</p>
             )}
             {artist.bio && (
-              <p className="text-gray-400 mb-4">{artist.bio}</p>
+              <p className="text-tastelanc-text-muted mb-4">{artist.bio}</p>
             )}
 
             {/* Social Links */}
@@ -161,7 +161,7 @@ export default async function ArtistPage({
                   href={artist.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+                  className="flex items-center gap-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
                 >
                   <Globe className="w-5 h-5" />
                   <span className="text-sm">Website</span>
@@ -172,7 +172,7 @@ export default async function ArtistPage({
                   href={`https://instagram.com/${artist.instagram.replace('@', '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+                  className="flex items-center gap-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
                 >
                   <Instagram className="w-5 h-5" />
                   <span className="text-sm">{artist.instagram}</span>
@@ -184,12 +184,12 @@ export default async function ArtistPage({
 
         {/* Upcoming Events */}
         <div>
-          <h2 className="text-xl font-semibold text-white mb-4">Upcoming Events</h2>
+          <h2 className="text-xl font-semibold text-tastelanc-text-primary mb-4">Upcoming Events</h2>
 
           {events.length === 0 ? (
             <Card className="p-8 text-center">
-              <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-600" />
-              <p className="text-gray-400">No upcoming events scheduled</p>
+              <Calendar className="w-12 h-12 mx-auto mb-4 text-tastelanc-text-faint" />
+              <p className="text-tastelanc-text-muted">No upcoming events scheduled</p>
             </Card>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -233,7 +233,7 @@ function EventCard({ event }: { event: Event }) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-4">
           <h3 className="text-white font-semibold text-lg truncate">{event.name}</h3>
-          <div className="flex items-center gap-3 text-gray-300 text-sm mt-1">
+          <div className="flex items-center gap-3 text-tastelanc-text-secondary text-sm mt-1">
             <span className="flex items-center gap-1">
               <Calendar className="w-4 h-4" />
               {formattedDate}

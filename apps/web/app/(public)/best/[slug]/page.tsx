@@ -96,13 +96,13 @@ export default async function BestOfPage({ params }: PageProps) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(listJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
 
-      <main className="max-w-5xl mx-auto px-4 py-10 text-white">
+      <main className="max-w-5xl mx-auto px-4 py-10 text-tastelanc-text-primary">
         {/* H1 with target keyword */}
         <h1 className="text-4xl font-bold mb-3">{config.h1(BRAND)}</h1>
-        <p className="text-gray-400 text-lg mb-8 max-w-3xl">{config.intro(BRAND)}</p>
+        <p className="text-tastelanc-text-muted text-lg mb-8 max-w-3xl">{config.intro(BRAND)}</p>
 
         {/* Item count */}
-        <p className="text-sm text-gray-500 mb-6">
+        <p className="text-sm text-tastelanc-text-faint mb-6">
           {totalCount} {isHappyHours ? 'happy hours' : 'restaurants'} in {BRAND.county}
         </p>
 
@@ -150,8 +150,8 @@ export default async function BestOfPage({ params }: PageProps) {
             <div className="space-y-6">
               {faqs.map((faq, i) => (
                 <div key={i} className="bg-tastelanc-surface rounded-lg p-6">
-                  <h3 className="font-semibold text-white text-lg mb-2">{faq.question}</h3>
-                  <p className="text-gray-400">{faq.answer}</p>
+                  <h3 className="font-semibold text-tastelanc-text-primary text-lg mb-2">{faq.question}</h3>
+                  <p className="text-tastelanc-text-muted">{faq.answer}</p>
                 </div>
               ))}
             </div>
@@ -161,13 +161,13 @@ export default async function BestOfPage({ params }: PageProps) {
         {/* Related Pages (Internal Links) */}
         {relatedPages.length > 0 && (
           <section className="mt-12 pt-8 border-t border-tastelanc-surface-light">
-            <h2 className="text-lg font-semibold text-gray-300 mb-4">You might also like</h2>
+            <h2 className="text-lg font-semibold text-tastelanc-text-secondary mb-4">You might also like</h2>
             <div className="flex flex-wrap gap-3">
               {relatedPages.map((page) => (
                 <Link
                   key={page.slug}
                   href={`/best/${page.slug}`}
-                  className="px-4 py-2 bg-tastelanc-surface hover:bg-tastelanc-surface-light rounded-full text-sm text-gray-300 hover:text-white transition-colors"
+                  className="px-4 py-2 bg-tastelanc-surface hover:bg-tastelanc-surface-light rounded-full text-sm text-tastelanc-text-secondary hover:text-tastelanc-text-primary transition-colors"
                 >
                   {page.h1(BRAND).replace(` in ${BRAND.countyShort}, ${BRAND.state}`, '')}
                 </Link>
@@ -202,21 +202,21 @@ function RestaurantCard({ restaurant, rank }: { restaurant: Restaurant; rank: nu
         </div>
       )}
       <div className="p-5">
-        <h3 className="font-semibold text-white text-lg mb-1">
+        <h3 className="font-semibold text-tastelanc-text-primary text-lg mb-1">
           {!restaurant.cover_image_url && <span className="text-tastelanc-accent mr-1">#{rank}</span>}
           {restaurant.name}
         </h3>
-        <p className="text-gray-400 text-sm flex items-center gap-1">
+        <p className="text-tastelanc-text-muted text-sm flex items-center gap-1">
           <MapPin className="w-3 h-3" />
           {restaurant.address}, {restaurant.city}
         </p>
         {restaurant.custom_description && (
-          <p className="text-gray-500 text-sm mt-2 line-clamp-2">{restaurant.custom_description}</p>
+          <p className="text-tastelanc-text-faint text-sm mt-2 line-clamp-2">{restaurant.custom_description}</p>
         )}
         {restaurant.categories && restaurant.categories.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-3">
             {restaurant.categories.slice(0, 3).map((cat) => (
-              <span key={cat} className="text-xs bg-tastelanc-surface px-2 py-0.5 rounded text-gray-400">
+              <span key={cat} className="text-xs bg-tastelanc-surface px-2 py-0.5 rounded text-tastelanc-text-muted">
                 {cat.replace(/_/g, ' ')}
               </span>
             ))}
@@ -238,8 +238,8 @@ function HappyHourCard({ hh, rank }: { hh: any; rank: number }) {
           {rank}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-white text-lg">{hh.restaurant?.name}</h3>
-          <p className="text-gray-400 text-sm flex items-center gap-1 mt-0.5">
+          <h3 className="font-semibold text-tastelanc-text-primary text-lg">{hh.restaurant?.name}</h3>
+          <p className="text-tastelanc-text-muted text-sm flex items-center gap-1 mt-0.5">
             <MapPin className="w-3 h-3" />
             {hh.restaurant?.address}
           </p>
@@ -249,7 +249,7 @@ function HappyHourCard({ hh, rank }: { hh: any; rank: number }) {
                 ? `${formatTimeSimple(hh.start_time)} - ${formatTimeSimple(hh.end_time)}`
                 : 'See app for times'}
             </span>
-            {hh.name && <span className="text-sm text-gray-500">{hh.name}</span>}
+            {hh.name && <span className="text-sm text-tastelanc-text-faint">{hh.name}</span>}
           </div>
           {hh.happy_hour_items && hh.happy_hour_items.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
@@ -259,7 +259,7 @@ function HappyHourCard({ hh, rank }: { hh: any; rank: number }) {
                 </span>
               ))}
               {hh.happy_hour_items.length > 3 && (
-                <span className="text-xs text-gray-500">+{hh.happy_hour_items.length - 3} more</span>
+                <span className="text-xs text-tastelanc-text-faint">+{hh.happy_hour_items.length - 3} more</span>
               )}
             </div>
           )}

@@ -105,11 +105,11 @@ export default function AddCityModal({ isOpen, onClose, onCityAdded }: AddCityMo
         <div className="flex items-center justify-between p-5 border-b border-tastelanc-surface-light">
           <div className="flex items-center gap-2">
             <MapPin className="w-5 h-5 text-tastelanc-accent" />
-            <h2 className="text-lg font-semibold text-white">Add City to Pipeline</h2>
+            <h2 className="text-lg font-semibold text-tastelanc-text-primary">Add City to Pipeline</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-gray-400 hover:text-white rounded-lg hover:bg-tastelanc-surface-light transition-colors"
+            className="p-1 text-tastelanc-text-muted hover:text-tastelanc-text-primary rounded-lg hover:bg-tastelanc-surface-light transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -118,7 +118,7 @@ export default function AddCityModal({ isOpen, onClose, onCityAdded }: AddCityMo
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1.5">
+            <label className="block text-sm font-medium text-tastelanc-text-muted mb-1.5">
               City Name <span className="text-red-400">*</span>
             </label>
             <AutocompleteInput
@@ -157,7 +157,7 @@ export default function AddCityModal({ isOpen, onClose, onCityAdded }: AddCityMo
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1.5">
+            <label className="block text-sm font-medium text-tastelanc-text-muted mb-1.5">
               County <span className="text-red-400">*</span>
             </label>
             <AutocompleteInput
@@ -177,7 +177,7 @@ export default function AddCityModal({ isOpen, onClose, onCityAdded }: AddCityMo
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1.5">
+            <label className="block text-sm font-medium text-tastelanc-text-muted mb-1.5">
               State
             </label>
             <input
@@ -186,10 +186,10 @@ export default function AddCityModal({ isOpen, onClose, onCityAdded }: AddCityMo
               onChange={(e) => setState(e.target.value)}
               placeholder="PA"
               disabled={selectedFromDropdown}
-              className="w-full px-3 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent disabled:opacity-60"
+              className="w-full px-3 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent disabled:opacity-60"
             />
             {selectedFromDropdown && (
-              <p className="text-xs text-gray-500 mt-1">Auto-filled from city selection</p>
+              <p className="text-xs text-tastelanc-text-faint mt-1">Auto-filled from city selection</p>
             )}
           </div>
 
@@ -198,7 +198,7 @@ export default function AddCityModal({ isOpen, onClose, onCityAdded }: AddCityMo
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-gray-300 rounded-lg transition-colors text-sm font-medium"
+              className="flex-1 px-4 py-2.5 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-tastelanc-text-secondary rounded-lg transition-colors text-sm font-medium"
             >
               Cancel
             </button>

@@ -27,7 +27,7 @@ export default function AdminMarketFilter({
         const url = value === 'all' ? basePath : `${basePath}?market=${value}`;
         router.push(url);
       }}
-      className="px-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+      className="px-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
     >
       <option value="all">All Markets</option>
       {markets.map((m) => (

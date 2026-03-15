@@ -48,7 +48,7 @@ export default function BrandProposalCard({ brand, onSelect, isSelecting }: Bran
     >
       {/* Variant badge */}
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-medium text-gray-500 bg-tastelanc-surface-light px-2 py-0.5 rounded-full">
+        <span className="text-xs font-medium text-tastelanc-text-faint bg-tastelanc-surface-light px-2 py-0.5 rounded-full">
           Variant #{brand.variant_number}
         </span>
         {brand.is_selected && (
@@ -94,8 +94,8 @@ export default function BrandProposalCard({ brand, onSelect, isSelecting }: Bran
           </button>
         )}
         <div>
-          <h3 className="text-xl font-bold text-white">{brand.app_name}</h3>
-          <p className="text-sm text-gray-400">{brand.tagline}</p>
+          <h3 className="text-xl font-bold text-tastelanc-text-primary">{brand.app_name}</h3>
+          <p className="text-sm text-tastelanc-text-muted">{brand.tagline}</p>
         </div>
       </div>
 
@@ -103,29 +103,29 @@ export default function BrandProposalCard({ brand, onSelect, isSelecting }: Bran
       <div className="space-y-2 mb-4">
         <div className="flex items-center gap-2 text-sm">
           <Bot className="w-4 h-4 flex-shrink-0" style={{ color: accentColor }} />
-          <span className="text-gray-300">
-            AI Assistant: <span className="text-white font-medium">{brand.ai_assistant_name}</span>
+          <span className="text-tastelanc-text-secondary">
+            AI Assistant: <span className="text-tastelanc-text-primary font-medium">{brand.ai_assistant_name}</span>
           </span>
         </div>
-        <div className="text-sm text-gray-300">
-          Premium: <span className="text-white font-medium">{brand.premium_name}</span>
+        <div className="text-sm text-tastelanc-text-secondary">
+          Premium: <span className="text-tastelanc-text-primary font-medium">{brand.premium_name}</span>
         </div>
       </div>
 
       {/* Name Story */}
       {brand.name_story && (
         <div className="mb-4 bg-tastelanc-surface-light/50 rounded-lg p-3">
-          <p className="text-xs font-medium text-gray-500 mb-1">The Story</p>
-          <p className="text-sm text-gray-300 italic leading-relaxed">{brand.name_story}</p>
+          <p className="text-xs font-medium text-tastelanc-text-faint mb-1">The Story</p>
+          <p className="text-sm text-tastelanc-text-secondary italic leading-relaxed">{brand.name_story}</p>
         </div>
       )}
 
       {/* Colors */}
       <div className="mb-4">
-        <p className="text-xs text-gray-500 mb-1.5">Brand Colors</p>
+        <p className="text-xs text-tastelanc-text-faint mb-1.5">Brand Colors</p>
         <ColorSwatchRow colors={brand.colors} />
         {brand.color_story && (
-          <p className="text-xs text-gray-400 italic mt-1.5 leading-relaxed">{brand.color_story}</p>
+          <p className="text-xs text-tastelanc-text-muted italic mt-1.5 leading-relaxed">{brand.color_story}</p>
         )}
       </div>
 

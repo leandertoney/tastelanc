@@ -305,39 +305,39 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
     const confirmInner = (
       <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="p-6">
-          <h2 className="text-lg font-bold text-white mb-6">Confirm & Send</h2>
+          <h2 className="text-lg font-bold text-tastelanc-text-primary mb-6">Confirm & Send</h2>
 
           <div className="space-y-4">
             <div>
-              <span className="text-xs text-gray-500 uppercase tracking-wider">From</span>
-              <p className="text-sm text-white mt-1">
+              <span className="text-xs text-tastelanc-text-faint uppercase tracking-wider">From</span>
+              <p className="text-sm text-tastelanc-text-primary mt-1">
                 {selectedSender ? `${selectedSender.name} <${selectedSender.email}>` : 'No sender configured'}
               </p>
             </div>
 
             <div>
-              <span className="text-xs text-gray-500 uppercase tracking-wider">To</span>
-              <p className="text-sm text-white mt-1">
+              <span className="text-xs text-tastelanc-text-faint uppercase tracking-wider">To</span>
+              <p className="text-sm text-tastelanc-text-primary mt-1">
                 {recipientName ? `${recipientName} ` : ''}&lt;{recipientEmail}&gt;
               </p>
             </div>
 
             <div>
-              <span className="text-xs text-gray-500 uppercase tracking-wider">Subject</span>
-              <p className="text-sm text-white mt-1">{subject}</p>
+              <span className="text-xs text-tastelanc-text-faint uppercase tracking-wider">Subject</span>
+              <p className="text-sm text-tastelanc-text-primary mt-1">{subject}</p>
             </div>
 
             <div>
-              <span className="text-xs text-gray-500 uppercase tracking-wider">Preview</span>
-              <div className="mt-1 p-3 bg-tastelanc-bg rounded-lg text-sm text-gray-300 max-h-32 overflow-y-auto whitespace-pre-wrap">
+              <span className="text-xs text-tastelanc-text-faint uppercase tracking-wider">Preview</span>
+              <div className="mt-1 p-3 bg-tastelanc-bg rounded-lg text-sm text-tastelanc-text-secondary max-h-32 overflow-y-auto whitespace-pre-wrap">
                 {body.substring(0, 300)}{body.length > 300 ? '...' : ''}
               </div>
             </div>
 
             {attachments.length > 0 && (
               <div>
-                <span className="text-xs text-gray-500 uppercase tracking-wider">Attachments</span>
-                <p className="text-sm text-white mt-1">
+                <span className="text-xs text-tastelanc-text-faint uppercase tracking-wider">Attachments</span>
+                <p className="text-sm text-tastelanc-text-primary mt-1">
                   {attachments.length} file{attachments.length !== 1 ? 's' : ''} attached
                 </p>
               </div>
@@ -347,7 +347,7 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
           <div className="flex items-center gap-3 mt-6">
             <button
               onClick={() => setStep('compose')}
-              className="flex items-center gap-2 px-4 py-2.5 text-gray-400 hover:text-white transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Go Back
@@ -382,8 +382,8 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
       <div className={`bg-tastelanc-surface border border-tastelanc-surface-light rounded-xl w-full ${embedded ? 'h-full overflow-y-auto' : 'max-w-2xl max-h-[90vh] overflow-y-auto'}`}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-tastelanc-surface-light">
-          <h2 className="text-lg font-bold text-white">{isReply ? 'Reply' : 'Compose Email'}</h2>
-          <button onClick={handleClose} className="p-1 text-gray-400 hover:text-white transition-colors">
+          <h2 className="text-lg font-bold text-tastelanc-text-primary">{isReply ? 'Reply' : 'Compose Email'}</h2>
+          <button onClick={handleClose} className="p-1 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -392,7 +392,7 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
           {/* Recipient */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs text-tastelanc-text-faint uppercase tracking-wider mb-1.5">
                 To (Email) <span className="text-red-400">*</span>
               </label>
               <input
@@ -401,12 +401,12 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
                 onChange={(e) => setRecipientEmail(e.target.value)}
                 placeholder="recipient@example.com"
                 disabled={isReply}
-                className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
-                Name <span className="text-gray-600">(optional)</span>
+              <label className="block text-xs text-tastelanc-text-faint uppercase tracking-wider mb-1.5">
+                Name <span className="text-tastelanc-text-faint">(optional)</span>
               </label>
               <input
                 type="text"
@@ -414,14 +414,14 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
                 onChange={(e) => setRecipientName(e.target.value)}
                 placeholder="Contact name"
                 disabled={isReply}
-                className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               />
             </div>
           </div>
 
           {/* Sender — dropdown for admins, static for reps */}
           <div>
-            <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Send As</label>
+            <label className="block text-xs text-tastelanc-text-faint uppercase tracking-wider mb-1.5">Send As</label>
             {!selectedSender ? (
               <div className="p-3 bg-tastelanc-bg border border-yellow-600/30 rounded-lg text-sm text-yellow-400">
                 No sender identity configured. Contact admin to set up your email.
@@ -430,32 +430,32 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
               <div className="relative">
                 <button
                   onClick={() => setSenderDropdownOpen(!senderDropdownOpen)}
-                  className="w-full flex items-center justify-between p-3 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white hover:border-gray-600 transition-colors"
+                  className="w-full flex items-center justify-between p-3 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary hover:border-tastelanc-border transition-colors"
                 >
                   <span>
                     {selectedSender.name}
-                    {selectedSender.title && <span className="text-gray-500"> — {selectedSender.title}</span>}
-                    <span className="text-gray-600 ml-2">&lt;{selectedSender.email}&gt;</span>
+                    {selectedSender.title && <span className="text-tastelanc-text-faint"> — {selectedSender.title}</span>}
+                    <span className="text-tastelanc-text-faint ml-2">&lt;{selectedSender.email}&gt;</span>
                   </span>
-                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${senderDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 text-tastelanc-text-muted transition-transform ${senderDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {senderDropdownOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-tastelanc-surface-light border border-gray-700 rounded-lg overflow-hidden z-10">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-tastelanc-surface-light border border-tastelanc-border rounded-lg overflow-hidden z-10">
                     {SENDER_IDENTITIES.map((sender) => (
                       <button
                         key={sender.email}
                         onClick={() => { setSelectedSender(sender); setSenderDropdownOpen(false); }}
                         className={`w-full flex items-center justify-between px-3 py-2.5 text-sm text-left transition-colors ${
                           selectedSender.email === sender.email
-                            ? 'bg-blue-600/10 text-white'
-                            : 'text-gray-300 hover:bg-tastelanc-bg hover:text-white'
+                            ? 'bg-blue-600/10 text-tastelanc-text-primary'
+                            : 'text-tastelanc-text-secondary hover:bg-tastelanc-bg hover:text-tastelanc-text-primary'
                         }`}
                       >
                         <span>
                           {sender.name}
-                          {sender.title && <span className="text-gray-500"> — {sender.title}</span>}
-                          <span className="text-gray-600 ml-2">&lt;{sender.email}&gt;</span>
+                          {sender.title && <span className="text-tastelanc-text-faint"> — {sender.title}</span>}
+                          <span className="text-tastelanc-text-faint ml-2">&lt;{sender.email}&gt;</span>
                         </span>
                         {selectedSender.email === sender.email && <Check className="w-4 h-4 text-blue-400" />}
                       </button>
@@ -464,10 +464,10 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
                 )}
               </div>
             ) : (
-              <div className="p-3 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white">
+              <div className="p-3 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary">
                 {selectedSender.name}
-                {selectedSender.title && <span className="text-gray-500"> — {selectedSender.title}</span>}
-                <span className="text-gray-600 ml-2">&lt;{selectedSender.email}&gt;</span>
+                {selectedSender.title && <span className="text-tastelanc-text-faint"> — {selectedSender.title}</span>}
+                <span className="text-tastelanc-text-faint ml-2">&lt;{selectedSender.email}&gt;</span>
               </div>
             )}
           </div>
@@ -496,13 +496,13 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
 
           {/* Subject */}
           <div>
-            <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Subject</label>
+            <label className="block text-xs text-tastelanc-text-faint uppercase tracking-wider mb-1.5">Subject</label>
             <input
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Email subject line..."
-              className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             {suggestedSubjects.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-2">
@@ -524,13 +524,13 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
 
           {/* Body with AI enhance chips */}
           <div>
-            <label className="text-xs text-gray-500 uppercase tracking-wider mb-1.5 block">Body</label>
+            <label className="text-xs text-tastelanc-text-faint uppercase tracking-wider mb-1.5 block">Body</label>
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder="Email body content..."
               rows={8}
-              className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+              className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
             />
             {body.trim() && (
               <div className="flex flex-wrap gap-1.5 mt-2">
@@ -566,7 +566,7 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
         <div className="flex items-center justify-between p-4 border-t border-tastelanc-surface-light">
           <div className="flex items-center gap-2">
             {isSavingDraft && (
-              <span className="flex items-center gap-1 text-[11px] text-gray-500">
+              <span className="flex items-center gap-1 text-[11px] text-tastelanc-text-faint">
                 <Loader2 className="w-3 h-3 animate-spin" /> Saving...
               </span>
             )}
@@ -579,14 +579,14 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
           <div className="flex items-center gap-3">
             <button
               onClick={handleClose}
-              className="px-4 py-2.5 text-gray-400 hover:text-white transition-colors"
+              className="px-4 py-2.5 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={openFilePicker}
               disabled={isUploading}
-              className="flex items-center gap-1.5 px-3 py-2.5 text-gray-400 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2.5 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
               title="Attach files"
             >
               <Paperclip className="w-4 h-4" />
@@ -594,7 +594,7 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
             <button
               onClick={saveDraft}
               disabled={isSavingDraft || (!recipientEmail.trim() && !subject.trim() && !body.trim())}
-              className="flex items-center gap-1.5 px-3 py-2.5 text-gray-400 hover:text-white disabled:opacity-30 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2.5 text-tastelanc-text-muted hover:text-tastelanc-text-primary disabled:opacity-30 transition-colors"
               title="Save draft"
             >
               <Save className="w-4 h-4" />

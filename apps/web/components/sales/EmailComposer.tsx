@@ -282,31 +282,31 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
         <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
           <div className="p-6">
-            <h2 className="text-lg font-bold text-white mb-6">Confirm & Send</h2>
+            <h2 className="text-lg font-bold text-tastelanc-text-primary mb-6">Confirm & Send</h2>
 
             <div className="space-y-4">
               <div>
-                <span className="text-xs text-gray-500 uppercase tracking-wider">From</span>
-                <p className="text-sm text-white mt-1">
+                <span className="text-xs text-tastelanc-text-faint uppercase tracking-wider">From</span>
+                <p className="text-sm text-tastelanc-text-primary mt-1">
                   {selectedSender.name} from {brand.name} &lt;{selectedSender.email}&gt;
                 </p>
               </div>
 
               <div>
-                <span className="text-xs text-gray-500 uppercase tracking-wider">To</span>
-                <p className="text-sm text-white mt-1">
+                <span className="text-xs text-tastelanc-text-faint uppercase tracking-wider">To</span>
+                <p className="text-sm text-tastelanc-text-primary mt-1">
                   {lead.contact_name || lead.business_name} &lt;{lead.email}&gt;
                 </p>
               </div>
 
               <div>
-                <span className="text-xs text-gray-500 uppercase tracking-wider">Subject</span>
-                <p className="text-sm text-white mt-1">{subject}</p>
+                <span className="text-xs text-tastelanc-text-faint uppercase tracking-wider">Subject</span>
+                <p className="text-sm text-tastelanc-text-primary mt-1">{subject}</p>
               </div>
 
               <div>
-                <span className="text-xs text-gray-500 uppercase tracking-wider">Preview</span>
-                <div className="mt-1 p-3 bg-tastelanc-bg rounded-lg text-sm text-gray-300 max-h-32 overflow-y-auto whitespace-pre-wrap">
+                <span className="text-xs text-tastelanc-text-faint uppercase tracking-wider">Preview</span>
+                <div className="mt-1 p-3 bg-tastelanc-bg rounded-lg text-sm text-tastelanc-text-secondary max-h-32 overflow-y-auto whitespace-pre-wrap">
                   {body.substring(0, 300)}{body.length > 300 ? '...' : ''}
                 </div>
               </div>
@@ -322,7 +322,7 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
             <div className="flex items-center gap-3 mt-6">
               <button
                 onClick={() => setStep('compose')}
-                className="flex items-center gap-2 px-4 py-2.5 text-gray-400 hover:text-white transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Go Back
@@ -352,8 +352,8 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
       <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-tastelanc-surface-light">
-          <h2 className="text-lg font-bold text-white">{isReply ? 'Reply' : 'Compose Email'}</h2>
-          <button onClick={onClose} className="p-1 text-gray-400 hover:text-white transition-colors">
+          <h2 className="text-lg font-bold text-tastelanc-text-primary">{isReply ? 'Reply' : 'Compose Email'}</h2>
+          <button onClick={onClose} className="p-1 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -361,10 +361,10 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
         <div className="p-4 space-y-4">
           {/* Sender Selection */}
           <div>
-            <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs text-tastelanc-text-faint uppercase tracking-wider mb-1.5">
               Send As
               {lastUsedHint && (
-                <span className="normal-case tracking-normal text-gray-600 ml-2">
+                <span className="normal-case tracking-normal text-tastelanc-text-faint ml-2">
                   Last used: {lastUsedHint}
                 </span>
               )}
@@ -372,20 +372,20 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
             <div className="relative">
               <button
                 onClick={() => setSenderDropdownOpen(!senderDropdownOpen)}
-                className="w-full flex items-center justify-between p-3 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white hover:border-gray-600 transition-colors"
+                className="w-full flex items-center justify-between p-3 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary hover:border-tastelanc-border transition-colors"
               >
                 <span>
                   {selectedSender.name}
                   {selectedSender.title && (
-                    <span className="text-gray-500"> — {selectedSender.title}</span>
+                    <span className="text-tastelanc-text-faint"> — {selectedSender.title}</span>
                   )}
-                  <span className="text-gray-600 ml-2">&lt;{selectedSender.email}&gt;</span>
+                  <span className="text-tastelanc-text-faint ml-2">&lt;{selectedSender.email}&gt;</span>
                 </span>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${senderDropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-4 h-4 text-tastelanc-text-muted transition-transform ${senderDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {senderDropdownOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-tastelanc-surface-light border border-gray-700 rounded-lg overflow-hidden z-10">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-tastelanc-surface-light border border-tastelanc-border rounded-lg overflow-hidden z-10">
                   {SENDER_IDENTITIES.map((sender) => (
                     <button
                       key={sender.email}
@@ -395,16 +395,16 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
                       }}
                       className={`w-full flex items-center justify-between px-3 py-2.5 text-sm text-left transition-colors ${
                         selectedSender.email === sender.email
-                          ? 'bg-blue-600/10 text-white'
-                          : 'text-gray-300 hover:bg-tastelanc-bg hover:text-white'
+                          ? 'bg-blue-600/10 text-tastelanc-text-primary'
+                          : 'text-tastelanc-text-secondary hover:bg-tastelanc-bg hover:text-tastelanc-text-primary'
                       }`}
                     >
                       <span>
                         {sender.name}
                         {sender.title && (
-                          <span className="text-gray-500"> — {sender.title}</span>
+                          <span className="text-tastelanc-text-faint"> — {sender.title}</span>
                         )}
-                        <span className="text-gray-600 ml-2">&lt;{sender.email}&gt;</span>
+                        <span className="text-tastelanc-text-faint ml-2">&lt;{sender.email}&gt;</span>
                       </span>
                       {selectedSender.email === sender.email && (
                         <Check className="w-4 h-4 text-blue-400" />
@@ -426,8 +426,8 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
                     onClick={() => setSelectedTemplate(opt.key)}
                     className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                       selectedTemplate === opt.key
-                        ? 'bg-tastelanc-surface-light text-white'
-                        : 'text-gray-500 hover:text-gray-300'
+                        ? 'bg-tastelanc-surface-light text-tastelanc-text-primary'
+                        : 'text-tastelanc-text-faint hover:text-tastelanc-text-secondary'
                     }`}
                   >
                     {opt.label}
@@ -457,13 +457,13 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
 
           {/* Subject + AI chips */}
           <div>
-            <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Subject</label>
+            <label className="block text-xs text-tastelanc-text-faint uppercase tracking-wider mb-1.5">Subject</label>
             <input
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Email subject line..."
-              className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             {suggestedSubjects.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-2">
@@ -485,13 +485,13 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
 
           {/* Body */}
           <div>
-            <label className="text-xs text-gray-500 uppercase tracking-wider mb-1.5 block">Body</label>
+            <label className="text-xs text-tastelanc-text-faint uppercase tracking-wider mb-1.5 block">Body</label>
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder="Email body content..."
               rows={8}
-              className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+              className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
             />
             {body.trim() && (
               <div className="flex flex-wrap gap-1.5 mt-2">
@@ -517,11 +517,11 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
 
           {/* Recipient info */}
           <div className="flex items-center gap-3 p-3 bg-tastelanc-bg rounded-lg">
-            <span className="text-xs text-gray-500">To:</span>
-            <span className="text-sm text-white">
+            <span className="text-xs text-tastelanc-text-faint">To:</span>
+            <span className="text-sm text-tastelanc-text-primary">
               {lead.contact_name || lead.business_name}
             </span>
-            <span className="text-sm text-gray-500">&lt;{lead.email}&gt;</span>
+            <span className="text-sm text-tastelanc-text-faint">&lt;{lead.email}&gt;</span>
           </div>
         </div>
 
@@ -529,7 +529,7 @@ export default function EmailComposer({ lead, onClose, onSent, replyTo }: EmailC
         <div className="flex items-center justify-end gap-3 p-4 border-t border-tastelanc-surface-light">
           <button
             onClick={onClose}
-            className="px-4 py-2.5 text-gray-400 hover:text-white transition-colors"
+            className="px-4 py-2.5 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
           >
             Cancel
           </button>

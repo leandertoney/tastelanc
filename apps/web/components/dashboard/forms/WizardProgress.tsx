@@ -31,7 +31,7 @@ export default function WizardProgress({
                 {
                   'bg-lancaster-gold text-black': isCompleted,
                   'bg-lancaster-gold/20 ring-2 ring-lancaster-gold text-lancaster-gold': isCurrent,
-                  'bg-tastelanc-surface text-gray-500': !isCompleted && !isCurrent,
+                  'bg-tastelanc-surface text-tastelanc-text-faint': !isCompleted && !isCurrent,
                 }
               )}
             >

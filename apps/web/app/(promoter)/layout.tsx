@@ -139,7 +139,7 @@ function PromoterLayoutContent({ children }: { children: React.ReactNode }) {
               <span className={sidebarCollapsed ? 'lg:hidden' : ''}>TasteLanc</span>
             </Link>
             {!sidebarCollapsed && (
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-tastelanc-text-faint mt-1">
                 {adminMode ? 'Admin Editing Mode' : 'Self-Promoter Dashboard'}
               </p>
             )}
@@ -169,13 +169,13 @@ function PromoterLayoutContent({ children }: { children: React.ReactNode }) {
                     )}
                   </div>
                 )}
-                <span className={`text-white text-sm font-medium truncate max-w-[120px] ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
+                <span className={`text-tastelanc-text-primary text-sm font-medium truncate max-w-[120px] ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
                   {isLoading ? 'Loading...' : artistName}
                 </span>
               </div>
               {!adminMode && !sidebarCollapsed && (
                 <ChevronDown
-                  className={`w-4 h-4 text-gray-400 transition-transform ${
+                  className={`w-4 h-4 text-tastelanc-text-muted transition-transform ${
                     profileMenuOpen ? 'rotate-180' : ''
                   }`}
                 />
@@ -201,7 +201,7 @@ function PromoterLayoutContent({ children }: { children: React.ReactNode }) {
                       className={`flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 rounded-lg transition-colors ${
                         isActive
                           ? 'bg-purple-500 text-white'
-                          : 'text-gray-400 hover:text-white hover:bg-tastelanc-surface-light'
+                          : 'text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light'
                       }`}
                     >
                       <Icon className="w-5 h-5 flex-shrink-0" />
@@ -216,19 +216,19 @@ function PromoterLayoutContent({ children }: { children: React.ReactNode }) {
           {/* User Info */}
           <div className={`${sidebarCollapsed ? 'lg:p-2' : ''} p-4 border-t border-tastelanc-surface-light`}>
             <div className={`flex items-center gap-3 mb-4 ${sidebarCollapsed ? 'lg:justify-center lg:px-0 lg:mb-2' : ''} px-3`}>
-              <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0" title={sidebarCollapsed ? displayName : undefined}>
-                <User className="w-4 h-4 text-white" />
+              <div className="w-8 h-8 bg-tastelanc-surface-light rounded-full flex items-center justify-center flex-shrink-0" title={sidebarCollapsed ? displayName : undefined}>
+                <User className="w-4 h-4 text-tastelanc-text-muted" />
               </div>
               <div className={`flex-1 min-w-0 ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
-                <p className="text-sm text-white truncate">{displayName}</p>
-                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                <p className="text-sm text-tastelanc-text-primary truncate">{displayName}</p>
+                <p className="text-xs text-tastelanc-text-faint truncate">{user?.email}</p>
               </div>
             </div>
             {selfPromoter?.slug && (
               <Link
                 href={`/artists/${selfPromoter.slug}`}
                 title={sidebarCollapsed ? 'View Public Page' : undefined}
-                className={`flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors`}
+                className={`flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors`}
               >
                 <ExternalLink className="w-5 h-5 flex-shrink-0" />
                 <span className={sidebarCollapsed ? 'lg:hidden' : ''}>View Public Page</span>
@@ -247,7 +247,7 @@ function PromoterLayoutContent({ children }: { children: React.ReactNode }) {
               <button
                 onClick={handleSignOut}
                 title={sidebarCollapsed ? 'Sign Out' : undefined}
-                className={`w-full flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 text-gray-400 hover:text-red-400 transition-colors`}
+                className={`w-full flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 text-tastelanc-text-muted hover:text-red-400 transition-colors`}
               >
                 <LogOut className="w-5 h-5 flex-shrink-0" />
                 <span className={sidebarCollapsed ? 'lg:hidden' : ''}>Sign Out</span>
@@ -264,18 +264,18 @@ function PromoterLayoutContent({ children }: { children: React.ReactNode }) {
           <div className="flex items-center justify-between px-4 py-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 text-gray-400 hover:text-white"
+              className="lg:hidden p-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary"
             >
               <Menu className="w-6 h-6" />
             </button>
             <div className="flex-1 lg:ml-0 ml-4">
-              <h1 className="text-lg font-semibold text-white">
+              <h1 className="text-lg font-semibold text-tastelanc-text-primary">
                 {navItems.find((item) => item.href === pathname)?.label || 'Dashboard'}
               </h1>
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 text-gray-400 hover:text-white"
+              className="lg:hidden p-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary"
             >
               {sidebarOpen && <X className="w-6 h-6" />}
             </button>

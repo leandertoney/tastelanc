@@ -44,14 +44,14 @@ export function EditableAttachmentChips({ attachments, onRemove, isUploading }: 
       {attachments.map((att, i) => (
         <span
           key={`${att.filename}-${i}`}
-          className="flex items-center gap-1.5 px-2.5 py-1 bg-tastelanc-surface-light rounded-full text-xs text-gray-300"
+          className="flex items-center gap-1.5 px-2.5 py-1 bg-tastelanc-surface-light rounded-full text-xs text-tastelanc-text-secondary"
         >
-          <AttachmentIcon type={att.contentType} className="w-3 h-3 text-gray-400" />
+          <AttachmentIcon type={att.contentType} className="w-3 h-3 text-tastelanc-text-muted" />
           <span className="truncate max-w-[120px]">{att.filename}</span>
-          <span className="text-gray-500">{formatFileSize(att.size)}</span>
+          <span className="text-tastelanc-text-faint">{formatFileSize(att.size)}</span>
           <button
             onClick={() => onRemove(i)}
-            className="ml-0.5 p-0.5 text-gray-500 hover:text-red-400 transition-colors"
+            className="ml-0.5 p-0.5 text-tastelanc-text-faint hover:text-red-400 transition-colors"
             title="Remove"
           >
             <X className="w-3 h-3" />
@@ -71,7 +71,7 @@ export function ReadonlyAttachmentChips({ attachments }: ReadonlyAttachmentChips
 
   return (
     <div className="flex flex-wrap gap-1.5 mt-2 pt-1.5 border-t border-white/5">
-      <Paperclip className="w-3 h-3 text-gray-500 mt-0.5" />
+      <Paperclip className="w-3 h-3 text-tastelanc-text-faint mt-0.5" />
       {attachments.map((att, i) => {
         const type = att.contentType || att.content_type || 'application/octet-stream';
         return att.url ? (
@@ -80,16 +80,16 @@ export function ReadonlyAttachmentChips({ attachments }: ReadonlyAttachmentChips
             href={att.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 px-2 py-0.5 bg-tastelanc-surface-light rounded text-xs text-gray-300 hover:text-white hover:bg-tastelanc-surface-light/80 transition-colors"
+            className="flex items-center gap-1 px-2 py-0.5 bg-tastelanc-surface-light rounded text-xs text-tastelanc-text-secondary hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light/80 transition-colors"
           >
             <AttachmentIcon type={type} className="w-3 h-3" />
             <span className="truncate max-w-[100px]">{att.filename}</span>
-            <Download className="w-2.5 h-2.5 text-gray-500" />
+            <Download className="w-2.5 h-2.5 text-tastelanc-text-faint" />
           </a>
         ) : (
           <span
             key={`${att.filename}-${i}`}
-            className="flex items-center gap-1 px-2 py-0.5 bg-tastelanc-surface-light rounded text-xs text-gray-400"
+            className="flex items-center gap-1 px-2 py-0.5 bg-tastelanc-surface-light rounded text-xs text-tastelanc-text-muted"
           >
             <AttachmentIcon type={type} className="w-3 h-3" />
             <span className="truncate max-w-[100px]">{att.filename}</span>

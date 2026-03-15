@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Providers from '@/components/Providers';
 import { BRAND } from '@/config/market';
-import { Toaster } from 'sonner';
+import { ThemedToaster } from '@/components/ui/ThemedToaster';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
 
@@ -12,19 +12,41 @@ function hexToRgb(hex: string): string {
   return `${parseInt(h.slice(0, 2), 16)} ${parseInt(h.slice(2, 4), 16)} ${parseInt(h.slice(4, 6), 16)}`;
 }
 
-const brandCssVars = `
-:root {
+/** Shared accent variables (same in light & dark) */
+const accentVars = `
   --brand-accent: ${hexToRgb(BRAND.colors.accent)};
   --brand-accent-hover: ${hexToRgb(BRAND.colors.accentHover)};
-  --brand-gold: ${hexToRgb(BRAND.colors.gold)};
-  --brand-bg: ${hexToRgb(BRAND.colors.bg)};
-  --brand-card: ${hexToRgb(BRAND.colors.card)};
-  --brand-surface: ${hexToRgb(BRAND.colors.surface)};
-  --brand-surface-light: ${hexToRgb(BRAND.colors.surfaceLight)};
-  --brand-header-bg: ${hexToRgb(BRAND.colors.headerBg)};
-  --brand-header-text: ${hexToRgb(BRAND.colors.headerText)};
   --brand-accent-hex: ${BRAND.colors.accent};
-  --brand-gold-hex: ${BRAND.colors.gold};
+`;
+
+function modeVars(m: typeof BRAND.colors.dark) {
+  return `
+  --brand-bg: ${hexToRgb(m.bg)};
+  --brand-card: ${hexToRgb(m.card)};
+  --brand-surface: ${hexToRgb(m.surface)};
+  --brand-surface-light: ${hexToRgb(m.surfaceLight)};
+  --brand-header-bg: ${hexToRgb(m.headerBg)};
+  --brand-header-text: ${hexToRgb(m.headerText)};
+  --brand-text-primary: ${hexToRgb(m.textPrimary)};
+  --brand-text-secondary: ${hexToRgb(m.textSecondary)};
+  --brand-text-muted: ${hexToRgb(m.textMuted)};
+  --brand-text-faint: ${hexToRgb(m.textFaint)};
+  --brand-border: ${hexToRgb(m.border)};
+  --brand-border-light: ${hexToRgb(m.borderLight)};
+  --brand-input-bg: ${hexToRgb(m.inputBg)};
+  --brand-gold: ${hexToRgb(m.gold)};
+  --brand-gold-hex: ${m.gold};
+  `;
+}
+
+const brandCssVars = `
+[data-theme="dark"], :root {
+  ${accentVars}
+  ${modeVars(BRAND.colors.dark)}
+}
+[data-theme="light"] {
+  ${accentVars}
+  ${modeVars(BRAND.colors.light)}
 }
 `;
 
@@ -69,7 +91,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <style dangerouslySetInnerHTML={{ __html: brandCssVars }} />
         {/* Smart App Banner — Safari on iOS auto-shows "Open in App" */}
@@ -102,7 +124,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen font-sans">
         <Providers>{children}</Providers>
-        <Toaster position="top-right" richColors theme="dark" />
+        <ThemedToaster />
       </body>
     </html>
   );

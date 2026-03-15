@@ -42,8 +42,8 @@ export default async function AdminSelfPromotersPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white">Self-Promoters</h1>
-            <p className="text-gray-400 mt-1">
+            <h1 className="text-3xl font-bold text-tastelanc-text-primary">Self-Promoters</h1>
+            <p className="text-tastelanc-text-muted mt-1">
               {selfPromoters.length} total • {activeCount} active • {paidCount} subscribed
             </p>
           </div>
@@ -62,32 +62,32 @@ export default async function AdminSelfPromotersPage() {
         <Card className="p-4 md:p-6">
           <div className="flex items-center gap-3 mb-2">
             <Music className="w-5 h-5 text-purple-500" />
-            <span className="text-gray-400 text-sm">Total</span>
+            <span className="text-tastelanc-text-muted text-sm">Total</span>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">{selfPromoters.length}</p>
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{selfPromoters.length}</p>
         </Card>
 
         <Card className="p-4 md:p-6">
           <div className="flex items-center gap-3 mb-2">
             <CheckCircle className="w-5 h-5 text-green-500" />
-            <span className="text-gray-400 text-sm">Active</span>
+            <span className="text-tastelanc-text-muted text-sm">Active</span>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">{activeCount}</p>
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{activeCount}</p>
         </Card>
 
         <Card className="p-4 md:p-6">
           <div className="flex items-center gap-3 mb-2">
             <DollarSign className="w-5 h-5 text-tastelanc-accent" />
-            <span className="text-gray-400 text-sm">Subscribed</span>
+            <span className="text-tastelanc-text-muted text-sm">Subscribed</span>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">{paidCount}</p>
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{paidCount}</p>
         </Card>
       </div>
 
       {/* Self-Promoter List */}
       <Card className="overflow-hidden">
         {selfPromoters.length === 0 ? (
-          <div className="p-8 text-center text-gray-400">
+          <div className="p-8 text-center text-tastelanc-text-muted">
             <Music className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>No self-promoters yet</p>
             <Link
@@ -102,11 +102,11 @@ export default async function AdminSelfPromotersPage() {
             <table className="w-full">
               <thead className="bg-tastelanc-surface-light">
                 <tr>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">Artist</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">Genre</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">Contact</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">Status</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">Joined</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Artist</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Genre</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Contact</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Status</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Joined</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-tastelanc-surface-light">
@@ -126,12 +126,12 @@ export default async function AdminSelfPromotersPage() {
                           </div>
                         )}
                         <div>
-                          <p className="text-white font-medium">{sp.name}</p>
-                          <p className="text-gray-500 text-sm">/{sp.slug}</p>
+                          <p className="text-tastelanc-text-primary font-medium">{sp.name}</p>
+                          <p className="text-tastelanc-text-faint text-sm">/{sp.slug}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-300">{sp.genre || '—'}</td>
+                    <td className="px-4 py-3 text-tastelanc-text-secondary">{sp.genre || '—'}</td>
                     <td className="px-4 py-3">
                       <div className="text-sm">
                         {sp.email && (
@@ -139,7 +139,7 @@ export default async function AdminSelfPromotersPage() {
                             {sp.email}
                           </a>
                         )}
-                        {sp.phone && <span className="text-gray-400">{sp.phone}</span>}
+                        {sp.phone && <span className="text-tastelanc-text-muted">{sp.phone}</span>}
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -147,14 +147,14 @@ export default async function AdminSelfPromotersPage() {
                         {sp.is_active ? (
                           <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">Active</span>
                         ) : (
-                          <span className="px-2 py-1 bg-gray-500/20 text-gray-400 text-xs rounded-full">Inactive</span>
+                          <span className="px-2 py-1 bg-tastelanc-surface-light/50 text-tastelanc-text-muted text-xs rounded-full">Inactive</span>
                         )}
                         {sp.stripe_subscription_id && (
                           <span className="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs rounded-full">Subscribed</span>
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-400 text-sm">
+                    <td className="px-4 py-3 text-tastelanc-text-muted text-sm">
                       {new Date(sp.created_at).toLocaleDateString()}
                     </td>
                   </tr>

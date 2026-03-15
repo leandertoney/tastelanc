@@ -49,7 +49,7 @@ export default function DaySelector({
                 'px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200',
                 isQuickSelectActive(qs.days)
                   ? 'bg-lancaster-gold/20 text-lancaster-gold border border-lancaster-gold/50'
-                  : 'bg-tastelanc-surface/50 text-gray-400 hover:text-white border border-transparent'
+                  : 'bg-tastelanc-surface/50 text-tastelanc-text-muted hover:text-tastelanc-text-primary border border-transparent'
               )}
             >
               {qs.label}
@@ -73,7 +73,7 @@ export default function DaySelector({
                 'min-w-[52px] active:scale-95',
                 isSelected
                   ? 'bg-lancaster-gold text-black shadow-lg shadow-lancaster-gold/20'
-                  : 'bg-tastelanc-surface text-gray-400 hover:text-white hover:bg-tastelanc-surface-light'
+                  : 'bg-tastelanc-surface text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light'
               )}
             >
               {day.slice(0, 3)}

@@ -37,12 +37,12 @@ export default async function RestaurantMenu({ params }: { params: { slug: strin
       <PageViewTracker pagePath={`/restaurants/${restaurant.slug}/menu`} pageType="menu" restaurantId={restaurant.id} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaRestaurant) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
-      <main className="max-w-4xl mx-auto px-4 py-10 text-white">
+      <main className="max-w-4xl mx-auto px-4 py-10 text-tastelanc-text-primary">
         {leadershipLine(claim)}
         <h1 className="text-3xl font-bold">{restaurant.name} Menu</h1>
-        <p className="text-gray-400 mt-1">{restaurant.address}, {restaurant.city}, {restaurant.state}</p>
+        <p className="text-tastelanc-text-muted mt-1">{restaurant.address}, {restaurant.city}, {restaurant.state}</p>
         {restaurantCTAButtons()}
-        <p className="mt-4 text-gray-300">Menu coming soon. Check back for dishes and pricing.</p>
+        <p className="mt-4 text-tastelanc-text-secondary">Menu coming soon. Check back for dishes and pricing.</p>
       </main>
     </>
   );

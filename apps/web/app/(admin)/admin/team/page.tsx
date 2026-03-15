@@ -223,7 +223,7 @@ export default function TeamPage() {
     if (member.isSalesRep) {
       return ROLE_LABELS.sales_rep;
     }
-    return { label: 'Member', color: 'bg-gray-500/20 text-gray-400' };
+    return { label: 'Member', color: 'bg-tastelanc-surface-light/50 text-tastelanc-text-muted' };
   };
 
   const isProtected = (member: TeamMember) => {
@@ -267,11 +267,11 @@ export default function TeamPage() {
     <div>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary flex items-center gap-3">
             <Users className="w-8 h-8 text-tastelanc-accent" />
             Team
           </h1>
-          <p className="text-gray-400 mt-1">Manage roles and market assignments</p>
+          <p className="text-tastelanc-text-muted mt-1">Manage roles and market assignments</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
@@ -285,35 +285,35 @@ export default function TeamPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <Card className="p-4 text-center">
-          <p className="text-2xl font-bold text-white">{members.length}</p>
-          <p className="text-xs text-gray-400 mt-1">Total Members</p>
+          <p className="text-2xl font-bold text-tastelanc-text-primary">{members.length}</p>
+          <p className="text-xs text-tastelanc-text-muted mt-1">Total Members</p>
         </Card>
         <Card className="p-4 text-center">
           <p className="text-2xl font-bold text-green-400">
             {members.filter(m => m.salesRepData?.is_active !== false && !isProtected(m)).length}
           </p>
-          <p className="text-xs text-gray-400 mt-1">Active Reps</p>
+          <p className="text-xs text-tastelanc-text-muted mt-1">Active Reps</p>
         </Card>
         <Card className="p-4 text-center">
           <p className="text-2xl font-bold text-blue-400">
             {members.reduce((sum, m) => sum + m.leadCount, 0)}
           </p>
-          <p className="text-xs text-gray-400 mt-1">Total Leads</p>
+          <p className="text-xs text-tastelanc-text-muted mt-1">Total Leads</p>
         </Card>
         <Card className="p-4 text-center">
           <p className="text-2xl font-bold text-amber-400">{markets.length}</p>
-          <p className="text-xs text-gray-400 mt-1">Markets</p>
+          <p className="text-xs text-tastelanc-text-muted mt-1">Markets</p>
         </Card>
       </div>
 
       {/* Market filter */}
       {markets.length > 1 && (
         <div className="flex items-center gap-3 mb-4">
-          <Filter className="w-4 h-4 text-gray-400" />
+          <Filter className="w-4 h-4 text-tastelanc-text-muted" />
           <select
             value={filterMarketId}
             onChange={(e) => setFilterMarketId(e.target.value)}
-            className="px-3 py-1.5 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+            className="px-3 py-1.5 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
           >
             <option value="all">All Markets</option>
             {markets.map(m => (
@@ -321,7 +321,7 @@ export default function TeamPage() {
             ))}
           </select>
           {filterMarketId !== 'all' && (
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-tastelanc-text-faint">
               {filteredMembers.length} member{filteredMembers.length !== 1 ? 's' : ''}
             </span>
           )}
@@ -344,9 +344,9 @@ export default function TeamPage() {
                     {locked ? (
                       <Crown className="w-4 h-4 text-amber-400 flex-shrink-0" />
                     ) : (
-                      <Shield className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                      <Shield className="w-4 h-4 text-tastelanc-text-faint flex-shrink-0" />
                     )}
-                    <h3 className="font-semibold text-white">{member.name}</h3>
+                    <h3 className="font-semibold text-tastelanc-text-primary">{member.name}</h3>
                     <Badge className={role.color}>{role.label}</Badge>
                     {member.salesRepData && (
                       <Badge className={member.salesRepData.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}>
@@ -354,7 +354,7 @@ export default function TeamPage() {
                       </Badge>
                     )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-tastelanc-text-muted">
                     <span className="flex items-center gap-1">
                       <Mail className="w-3 h-3" /> {member.email}
                     </span>
@@ -378,7 +378,7 @@ export default function TeamPage() {
                 {!locked && !isEditing && (
                   <button
                     onClick={() => startEdit(member)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-tastelanc-surface-light text-gray-300 hover:text-white rounded-lg transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary rounded-lg transition-colors"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                     Edit
@@ -392,23 +392,23 @@ export default function TeamPage() {
                   {/* Name & Phone */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">Name</label>
+                      <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Name</label>
                       <input
                         type="text"
                         value={editForm.name}
                         onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
                         placeholder="Full name"
-                        className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                        className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">Phone</label>
+                      <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Phone</label>
                       <input
                         type="text"
                         value={editForm.phone}
                         onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
                         placeholder="(555) 123-4567"
-                        className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                        className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                       />
                     </div>
                   </div>
@@ -416,7 +416,7 @@ export default function TeamPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Market assignment */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Market Assignment</label>
+                      <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">Market Assignment</label>
                       <div className="space-y-2">
                         {markets.map(market => (
                           <label
@@ -427,9 +427,9 @@ export default function TeamPage() {
                               type="checkbox"
                               checked={editForm.market_ids.includes(market.id)}
                               onChange={() => toggleMarket(market.id)}
-                              className="rounded border-gray-600 bg-tastelanc-surface-light text-tastelanc-accent focus:ring-tastelanc-accent"
+                              className="rounded border-tastelanc-border bg-tastelanc-surface-light text-tastelanc-accent focus:ring-tastelanc-accent"
                             />
-                            <span className="text-sm text-gray-300">{market.name}</span>
+                            <span className="text-sm text-tastelanc-text-secondary">{market.name}</span>
                           </label>
                         ))}
                       </div>
@@ -437,7 +437,7 @@ export default function TeamPage() {
 
                     {/* Status */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Status</label>
+                      <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">Status</label>
                       <button
                         onClick={() => setEditForm(prev => ({ ...prev, is_active: !prev.is_active }))}
                         className={`px-4 py-2 rounded-lg text-sm transition-colors ${
@@ -462,7 +462,7 @@ export default function TeamPage() {
                     </button>
                     <button
                       onClick={cancelEdit}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-tastelanc-surface-light text-gray-400 hover:text-white rounded-lg text-sm transition-colors"
+                      className="flex items-center gap-1.5 px-4 py-2 bg-tastelanc-surface-light text-tastelanc-text-muted hover:text-tastelanc-text-primary rounded-lg text-sm transition-colors"
                     >
                       <X className="w-3.5 h-3.5" />
                       Cancel
@@ -480,52 +480,52 @@ export default function TeamPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="bg-tastelanc-surface rounded-xl w-full max-w-md p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-white">Add Team Member</h2>
-              <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-white">
+              <h2 className="text-lg font-semibold text-tastelanc-text-primary">Add Team Member</h2>
+              <button onClick={() => setShowAddModal(false)} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Full Name *</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Full Name *</label>
                 <input
                   type="text"
                   value={addForm.name}
                   onChange={(e) => setAddForm(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="Jordan Smith"
-                  className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Email *</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Email *</label>
                 <input
                   type="email"
                   value={addForm.email}
                   onChange={(e) => setAddForm(prev => ({ ...prev, email: e.target.value }))}
                   placeholder="jordan@tastelanc.com"
-                  className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Phone</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Phone</label>
                 <input
                   type="tel"
                   value={addForm.phone}
                   onChange={(e) => setAddForm(prev => ({ ...prev, phone: e.target.value }))}
                   placeholder="(555) 123-4567"
-                  className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Role</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Role</label>
                 <select
                   value={addForm.role}
                   onChange={(e) => setAddForm(prev => ({ ...prev, role: e.target.value }))}
-                  className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 >
                   {ASSIGNABLE_ROLES.map(r => (
                     <option key={r.value} value={r.value}>{r.label}</option>
@@ -534,7 +534,7 @@ export default function TeamPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Market Assignment</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">Market Assignment</label>
                 <div className="space-y-2">
                   {markets.map(market => (
                     <label
@@ -545,9 +545,9 @@ export default function TeamPage() {
                         type="checkbox"
                         checked={addForm.market_ids.includes(market.id)}
                         onChange={() => toggleAddMarket(market.id)}
-                        className="rounded border-gray-600 bg-tastelanc-surface-light text-tastelanc-accent focus:ring-tastelanc-accent"
+                        className="rounded border-tastelanc-border bg-tastelanc-surface-light text-tastelanc-accent focus:ring-tastelanc-accent"
                       />
-                      <span className="text-sm text-gray-300">{market.name}</span>
+                      <span className="text-sm text-tastelanc-text-secondary">{market.name}</span>
                     </label>
                   ))}
                 </div>
@@ -565,7 +565,7 @@ export default function TeamPage() {
               </button>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="px-4 py-2.5 bg-tastelanc-surface-light text-gray-400 hover:text-white rounded-lg text-sm transition-colors"
+                className="px-4 py-2.5 bg-tastelanc-surface-light text-tastelanc-text-muted hover:text-tastelanc-text-primary rounded-lg text-sm transition-colors"
               >
                 Cancel
               </button>

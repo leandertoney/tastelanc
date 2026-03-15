@@ -134,11 +134,11 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl md:text-4xl font-bold text-white">{restaurant.name}</h1>
+                <h1 className="text-3xl md:text-4xl font-bold text-tastelanc-text-primary">{restaurant.name}</h1>
                 {restaurant.is_verified && <Badge variant="accent">Verified</Badge>}
               </div>
 
-              <p className="text-gray-400 flex items-center gap-2 mb-3">
+              <p className="text-tastelanc-text-muted flex items-center gap-2 mb-3">
                 <MapPin className="w-4 h-4" />
                 {restaurant.address}, {restaurant.city}, {restaurant.state}
               </p>
@@ -166,7 +166,7 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
               {restaurant.phone && (
                 <a
                   href={`tel:${restaurant.phone}`}
-                  className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors"
+                  className="flex items-center gap-2 text-tastelanc-text-secondary hover:text-tastelanc-text-primary transition-colors"
                 >
                   <Phone className="w-4 h-4" />
                   {restaurant.phone}
@@ -177,7 +177,7 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
                   href={restaurant.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors"
+                  className="flex items-center gap-2 text-tastelanc-text-secondary hover:text-tastelanc-text-primary transition-colors"
                 >
                   <Globe className="w-4 h-4" />
                   Visit Website
@@ -187,7 +187,7 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
           </div>
 
           {(restaurant.custom_description || restaurant.description) && (
-            <p className="text-gray-300 mt-4">{restaurant.custom_description || restaurant.description}</p>
+            <p className="text-tastelanc-text-secondary mt-4">{restaurant.custom_description || restaurant.description}</p>
           )}
         </div>
 
@@ -197,7 +197,7 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
             {/* Happy Hours */}
             {restaurant.happy_hours.length > 0 && (
               <section className="bg-tastelanc-card rounded-xl p-6">
-                <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <h2 className="text-xl font-bold text-tastelanc-text-primary mb-4 flex items-center gap-2">
                   <Clock className="w-5 h-5 text-lancaster-gold" />
                   Happy Hours
                 </h2>
@@ -205,12 +205,12 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
                   {restaurant.happy_hours.map((hh: { id: string; name: string; days_of_week: string[]; start_time: string; end_time: string; happy_hour_items?: { id: string; name: string; discounted_price: number }[] }) => (
                     <div key={hh.id} className="border-b border-tastelanc-surface-light pb-4 last:border-0 last:pb-0">
                       <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-medium text-white">{hh.name}</h3>
+                        <h3 className="font-medium text-tastelanc-text-primary">{hh.name}</h3>
                         <span className="text-lancaster-gold text-sm">
                           {formatTime(hh.start_time)} - {formatTime(hh.end_time)}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-400 mb-2">
+                      <p className="text-sm text-tastelanc-text-muted mb-2">
                         {hh.days_of_week.map((d: string) => capitalizeWords(d)).join(', ')}
                       </p>
                       {hh.happy_hour_items && hh.happy_hour_items.length > 0 && (
@@ -231,7 +231,7 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
             {/* Specials */}
             {restaurant.specials.length > 0 && (
               <section className="bg-tastelanc-card rounded-xl p-6">
-                <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <h2 className="text-xl font-bold text-tastelanc-text-primary mb-4 flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-tastelanc-accent" />
                   Specials
                 </h2>
@@ -250,11 +250,11 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
                       )}
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-medium text-white">{special.name}</h3>
+                          <h3 className="font-medium text-tastelanc-text-primary">{special.name}</h3>
                           {special.description && (
-                            <p className="text-sm text-gray-400 mt-1">{special.description}</p>
+                            <p className="text-sm text-tastelanc-text-muted mt-1">{special.description}</p>
                           )}
-                          <p className="text-sm text-gray-500 mt-1">
+                          <p className="text-sm text-tastelanc-text-faint mt-1">
                             {special.days_of_week.map((d: string) => capitalizeWords(d)).join(', ')}
                           </p>
                         </div>
@@ -269,7 +269,7 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
                           )}
                           {special.original_price && special.special_price && (
                             <div className="text-sm mt-1">
-                              <span className="line-through text-gray-500 mr-1">
+                              <span className="line-through text-tastelanc-text-faint mr-1">
                                 ${special.original_price.toFixed(2)}
                               </span>
                               <span className="text-green-400 font-semibold">
@@ -288,7 +288,7 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
             {/* Events */}
             {restaurant.events.length > 0 && (
               <section className="bg-tastelanc-card rounded-xl p-6">
-                <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <h2 className="text-xl font-bold text-tastelanc-text-primary mb-4 flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-tastelanc-accent" />
                   Upcoming Events
                 </h2>
@@ -307,8 +307,8 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
                       )}
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-medium text-white">{event.name}</h3>
-                          <p className="text-sm text-gray-400">
+                          <h3 className="font-medium text-tastelanc-text-primary">{event.name}</h3>
+                          <p className="text-sm text-tastelanc-text-muted">
                             {capitalizeWords(event.event_type.replace('_', ' '))}
                             {event.performer_name && ` • ${event.performer_name}`}
                           </p>
@@ -324,10 +324,10 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
             {/* Menu */}
             {restaurant.menus.length > 0 && (
               <section className="bg-tastelanc-card rounded-xl p-6">
-                <h2 className="text-xl font-bold text-white mb-4">Menu</h2>
+                <h2 className="text-xl font-bold text-tastelanc-text-primary mb-4">Menu</h2>
                 {restaurant.menus.map((menu: { id: string; name: string; menu_sections?: { id: string; name: string; menu_items?: { id: string; name: string; description: string | null; price: number | null }[] }[] }) => (
                   <div key={menu.id} className="mb-6 last:mb-0">
-                    <h3 className="text-lg font-semibold text-white mb-4">{menu.name}</h3>
+                    <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-4">{menu.name}</h3>
                     {menu.menu_sections?.map((section) => (
                       <div key={section.id} className="mb-4">
                         <h4 className="text-tastelanc-accent font-medium mb-2">{section.name}</h4>
@@ -335,13 +335,13 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
                           {section.menu_items?.map((item) => (
                             <div key={item.id} className="flex justify-between">
                               <div>
-                                <span className="text-white">{item.name}</span>
+                                <span className="text-tastelanc-text-primary">{item.name}</span>
                                 {item.description && (
-                                  <p className="text-sm text-gray-500">{item.description}</p>
+                                  <p className="text-sm text-tastelanc-text-faint">{item.description}</p>
                                 )}
                               </div>
                               {item.price && (
-                                <span className="text-gray-400">${item.price.toFixed(2)}</span>
+                                <span className="text-tastelanc-text-muted">${item.price.toFixed(2)}</span>
                               )}
                             </div>
                           ))}
@@ -358,7 +358,7 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
           <div className="space-y-6">
             {/* Hours */}
             <div className="bg-tastelanc-card rounded-xl p-6">
-              <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <h2 className="text-lg font-bold text-tastelanc-text-primary mb-4 flex items-center gap-2">
                 <Clock className="w-5 h-5" />
                 Hours
               </h2>
@@ -372,7 +372,7 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
                   <div
                     key={hours.id}
                     className={`flex justify-between text-sm ${
-                      hours.day_of_week === today ? 'text-white font-medium' : 'text-gray-400'
+                      hours.day_of_week === today ? 'text-tastelanc-text-primary font-medium' : 'text-tastelanc-text-muted'
                     }`}
                   >
                     <span>{capitalizeWords(hours.day_of_week)}</span>
@@ -389,7 +389,7 @@ export default async function RestaurantDetailPage({ params }: PageProps) {
             {/* Map Placeholder */}
             {restaurant.latitude && restaurant.longitude && (
               <div className="bg-tastelanc-card rounded-xl p-6">
-                <h2 className="text-lg font-bold text-white mb-4">Location</h2>
+                <h2 className="text-lg font-bold text-tastelanc-text-primary mb-4">Location</h2>
                 <div className="aspect-square bg-tastelanc-surface rounded-lg flex items-center justify-center">
                   <a
                     href={`https://www.google.com/maps/search/?api=1&query=${restaurant.latitude},${restaurant.longitude}`}

@@ -73,10 +73,10 @@ export default function PromoterOverviewPage() {
     <div className="space-y-6">
       {/* Welcome */}
       <div>
-        <h1 className="text-2xl font-bold text-white">
+        <h1 className="text-2xl font-bold text-tastelanc-text-primary">
           Welcome back, {selfPromoter?.name}
         </h1>
-        <p className="text-gray-400 mt-1">Manage your events and profile</p>
+        <p className="text-tastelanc-text-muted mt-1">Manage your events and profile</p>
       </div>
 
       {/* Quick Stats */}
@@ -84,23 +84,23 @@ export default function PromoterOverviewPage() {
         <Card className="p-4">
           <div className="flex items-center gap-3 mb-2">
             <Calendar className="w-5 h-5 text-purple-500" />
-            <span className="text-gray-400 text-sm">Total Events</span>
+            <span className="text-tastelanc-text-muted text-sm">Total Events</span>
           </div>
-          <p className="text-2xl font-bold text-white">{events.length}</p>
+          <p className="text-2xl font-bold text-tastelanc-text-primary">{events.length}</p>
         </Card>
 
         <Card className="p-4">
           <div className="flex items-center gap-3 mb-2">
             <CheckCircle className="w-5 h-5 text-green-500" />
-            <span className="text-gray-400 text-sm">Active Events</span>
+            <span className="text-tastelanc-text-muted text-sm">Active Events</span>
           </div>
-          <p className="text-2xl font-bold text-white">{activeEventsCount}</p>
+          <p className="text-2xl font-bold text-tastelanc-text-primary">{activeEventsCount}</p>
         </Card>
       </div>
 
       {/* Quick Actions */}
       <Card className="p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
+        <h2 className="text-lg font-semibold text-tastelanc-text-primary mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Link
             href="/promoter/events"
@@ -110,8 +110,8 @@ export default function PromoterOverviewPage() {
               <Plus className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="text-white font-medium">Create Event</p>
-              <p className="text-gray-400 text-sm">Add a new performance</p>
+              <p className="text-tastelanc-text-primary font-medium">Create Event</p>
+              <p className="text-tastelanc-text-muted text-sm">Add a new performance</p>
             </div>
           </Link>
 
@@ -119,12 +119,12 @@ export default function PromoterOverviewPage() {
             href="/promoter/profile"
             className="flex items-center gap-3 p-4 bg-tastelanc-surface-light hover:bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg transition-colors"
           >
-            <div className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center">
-              <Music className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 bg-tastelanc-surface-light rounded-lg flex items-center justify-center">
+              <Music className="w-5 h-5 text-tastelanc-text-muted" />
             </div>
             <div>
-              <p className="text-white font-medium">Edit Profile</p>
-              <p className="text-gray-400 text-sm">Update your info</p>
+              <p className="text-tastelanc-text-primary font-medium">Edit Profile</p>
+              <p className="text-tastelanc-text-muted text-sm">Update your info</p>
             </div>
           </Link>
         </div>
@@ -133,7 +133,7 @@ export default function PromoterOverviewPage() {
       {/* Upcoming Events */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-white">Upcoming Events</h2>
+          <h2 className="text-lg font-semibold text-tastelanc-text-primary">Upcoming Events</h2>
           <Link
             href="/promoter/events"
             className="text-sm text-purple-400 hover:text-purple-300"
@@ -144,12 +144,12 @@ export default function PromoterOverviewPage() {
 
         {isLoadingEvents ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+            <Loader2 className="w-6 h-6 animate-spin text-tastelanc-text-muted" />
           </div>
         ) : upcomingEvents.length === 0 ? (
           <div className="text-center py-8">
-            <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-600" />
-            <p className="text-gray-400">No upcoming events</p>
+            <Calendar className="w-12 h-12 mx-auto mb-3 text-tastelanc-text-faint" />
+            <p className="text-tastelanc-text-muted">No upcoming events</p>
             <Link
               href="/promoter/events"
               className="text-purple-400 hover:text-purple-300 text-sm mt-2 inline-block"
@@ -176,8 +176,8 @@ export default function PromoterOverviewPage() {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium truncate">{event.name}</p>
-                  <p className="text-gray-400 text-sm">
+                  <p className="text-tastelanc-text-primary font-medium truncate">{event.name}</p>
+                  <p className="text-tastelanc-text-muted text-sm">
                     {event.event_date
                       ? new Date(event.event_date).toLocaleDateString('en-US', {
                           weekday: 'short',

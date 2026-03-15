@@ -114,30 +114,30 @@ export default async function EventsPage({ searchParams }: PageProps) {
             </span>
           </div>
 
-          <h3 className="font-semibold text-white text-lg mb-1">{event.name}</h3>
+          <h3 className="font-semibold text-tastelanc-text-primary text-lg mb-1">{event.name}</h3>
 
-          <p className="text-gray-400 text-sm flex items-center gap-1 mb-2">
+          <p className="text-tastelanc-text-muted text-sm flex items-center gap-1 mb-2">
             <MapPin className="w-3 h-3" />
             {event.restaurant?.name}
           </p>
 
           {event.performer_name && (
-            <p className="text-sm text-gray-300 mb-2">
+            <p className="text-sm text-tastelanc-text-secondary mb-2">
               Featuring: {event.performer_name}
             </p>
           )}
 
           {event.description && (
-            <p className="text-gray-500 text-sm line-clamp-2">{event.description}</p>
+            <p className="text-tastelanc-text-faint text-sm line-clamp-2">{event.description}</p>
           )}
 
           <div className="mt-3 pt-3 border-t border-tastelanc-surface-light">
             {event.is_recurring ? (
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-tastelanc-text-muted">
                 Every {event.days_of_week.map((d: string) => capitalizeWords(d)).join(', ')}
               </p>
             ) : event.event_date ? (
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-tastelanc-text-muted">
                 {new Date(event.event_date).toLocaleDateString('en-US', {
                   weekday: 'long',
                   month: 'short',
@@ -162,11 +162,11 @@ export default async function EventsPage({ searchParams }: PageProps) {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
+          <h1 className="text-4xl font-bold text-tastelanc-text-primary mb-2 flex items-center gap-3">
             <Calendar className="w-10 h-10 text-tastelanc-accent" />
             Events
           </h1>
-          <p className="text-gray-400">
+          <p className="text-tastelanc-text-muted">
             Discover live entertainment in {BRAND.countyShort}
           </p>
         </div>
@@ -178,7 +178,7 @@ export default async function EventsPage({ searchParams }: PageProps) {
             className={`px-4 py-2 rounded-full text-sm transition-colors flex items-center gap-2 ${
               !params.type
                 ? 'bg-tastelanc-accent text-white'
-                : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white'
+                : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary'
             }`}
           >
             All Events
@@ -190,7 +190,7 @@ export default async function EventsPage({ searchParams }: PageProps) {
               className={`px-4 py-2 rounded-full text-sm transition-colors flex items-center gap-2 ${
                 params.type === type.value
                   ? 'bg-tastelanc-accent text-white'
-                  : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white'
+                  : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary'
               }`}
             >
               {EVENT_ICONS[type.value]}
@@ -200,7 +200,7 @@ export default async function EventsPage({ searchParams }: PageProps) {
         </div>
 
         {/* Results */}
-        <p className="text-gray-400 mb-6">
+        <p className="text-tastelanc-text-muted mb-6">
           {events.length} event{events.length !== 1 ? 's' : ''} found
           {params.type && ` in ${capitalizeWords(params.type.replace('_', ' '))}`}
         </p>
@@ -222,9 +222,9 @@ export default async function EventsPage({ searchParams }: PageProps) {
           </>
         ) : (
           <div className="text-center py-16">
-            <Calendar className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">No events found</p>
-            <p className="text-gray-600 mt-2">Try checking a different category</p>
+            <Calendar className="w-16 h-16 text-tastelanc-text-faint mx-auto mb-4" />
+            <p className="text-tastelanc-text-faint text-lg">No events found</p>
+            <p className="text-tastelanc-text-faint mt-2">Try checking a different category</p>
           </div>
         )}
       </div>

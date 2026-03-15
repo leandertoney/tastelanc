@@ -70,13 +70,13 @@ export default function AdminConsumersPage() {
     <div>
       <div className="mb-6 md:mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white">{BRAND.premiumName} Subscribers</h1>
-          <p className="text-gray-400 mt-1 text-sm md:text-base">Consumer premium subscription tracking</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{BRAND.premiumName} Subscribers</h1>
+          <p className="text-tastelanc-text-muted mt-1 text-sm md:text-base">Consumer premium subscription tracking</p>
         </div>
         <button
           onClick={fetchData}
           disabled={isLoading}
-          className="flex items-center gap-2 px-3 py-2 bg-tastelanc-surface-light rounded-lg text-gray-400 hover:text-white transition-colors"
+          className="flex items-center gap-2 px-3 py-2 bg-tastelanc-surface-light rounded-lg text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           <span className="hidden sm:inline">Refresh</span>
@@ -91,8 +91,8 @@ export default function AdminConsumersPage() {
               <Crown className="w-4 h-4 md:w-5 md:h-5 text-lancaster-gold" />
             </div>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">{stats.active}</p>
-          <p className="text-gray-400 text-xs md:text-sm">Active Subscribers</p>
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{stats.active}</p>
+          <p className="text-tastelanc-text-muted text-xs md:text-sm">Active Subscribers</p>
         </Card>
 
         <Card className="p-4 md:p-6">
@@ -101,8 +101,8 @@ export default function AdminConsumersPage() {
               <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
             </div>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">${stats.mrr.toFixed(2)}</p>
-          <p className="text-gray-400 text-xs md:text-sm">Monthly Revenue</p>
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">${stats.mrr.toFixed(2)}</p>
+          <p className="text-tastelanc-text-muted text-xs md:text-sm">Monthly Revenue</p>
         </Card>
 
         <Card className="p-4 md:p-6">
@@ -111,8 +111,8 @@ export default function AdminConsumersPage() {
               <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
             </div>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">${stats.arr.toFixed(0)}</p>
-          <p className="text-gray-400 text-xs md:text-sm">Projected ARR</p>
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">${stats.arr.toFixed(0)}</p>
+          <p className="text-tastelanc-text-muted text-xs md:text-sm">Projected ARR</p>
         </Card>
 
         <Card className="p-4 md:p-6">
@@ -121,18 +121,18 @@ export default function AdminConsumersPage() {
               <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-purple-500" />
             </div>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">{stats.founders}</p>
-          <p className="text-gray-400 text-xs md:text-sm">Founders</p>
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{stats.founders}</p>
+          <p className="text-tastelanc-text-muted text-xs md:text-sm">Founders</p>
         </Card>
       </div>
 
       {/* Plan Breakdown */}
       <Card className="p-4 md:p-6 mb-6 md:mb-8">
-        <h2 className="text-lg md:text-xl font-semibold text-white mb-4 md:mb-6">Subscriptions by Plan</h2>
+        <h2 className="text-lg md:text-xl font-semibold text-tastelanc-text-primary mb-4 md:mb-6">Subscriptions by Plan</h2>
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           <div className="p-3 md:p-4 rounded-lg bg-tastelanc-surface-light/50">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-400 text-sm">Monthly</span>
+              <span className="text-tastelanc-text-muted text-sm">Monthly</span>
               <Badge variant="default" className="text-xs">{stats.monthly}</Badge>
             </div>
             <div className="h-2 bg-tastelanc-surface rounded-full overflow-hidden">
@@ -141,12 +141,12 @@ export default function AdminConsumersPage() {
                 style={{ width: `${stats.active > 0 ? Math.max(5, (stats.monthly / stats.active) * 100) : 0}%` }}
               />
             </div>
-            <p className="text-xs text-gray-500 mt-1">$1.99/mo each</p>
+            <p className="text-xs text-tastelanc-text-faint mt-1">$1.99/mo each</p>
           </div>
 
           <div className="p-3 md:p-4 rounded-lg bg-tastelanc-surface-light/50">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-400 text-sm">Yearly</span>
+              <span className="text-tastelanc-text-muted text-sm">Yearly</span>
               <Badge variant="gold" className="text-xs">{stats.yearly}</Badge>
             </div>
             <div className="h-2 bg-tastelanc-surface rounded-full overflow-hidden">
@@ -155,18 +155,18 @@ export default function AdminConsumersPage() {
                 style={{ width: `${stats.active > 0 ? Math.max(5, (stats.yearly / stats.active) * 100) : 0}%` }}
               />
             </div>
-            <p className="text-xs text-gray-500 mt-1">$19.99/yr each</p>
+            <p className="text-xs text-tastelanc-text-faint mt-1">$19.99/yr each</p>
           </div>
 
           <div className="p-3 md:p-4 rounded-lg bg-tastelanc-surface-light/50 col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-400 text-sm">Total Revenue</span>
+              <span className="text-tastelanc-text-muted text-sm">Total Revenue</span>
               <Badge variant="gold" className="text-xs">${stats.totalRevenue?.toFixed(2) || '0.00'}</Badge>
             </div>
             <div className="h-2 bg-tastelanc-surface rounded-full overflow-hidden">
               <div className="h-full bg-green-500 rounded-full" style={{ width: '100%' }} />
             </div>
-            <p className="text-xs text-gray-500 mt-1">Active subscriptions value</p>
+            <p className="text-xs text-tastelanc-text-faint mt-1">Active subscriptions value</p>
           </div>
         </div>
       </Card>
@@ -174,21 +174,21 @@ export default function AdminConsumersPage() {
       {/* Subscription List */}
       <Card className="overflow-hidden">
         <div className="p-4 md:p-6 border-b border-tastelanc-surface-light flex items-center justify-between">
-          <h2 className="text-lg md:text-xl font-semibold text-white">All Consumer Subscriptions</h2>
-          <span className="text-xs text-gray-500">
+          <h2 className="text-lg md:text-xl font-semibold text-tastelanc-text-primary">All Consumer Subscriptions</h2>
+          <span className="text-xs text-tastelanc-text-faint">
             Last updated: {lastRefresh.toLocaleTimeString()}
           </span>
         </div>
         {isLoading ? (
           <div className="p-8 md:p-12 text-center">
             <Loader2 className="w-8 h-8 text-tastelanc-accent mx-auto mb-4 animate-spin" />
-            <p className="text-gray-400">Loading subscriptions...</p>
+            <p className="text-tastelanc-text-muted">Loading subscriptions...</p>
           </div>
         ) : subscriptions.length === 0 ? (
           <div className="p-8 md:p-12 text-center">
-            <Users className="w-10 h-10 md:w-12 md:h-12 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-base md:text-lg font-medium text-white mb-2">No consumer subscriptions yet</h3>
-            <p className="text-gray-400 text-sm md:text-base">
+            <Users className="w-10 h-10 md:w-12 md:h-12 text-tastelanc-text-faint mx-auto mb-4" />
+            <h3 className="text-base md:text-lg font-medium text-tastelanc-text-primary mb-2">No consumer subscriptions yet</h3>
+            <p className="text-tastelanc-text-muted text-sm md:text-base">
               {BRAND.premiumName} subscriptions will appear here after purchase.
             </p>
           </div>
@@ -199,12 +199,12 @@ export default function AdminConsumersPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-tastelanc-surface-light">
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Email</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Plan</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Status</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Founder</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Renews</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Subscribed</th>
+                    <th className="text-left py-4 px-6 text-tastelanc-text-muted font-medium">Email</th>
+                    <th className="text-left py-4 px-6 text-tastelanc-text-muted font-medium">Plan</th>
+                    <th className="text-left py-4 px-6 text-tastelanc-text-muted font-medium">Status</th>
+                    <th className="text-left py-4 px-6 text-tastelanc-text-muted font-medium">Founder</th>
+                    <th className="text-left py-4 px-6 text-tastelanc-text-muted font-medium">Renews</th>
+                    <th className="text-left py-4 px-6 text-tastelanc-text-muted font-medium">Subscribed</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -215,10 +215,10 @@ export default function AdminConsumersPage() {
                     >
                       <td className="py-4 px-6">
                         <div>
-                          <span className="text-white font-medium block">
+                          <span className="text-tastelanc-text-primary font-medium block">
                             {sub.full_name || 'Unknown'}
                           </span>
-                          <span className="text-gray-500 text-sm">
+                          <span className="text-tastelanc-text-faint text-sm">
                             {sub.email || 'No email'}
                           </span>
                         </div>
@@ -240,7 +240,7 @@ export default function AdminConsumersPage() {
                               ? 'bg-yellow-500/20 text-yellow-400'
                               : sub.status === 'canceled'
                               ? 'bg-red-500/20 text-red-400'
-                              : 'bg-gray-500/20 text-gray-400'
+                              : 'bg-tastelanc-surface-light/50 text-tastelanc-text-muted'
                           }`}
                         >
                           {sub.status}
@@ -253,17 +253,17 @@ export default function AdminConsumersPage() {
                             Yes
                           </span>
                         ) : (
-                          <span className="text-gray-500">No</span>
+                          <span className="text-tastelanc-text-faint">No</span>
                         )}
                       </td>
-                      <td className="py-4 px-6 text-gray-400">
+                      <td className="py-4 px-6 text-tastelanc-text-muted">
                         {sub.current_period_end && sub.billing_period !== 'lifetime'
                           ? new Date(sub.current_period_end).toLocaleDateString()
                           : sub.billing_period === 'lifetime'
                           ? 'Never'
                           : '-'}
                       </td>
-                      <td className="py-4 px-6 text-gray-400">
+                      <td className="py-4 px-6 text-tastelanc-text-muted">
                         {new Date(sub.created_at).toLocaleDateString()}
                       </td>
                     </tr>
@@ -278,11 +278,11 @@ export default function AdminConsumersPage() {
                 <div key={sub.id} className="bg-tastelanc-surface-light/50 rounded-lg p-3">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="min-w-0">
-                      <span className="text-white font-medium text-sm block truncate">
+                      <span className="text-tastelanc-text-primary font-medium text-sm block truncate">
                         {sub.full_name || sub.email || 'Unknown'}
                       </span>
                       {sub.full_name && (
-                        <span className="text-gray-500 text-xs truncate block">
+                        <span className="text-tastelanc-text-faint text-xs truncate block">
                           {sub.email}
                         </span>
                       )}
@@ -295,7 +295,7 @@ export default function AdminConsumersPage() {
                           ? 'bg-yellow-500/20 text-yellow-400'
                           : sub.status === 'canceled'
                           ? 'bg-red-500/20 text-red-400'
-                          : 'bg-gray-500/20 text-gray-400'
+                          : 'bg-tastelanc-surface-light/50 text-tastelanc-text-muted'
                       }`}
                     >
                       {sub.status}
@@ -315,7 +315,7 @@ export default function AdminConsumersPage() {
                         </span>
                       )}
                     </div>
-                    <span className="text-gray-400">
+                    <span className="text-tastelanc-text-muted">
                       {new Date(sub.created_at).toLocaleDateString()}
                     </span>
                   </div>

@@ -80,7 +80,7 @@ export default function EventAnalytics() {
   const trendColor = (value: number) => {
     if (value > 0) return 'text-green-400';
     if (value < 0) return 'text-red-400';
-    return 'text-gray-500';
+    return 'text-tastelanc-text-faint';
   };
 
   const statCards = [
@@ -130,8 +130,8 @@ export default function EventAnalytics() {
             <Card key={stat.label} className="p-5">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-gray-400 text-xs">{stat.label}</p>
-                  <p className="text-2xl font-bold text-white mt-1">
+                  <p className="text-tastelanc-text-muted text-xs">{stat.label}</p>
+                  <p className="text-2xl font-bold text-tastelanc-text-primary mt-1">
                     {stat.isPercentage ? `${stat.value}%` : stat.value.toLocaleString()}
                   </p>
                 </div>
@@ -148,7 +148,7 @@ export default function EventAnalytics() {
                     </span>
                   </>
                 )}
-                <span className="text-xs text-gray-500">{stat.subtitle}</span>
+                <span className="text-xs text-tastelanc-text-faint">{stat.subtitle}</span>
               </div>
             </Card>
           );
@@ -158,9 +158,9 @@ export default function EventAnalytics() {
       {/* Mini Chart */}
       {hasAnyData && (
         <Card className="p-5">
-          <h4 className="text-sm font-medium text-gray-400 mb-4">Event Views This Week</h4>
+          <h4 className="text-sm font-medium text-tastelanc-text-muted mb-4">Event Views This Week</h4>
           {weeklyViews.every((d) => d.views === 0) ? (
-            <p className="text-gray-500 text-sm py-4 text-center">
+            <p className="text-tastelanc-text-faint text-sm py-4 text-center">
               No event views this week yet
             </p>
           ) : (
@@ -172,7 +172,7 @@ export default function EventAnalytics() {
                     style={{ height: `${Math.max((dayData.views / maxViews) * 100, 4)}%` }}
                     title={`${dayData.views} views`}
                   />
-                  <span className="text-xs text-gray-500 mt-1.5">{dayData.day}</span>
+                  <span className="text-xs text-tastelanc-text-faint mt-1.5">{dayData.day}</span>
                 </div>
               ))}
             </div>

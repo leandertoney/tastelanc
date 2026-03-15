@@ -102,12 +102,12 @@ export default function AdminNewSelfPromoterPage() {
       <div className="mb-8">
         <Link
           href="/admin/self-promoters"
-          className="text-gray-400 hover:text-white text-sm mb-2 inline-block"
+          className="text-tastelanc-text-muted hover:text-tastelanc-text-primary text-sm mb-2 inline-block"
         >
           ← Back to Self-Promoters
         </Link>
-        <h1 className="text-2xl font-bold text-white">New Self-Promoter</h1>
-        <p className="text-gray-400 mt-1">Sign up a DJ, musician, or performer • $50/month</p>
+        <h1 className="text-2xl font-bold text-tastelanc-text-primary">New Self-Promoter</h1>
+        <p className="text-tastelanc-text-muted mt-1">Sign up a DJ, musician, or performer • $50/month</p>
       </div>
 
       {/* Success State */}
@@ -117,8 +117,8 @@ export default function AdminNewSelfPromoterPage() {
             <div className="w-14 h-14 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-7 h-7 text-green-400" />
             </div>
-            <h2 className="text-xl font-semibold text-white mb-1">Checkout Ready</h2>
-            <p className="text-gray-400 text-sm">
+            <h2 className="text-xl font-semibold text-tastelanc-text-primary mb-1">Checkout Ready</h2>
+            <p className="text-tastelanc-text-muted text-sm">
               {artistName} • $50/month
             </p>
           </div>
@@ -135,7 +135,7 @@ export default function AdminNewSelfPromoterPage() {
             </a>
             <button
               onClick={() => copyToClipboard(checkoutUrl)}
-              className="w-full inline-flex items-center justify-center gap-2 bg-tastelanc-surface hover:bg-tastelanc-surface-light text-white px-6 py-3 rounded-lg transition-colors"
+              className="w-full inline-flex items-center justify-center gap-2 bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-primary px-6 py-3 rounded-lg transition-colors"
             >
               {copied ? (
                 <>
@@ -151,7 +151,7 @@ export default function AdminNewSelfPromoterPage() {
             </button>
             <button
               onClick={resetForm}
-              className="w-full text-sm text-gray-400 hover:text-white transition-colors py-2"
+              className="w-full text-sm text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors py-2"
             >
               Sign Up Another
             </button>
@@ -169,12 +169,12 @@ export default function AdminNewSelfPromoterPage() {
                       ? 'bg-green-500 text-white'
                       : s === step
                       ? 'bg-purple-500 text-white'
-                      : 'bg-tastelanc-surface-light text-gray-500'
+                      : 'bg-tastelanc-surface-light text-tastelanc-text-faint'
                   }`}
                 >
                   {s < step ? <Check className="w-3.5 h-3.5" /> : s}
                 </div>
-                <span className={`text-xs hidden sm:block ${s === step ? 'text-white' : 'text-gray-500'}`}>
+                <span className={`text-xs hidden sm:block ${s === step ? 'text-tastelanc-text-primary' : 'text-tastelanc-text-faint'}`}>
                   {s === 1 ? 'Details' : 'Review'}
                 </span>
                 {s < 2 && <div className={`flex-1 h-px ${s < step ? 'bg-green-500' : 'bg-tastelanc-surface-light'}`} />}
@@ -185,71 +185,71 @@ export default function AdminNewSelfPromoterPage() {
           {/* Step 1: Artist Details */}
           {step === 1 && (
             <Card className="p-6">
-              <h2 className="text-lg font-semibold text-white mb-5">Artist Details</h2>
+              <h2 className="text-lg font-semibold text-tastelanc-text-primary mb-5">Artist Details</h2>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Email *</label>
+                  <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Email *</label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tastelanc-text-faint" />
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => { setEmail(e.target.value); setStepError(''); }}
                       placeholder="artist@email.com"
-                      className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Artist / Band Name *</label>
+                  <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Artist / Band Name *</label>
                   <div className="relative">
-                    <Music className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <Music className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tastelanc-text-faint" />
                     <input
                       type="text"
                       value={artistName}
                       onChange={(e) => { setArtistName(e.target.value); setStepError(''); }}
                       placeholder="DJ Awesome"
-                      className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Contact Name</label>
+                  <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Contact Name</label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tastelanc-text-faint" />
                     <input
                       type="text"
                       value={contactName}
                       onChange={(e) => setContactName(e.target.value)}
                       placeholder="John Smith"
-                      className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Phone</label>
+                  <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Phone</label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tastelanc-text-faint" />
                     <input
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="(717) 555-0123"
-                      className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Genre</label>
+                  <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Genre</label>
                   <select
                     value={genre}
                     onChange={(e) => setGenre(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="">Select a genre...</option>
                     <option value="DJ/EDM">DJ / EDM</option>
@@ -288,7 +288,7 @@ export default function AdminNewSelfPromoterPage() {
           {step === 2 && (
             <div className="space-y-4">
               <Card className="p-6">
-                <h2 className="text-lg font-semibold text-white mb-5">Review</h2>
+                <h2 className="text-lg font-semibold text-tastelanc-text-primary mb-5">Review</h2>
 
                 {/* Details summary */}
                 <div className="mb-5 pb-4 border-b border-tastelanc-surface-light">
@@ -297,22 +297,22 @@ export default function AdminNewSelfPromoterPage() {
                       <Music className="w-6 h-6 text-purple-400" />
                     </div>
                     <div>
-                      <p className="text-white font-semibold text-lg">{artistName}</p>
-                      {genre && <p className="text-gray-400 text-sm">{genre}</p>}
+                      <p className="text-tastelanc-text-primary font-semibold text-lg">{artistName}</p>
+                      {genre && <p className="text-tastelanc-text-muted text-sm">{genre}</p>}
                     </div>
                   </div>
                   <div className="text-sm space-y-1">
-                    <p className="text-gray-400">
-                      <span className="text-gray-500">Email:</span> {email}
+                    <p className="text-tastelanc-text-muted">
+                      <span className="text-tastelanc-text-faint">Email:</span> {email}
                     </p>
                     {contactName && (
-                      <p className="text-gray-400">
-                        <span className="text-gray-500">Contact:</span> {contactName}
+                      <p className="text-tastelanc-text-muted">
+                        <span className="text-tastelanc-text-faint">Contact:</span> {contactName}
                       </p>
                     )}
                     {phone && (
-                      <p className="text-gray-400">
-                        <span className="text-gray-500">Phone:</span> {phone}
+                      <p className="text-tastelanc-text-muted">
+                        <span className="text-tastelanc-text-faint">Phone:</span> {phone}
                       </p>
                     )}
                   </div>
@@ -321,10 +321,10 @@ export default function AdminNewSelfPromoterPage() {
                 {/* Pricing */}
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-white font-medium">Self-Promoter Plan</p>
-                    <p className="text-gray-400 text-sm">Monthly subscription</p>
+                    <p className="text-tastelanc-text-primary font-medium">Self-Promoter Plan</p>
+                    <p className="text-tastelanc-text-muted text-sm">Monthly subscription</p>
                   </div>
-                  <p className="text-2xl font-bold text-white">$50<span className="text-gray-400 text-base font-normal">/mo</span></p>
+                  <p className="text-2xl font-bold text-tastelanc-text-primary">$50<span className="text-tastelanc-text-muted text-base font-normal">/mo</span></p>
                 </div>
               </Card>
 
@@ -338,7 +338,7 @@ export default function AdminNewSelfPromoterPage() {
               <div className="flex gap-3">
                 <button
                   onClick={() => { setStep(1); setError(''); }}
-                  className="flex-1 bg-tastelanc-surface hover:bg-tastelanc-surface-light text-white py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-primary py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Back

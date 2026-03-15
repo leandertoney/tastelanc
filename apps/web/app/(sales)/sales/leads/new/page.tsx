@@ -166,30 +166,30 @@ export default function NewLeadPage() {
     }
   };
 
-  const inputClass = 'w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent';
+  const inputClass = 'w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent';
 
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => router.back()}
-          className="p-2 text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
+          className="p-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light rounded-lg transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-white">Add New Lead</h1>
-          <p className="text-gray-400 text-sm">Search for a business or enter details manually</p>
+          <h1 className="text-2xl font-bold text-tastelanc-text-primary">Add New Lead</h1>
+          <p className="text-tastelanc-text-muted text-sm">Search for a business or enter details manually</p>
         </div>
       </div>
 
       {/* Business Search */}
       {!manualMode && !selectedResult && (
         <Card className="p-6 mb-4 overflow-visible">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Find a Business</h2>
+          <h2 className="text-sm font-semibold text-tastelanc-text-muted uppercase tracking-wide mb-3">Find a Business</h2>
           <div ref={searchRef} className="relative">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tastelanc-text-faint" />
               <input
                 type="text"
                 value={searchQuery}
@@ -199,7 +199,7 @@ export default function NewLeadPage() {
                 autoFocus
               />
               {isSearching && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 animate-spin" />
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tastelanc-text-faint animate-spin" />
               )}
             </div>
 
@@ -207,7 +207,7 @@ export default function NewLeadPage() {
             {showResults && (
               <div className="absolute z-10 w-full mt-1 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg shadow-xl max-h-80 overflow-y-auto">
                 {searchResults.length === 0 && !isSearching ? (
-                  <div className="p-4 text-center text-gray-500 text-sm">
+                  <div className="p-4 text-center text-tastelanc-text-faint text-sm">
                     No results found for &quot;{searchQuery}&quot;
                   </div>
                 ) : (
@@ -227,7 +227,7 @@ export default function NewLeadPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-white truncate">{result.business_name}</span>
+                            <span className="font-medium text-tastelanc-text-primary truncate">{result.business_name}</span>
                             <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
                               result.source === 'directory'
                                 ? 'bg-green-500/20 text-green-400'
@@ -241,7 +241,7 @@ export default function NewLeadPage() {
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-gray-500 truncate mt-0.5">
+                          <p className="text-xs text-tastelanc-text-faint truncate mt-0.5">
                             {[result.address, result.city, result.state].filter(Boolean).join(', ')}
                           </p>
                         </div>
@@ -263,7 +263,7 @@ export default function NewLeadPage() {
 
           <button
             onClick={handleManualMode}
-            className="mt-3 text-sm text-gray-500 hover:text-gray-300 transition-colors"
+            className="mt-3 text-sm text-tastelanc-text-faint hover:text-tastelanc-text-secondary transition-colors"
           >
             Or enter details manually
           </button>
@@ -284,8 +284,8 @@ export default function NewLeadPage() {
               <MapPin className="w-5 h-5 text-blue-400" />
             )}
             <div>
-              <p className="text-white font-medium">{selectedResult.business_name}</p>
-              <p className="text-xs text-gray-400">
+              <p className="text-tastelanc-text-primary font-medium">{selectedResult.business_name}</p>
+              <p className="text-xs text-tastelanc-text-muted">
                 {selectedResult.source === 'directory' ? 'Linked to directory' : 'Found via Google Places'}
                 {selectedResult.tier_name && ` \u00b7 ${selectedResult.tier_name}`}
               </p>
@@ -293,7 +293,7 @@ export default function NewLeadPage() {
           </div>
           <button
             onClick={handleUnlink}
-            className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            className="p-1.5 text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-white/10 rounded-lg transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -306,7 +306,7 @@ export default function NewLeadPage() {
           <Card className="p-6 space-y-5">
             {/* Business Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Business Name *</label>
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Business Name *</label>
               <input
                 type="text"
                 value={form.business_name}
@@ -318,7 +318,7 @@ export default function NewLeadPage() {
 
             {/* Contact Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Contact Name</label>
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Contact Name</label>
               <input
                 type="text"
                 value={form.contact_name}
@@ -331,7 +331,7 @@ export default function NewLeadPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Email</label>
                 <input
                   type="text"
                   value={form.email}
@@ -343,7 +343,7 @@ export default function NewLeadPage() {
 
               {/* Phone */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Phone</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Phone</label>
                 <input
                   type="tel"
                   value={form.phone}
@@ -356,7 +356,7 @@ export default function NewLeadPage() {
 
             {/* Website */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Website</label>
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Website</label>
               <input
                 type="text"
                 value={form.website}
@@ -368,7 +368,7 @@ export default function NewLeadPage() {
 
             {/* Address */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Address</label>
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Address</label>
               <input
                 type="text"
                 value={form.address}
@@ -381,7 +381,7 @@ export default function NewLeadPage() {
             <div className="grid grid-cols-3 gap-4">
               {/* City */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">City</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">City</label>
                 <input
                   type="text"
                   value={form.city}
@@ -392,7 +392,7 @@ export default function NewLeadPage() {
 
               {/* State */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">State</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">State</label>
                 <input
                   type="text"
                   value={form.state}
@@ -403,7 +403,7 @@ export default function NewLeadPage() {
 
               {/* Zip */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">ZIP Code</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">ZIP Code</label>
                 <input
                   type="text"
                   value={form.zip_code}
@@ -416,7 +416,7 @@ export default function NewLeadPage() {
 
             {/* Category */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Category</label>
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Category</label>
               <select
                 value={form.category}
                 onChange={(e) => handleChange('category', e.target.value)}
@@ -432,7 +432,7 @@ export default function NewLeadPage() {
 
             {/* Notes */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Notes</label>
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Notes</label>
               <textarea
                 value={form.notes}
                 onChange={(e) => handleChange('notes', e.target.value)}

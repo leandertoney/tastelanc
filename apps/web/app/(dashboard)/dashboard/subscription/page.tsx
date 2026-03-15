@@ -139,21 +139,21 @@ export default function SubscriptionPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+        <h2 className="text-2xl font-bold text-tastelanc-text-primary flex items-center gap-2">
           <Crown className="w-6 h-6 text-lancaster-gold" />
           Subscription
         </h2>
-        <p className="text-gray-400 mt-1">Choose the plan that fits your needs</p>
+        <p className="text-tastelanc-text-muted mt-1">Choose the plan that fits your needs</p>
       </div>
 
       {/* Current Plan Banner */}
       <Card className="p-6 bg-gradient-to-r from-tastelanc-surface to-tastelanc-surface-light">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <p className="text-gray-400 text-sm">Current Plan</p>
-            <h3 className="text-2xl font-bold text-white capitalize">{currentPlan}</h3>
+            <p className="text-tastelanc-text-muted text-sm">Current Plan</p>
+            <h3 className="text-2xl font-bold text-tastelanc-text-primary capitalize">{currentPlan}</h3>
             {hasActiveSubscription && (
-              <p className="text-gray-500 text-sm mt-1">Active subscription via Stripe</p>
+              <p className="text-tastelanc-text-faint text-sm mt-1">Active subscription via Stripe</p>
             )}
           </div>
           <div className="flex items-center gap-3">
@@ -186,7 +186,7 @@ export default function SubscriptionPage() {
           className={`px-4 py-2 rounded-lg transition-colors ${
             billingPeriod === 'monthly'
               ? 'bg-tastelanc-accent text-white'
-              : 'bg-tastelanc-surface text-gray-400 hover:text-white'
+              : 'bg-tastelanc-surface text-tastelanc-text-muted hover:text-tastelanc-text-primary'
           }`}
         >
           Monthly
@@ -196,7 +196,7 @@ export default function SubscriptionPage() {
           className={`px-4 py-2 rounded-lg transition-colors ${
             billingPeriod === '3mo'
               ? 'bg-tastelanc-accent text-white'
-              : 'bg-tastelanc-surface text-gray-400 hover:text-white'
+              : 'bg-tastelanc-surface text-tastelanc-text-muted hover:text-tastelanc-text-primary'
           }`}
         >
           3 Months
@@ -206,7 +206,7 @@ export default function SubscriptionPage() {
           className={`px-4 py-2 rounded-lg transition-colors ${
             billingPeriod === '6mo'
               ? 'bg-tastelanc-accent text-white'
-              : 'bg-tastelanc-surface text-gray-400 hover:text-white'
+              : 'bg-tastelanc-surface text-tastelanc-text-muted hover:text-tastelanc-text-primary'
           }`}
         >
           6 Months
@@ -216,7 +216,7 @@ export default function SubscriptionPage() {
           className={`px-4 py-2 rounded-lg transition-colors ${
             billingPeriod === 'yearly'
               ? 'bg-tastelanc-accent text-white'
-              : 'bg-tastelanc-surface text-gray-400 hover:text-white'
+              : 'bg-tastelanc-surface text-tastelanc-text-muted hover:text-tastelanc-text-primary'
           }`}
         >
           1 Year
@@ -271,28 +271,28 @@ export default function SubscriptionPage() {
               )}
 
               <div className="text-center mb-6">
-                <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
+                <h3 className="text-xl font-bold text-tastelanc-text-primary mb-2">{plan.name}</h3>
                 <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-3xl font-bold text-white">
+                  <span className="text-3xl font-bold text-tastelanc-text-primary">
                     ${displayPrice}
                   </span>
                   {displayPrice > 0 && (
-                    <span className="text-gray-400">
+                    <span className="text-tastelanc-text-muted">
                       /{billingPeriod === 'yearly' ? 'year' : billingPeriod === 'monthly' ? 'mo' : billingPeriod}
                     </span>
                   )}
                 </div>
                 {displayPrice === 0 && (
-                  <span className="text-gray-400 text-sm">{plan.period}</span>
+                  <span className="text-tastelanc-text-muted text-sm">{plan.period}</span>
                 )}
-                <p className="text-gray-400 text-sm mt-2">{plan.description}</p>
+                <p className="text-tastelanc-text-muted text-sm mt-2">{plan.description}</p>
               </div>
 
               <ul className="space-y-3 mb-6">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-start gap-2 text-sm">
                     <Check className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-300">{feature}</span>
+                    <span className="text-tastelanc-text-secondary">{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -317,14 +317,14 @@ export default function SubscriptionPage() {
 
       {/* Features Comparison */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-white mb-6">Why Upgrade?</h3>
+        <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-6">Why Upgrade?</h3>
         <div className="grid md:grid-cols-3 gap-4 md:gap-8">
           <div className="text-center">
             <div className="w-12 h-12 bg-tastelanc-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Sparkles className="w-6 h-6 text-tastelanc-accent" />
             </div>
-            <h4 className="font-semibold text-white mb-2">More Visibility</h4>
-            <p className="text-gray-400 text-sm">
+            <h4 className="font-semibold text-tastelanc-text-primary mb-2">More Visibility</h4>
+            <p className="text-tastelanc-text-muted text-sm">
               Premium members get priority placement in search results and featured sections.
             </p>
           </div>
@@ -332,8 +332,8 @@ export default function SubscriptionPage() {
             <div className="w-12 h-12 bg-lancaster-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Crown className="w-6 h-6 text-lancaster-gold" />
             </div>
-            <h4 className="font-semibold text-white mb-2">More Features</h4>
-            <p className="text-gray-400 text-sm">
+            <h4 className="font-semibold text-tastelanc-text-primary mb-2">More Features</h4>
+            <p className="text-tastelanc-text-muted text-sm">
               Unlock events, advanced analytics, and more tools to manage your restaurant.
             </p>
           </div>
@@ -341,8 +341,8 @@ export default function SubscriptionPage() {
             <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Zap className="w-6 h-6 text-green-500" />
             </div>
-            <h4 className="font-semibold text-white mb-2">More Engagement</h4>
-            <p className="text-gray-400 text-sm">
+            <h4 className="font-semibold text-tastelanc-text-primary mb-2">More Engagement</h4>
+            <p className="text-tastelanc-text-muted text-sm">
               Restaurants with premium plans see 3x more customer engagement on average.
             </p>
           </div>
@@ -351,29 +351,29 @@ export default function SubscriptionPage() {
 
       {/* FAQ */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Frequently Asked Questions</h3>
+        <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-4">Frequently Asked Questions</h3>
         <div className="space-y-4">
           <div>
-            <h4 className="font-medium text-white mb-1">Can I cancel anytime?</h4>
-            <p className="text-gray-400 text-sm">
+            <h4 className="font-medium text-tastelanc-text-primary mb-1">Can I cancel anytime?</h4>
+            <p className="text-tastelanc-text-muted text-sm">
               Yes, you can cancel your subscription at any time by clicking &quot;Manage Billing&quot; above. Your access will continue until the end of your billing period.
             </p>
           </div>
           <div>
-            <h4 className="font-medium text-white mb-1">How does billing work?</h4>
-            <p className="text-gray-400 text-sm">
+            <h4 className="font-medium text-tastelanc-text-primary mb-1">How does billing work?</h4>
+            <p className="text-tastelanc-text-muted text-sm">
               You&apos;ll be charged at the beginning of each billing cycle. Choose month-to-month, 3-month, 6-month, or annual billing.
             </p>
           </div>
           <div>
-            <h4 className="font-medium text-white mb-1">Can I switch plans?</h4>
-            <p className="text-gray-400 text-sm">
+            <h4 className="font-medium text-tastelanc-text-primary mb-1">Can I switch plans?</h4>
+            <p className="text-tastelanc-text-muted text-sm">
               Yes, you can upgrade your plan at any time. To downgrade, use &quot;Manage Billing&quot; to adjust your subscription through Stripe.
             </p>
           </div>
           <div>
-            <h4 className="font-medium text-white mb-1">How do I update my payment method?</h4>
-            <p className="text-gray-400 text-sm">
+            <h4 className="font-medium text-tastelanc-text-primary mb-1">How do I update my payment method?</h4>
+            <p className="text-tastelanc-text-muted text-sm">
               Click &quot;Manage Billing&quot; to securely update your payment method, view invoices, or change your billing details through Stripe.
             </p>
           </div>
@@ -382,7 +382,7 @@ export default function SubscriptionPage() {
 
       {/* Contact */}
       <div className="text-center">
-        <p className="text-gray-400">
+        <p className="text-tastelanc-text-muted">
           Have questions? Contact us at{' '}
           <a href="mailto:info@tastelanc.com" className="text-tastelanc-accent hover:underline">
             info@tastelanc.com

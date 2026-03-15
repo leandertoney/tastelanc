@@ -808,14 +808,14 @@ export default function MenuPage() {
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-tastelanc-text-primary flex items-center gap-2">
               <UtensilsCrossed className="w-6 h-6" />
               Menu Management
             </h2>
             <div className="flex items-center gap-2 mt-1">
-              <p className="text-gray-400">Manage your restaurant&apos;s menus and items</p>
+              <p className="text-tastelanc-text-muted">Manage your restaurant&apos;s menus and items</p>
               <Tooltip content="Create multiple menus (Lunch, Dinner, Drinks, etc.) with sections and items. You can import menus from a URL, image, or PDF — or build them manually. Drag items to reorder." position="bottom">
-                <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
+                <HelpCircle className="w-4 h-4 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
               </Tooltip>
             </div>
           </div>
@@ -852,30 +852,30 @@ export default function MenuPage() {
         {showAddMenu && (
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Create New Menu</h3>
-              <button onClick={() => setShowAddMenu(false)} className="text-gray-400 hover:text-white">
+              <h3 className="text-lg font-semibold text-tastelanc-text-primary">Create New Menu</h3>
+              <button onClick={() => setShowAddMenu(false)} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Menu Name *</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Menu Name *</label>
                 <input
                   type="text"
                   placeholder="e.g., Main Menu, Lunch Menu, Drinks"
                   value={newMenu.name}
                   onChange={(e) => setNewMenu({ ...newMenu, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Description (optional)</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Description (optional)</label>
                 <input
                   type="text"
                   placeholder="Brief description of this menu"
                   value={newMenu.description}
                   onChange={(e) => setNewMenu({ ...newMenu, description: e.target.value })}
-                  className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 />
               </div>
               <div className="flex gap-2">
@@ -895,28 +895,28 @@ export default function MenuPage() {
         {editingMenu && (
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Edit Menu</h3>
-              <button onClick={() => setEditingMenu(null)} className="text-gray-400 hover:text-white">
+              <h3 className="text-lg font-semibold text-tastelanc-text-primary">Edit Menu</h3>
+              <button onClick={() => setEditingMenu(null)} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Menu Name *</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Menu Name *</label>
                 <input
                   type="text"
                   value={editingMenu.name}
                   onChange={(e) => setEditingMenu({ ...editingMenu, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Description</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Description</label>
                 <input
                   type="text"
                   value={editingMenu.description || ''}
                   onChange={(e) => setEditingMenu({ ...editingMenu, description: e.target.value })}
-                  className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 />
               </div>
               <div className="flex gap-2">
@@ -936,28 +936,28 @@ export default function MenuPage() {
         {editingSection && (
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Edit Section</h3>
-              <button onClick={() => setEditingSection(null)} className="text-gray-400 hover:text-white">
+              <h3 className="text-lg font-semibold text-tastelanc-text-primary">Edit Section</h3>
+              <button onClick={() => setEditingSection(null)} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Section Name *</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Section Name *</label>
                 <input
                   type="text"
                   value={editingSection.name}
                   onChange={(e) => setEditingSection({ ...editingSection, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Description</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Description</label>
                 <input
                   type="text"
                   value={editingSection.description || ''}
                   onChange={(e) => setEditingSection({ ...editingSection, description: e.target.value })}
-                  className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 />
               </div>
               <div className="flex gap-2">
@@ -977,54 +977,54 @@ export default function MenuPage() {
         {editingItem && (
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Edit Menu Item</h3>
-              <button onClick={() => setEditingItem(null)} className="text-gray-400 hover:text-white">
+              <h3 className="text-lg font-semibold text-tastelanc-text-primary">Edit Menu Item</h3>
+              <button onClick={() => setEditingItem(null)} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Item Name *</label>
+                  <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Item Name *</label>
                   <input
                     type="text"
                     value={editingItem.name}
                     onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
-                    className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                    className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Price</label>
+                  <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Price</label>
                   <input
                     type="number"
                     step="0.01"
                     min="0"
                     value={editingItem.price ?? ''}
                     onChange={(e) => setEditingItem({ ...editingItem, price: e.target.value ? parseFloat(e.target.value) : null })}
-                    className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                    className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Description</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Description</label>
                 <textarea
                   value={editingItem.description || ''}
                   onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
                   rows={2}
-                  className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Price Description (e.g., &quot;Market Price&quot;)</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Price Description (e.g., &quot;Market Price&quot;)</label>
                 <input
                   type="text"
                   value={editingItem.price_description || ''}
                   onChange={(e) => setEditingItem({ ...editingItem, price_description: e.target.value })}
-                  className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Dietary Information</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">Dietary Information</label>
                 <div className="flex flex-wrap gap-2">
                   {DIETARY_FLAGS.map((flag) => (
                     <label key={flag.value} className="flex items-center gap-2 cursor-pointer">
@@ -1038,9 +1038,9 @@ export default function MenuPage() {
                             setEditingItem({ ...editingItem, dietary_flags: editingItem.dietary_flags.filter((f) => f !== flag.value) });
                           }
                         }}
-                        className="rounded border-gray-600 bg-tastelanc-surface text-tastelanc-accent focus:ring-tastelanc-accent"
+                        className="rounded border-tastelanc-border bg-tastelanc-surface text-tastelanc-accent focus:ring-tastelanc-accent"
                       />
-                      <span className="text-sm text-gray-300">{flag.label}</span>
+                      <span className="text-sm text-tastelanc-text-secondary">{flag.label}</span>
                     </label>
                   ))}
                 </div>
@@ -1051,18 +1051,18 @@ export default function MenuPage() {
                     type="checkbox"
                     checked={editingItem.is_featured}
                     onChange={(e) => setEditingItem({ ...editingItem, is_featured: e.target.checked })}
-                    className="rounded border-gray-600 bg-tastelanc-surface text-tastelanc-accent focus:ring-tastelanc-accent"
+                    className="rounded border-tastelanc-border bg-tastelanc-surface text-tastelanc-accent focus:ring-tastelanc-accent"
                   />
-                  <span className="text-sm text-gray-300">Featured Item</span>
+                  <span className="text-sm text-tastelanc-text-secondary">Featured Item</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={editingItem.is_available}
                     onChange={(e) => setEditingItem({ ...editingItem, is_available: e.target.checked })}
-                    className="rounded border-gray-600 bg-tastelanc-surface text-tastelanc-accent focus:ring-tastelanc-accent"
+                    className="rounded border-tastelanc-border bg-tastelanc-surface text-tastelanc-accent focus:ring-tastelanc-accent"
                   />
-                  <span className="text-sm text-gray-300">Available</span>
+                  <span className="text-sm text-tastelanc-text-secondary">Available</span>
                 </label>
               </div>
               <div className="flex gap-2">
@@ -1083,8 +1083,8 @@ export default function MenuPage() {
           <Card key={menu.id} className="p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-xl font-semibold text-white">{menu.name}</h3>
-                {menu.description && <p className="text-gray-400 text-sm">{menu.description}</p>}
+                <h3 className="text-xl font-semibold text-tastelanc-text-primary">{menu.name}</h3>
+                {menu.description && <p className="text-tastelanc-text-muted text-sm">{menu.description}</p>}
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="secondary" size="sm" onClick={() => setEditingMenu(menu)}>
@@ -1095,7 +1095,7 @@ export default function MenuPage() {
                   <Plus className="w-4 h-4 mr-1" />
                   Add Section
                 </Button>
-                <button onClick={() => handleDeleteMenu(menu.id)} className="text-gray-400 hover:text-red-400 p-2">
+                <button onClick={() => handleDeleteMenu(menu.id)} className="text-tastelanc-text-muted hover:text-red-400 p-2">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -1104,21 +1104,21 @@ export default function MenuPage() {
             {/* Add Section Form */}
             {showAddSection === menu.id && (
               <div className="mb-6 p-4 bg-tastelanc-surface/50 rounded-lg">
-                <h4 className="text-white font-medium mb-3">Add New Section</h4>
+                <h4 className="text-tastelanc-text-primary font-medium mb-3">Add New Section</h4>
                 <div className="space-y-3">
                   <input
                     type="text"
                     placeholder="Section name (e.g., Appetizers, Entrees)"
                     value={newSection.name}
                     onChange={(e) => setNewSection({ ...newSection, name: e.target.value })}
-                    className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                    className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                   />
                   <input
                     type="text"
                     placeholder="Description (optional)"
                     value={newSection.description}
                     onChange={(e) => setNewSection({ ...newSection, description: e.target.value })}
-                    className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                    className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                   />
                   <div className="flex gap-2">
                     <Button size="sm" onClick={() => handleCreateSection(menu.id)} disabled={saving || !newSection.name.trim()}>
@@ -1157,8 +1157,8 @@ export default function MenuPage() {
                           onClick={() => setActiveTab(menu.id, section.id)}
                           className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors ${
                             isActive
-                              ? 'text-white border-tastelanc-accent'
-                              : 'text-gray-400 border-transparent hover:text-white hover:border-tastelanc-surface-light'
+                              ? 'text-tastelanc-text-primary border-tastelanc-accent'
+                              : 'text-tastelanc-text-muted border-transparent hover:text-tastelanc-text-primary hover:border-tastelanc-surface-light'
                           }`}
                         >
                           {section.name}
@@ -1170,7 +1170,7 @@ export default function MenuPage() {
                     })}
                   <button
                     onClick={() => setShowAddSection(menu.id)}
-                    className="px-3 py-3 text-gray-400 hover:text-white transition-colors"
+                    className="px-3 py-3 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
                     title="Add Section"
                   >
                     <Plus className="w-4 h-4" />
@@ -1187,15 +1187,15 @@ export default function MenuPage() {
                 <div key={section.id} className="border border-tastelanc-surface-light rounded-lg">
                   <div className="flex items-center justify-between p-4 bg-tastelanc-surface rounded-t-lg">
                     <div className="flex items-center gap-2">
-                      <GripVertical className="w-4 h-4 text-gray-500 cursor-grab" />
-                      <h4 className="font-medium text-white">{section.name}</h4>
+                      <GripVertical className="w-4 h-4 text-tastelanc-text-faint cursor-grab" />
+                      <h4 className="font-medium text-tastelanc-text-primary">{section.name}</h4>
                       <Badge>{section.menu_items.length} items</Badge>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button onClick={() => setEditingSection(section)} className="text-gray-400 hover:text-white">
+                      <button onClick={() => setEditingSection(section)} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary">
                         <Pencil className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDeleteSection(section.id, menu.id)} className="text-gray-400 hover:text-red-400">
+                      <button onClick={() => handleDeleteSection(section.id, menu.id)} className="text-tastelanc-text-muted hover:text-red-400">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -1232,7 +1232,7 @@ export default function MenuPage() {
                               placeholder="Item name *"
                               value={newItem.name}
                               onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                              className="px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                              className="px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                             />
                             <input
                               type="number"
@@ -1241,7 +1241,7 @@ export default function MenuPage() {
                               onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
                               step="0.01"
                               min="0"
-                              className="px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                              className="px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                             />
                           </div>
                           <input
@@ -1249,7 +1249,7 @@ export default function MenuPage() {
                             placeholder="Description (optional)"
                             value={newItem.description}
                             onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
-                            className="px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                            className="px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                           />
                           <div className="flex flex-wrap gap-3">
                             {DIETARY_FLAGS.map((flag) => (
@@ -1264,9 +1264,9 @@ export default function MenuPage() {
                                       setNewItem({ ...newItem, dietary_flags: newItem.dietary_flags.filter((f) => f !== flag.value) });
                                     }
                                   }}
-                                  className="rounded border-gray-600 bg-tastelanc-surface text-tastelanc-accent focus:ring-tastelanc-accent"
+                                  className="rounded border-tastelanc-border bg-tastelanc-surface text-tastelanc-accent focus:ring-tastelanc-accent"
                                 />
-                                <span className="text-sm text-gray-300">{flag.label}</span>
+                                <span className="text-sm text-tastelanc-text-secondary">{flag.label}</span>
                               </label>
                             ))}
                           </div>
@@ -1291,7 +1291,7 @@ export default function MenuPage() {
                     ) : (
                       <button
                         onClick={() => setShowAddItem(section.id)}
-                        className="w-full p-4 text-left text-gray-400 hover:text-white hover:bg-tastelanc-surface/50 transition-colors flex items-center gap-2"
+                        className="w-full p-4 text-left text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface/50 transition-colors flex items-center gap-2"
                       >
                         <Plus className="w-4 h-4" />
                         Add Item
@@ -1302,7 +1302,7 @@ export default function MenuPage() {
               ))}
 
               {menu.menu_sections.length === 0 && (
-                <div className="text-center py-8 text-gray-400">
+                <div className="text-center py-8 text-tastelanc-text-muted">
                   <p>No sections yet. Add a section to start adding menu items.</p>
                 </div>
               )}
@@ -1314,11 +1314,11 @@ export default function MenuPage() {
         {showUrlImport && (
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-tastelanc-text-primary flex items-center gap-2">
                 <Link2 className="w-5 h-5" />
                 Import Menu from URL
               </h3>
-              <button onClick={cancelUrlImport} className="text-gray-400 hover:text-white">
+              <button onClick={cancelUrlImport} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1326,15 +1326,15 @@ export default function MenuPage() {
             {!parsedMenu ? (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Menu URL</label>
+                  <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Menu URL</label>
                   <input
                     type="url"
                     placeholder="https://yourrestaurant.com/menu"
                     value={importUrl}
                     onChange={(e) => setImportUrl(e.target.value)}
-                    className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                    className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                   />
-                  <p className="text-gray-500 text-sm mt-1">
+                  <p className="text-tastelanc-text-faint text-sm mt-1">
                     Paste a link to your restaurant&apos;s online menu page
                   </p>
                 </div>
@@ -1357,11 +1357,11 @@ export default function MenuPage() {
                             ) : isActive ? (
                               <Loader2 className="w-4 h-4 text-tastelanc-accent animate-spin" />
                             ) : (
-                              <div className="w-2 h-2 rounded-full bg-gray-600" />
+                              <div className="w-2 h-2 rounded-full bg-tastelanc-surface-light" />
                             )}
                           </div>
                           <span className={`text-sm ${
-                            isActive ? 'text-white font-medium' : isComplete ? 'text-gray-400' : 'text-gray-600'
+                            isActive ? 'text-tastelanc-text-primary font-medium' : isComplete ? 'text-tastelanc-text-muted' : 'text-tastelanc-text-faint'
                           }`}>
                             {step.label}
                           </span>
@@ -1374,7 +1374,7 @@ export default function MenuPage() {
                         style={{ width: `${Math.min(((importStep + 1) / importSteps.length) * 100, 95)}%` }}
                       />
                     </div>
-                    <p className="text-gray-500 text-xs text-center">
+                    <p className="text-tastelanc-text-faint text-xs text-center">
                       This usually takes 15–30 seconds
                     </p>
                   </div>
@@ -1406,18 +1406,18 @@ export default function MenuPage() {
                     <Check className="w-5 h-5" />
                     <span className="font-medium">Menu imported!</span>
                   </div>
-                  <p className="text-gray-400 text-sm">
+                  <p className="text-tastelanc-text-muted text-sm">
                     We found {parsedMenu.stats.sections_count} sections with {parsedMenu.stats.items_count} items
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Menu Name</label>
+                  <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Menu Name</label>
                   <input
                     type="text"
                     value={importMenuName}
                     onChange={(e) => setImportMenuName(e.target.value)}
-                    className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                    className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                   />
                 </div>
 
@@ -1426,18 +1426,18 @@ export default function MenuPage() {
                   {parsedMenu.sections.map((section, sIdx) => (
                     <div key={sIdx} className="border border-tastelanc-surface-light rounded-lg">
                       <div className="p-3 bg-tastelanc-surface rounded-t-lg">
-                        <h4 className="font-medium text-white">{section.name}</h4>
+                        <h4 className="font-medium text-tastelanc-text-primary">{section.name}</h4>
                         {section.description && (
-                          <p className="text-gray-400 text-sm">{section.description}</p>
+                          <p className="text-tastelanc-text-muted text-sm">{section.description}</p>
                         )}
                       </div>
                       <div className="divide-y divide-tastelanc-surface-light">
                         {section.items.map((item, iIdx) => (
                           <div key={iIdx} className="p-3 flex justify-between items-start">
                             <div>
-                              <p className="text-white">{item.name}</p>
+                              <p className="text-tastelanc-text-primary">{item.name}</p>
                               {item.description && (
-                                <p className="text-gray-400 text-sm">{item.description}</p>
+                                <p className="text-tastelanc-text-muted text-sm">{item.description}</p>
                               )}
                               {item.dietary_flags && item.dietary_flags.length > 0 && (
                                 <div className="flex gap-1 mt-1">
@@ -1447,7 +1447,7 @@ export default function MenuPage() {
                                 </div>
                               )}
                             </div>
-                            <div className="text-gray-300">
+                            <div className="text-tastelanc-text-secondary">
                               {item.price !== null && item.price !== undefined
                                 ? `$${item.price.toFixed(2)}`
                                 : item.price_description || ''}
@@ -1496,11 +1496,11 @@ export default function MenuPage() {
         {showImageImport && (
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-tastelanc-text-primary flex items-center gap-2">
                 <Image className="w-5 h-5" />
                 Import Menu from Image
               </h3>
-              <button onClick={cancelImageImport} className="text-gray-400 hover:text-white">
+              <button onClick={cancelImageImport} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1508,7 +1508,7 @@ export default function MenuPage() {
             {!parsedMenu ? (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Menu Image</label>
+                  <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Menu Image</label>
                   <div className="border-2 border-dashed border-tastelanc-surface-light rounded-lg p-6 text-center">
                     {imagePreview ? (
                       <div className="space-y-4">
@@ -1517,7 +1517,7 @@ export default function MenuPage() {
                           alt="Menu preview"
                           className="max-h-64 mx-auto rounded-lg"
                         />
-                        <p className="text-gray-400 text-sm">{imageFile?.name}</p>
+                        <p className="text-tastelanc-text-muted text-sm">{imageFile?.name}</p>
                         <Button
                           variant="secondary"
                           size="sm"
@@ -1531,9 +1531,9 @@ export default function MenuPage() {
                       </div>
                     ) : (
                       <label className="cursor-pointer">
-                        <Image className="w-12 h-12 text-gray-500 mx-auto mb-3" />
-                        <p className="text-gray-300 mb-1">Click to upload a menu image</p>
-                        <p className="text-gray-500 text-sm">JPEG, PNG, GIF, or WebP (max 10MB)</p>
+                        <Image className="w-12 h-12 text-tastelanc-text-faint mx-auto mb-3" />
+                        <p className="text-tastelanc-text-secondary mb-1">Click to upload a menu image</p>
+                        <p className="text-tastelanc-text-faint text-sm">JPEG, PNG, GIF, or WebP (max 10MB)</p>
                         <input
                           type="file"
                           accept="image/jpeg,image/png,image/gif,image/webp"
@@ -1571,18 +1571,18 @@ export default function MenuPage() {
                     <Check className="w-5 h-5" />
                     <span className="font-medium">Menu imported!</span>
                   </div>
-                  <p className="text-gray-400 text-sm">
+                  <p className="text-tastelanc-text-muted text-sm">
                     We found {parsedMenu.stats.sections_count} sections with {parsedMenu.stats.items_count} items
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Menu Name</label>
+                  <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Menu Name</label>
                   <input
                     type="text"
                     value={importMenuName}
                     onChange={(e) => setImportMenuName(e.target.value)}
-                    className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                    className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                   />
                 </div>
 
@@ -1591,18 +1591,18 @@ export default function MenuPage() {
                   {parsedMenu.sections.map((section, sIdx) => (
                     <div key={sIdx} className="border border-tastelanc-surface-light rounded-lg">
                       <div className="p-3 bg-tastelanc-surface rounded-t-lg">
-                        <h4 className="font-medium text-white">{section.name}</h4>
+                        <h4 className="font-medium text-tastelanc-text-primary">{section.name}</h4>
                         {section.description && (
-                          <p className="text-gray-400 text-sm">{section.description}</p>
+                          <p className="text-tastelanc-text-muted text-sm">{section.description}</p>
                         )}
                       </div>
                       <div className="divide-y divide-tastelanc-surface-light">
                         {section.items.map((item, iIdx) => (
                           <div key={iIdx} className="p-3 flex justify-between items-start">
                             <div>
-                              <p className="text-white">{item.name}</p>
+                              <p className="text-tastelanc-text-primary">{item.name}</p>
                               {item.description && (
-                                <p className="text-gray-400 text-sm">{item.description}</p>
+                                <p className="text-tastelanc-text-muted text-sm">{item.description}</p>
                               )}
                               {item.dietary_flags && item.dietary_flags.length > 0 && (
                                 <div className="flex gap-1 mt-1">
@@ -1612,7 +1612,7 @@ export default function MenuPage() {
                                 </div>
                               )}
                             </div>
-                            <div className="text-gray-300">
+                            <div className="text-tastelanc-text-secondary">
                               {item.price !== null && item.price !== undefined
                                 ? `$${item.price.toFixed(2)}`
                                 : item.price_description || ''}
@@ -1661,11 +1661,11 @@ export default function MenuPage() {
         {showPdfImport && (
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-tastelanc-text-primary flex items-center gap-2">
                 <FileText className="w-5 h-5" />
                 Import Menu from PDF
               </h3>
-              <button onClick={cancelPdfImport} className="text-gray-400 hover:text-white">
+              <button onClick={cancelPdfImport} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1673,13 +1673,13 @@ export default function MenuPage() {
             {!parsedMenu ? (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Menu PDF</label>
+                  <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Menu PDF</label>
                   <div className="border-2 border-dashed border-tastelanc-surface-light rounded-lg p-6 text-center">
                     {pdfFile ? (
                       <div className="space-y-4">
                         <FileText className="w-12 h-12 text-tastelanc-accent mx-auto" />
-                        <p className="text-gray-300">{pdfFile.name}</p>
-                        <p className="text-gray-500 text-sm">
+                        <p className="text-tastelanc-text-secondary">{pdfFile.name}</p>
+                        <p className="text-tastelanc-text-faint text-sm">
                           {(pdfFile.size / (1024 * 1024)).toFixed(2)} MB
                         </p>
                         <Button
@@ -1692,9 +1692,9 @@ export default function MenuPage() {
                       </div>
                     ) : (
                       <label className="cursor-pointer">
-                        <FileText className="w-12 h-12 text-gray-500 mx-auto mb-3" />
-                        <p className="text-gray-300 mb-1">Click to upload a menu PDF</p>
-                        <p className="text-gray-500 text-sm">PDF files only (max 20MB)</p>
+                        <FileText className="w-12 h-12 text-tastelanc-text-faint mx-auto mb-3" />
+                        <p className="text-tastelanc-text-secondary mb-1">Click to upload a menu PDF</p>
+                        <p className="text-tastelanc-text-faint text-sm">PDF files only (max 20MB)</p>
                         <input
                           type="file"
                           accept="application/pdf"
@@ -1732,18 +1732,18 @@ export default function MenuPage() {
                     <Check className="w-5 h-5" />
                     <span className="font-medium">Menu imported!</span>
                   </div>
-                  <p className="text-gray-400 text-sm">
+                  <p className="text-tastelanc-text-muted text-sm">
                     We found {parsedMenu.stats.sections_count} sections with {parsedMenu.stats.items_count} items
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Menu Name</label>
+                  <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Menu Name</label>
                   <input
                     type="text"
                     value={importMenuName}
                     onChange={(e) => setImportMenuName(e.target.value)}
-                    className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                    className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                   />
                 </div>
 
@@ -1752,18 +1752,18 @@ export default function MenuPage() {
                   {parsedMenu.sections.map((section, sIdx) => (
                     <div key={sIdx} className="border border-tastelanc-surface-light rounded-lg">
                       <div className="p-3 bg-tastelanc-surface rounded-t-lg">
-                        <h4 className="font-medium text-white">{section.name}</h4>
+                        <h4 className="font-medium text-tastelanc-text-primary">{section.name}</h4>
                         {section.description && (
-                          <p className="text-gray-400 text-sm">{section.description}</p>
+                          <p className="text-tastelanc-text-muted text-sm">{section.description}</p>
                         )}
                       </div>
                       <div className="divide-y divide-tastelanc-surface-light">
                         {section.items.map((item, iIdx) => (
                           <div key={iIdx} className="p-3 flex justify-between items-start">
                             <div>
-                              <p className="text-white">{item.name}</p>
+                              <p className="text-tastelanc-text-primary">{item.name}</p>
                               {item.description && (
-                                <p className="text-gray-400 text-sm">{item.description}</p>
+                                <p className="text-tastelanc-text-muted text-sm">{item.description}</p>
                               )}
                               {item.dietary_flags && item.dietary_flags.length > 0 && (
                                 <div className="flex gap-1 mt-1">
@@ -1773,7 +1773,7 @@ export default function MenuPage() {
                                 </div>
                               )}
                             </div>
-                            <div className="text-gray-300">
+                            <div className="text-tastelanc-text-secondary">
                               {item.price !== null && item.price !== undefined
                                 ? `$${item.price.toFixed(2)}`
                                 : item.price_description || ''}
@@ -1820,15 +1820,15 @@ export default function MenuPage() {
 
         {menus.length === 0 && !showAddMenu && !showUrlImport && !showImageImport && !showPdfImport && (
           <Card className="p-12 text-center">
-            <UtensilsCrossed className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-white mb-2">No menus yet</h3>
-            <p className="text-gray-400 mb-6">Create your first menu to start adding items</p>
+            <UtensilsCrossed className="w-12 h-12 text-tastelanc-text-faint mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-2">No menus yet</h3>
+            <p className="text-tastelanc-text-muted mb-6">Create your first menu to start adding items</p>
             <div className="flex flex-col items-center gap-4">
               <Button onClick={() => setShowAddMenu(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Create Menu Manually
               </Button>
-              <div className="text-gray-500 text-sm">or import from</div>
+              <div className="text-tastelanc-text-faint text-sm">or import from</div>
               <div className="flex gap-3">
                 <Button variant="secondary" size="sm" onClick={() => setShowUrlImport(true)}>
                   <Link2 className="w-4 h-4 mr-2" />

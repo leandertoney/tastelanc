@@ -61,8 +61,8 @@ export default async function RestaurantsPage({ searchParams }: PageProps) {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Restaurants</h1>
-          <p className="text-gray-400">
+          <h1 className="text-4xl font-bold text-tastelanc-text-primary mb-2">Restaurants</h1>
+          <p className="text-tastelanc-text-muted">
             Discover the best dining spots in {BRAND.countyShort}, {BRAND.state}
           </p>
         </div>
@@ -70,20 +70,20 @@ export default async function RestaurantsPage({ searchParams }: PageProps) {
         {/* Search and Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-8">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-tastelanc-text-muted" />
             <form>
               <input
                 type="text"
                 name="q"
                 defaultValue={params.q}
                 placeholder="Search restaurants..."
-                className="w-full pl-10 pr-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full pl-10 pr-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               />
             </form>
           </div>
           <div className="flex items-center gap-2">
-            <SlidersHorizontal className="w-5 h-5 text-gray-400" />
-            <span className="text-gray-400 text-sm">Filter:</span>
+            <SlidersHorizontal className="w-5 h-5 text-tastelanc-text-muted" />
+            <span className="text-tastelanc-text-muted text-sm">Filter:</span>
           </div>
         </div>
 
@@ -96,7 +96,7 @@ export default async function RestaurantsPage({ searchParams }: PageProps) {
               className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                 !params.category
                   ? 'bg-tastelanc-accent text-white'
-                  : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white'
+                  : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary'
               }`}
             >
               All Restaurants
@@ -105,7 +105,7 @@ export default async function RestaurantsPage({ searchParams }: PageProps) {
 
           {/* Cuisines */}
           <div>
-            <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">{CATEGORY_GROUPS.cuisines}</p>
+            <p className="text-xs uppercase tracking-wider text-tastelanc-text-faint mb-2">{CATEGORY_GROUPS.cuisines}</p>
             <div className="flex flex-wrap gap-2">
               {CATEGORIES_BY_GROUP.cuisines.map((cat) => (
                 <a
@@ -114,7 +114,7 @@ export default async function RestaurantsPage({ searchParams }: PageProps) {
                   className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
                     params.category === cat.value
                       ? 'bg-tastelanc-accent text-white'
-                      : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white'
+                      : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary'
                   }`}
                 >
                   {cat.label}
@@ -125,7 +125,7 @@ export default async function RestaurantsPage({ searchParams }: PageProps) {
 
           {/* Meal Time */}
           <div>
-            <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">{CATEGORY_GROUPS.meal_time}</p>
+            <p className="text-xs uppercase tracking-wider text-tastelanc-text-faint mb-2">{CATEGORY_GROUPS.meal_time}</p>
             <div className="flex flex-wrap gap-2">
               {CATEGORIES_BY_GROUP.meal_time.map((cat) => (
                 <a
@@ -134,7 +134,7 @@ export default async function RestaurantsPage({ searchParams }: PageProps) {
                   className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
                     params.category === cat.value
                       ? 'bg-tastelanc-accent text-white'
-                      : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white'
+                      : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary'
                   }`}
                 >
                   {cat.label}
@@ -145,7 +145,7 @@ export default async function RestaurantsPage({ searchParams }: PageProps) {
 
           {/* Drinks & Bars */}
           <div>
-            <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">{CATEGORY_GROUPS.drinks}</p>
+            <p className="text-xs uppercase tracking-wider text-tastelanc-text-faint mb-2">{CATEGORY_GROUPS.drinks}</p>
             <div className="flex flex-wrap gap-2">
               {CATEGORIES_BY_GROUP.drinks.map((cat) => (
                 <a
@@ -154,7 +154,7 @@ export default async function RestaurantsPage({ searchParams }: PageProps) {
                   className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
                     params.category === cat.value
                       ? 'bg-tastelanc-accent text-white'
-                      : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white'
+                      : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary'
                   }`}
                 >
                   {cat.label}
@@ -165,7 +165,7 @@ export default async function RestaurantsPage({ searchParams }: PageProps) {
 
           {/* Features */}
           <div>
-            <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">{CATEGORY_GROUPS.features}</p>
+            <p className="text-xs uppercase tracking-wider text-tastelanc-text-faint mb-2">{CATEGORY_GROUPS.features}</p>
             <div className="flex flex-wrap gap-2">
               {CATEGORIES_BY_GROUP.features.map((cat) => (
                 <a
@@ -174,7 +174,7 @@ export default async function RestaurantsPage({ searchParams }: PageProps) {
                   className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
                     params.category === cat.value
                       ? 'bg-tastelanc-accent text-white'
-                      : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white'
+                      : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary'
                   }`}
                 >
                   {cat.label}
@@ -185,7 +185,7 @@ export default async function RestaurantsPage({ searchParams }: PageProps) {
         </div>
 
         {/* Results Count */}
-        <p className="text-gray-400 mb-6">
+        <p className="text-tastelanc-text-muted mb-6">
           {restaurants.length} restaurant{restaurants.length !== 1 ? 's' : ''} found
           {params.category && ` in ${getCategoryLabel(params.category as any)}`}
         </p>
@@ -199,8 +199,8 @@ export default async function RestaurantsPage({ searchParams }: PageProps) {
           </div>
         ) : (
           <div className="text-center py-16">
-            <p className="text-gray-500 text-lg">No restaurants found</p>
-            <p className="text-gray-600 mt-2">Try adjusting your filters</p>
+            <p className="text-tastelanc-text-faint text-lg">No restaurants found</p>
+            <p className="text-tastelanc-text-faint mt-2">Try adjusting your filters</p>
           </div>
         )}
       </div>

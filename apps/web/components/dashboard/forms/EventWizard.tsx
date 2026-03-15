@@ -304,7 +304,7 @@ export default function EventWizard({ onClose, onSubmit, restaurantId, allowedTy
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
               Event Name *
             </label>
             <input
@@ -312,46 +312,46 @@ export default function EventWizard({ onClose, onSubmit, restaurantId, allowedTy
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="e.g., Trivia Night"
-              className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+              className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
               autoFocus
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
               Description
-              <span className="text-gray-500 font-normal ml-1">(optional)</span>
+              <span className="text-tastelanc-text-faint font-normal ml-1">(optional)</span>
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Tell people what to expect..."
               rows={2}
-              className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold resize-none"
+              className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold resize-none"
             />
           </div>
 
           {/* Performer */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
               Performer / Host
-              <span className="text-gray-500 font-normal ml-1">(optional)</span>
+              <span className="text-tastelanc-text-faint font-normal ml-1">(optional)</span>
             </label>
             <input
               type="text"
               value={formData.performer_name}
               onChange={(e) => setFormData({ ...formData, performer_name: e.target.value })}
               placeholder="e.g., The Jazz Quartet"
-              className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+              className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
             />
           </div>
 
           {/* Custom Artwork */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
               Event Artwork
-              <span className="text-gray-500 font-normal ml-1">(optional)</span>
+              <span className="text-tastelanc-text-faint font-normal ml-1">(optional)</span>
             </label>
             <EventImageUpload
               value={formData.image_url}
@@ -383,7 +383,7 @@ export default function EventWizard({ onClose, onSubmit, restaurantId, allowedTy
               className={`flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
                 formData.is_recurring
                   ? 'bg-lancaster-gold text-black'
-                  : 'bg-tastelanc-surface text-gray-400'
+                  : 'bg-tastelanc-surface text-tastelanc-text-muted'
               }`}
             >
               Recurring (weekly)
@@ -394,7 +394,7 @@ export default function EventWizard({ onClose, onSubmit, restaurantId, allowedTy
               className={`flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
                 !formData.is_recurring
                   ? 'bg-lancaster-gold text-black'
-                  : 'bg-tastelanc-surface text-gray-400'
+                  : 'bg-tastelanc-surface text-tastelanc-text-muted'
               }`}
             >
               One-time event
@@ -404,7 +404,7 @@ export default function EventWizard({ onClose, onSubmit, restaurantId, allowedTy
           {/* Days or Date */}
           {formData.is_recurring ? (
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-3">
                 Which days? *
               </label>
               <DaySelector
@@ -414,14 +414,14 @@ export default function EventWizard({ onClose, onSubmit, restaurantId, allowedTy
             </div>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                 Event Date *
               </label>
               <input
                 type="date"
                 value={formData.event_date}
                 onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
-                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
               />
             </div>
           )}
@@ -466,18 +466,18 @@ export default function EventWizard({ onClose, onSubmit, restaurantId, allowedTy
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-semibold text-white mb-1">{formData.name}</h3>
+                <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-1">{formData.name}</h3>
                 {formData.performer_name && (
                   <p className="text-lancaster-gold text-sm mb-1">{formData.performer_name}</p>
                 )}
                 {formData.description && (
-                  <p className="text-gray-400 text-sm mb-2 line-clamp-2">{formData.description}</p>
+                  <p className="text-tastelanc-text-muted text-sm mb-2 line-clamp-2">{formData.description}</p>
                 )}
               </div>
             </div>
 
             <div className="flex flex-wrap gap-2 text-sm mt-3">
-              <span className="px-2 py-1 bg-tastelanc-bg rounded text-gray-300">
+              <span className="px-2 py-1 bg-tastelanc-bg rounded text-tastelanc-text-secondary">
                 {formatTime(formData.start_time)}
                 {formData.end_time && ` - ${formatTime(formData.end_time)}`}
               </span>

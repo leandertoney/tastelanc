@@ -36,10 +36,10 @@ export default function RestaurantCard({ restaurant }: RestaurantCardProps) {
         )}
       </div>
       <div className="p-4">
-        <h3 className="font-semibold text-white group-hover:text-tastelanc-accent transition-colors">
+        <h3 className="font-semibold text-tastelanc-text-primary group-hover:text-tastelanc-accent transition-colors">
           {restaurant.name}
         </h3>
-        <p className="text-sm text-gray-400 flex items-center gap-1 mt-1">
+        <p className="text-sm text-tastelanc-text-muted flex items-center gap-1 mt-1">
           <MapPin className="w-3 h-3" />
           {restaurant.city}, {restaurant.state}
         </p>

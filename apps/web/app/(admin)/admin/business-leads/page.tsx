@@ -230,17 +230,17 @@ export default function BusinessLeadsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary flex items-center gap-3">
             <Briefcase className="w-8 h-8 text-tastelanc-accent" />
             Business Leads
           </h1>
-          <p className="text-gray-400 mt-1">Manage B2B outreach and restaurant partnerships</p>
+          <p className="text-tastelanc-text-muted mt-1">Manage B2B outreach and restaurant partnerships</p>
         </div>
         <div className="flex gap-3">
           <button
             onClick={handleConvertContacts}
             disabled={isConverting}
-            className="flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-white rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-tastelanc-text-primary rounded-lg transition-colors"
           >
             {isConverting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -251,7 +251,7 @@ export default function BusinessLeadsPage() {
           </button>
           <Link
             href="/admin/business-leads/import"
-            className="flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-white rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-tastelanc-text-primary rounded-lg transition-colors"
           >
             <Upload className="w-4 h-4" />
             Import CSV
@@ -288,28 +288,28 @@ export default function BusinessLeadsPage() {
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
           <Card className="p-4">
-            <div className="text-2xl font-bold text-white">{stats.total}</div>
-            <div className="text-sm text-gray-400">Total Leads</div>
+            <div className="text-2xl font-bold text-tastelanc-text-primary">{stats.total}</div>
+            <div className="text-sm text-tastelanc-text-muted">Total Leads</div>
           </Card>
           <Card className="p-4">
             <div className="text-2xl font-bold text-blue-400">{stats.new}</div>
-            <div className="text-sm text-gray-400">New</div>
+            <div className="text-sm text-tastelanc-text-muted">New</div>
           </Card>
           <Card className="p-4">
             <div className="text-2xl font-bold text-yellow-400">{stats.contacted}</div>
-            <div className="text-sm text-gray-400">Contacted</div>
+            <div className="text-sm text-tastelanc-text-muted">Contacted</div>
           </Card>
           <Card className="p-4">
             <div className="text-2xl font-bold text-green-400">{stats.interested}</div>
-            <div className="text-sm text-gray-400">Interested</div>
+            <div className="text-sm text-tastelanc-text-muted">Interested</div>
           </Card>
           <Card className="p-4">
             <div className="text-2xl font-bold text-red-400">{stats.notInterested}</div>
-            <div className="text-sm text-gray-400">Not Interested</div>
+            <div className="text-sm text-tastelanc-text-muted">Not Interested</div>
           </Card>
           <Card className="p-4">
             <div className="text-2xl font-bold text-lancaster-gold">{stats.converted}</div>
-            <div className="text-sm text-gray-400">Converted</div>
+            <div className="text-sm text-tastelanc-text-muted">Converted</div>
           </Card>
         </div>
       )}
@@ -320,13 +320,13 @@ export default function BusinessLeadsPage() {
           {/* Search row */}
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-tastelanc-text-muted" />
               <input
                 type="text"
                 placeholder="Search leads..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               />
             </div>
           </div>
@@ -338,7 +338,7 @@ export default function BusinessLeadsPage() {
               <select
                 value={marketFilter}
                 onChange={(e) => setMarketFilter(e.target.value)}
-                className="px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               >
                 <option value="all">All Markets</option>
                 {markets.map((m) => (
@@ -352,7 +352,7 @@ export default function BusinessLeadsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              className="px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
             >
               <option value="all">All Status</option>
               <option value="new">New</option>
@@ -365,7 +365,7 @@ export default function BusinessLeadsPage() {
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              className="px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
             >
               <option value="all">All Categories</option>
               {CATEGORIES.map((cat) => (
@@ -380,7 +380,7 @@ export default function BusinessLeadsPage() {
               <select
                 value={repFilter}
                 onChange={(e) => setRepFilter(e.target.value)}
-                className="px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               >
                 <option value="all">All Reps</option>
                 <option value="unassigned">Unassigned</option>
@@ -402,7 +402,7 @@ export default function BusinessLeadsPage() {
                   setRepFilter('all');
                   setSearch('');
                 }}
-                className="px-4 py-2.5 text-sm text-gray-400 hover:text-white transition-colors"
+                className="px-4 py-2.5 text-sm text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
               >
                 Clear filters ({activeFilterCount})
               </button>
@@ -418,9 +418,9 @@ export default function BusinessLeadsPage() {
         </div>
       ) : leads.length === 0 ? (
         <Card className="p-12 text-center">
-          <Users className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">No leads found</h3>
-          <p className="text-gray-400 mb-4">
+          <Users className="w-12 h-12 text-tastelanc-text-faint mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-2">No leads found</h3>
+          <p className="text-tastelanc-text-muted mb-4">
             {search || statusFilter !== 'all' || categoryFilter !== 'all' || marketFilter !== 'all' || repFilter !== 'all'
               ? 'Try adjusting your filters'
               : 'Add your first business lead to get started'}
@@ -436,7 +436,7 @@ export default function BusinessLeadsPage() {
               </Link>
               <button
                 onClick={handleConvertContacts}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-white rounded-lg transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-tastelanc-text-primary rounded-lg transition-colors"
               >
                 <RefreshCw className="w-4 h-4" />
                 Import from Contacts
@@ -456,7 +456,7 @@ export default function BusinessLeadsPage() {
                   {/* Lead Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-1">
-                      <h3 className="font-semibold text-white truncate">
+                      <h3 className="font-semibold text-tastelanc-text-primary truncate">
                         {lead.business_name}
                       </h3>
                       <Badge className={statusConfig.color}>
@@ -464,18 +464,18 @@ export default function BusinessLeadsPage() {
                         {statusConfig.label}
                       </Badge>
                       {lead.category && (
-                        <Badge className="bg-tastelanc-surface-light text-gray-300">
+                        <Badge className="bg-tastelanc-surface-light text-tastelanc-text-secondary">
                           {lead.category}
                         </Badge>
                       )}
                     </div>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-tastelanc-text-muted">
                       {lead.contact_name && (
                         <span>{lead.contact_name}</span>
                       )}
                       <a
                         href={`mailto:${lead.email}`}
-                        className="flex items-center gap-1 hover:text-white"
+                        className="flex items-center gap-1 hover:text-tastelanc-text-primary"
                       >
                         <Mail className="w-3 h-3" />
                         {lead.email}
@@ -483,7 +483,7 @@ export default function BusinessLeadsPage() {
                       {lead.phone && (
                         <a
                           href={`tel:${lead.phone}`}
-                          className="flex items-center gap-1 hover:text-white"
+                          className="flex items-center gap-1 hover:text-tastelanc-text-primary"
                         >
                           <Phone className="w-3 h-3" />
                           {lead.phone}
@@ -500,7 +500,7 @@ export default function BusinessLeadsPage() {
                           href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1 hover:text-white"
+                          className="flex items-center gap-1 hover:text-tastelanc-text-primary"
                         >
                           <Globe className="w-3 h-3" />
                           Website
@@ -514,7 +514,7 @@ export default function BusinessLeadsPage() {
                       )}
                     </div>
                     {lead.notes && (
-                      <p className="mt-2 text-sm text-gray-500 line-clamp-1">
+                      <p className="mt-2 text-sm text-tastelanc-text-faint line-clamp-1">
                         <MessageSquare className="w-3 h-3 inline mr-1" />
                         {lead.notes}
                       </p>
@@ -526,7 +526,7 @@ export default function BusinessLeadsPage() {
                     <select
                       value={lead.status}
                       onChange={(e) => handleStatusChange(lead.id, e.target.value)}
-                      className="px-3 py-1.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                      className="px-3 py-1.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded text-sm text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                     >
                       <option value="new">New</option>
                       <option value="contacted">Contacted</option>
@@ -538,7 +538,7 @@ export default function BusinessLeadsPage() {
                       <select
                         value={lead.assigned_to || 'unassigned'}
                         onChange={(e) => handleRepAssign(lead.id, e.target.value)}
-                        className="px-3 py-1.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent max-w-[140px]"
+                        className="px-3 py-1.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded text-sm text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent max-w-[140px]"
                       >
                         <option value="unassigned">Unassigned</option>
                         {reps.map((rep) => (
@@ -553,7 +553,7 @@ export default function BusinessLeadsPage() {
                       className="p-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface rounded-lg transition-colors"
                       title="Send Email"
                     >
-                      <Mail className="w-4 h-4 text-white" />
+                      <Mail className="w-4 h-4 text-tastelanc-text-primary" />
                     </a>
                     <Link
                       href={`/admin/sales?email=${encodeURIComponent(lead.email)}&name=${encodeURIComponent(lead.contact_name || lead.business_name)}&phone=${encodeURIComponent(lead.phone || '')}&businessName=${encodeURIComponent(lead.business_name)}`}

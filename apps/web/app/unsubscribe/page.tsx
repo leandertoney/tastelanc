@@ -29,10 +29,10 @@ function UnsubscribeContent() {
               <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-8 h-8 text-green-400" />
               </div>
-              <h1 className="text-2xl font-bold text-white mb-2">
+              <h1 className="text-2xl font-bold text-tastelanc-text-primary mb-2">
                 {isTest ? 'Test Unsubscribe' : "You've Been Unsubscribed"}
               </h1>
-              <p className="text-gray-400 mb-6">
+              <p className="text-tastelanc-text-muted mb-6">
                 {isTest
                   ? 'This was a test email. You have not been unsubscribed.'
                   : "You won't receive any more marketing emails from us. We're sorry to see you go!"}
@@ -43,10 +43,10 @@ function UnsubscribeContent() {
               <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <XCircle className="w-8 h-8 text-red-400" />
               </div>
-              <h1 className="text-2xl font-bold text-white mb-2">
+              <h1 className="text-2xl font-bold text-tastelanc-text-primary mb-2">
                 Something Went Wrong
               </h1>
-              <p className="text-gray-400 mb-6">
+              <p className="text-tastelanc-text-muted mb-6">
                 {error === 'missing_email'
                   ? 'No email address was provided.'
                   : 'We couldn\'t process your unsubscribe request. Please try again or contact us.'}
@@ -57,10 +57,10 @@ function UnsubscribeContent() {
               <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <AlertCircle className="w-8 h-8 text-yellow-400" />
               </div>
-              <h1 className="text-2xl font-bold text-white mb-2">
+              <h1 className="text-2xl font-bold text-tastelanc-text-primary mb-2">
                 Unsubscribe
               </h1>
-              <p className="text-gray-400 mb-6">
+              <p className="text-tastelanc-text-muted mb-6">
                 Use the link in your email to unsubscribe from our mailing list.
               </p>
             </>
@@ -74,7 +74,7 @@ function UnsubscribeContent() {
           </Link>
 
           {success && !isTest && (
-            <p className="text-gray-500 text-sm mt-6">
+            <p className="text-tastelanc-text-faint text-sm mt-6">
               Changed your mind?{' '}
               <Link href="/early-access" className="text-tastelanc-accent hover:underline">
                 Sign up again

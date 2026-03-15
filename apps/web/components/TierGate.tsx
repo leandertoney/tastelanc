@@ -61,7 +61,7 @@ export default function TierGate({
   // User doesn't have access - show upgrade prompt
   if (inline) {
     return (
-      <div className="flex items-center gap-2 text-gray-400 text-sm">
+      <div className="flex items-center gap-2 text-tastelanc-text-muted text-sm">
         <Lock className="w-4 h-4" />
         <span>Upgrade to {requiredTier === 'elite' ? 'Elite' : 'Premium'} to access</span>
         <Link
@@ -92,12 +92,12 @@ export default function TierGate({
         </div>
 
         {/* Title */}
-        <h2 className="text-2xl font-bold text-white mb-3">
+        <h2 className="text-2xl font-bold text-tastelanc-text-primary mb-3">
           {feature} is a {requiredTier === 'elite' ? 'Elite' : 'Premium'} Feature
         </h2>
 
         {/* Description */}
-        <p className="text-gray-400 mb-6">
+        <p className="text-tastelanc-text-muted mb-6">
           {description ||
             `Upgrade to ${requiredTier === 'elite' ? 'Elite' : 'Premium'} to unlock ${feature.toLowerCase()} and grow your restaurant's presence on ${BRAND.name}.`}
         </p>
@@ -105,11 +105,11 @@ export default function TierGate({
         {/* Tier comparison */}
         <div className="bg-tastelanc-surface rounded-lg p-4 mb-6 text-left">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-gray-400">Your current tier:</span>
-            <span className="font-medium text-white capitalize">{tierName || 'Basic'}</span>
+            <span className="text-tastelanc-text-muted">Your current tier:</span>
+            <span className="font-medium text-tastelanc-text-primary capitalize">{tierName || 'Basic'}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-gray-400">Required tier:</span>
+            <span className="text-tastelanc-text-muted">Required tier:</span>
             <span className={`font-medium capitalize ${requiredTier === 'elite' ? 'text-yellow-500' : 'text-tastelanc-accent'}`}>
               {requiredTier}
             </span>
@@ -121,14 +121,14 @@ export default function TierGate({
           {requiredTier === 'elite' ? (
             <div>
               <p className="text-yellow-500 font-semibold mb-1">Elite Plan</p>
-              <p className="text-gray-300">Starting at $350 for 3 months</p>
-              <p className="text-gray-500 text-sm">or $1,100/year (save $300)</p>
+              <p className="text-tastelanc-text-secondary">Starting at $350 for 3 months</p>
+              <p className="text-tastelanc-text-faint text-sm">or $1,100/year (save $300)</p>
             </div>
           ) : (
             <div>
               <p className="text-tastelanc-accent font-semibold mb-1">Premium Plan</p>
-              <p className="text-gray-300">Starting at $250 for 3 months</p>
-              <p className="text-gray-500 text-sm">or $800/year (save $200)</p>
+              <p className="text-tastelanc-text-secondary">Starting at $250 for 3 months</p>
+              <p className="text-tastelanc-text-faint text-sm">or $800/year (save $200)</p>
             </div>
           )}
         </div>
@@ -147,8 +147,8 @@ export default function TierGate({
         </Link>
 
         {/* Current tier features link */}
-        <p className="mt-4 text-gray-500 text-sm">
-          <Link href="/dashboard" className="hover:text-gray-400">
+        <p className="mt-4 text-tastelanc-text-faint text-sm">
+          <Link href="/dashboard" className="hover:text-tastelanc-text-muted">
             Continue with Basic features
           </Link>
         </p>

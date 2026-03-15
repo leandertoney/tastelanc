@@ -87,8 +87,8 @@ export default async function HappyHoursPage({ searchParams }: PageProps) {
         <div className="p-6">
           <div className="flex justify-between items-start mb-3">
             <div>
-              <h3 className="font-semibold text-white text-lg">{hh.restaurant?.name}</h3>
-              <p className="text-gray-400 text-sm flex items-center gap-1 mt-1">
+              <h3 className="font-semibold text-tastelanc-text-primary text-lg">{hh.restaurant?.name}</h3>
+              <p className="text-tastelanc-text-muted text-sm flex items-center gap-1 mt-1">
                 <MapPin className="w-3 h-3" />
                 {hh.restaurant?.address}
               </p>
@@ -100,15 +100,15 @@ export default async function HappyHoursPage({ searchParams }: PageProps) {
             )}
           </div>
 
-          <h4 className="text-white font-medium mb-2">{hh.name}</h4>
+          <h4 className="text-tastelanc-text-primary font-medium mb-2">{hh.name}</h4>
 
           {hh.description && (
-            <p className="text-gray-400 text-sm mb-3">{hh.description}</p>
+            <p className="text-tastelanc-text-muted text-sm mb-3">{hh.description}</p>
           )}
 
           {hh.happy_hour_items && hh.happy_hour_items.length > 0 && (
             <div className="border-t border-tastelanc-surface-light pt-3 mt-3">
-              <p className="text-sm text-gray-500 mb-2">Deals:</p>
+              <p className="text-sm text-tastelanc-text-faint mb-2">Deals:</p>
               <div className="flex flex-wrap gap-2">
                 {hh.happy_hour_items.slice(0, 4).map((item: { id: string; name: string; discounted_price: number | null }) => (
                   <span key={item.id} className="text-sm text-lancaster-gold">
@@ -116,7 +116,7 @@ export default async function HappyHoursPage({ searchParams }: PageProps) {
                   </span>
                 ))}
                 {hh.happy_hour_items.length > 4 && (
-                  <span className="text-sm text-gray-500">+{hh.happy_hour_items.length - 4} more</span>
+                  <span className="text-sm text-tastelanc-text-faint">+{hh.happy_hour_items.length - 4} more</span>
                 )}
               </div>
             </div>
@@ -131,11 +131,11 @@ export default async function HappyHoursPage({ searchParams }: PageProps) {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
+          <h1 className="text-4xl font-bold text-tastelanc-text-primary mb-2 flex items-center gap-3">
             <Clock className="w-10 h-10 text-lancaster-gold" />
             Happy Hours
           </h1>
-          <p className="text-gray-400">
+          <p className="text-tastelanc-text-muted">
             Find the best happy hour deals in {BRAND.countyShort}
           </p>
         </div>
@@ -149,7 +149,7 @@ export default async function HappyHoursPage({ searchParams }: PageProps) {
               className={`px-4 py-2 rounded-full text-sm transition-colors ${
                 currentDay === day.value
                   ? 'bg-lancaster-gold text-black font-medium'
-                  : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white'
+                  : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary'
               }`}
             >
               {day.label}
@@ -158,7 +158,7 @@ export default async function HappyHoursPage({ searchParams }: PageProps) {
         </div>
 
         {/* Results */}
-        <p className="text-gray-400 mb-6">
+        <p className="text-tastelanc-text-muted mb-6">
           {happyHours.length} happy hour{happyHours.length !== 1 ? 's' : ''} on {capitalizeWords(currentDay)}
         </p>
 
@@ -179,9 +179,9 @@ export default async function HappyHoursPage({ searchParams }: PageProps) {
           </>
         ) : (
           <div className="text-center py-16">
-            <Clock className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">No happy hours on {capitalizeWords(currentDay)}</p>
-            <p className="text-gray-600 mt-2">Try checking another day</p>
+            <Clock className="w-16 h-16 text-tastelanc-text-faint mx-auto mb-4" />
+            <p className="text-tastelanc-text-faint text-lg">No happy hours on {capitalizeWords(currentDay)}</p>
+            <p className="text-tastelanc-text-faint mt-2">Try checking another day</p>
           </div>
         )}
       </div>

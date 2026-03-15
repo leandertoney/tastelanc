@@ -45,7 +45,7 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   approved: { label: 'Approved', className: 'bg-green-500/20 text-green-400' },
   setup_in_progress: { label: 'Setting Up', className: 'bg-orange-500/20 text-orange-400' },
   live: { label: 'Live', className: 'bg-emerald-500/20 text-emerald-400' },
-  on_hold: { label: 'On Hold', className: 'bg-gray-500/20 text-gray-400' },
+  on_hold: { label: 'On Hold', className: 'bg-tastelanc-surface-light/50 text-tastelanc-text-muted' },
   rejected: { label: 'Rejected', className: 'bg-red-500/20 text-red-400' },
 };
 
@@ -543,7 +543,7 @@ export default function CityDetailPage() {
   if (!city) {
     return (
       <div className="text-center py-20">
-        <p className="text-gray-400 mb-4">City not found.</p>
+        <p className="text-tastelanc-text-muted mb-4">City not found.</p>
         <Link
           href="/admin/expansion"
           className="text-tastelanc-accent hover:underline text-sm"
@@ -561,7 +561,7 @@ export default function CityDetailPage() {
       {/* Back button */}
       <Link
         href="/admin/expansion"
-        className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Expansion Pipeline
@@ -579,21 +579,21 @@ export default function CityDetailPage() {
                     type="text"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="text-xl font-bold text-white bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-tastelanc-accent w-full max-w-xs"
+                    className="text-xl font-bold text-tastelanc-text-primary bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-tastelanc-accent w-full max-w-xs"
                     placeholder="City name"
                   />
                   <input
                     type="text"
                     value={editCounty}
                     onChange={(e) => setEditCounty(e.target.value)}
-                    className="text-sm text-gray-300 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-tastelanc-accent w-full max-w-[180px]"
+                    className="text-sm text-tastelanc-text-secondary bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-tastelanc-accent w-full max-w-[180px]"
                     placeholder="County"
                   />
                   <input
                     type="text"
                     value={editState}
                     onChange={(e) => setEditState(e.target.value)}
-                    className="text-sm text-gray-300 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-tastelanc-accent w-16"
+                    className="text-sm text-tastelanc-text-secondary bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-tastelanc-accent w-16"
                     placeholder="ST"
                   />
                 </div>
@@ -608,7 +608,7 @@ export default function CityDetailPage() {
                   </button>
                   <button
                     onClick={() => setIsEditing(false)}
-                    className="flex items-center gap-1 px-3 py-1 text-gray-400 hover:text-white text-xs transition-colors"
+                    className="flex items-center gap-1 px-3 py-1 text-tastelanc-text-muted hover:text-tastelanc-text-primary text-xs transition-colors"
                   >
                     <X className="w-3 h-3" />
                     Cancel
@@ -618,13 +618,13 @@ export default function CityDetailPage() {
             ) : (
               <>
                 <div className="flex items-center gap-3 mb-1">
-                  <h1 className="text-2xl font-bold text-white truncate">
+                  <h1 className="text-2xl font-bold text-tastelanc-text-primary truncate">
                     {city.city_name}
                   </h1>
                   {canManage && (
                     <button
                       onClick={startEditing}
-                      className="p-1 text-gray-600 hover:text-gray-300 transition-colors flex-shrink-0"
+                      className="p-1 text-tastelanc-text-faint hover:text-tastelanc-text-secondary transition-colors flex-shrink-0"
                       title="Edit city details"
                     >
                       <Pencil className="w-4 h-4" />
@@ -638,7 +638,7 @@ export default function CityDetailPage() {
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-tastelanc-text-muted">
                   {city.county} County, {city.state}
                 </p>
               </>
@@ -683,7 +683,7 @@ export default function CityDetailPage() {
                   <button
                     onClick={handlePutOnHold}
                     disabled={isChangingStatus}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-gray-500/10 text-gray-400 border border-gray-500/20 rounded-lg text-sm font-medium hover:bg-gray-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-tastelanc-surface-light/30 text-tastelanc-text-muted border border-tastelanc-border rounded-lg text-sm font-medium hover:bg-tastelanc-surface-light/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isChangingStatus ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -714,13 +714,13 @@ export default function CityDetailPage() {
         const reviewResolved = city.review_status && city.review_status !== 'pending_review';
         return (
           <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5">
-            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-medium text-tastelanc-text-muted uppercase tracking-wider mb-3">
               Team Reviews
             </h3>
             {/* Vote buttons — only if review is still pending */}
             {canManage && !currentUserHasVoted && !reviewResolved && ['researched', 'brand_ready'].includes(city.status) && (
               <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                <p className="text-sm text-gray-300 mb-2">Cast your vote on this market:</p>
+                <p className="text-sm text-tastelanc-text-secondary mb-2">Cast your vote on this market:</p>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleVote('interested')}
@@ -768,9 +768,9 @@ export default function CityDetailPage() {
                     return (
                       <div key={member.email} className="flex items-center justify-between bg-tastelanc-surface-light/50 rounded-lg px-4 py-3">
                         <div>
-                          <p className="text-sm font-medium text-white">{member.name}</p>
+                          <p className="text-sm font-medium text-tastelanc-text-primary">{member.name}</p>
                           {review && (
-                            <p className="text-xs text-gray-500 mt-0.5">
+                            <p className="text-xs text-tastelanc-text-faint mt-0.5">
                               {new Date(review.voted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                             </p>
                           )}
@@ -780,7 +780,7 @@ export default function CityDetailPage() {
                             {voteLabel}
                           </span>
                         ) : (
-                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-500/15 text-gray-500">
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-tastelanc-surface-light/50 text-tastelanc-text-faint">
                             Pending
                           </span>
                         )}
@@ -819,7 +819,7 @@ export default function CityDetailPage() {
               className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                 isActive
                   ? 'border-tastelanc-accent text-tastelanc-accent'
-                  : 'border-transparent text-gray-500 hover:text-gray-300'
+                  : 'border-transparent text-tastelanc-text-faint hover:text-tastelanc-text-secondary'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -868,8 +868,8 @@ export default function CityDetailPage() {
 
             {brands.length === 0 ? (
               <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-8 text-center">
-                <Palette className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-                <p className="text-gray-400">
+                <Palette className="w-10 h-10 text-tastelanc-text-faint mx-auto mb-3" />
+                <p className="text-tastelanc-text-muted">
                   No brand proposals yet. Click Generate Brands to create some.
                 </p>
               </div>
@@ -897,7 +897,7 @@ export default function CityDetailPage() {
                 <select
                   value={jobRoleType}
                   onChange={(e) => setJobRoleType(e.target.value as JobRoleType)}
-                  className="px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light text-white text-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-tastelanc-accent"
+                  className="px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light text-tastelanc-text-primary text-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-tastelanc-accent"
                 >
                   {ROLE_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -927,8 +927,8 @@ export default function CityDetailPage() {
 
             {jobs.length === 0 ? (
               <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-8 text-center">
-                <Briefcase className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-                <p className="text-gray-400">
+                <Briefcase className="w-10 h-10 text-tastelanc-text-faint mx-auto mb-3" />
+                <p className="text-tastelanc-text-muted">
                   No job listings yet. Select a role type and click Generate Listing.
                 </p>
               </div>
@@ -958,8 +958,8 @@ export default function CityDetailPage() {
       {showRejectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-white mb-2">Reject City</h3>
-            <p className="text-sm text-gray-400 mb-4">
+            <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-2">Reject City</h3>
+            <p className="text-sm text-tastelanc-text-muted mb-4">
               Please provide a reason for rejecting {city.city_name}.
             </p>
             <textarea
@@ -967,7 +967,7 @@ export default function CityDetailPage() {
               onChange={(e) => setRejectReason(e.target.value)}
               placeholder="Reason for rejection..."
               rows={4}
-              className="w-full px-3 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light text-white text-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-tastelanc-accent placeholder-gray-600 resize-none"
+              className="w-full px-3 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light text-tastelanc-text-primary text-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-tastelanc-accent placeholder-tastelanc-text-faint resize-none"
             />
             <div className="flex items-center justify-end gap-2 mt-4">
               <button
@@ -975,7 +975,7 @@ export default function CityDetailPage() {
                   setShowRejectModal(false);
                   setRejectReason('');
                 }}
-                className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+                className="px-4 py-2 text-sm text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
               >
                 Cancel
               </button>

@@ -232,8 +232,8 @@ export default async function AdminDashboardPage() {
   return (
     <div>
       <div className="mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-white">Admin Dashboard</h1>
-        <p className="text-gray-400 mt-1 text-sm md:text-base">Overview of {BRAND.name} platform</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">Admin Dashboard</h1>
+        <p className="text-tastelanc-text-muted mt-1 text-sm md:text-base">Overview of {BRAND.name} platform</p>
       </div>
 
       {/* Revenue Banner — super_admin & co_founder only */}
@@ -245,18 +245,18 @@ export default async function AdminDashboardPage() {
                 <DollarSign className="w-6 h-6 text-green-400" />
               </div>
               <div>
-                <p className="text-gray-400 text-sm">Monthly Recurring Revenue</p>
+                <p className="text-tastelanc-text-muted text-sm">Monthly Recurring Revenue</p>
                 <p className="text-3xl font-bold text-green-400">${stripeRevenue.mrr.toLocaleString()}</p>
               </div>
             </div>
             <div className="flex gap-6">
               <div className="text-center">
-                <p className="text-2xl font-bold text-white">{stripeRevenue.totalSubscriptions}</p>
-                <p className="text-gray-400 text-xs">Paid Members</p>
+                <p className="text-2xl font-bold text-tastelanc-text-primary">{stripeRevenue.totalSubscriptions}</p>
+                <p className="text-tastelanc-text-muted text-xs">Paid Members</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-white">${stripeRevenue.arr.toLocaleString()}</p>
-                <p className="text-gray-400 text-xs">ARR</p>
+                <p className="text-2xl font-bold text-tastelanc-text-primary">${stripeRevenue.arr.toLocaleString()}</p>
+                <p className="text-tastelanc-text-muted text-xs">ARR</p>
               </div>
             </div>
           </div>
@@ -272,8 +272,8 @@ export default async function AdminDashboardPage() {
             </div>
             <TrendingUp className="w-4 h-4 text-green-500 hidden md:block" />
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">{stats.totalRestaurants}</p>
-          <p className="text-gray-400 text-xs md:text-sm">Total Restaurants</p>
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{stats.totalRestaurants}</p>
+          <p className="text-tastelanc-text-muted text-xs md:text-sm">Total Restaurants</p>
         </Card>
 
         {canSeeFinancials ? (
@@ -284,8 +284,8 @@ export default async function AdminDashboardPage() {
                   <Users className="w-5 h-5 md:w-6 md:h-6 text-green-500" />
                 </div>
               </div>
-              <p className="text-2xl md:text-3xl font-bold text-white">{stripeRevenue.totalSubscriptions}</p>
-              <p className="text-gray-400 text-xs md:text-sm">Paid Members</p>
+              <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{stripeRevenue.totalSubscriptions}</p>
+              <p className="text-tastelanc-text-muted text-xs md:text-sm">Paid Members</p>
             </Card>
           </Link>
         ) : (
@@ -295,8 +295,8 @@ export default async function AdminDashboardPage() {
                 <Users className="w-5 h-5 md:w-6 md:h-6 text-green-500" />
               </div>
             </div>
-            <p className="text-2xl md:text-3xl font-bold text-white">{stats.activeSubscriptions}</p>
-            <p className="text-gray-400 text-xs md:text-sm">Active Subscriptions</p>
+            <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{stats.activeSubscriptions}</p>
+            <p className="text-tastelanc-text-muted text-xs md:text-sm">Active Subscriptions</p>
           </Card>
         )}
 
@@ -306,8 +306,8 @@ export default async function AdminDashboardPage() {
               <Eye className="w-5 h-5 md:w-6 md:h-6 text-purple-500" />
             </div>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">{stats.totalPageViews.toLocaleString()}</p>
-          <p className="text-gray-400 text-xs md:text-sm">Views (30d)</p>
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{stats.totalPageViews.toLocaleString()}</p>
+          <p className="text-tastelanc-text-muted text-xs md:text-sm">Views (30d)</p>
         </Card>
 
         <Card className="p-4 md:p-6">
@@ -319,20 +319,20 @@ export default async function AdminDashboardPage() {
               <Badge variant="accent" className="text-xs">{stats.unreadContacts} new</Badge>
             )}
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">{stats.totalContacts}</p>
-          <p className="text-gray-400 text-xs md:text-sm">Contacts</p>
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{stats.totalContacts}</p>
+          <p className="text-tastelanc-text-muted text-xs md:text-sm">Contacts</p>
         </Card>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4 md:gap-8">
         {/* Paid Members by Plan */}
         <Card className="p-4 md:p-6">
-          <h2 className="text-xl font-semibold text-white mb-6">Paid Members by Plan</h2>
+          <h2 className="text-xl font-semibold text-tastelanc-text-primary mb-6">Paid Members by Plan</h2>
           <div className="space-y-4">
             <div>
               <div className="flex justify-between mb-1">
-                <span className="text-gray-400">Starter</span>
-                <span className="text-white font-medium">{stats.signupsByPlan.starter}</span>
+                <span className="text-tastelanc-text-muted">Starter</span>
+                <span className="text-tastelanc-text-primary font-medium">{stats.signupsByPlan.starter}</span>
               </div>
               <div className="h-2 bg-tastelanc-surface-light rounded-full overflow-hidden">
                 <div
@@ -345,8 +345,8 @@ export default async function AdminDashboardPage() {
             </div>
             <div>
               <div className="flex justify-between mb-1">
-                <span className="text-gray-400">Premium</span>
-                <span className="text-white font-medium">{stats.signupsByPlan.premium}</span>
+                <span className="text-tastelanc-text-muted">Premium</span>
+                <span className="text-tastelanc-text-primary font-medium">{stats.signupsByPlan.premium}</span>
               </div>
               <div className="h-2 bg-tastelanc-surface-light rounded-full overflow-hidden">
                 <div
@@ -359,8 +359,8 @@ export default async function AdminDashboardPage() {
             </div>
             <div>
               <div className="flex justify-between mb-1">
-                <span className="text-gray-400">Elite</span>
-                <span className="text-white font-medium">{stats.signupsByPlan.elite}</span>
+                <span className="text-tastelanc-text-muted">Elite</span>
+                <span className="text-tastelanc-text-primary font-medium">{stats.signupsByPlan.elite}</span>
               </div>
               <div className="h-2 bg-tastelanc-surface-light rounded-full overflow-hidden">
                 <div
@@ -373,8 +373,8 @@ export default async function AdminDashboardPage() {
             </div>
             <div>
               <div className="flex justify-between mb-1">
-                <span className="text-gray-400">Coffee Shop</span>
-                <span className="text-white font-medium">{stats.signupsByPlan.coffee_shop}</span>
+                <span className="text-tastelanc-text-muted">Coffee Shop</span>
+                <span className="text-tastelanc-text-primary font-medium">{stats.signupsByPlan.coffee_shop}</span>
               </div>
               <div className="h-2 bg-tastelanc-surface-light rounded-full overflow-hidden">
                 <div
@@ -397,7 +397,7 @@ export default async function AdminDashboardPage() {
         {/* Recent Contacts */}
         <Card className="p-4 md:p-6">
           <div className="flex items-center justify-between mb-4 md:mb-6">
-            <h2 className="text-xl font-semibold text-white">Recent Contacts</h2>
+            <h2 className="text-xl font-semibold text-tastelanc-text-primary">Recent Contacts</h2>
             {stats.unreadContacts > 0 && (
               <div className="flex items-center gap-1 text-tastelanc-accent text-sm">
                 <AlertCircle className="w-4 h-4" />
@@ -406,7 +406,7 @@ export default async function AdminDashboardPage() {
             )}
           </div>
           {stats.recentContacts.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No contacts yet</p>
+            <p className="text-tastelanc-text-faint text-center py-8">No contacts yet</p>
           ) : (
             <div className="space-y-4">
               {stats.recentContacts.map((contact) => (
@@ -416,17 +416,17 @@ export default async function AdminDashboardPage() {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-white truncate">
+                      <span className="font-medium text-tastelanc-text-primary truncate">
                         {contact.name}
                       </span>
                       {!contact.read_at && (
                         <span className="w-2 h-2 bg-tastelanc-accent rounded-full" />
                       )}
                     </div>
-                    <p className="text-gray-400 text-sm truncate">
+                    <p className="text-tastelanc-text-muted text-sm truncate">
                       {contact.business_name || contact.email}
                     </p>
-                    <p className="text-gray-500 text-xs mt-1">
+                    <p className="text-tastelanc-text-faint text-xs mt-1">
                       {new Date(contact.created_at).toLocaleString('en-US', {
                         month: 'short',
                         day: 'numeric',

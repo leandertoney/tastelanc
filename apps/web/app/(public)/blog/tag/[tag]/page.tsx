@@ -86,11 +86,11 @@ export default async function TagPage({ params }: PageProps) {
   return (
     <>
       {/* Page Header */}
-      <section className="border-b border-gray-800 py-12 md:py-16 px-4">
+      <section className="border-b border-tastelanc-border py-12 md:py-16 px-4">
         <div className="max-w-6xl mx-auto">
           <Link
             href="/blog"
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-amber-400 transition-colors mb-6"
+            className="inline-flex items-center gap-2 text-tastelanc-text-muted hover:text-amber-400 transition-colors mb-6"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to all posts
@@ -111,29 +111,29 @@ export default async function TagPage({ params }: PageProps) {
               </div>
             )}
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+              <h1 className="text-3xl md:text-4xl font-bold text-tastelanc-text-primary mb-2">
                 {tagInfo.display}
               </h1>
-              <p className="text-gray-400 text-base md:text-lg">
+              <p className="text-tastelanc-text-muted text-base md:text-lg">
                 {posts.length} {posts.length === 1 ? 'post' : 'posts'} from {BRAND.aiName}
               </p>
             </div>
           </div>
 
           {/* Category Filters */}
-          <div className="flex flex-wrap justify-center gap-2 md:gap-3 border-t border-gray-800 pt-8 mt-8">
-            <Link href="/blog" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors">All</Link>
-            <Link href="/blog/tag/hidden-gems" className={tag === 'hidden-gems' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors'}>Hidden Gems</Link>
-            <Link href="/blog/tag/date-night" className={tag === 'date-night' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors'}>Date Night</Link>
-            <Link href="/blog/tag/family" className={tag === 'family' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors'}>Family</Link>
-            <Link href="/blog/tag/happy-hours" className={tag === 'happy-hours' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors'}>Happy Hours</Link>
-            <Link href="/blog/tag/brunch" className={tag === 'brunch' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors'}>Brunch</Link>
-            <Link href="/blog/tag/nightlife" className={tag === 'nightlife' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors'}>Nightlife</Link>
-            <Link href="/blog/tag/events" className={tag === 'events' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors'}>Events</Link>
-            <Link href="/blog/tag/live-music" className={tag === 'live-music' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors'}>Live Music</Link>
-            <Link href="/blog/tag/late-night" className={tag === 'late-night' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors'}>Late Night</Link>
-            <Link href="/blog/tag/budget-eats" className={tag === 'budget-eats' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors'}>Budget Eats</Link>
-            <Link href="/blog/tag/best-of" className={tag === 'best-of' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors'}>Best Of</Link>
+          <div className="flex flex-wrap justify-center gap-2 md:gap-3 border-t border-tastelanc-border pt-8 mt-8">
+            <Link href="/blog" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors">All</Link>
+            <Link href="/blog/tag/hidden-gems" className={tag === 'hidden-gems' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors'}>Hidden Gems</Link>
+            <Link href="/blog/tag/date-night" className={tag === 'date-night' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors'}>Date Night</Link>
+            <Link href="/blog/tag/family" className={tag === 'family' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors'}>Family</Link>
+            <Link href="/blog/tag/happy-hours" className={tag === 'happy-hours' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors'}>Happy Hours</Link>
+            <Link href="/blog/tag/brunch" className={tag === 'brunch' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors'}>Brunch</Link>
+            <Link href="/blog/tag/nightlife" className={tag === 'nightlife' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors'}>Nightlife</Link>
+            <Link href="/blog/tag/events" className={tag === 'events' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors'}>Events</Link>
+            <Link href="/blog/tag/live-music" className={tag === 'live-music' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors'}>Live Music</Link>
+            <Link href="/blog/tag/late-night" className={tag === 'late-night' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors'}>Late Night</Link>
+            <Link href="/blog/tag/budget-eats" className={tag === 'budget-eats' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors'}>Budget Eats</Link>
+            <Link href="/blog/tag/best-of" className={tag === 'best-of' ? 'bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium' : 'bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors'}>Best Of</Link>
           </div>
         </div>
       </section>
@@ -155,8 +155,8 @@ export default async function TagPage({ params }: PageProps) {
                 <Sparkles className="w-8 h-8 text-tastelanc-accent" />
               )}
             </div>
-            <h2 className="text-xl font-semibold text-white mb-2">No Posts Yet</h2>
-            <p className="text-gray-400 mb-6">
+            <h2 className="text-xl font-semibold text-tastelanc-text-primary mb-2">No Posts Yet</h2>
+            <p className="text-tastelanc-text-muted mb-6">
               {authorName} hasn&apos;t written about {tagInfo.display.toLowerCase()} yet. Check back soon!
             </p>
             <Link
@@ -211,13 +211,13 @@ export default async function TagPage({ params }: PageProps) {
                     </h3>
 
                     {/* Summary */}
-                    <p className="text-gray-300 text-sm mb-3 line-clamp-2 group-hover:text-gray-200 transition-colors">
+                    <p className="text-tastelanc-text-secondary text-sm mb-3 line-clamp-2 group-hover:text-tastelanc-text-secondary transition-colors">
                       {post.summary}
                     </p>
 
                     {/* Author & Meta */}
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                      <div className="flex items-center gap-2 text-xs text-tastelanc-text-muted">
                         <span>{authorName}</span>
                         <span>•</span>
                         <span>{formatDate(post.created_at)}</span>

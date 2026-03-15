@@ -179,7 +179,7 @@ function SetupAccountContent() {
             <h1 className="text-2xl lg:text-4xl font-bold text-white mb-1 lg:mb-2">
               {restaurantName}
             </h1>
-            <p className="text-gray-300 text-base lg:text-lg">
+            <p className="text-tastelanc-text-secondary text-base lg:text-lg">
               Welcome to {BRAND.name}
             </p>
           </div>

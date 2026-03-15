@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Menu, TrendingUp, Shield, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import SalesSidebar from './SalesSidebar';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { createClient } from '@/lib/supabase/client';
 import { MARKET_CONFIG, type MarketBrand } from '@/config/market';
 
@@ -81,11 +82,11 @@ export default function SalesLayoutClient({
     return {
       '--brand-accent': hexToRgb(repMarketConfig.colors.accent),
       '--brand-accent-hover': hexToRgb(repMarketConfig.colors.accentHover),
-      '--brand-gold': hexToRgb(repMarketConfig.colors.gold),
-      '--brand-bg': hexToRgb(repMarketConfig.colors.bg),
-      '--brand-card': hexToRgb(repMarketConfig.colors.card),
-      '--brand-surface': hexToRgb(repMarketConfig.colors.surface),
-      '--brand-surface-light': hexToRgb(repMarketConfig.colors.surfaceLight),
+      '--brand-gold': hexToRgb(repMarketConfig.colors.dark.gold),
+      '--brand-bg': hexToRgb(repMarketConfig.colors.dark.bg),
+      '--brand-card': hexToRgb(repMarketConfig.colors.dark.card),
+      '--brand-surface': hexToRgb(repMarketConfig.colors.dark.surface),
+      '--brand-surface-light': hexToRgb(repMarketConfig.colors.dark.surfaceLight),
     } as React.CSSProperties;
   }, [repMarketConfig]);
 
@@ -119,31 +120,32 @@ export default function SalesLayoutClient({
           </div>
         )}
 
-        {/* Mobile Header */}
-        <header className="md:hidden sticky top-0 bg-tastelanc-surface border-b border-tastelanc-surface-light z-30">
+        {/* Header */}
+        <header className="sticky top-0 bg-tastelanc-surface border-b border-tastelanc-surface-light z-30">
           <div className="flex items-center justify-between px-4 py-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="text-gray-400 hover:text-white p-2 -ml-2"
+              className="md:hidden text-tastelanc-text-muted hover:text-tastelanc-text-primary p-2 -ml-2"
               aria-label="Open menu"
             >
               <Menu className="w-6 h-6" />
             </button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 md:hidden">
               <div className="w-8 h-8 bg-tastelanc-accent rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-4 h-4 text-white" />
               </div>
-              <span className="text-lg font-bold text-white">Sales CRM</span>
+              <span className="text-lg font-bold text-tastelanc-text-primary">Sales CRM</span>
             </div>
-            <div className="w-10" />
+            <div className="hidden md:block flex-1" />
+            <ThemeToggle />
           </div>
         </header>
 
         {/* Main Content */}
         <main className="flex-1 p-4 md:p-5 overflow-auto">
           {repName && (
-            <p className="text-gray-400 text-sm mb-4">
-              {getGreeting()}, <span className="text-white font-medium">{repName}</span>
+            <p className="text-tastelanc-text-muted text-sm mb-4">
+              {getGreeting()}, <span className="text-tastelanc-text-primary font-medium">{repName}</span>
             </p>
           )}
           {children}

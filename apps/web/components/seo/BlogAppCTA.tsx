@@ -12,10 +12,10 @@ export function BlogAppCTA() {
     <div className="my-8 bg-gradient-to-r from-tastelanc-surface to-tastelanc-card rounded-xl p-6 border border-tastelanc-surface-light">
       <div className="flex flex-col sm:flex-row items-center gap-4">
         <div className="flex-1">
-          <p className="text-white font-semibold text-lg">
+          <p className="text-tastelanc-text-primary font-semibold text-lg">
             This list updates in real-time in the {BRAND.name} app
           </p>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-tastelanc-text-muted text-sm mt-1">
             Get personalized recommendations from {BRAND.aiName}, your AI dining guide. Free on iOS & Android.
           </p>
         </div>

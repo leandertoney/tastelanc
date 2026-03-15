@@ -29,7 +29,7 @@ export default function SmartSuggestion({
       <button
         type="button"
         onClick={onDismiss}
-        className="absolute top-2 right-2 p-1 text-gray-500 hover:text-white rounded-lg transition-colors"
+        className="absolute top-2 right-2 p-1 text-tastelanc-text-faint hover:text-tastelanc-text-primary rounded-lg transition-colors"
       >
         <X className="w-4 h-4" />
       </button>
@@ -45,7 +45,7 @@ export default function SmartSuggestion({
           <p className="text-sm font-medium text-lancaster-gold mb-1">
             Smart Suggestion
           </p>
-          <p className="text-sm text-gray-300 leading-relaxed">
+          <p className="text-sm text-tastelanc-text-secondary leading-relaxed">
             {message}
           </p>
         </div>
@@ -68,7 +68,7 @@ export default function SmartSuggestion({
         <button
           type="button"
           onClick={onDismiss}
-          className="px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white transition-colors"
+          className="px-4 py-2 rounded-lg text-sm text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
         >
           No thanks
         </button>

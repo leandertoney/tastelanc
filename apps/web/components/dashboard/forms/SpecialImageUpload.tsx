@@ -102,7 +102,7 @@ export default function SpecialImageUpload({ value, onChange, restaurantId }: Sp
             <X className="w-4 h-4 text-white" />
           </button>
         </div>
-        <p className="text-xs text-gray-500 mt-1.5">Custom image uploaded</p>
+        <p className="text-xs text-tastelanc-text-faint mt-1.5">Custom image uploaded</p>
       </div>
     );
   }
@@ -128,7 +128,7 @@ export default function SpecialImageUpload({ value, onChange, restaurantId }: Sp
           flex flex-col items-center justify-center gap-2
           ${isDragOver
             ? 'border-lancaster-gold bg-lancaster-gold/10'
-            : 'border-tastelanc-surface-light hover:border-gray-500 bg-tastelanc-surface/50'
+            : 'border-tastelanc-surface-light hover:border-tastelanc-border bg-tastelanc-surface/50'
           }
           ${isUploading ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}
         `}
@@ -136,7 +136,7 @@ export default function SpecialImageUpload({ value, onChange, restaurantId }: Sp
         {isUploading ? (
           <>
             <Loader2 className="w-8 h-8 text-lancaster-gold animate-spin" />
-            <span className="text-sm text-gray-400">Uploading...</span>
+            <span className="text-sm text-tastelanc-text-muted">Uploading...</span>
           </>
         ) : (
           <>
@@ -144,14 +144,14 @@ export default function SpecialImageUpload({ value, onChange, restaurantId }: Sp
               {isDragOver ? (
                 <ImageIcon className="w-6 h-6 text-lancaster-gold" />
               ) : (
-                <Upload className="w-6 h-6 text-gray-400" />
+                <Upload className="w-6 h-6 text-tastelanc-text-muted" />
               )}
             </div>
             <div className="text-center">
-              <span className="text-sm text-gray-300">
+              <span className="text-sm text-tastelanc-text-secondary">
                 {isDragOver ? 'Drop image here' : 'Add custom image'}
               </span>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <p className="text-xs text-tastelanc-text-faint mt-0.5">
                 PNG, JPG, or WebP (max 5MB)
               </p>
             </div>
@@ -161,7 +161,7 @@ export default function SpecialImageUpload({ value, onChange, restaurantId }: Sp
       {error && (
         <p className="text-xs text-red-400 mt-1.5">{error}</p>
       )}
-      <p className="text-xs text-gray-500 mt-1.5">
+      <p className="text-xs text-tastelanc-text-faint mt-1.5">
         Optional. Your restaurant cover image will be used if not provided.
       </p>
     </div>

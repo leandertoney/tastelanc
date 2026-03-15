@@ -53,10 +53,10 @@ export default function TemplateSelector<T>({
               </div>
 
               {/* Text */}
-              <h3 className="text-sm font-medium text-white text-center mb-1">
+              <h3 className="text-sm font-medium text-tastelanc-text-primary text-center mb-1">
                 {template.name}
               </h3>
-              <p className="text-xs text-gray-500 text-center line-clamp-2">
+              <p className="text-xs text-tastelanc-text-faint text-center line-clamp-2">
                 {template.description}
               </p>
 
@@ -83,7 +83,7 @@ export default function TemplateSelector<T>({
           <div className="w-full border-t border-tastelanc-surface-light" />
         </div>
         <div className="relative flex justify-center text-xs">
-          <span className="px-2 bg-tastelanc-bg text-gray-500">or</span>
+          <span className="px-2 bg-tastelanc-bg text-tastelanc-text-faint">or</span>
         </div>
       </div>
 
@@ -94,7 +94,7 @@ export default function TemplateSelector<T>({
         className={cn(
           'w-full flex items-center justify-center gap-2 p-4 rounded-xl',
           'border border-dashed border-tastelanc-surface-light',
-          'text-gray-400 hover:text-white hover:border-gray-500',
+          'text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:border-tastelanc-border',
           'transition-colors'
         )}
       >

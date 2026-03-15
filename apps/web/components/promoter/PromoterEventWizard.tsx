@@ -149,10 +149,10 @@ export default function PromoterEventWizard({
       <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-tastelanc-surface rounded-xl">
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between p-4 border-b border-tastelanc-surface-light bg-tastelanc-surface">
-          <h2 className="text-lg font-semibold text-white">Create Event</h2>
+          <h2 className="text-lg font-semibold text-tastelanc-text-primary">Create Event</h2>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-white transition-colors"
+            className="p-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -164,8 +164,8 @@ export default function PromoterEventWizard({
             <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Check className="w-8 h-8 text-green-400" />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Event Created!</h3>
-            <p className="text-gray-400">Your event is now live</p>
+            <h3 className="text-xl font-semibold text-tastelanc-text-primary mb-2">Event Created!</h3>
+            <p className="text-tastelanc-text-muted">Your event is now live</p>
           </div>
         ) : (
           <>
@@ -179,7 +179,7 @@ export default function PromoterEventWizard({
                         ? 'bg-green-500 text-white'
                         : s === step
                         ? 'bg-purple-500 text-white'
-                        : 'bg-tastelanc-surface-light text-gray-500'
+                        : 'bg-tastelanc-surface-light text-tastelanc-text-faint'
                     }`}
                   >
                     {s < step ? <Check className="w-3 h-3" /> : s}
@@ -197,8 +197,8 @@ export default function PromoterEventWizard({
               {step === 1 && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-white font-medium mb-1">What type of event?</h3>
-                    <p className="text-gray-400 text-sm">Select the category that best fits</p>
+                    <h3 className="text-tastelanc-text-primary font-medium mb-1">What type of event?</h3>
+                    <p className="text-tastelanc-text-muted text-sm">Select the category that best fits</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -212,12 +212,12 @@ export default function PromoterEventWizard({
                           className={`p-4 rounded-lg border-2 text-left transition-all ${
                             isSelected
                               ? 'border-purple-500 bg-purple-500/10'
-                              : 'border-tastelanc-surface-light hover:border-gray-600'
+                              : 'border-tastelanc-surface-light hover:border-tastelanc-border'
                           }`}
                         >
-                          <Icon className={`w-6 h-6 mb-2 ${isSelected ? 'text-purple-400' : 'text-gray-400'}`} />
-                          <p className="text-white font-medium text-sm">{type.label}</p>
-                          <p className="text-gray-500 text-xs">{type.description}</p>
+                          <Icon className={`w-6 h-6 mb-2 ${isSelected ? 'text-purple-400' : 'text-tastelanc-text-muted'}`} />
+                          <p className="text-tastelanc-text-primary font-medium text-sm">{type.label}</p>
+                          <p className="text-tastelanc-text-faint text-xs">{type.description}</p>
                         </button>
                       );
                     })}
@@ -238,56 +238,56 @@ export default function PromoterEventWizard({
               {step === 2 && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-white font-medium mb-1">Event Details</h3>
-                    <p className="text-gray-400 text-sm">Tell us about your event</p>
+                    <h3 className="text-tastelanc-text-primary font-medium mb-1">Event Details</h3>
+                    <p className="text-tastelanc-text-muted text-sm">Tell us about your event</p>
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-300 mb-1">Event Name *</label>
+                    <label className="block text-sm text-tastelanc-text-secondary mb-1">Event Name *</label>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="e.g., Friday Night Live"
-                      className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-300 mb-1">Description</label>
+                    <label className="block text-sm text-tastelanc-text-secondary mb-1">Description</label>
                     <textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="What should people expect?"
                       rows={3}
-                      className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                      className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-sm text-gray-300 mb-1">Date *</label>
+                      <label className="block text-sm text-tastelanc-text-secondary mb-1">Date *</label>
                       <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tastelanc-text-faint" />
                         <input
                           type="date"
                           value={eventDate}
                           onChange={(e) => setEventDate(e.target.value)}
                           min={today}
-                          className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-purple-500"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-sm text-gray-300 mb-1">Start Time *</label>
+                      <label className="block text-sm text-tastelanc-text-secondary mb-1">Start Time *</label>
                       <div className="relative">
-                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tastelanc-text-faint" />
                         <input
                           type="time"
                           value={startTime}
                           onChange={(e) => setStartTime(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-purple-500"
                         />
                       </div>
                     </div>
@@ -295,22 +295,22 @@ export default function PromoterEventWizard({
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-sm text-gray-300 mb-1">End Time</label>
+                      <label className="block text-sm text-tastelanc-text-secondary mb-1">End Time</label>
                       <div className="relative">
-                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tastelanc-text-faint" />
                         <input
                           type="time"
                           value={endTime}
                           onChange={(e) => setEndTime(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-purple-500"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-sm text-gray-300 mb-1">Cover Charge</label>
+                      <label className="block text-sm text-tastelanc-text-secondary mb-1">Cover Charge</label>
                       <div className="relative">
-                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tastelanc-text-faint" />
                         <input
                           type="number"
                           value={coverCharge}
@@ -318,7 +318,7 @@ export default function PromoterEventWizard({
                           placeholder="0"
                           min="0"
                           step="0.01"
-                          className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-purple-500"
                         />
                       </div>
                     </div>
@@ -348,8 +348,8 @@ export default function PromoterEventWizard({
               {step === 3 && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-white font-medium mb-1">Event Flyer *</h3>
-                    <p className="text-gray-400 text-sm">Upload your event image/flyer</p>
+                    <h3 className="text-tastelanc-text-primary font-medium mb-1">Event Flyer *</h3>
+                    <p className="text-tastelanc-text-muted text-sm">Upload your event image/flyer</p>
                   </div>
 
                   <input
@@ -391,8 +391,8 @@ export default function PromoterEventWizard({
                             <Upload className="w-8 h-8 text-purple-400" />
                           </div>
                           <div className="text-center">
-                            <p className="text-white font-medium">Upload Event Flyer</p>
-                            <p className="text-gray-500 text-sm">JPEG, PNG or WebP • Max 5MB</p>
+                            <p className="text-tastelanc-text-primary font-medium">Upload Event Flyer</p>
+                            <p className="text-tastelanc-text-faint text-sm">JPEG, PNG or WebP • Max 5MB</p>
                           </div>
                         </>
                       )}
@@ -427,8 +427,8 @@ export default function PromoterEventWizard({
               {step === 4 && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-white font-medium mb-1">Review Your Event</h3>
-                    <p className="text-gray-400 text-sm">Make sure everything looks good</p>
+                    <h3 className="text-tastelanc-text-primary font-medium mb-1">Review Your Event</h3>
+                    <p className="text-tastelanc-text-muted text-sm">Make sure everything looks good</p>
                   </div>
 
                   <Card className="p-4">
@@ -441,23 +441,23 @@ export default function PromoterEventWizard({
                         />
                       )}
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-white font-semibold truncate">{name}</h4>
+                        <h4 className="text-tastelanc-text-primary font-semibold truncate">{name}</h4>
                         <p className="text-purple-400 text-sm capitalize">{eventType.replace('_', ' ')}</p>
-                        <p className="text-gray-400 text-sm mt-1">
+                        <p className="text-tastelanc-text-muted text-sm mt-1">
                           {eventDate && new Date(eventDate + 'T00:00:00').toLocaleDateString('en-US', {
                             weekday: 'long',
                             month: 'long',
                             day: 'numeric',
                           })}
                         </p>
-                        <p className="text-gray-400 text-sm">
+                        <p className="text-tastelanc-text-muted text-sm">
                           {startTime}{endTime && ` - ${endTime}`}
                           {coverCharge && ` • $${coverCharge} cover`}
                         </p>
                       </div>
                     </div>
                     {description && (
-                      <p className="text-gray-400 text-sm mt-3 line-clamp-2">{description}</p>
+                      <p className="text-tastelanc-text-muted text-sm mt-3 line-clamp-2">{description}</p>
                     )}
                   </Card>
 

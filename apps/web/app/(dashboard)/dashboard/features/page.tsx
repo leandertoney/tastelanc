@@ -163,8 +163,8 @@ export default function FeaturesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Features & Amenities</h2>
-          <p className="text-gray-400 mt-1">
+          <h2 className="text-2xl font-bold text-tastelanc-text-primary">Features & Amenities</h2>
+          <p className="text-tastelanc-text-muted mt-1">
             Select what your restaurant offers. These help diners discover you through search filters in the app.
           </p>
         </div>
@@ -197,7 +197,7 @@ export default function FeaturesPage() {
         return (
           <Card key={group.key} className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">{group.label}</h3>
+              <h3 className="text-lg font-semibold text-tastelanc-text-primary">{group.label}</h3>
               {groupActiveCount > 0 && (
                 <span className="text-xs text-tastelanc-accent bg-tastelanc-accent/10 px-2 py-1 rounded-full">
                   {groupActiveCount} active
@@ -215,7 +215,7 @@ export default function FeaturesPage() {
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors ${
                       isActive
                         ? 'bg-tastelanc-accent text-white'
-                        : 'bg-tastelanc-surface-light text-gray-400 hover:text-white hover:bg-tastelanc-surface-light/80'
+                        : 'bg-tastelanc-surface-light text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light/80'
                     }`}
                   >
                     {isActive && <Check className="w-3.5 h-3.5" />}
@@ -232,7 +232,7 @@ export default function FeaturesPage() {
       {hasChanges && (
         <div className="fixed bottom-0 left-0 right-0 lg:left-64 bg-tastelanc-surface border-t border-tastelanc-surface-light p-4 z-40">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-tastelanc-text-muted">
               You have unsaved changes
             </p>
             <Button

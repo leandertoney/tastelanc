@@ -128,12 +128,12 @@ export default function NewBusinessLeadPage() {
       <div className="mb-6">
         <Link
           href="/admin/business-leads"
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-4"
+          className="inline-flex items-center gap-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Leads
         </Link>
-        <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+        <h1 className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary flex items-center gap-3">
           <Briefcase className="w-8 h-8 text-tastelanc-accent" />
           Add New Lead
         </h1>
@@ -163,7 +163,7 @@ export default function NewBusinessLeadPage() {
           {/* Business Info */}
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">
                 Business Name *
               </label>
               <input
@@ -171,12 +171,12 @@ export default function NewBusinessLeadPage() {
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
                 placeholder="e.g., Joe's Pizza"
-                className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">
                 Contact Name
               </label>
               <input
@@ -184,7 +184,7 @@ export default function NewBusinessLeadPage() {
                 value={contactName}
                 onChange={(e) => setContactName(e.target.value)}
                 placeholder="e.g., John Smith"
-                className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               />
             </div>
           </div>
@@ -192,7 +192,7 @@ export default function NewBusinessLeadPage() {
           {/* Contact Info */}
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">
                 Email *
               </label>
               <input
@@ -200,12 +200,12 @@ export default function NewBusinessLeadPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="contact@business.com"
-                className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">
                 Phone
               </label>
               <input
@@ -213,13 +213,13 @@ export default function NewBusinessLeadPage() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="(717) 555-0123"
-                className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">
               Website
             </label>
             <input
@@ -227,13 +227,13 @@ export default function NewBusinessLeadPage() {
               value={website}
               onChange={(e) => setWebsite(e.target.value)}
               placeholder="https://joespizza.com"
-              className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
             />
           </div>
 
           {/* Location */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">
               Address
             </label>
             <input
@@ -241,35 +241,35 @@ export default function NewBusinessLeadPage() {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="123 Main St"
-              className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
             />
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">
                 City
               </label>
               <input
                 type="text"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">
                 State
               </label>
               <input
                 type="text"
                 value={state}
                 onChange={(e) => setState(e.target.value)}
-                className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">
                 Zip Code
               </label>
               <input
@@ -277,7 +277,7 @@ export default function NewBusinessLeadPage() {
                 value={zipCode}
                 onChange={(e) => setZipCode(e.target.value)}
                 placeholder="17601"
-                className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               />
             </div>
           </div>
@@ -285,13 +285,13 @@ export default function NewBusinessLeadPage() {
           {/* Market + Category */}
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">
                 Market
               </label>
               <select
                 value={marketId}
                 onChange={(e) => setMarketId(e.target.value)}
-                className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               >
                 {markets.map((m) => (
                   <option key={m.id} value={m.id}>
@@ -301,13 +301,13 @@ export default function NewBusinessLeadPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">
                 Category
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat.value} value={cat.value}>
@@ -320,7 +320,7 @@ export default function NewBusinessLeadPage() {
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">
               Notes
             </label>
             <textarea
@@ -328,13 +328,13 @@ export default function NewBusinessLeadPage() {
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Any additional notes about this lead..."
               rows={3}
-              className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent resize-none"
+              className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent resize-none"
             />
           </div>
 
           {/* Tags */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">
               Tags (comma-separated)
             </label>
             <input
@@ -342,7 +342,7 @@ export default function NewBusinessLeadPage() {
               value={tags}
               onChange={(e) => setTags(e.target.value)}
               placeholder="e.g., downtown, happy-hour, new"
-              className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
             />
           </div>
 

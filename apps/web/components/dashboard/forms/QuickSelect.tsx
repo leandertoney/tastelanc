@@ -51,21 +51,21 @@ export default function QuickSelect<T extends string | number>({
               className={cn(
                 'flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200',
                 selected
-                  ? 'border-lancaster-gold bg-lancaster-gold/10 text-white'
-                  : 'border-tastelanc-surface hover:border-tastelanc-surface-light bg-tastelanc-surface/50 text-gray-300 hover:text-white'
+                  ? 'border-lancaster-gold bg-lancaster-gold/10 text-tastelanc-text-primary'
+                  : 'border-tastelanc-surface hover:border-tastelanc-surface-light bg-tastelanc-surface/50 text-tastelanc-text-secondary hover:text-tastelanc-text-primary'
               )}
             >
               {Icon && (
                 <Icon
                   className={cn(
                     'w-6 h-6 mb-2',
-                    selected ? 'text-lancaster-gold' : 'text-gray-400'
+                    selected ? 'text-lancaster-gold' : 'text-tastelanc-text-muted'
                   )}
                 />
               )}
               <span className="font-medium text-sm">{option.label}</span>
               {option.description && (
-                <span className="text-xs text-gray-500 mt-1">
+                <span className="text-xs text-tastelanc-text-faint mt-1">
                   {option.description}
                 </span>
               )}
@@ -96,7 +96,7 @@ export default function QuickSelect<T extends string | number>({
               },
               selected
                 ? 'bg-lancaster-gold text-black'
-                : 'bg-tastelanc-surface text-gray-400 hover:text-white hover:bg-tastelanc-surface-light'
+                : 'bg-tastelanc-surface text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light'
             )}
           >
             {Icon && <Icon className="w-4 h-4" />}

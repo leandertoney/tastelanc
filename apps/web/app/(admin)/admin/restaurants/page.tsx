@@ -67,8 +67,8 @@ export default async function AdminRestaurantsPage({
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white">All Restaurants</h1>
-            <p className="text-gray-400 mt-1">
+            <h1 className="text-3xl font-bold text-tastelanc-text-primary">All Restaurants</h1>
+            <p className="text-tastelanc-text-muted mt-1">
               {count} total • {activeCount} active • {verifiedCount} verified • {paidCount} paid
             </p>
           </div>
@@ -84,33 +84,33 @@ export default async function AdminRestaurantsPage({
         <Card className="p-4 md:p-6">
           <div className="flex items-center gap-3 mb-2">
             <Store className="w-5 h-5 text-blue-500" />
-            <span className="text-gray-400 text-sm">Total</span>
+            <span className="text-tastelanc-text-muted text-sm">Total</span>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">{count}</p>
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{count}</p>
         </Card>
 
         <Card className="p-4 md:p-6">
           <div className="flex items-center gap-3 mb-2">
             <CheckCircle className="w-5 h-5 text-green-500" />
-            <span className="text-gray-400 text-sm">Active</span>
+            <span className="text-tastelanc-text-muted text-sm">Active</span>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">{activeCount}</p>
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{activeCount}</p>
         </Card>
 
         <Card className="p-4 md:p-6">
           <div className="flex items-center gap-3 mb-2">
             <CheckCircle className="w-5 h-5 text-lancaster-gold" />
-            <span className="text-gray-400 text-sm">Verified</span>
+            <span className="text-tastelanc-text-muted text-sm">Verified</span>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">{verifiedCount}</p>
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{verifiedCount}</p>
         </Card>
 
         <Card className="p-4 md:p-6">
           <div className="flex items-center gap-3 mb-2">
             <CheckCircle className="w-5 h-5 text-tastelanc-accent" />
-            <span className="text-gray-400 text-sm">Paid</span>
+            <span className="text-tastelanc-text-muted text-sm">Paid</span>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">{paidCount}</p>
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{paidCount}</p>
         </Card>
       </div>
 

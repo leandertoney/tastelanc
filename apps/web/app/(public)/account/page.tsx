@@ -152,7 +152,7 @@ export default function AccountPage() {
   return (
     <div className="min-h-screen bg-tastelanc-dark">
       {/* Header */}
-      <header className="border-b border-gray-800">
+      <header className="border-b border-tastelanc-border">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <Image
@@ -166,7 +166,7 @@ export default function AccountPage() {
           <Button
             variant="ghost"
             onClick={handleSignOut}
-            className="text-gray-400 hover:text-white"
+            className="text-tastelanc-text-muted hover:text-tastelanc-text-primary"
           >
             <LogOut className="w-4 h-4 mr-2" />
             Sign Out
@@ -178,10 +178,10 @@ export default function AccountPage() {
       <main className="max-w-4xl mx-auto px-4 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white mb-2">
+          <h1 className="text-2xl font-bold text-tastelanc-text-primary mb-2">
             Welcome{user?.user_metadata?.full_name ? `, ${user.user_metadata.full_name}` : ''}!
           </h1>
-          <p className="text-gray-400">
+          <p className="text-tastelanc-text-muted">
             Manage your {BRAND.premiumName} subscription and account settings.
           </p>
         </div>
@@ -195,8 +195,8 @@ export default function AccountPage() {
                   <Crown className="w-5 h-5 text-lancaster-gold" />
                 </div>
                 <div>
-                  <h2 className="font-semibold text-white">Your Subscription</h2>
-                  <p className="text-sm text-gray-400">{planDetails.name}</p>
+                  <h2 className="font-semibold text-tastelanc-text-primary">Your Subscription</h2>
+                  <p className="text-sm text-tastelanc-text-muted">{planDetails.name}</p>
                 </div>
               </div>
               <Badge variant={planDetails.isActive ? 'gold' : 'default'}>
@@ -208,17 +208,17 @@ export default function AccountPage() {
               <>
                 <div className="space-y-3 mb-6">
                   <div className="flex items-center gap-2 text-sm">
-                    <CreditCard className="w-4 h-4 text-gray-500" />
-                    <span className="text-gray-400">Plan:</span>
-                    <span className="text-white font-medium">
+                    <CreditCard className="w-4 h-4 text-tastelanc-text-faint" />
+                    <span className="text-tastelanc-text-muted">Plan:</span>
+                    <span className="text-tastelanc-text-primary font-medium">
                       {planDetails.price}{planDetails.period}
                     </span>
                   </div>
                   {subscription?.current_period_end && subscription.billing_period !== 'lifetime' && (
                     <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="w-4 h-4 text-gray-500" />
-                      <span className="text-gray-400">Renews:</span>
-                      <span className="text-white">
+                      <Calendar className="w-4 h-4 text-tastelanc-text-faint" />
+                      <span className="text-tastelanc-text-muted">Renews:</span>
+                      <span className="text-tastelanc-text-primary">
                         {new Date(subscription.current_period_end).toLocaleDateString('en-US', {
                           month: 'long',
                           day: 'numeric',
@@ -236,22 +236,22 @@ export default function AccountPage() {
                 </div>
 
                 {/* Benefits */}
-                <div className="border-t border-gray-700 pt-4 mb-4">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-3">Your Benefits</p>
+                <div className="border-t border-tastelanc-border pt-4 mb-4">
+                  <p className="text-xs text-tastelanc-text-faint uppercase tracking-wide mb-3">Your Benefits</p>
                   <ul className="space-y-2">
-                    <li className="flex items-center gap-2 text-sm text-gray-300">
+                    <li className="flex items-center gap-2 text-sm text-tastelanc-text-secondary">
                       <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
                       $30+ instant savings from local restaurants
                     </li>
-                    <li className="flex items-center gap-2 text-sm text-gray-300">
+                    <li className="flex items-center gap-2 text-sm text-tastelanc-text-secondary">
                       <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
                       Vote in top 8 restaurant categories
                     </li>
-                    <li className="flex items-center gap-2 text-sm text-gray-300">
+                    <li className="flex items-center gap-2 text-sm text-tastelanc-text-secondary">
                       <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
                       Ad-free browsing experience
                     </li>
-                    <li className="flex items-center gap-2 text-sm text-gray-300">
+                    <li className="flex items-center gap-2 text-sm text-tastelanc-text-secondary">
                       <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
                       2.5x rewards points multiplier
                     </li>
@@ -278,8 +278,8 @@ export default function AccountPage() {
               </>
             ) : (
               <div className="text-center py-4">
-                <AlertCircle className="w-8 h-8 text-gray-500 mx-auto mb-3" />
-                <p className="text-gray-400 mb-4">
+                <AlertCircle className="w-8 h-8 text-tastelanc-text-faint mx-auto mb-3" />
+                <p className="text-tastelanc-text-muted mb-4">
                   Download the {BRAND.name} app to get started.
                 </p>
                 {BRAND.appStoreUrls.ios ? (
@@ -293,7 +293,7 @@ export default function AccountPage() {
                     </Button>
                   </a>
                 ) : (
-                  <p className="text-gray-500 text-sm">App coming soon</p>
+                  <p className="text-tastelanc-text-faint text-sm">App coming soon</p>
                 )}
               </div>
             )}
@@ -306,23 +306,23 @@ export default function AccountPage() {
                 <Smartphone className="w-5 h-5 text-tastelanc-accent" />
               </div>
               <div>
-                <h2 className="font-semibold text-white">Mobile App Access</h2>
-                <p className="text-sm text-gray-400">Coming soon</p>
+                <h2 className="font-semibold text-tastelanc-text-primary">Mobile App Access</h2>
+                <p className="text-sm text-tastelanc-text-muted">Coming soon</p>
               </div>
             </div>
 
             <div className="bg-tastelanc-surface rounded-lg p-4 mb-4">
-              <p className="text-sm text-gray-300 leading-relaxed">
-                This email and password will be your login for the <strong className="text-white">{BRAND.name} mobile app</strong> when it launches.
+              <p className="text-sm text-tastelanc-text-secondary leading-relaxed">
+                This email and password will be your login for the <strong className="text-tastelanc-text-primary">{BRAND.name} mobile app</strong> when it launches.
               </p>
-              <p className="text-sm text-gray-400 mt-3">
+              <p className="text-sm text-tastelanc-text-muted mt-3">
                 Your {BRAND.premiumName} benefits, rewards, and saved favorites will sync automatically across all your devices.
               </p>
             </div>
 
             <div className="text-center">
-              <p className="text-xs text-gray-500 mb-2">Your account email</p>
-              <p className="text-white font-medium">{user?.email}</p>
+              <p className="text-xs text-tastelanc-text-faint mb-2">Your account email</p>
+              <p className="text-tastelanc-text-primary font-medium">{user?.email}</p>
             </div>
           </Card>
         </div>
@@ -331,7 +331,7 @@ export default function AccountPage() {
         <div className="mt-8 text-center">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to {BRAND.name}

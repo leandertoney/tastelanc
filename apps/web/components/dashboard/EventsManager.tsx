@@ -280,14 +280,14 @@ export default function EventsManager({ mode }: EventsManagerProps) {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-tastelanc-text-primary flex items-center gap-2">
             <TitleIcon className="w-6 h-6 text-tastelanc-accent" />
             {config.title}
           </h2>
           <div className="flex items-center gap-2 mt-1">
-            <p className="text-gray-400">{config.subtitle}</p>
+            <p className="text-tastelanc-text-muted">{config.subtitle}</p>
             <Tooltip content={config.hint} position="bottom">
-              <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
+              <HelpCircle className="w-4 h-4 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
             </Tooltip>
           </div>
         </div>
@@ -307,7 +307,7 @@ export default function EventsManager({ mode }: EventsManagerProps) {
               setTipDismissed(true);
               localStorage.setItem(`tip-dismissed-${mode}`, 'true');
             }}
-            className="p-1 text-blue-400 hover:text-white flex-shrink-0"
+            className="p-1 text-blue-400 hover:text-tastelanc-text-primary flex-shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -337,21 +337,21 @@ export default function EventsManager({ mode }: EventsManagerProps) {
       {editingEvent && restaurant?.id && (
         <Card className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-white">Edit {mode === 'entertainment' ? 'Entertainment' : 'Event'}</h3>
-            <button onClick={() => setEditingEvent(null)} className="text-gray-400 hover:text-white">
+            <h3 className="text-lg font-semibold text-tastelanc-text-primary">Edit {mode === 'entertainment' ? 'Entertainment' : 'Event'}</h3>
+            <button onClick={() => setEditingEvent(null)} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary">
               <X className="w-5 h-5" />
             </button>
           </div>
           <div className="space-y-5">
             {/* Event Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                 Type *
               </label>
               <select
                 value={editingEvent.event_type}
                 onChange={(e) => setEditingEvent({ ...editingEvent, event_type: e.target.value })}
-                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
               >
                 {filteredEventTypes.map((type) => (
                   <option key={type.value} value={type.value}>
@@ -363,40 +363,40 @@ export default function EventsManager({ mode }: EventsManagerProps) {
 
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                 Name *
               </label>
               <input
                 type="text"
                 value={editingEvent.name}
                 onChange={(e) => setEditingEvent({ ...editingEvent, name: e.target.value })}
-                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
               />
             </div>
 
             {/* Performer Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                 Performer/Host Name
               </label>
               <input
                 type="text"
                 value={editingEvent.performer_name || ''}
                 onChange={(e) => setEditingEvent({ ...editingEvent, performer_name: e.target.value })}
-                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
               />
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                 Description
               </label>
               <textarea
                 value={editingEvent.description || ''}
                 onChange={(e) => setEditingEvent({ ...editingEvent, description: e.target.value })}
                 rows={2}
-                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold resize-none"
+                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold resize-none"
               />
             </div>
 
@@ -407,16 +407,16 @@ export default function EventsManager({ mode }: EventsManagerProps) {
                   type="checkbox"
                   checked={editingEvent.is_recurring}
                   onChange={(e) => setEditingEvent({ ...editingEvent, is_recurring: e.target.checked })}
-                  className="w-5 h-5 rounded border-gray-600 bg-tastelanc-surface text-lancaster-gold focus:ring-lancaster-gold"
+                  className="w-5 h-5 rounded border-tastelanc-border bg-tastelanc-surface text-lancaster-gold focus:ring-lancaster-gold"
                 />
-                <span className="text-gray-300">Recurring (repeats weekly)</span>
+                <span className="text-tastelanc-text-secondary">Recurring (repeats weekly)</span>
               </label>
             </div>
 
             {/* Days or Date */}
             {editingEvent.is_recurring ? (
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-3">
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-3">
                   Which days? *
                 </label>
                 <DaySelector
@@ -426,21 +426,21 @@ export default function EventsManager({ mode }: EventsManagerProps) {
               </div>
             ) : (
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                   Event Date *
                 </label>
                 <input
                   type="date"
                   value={editingEvent.event_date || ''}
                   onChange={(e) => setEditingEvent({ ...editingEvent, event_date: e.target.value })}
-                  className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+                  className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
                 />
               </div>
             )}
 
             {/* Time Range */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                 Time *
               </label>
               <TimeRangePicker
@@ -455,7 +455,7 @@ export default function EventsManager({ mode }: EventsManagerProps) {
 
             {/* Image Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                 Artwork
               </label>
               <EventImageUpload
@@ -504,7 +504,7 @@ export default function EventsManager({ mode }: EventsManagerProps) {
                 )}
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-lg font-semibold text-white">{event.name}</h3>
+                    <h3 className="text-lg font-semibold text-tastelanc-text-primary">{event.name}</h3>
                     <Badge variant={event.is_active ? 'accent' : 'default'}>
                       {event.is_active ? 'Active' : 'Inactive'}
                     </Badge>
@@ -514,9 +514,9 @@ export default function EventsManager({ mode }: EventsManagerProps) {
                     <p className="text-tastelanc-accent text-sm mb-1">{event.performer_name}</p>
                   )}
                   {event.description && (
-                    <p className="text-gray-400 text-sm mb-2">{event.description}</p>
+                    <p className="text-tastelanc-text-muted text-sm mb-2">{event.description}</p>
                   )}
-                  <div className="flex flex-wrap items-center gap-3 text-sm text-gray-300">
+                  <div className="flex flex-wrap items-center gap-3 text-sm text-tastelanc-text-secondary">
                     <span>
                       {formatTime(event.start_time)}
                       {event.end_time && ` - ${formatTime(event.end_time)}`}
@@ -539,20 +539,20 @@ export default function EventsManager({ mode }: EventsManagerProps) {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setEditingEvent(event)}
-                    className="text-gray-400 hover:text-white"
+                    className="text-tastelanc-text-muted hover:text-tastelanc-text-primary"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => deleteEvent(event.id)}
-                    className="text-gray-400 hover:text-red-400"
+                    className="text-tastelanc-text-muted hover:text-red-400"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
                 <button
                   onClick={() => toggleActive(event.id, event.is_active)}
-                  className="text-gray-400 hover:text-white text-sm"
+                  className="text-tastelanc-text-muted hover:text-tastelanc-text-primary text-sm"
                 >
                   {event.is_active ? 'Deactivate' : 'Activate'}
                 </button>
@@ -565,22 +565,22 @@ export default function EventsManager({ mode }: EventsManagerProps) {
       {events.length === 0 && !showWizard && (
         <Card className="p-12 text-center">
           <TitleIcon className="w-12 h-12 text-tastelanc-accent mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">{config.emptyTitle}</h3>
-          <p className="text-gray-400 mb-6 max-w-md mx-auto">
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-2">{config.emptyTitle}</h3>
+          <p className="text-tastelanc-text-muted mb-6 max-w-md mx-auto">
             {config.emptyText}
           </p>
           <div className="max-w-sm mx-auto mb-6 text-left space-y-3">
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 rounded-full bg-tastelanc-accent/20 text-tastelanc-accent flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</div>
-              <p className="text-sm text-gray-300">Pick a template or start from scratch</p>
+              <p className="text-sm text-tastelanc-text-secondary">Pick a template or start from scratch</p>
             </div>
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 rounded-full bg-tastelanc-accent/20 text-tastelanc-accent flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</div>
-              <p className="text-sm text-gray-300">Add details, schedule, and optional artwork</p>
+              <p className="text-sm text-tastelanc-text-secondary">Add details, schedule, and optional artwork</p>
             </div>
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 rounded-full bg-tastelanc-accent/20 text-tastelanc-accent flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</div>
-              <p className="text-sm text-gray-300">Your event goes live on TasteLanc instantly</p>
+              <p className="text-sm text-tastelanc-text-secondary">Your event goes live on TasteLanc instantly</p>
             </div>
           </div>
           <Button onClick={() => setShowWizard(true)}>

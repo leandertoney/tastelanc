@@ -254,7 +254,7 @@ export default async function BlogPostPage({ params }: PageProps) {
             {/* Back Link */}
             <Link
               href="/blog"
-              className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
+              className="inline-flex items-center gap-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors mb-6"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Blog
@@ -262,17 +262,17 @@ export default async function BlogPostPage({ params }: PageProps) {
 
             {/* Article Header */}
             <header className="mb-10">
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-tastelanc-text-primary mb-6 leading-tight">
                 {post.title}
               </h1>
 
-              <p className="text-xl text-gray-300 leading-relaxed mb-6">
+              <p className="text-xl text-tastelanc-text-secondary leading-relaxed mb-6">
                 {post.summary}
               </p>
 
               {/* Author & Meta - Clean like FIG */}
-              <div className="flex items-center gap-4 text-sm text-gray-400">
-                <span className="font-medium text-white">By {BRAND.aiName}</span>
+              <div className="flex items-center gap-4 text-sm text-tastelanc-text-muted">
+                <span className="font-medium text-tastelanc-text-primary">By {BRAND.aiName}</span>
                 <span>•</span>
                 <span>{formatDate(post.created_at)}</span>
                 <span>•</span>
@@ -287,31 +287,31 @@ export default async function BlogPostPage({ params }: PageProps) {
             <article
               className="prose prose-invert prose-lg max-w-none
                 /* Clean typography */
-                prose-headings:text-white prose-headings:font-bold
+                prose-headings:text-tastelanc-text-primary prose-headings:font-bold
 
                 /* Clean H2 - no borders, just bold */
-                prose-h2:text-white prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-6
+                prose-h2:text-tastelanc-text-primary prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-6
 
                 /* H3 subheaders */
-                prose-h3:text-white prose-h3:text-xl prose-h3:mt-10 prose-h3:mb-4
+                prose-h3:text-tastelanc-text-primary prose-h3:text-xl prose-h3:mt-10 prose-h3:mb-4
 
                 /* Clean paragraph styling */
-                prose-p:text-gray-300 prose-p:leading-relaxed prose-p:mb-6
+                prose-p:text-tastelanc-text-secondary prose-p:leading-relaxed prose-p:mb-6
 
                 /* Links - gold color only, NO underlines */
                 prose-a:text-lancaster-gold prose-a:no-underline prose-a:font-medium
                 hover:prose-a:text-yellow-400
-                prose-strong:text-white prose-strong:font-semibold
+                prose-strong:text-tastelanc-text-primary prose-strong:font-semibold
 
                 /* Clean lists */
-                prose-ul:text-gray-300 prose-ul:my-6
-                prose-li:text-gray-300 prose-li:marker:text-lancaster-gold
-                prose-ol:text-gray-300 prose-ol:my-6
+                prose-ul:text-tastelanc-text-secondary prose-ul:my-6
+                prose-li:text-tastelanc-text-secondary prose-li:marker:text-lancaster-gold
+                prose-ol:text-tastelanc-text-secondary prose-ol:my-6
 
                 /* Blockquotes */
                 prose-blockquote:border-l-4 prose-blockquote:border-lancaster-gold
                 prose-blockquote:pl-6 prose-blockquote:my-8
-                prose-blockquote:text-gray-300 prose-blockquote:italic
+                prose-blockquote:text-tastelanc-text-secondary prose-blockquote:italic
 
                 /* Restaurant links - gold, NO underlines or borders */
                 [&_.restaurant-link]:text-lancaster-gold [&_.restaurant-link]:font-semibold
@@ -320,7 +320,7 @@ export default async function BlogPostPage({ params }: PageProps) {
                 /* Restaurant feature images - clean */
                 [&_.restaurant-feature]:my-10 [&_.restaurant-feature]:overflow-hidden
                 [&_.restaurant-img]:w-full [&_.restaurant-img]:aspect-[16/10] [&_.restaurant-img]:object-cover
-                [&_figcaption]:text-center [&_figcaption]:text-sm [&_figcaption]:text-gray-400
+                [&_figcaption]:text-center [&_figcaption]:text-sm [&_figcaption]:text-tastelanc-text-muted
                 [&_figcaption]:py-3 [&_figcaption]:font-medium
 
                 /* Restaurant grid layout */
@@ -328,8 +328,8 @@ export default async function BlogPostPage({ params }: PageProps) {
                 [&_.restaurant-grid]:gap-6 [&_.restaurant-grid]:my-10
                 [&_.restaurant-card]:bg-tastelanc-surface [&_.restaurant-card]:overflow-hidden
                 [&_.restaurant-card_img]:aspect-[4/3] [&_.restaurant-card_img]:object-cover [&_.restaurant-card_img]:w-full
-                [&_.restaurant-card_h4]:px-4 [&_.restaurant-card_h4]:pt-4 [&_.restaurant-card_h4]:pb-1 [&_.restaurant-card_h4]:font-bold [&_.restaurant-card_h4]:text-white
-                [&_.restaurant-card_p]:px-4 [&_.restaurant-card_p]:pb-4 [&_.restaurant-card_p]:text-sm [&_.restaurant-card_p]:text-gray-400
+                [&_.restaurant-card_h4]:px-4 [&_.restaurant-card_h4]:pt-4 [&_.restaurant-card_h4]:pb-1 [&_.restaurant-card_h4]:font-bold [&_.restaurant-card_h4]:text-tastelanc-text-primary
+                [&_.restaurant-card_p]:px-4 [&_.restaurant-card_p]:pb-4 [&_.restaurant-card_p]:text-sm [&_.restaurant-card_p]:text-tastelanc-text-muted
               "
               dangerouslySetInnerHTML={{ __html: post.body_html }}
             />
@@ -356,8 +356,8 @@ export default async function BlogPostPage({ params }: PageProps) {
                   )}
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white mb-1">About {BRAND.aiName}</h3>
-                  <p className="text-gray-300 text-sm leading-relaxed">
+                  <h3 className="text-lg font-bold text-tastelanc-text-primary mb-1">About {BRAND.aiName}</h3>
+                  <p className="text-tastelanc-text-secondary text-sm leading-relaxed">
                     {authorBio}
                   </p>
                   <div className="flex items-center gap-4 mt-3">
@@ -376,7 +376,7 @@ export default async function BlogPostPage({ params }: PageProps) {
                       href={BRAND.instagramUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-gray-400 hover:text-lancaster-gold text-sm transition-colors"
+                      className="inline-flex items-center gap-1 text-tastelanc-text-muted hover:text-lancaster-gold text-sm transition-colors"
                     >
                       <Instagram className="w-4 h-4" />
                       {BRAND.socialHandle}
@@ -392,10 +392,10 @@ export default async function BlogPostPage({ params }: PageProps) {
             <div className="lg:sticky lg:top-24">
               {/* Newsletter/App CTA Box */}
               <div className="bg-tastelanc-surface p-6 mb-8">
-                <h3 className="text-xl font-bold text-white mb-3">
+                <h3 className="text-xl font-bold text-tastelanc-text-primary mb-3">
                   Your Guide to {BRAND.countyShort} Dining
                 </h3>
-                <p className="text-gray-400 text-sm leading-relaxed mb-6">
+                <p className="text-tastelanc-text-muted text-sm leading-relaxed mb-6">
                   Get real-time happy hours, specials, and personalized recommendations from {BRAND.aiName} delivered to you.
                 </p>
                 {BRAND.appStoreUrls.ios && (
@@ -423,7 +423,7 @@ export default async function BlogPostPage({ params }: PageProps) {
               {/* Tags */}
               {post.tags && post.tags.length > 0 && (
                 <div className="mb-8">
-                  <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
+                  <h4 className="text-sm font-semibold text-tastelanc-text-muted uppercase tracking-wide mb-3">
                     Topics
                   </h4>
                   <div className="flex flex-wrap gap-2">
@@ -431,7 +431,7 @@ export default async function BlogPostPage({ params }: PageProps) {
                       <Link
                         key={tag}
                         href={`/blog/tag/${encodeURIComponent(tag)}`}
-                        className="px-3 py-1 bg-tastelanc-surface text-gray-300 text-sm hover:bg-lancaster-gold hover:text-black transition-colors"
+                        className="px-3 py-1 bg-tastelanc-surface text-tastelanc-text-secondary text-sm hover:bg-lancaster-gold hover:text-black transition-colors"
                       >
                         {tag}
                       </Link>
@@ -443,7 +443,7 @@ export default async function BlogPostPage({ params }: PageProps) {
               {/* Related Posts in Sidebar */}
               {relatedPosts.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">
+                  <h4 className="text-sm font-semibold text-tastelanc-text-muted uppercase tracking-wide mb-4">
                     More from {BRAND.aiName}
                   </h4>
                   <div className="space-y-4">
@@ -453,10 +453,10 @@ export default async function BlogPostPage({ params }: PageProps) {
                         href={`/blog/${relatedPost.slug}`}
                         className="block group"
                       >
-                        <h5 className="font-medium text-white group-hover:text-lancaster-gold transition-colors line-clamp-2 text-sm">
+                        <h5 className="font-medium text-tastelanc-text-primary group-hover:text-lancaster-gold transition-colors line-clamp-2 text-sm">
                           {relatedPost.title}
                         </h5>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-tastelanc-text-faint mt-1">
                           {new Date(relatedPost.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </p>
                       </Link>

@@ -11,10 +11,10 @@ export function Badge({ className, variant = 'default', children, ...props }: Ba
       className={cn(
         'inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full',
         {
-          'bg-tastelanc-surface text-gray-400': variant === 'default',
+          'bg-tastelanc-surface text-tastelanc-text-muted': variant === 'default',
           'bg-tastelanc-accent text-white': variant === 'accent',
-          'bg-green-900/50 text-green-400': variant === 'success',
-          'bg-yellow-900/50 text-yellow-400': variant === 'warning',
+          'bg-green-500/15 text-green-600': variant === 'success',
+          'bg-yellow-500/15 text-yellow-600': variant === 'warning',
           'bg-lancaster-gold/20 text-lancaster-gold': variant === 'gold',
         },
         className

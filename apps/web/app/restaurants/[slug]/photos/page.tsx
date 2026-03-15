@@ -37,7 +37,7 @@ export default async function RestaurantPhotos({ params }: { params: { slug: str
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaRestaurant) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
-      <main className="max-w-4xl mx-auto px-4 py-10 text-white">
+      <main className="max-w-4xl mx-auto px-4 py-10 text-tastelanc-text-primary">
         {leadershipLine(claim)}
         <h1 className="text-3xl font-bold">{restaurant.name} Photos</h1>
         {restaurantCTAButtons()}

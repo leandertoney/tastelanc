@@ -33,7 +33,7 @@ export default function MarkAsReadButton({ contactId }: { contactId: string }) {
     <button
       onClick={handleMarkAsRead}
       disabled={isLoading}
-      className="text-sm text-gray-400 hover:text-white flex items-center gap-1 disabled:opacity-50"
+      className="text-sm text-tastelanc-text-muted hover:text-tastelanc-text-primary flex items-center gap-1 disabled:opacity-50"
     >
       <Check className="w-4 h-4" />
       {isLoading ? 'Marking...' : 'Mark as Read'}

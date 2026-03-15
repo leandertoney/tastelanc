@@ -99,20 +99,20 @@ export default function AdminRestaurantActions({
           disabled={saving === 'is_active'}
           className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-4 text-left hover:border-tastelanc-accent/50 transition-colors disabled:opacity-50"
         >
-          <p className="text-sm text-gray-400 mb-1">Status</p>
+          <p className="text-sm text-tastelanc-text-muted mb-1">Status</p>
           <div className="flex items-center gap-2">
             {saving === 'is_active' ? (
-              <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+              <Loader2 className="w-5 h-5 text-tastelanc-text-muted animate-spin" />
             ) : isActive ? (
               <CheckCircle className="w-5 h-5 text-green-400" />
             ) : (
               <XCircle className="w-5 h-5 text-red-400" />
             )}
-            <span className="text-white font-medium">
+            <span className="text-tastelanc-text-primary font-medium">
               {isActive ? 'Active' : 'Inactive'}
             </span>
           </div>
-          <p className="text-xs text-gray-500 mt-1">Click to toggle</p>
+          <p className="text-xs text-tastelanc-text-faint mt-1">Click to toggle</p>
         </button>
 
         {/* Verified Toggle */}
@@ -121,36 +121,36 @@ export default function AdminRestaurantActions({
           disabled={saving === 'is_verified'}
           className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-4 text-left hover:border-tastelanc-accent/50 transition-colors disabled:opacity-50"
         >
-          <p className="text-sm text-gray-400 mb-1">Verified</p>
+          <p className="text-sm text-tastelanc-text-muted mb-1">Verified</p>
           <div className="flex items-center gap-2">
             {saving === 'is_verified' ? (
-              <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+              <Loader2 className="w-5 h-5 text-tastelanc-text-muted animate-spin" />
             ) : isVerified ? (
               <Shield className="w-5 h-5 text-lancaster-gold" />
             ) : (
-              <ShieldOff className="w-5 h-5 text-gray-400" />
+              <ShieldOff className="w-5 h-5 text-tastelanc-text-muted" />
             )}
-            <span className="text-white font-medium">
+            <span className="text-tastelanc-text-primary font-medium">
               {isVerified ? 'Verified' : 'Not Verified'}
             </span>
           </div>
-          <p className="text-xs text-gray-500 mt-1">Click to toggle</p>
+          <p className="text-xs text-tastelanc-text-faint mt-1">Click to toggle</p>
         </button>
 
         {/* Tier Selector */}
         <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-4">
-          <p className="text-sm text-gray-400 mb-1">Tier</p>
+          <p className="text-sm text-tastelanc-text-muted mb-1">Tier</p>
           <div className="relative">
             {saving === 'tier_id' ? (
               <div className="flex items-center gap-2">
-                <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
-                <span className="text-white font-medium">Saving...</span>
+                <Loader2 className="w-5 h-5 text-tastelanc-text-muted animate-spin" />
+                <span className="text-tastelanc-text-primary font-medium">Saving...</span>
               </div>
             ) : (
               <select
                 value={tierId}
                 onChange={(e) => handleTierChange(e.target.value)}
-                className="w-full bg-tastelanc-bg border border-tastelanc-surface-light rounded-md px-3 py-1.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-tastelanc-accent appearance-none cursor-pointer"
+                className="w-full bg-tastelanc-bg border border-tastelanc-surface-light rounded-md px-3 py-1.5 text-tastelanc-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-tastelanc-accent appearance-none cursor-pointer"
               >
                 {tiers.map((t) => (
                   <option key={t.id} value={t.id}>
@@ -160,15 +160,15 @@ export default function AdminRestaurantActions({
               </select>
             )}
           </div>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-tastelanc-text-faint mt-1">
             Current: {currentTier?.display_name || currentTier?.name || 'Unknown'}
           </p>
         </div>
 
         {/* Subscription Info (read-only) */}
         <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-4">
-          <p className="text-sm text-gray-400 mb-1">Subscription</p>
-          <p className="text-white font-medium capitalize">
+          <p className="text-sm text-tastelanc-text-muted mb-1">Subscription</p>
+          <p className="text-tastelanc-text-primary font-medium capitalize">
             {currentTier?.display_name || currentTier?.name || 'Basic'}
           </p>
         </div>
@@ -177,7 +177,7 @@ export default function AdminRestaurantActions({
       {/* Admin Notes */}
       <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-tastelanc-text-primary flex items-center gap-2">
             <StickyNote className="w-5 h-5 text-tastelanc-accent" />
             Admin Notes
           </h2>
@@ -199,7 +199,7 @@ export default function AdminRestaurantActions({
           onChange={(e) => setAdminNotes(e.target.value)}
           placeholder="Internal notes about this restaurant (not visible to the owner)..."
           rows={4}
-          className="w-full bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent resize-y"
+          className="w-full bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg px-4 py-3 text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent resize-y"
         />
         {adminNotes !== (initialAdminNotes || '') && (
           <p className="text-xs text-yellow-500 mt-2">Unsaved changes</p>

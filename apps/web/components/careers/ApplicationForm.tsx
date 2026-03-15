@@ -110,10 +110,10 @@ export default function ApplicationForm({
           <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-8 h-8 text-green-500" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">
+          <h2 className="text-2xl font-bold text-tastelanc-text-primary mb-2">
             Application Submitted!
           </h2>
-          <p className="text-gray-400 mb-6">
+          <p className="text-tastelanc-text-muted mb-6">
             Thank you for your interest in joining {brandName}. We&apos;ll
             review your application and get back to you soon.
           </p>
@@ -143,7 +143,7 @@ export default function ApplicationForm({
         <div>
           <label
             htmlFor="position"
-            className="block text-sm font-medium text-gray-300 mb-1"
+            className="block text-sm font-medium text-tastelanc-text-secondary mb-1"
           >
             Position
           </label>
@@ -152,7 +152,7 @@ export default function ApplicationForm({
             name="position"
             value={formData.position}
             onChange={handleChange}
-            className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent"
+            className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent"
           >
             {positionOptions.map((pos) => (
               <option key={pos} value={pos}>
@@ -167,7 +167,7 @@ export default function ApplicationForm({
           <div>
             <label
               htmlFor="name"
-              className="block text-sm font-medium text-gray-300 mb-1"
+              className="block text-sm font-medium text-tastelanc-text-secondary mb-1"
             >
               Full Name *
             </label>
@@ -179,17 +179,17 @@ export default function ApplicationForm({
                 required
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 pl-10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent"
+                className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 pl-10 text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent"
                 placeholder="Jane Doe"
               />
-              <User className="absolute left-3 top-3.5 w-4 h-4 text-gray-500" />
+              <User className="absolute left-3 top-3.5 w-4 h-4 text-tastelanc-text-faint" />
             </div>
           </div>
 
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-300 mb-1"
+              className="block text-sm font-medium text-tastelanc-text-secondary mb-1"
             >
               Email Address *
             </label>
@@ -201,10 +201,10 @@ export default function ApplicationForm({
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 pl-10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent"
+                className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 pl-10 text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent"
                 placeholder="jane@email.com"
               />
-              <Mail className="absolute left-3 top-3.5 w-4 h-4 text-gray-500" />
+              <Mail className="absolute left-3 top-3.5 w-4 h-4 text-tastelanc-text-faint" />
             </div>
           </div>
         </div>
@@ -214,7 +214,7 @@ export default function ApplicationForm({
           <div>
             <label
               htmlFor="phone"
-              className="block text-sm font-medium text-gray-300 mb-1"
+              className="block text-sm font-medium text-tastelanc-text-secondary mb-1"
             >
               Phone Number
             </label>
@@ -225,17 +225,17 @@ export default function ApplicationForm({
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 pl-10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent"
+                className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 pl-10 text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent"
                 placeholder="(717) 555-0123"
               />
-              <Phone className="absolute left-3 top-3.5 w-4 h-4 text-gray-500" />
+              <Phone className="absolute left-3 top-3.5 w-4 h-4 text-tastelanc-text-faint" />
             </div>
           </div>
 
           <div>
             <label
               htmlFor="linkedin"
-              className="block text-sm font-medium text-gray-300 mb-1"
+              className="block text-sm font-medium text-tastelanc-text-secondary mb-1"
             >
               LinkedIn Profile
             </label>
@@ -246,10 +246,10 @@ export default function ApplicationForm({
                 name="linkedin"
                 value={formData.linkedin}
                 onChange={handleChange}
-                className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 pl-10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent"
+                className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 pl-10 text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent"
                 placeholder="https://linkedin.com/in/yourprofile"
               />
-              <Briefcase className="absolute left-3 top-3.5 w-4 h-4 text-gray-500" />
+              <Briefcase className="absolute left-3 top-3.5 w-4 h-4 text-tastelanc-text-faint" />
             </div>
           </div>
         </div>
@@ -258,7 +258,7 @@ export default function ApplicationForm({
         <div>
           <label
             htmlFor="message"
-            className="block text-sm font-medium text-gray-300 mb-1"
+            className="block text-sm font-medium text-tastelanc-text-secondary mb-1"
           >
             Why are you interested in this role? *
           </label>
@@ -269,16 +269,16 @@ export default function ApplicationForm({
             rows={5}
             value={formData.message}
             onChange={handleChange}
-            className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent resize-none"
+            className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3 text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent focus:border-transparent resize-none"
             placeholder="Tell us about yourself, your experience, and why you'd be a great fit for this role..."
           />
         </div>
 
         {/* Resume Upload */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">
+          <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">
             Resume{' '}
-            <span className="text-gray-500">
+            <span className="text-tastelanc-text-faint">
               (optional — PDF, DOC, or DOCX, max 5MB)
             </span>
           </label>
@@ -292,7 +292,7 @@ export default function ApplicationForm({
           {resumeFile ? (
             <div className="flex items-center gap-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg px-4 py-3">
               <FileText className="w-5 h-5 text-tastelanc-accent flex-shrink-0" />
-              <span className="text-white text-sm truncate flex-1">
+              <span className="text-tastelanc-text-primary text-sm truncate flex-1">
                 {resumeFile.name}
               </span>
               <button
@@ -301,7 +301,7 @@ export default function ApplicationForm({
                   setResumeFile(null);
                   if (fileInputRef.current) fileInputRef.current.value = '';
                 }}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -310,7 +310,7 @@ export default function ApplicationForm({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="w-full flex items-center justify-center gap-2 bg-tastelanc-surface border border-dashed border-tastelanc-surface-light rounded-lg px-4 py-3 text-gray-400 hover:text-white hover:border-gray-500 transition-colors"
+              className="w-full flex items-center justify-center gap-2 bg-tastelanc-surface border border-dashed border-tastelanc-surface-light rounded-lg px-4 py-3 text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:border-tastelanc-border transition-colors"
             >
               <FileText className="w-5 h-5" />
               Upload Resume
@@ -337,7 +337,7 @@ export default function ApplicationForm({
           )}
         </button>
 
-        <p className="text-xs text-gray-500 text-center">
+        <p className="text-xs text-tastelanc-text-faint text-center">
           By submitting, you agree to our{' '}
           <a href="/privacy" className="text-tastelanc-accent hover:underline">
             Privacy Policy

@@ -197,14 +197,14 @@ export default function SpecialsPage() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-tastelanc-text-primary flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-tastelanc-accent" />
             Daily Specials
           </h2>
           <div className="flex items-center gap-2 mt-1">
-            <p className="text-gray-400">Manage recurring weekly specials</p>
+            <p className="text-tastelanc-text-muted">Manage recurring weekly specials</p>
             <Tooltip content="Specials repeat weekly on the days you choose. Add a name, description, price, and image. Users see these when browsing your restaurant in the app." position="bottom">
-              <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
+              <HelpCircle className="w-4 h-4 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
             </Tooltip>
           </div>
         </div>
@@ -233,41 +233,41 @@ export default function SpecialsPage() {
       {editingSpecial && restaurant?.id && (
         <Card className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-white">Edit Special</h3>
-            <button onClick={() => setEditingSpecial(null)} className="text-gray-400 hover:text-white">
+            <h3 className="text-lg font-semibold text-tastelanc-text-primary">Edit Special</h3>
+            <button onClick={() => setEditingSpecial(null)} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary">
               <X className="w-5 h-5" />
             </button>
           </div>
           <div className="space-y-5">
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                 Special Name *
               </label>
               <input
                 type="text"
                 value={editingSpecial.name}
                 onChange={(e) => setEditingSpecial({ ...editingSpecial, name: e.target.value })}
-                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
               />
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                 Description
               </label>
               <textarea
                 value={editingSpecial.description || ''}
                 onChange={(e) => setEditingSpecial({ ...editingSpecial, description: e.target.value })}
                 rows={2}
-                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold resize-none"
+                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold resize-none"
               />
             </div>
 
             {/* Days */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-3">
                 Which days? *
               </label>
               <DaySelector
@@ -278,9 +278,9 @@ export default function SpecialsPage() {
 
             {/* Time Range */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                 Time Available
-                <span className="text-gray-500 font-normal ml-1">(leave blank for all day)</span>
+                <span className="text-tastelanc-text-faint font-normal ml-1">(leave blank for all day)</span>
               </label>
               <TimeRangePicker
                 startTime={editingSpecial.start_time || ''}
@@ -294,7 +294,7 @@ export default function SpecialsPage() {
 
             {/* Image Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                 Custom Image
               </label>
               <SpecialImageUpload
@@ -307,32 +307,32 @@ export default function SpecialsPage() {
             {/* Price */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                   Original Price
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-tastelanc-text-faint">$</span>
                   <input
                     type="number"
                     value={editingSpecial.original_price ?? ''}
                     onChange={(e) => setEditingSpecial({ ...editingSpecial, original_price: e.target.value ? parseFloat(e.target.value) : null })}
                     step="0.01"
-                    className="w-full pl-7 pr-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+                    className="w-full pl-7 pr-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                   Special Price
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-tastelanc-text-faint">$</span>
                   <input
                     type="number"
                     value={editingSpecial.special_price ?? ''}
                     onChange={(e) => setEditingSpecial({ ...editingSpecial, special_price: e.target.value ? parseFloat(e.target.value) : null })}
                     step="0.01"
-                    className="w-full pl-7 pr-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+                    className="w-full pl-7 pr-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
                   />
                 </div>
               </div>
@@ -373,25 +373,25 @@ export default function SpecialsPage() {
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-lg font-semibold text-white">{special.name}</h3>
+                    <h3 className="text-lg font-semibold text-tastelanc-text-primary">{special.name}</h3>
                     <Badge variant={special.is_active ? 'accent' : 'default'}>
                       {special.is_active ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
                   {special.description && (
-                    <p className="text-gray-400 text-sm">{special.description}</p>
+                    <p className="text-tastelanc-text-muted text-sm">{special.description}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setEditingSpecial(special)}
-                    className="text-gray-400 hover:text-white"
+                    className="text-tastelanc-text-muted hover:text-tastelanc-text-primary"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => deleteSpecial(special.id)}
-                    className="text-gray-400 hover:text-red-400"
+                    className="text-tastelanc-text-muted hover:text-red-400"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -420,7 +420,7 @@ export default function SpecialsPage() {
                 ))}
                 {special.original_price && special.special_price && (
                   <span className="text-sm">
-                    <span className="line-through text-gray-500 mr-1">
+                    <span className="line-through text-tastelanc-text-faint mr-1">
                       ${special.original_price.toFixed(2)}
                     </span>
                     <span className="text-green-400 font-semibold">
@@ -437,7 +437,7 @@ export default function SpecialsPage() {
 
               <button
                 onClick={() => toggleActive(special.id, special.is_active)}
-                className="mt-4 text-sm text-gray-400 hover:text-white"
+                className="mt-4 text-sm text-tastelanc-text-muted hover:text-tastelanc-text-primary"
               >
                 {special.is_active ? 'Deactivate' : 'Activate'}
               </button>
@@ -449,8 +449,8 @@ export default function SpecialsPage() {
       {specials.length === 0 && !showWizard && (
         <Card className="p-12 text-center">
           <Sparkles className="w-12 h-12 text-tastelanc-accent mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">No specials yet</h3>
-          <p className="text-gray-400 mb-4">Create weekly specials to bring in more customers</p>
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-2">No specials yet</h3>
+          <p className="text-tastelanc-text-muted mb-4">Create weekly specials to bring in more customers</p>
           <Button onClick={() => setShowWizard(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Add Special

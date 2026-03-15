@@ -23,6 +23,7 @@ import { Tooltip } from '@/components/ui';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
+
 interface NavItem {
   href: string;
   icon: typeof LayoutDashboard;
@@ -137,13 +138,13 @@ export default function SalesSidebar({ isOpen, onClose, collapsed, onMouseEnter,
               <TrendingUp className={`${collapsed ? 'md:w-4 md:h-4' : ''} w-6 h-6 text-white`} />
             </div>
             <div className={`${collapsed ? 'md:hidden' : ''}`}>
-              <span className="text-xl font-bold text-white">{brandName || BRAND.name}</span>
+              <span className="text-xl font-bold text-tastelanc-text-primary">{brandName || BRAND.name}</span>
               <span className="block text-xs text-tastelanc-accent">Sales CRM</span>
             </div>
           </Link>
           <button
             onClick={onClose}
-            className="md:hidden text-gray-400 hover:text-white p-1"
+            className="md:hidden text-tastelanc-text-muted hover:text-tastelanc-text-primary p-1"
             aria-label="Close menu"
           >
             <X className="w-6 h-6" />
@@ -160,7 +161,7 @@ export default function SalesSidebar({ isOpen, onClose, collapsed, onMouseEnter,
               return (
                 <li key={item.href}>
                   {item.section && !collapsed && (
-                    <p className={`text-[10px] uppercase tracking-wider text-gray-500 px-4 ${index > 0 ? 'mt-4' : ''} mb-2`}>
+                    <p className={`text-[10px] uppercase tracking-wider text-tastelanc-text-faint px-4 ${index > 0 ? 'mt-4' : ''} mb-2`}>
                       {item.section}
                     </p>
                   )}
@@ -177,7 +178,7 @@ export default function SalesSidebar({ isOpen, onClose, collapsed, onMouseEnter,
                           ? 'bg-tastelanc-accent text-white'
                           : item.highlight
                           ? 'text-lancaster-gold hover:bg-lancaster-gold/10'
-                          : 'text-gray-400 hover:bg-tastelanc-surface-light hover:text-white'
+                          : 'text-tastelanc-text-muted hover:bg-tastelanc-surface-light hover:text-tastelanc-text-primary'
                       }`}
                     >
                       <item.icon className={`w-5 h-5 flex-shrink-0 ${item.highlight && !isActive ? 'text-lancaster-gold' : ''}`} />
@@ -196,7 +197,7 @@ export default function SalesSidebar({ isOpen, onClose, collapsed, onMouseEnter,
                     {item.hint && !collapsed && (
                       <Tooltip content={item.hint} position="right">
                         <span className="absolute right-2 opacity-0 group-hover/nav:opacity-100 transition-opacity cursor-help">
-                          <HelpCircle className="w-3.5 h-3.5 text-gray-600 hover:text-gray-400" />
+                          <HelpCircle className="w-3.5 h-3.5 text-tastelanc-text-faint hover:text-tastelanc-text-muted" />
                         </span>
                       </Tooltip>
                     )}
@@ -212,7 +213,7 @@ export default function SalesSidebar({ isOpen, onClose, collapsed, onMouseEnter,
           <button
             onClick={handleLogout}
             title={collapsed ? 'Sign Out' : undefined}
-            className={`flex items-center gap-3 ${collapsed ? 'md:justify-center md:px-0' : ''} px-4 py-3 rounded-lg text-gray-400 hover:bg-tastelanc-surface-light hover:text-white transition-colors w-full`}
+            className={`flex items-center gap-3 ${collapsed ? 'md:justify-center md:px-0' : ''} px-4 py-3 rounded-lg text-tastelanc-text-muted hover:bg-tastelanc-surface-light hover:text-tastelanc-text-primary transition-colors w-full`}
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
             <span className={`${collapsed ? 'md:hidden' : ''}`}>Sign Out</span>

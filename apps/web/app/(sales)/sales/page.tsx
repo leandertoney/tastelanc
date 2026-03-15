@@ -180,8 +180,8 @@ export default function SalesDashboard() {
       <div className="flex items-center justify-center py-12">
         <div className="text-center max-w-md">
           <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-white mb-2">Couldn&apos;t load sales data</h2>
-          <p className="text-gray-400 text-sm mb-6">
+          <h2 className="text-lg font-semibold text-tastelanc-text-primary mb-2">Couldn&apos;t load sales data</h2>
+          <p className="text-tastelanc-text-muted text-sm mb-6">
             We had trouble fetching the sales dashboard. Please check your connection and try again.
           </p>
           <button
@@ -201,14 +201,14 @@ export default function SalesDashboard() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary flex items-center gap-3">
             <TrendingUp className="w-8 h-8 text-tastelanc-accent" />
             Sales Dashboard
           </h1>
           <div className="flex items-center gap-2 mt-1">
-            <p className="text-gray-400">Track your pipeline and outreach</p>
+            <p className="text-tastelanc-text-muted">Track your pipeline and outreach</p>
             <Tooltip content="This is your home base. Pipeline cards show lead counts by stage — click any card to see those leads. The sections below highlight leads needing attention." position="bottom">
-              <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
+              <HelpCircle className="w-4 h-4 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
             </Tooltip>
           </div>
         </div>
@@ -216,7 +216,7 @@ export default function SalesDashboard() {
           <button
             onClick={() => fetchData(true)}
             disabled={isRefreshing}
-            className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-tastelanc-surface-light transition-colors disabled:opacity-50"
+            className="p-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary rounded-lg hover:bg-tastelanc-surface-light transition-colors disabled:opacity-50"
             title="Refresh data"
           >
             <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -244,9 +244,9 @@ export default function SalesDashboard() {
               <Card className="p-4 hover:bg-tastelanc-surface-light/50 transition-colors cursor-pointer">
                 <div className="flex items-center gap-2 mb-1">
                   <div className={`w-2 h-2 rounded-full ${stage.dotColor}`} />
-                  <span className="text-xs text-gray-500 uppercase tracking-wider">{stage.label}</span>
+                  <span className="text-xs text-tastelanc-text-faint uppercase tracking-wider">{stage.label}</span>
                 </div>
-                <span className="text-2xl font-bold text-white">{stage.count}</span>
+                <span className="text-2xl font-bold text-tastelanc-text-primary">{stage.count}</span>
               </Card>
             </Link>
           ))}
@@ -256,10 +256,10 @@ export default function SalesDashboard() {
       {/* Quick Stats Row */}
       {stats && (
         <div className="flex items-center gap-4 mb-6 text-sm">
-          <span className="text-gray-500">{stats.total} total leads</span>
+          <span className="text-tastelanc-text-faint">{stats.total} total leads</span>
           {stats.notInterested > 0 && (
             <>
-              <span className="text-gray-700">·</span>
+              <span className="text-tastelanc-text-faint">·</span>
               <Link href="/sales/leads?status=not_interested" className="text-red-400 hover:text-red-300 transition-colors">
                 {stats.notInterested} not interested
               </Link>
@@ -267,7 +267,7 @@ export default function SalesDashboard() {
           )}
           {stats.converted > 0 && (
             <>
-              <span className="text-gray-700">·</span>
+              <span className="text-tastelanc-text-faint">·</span>
               <span className="text-lancaster-gold">
                 {Math.round((stats.converted / stats.total) * 100)}% conversion rate
               </span>
@@ -280,11 +280,11 @@ export default function SalesDashboard() {
         {/* Needs Follow-Up */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-tastelanc-text-primary flex items-center gap-2">
               <Clock className="w-5 h-5 text-yellow-400" />
               Needs Follow-Up
               <Tooltip content="Leads you haven't contacted in over 3 days. Reach out soon to keep them warm!" position="top">
-                <HelpCircle className="w-3.5 h-3.5 text-gray-600 hover:text-gray-400 cursor-help" />
+                <HelpCircle className="w-3.5 h-3.5 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
               </Tooltip>
             </h2>
             <Link href="/sales/leads?status=contacted" className="text-sm text-tastelanc-accent hover:underline flex items-center gap-1">
@@ -292,7 +292,7 @@ export default function SalesDashboard() {
             </Link>
           </div>
           {followUpLeads.length === 0 ? (
-            <p className="text-gray-500 text-sm py-4 text-center">All caught up!</p>
+            <p className="text-tastelanc-text-faint text-sm py-4 text-center">All caught up!</p>
           ) : (
             <div className="space-y-3">
               {followUpLeads.map((lead) => (
@@ -302,12 +302,12 @@ export default function SalesDashboard() {
                   className="block p-3 bg-tastelanc-surface-light rounded-lg hover:bg-tastelanc-surface-light/80 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-white text-sm font-medium truncate">{lead.business_name}</span>
+                    <span className="text-tastelanc-text-primary text-sm font-medium truncate">{lead.business_name}</span>
                     <Badge className={STATUS_CONFIG[lead.status]?.color || ''}>
                       {STATUS_CONFIG[lead.status]?.label || lead.status}
                     </Badge>
                   </div>
-                  <p className="text-gray-500 text-xs">
+                  <p className="text-tastelanc-text-faint text-xs">
                     {lead.last_contacted_at
                       ? `Last contact: ${new Date(lead.last_contacted_at).toLocaleDateString()}`
                       : 'Never contacted'}
@@ -321,11 +321,11 @@ export default function SalesDashboard() {
         {/* Recent Leads */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-tastelanc-text-primary flex items-center gap-2">
               <Briefcase className="w-5 h-5 text-tastelanc-accent" />
               Recent Leads
               <Tooltip content="Your most recently added leads. Click any lead to view details, log activity, or send an email." position="top">
-                <HelpCircle className="w-3.5 h-3.5 text-gray-600 hover:text-gray-400 cursor-help" />
+                <HelpCircle className="w-3.5 h-3.5 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
               </Tooltip>
             </h2>
             <Link href="/sales/leads" className="text-sm text-tastelanc-accent hover:underline flex items-center gap-1">
@@ -333,7 +333,7 @@ export default function SalesDashboard() {
             </Link>
           </div>
           {recentLeads.length === 0 ? (
-            <p className="text-gray-500 text-sm py-4 text-center">No leads yet</p>
+            <p className="text-tastelanc-text-faint text-sm py-4 text-center">No leads yet</p>
           ) : (
             <div className="space-y-3">
               {recentLeads.map((lead) => (
@@ -343,12 +343,12 @@ export default function SalesDashboard() {
                   className="block p-3 bg-tastelanc-surface-light rounded-lg hover:bg-tastelanc-surface-light/80 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-white text-sm font-medium truncate">{lead.business_name}</span>
+                    <span className="text-tastelanc-text-primary text-sm font-medium truncate">{lead.business_name}</span>
                     <Badge className={STATUS_CONFIG[lead.status]?.color || ''}>
                       {STATUS_CONFIG[lead.status]?.label || lead.status}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <div className="flex items-center gap-3 text-xs text-tastelanc-text-faint">
                     {lead.contact_name && <span>{lead.contact_name}</span>}
                     <span>{new Date(lead.created_at).toLocaleDateString()}</span>
                   </div>
@@ -363,12 +363,12 @@ export default function SalesDashboard() {
       {directContacts.length > 0 && (
         <Card className="p-6 mt-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-tastelanc-text-primary flex items-center gap-2">
               <User className="w-5 h-5 text-emerald-400" />
               Direct Contacts
-              <span className="text-sm font-normal text-gray-500">({directContactsTotal})</span>
+              <span className="text-sm font-normal text-tastelanc-text-faint">({directContactsTotal})</span>
               <Tooltip content="Restaurants with verified decision-maker contact info (personal phone, email, title). Click 'Create Lead' to add them to your pipeline instantly." position="top">
-                <HelpCircle className="w-3.5 h-3.5 text-gray-600 hover:text-gray-400 cursor-help" />
+                <HelpCircle className="w-3.5 h-3.5 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
               </Tooltip>
             </h2>
             <Link href="/sales/restaurants" className="text-sm text-tastelanc-accent hover:underline flex items-center gap-1">
@@ -383,11 +383,11 @@ export default function SalesDashboard() {
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="min-w-0 flex-1">
-                    <span className="text-white text-sm font-medium truncate block">{contact.name}</span>
+                    <span className="text-tastelanc-text-primary text-sm font-medium truncate block">{contact.name}</span>
                     <div className="flex items-center gap-1 mt-0.5">
                       <span className="text-xs text-emerald-400">{contact.contact_name}</span>
                       {contact.contact_title && (
-                        <span className="text-xs text-gray-500"> &mdash; {contact.contact_title}</span>
+                        <span className="text-xs text-tastelanc-text-faint"> &mdash; {contact.contact_title}</span>
                       )}
                     </div>
                   </div>
@@ -418,7 +418,7 @@ export default function SalesDashboard() {
                     </a>
                   )}
                   {contact.city && (
-                    <span className="text-gray-500">{contact.city}</span>
+                    <span className="text-tastelanc-text-faint">{contact.city}</span>
                   )}
                 </div>
               </div>

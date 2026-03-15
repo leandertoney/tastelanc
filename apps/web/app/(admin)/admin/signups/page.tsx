@@ -50,8 +50,8 @@ export default async function AdminSignupsPage() {
   return (
     <div>
       <div className="mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-white">Signup Tracking</h1>
-        <p className="text-gray-400 mt-1 text-sm md:text-base">Track restaurant signups by plan</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">Signup Tracking</h1>
+        <p className="text-tastelanc-text-muted mt-1 text-sm md:text-base">Track restaurant signups by plan</p>
       </div>
 
       {/* Stats Overview */}
@@ -62,8 +62,8 @@ export default async function AdminSignupsPage() {
               <Users className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
             </div>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">{stats.total}</p>
-          <p className="text-gray-400 text-xs md:text-sm">Total Signups</p>
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{stats.total}</p>
+          <p className="text-tastelanc-text-muted text-xs md:text-sm">Total Signups</p>
         </Card>
 
         <Card className="p-4 md:p-6">
@@ -72,8 +72,8 @@ export default async function AdminSignupsPage() {
               <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
             </div>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">{stats.active}</p>
-          <p className="text-gray-400 text-xs md:text-sm">Active Subs</p>
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{stats.active}</p>
+          <p className="text-tastelanc-text-muted text-xs md:text-sm">Active Subs</p>
         </Card>
 
         <Card className="p-4 md:p-6">
@@ -82,10 +82,10 @@ export default async function AdminSignupsPage() {
               <CreditCard className="w-4 h-4 md:w-5 md:h-5 text-lancaster-gold" />
             </div>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">
             {(stats.byTier['premium'] || 0) + (stats.byTier['elite'] || 0)}
           </p>
-          <p className="text-gray-400 text-xs md:text-sm">Premium + Elite</p>
+          <p className="text-tastelanc-text-muted text-xs md:text-sm">Premium + Elite</p>
         </Card>
 
         <Card className="p-4 md:p-6">
@@ -94,20 +94,20 @@ export default async function AdminSignupsPage() {
               <Calendar className="w-4 h-4 md:w-5 md:h-5 text-purple-500" />
             </div>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">{stats.byTier['starter'] || 0}</p>
-          <p className="text-gray-400 text-xs md:text-sm">Starter Plans</p>
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{stats.byTier['starter'] || 0}</p>
+          <p className="text-tastelanc-text-muted text-xs md:text-sm">Starter Plans</p>
         </Card>
       </div>
 
       {/* Signups by Tier */}
       <Card className="p-4 md:p-6 mb-6 md:mb-8">
-        <h2 className="text-lg md:text-xl font-semibold text-white mb-4 md:mb-6">Signups by Plan</h2>
+        <h2 className="text-lg md:text-xl font-semibold text-tastelanc-text-primary mb-4 md:mb-6">Signups by Plan</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           {['basic', 'starter', 'premium', 'elite'].map((tier) => {
             const count = stats.byTier[tier] || 0;
             const percentage = stats.total > 0 ? (count / stats.total) * 100 : 0;
             const colors: Record<string, string> = {
-              basic: 'bg-gray-500',
+              basic: 'bg-tastelanc-surface-light',
               starter: 'bg-blue-500',
               premium: 'bg-lancaster-gold',
               elite: 'bg-purple-500',
@@ -116,7 +116,7 @@ export default async function AdminSignupsPage() {
             return (
               <div key={tier} className="p-3 md:p-4 rounded-lg bg-tastelanc-surface-light/50">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-400 capitalize text-sm">{tier}</span>
+                  <span className="text-tastelanc-text-muted capitalize text-sm">{tier}</span>
                   <Badge variant={tier === 'premium' ? 'gold' : 'default'} className="text-xs">{count}</Badge>
                 </div>
                 <div className="h-2 bg-tastelanc-surface rounded-full overflow-hidden">
@@ -125,7 +125,7 @@ export default async function AdminSignupsPage() {
                     style={{ width: `${Math.max(5, percentage)}%` }}
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">{percentage.toFixed(1)}%</p>
+                <p className="text-xs text-tastelanc-text-faint mt-1">{percentage.toFixed(1)}%</p>
               </div>
             );
           })}
@@ -135,13 +135,13 @@ export default async function AdminSignupsPage() {
       {/* Subscription List */}
       <Card className="overflow-hidden">
         <div className="p-4 md:p-6 border-b border-tastelanc-surface-light">
-          <h2 className="text-lg md:text-xl font-semibold text-white">All Subscriptions</h2>
+          <h2 className="text-lg md:text-xl font-semibold text-tastelanc-text-primary">All Subscriptions</h2>
         </div>
         {subscriptions.length === 0 ? (
           <div className="p-8 md:p-12 text-center">
-            <Users className="w-10 h-10 md:w-12 md:h-12 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-base md:text-lg font-medium text-white mb-2">No subscriptions yet</h3>
-            <p className="text-gray-400 text-sm md:text-base">
+            <Users className="w-10 h-10 md:w-12 md:h-12 text-tastelanc-text-faint mx-auto mb-4" />
+            <h3 className="text-base md:text-lg font-medium text-tastelanc-text-primary mb-2">No subscriptions yet</h3>
+            <p className="text-tastelanc-text-muted text-sm md:text-base">
               Restaurant subscriptions will appear here after signup.
             </p>
           </div>
@@ -152,11 +152,11 @@ export default async function AdminSignupsPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-tastelanc-surface-light">
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Restaurant</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Plan</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Status</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Period End</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Created</th>
+                    <th className="text-left py-4 px-6 text-tastelanc-text-muted font-medium">Restaurant</th>
+                    <th className="text-left py-4 px-6 text-tastelanc-text-muted font-medium">Plan</th>
+                    <th className="text-left py-4 px-6 text-tastelanc-text-muted font-medium">Status</th>
+                    <th className="text-left py-4 px-6 text-tastelanc-text-muted font-medium">Period End</th>
+                    <th className="text-left py-4 px-6 text-tastelanc-text-muted font-medium">Created</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -166,7 +166,7 @@ export default async function AdminSignupsPage() {
                       className="border-b border-tastelanc-surface-light/50 hover:bg-tastelanc-surface-light/30"
                     >
                       <td className="py-4 px-6">
-                        <span className="text-white font-medium">
+                        <span className="text-tastelanc-text-primary font-medium">
                           {sub.restaurants?.name || 'Unknown'}
                         </span>
                       </td>
@@ -187,18 +187,18 @@ export default async function AdminSignupsPage() {
                               ? 'bg-blue-500/20 text-blue-400'
                               : sub.status === 'past_due'
                               ? 'bg-yellow-500/20 text-yellow-400'
-                              : 'bg-gray-500/20 text-gray-400'
+                              : 'bg-tastelanc-surface-light/50 text-tastelanc-text-muted'
                           }`}
                         >
                           {sub.status}
                         </span>
                       </td>
-                      <td className="py-4 px-6 text-gray-400">
+                      <td className="py-4 px-6 text-tastelanc-text-muted">
                         {sub.current_period_end
                           ? new Date(sub.current_period_end).toLocaleDateString()
                           : '-'}
                       </td>
-                      <td className="py-4 px-6 text-gray-400">
+                      <td className="py-4 px-6 text-tastelanc-text-muted">
                         {new Date(sub.created_at).toLocaleDateString()}
                       </td>
                     </tr>
@@ -212,7 +212,7 @@ export default async function AdminSignupsPage() {
               {subscriptions.map((sub) => (
                 <div key={sub.id} className="bg-tastelanc-surface-light/50 rounded-lg p-3">
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <span className="text-white font-medium text-sm">
+                    <span className="text-tastelanc-text-primary font-medium text-sm">
                       {sub.restaurants?.name || 'Unknown'}
                     </span>
                     <span
@@ -223,7 +223,7 @@ export default async function AdminSignupsPage() {
                           ? 'bg-blue-500/20 text-blue-400'
                           : sub.status === 'past_due'
                           ? 'bg-yellow-500/20 text-yellow-400'
-                          : 'bg-gray-500/20 text-gray-400'
+                          : 'bg-tastelanc-surface-light/50 text-tastelanc-text-muted'
                       }`}
                     >
                       {sub.status}
@@ -236,7 +236,7 @@ export default async function AdminSignupsPage() {
                     >
                       {sub.tiers?.display_name || sub.tiers?.name || 'Unknown'}
                     </Badge>
-                    <span className="text-gray-400">
+                    <span className="text-tastelanc-text-muted">
                       {new Date(sub.created_at).toLocaleDateString()}
                     </span>
                   </div>

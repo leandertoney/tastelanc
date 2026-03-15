@@ -118,8 +118,8 @@ export default function PromoterEventsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Events</h1>
-          <p className="text-gray-400 mt-1">Create and manage your performances</p>
+          <h1 className="text-2xl font-bold text-tastelanc-text-primary">Events</h1>
+          <p className="text-tastelanc-text-muted mt-1">Create and manage your performances</p>
         </div>
         <button
           onClick={() => setShowWizard(true)}
@@ -143,25 +143,25 @@ export default function PromoterEventsPage() {
       <Card className="overflow-hidden">
         {isLoadingEvents ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+            <Loader2 className="w-6 h-6 animate-spin text-tastelanc-text-muted" />
           </div>
         ) : events.length === 0 ? (
           <div className="text-center py-12 px-6">
             <Calendar className="w-12 h-12 mx-auto mb-4 text-purple-400" />
-            <h3 className="text-lg font-medium text-white mb-2">No events yet</h3>
-            <p className="text-gray-400 mb-6">Create your first event to start promoting your performances</p>
+            <h3 className="text-lg font-medium text-tastelanc-text-primary mb-2">No events yet</h3>
+            <p className="text-tastelanc-text-muted mb-6">Create your first event to start promoting your performances</p>
             <div className="max-w-sm mx-auto mb-6 text-left space-y-3">
               <div className="flex items-start gap-3">
                 <div className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</div>
-                <p className="text-sm text-gray-300">Choose your event type (live music, DJ, karaoke, comedy)</p>
+                <p className="text-sm text-tastelanc-text-secondary">Choose your event type (live music, DJ, karaoke, comedy)</p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</div>
-                <p className="text-sm text-gray-300">Add details, date, time, and upload your event flyer</p>
+                <p className="text-sm text-tastelanc-text-secondary">Add details, date, time, and upload your event flyer</p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</div>
-                <p className="text-sm text-gray-300">Your event goes live and gets promoted to local audiences</p>
+                <p className="text-sm text-tastelanc-text-secondary">Your event goes live and gets promoted to local audiences</p>
               </div>
             </div>
             <button
@@ -195,14 +195,14 @@ export default function PromoterEventsPage() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-white font-medium truncate">{event.name}</h3>
+                      <h3 className="text-tastelanc-text-primary font-medium truncate">{event.name}</h3>
                       {!event.is_active && (
-                        <span className="px-2 py-0.5 bg-gray-500/20 text-gray-400 text-xs rounded-full">
+                        <span className="px-2 py-0.5 bg-tastelanc-surface-light text-tastelanc-text-muted text-xs rounded-full">
                           Inactive
                         </span>
                       )}
                     </div>
-                    <p className="text-gray-400 text-sm">
+                    <p className="text-tastelanc-text-muted text-sm">
                       {event.event_date
                         ? new Date(event.event_date).toLocaleDateString('en-US', {
                             weekday: 'long',
@@ -218,7 +218,7 @@ export default function PromoterEventsPage() {
                         {event.event_type.replace('_', ' ')}
                       </span>
                       {event.cover_charge && (
-                        <span className="text-gray-500 text-xs">
+                        <span className="text-tastelanc-text-faint text-xs">
                           ${event.cover_charge} cover
                         </span>
                       )}
@@ -228,7 +228,7 @@ export default function PromoterEventsPage() {
                   <button
                     onClick={() => handleDelete(event.id)}
                     disabled={deletingId === event.id}
-                    className="p-2 text-gray-500 hover:text-red-400 transition-colors disabled:opacity-50"
+                    className="p-2 text-tastelanc-text-faint hover:text-red-400 transition-colors disabled:opacity-50"
                   >
                     {deletingId === event.id ? (
                       <Loader2 className="w-5 h-5 animate-spin" />

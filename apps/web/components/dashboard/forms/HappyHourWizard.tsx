@@ -209,7 +209,7 @@ export default function HappyHourWizard({ restaurantId, onClose, onSubmit, initi
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
               Name *
             </label>
             <input
@@ -217,29 +217,29 @@ export default function HappyHourWizard({ restaurantId, onClose, onSubmit, initi
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="e.g., Weekday Happy Hour"
-              className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+              className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
               autoFocus
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
               What's on special?
-              <span className="text-gray-500 font-normal ml-1">(optional)</span>
+              <span className="text-tastelanc-text-faint font-normal ml-1">(optional)</span>
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="e.g., $3 drafts, $5 wells, half-price apps"
               rows={2}
-              className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold resize-none"
+              className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold resize-none"
             />
           </div>
 
           {/* Days */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-3">
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-3">
               Which days? *
             </label>
             <DaySelector
@@ -258,9 +258,9 @@ export default function HappyHourWizard({ restaurantId, onClose, onSubmit, initi
 
           {/* Image Upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
               Custom Image
-              <span className="text-gray-500 font-normal ml-1">(optional)</span>
+              <span className="text-tastelanc-text-faint font-normal ml-1">(optional)</span>
             </label>
             <HappyHourImageUpload
               value={formData.image_url}
@@ -298,14 +298,14 @@ export default function HappyHourWizard({ restaurantId, onClose, onSubmit, initi
             <div className="p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Clock className="w-5 h-5 text-lancaster-gold" />
-                <h3 className="text-lg font-semibold text-white">{formData.name}</h3>
+                <h3 className="text-lg font-semibold text-tastelanc-text-primary">{formData.name}</h3>
               </div>
               {formData.description && (
-                <p className="text-gray-400 text-sm mb-3">{formData.description}</p>
+                <p className="text-tastelanc-text-muted text-sm mb-3">{formData.description}</p>
               )}
 
               <div className="flex flex-wrap gap-2 text-sm">
-                <span className="px-2 py-1 bg-tastelanc-bg rounded text-gray-300">
+                <span className="px-2 py-1 bg-tastelanc-bg rounded text-tastelanc-text-secondary">
                   {formatTime(formData.start_time)} - {formatTime(formData.end_time)}
                 </span>
                 {formData.days_of_week.map((day) => (

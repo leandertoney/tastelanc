@@ -37,7 +37,7 @@ interface PaymentMethod {
 const PAYMENT_METHODS: PaymentMethod[] = [
   { key: 'cashapp', label: 'Cash App', placeholder: '$cashtag', icon: '💵', color: 'bg-green-600' },
   { key: 'venmo', label: 'Venmo', placeholder: '@username', icon: '💙', color: 'bg-blue-600' },
-  { key: 'applepay', label: 'Apple Pay', placeholder: 'Phone or email', icon: '🍎', color: 'bg-gray-700' },
+  { key: 'applepay', label: 'Apple Pay', placeholder: 'Phone or email', icon: '🍎', color: 'bg-tastelanc-surface' },
   { key: 'zelle', label: 'Zelle', placeholder: 'Phone or email', icon: '💜', color: 'bg-purple-600', comingSoon: true },
 ];
 
@@ -140,11 +140,11 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary flex items-center gap-3">
             <Settings className="w-8 h-8 text-tastelanc-accent" />
             Settings
           </h1>
-          <p className="text-gray-400 mt-1">Profile, payment methods, and preferences</p>
+          <p className="text-tastelanc-text-muted mt-1">Profile, payment methods, and preferences</p>
         </div>
       </div>
 
@@ -153,31 +153,31 @@ export default function SettingsPage() {
         <Card className="p-4 mb-5">
           <div className="flex items-center gap-2 mb-4">
             <User className="w-5 h-5 text-tastelanc-accent" />
-            <h3 className="text-sm font-semibold text-white">Profile</h3>
+            <h3 className="text-sm font-semibold text-tastelanc-text-primary">Profile</h3>
           </div>
           <div className="grid md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Name</label>
+              <label className="block text-xs text-tastelanc-text-faint mb-1">Name</label>
               <input
                 type="text"
                 value={form.name}
                 onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Your name"
-                className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Email</label>
-              <p className="px-3 py-2 text-sm text-gray-400">{settings.email || '—'}</p>
+              <label className="block text-xs text-tastelanc-text-faint mb-1">Email</label>
+              <p className="px-3 py-2 text-sm text-tastelanc-text-muted">{settings.email || '—'}</p>
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Phone</label>
+              <label className="block text-xs text-tastelanc-text-faint mb-1">Phone</label>
               <input
                 type="text"
                 value={form.phone}
                 onChange={(e) => setForm(prev => ({ ...prev, phone: e.target.value }))}
                 placeholder="(555) 123-4567"
-                className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               />
             </div>
           </div>
@@ -188,9 +188,9 @@ export default function SettingsPage() {
       <Card className="p-4 mb-5">
         <div className="flex items-center gap-2 mb-4">
           <Smartphone className="w-5 h-5 text-tastelanc-accent" />
-          <h3 className="text-sm font-semibold text-white">Payment Methods</h3>
+          <h3 className="text-sm font-semibold text-tastelanc-text-primary">Payment Methods</h3>
         </div>
-        <p className="text-xs text-gray-500 mb-5">
+        <p className="text-xs text-tastelanc-text-faint mb-5">
           Enable the payment methods you accept. Commission payouts are sent via your preferred method.
         </p>
 
@@ -214,7 +214,7 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">{method.icon}</span>
                     <div>
-                      <span className="text-sm font-medium text-white">{method.label}</span>
+                      <span className="text-sm font-medium text-tastelanc-text-primary">{method.label}</span>
                       {method.comingSoon && (
                         <span className="ml-2 text-[10px] bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded-full">
                           Coming Soon
@@ -243,7 +243,7 @@ export default function SettingsPage() {
                       value={detail}
                       onChange={(e) => handleDetailChange(method.key, e.target.value)}
                       placeholder={method.placeholder}
-                      className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                      className="w-full px-3 py-2 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                     />
                   </div>
                 )}

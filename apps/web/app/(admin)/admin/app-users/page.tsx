@@ -102,8 +102,8 @@ export default function AdminAppUsersPage() {
     <div>
       <div className="mb-6 md:mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white">App Users</h1>
-          <p className="text-gray-400 mt-1 text-sm md:text-base">
+          <h1 className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">App Users</h1>
+          <p className="text-tastelanc-text-muted mt-1 text-sm md:text-base">
             Everyone who has downloaded and opened the app
           </p>
         </div>
@@ -118,7 +118,7 @@ export default function AdminAppUsersPage() {
           <button
             onClick={fetchData}
             disabled={isLoading}
-            className="flex items-center gap-2 px-3 py-2 bg-tastelanc-surface-light rounded-lg text-gray-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 px-3 py-2 bg-tastelanc-surface-light rounded-lg text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Refresh</span>
@@ -134,8 +134,8 @@ export default function AdminAppUsersPage() {
               <Users className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
             </div>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">{stats.total}</p>
-          <p className="text-gray-400 text-xs md:text-sm">Total App Users</p>
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{stats.total}</p>
+          <p className="text-tastelanc-text-muted text-xs md:text-sm">Total App Users</p>
         </Card>
 
         <Card className="p-4 md:p-6">
@@ -144,8 +144,8 @@ export default function AdminAppUsersPage() {
               <UserCheck className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
             </div>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">{stats.signedIn}</p>
-          <p className="text-gray-400 text-xs md:text-sm">Signed In (with email)</p>
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{stats.signedIn}</p>
+          <p className="text-tastelanc-text-muted text-xs md:text-sm">Signed In (with email)</p>
         </Card>
 
         <Card className="p-4 md:p-6">
@@ -154,8 +154,8 @@ export default function AdminAppUsersPage() {
               <Activity className="w-4 h-4 md:w-5 md:h-5 text-purple-500" />
             </div>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">{stats.activeLast7}</p>
-          <p className="text-gray-400 text-xs md:text-sm">Active Last 7 Days</p>
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{stats.activeLast7}</p>
+          <p className="text-tastelanc-text-muted text-xs md:text-sm">Active Last 7 Days</p>
         </Card>
 
         <Card className="p-4 md:p-6">
@@ -164,8 +164,8 @@ export default function AdminAppUsersPage() {
               <Smartphone className="w-4 h-4 md:w-5 md:h-5 text-tastelanc-accent" />
             </div>
           </div>
-          <p className="text-2xl md:text-3xl font-bold text-white">{stats.pushTokens}</p>
-          <p className="text-gray-400 text-xs md:text-sm">
+          <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{stats.pushTokens}</p>
+          <p className="text-tastelanc-text-muted text-xs md:text-sm">
             Push Tokens ({stats.iosTokens} iOS, {stats.androidTokens} Android)
           </p>
         </Card>
@@ -173,33 +173,33 @@ export default function AdminAppUsersPage() {
 
       {/* Breakdown */}
       <Card className="p-4 md:p-6 mb-6 md:mb-8">
-        <h2 className="text-lg md:text-xl font-semibold text-white mb-4 md:mb-6">User Breakdown</h2>
+        <h2 className="text-lg md:text-xl font-semibold text-tastelanc-text-primary mb-4 md:mb-6">User Breakdown</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <div className="p-3 md:p-4 rounded-lg bg-tastelanc-surface-light/50">
-            <span className="text-gray-400 text-sm block mb-1">Signed In</span>
-            <span className="text-white text-xl font-bold">{stats.signedIn}</span>
-            <span className="text-gray-500 text-xs block">
+            <span className="text-tastelanc-text-muted text-sm block mb-1">Signed In</span>
+            <span className="text-tastelanc-text-primary text-xl font-bold">{stats.signedIn}</span>
+            <span className="text-tastelanc-text-faint text-xs block">
               {stats.total > 0 ? Math.round((stats.signedIn / stats.total) * 100) : 0}% of total
             </span>
           </div>
           <div className="p-3 md:p-4 rounded-lg bg-tastelanc-surface-light/50">
-            <span className="text-gray-400 text-sm block mb-1">Anonymous</span>
-            <span className="text-white text-xl font-bold">{stats.anonymous}</span>
-            <span className="text-gray-500 text-xs block">
+            <span className="text-tastelanc-text-muted text-sm block mb-1">Anonymous</span>
+            <span className="text-tastelanc-text-primary text-xl font-bold">{stats.anonymous}</span>
+            <span className="text-tastelanc-text-faint text-xs block">
               {stats.total > 0 ? Math.round((stats.anonymous / stats.total) * 100) : 0}% of total
             </span>
           </div>
           <div className="p-3 md:p-4 rounded-lg bg-tastelanc-surface-light/50">
-            <span className="text-gray-400 text-sm block mb-1">Active (30d)</span>
-            <span className="text-white text-xl font-bold">{stats.activeLast30}</span>
-            <span className="text-gray-500 text-xs block">
+            <span className="text-tastelanc-text-muted text-sm block mb-1">Active (30d)</span>
+            <span className="text-tastelanc-text-primary text-xl font-bold">{stats.activeLast30}</span>
+            <span className="text-tastelanc-text-faint text-xs block">
               {stats.total > 0 ? Math.round((stats.activeLast30 / stats.total) * 100) : 0}% retention
             </span>
           </div>
           <div className="p-3 md:p-4 rounded-lg bg-tastelanc-surface-light/50">
-            <span className="text-gray-400 text-sm block mb-1">With Email</span>
-            <span className="text-white text-xl font-bold">{stats.withEmail}</span>
-            <span className="text-gray-500 text-xs block">Exportable contacts</span>
+            <span className="text-tastelanc-text-muted text-sm block mb-1">With Email</span>
+            <span className="text-tastelanc-text-primary text-xl font-bold">{stats.withEmail}</span>
+            <span className="text-tastelanc-text-faint text-xs block">Exportable contacts</span>
           </div>
         </div>
       </Card>
@@ -208,7 +208,7 @@ export default function AdminAppUsersPage() {
       <Card className="overflow-hidden">
         <div className="p-4 md:p-6 border-b border-tastelanc-surface-light flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg md:text-xl font-semibold text-white">
+            <h2 className="text-lg md:text-xl font-semibold text-tastelanc-text-primary">
               {showAnonymous ? 'All Users' : 'Signed-In Users'}
             </h2>
             <Badge variant="default">{filteredUsers.length}</Badge>
@@ -216,7 +216,7 @@ export default function AdminAppUsersPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowAnonymous(!showAnonymous)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-white bg-tastelanc-surface-light/50 hover:bg-tastelanc-surface-light transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-tastelanc-text-muted hover:text-tastelanc-text-primary bg-tastelanc-surface-light/50 hover:bg-tastelanc-surface-light transition-colors"
             >
               {showAnonymous ? (
                 <><EyeOff className="w-3 h-3" /> Hide Anonymous</>
@@ -224,7 +224,7 @@ export default function AdminAppUsersPage() {
                 <><Eye className="w-3 h-3" /> Show Anonymous</>
               )}
             </button>
-            <span className="text-xs text-gray-500 hidden sm:inline">
+            <span className="text-xs text-tastelanc-text-faint hidden sm:inline">
               Updated: {lastRefresh.toLocaleTimeString()}
             </span>
           </div>
@@ -233,13 +233,13 @@ export default function AdminAppUsersPage() {
         {isLoading ? (
           <div className="p-8 md:p-12 text-center">
             <Loader2 className="w-8 h-8 text-tastelanc-accent mx-auto mb-4 animate-spin" />
-            <p className="text-gray-400">Loading app users...</p>
+            <p className="text-tastelanc-text-muted">Loading app users...</p>
           </div>
         ) : filteredUsers.length === 0 ? (
           <div className="p-8 md:p-12 text-center">
-            <Users className="w-10 h-10 md:w-12 md:h-12 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-base md:text-lg font-medium text-white mb-2">No users found</h3>
-            <p className="text-gray-400 text-sm">
+            <Users className="w-10 h-10 md:w-12 md:h-12 text-tastelanc-text-faint mx-auto mb-4" />
+            <h3 className="text-base md:text-lg font-medium text-tastelanc-text-primary mb-2">No users found</h3>
+            <p className="text-tastelanc-text-muted text-sm">
               {showAnonymous ? 'No app users yet.' : 'No signed-in users yet. Try showing anonymous users.'}
             </p>
           </div>
@@ -250,12 +250,12 @@ export default function AdminAppUsersPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-tastelanc-surface-light">
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">User</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Status</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Last Seen</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Platform</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Favorites</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Joined</th>
+                    <th className="text-left py-4 px-6 text-tastelanc-text-muted font-medium">User</th>
+                    <th className="text-left py-4 px-6 text-tastelanc-text-muted font-medium">Status</th>
+                    <th className="text-left py-4 px-6 text-tastelanc-text-muted font-medium">Last Seen</th>
+                    <th className="text-left py-4 px-6 text-tastelanc-text-muted font-medium">Platform</th>
+                    <th className="text-left py-4 px-6 text-tastelanc-text-muted font-medium">Favorites</th>
+                    <th className="text-left py-4 px-6 text-tastelanc-text-muted font-medium">Joined</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -266,20 +266,20 @@ export default function AdminAppUsersPage() {
                     >
                       <td className="py-4 px-6">
                         <div>
-                          <span className="text-white font-medium block">
+                          <span className="text-tastelanc-text-primary font-medium block">
                             {user.display_name || user.email || 'Anonymous User'}
                           </span>
                           {user.email && user.display_name && (
-                            <span className="text-gray-500 text-sm">{user.email}</span>
+                            <span className="text-tastelanc-text-faint text-sm">{user.email}</span>
                           )}
                           {!user.email && !user.display_name && (
-                            <span className="text-gray-600 text-xs">{user.id.slice(0, 8)}...</span>
+                            <span className="text-tastelanc-text-faint text-xs">{user.id.slice(0, 8)}...</span>
                           )}
                         </div>
                       </td>
                       <td className="py-4 px-6">
                         {user.is_anonymous ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-500/20 text-gray-400">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-tastelanc-surface-light/50 text-tastelanc-text-muted">
                             Anonymous
                           </span>
                         ) : (
@@ -288,7 +288,7 @@ export default function AdminAppUsersPage() {
                           </span>
                         )}
                       </td>
-                      <td className="py-4 px-6 text-gray-400">
+                      <td className="py-4 px-6 text-tastelanc-text-muted">
                         {user.last_seen_at ? timeAgo(user.last_seen_at) : 'Never'}
                       </td>
                       <td className="py-4 px-6">
@@ -297,13 +297,13 @@ export default function AdminAppUsersPage() {
                             {user.platform === 'ios' ? 'iOS' : 'Android'}
                           </Badge>
                         ) : (
-                          <span className="text-gray-600">-</span>
+                          <span className="text-tastelanc-text-faint">-</span>
                         )}
                       </td>
-                      <td className="py-4 px-6 text-gray-400">
+                      <td className="py-4 px-6 text-tastelanc-text-muted">
                         {user.favorites_count > 0 ? user.favorites_count : '-'}
                       </td>
-                      <td className="py-4 px-6 text-gray-400">
+                      <td className="py-4 px-6 text-tastelanc-text-muted">
                         {new Date(user.created_at).toLocaleDateString()}
                       </td>
                     </tr>
@@ -318,15 +318,15 @@ export default function AdminAppUsersPage() {
                 <div key={user.id} className="bg-tastelanc-surface-light/50 rounded-lg p-3">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="min-w-0">
-                      <span className="text-white font-medium text-sm block truncate">
+                      <span className="text-tastelanc-text-primary font-medium text-sm block truncate">
                         {user.display_name || user.email || 'Anonymous User'}
                       </span>
                       {user.email && user.display_name && (
-                        <span className="text-gray-500 text-xs truncate block">{user.email}</span>
+                        <span className="text-tastelanc-text-faint text-xs truncate block">{user.email}</span>
                       )}
                     </div>
                     {user.is_anonymous ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-500/20 text-gray-400 flex-shrink-0">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-tastelanc-surface-light/50 text-tastelanc-text-muted flex-shrink-0">
                         Anonymous
                       </span>
                     ) : (
@@ -342,11 +342,11 @@ export default function AdminAppUsersPage() {
                           {user.platform === 'ios' ? 'iOS' : 'Android'}
                         </Badge>
                       )}
-                      <span className="text-gray-500">
+                      <span className="text-tastelanc-text-faint">
                         {user.last_seen_at ? timeAgo(user.last_seen_at) : 'Never seen'}
                       </span>
                     </div>
-                    <span className="text-gray-400">
+                    <span className="text-tastelanc-text-muted">
                       {new Date(user.created_at).toLocaleDateString()}
                     </span>
                   </div>

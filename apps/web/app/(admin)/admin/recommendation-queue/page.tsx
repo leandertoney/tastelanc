@@ -128,17 +128,17 @@ export default function RecommendationQueuePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-tastelanc-text-primary flex items-center gap-3">
             <Instagram className="w-7 h-7 text-pink-400" />
             Recommendation Queue
           </h1>
-          <p className="text-gray-400 mt-1">
+          <p className="text-tastelanc-text-muted mt-1">
             Review and approve community video recommendations before they post to Instagram
           </p>
         </div>
         <button
           onClick={fetchQueue}
-          className="flex items-center gap-2 px-3 py-2 bg-tastelanc-surface rounded-lg text-gray-300 hover:text-white transition-colors"
+          className="flex items-center gap-2 px-3 py-2 bg-tastelanc-surface rounded-lg text-tastelanc-text-secondary hover:text-tastelanc-text-primary transition-colors"
         >
           <RefreshCw className="w-4 h-4" />
           Refresh
@@ -154,7 +154,7 @@ export default function RecommendationQueuePage() {
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               filter === tab.key
                 ? 'bg-tastelanc-accent text-white'
-                : 'bg-tastelanc-surface text-gray-400 hover:text-white'
+                : 'bg-tastelanc-surface text-tastelanc-text-muted hover:text-tastelanc-text-primary'
             }`}
           >
             {tab.label}
@@ -175,8 +175,8 @@ export default function RecommendationQueuePage() {
             onClick={() => setMarketFilter(slug)}
             className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
               marketFilter === slug
-                ? 'bg-tastelanc-surface-light text-white'
-                : 'bg-tastelanc-surface/50 text-gray-500 hover:text-gray-300'
+                ? 'bg-tastelanc-surface-light text-tastelanc-text-primary'
+                : 'bg-tastelanc-surface/50 text-tastelanc-text-faint hover:text-tastelanc-text-secondary'
             }`}
           >
             {slug === '' ? 'All Markets' : slug === 'lancaster-pa' ? 'Lancaster' : slug === 'cumberland-pa' ? 'Cumberland' : 'Fayetteville'}
@@ -195,8 +195,8 @@ export default function RecommendationQueuePage() {
       {!loading && recs.length === 0 && (
         <Card className="p-12 text-center">
           <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">Queue is clear</h3>
-          <p className="text-gray-400 text-sm">
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-2">Queue is clear</h3>
+          <p className="text-tastelanc-text-muted text-sm">
             No recommendations in this category right now.
           </p>
         </Card>
@@ -225,7 +225,7 @@ export default function RecommendationQueuePage() {
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-tastelanc-surface">
-                          <Play className="w-6 h-6 text-gray-600" />
+                          <Play className="w-6 h-6 text-tastelanc-text-faint" />
                         </div>
                       )}
                     </div>
@@ -239,8 +239,8 @@ export default function RecommendationQueuePage() {
                     {/* Top row: restaurant + status */}
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h3 className="text-white font-semibold">{rec.restaurant.name}</h3>
-                        <p className="text-xs text-gray-500">
+                        <h3 className="text-tastelanc-text-primary font-semibold">{rec.restaurant.name}</h3>
+                        <p className="text-xs text-tastelanc-text-faint">
                           {rec.profiles?.display_name || 'Anonymous'} &middot;{' '}
                           {rec.restaurant.market.name} &middot;{' '}
                           {new Date(rec.created_at).toLocaleDateString()}
@@ -267,7 +267,7 @@ export default function RecommendationQueuePage() {
                         </span>
                       )}
                       {rec.caption && (
-                        <span className="text-sm text-gray-300">{rec.caption}</span>
+                        <span className="text-sm text-tastelanc-text-secondary">{rec.caption}</span>
                       )}
                     </div>
 
@@ -275,12 +275,12 @@ export default function RecommendationQueuePage() {
                     {rec.ai_review_notes && (
                       <div className="flex items-start gap-2 bg-tastelanc-surface/50 rounded-md px-3 py-2">
                         <Shield className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-                        <p className="text-xs text-gray-400">{rec.ai_review_notes}</p>
+                        <p className="text-xs text-tastelanc-text-muted">{rec.ai_review_notes}</p>
                       </div>
                     )}
 
                     {/* Stats */}
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <div className="flex items-center gap-4 text-xs text-tastelanc-text-faint">
                       <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> {rec.view_count}</span>
                       <span className="flex items-center gap-1"><Heart className="w-3.5 h-3.5" /> {rec.like_count}</span>
                       {rec.ig_post_id && (
@@ -296,7 +296,7 @@ export default function RecommendationQueuePage() {
                         <textarea
                           value={captionDraft}
                           onChange={(e) => setCaptionDraft(e.target.value)}
-                          className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-3 text-sm text-white resize-none"
+                          className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-3 text-sm text-tastelanc-text-primary resize-none"
                           rows={4}
                           placeholder="Override the Instagram caption..."
                         />
@@ -311,7 +311,7 @@ export default function RecommendationQueuePage() {
                           </button>
                           <button
                             onClick={() => setEditingCaption(null)}
-                            className="px-3 py-1.5 text-gray-400 text-xs hover:text-white transition-colors"
+                            className="px-3 py-1.5 text-tastelanc-text-muted text-xs hover:text-tastelanc-text-primary transition-colors"
                           >
                             Cancel
                           </button>
@@ -343,7 +343,7 @@ export default function RecommendationQueuePage() {
                             setEditingCaption(rec.id);
                             setCaptionDraft(rec.ig_caption_override || rec.caption || '');
                           }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-tastelanc-surface text-gray-300 text-xs font-medium rounded-lg hover:text-white transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-tastelanc-surface text-tastelanc-text-secondary text-xs font-medium rounded-lg hover:text-tastelanc-text-primary transition-colors"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                           Edit Caption
@@ -356,7 +356,7 @@ export default function RecommendationQueuePage() {
                       <button
                         onClick={() => handleAction(rec.id, 'reset')}
                         disabled={actionLoading === rec.id}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-tastelanc-surface text-gray-300 text-xs font-medium rounded-lg hover:text-white transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-tastelanc-surface text-tastelanc-text-secondary text-xs font-medium rounded-lg hover:text-tastelanc-text-primary transition-colors disabled:opacity-50"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
                         Reset to Pending

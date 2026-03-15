@@ -187,10 +187,10 @@ export default function DiscoverRestaurantPage({
               <Sparkles className="w-10 h-10 text-tastelanc-accent" />
             </div>
           )}
-          <h1 className="text-2xl font-bold text-white mb-4">
+          <h1 className="text-2xl font-bold text-tastelanc-text-primary mb-4">
             This page is exclusive to {BRAND.aiName}!
           </h1>
-          <p className="text-gray-400 mb-6">
+          <p className="text-tastelanc-text-muted mb-6">
             Chat with {BRAND.aiName} to discover {BRAND.countyShort}&apos;s best restaurants, bars, and nightlife. She&apos;ll
             personally recommend spots and give you access to their details!
           </p>
@@ -261,7 +261,7 @@ export default function DiscoverRestaurantPage({
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl md:text-4xl font-bold text-white">{restaurant.name}</h1>
+                <h1 className="text-3xl md:text-4xl font-bold text-tastelanc-text-primary">{restaurant.name}</h1>
                 <Badge variant="accent" className="flex items-center gap-1">
                   {BRAND.aiAvatarImage ? (
                     <Image
@@ -278,7 +278,7 @@ export default function DiscoverRestaurantPage({
                 </Badge>
               </div>
 
-              <p className="text-gray-400 flex items-center gap-2 mb-3">
+              <p className="text-tastelanc-text-muted flex items-center gap-2 mb-3">
                 <MapPin className="w-4 h-4" />
                 {restaurant.address}, {restaurant.city}, {restaurant.state}
               </p>
@@ -296,7 +296,7 @@ export default function DiscoverRestaurantPage({
               {restaurant.phone && (
                 <a
                   href={`tel:${restaurant.phone}`}
-                  className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors"
+                  className="flex items-center gap-2 text-tastelanc-text-secondary hover:text-tastelanc-text-primary transition-colors"
                 >
                   <Phone className="w-4 h-4" />
                   {restaurant.phone}
@@ -307,7 +307,7 @@ export default function DiscoverRestaurantPage({
                   href={restaurant.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors"
+                  className="flex items-center gap-2 text-tastelanc-text-secondary hover:text-tastelanc-text-primary transition-colors"
                 >
                   <Globe className="w-4 h-4" />
                   Visit Website
@@ -317,7 +317,7 @@ export default function DiscoverRestaurantPage({
           </div>
 
           {(restaurant.custom_description || restaurant.description) && (
-            <p className="text-gray-300 mt-4">{restaurant.custom_description || restaurant.description}</p>
+            <p className="text-tastelanc-text-secondary mt-4">{restaurant.custom_description || restaurant.description}</p>
           )}
         </div>
 
@@ -327,7 +327,7 @@ export default function DiscoverRestaurantPage({
             {/* Happy Hours */}
             {restaurant.happy_hours.length > 0 && (
               <section className="bg-tastelanc-card rounded-xl p-6">
-                <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <h2 className="text-xl font-bold text-tastelanc-text-primary mb-4 flex items-center gap-2">
                   <Clock className="w-5 h-5 text-lancaster-gold" />
                   Happy Hours
                 </h2>
@@ -338,12 +338,12 @@ export default function DiscoverRestaurantPage({
                       className="border-b border-tastelanc-surface-light pb-4 last:border-0 last:pb-0"
                     >
                       <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-medium text-white">{hh.name}</h3>
+                        <h3 className="font-medium text-tastelanc-text-primary">{hh.name}</h3>
                         <span className="text-lancaster-gold text-sm">
                           {formatTime(hh.start_time)} - {formatTime(hh.end_time)}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-400 mb-2">
+                      <p className="text-sm text-tastelanc-text-muted mb-2">
                         {hh.days_of_week.map((d: string) => capitalizeWords(d)).join(', ')}
                       </p>
                       {hh.happy_hour_items && hh.happy_hour_items.length > 0 && (
@@ -364,7 +364,7 @@ export default function DiscoverRestaurantPage({
             {/* Specials */}
             {restaurant.specials.length > 0 && (
               <section className="bg-tastelanc-card rounded-xl p-6">
-                <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <h2 className="text-xl font-bold text-tastelanc-text-primary mb-4 flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-tastelanc-accent" />
                   Specials
                 </h2>
@@ -374,11 +374,11 @@ export default function DiscoverRestaurantPage({
                       key={special.id}
                       className="border-b border-tastelanc-surface-light pb-4 last:border-0 last:pb-0"
                     >
-                      <h3 className="font-medium text-white">{special.name}</h3>
+                      <h3 className="font-medium text-tastelanc-text-primary">{special.name}</h3>
                       {special.description && (
-                        <p className="text-sm text-gray-400 mt-1">{special.description}</p>
+                        <p className="text-sm text-tastelanc-text-muted mt-1">{special.description}</p>
                       )}
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-tastelanc-text-faint mt-1">
                         {special.days_of_week.map((d: string) => capitalizeWords(d)).join(', ')}
                       </p>
                     </div>
@@ -390,7 +390,7 @@ export default function DiscoverRestaurantPage({
             {/* Events */}
             {restaurant.events.length > 0 && (
               <section className="bg-tastelanc-card rounded-xl p-6">
-                <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <h2 className="text-xl font-bold text-tastelanc-text-primary mb-4 flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-tastelanc-accent" />
                   Upcoming Events
                 </h2>
@@ -402,8 +402,8 @@ export default function DiscoverRestaurantPage({
                     >
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-medium text-white">{event.name}</h3>
-                          <p className="text-sm text-gray-400">
+                          <h3 className="font-medium text-tastelanc-text-primary">{event.name}</h3>
+                          <p className="text-sm text-tastelanc-text-muted">
                             {capitalizeWords(event.event_type.replace('_', ' '))}
                             {event.performer_name && ` • ${event.performer_name}`}
                           </p>
@@ -424,7 +424,7 @@ export default function DiscoverRestaurantPage({
             {/* Hours */}
             {sortedHours.length > 0 && (
               <div className="bg-tastelanc-card rounded-xl p-6">
-                <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <h2 className="text-lg font-bold text-tastelanc-text-primary mb-4 flex items-center gap-2">
                   <Clock className="w-5 h-5" />
                   Hours
                 </h2>
@@ -439,7 +439,7 @@ export default function DiscoverRestaurantPage({
                     <div
                       key={hours.id}
                       className={`flex justify-between text-sm ${
-                        hours.day_of_week === today ? 'text-white font-medium' : 'text-gray-400'
+                        hours.day_of_week === today ? 'text-tastelanc-text-primary font-medium' : 'text-tastelanc-text-muted'
                       }`}
                     >
                       <span>{capitalizeWords(hours.day_of_week)}</span>
@@ -457,7 +457,7 @@ export default function DiscoverRestaurantPage({
             {/* Map */}
             {restaurant.latitude && restaurant.longitude && (
               <div className="bg-tastelanc-card rounded-xl p-6">
-                <h2 className="text-lg font-bold text-white mb-4">Location</h2>
+                <h2 className="text-lg font-bold text-tastelanc-text-primary mb-4">Location</h2>
                 <div className="aspect-square bg-tastelanc-surface rounded-lg flex items-center justify-center">
                   <a
                     href={`https://www.google.com/maps/search/?api=1&query=${restaurant.latitude},${restaurant.longitude}`}
@@ -487,9 +487,9 @@ export default function DiscoverRestaurantPage({
                     <Sparkles className="w-5 h-5 text-tastelanc-accent" />
                   </div>
                 )}
-                <h2 className="text-lg font-bold text-white">Need more suggestions?</h2>
+                <h2 className="text-lg font-bold text-tastelanc-text-primary">Need more suggestions?</h2>
               </div>
-              <p className="text-gray-400 text-sm mb-4">
+              <p className="text-tastelanc-text-muted text-sm mb-4">
                 Ask {BRAND.aiName} for more recommendations based on your preferences!
               </p>
               <button

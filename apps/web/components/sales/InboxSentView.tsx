@@ -67,7 +67,7 @@ function DeliveryBadge({ status, openedAt }: { status: string | null; openedAt: 
       isOpened ? 'bg-green-500/15 text-green-400'
         : isDelivered ? 'bg-blue-500/15 text-blue-400'
         : isBounced ? 'bg-red-500/15 text-red-400'
-        : 'bg-gray-500/15 text-gray-400'
+        : 'bg-tastelanc-surface-light text-tastelanc-text-muted'
     }`}>
       {isOpened ? (
         <><Check className="w-2.5 h-2.5" /> Opened{openedAt ? ` ${formatRelativeDate(openedAt)}` : ''}</>
@@ -116,13 +116,13 @@ export default function InboxSentView() {
         {/* Search */}
         <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-3 mb-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tastelanc-text-muted" />
             <input
               type="text"
               placeholder="Search sent emails..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              className="w-full pl-9 pr-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
             />
           </div>
         </div>
@@ -135,9 +135,9 @@ export default function InboxSentView() {
             </div>
           ) : emails.length === 0 ? (
             <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-8 text-center">
-              <Send className="w-10 h-10 text-gray-500 mx-auto mb-3" />
-              <h3 className="text-sm font-semibold text-white mb-1">No sent emails</h3>
-              <p className="text-xs text-gray-400">
+              <Send className="w-10 h-10 text-tastelanc-text-faint mx-auto mb-3" />
+              <h3 className="text-sm font-semibold text-tastelanc-text-primary mb-1">No sent emails</h3>
+              <p className="text-xs text-tastelanc-text-muted">
                 {search ? 'Try a different search' : 'Sent emails will appear here'}
               </p>
             </div>
@@ -156,27 +156,27 @@ export default function InboxSentView() {
                 >
                   <div className="flex items-start gap-2">
                     <div className="pt-1 w-3 flex-shrink-0">
-                      <Send className="w-3 h-3 text-gray-500" />
+                      <Send className="w-3 h-3 text-tastelanc-text-faint" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm text-gray-300 truncate">
+                        <span className="text-sm text-tastelanc-text-secondary truncate">
                           To: {email.recipient_email}
                         </span>
-                        <span className="text-[10px] text-gray-500 flex-shrink-0">
+                        <span className="text-[10px] text-tastelanc-text-faint flex-shrink-0">
                           {formatRelativeDate(email.sent_at)}
                         </span>
                       </div>
                       {email.subject && (
-                        <p className="text-xs text-gray-500 truncate mt-0.5">{email.subject}</p>
+                        <p className="text-xs text-tastelanc-text-faint truncate mt-0.5">{email.subject}</p>
                       )}
-                      <p className="text-xs text-gray-600 truncate mt-0.5">
+                      <p className="text-xs text-tastelanc-text-faint truncate mt-0.5">
                         {email.body_text?.substring(0, 100) || 'No preview'}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
                         <DeliveryBadge status={email.status} openedAt={email.opened_at} />
                         {email.lead_business_name && (
-                          <span className="text-[10px] bg-tastelanc-surface-light text-gray-400 px-1.5 py-0.5 rounded">
+                          <span className="text-[10px] bg-tastelanc-surface-light text-tastelanc-text-muted px-1.5 py-0.5 rounded">
                             {email.lead_business_name}
                           </span>
                         )}
@@ -195,8 +195,8 @@ export default function InboxSentView() {
         {!selectedEmail ? (
           <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light flex-1 flex items-center justify-center">
             <div className="text-center">
-              <Inbox className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-500 text-sm">Select a sent email to view</p>
+              <Inbox className="w-12 h-12 text-tastelanc-text-faint mx-auto mb-3" />
+              <p className="text-tastelanc-text-faint text-sm">Select a sent email to view</p>
             </div>
           </div>
         ) : (
@@ -205,15 +205,15 @@ export default function InboxSentView() {
             <div className="flex items-center gap-3 p-4 border-b border-tastelanc-surface-light">
               <button
                 onClick={() => setSelectedEmail(null)}
-                className="md:hidden p-1 text-gray-400 hover:text-white"
+                className="md:hidden p-1 text-tastelanc-text-muted hover:text-tastelanc-text-primary"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div className="flex-1 min-w-0">
-                <h2 className="text-sm font-semibold text-white truncate">
+                <h2 className="text-sm font-semibold text-tastelanc-text-primary truncate">
                   {selectedEmail.subject || '(No subject)'}
                 </h2>
-                <p className="text-xs text-gray-500 truncate">
+                <p className="text-xs text-tastelanc-text-faint truncate">
                   To: {selectedEmail.recipient_email}
                 </p>
               </div>
@@ -233,20 +233,20 @@ export default function InboxSentView() {
               <div className="space-y-4">
                 {/* Meta */}
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
-                    <span className="font-medium text-gray-300">From:</span>
+                  <div className="flex items-center gap-2 text-xs text-tastelanc-text-muted">
+                    <span className="font-medium text-tastelanc-text-secondary">From:</span>
                     {selectedEmail.sender_name} &lt;{selectedEmail.sender_email}&gt;
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
-                    <span className="font-medium text-gray-300">To:</span>
+                  <div className="flex items-center gap-2 text-xs text-tastelanc-text-muted">
+                    <span className="font-medium text-tastelanc-text-secondary">To:</span>
                     {selectedEmail.recipient_email}
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
-                    <span className="font-medium text-gray-300">Date:</span>
+                  <div className="flex items-center gap-2 text-xs text-tastelanc-text-muted">
+                    <span className="font-medium text-tastelanc-text-secondary">Date:</span>
                     {formatTimestamp(selectedEmail.sent_at)}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-gray-300">Status:</span>
+                    <span className="text-xs font-medium text-tastelanc-text-secondary">Status:</span>
                     <DeliveryBadge status={selectedEmail.status} openedAt={selectedEmail.opened_at} />
                     {selectedEmail.clicked_at && (
                       <span className="text-[10px] text-green-400">
@@ -259,14 +259,14 @@ export default function InboxSentView() {
                 {/* Subject */}
                 {selectedEmail.subject && (
                   <div className="border-t border-tastelanc-surface-light pt-3">
-                    <h3 className="text-sm font-medium text-white">{selectedEmail.subject}</h3>
+                    <h3 className="text-sm font-medium text-tastelanc-text-primary">{selectedEmail.subject}</h3>
                   </div>
                 )}
 
                 {/* Body */}
                 {selectedEmail.body_text && (
                   <div className="border-t border-tastelanc-surface-light pt-3">
-                    <p className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">
+                    <p className="text-sm text-tastelanc-text-secondary whitespace-pre-wrap leading-relaxed">
                       {selectedEmail.body_text}
                     </p>
                   </div>

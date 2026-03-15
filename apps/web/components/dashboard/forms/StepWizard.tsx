@@ -65,7 +65,7 @@ export default function StepWizard({
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white rounded-lg hover:bg-tastelanc-surface transition-colors"
+            className="absolute top-4 right-4 p-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary rounded-lg hover:bg-tastelanc-surface transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -78,9 +78,9 @@ export default function StepWizard({
           />
 
           {/* Title */}
-          <h2 className="text-xl font-bold text-white text-center">{title}</h2>
+          <h2 className="text-xl font-bold text-tastelanc-text-primary text-center">{title}</h2>
           {subtitle && (
-            <p className="text-gray-400 text-center mt-1 text-sm">{subtitle}</p>
+            <p className="text-tastelanc-text-muted text-center mt-1 text-sm">{subtitle}</p>
           )}
         </div>
 

@@ -420,8 +420,8 @@ export default function ProfilePage() {
     return (
       <div className="max-w-4xl space-y-8">
         <div>
-          <h2 className="text-2xl font-bold text-white">Restaurant Profile</h2>
-          <p className="text-gray-400 mt-1">Loading...</p>
+          <h2 className="text-2xl font-bold text-tastelanc-text-primary">Restaurant Profile</h2>
+          <p className="text-tastelanc-text-muted mt-1">Loading...</p>
         </div>
         <div className="space-y-8">
           {[1, 2, 3].map((i) => (
@@ -441,13 +441,13 @@ export default function ProfilePage() {
   return (
     <div className="max-w-4xl space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-white">Restaurant Profile</h2>
+        <h2 className="text-2xl font-bold text-tastelanc-text-primary">Restaurant Profile</h2>
         <div className="flex items-center gap-2 mt-1">
-          <p className="text-gray-400">
+          <p className="text-tastelanc-text-muted">
             Update your restaurant&apos;s public information
           </p>
           <Tooltip content="This is what users see when they view your restaurant. Add your description, photos, address, phone, website, and hours. A complete profile gets significantly more views." position="bottom">
-            <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
+            <HelpCircle className="w-4 h-4 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
           </Tooltip>
         </div>
       </div>
@@ -462,7 +462,7 @@ export default function ProfilePage() {
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Cover Image */}
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Cover Image</h3>
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-4">Cover Image</h3>
           <input
             ref={coverInputRef}
             type="file"
@@ -505,14 +505,14 @@ export default function ProfilePage() {
               <div className="text-center">
                 {uploadingCover ? (
                   <>
-                    <Loader2 className="w-8 h-8 text-gray-400 mx-auto mb-2 animate-spin" />
-                    <p className="text-gray-400">Uploading...</p>
+                    <Loader2 className="w-8 h-8 text-tastelanc-text-muted mx-auto mb-2 animate-spin" />
+                    <p className="text-tastelanc-text-muted">Uploading...</p>
                   </>
                 ) : (
                   <>
-                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-400">Click to upload or drag and drop</p>
-                    <p className="text-gray-500 text-sm mt-1">PNG, JPG up to 5MB</p>
+                    <Upload className="w-8 h-8 text-tastelanc-text-muted mx-auto mb-2" />
+                    <p className="text-tastelanc-text-muted">Click to upload or drag and drop</p>
+                    <p className="text-tastelanc-text-faint text-sm mt-1">PNG, JPG up to 5MB</p>
                   </>
                 )}
               </div>
@@ -522,30 +522,30 @@ export default function ProfilePage() {
 
         {/* Basic Info */}
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Basic Information</h3>
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-4">Basic Information</h3>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Restaurant Name</label>
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">Restaurant Name</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">Description</label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={4}
-                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent resize-none"
+                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent resize-none"
                 placeholder="Tell customers about your restaurant..."
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Categories</label>
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">Categories</label>
               <div className="flex flex-wrap gap-2">
                 {CATEGORY_OPTIONS.map((cat) => (
                   <button
@@ -555,7 +555,7 @@ export default function ProfilePage() {
                     className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
                       formData.categories.includes(cat.value)
                         ? 'bg-tastelanc-accent text-white'
-                        : 'bg-tastelanc-surface text-gray-400 hover:text-white'
+                        : 'bg-tastelanc-surface text-tastelanc-text-muted hover:text-tastelanc-text-primary'
                     }`}
                   >
                     {cat.label}
@@ -568,46 +568,46 @@ export default function ProfilePage() {
 
         {/* Location */}
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-4 flex items-center gap-2">
             <MapPin className="w-5 h-5" />
             Location
           </h3>
           <div className="grid md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-300 mb-2">Street Address</label>
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">Street Address</label>
               <input
                 type="text"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">City</label>
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">City</label>
               <input
                 type="text"
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">State</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">State</label>
                 <input
                   type="text"
                   value={formData.state}
                   onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                  className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">ZIP Code</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">ZIP Code</label>
                 <input
                   type="text"
                   value={formData.zip_code}
                   onChange={(e) => setFormData({ ...formData, zip_code: e.target.value })}
-                  className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 />
               </div>
             </div>
@@ -616,10 +616,10 @@ export default function ProfilePage() {
 
         {/* Contact */}
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Contact Information</h3>
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-4">Contact Information</h3>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                 <Phone className="w-4 h-4 inline mr-1" />
                 Phone
               </label>
@@ -627,11 +627,11 @@ export default function ProfilePage() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                 <Mail className="w-4 h-4 inline mr-1" />
                 Email
               </label>
@@ -639,11 +639,11 @@ export default function ProfilePage() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                 <Globe className="w-4 h-4 inline mr-1" />
                 Website
               </label>
@@ -651,7 +651,7 @@ export default function ProfilePage() {
                 type="url"
                 value={formData.website}
                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 placeholder="https://"
               />
             </div>
@@ -660,16 +660,16 @@ export default function ProfilePage() {
 
         {/* Check-In PIN */}
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-4 flex items-center gap-2">
             <KeyRound className="w-5 h-5" />
             Check-In PIN
           </h3>
-          <p className="text-gray-400 text-sm mb-4">
+          <p className="text-tastelanc-text-muted text-sm mb-4">
             This is the 4-digit PIN guests enter to check in at your restaurant and earn rewards points. Share it with your staff so they can provide it to customers.
           </p>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex-1 max-w-[200px]">
-              <label className="block text-sm font-medium text-gray-300 mb-2">PIN Code</label>
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">PIN Code</label>
               <input
                 type="text"
                 value={formData.checkin_pin}
@@ -681,11 +681,11 @@ export default function ProfilePage() {
                 inputMode="numeric"
                 pattern="[0-9]{4}"
                 placeholder="1234"
-                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white text-2xl font-mono tracking-[0.5em] text-center placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary text-2xl font-mono tracking-[0.5em] text-center placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               />
             </div>
             <div className="bg-tastelanc-surface rounded-lg px-4 py-3 border border-tastelanc-surface-light">
-              <p className="text-xs text-gray-400 mb-1">Current PIN</p>
+              <p className="text-xs text-tastelanc-text-muted mb-1">Current PIN</p>
               <p className="text-2xl font-mono font-bold text-tastelanc-accent tracking-[0.3em]">
                 {restaurant?.checkin_pin || '1987'}
               </p>
@@ -710,7 +710,7 @@ export default function ProfilePage() {
 
       {/* Business Hours Section */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+        <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-4 flex items-center gap-2">
           <Clock className="w-5 h-5" />
           Business Hours
         </h3>
@@ -737,7 +737,7 @@ export default function ProfilePage() {
                   className="flex flex-col sm:flex-row sm:items-center gap-4 py-4 border-b border-tastelanc-surface-light last:border-0"
                 >
                   <div className="w-24 sm:w-32">
-                    <span className="text-white font-medium">{capitalizeDay(entry.day_of_week)}</span>
+                    <span className="text-tastelanc-text-primary font-medium">{capitalizeDay(entry.day_of_week)}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <input
@@ -747,7 +747,7 @@ export default function ProfilePage() {
                       onChange={(e) => updateHours(entry.day_of_week, 'is_closed', e.target.checked)}
                       className="w-4 h-4 rounded border-tastelanc-surface-light bg-tastelanc-surface text-tastelanc-accent focus:ring-tastelanc-accent"
                     />
-                    <label htmlFor={`closed-${entry.day_of_week}`} className="text-sm text-gray-400">Closed</label>
+                    <label htmlFor={`closed-${entry.day_of_week}`} className="text-sm text-tastelanc-text-muted">Closed</label>
                   </div>
                   {!entry.is_closed && (
                     <div className="flex items-center gap-2 flex-1">
@@ -755,18 +755,18 @@ export default function ProfilePage() {
                         type="time"
                         value={entry.open_time}
                         onChange={(e) => updateHours(entry.day_of_week, 'open_time', e.target.value)}
-                        className="px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                        className="px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                       />
-                      <span className="text-gray-400">to</span>
+                      <span className="text-tastelanc-text-muted">to</span>
                       <input
                         type="time"
                         value={entry.close_time}
                         onChange={(e) => updateHours(entry.day_of_week, 'close_time', e.target.value)}
-                        className="px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                        className="px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                       />
                     </div>
                   )}
-                  {entry.is_closed && <span className="text-gray-500 italic">Closed</span>}
+                  {entry.is_closed && <span className="text-tastelanc-text-faint italic">Closed</span>}
                 </div>
               ))}
             </div>
@@ -786,11 +786,11 @@ export default function ProfilePage() {
       {/* Photo Gallery Section */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary flex items-center gap-2">
             <ImageIcon className="w-5 h-5" />
             Photo Gallery
           </h3>
-          <span className="text-gray-400 text-sm">{photos.length}/10 photos</span>
+          <span className="text-tastelanc-text-muted text-sm">{photos.length}/10 photos</span>
         </div>
 
         {/* Hidden file input */}
@@ -818,15 +818,15 @@ export default function ProfilePage() {
             {uploading ? (
               <>
                 <Loader2 className="w-8 h-8 text-lancaster-gold mx-auto mb-2 animate-spin" />
-                <p className="text-gray-300 text-sm">Uploading photo...</p>
+                <p className="text-tastelanc-text-secondary text-sm">Uploading photo...</p>
               </>
             ) : (
               <>
-                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-300 text-sm">
+                <Upload className="w-8 h-8 text-tastelanc-text-muted mx-auto mb-2" />
+                <p className="text-tastelanc-text-secondary text-sm">
                   {isDragOver ? 'Drop photo here' : 'Drag and drop photos here, or click to browse'}
                 </p>
-                <p className="text-gray-500 text-xs mt-1">PNG, JPG, WebP up to 5MB each</p>
+                <p className="text-tastelanc-text-faint text-xs mt-1">PNG, JPG, WebP up to 5MB each</p>
               </>
             )}
           </div>
@@ -878,7 +878,7 @@ export default function ProfilePage() {
                 )}
                 {photo.caption && (
                   <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-                    <p className="text-white text-sm truncate">{photo.caption}</p>
+                    <p className="text-tastelanc-text-primary text-sm truncate">{photo.caption}</p>
                   </div>
                 )}
               </div>
@@ -886,8 +886,8 @@ export default function ProfilePage() {
           </div>
         ) : (
           <div className="text-center py-8">
-            <ImageIcon className="w-10 h-10 text-gray-500 mx-auto mb-3" />
-            <p className="text-gray-400 text-sm mb-3">No photos yet. Upload photos to showcase your restaurant.</p>
+            <ImageIcon className="w-10 h-10 text-tastelanc-text-faint mx-auto mb-3" />
+            <p className="text-tastelanc-text-muted text-sm mb-3">No photos yet. Upload photos to showcase your restaurant.</p>
             <Button onClick={handleUpload} variant="secondary">
               <Upload className="w-4 h-4 mr-2" />
               Upload Photos

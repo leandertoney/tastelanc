@@ -52,7 +52,7 @@ type DateRange = '7d' | '30d' | 'all';
 
 function getAdStatus(ad: FeaturedAd): { label: string; className: string } {
   const today = new Date().toISOString().split('T')[0];
-  if (!ad.is_active) return { label: 'Inactive', className: 'bg-gray-500/20 text-gray-400' };
+  if (!ad.is_active) return { label: 'Inactive', className: 'bg-tastelanc-surface-light/50 text-tastelanc-text-muted' };
   if (ad.start_date && ad.start_date > today) return { label: 'Scheduled', className: 'bg-blue-500/20 text-blue-400' };
   if (ad.end_date && ad.end_date < today) return { label: 'Expired', className: 'bg-yellow-500/20 text-yellow-400' };
   return { label: 'Active', className: 'bg-green-500/20 text-green-400' };
@@ -60,7 +60,7 @@ function getAdStatus(ad: FeaturedAd): { label: string; className: string } {
 
 function Sparkline({ daily }: { daily: Array<{ date: string; impressions: number }> }) {
   if (!daily || daily.length === 0) {
-    return <span className="text-gray-600 text-xs">No data</span>;
+    return <span className="text-tastelanc-text-faint text-xs">No data</span>;
   }
   const sorted = [...daily].sort((a, b) => a.date.localeCompare(b.date));
   const maxVal = Math.max(...sorted.map((d) => d.impressions), 1);
@@ -204,18 +204,18 @@ export default function SponsoredAdsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-xl md:text-2xl font-bold text-tastelanc-text-primary flex items-center gap-2">
             <Megaphone className="w-6 h-6 text-lancaster-gold" />
             Sponsored Ads
           </h1>
-          <p className="text-gray-400 text-xs md:text-sm mt-1">
+          <p className="text-tastelanc-text-muted text-xs md:text-sm mt-1">
             Track impressions, clicks, and manage ad placements
           </p>
         </div>
         <button
           onClick={() => fetchData()}
           disabled={isLoading}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-tastelanc-surface hover:bg-tastelanc-surface-light rounded-lg text-gray-300 transition-colors text-sm"
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-tastelanc-surface hover:bg-tastelanc-surface-light rounded-lg text-tastelanc-text-secondary transition-colors text-sm"
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           Refresh
@@ -223,7 +223,7 @@ export default function SponsoredAdsPage() {
       </div>
 
       {/* Last Updated */}
-      <div className="flex items-center gap-2 text-xs md:text-sm text-gray-500 mb-4 md:mb-6">
+      <div className="flex items-center gap-2 text-xs md:text-sm text-tastelanc-text-faint mb-4 md:mb-6">
         <Clock className="w-4 h-4" />
         Last updated: {lastRefresh.toLocaleTimeString()}
       </div>
@@ -241,7 +241,7 @@ export default function SponsoredAdsPage() {
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               range === r.key
                 ? 'bg-tastelanc-accent text-white'
-                : 'bg-tastelanc-surface text-gray-400 hover:bg-tastelanc-surface-light hover:text-white'
+                : 'bg-tastelanc-surface text-tastelanc-text-muted hover:bg-tastelanc-surface-light hover:text-tastelanc-text-primary'
             }`}
           >
             {r.label}
@@ -257,10 +257,10 @@ export default function SponsoredAdsPage() {
               <div className={`w-8 h-8 md:w-10 md:h-10 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
                 <stat.icon className={`w-4 h-4 md:w-5 md:h-5 ${stat.color}`} />
               </div>
-              <span className="text-gray-500 text-xs">{rangeLabel}</span>
+              <span className="text-tastelanc-text-faint text-xs">{rangeLabel}</span>
             </div>
-            <p className="text-xl md:text-3xl font-bold text-white">{stat.value}</p>
-            <p className="text-xs md:text-sm text-gray-400 mt-1">{stat.label}</p>
+            <p className="text-xl md:text-3xl font-bold text-tastelanc-text-primary">{stat.value}</p>
+            <p className="text-xs md:text-sm text-tastelanc-text-muted mt-1">{stat.label}</p>
           </div>
         ))}
       </div>
@@ -268,13 +268,13 @@ export default function SponsoredAdsPage() {
       {/* Per-Ad Performance */}
       <div className="bg-tastelanc-surface rounded-lg overflow-hidden">
         <div className="p-4 md:p-6 border-b border-tastelanc-surface-light">
-          <h3 className="text-base md:text-lg font-semibold text-white">Ad Performance</h3>
+          <h3 className="text-base md:text-lg font-semibold text-tastelanc-text-primary">Ad Performance</h3>
         </div>
 
         {!data?.ads || data.ads.length === 0 ? (
           <div className="py-12 text-center">
-            <Megaphone className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-            <p className="text-gray-500">No sponsored ads yet</p>
+            <Megaphone className="w-10 h-10 text-tastelanc-text-faint mx-auto mb-3" />
+            <p className="text-tastelanc-text-faint">No sponsored ads yet</p>
           </div>
         ) : (
           <>
@@ -283,15 +283,15 @@ export default function SponsoredAdsPage() {
               <table className="w-full text-sm">
                 <thead className="bg-tastelanc-surface-light">
                   <tr>
-                    <th className="text-left px-4 py-3 text-gray-400 font-medium">Ad</th>
-                    <th className="text-left px-4 py-3 text-gray-400 font-medium">Status</th>
-                    <th className="text-right px-4 py-3 text-gray-400 font-medium">Impressions</th>
-                    <th className="text-right px-4 py-3 text-gray-400 font-medium">Unique</th>
-                    <th className="text-right px-4 py-3 text-gray-400 font-medium">Clicks</th>
-                    <th className="text-right px-4 py-3 text-gray-400 font-medium">CTR</th>
-                    <th className="text-center px-4 py-3 text-gray-400 font-medium">Trend (7d)</th>
-                    <th className="text-center px-4 py-3 text-gray-400 font-medium">Priority</th>
-                    <th className="text-center px-4 py-3 text-gray-400 font-medium">Active</th>
+                    <th className="text-left px-4 py-3 text-tastelanc-text-muted font-medium">Ad</th>
+                    <th className="text-left px-4 py-3 text-tastelanc-text-muted font-medium">Status</th>
+                    <th className="text-right px-4 py-3 text-tastelanc-text-muted font-medium">Impressions</th>
+                    <th className="text-right px-4 py-3 text-tastelanc-text-muted font-medium">Unique</th>
+                    <th className="text-right px-4 py-3 text-tastelanc-text-muted font-medium">Clicks</th>
+                    <th className="text-right px-4 py-3 text-tastelanc-text-muted font-medium">CTR</th>
+                    <th className="text-center px-4 py-3 text-tastelanc-text-muted font-medium">Trend (7d)</th>
+                    <th className="text-center px-4 py-3 text-tastelanc-text-muted font-medium">Priority</th>
+                    <th className="text-center px-4 py-3 text-tastelanc-text-muted font-medium">Active</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-tastelanc-surface-light">
@@ -315,12 +315,12 @@ export default function SponsoredAdsPage() {
                               />
                             </a>
                             <div>
-                              <p className="text-white font-medium">{ad.business_name}</p>
+                              <p className="text-tastelanc-text-primary font-medium">{ad.business_name}</p>
                               <a
                                 href={ad.click_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-xs text-gray-500 hover:text-tastelanc-accent flex items-center gap-1"
+                                className="text-xs text-tastelanc-text-faint hover:text-tastelanc-accent flex items-center gap-1"
                               >
                                 {new URL(ad.click_url).hostname}
                                 <ExternalLink className="w-3 h-3" />
@@ -333,10 +333,10 @@ export default function SponsoredAdsPage() {
                             {status.label}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-right text-white font-medium">{impressions.toLocaleString()}</td>
-                        <td className="px-4 py-3 text-right text-gray-400">{unique.toLocaleString()}</td>
-                        <td className="px-4 py-3 text-right text-white font-medium">{clicks.toLocaleString()}</td>
-                        <td className="px-4 py-3 text-right text-gray-400">{ctr}%</td>
+                        <td className="px-4 py-3 text-right text-tastelanc-text-primary font-medium">{impressions.toLocaleString()}</td>
+                        <td className="px-4 py-3 text-right text-tastelanc-text-muted">{unique.toLocaleString()}</td>
+                        <td className="px-4 py-3 text-right text-tastelanc-text-primary font-medium">{clicks.toLocaleString()}</td>
+                        <td className="px-4 py-3 text-right text-tastelanc-text-muted">{ctr}%</td>
                         <td className="px-4 py-3">
                           <div className="flex justify-center">
                             <Sparkline daily={perf?.daily || []} />
@@ -344,17 +344,17 @@ export default function SponsoredAdsPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-center gap-1">
-                            <span className="text-white font-medium w-6 text-center">{ad.priority}</span>
+                            <span className="text-tastelanc-text-primary font-medium w-6 text-center">{ad.priority}</span>
                             <div className="flex flex-col">
                               <button
                                 onClick={() => handlePriorityChange(ad.id, ad.priority + 1)}
-                                className="text-gray-500 hover:text-white transition-colors"
+                                className="text-tastelanc-text-faint hover:text-tastelanc-text-primary transition-colors"
                               >
                                 <ChevronUp className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handlePriorityChange(ad.id, Math.max(0, ad.priority - 1))}
-                                className="text-gray-500 hover:text-white transition-colors"
+                                className="text-tastelanc-text-faint hover:text-tastelanc-text-primary transition-colors"
                               >
                                 <ChevronDown className="w-3.5 h-3.5" />
                               </button>
@@ -366,7 +366,7 @@ export default function SponsoredAdsPage() {
                             <button
                               onClick={() => handleToggleActive(ad.id, !ad.is_active)}
                               className={`w-10 h-5 rounded-full transition-colors relative ${
-                                ad.is_active ? 'bg-green-500' : 'bg-gray-600'
+                                ad.is_active ? 'bg-green-500' : 'bg-tastelanc-surface-light'
                               }`}
                             >
                               <div
@@ -406,18 +406,18 @@ export default function SponsoredAdsPage() {
                         />
                       </a>
                       <div className="flex-1 min-w-0">
-                        <p className="text-white font-medium truncate">{ad.business_name}</p>
+                        <p className="text-tastelanc-text-primary font-medium truncate">{ad.business_name}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${status.className}`}>
                             {status.label}
                           </span>
-                          <span className="text-xs text-gray-500">P{ad.priority}</span>
+                          <span className="text-xs text-tastelanc-text-faint">P{ad.priority}</span>
                         </div>
                       </div>
                       <button
                         onClick={() => handleToggleActive(ad.id, !ad.is_active)}
                         className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${
-                          ad.is_active ? 'bg-green-500' : 'bg-gray-600'
+                          ad.is_active ? 'bg-green-500' : 'bg-tastelanc-surface-light'
                         }`}
                       >
                         <div
@@ -431,20 +431,20 @@ export default function SponsoredAdsPage() {
                     {/* Stats row */}
                     <div className="grid grid-cols-4 gap-2 text-center">
                       <div>
-                        <p className="text-white font-medium text-sm">{impressions.toLocaleString()}</p>
-                        <p className="text-gray-500 text-xs">Imps</p>
+                        <p className="text-tastelanc-text-primary font-medium text-sm">{impressions.toLocaleString()}</p>
+                        <p className="text-tastelanc-text-faint text-xs">Imps</p>
                       </div>
                       <div>
-                        <p className="text-gray-300 text-sm">{unique.toLocaleString()}</p>
-                        <p className="text-gray-500 text-xs">Unique</p>
+                        <p className="text-tastelanc-text-secondary text-sm">{unique.toLocaleString()}</p>
+                        <p className="text-tastelanc-text-faint text-xs">Unique</p>
                       </div>
                       <div>
-                        <p className="text-white font-medium text-sm">{clicks.toLocaleString()}</p>
-                        <p className="text-gray-500 text-xs">Clicks</p>
+                        <p className="text-tastelanc-text-primary font-medium text-sm">{clicks.toLocaleString()}</p>
+                        <p className="text-tastelanc-text-faint text-xs">Clicks</p>
                       </div>
                       <div>
-                        <p className="text-gray-300 text-sm">{ctr}%</p>
-                        <p className="text-gray-500 text-xs">CTR</p>
+                        <p className="text-tastelanc-text-secondary text-sm">{ctr}%</p>
+                        <p className="text-tastelanc-text-faint text-xs">CTR</p>
                       </div>
                     </div>
                   </div>

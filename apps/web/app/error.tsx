@@ -18,8 +18,8 @@ export default function GlobalError({
     <div className="flex items-center justify-center min-h-[400px] p-6">
       <div className="text-center max-w-md">
         <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-        <h2 className="text-lg font-semibold text-white mb-2">Something went wrong</h2>
-        <p className="text-gray-400 text-sm mb-6">
+        <h2 className="text-lg font-semibold text-tastelanc-text-primary mb-2">Something went wrong</h2>
+        <p className="text-tastelanc-text-muted text-sm mb-6">
           An unexpected error occurred. Please try again.
         </p>
         <button

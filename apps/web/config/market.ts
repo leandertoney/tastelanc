@@ -46,17 +46,44 @@ export interface MarketBrand {
   // Apple App Store ID (for Smart App Banner in Safari)
   iosAppId: string;
 
-  // Web theme colors (dark theme)
+  // Web theme colors (mode-aware)
   colors: {
+    // Accent colors — same in light & dark
     accent: string;
     accentHover: string;
-    gold: string;
-    bg: string;
-    card: string;
-    surface: string;
-    surfaceLight: string;
-    headerBg: string; // navbar background (defaults to bg if same)
-    headerText: string; // navbar text color (light on dark bg, dark on light bg)
+    // Mode-specific palettes
+    dark: {
+      bg: string;
+      card: string;
+      surface: string;
+      surfaceLight: string;
+      headerBg: string;
+      headerText: string;
+      textPrimary: string;
+      textSecondary: string;
+      textMuted: string;
+      textFaint: string;
+      border: string;
+      borderLight: string;
+      inputBg: string;
+      gold: string;
+    };
+    light: {
+      bg: string;
+      card: string;
+      surface: string;
+      surfaceLight: string;
+      headerBg: string;
+      headerText: string;
+      textPrimary: string;
+      textSecondary: string;
+      textMuted: string;
+      textFaint: string;
+      border: string;
+      borderLight: string;
+      inputBg: string;
+      gold: string;
+    };
   };
 
   // SEO defaults
@@ -107,13 +134,38 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
     colors: {
       accent: '#A41E22',
       accentHover: '#8B1A1D',
-      gold: '#D4AF37',
-      bg: '#1A1A1A',
-      card: '#252525',
-      surface: '#1E1E1E',
-      surfaceLight: '#2A2A2A',
-      headerBg: '#1A1A1A',
-      headerText: '#FFFFFF',
+      dark: {
+        bg: '#1A1A1A',
+        card: '#252525',
+        surface: '#1E1E1E',
+        surfaceLight: '#2A2A2A',
+        headerBg: '#1A1A1A',
+        headerText: '#FFFFFF',
+        textPrimary: '#FFFFFF',
+        textSecondary: '#D1D5DB',
+        textMuted: '#9CA3AF',
+        textFaint: '#6B7280',
+        border: '#374151',
+        borderLight: '#4B5563',
+        inputBg: '#1E1E1E',
+        gold: '#D4AF37',
+      },
+      light: {
+        bg: '#F3F4F6',
+        card: '#FFFFFF',
+        surface: '#FFFFFF',
+        surfaceLight: '#F0F1F3',
+        headerBg: '#FFFFFF',
+        headerText: '#111827',
+        textPrimary: '#111827',
+        textSecondary: '#374151',
+        textMuted: '#6B7280',
+        textFaint: '#9CA3AF',
+        border: '#D1D5DB',
+        borderLight: '#E5E7EB',
+        inputBg: '#FFFFFF',
+        gold: '#92700C',
+      },
     },
 
     seo: {
@@ -159,13 +211,38 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
     colors: {
       accent: '#3B7A57',
       accentHover: '#2D6043',
-      gold: '#C9A227',
-      bg: '#1A1A1A',
-      card: '#252525',
-      surface: '#1E1E1E',
-      surfaceLight: '#2A2A2A',
-      headerBg: '#F4EBDD',
-      headerText: '#0F1E2E',
+      dark: {
+        bg: '#1A1A1A',
+        card: '#252525',
+        surface: '#1E1E1E',
+        surfaceLight: '#2A2A2A',
+        headerBg: '#F4EBDD',
+        headerText: '#0F1E2E',
+        textPrimary: '#FFFFFF',
+        textSecondary: '#D1D5DB',
+        textMuted: '#9CA3AF',
+        textFaint: '#6B7280',
+        border: '#374151',
+        borderLight: '#4B5563',
+        inputBg: '#1E1E1E',
+        gold: '#C9A227',
+      },
+      light: {
+        bg: '#F3F4F6',
+        card: '#FFFFFF',
+        surface: '#FFFFFF',
+        surfaceLight: '#F0F1F3',
+        headerBg: '#F4EBDD',
+        headerText: '#0F1E2E',
+        textPrimary: '#111827',
+        textSecondary: '#374151',
+        textMuted: '#6B7280',
+        textFaint: '#9CA3AF',
+        border: '#D1D5DB',
+        borderLight: '#E5E7EB',
+        inputBg: '#FFFFFF',
+        gold: '#856508',
+      },
     },
 
     seo: {
@@ -212,13 +289,38 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
     colors: {
       accent: '#93B5CF',
       accentHover: '#7A9BB5',
-      gold: '#C9A227',
-      bg: '#040F1A',
-      card: '#0A1929',
-      surface: '#071422',
-      surfaceLight: '#0D1F33',
-      headerBg: '#040F1A',
-      headerText: '#FFFFFF',
+      dark: {
+        bg: '#040F1A',
+        card: '#0A1929',
+        surface: '#071422',
+        surfaceLight: '#0D1F33',
+        headerBg: '#040F1A',
+        headerText: '#FFFFFF',
+        textPrimary: '#FFFFFF',
+        textSecondary: '#D1D5DB',
+        textMuted: '#9CA3AF',
+        textFaint: '#6B7280',
+        border: '#374151',
+        borderLight: '#4B5563',
+        inputBg: '#071422',
+        gold: '#C9A227',
+      },
+      light: {
+        bg: '#F3F4F6',
+        card: '#FFFFFF',
+        surface: '#FFFFFF',
+        surfaceLight: '#F0F1F3',
+        headerBg: '#FFFFFF',
+        headerText: '#111827',
+        textPrimary: '#111827',
+        textSecondary: '#374151',
+        textMuted: '#6B7280',
+        textFaint: '#9CA3AF',
+        border: '#D1D5DB',
+        borderLight: '#E5E7EB',
+        inputBg: '#FFFFFF',
+        gold: '#856508',
+      },
     },
 
     seo: {

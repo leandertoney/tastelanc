@@ -111,7 +111,7 @@ export default function AutocompleteInput({
         placeholder={placeholder}
         autoFocus={autoFocus}
         disabled={disabled}
-        className="w-full px-3 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+        className="w-full px-3 py-2.5 bg-tastelanc-input-bg border border-tastelanc-border rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
         role="combobox"
         aria-expanded={isOpen && options.length > 0}
         aria-autocomplete="list"
@@ -130,8 +130,8 @@ export default function AutocompleteInput({
               aria-selected={i === highlightedIndex}
               className={`px-3 py-2 cursor-pointer text-sm transition-colors ${
                 i === highlightedIndex
-                  ? 'bg-tastelanc-accent/20 text-white'
-                  : 'text-gray-300 hover:bg-tastelanc-surface-light'
+                  ? 'bg-tastelanc-accent/20 text-tastelanc-text-primary'
+                  : 'text-tastelanc-text-secondary hover:bg-tastelanc-surface-light'
               }`}
               onMouseDown={(e) => {
                 e.preventDefault(); // Prevent input blur
@@ -141,7 +141,7 @@ export default function AutocompleteInput({
             >
               <div className="font-medium">{option.label}</div>
               {option.sublabel && (
-                <div className="text-xs text-gray-500">{option.sublabel}</div>
+                <div className="text-xs text-tastelanc-text-faint">{option.sublabel}</div>
               )}
             </li>
           ))}

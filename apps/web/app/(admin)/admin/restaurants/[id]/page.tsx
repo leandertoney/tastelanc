@@ -85,20 +85,20 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
         <div className="flex items-center gap-4">
           <Link
             href="/admin/restaurants"
-            className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-tastelanc-surface-light transition-colors"
+            className="p-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary rounded-lg hover:bg-tastelanc-surface-light transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-white">{restaurant.name}</h1>
-            <p className="text-gray-400">{restaurant.city}, {restaurant.state}</p>
+            <h1 className="text-2xl font-bold text-tastelanc-text-primary">{restaurant.name}</h1>
+            <p className="text-tastelanc-text-muted">{restaurant.city}, {restaurant.state}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <Link
             href={`/restaurants/${restaurant.slug}`}
             target="_blank"
-            className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white border border-tastelanc-surface-light rounded-lg hover:bg-tastelanc-surface-light transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-tastelanc-text-secondary hover:text-tastelanc-text-primary border border-tastelanc-surface-light rounded-lg hover:bg-tastelanc-surface-light transition-colors"
           >
             <ExternalLink className="w-4 h-4" />
             View Public Page
@@ -138,27 +138,27 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
       <div className="grid md:grid-cols-2 gap-6">
         {/* Contact Info */}
         <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-tastelanc-text-primary mb-4 flex items-center gap-2">
             <Store className="w-5 h-5 text-tastelanc-accent" />
             Contact Information
           </h2>
           <div className="space-y-3">
             <div className="flex items-start gap-3">
-              <MapPin className="w-4 h-4 text-gray-400 mt-1" />
+              <MapPin className="w-4 h-4 text-tastelanc-text-muted mt-1" />
               <div>
-                <p className="text-white">{restaurant.address}</p>
-                <p className="text-gray-400">{restaurant.city}, {restaurant.state} {restaurant.zip_code}</p>
+                <p className="text-tastelanc-text-primary">{restaurant.address}</p>
+                <p className="text-tastelanc-text-muted">{restaurant.city}, {restaurant.state} {restaurant.zip_code}</p>
               </div>
             </div>
             {restaurant.phone && (
               <div className="flex items-center gap-3">
-                <Phone className="w-4 h-4 text-gray-400" />
-                <p className="text-white">{restaurant.phone}</p>
+                <Phone className="w-4 h-4 text-tastelanc-text-muted" />
+                <p className="text-tastelanc-text-primary">{restaurant.phone}</p>
               </div>
             )}
             {restaurant.website && (
               <div className="flex items-center gap-3">
-                <Globe className="w-4 h-4 text-gray-400" />
+                <Globe className="w-4 h-4 text-tastelanc-text-muted" />
                 <a
                   href={restaurant.website}
                   target="_blank"
@@ -174,26 +174,26 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
 
         {/* Content Stats */}
         <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-tastelanc-text-primary mb-4 flex items-center gap-2">
             <Calendar className="w-5 h-5 text-tastelanc-accent" />
             Content Overview
           </h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="p-3 bg-tastelanc-bg rounded-lg">
-              <p className="text-2xl font-bold text-white">{hoursResult.count || 0}</p>
-              <p className="text-sm text-gray-400">Hours Set</p>
+              <p className="text-2xl font-bold text-tastelanc-text-primary">{hoursResult.count || 0}</p>
+              <p className="text-sm text-tastelanc-text-muted">Hours Set</p>
             </div>
             <div className="p-3 bg-tastelanc-bg rounded-lg">
-              <p className="text-2xl font-bold text-white">{eventsResult.count || 0}</p>
-              <p className="text-sm text-gray-400">Active Events</p>
+              <p className="text-2xl font-bold text-tastelanc-text-primary">{eventsResult.count || 0}</p>
+              <p className="text-sm text-tastelanc-text-muted">Active Events</p>
             </div>
             <div className="p-3 bg-tastelanc-bg rounded-lg">
-              <p className="text-2xl font-bold text-white">{specialsResult.count || 0}</p>
-              <p className="text-sm text-gray-400">Active Specials</p>
+              <p className="text-2xl font-bold text-tastelanc-text-primary">{specialsResult.count || 0}</p>
+              <p className="text-sm text-tastelanc-text-muted">Active Specials</p>
             </div>
             <div className="p-3 bg-tastelanc-bg rounded-lg">
-              <p className="text-2xl font-bold text-white">{happyHoursResult.count || 0}</p>
-              <p className="text-sm text-gray-400">Happy Hours</p>
+              <p className="text-2xl font-bold text-tastelanc-text-primary">{happyHoursResult.count || 0}</p>
+              <p className="text-sm text-tastelanc-text-muted">Happy Hours</p>
             </div>
           </div>
         </div>
@@ -201,15 +201,15 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
         {/* Description */}
         {(restaurant.custom_description || restaurant.description) && (
           <div className="md:col-span-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Description</h2>
-            <p className="text-gray-300">{restaurant.custom_description || restaurant.description}</p>
+            <h2 className="text-lg font-semibold text-tastelanc-text-primary mb-4">Description</h2>
+            <p className="text-tastelanc-text-secondary">{restaurant.custom_description || restaurant.description}</p>
           </div>
         )}
 
         {/* Categories */}
         {restaurant.categories && restaurant.categories.length > 0 && (
           <div className="md:col-span-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Categories</h2>
+            <h2 className="text-lg font-semibold text-tastelanc-text-primary mb-4">Categories</h2>
             <div className="flex flex-wrap gap-2">
               {restaurant.categories.map((cat: string) => (
                 <span
@@ -226,26 +226,26 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
 
       {/* Metadata */}
       <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-6">
-        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-tastelanc-text-primary mb-4 flex items-center gap-2">
           <Clock className="w-5 h-5 text-tastelanc-accent" />
           Metadata
         </h2>
         <div className="grid md:grid-cols-4 gap-4 text-sm">
           <div>
-            <p className="text-gray-400">Owner</p>
-            <p className="text-white truncate">{ownerEmail || 'No owner assigned'}</p>
+            <p className="text-tastelanc-text-muted">Owner</p>
+            <p className="text-tastelanc-text-primary truncate">{ownerEmail || 'No owner assigned'}</p>
           </div>
           <div>
-            <p className="text-gray-400">Created</p>
-            <p className="text-white">{new Date(restaurant.created_at).toLocaleDateString()}</p>
+            <p className="text-tastelanc-text-muted">Created</p>
+            <p className="text-tastelanc-text-primary">{new Date(restaurant.created_at).toLocaleDateString()}</p>
           </div>
           <div>
-            <p className="text-gray-400">Last Updated</p>
-            <p className="text-white">{new Date(restaurant.updated_at).toLocaleDateString()}</p>
+            <p className="text-tastelanc-text-muted">Last Updated</p>
+            <p className="text-tastelanc-text-primary">{new Date(restaurant.updated_at).toLocaleDateString()}</p>
           </div>
           <div>
-            <p className="text-gray-400">Restaurant ID</p>
-            <p className="text-white font-mono text-xs">{restaurant.id}</p>
+            <p className="text-tastelanc-text-muted">Restaurant ID</p>
+            <p className="text-tastelanc-text-primary font-mono text-xs">{restaurant.id}</p>
           </div>
         </div>
       </div>

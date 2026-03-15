@@ -396,21 +396,21 @@ export default function CalendarPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary flex items-center gap-3">
             <CalendarDays className="w-8 h-8 text-tastelanc-accent" />
             Calendar
           </h1>
           <div className="flex items-center gap-2 mt-1">
-            <p className="text-gray-400">Schedule and track meetings</p>
+            <p className="text-tastelanc-text-muted">Schedule and track meetings</p>
             <Tooltip content="Click any date to add a meeting. Assign meetings to team members to auto-create leads. Double-click a date or use + to get started." position="bottom">
-              <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
+              <HelpCircle className="w-4 h-4 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
             </Tooltip>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={goToToday}
-            className="px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-gray-300 hover:text-white rounded-lg transition-colors border border-tastelanc-surface-light text-sm"
+            className="px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-tastelanc-text-secondary hover:text-tastelanc-text-primary rounded-lg transition-colors border border-tastelanc-surface-light text-sm"
           >
             Today
           </button>
@@ -427,13 +427,13 @@ export default function CalendarPage() {
       {/* Month Navigation */}
       <Card className="p-4 mb-5">
         <div className="flex items-center justify-between">
-          <button onClick={prevMonth} className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-tastelanc-surface-light transition-colors">
+          <button onClick={prevMonth} className="p-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary rounded-lg hover:bg-tastelanc-surface-light transition-colors">
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <h2 className="text-xl font-bold text-white">
+          <h2 className="text-xl font-bold text-tastelanc-text-primary">
             {MONTHS[currentMonth]} {currentYear}
           </h2>
-          <button onClick={nextMonth} className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-tastelanc-surface-light transition-colors">
+          <button onClick={nextMonth} className="p-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary rounded-lg hover:bg-tastelanc-surface-light transition-colors">
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
@@ -450,7 +450,7 @@ export default function CalendarPage() {
             <>
               <div className="grid grid-cols-7 mb-2">
                 {DAYS.map((day) => (
-                  <div key={day} className="text-center text-xs font-semibold text-gray-500 uppercase tracking-wider py-2">
+                  <div key={day} className="text-center text-xs font-semibold text-tastelanc-text-faint uppercase tracking-wider py-2">
                     {day}
                   </div>
                 ))}
@@ -478,8 +478,8 @@ export default function CalendarPage() {
                           isToday
                             ? 'bg-tastelanc-accent text-white'
                             : day.month === 'current'
-                            ? 'text-gray-300'
-                            : 'text-gray-600'
+                            ? 'text-tastelanc-text-secondary'
+                            : 'text-tastelanc-text-faint'
                         }`}
                       >
                         {day.date}
@@ -500,7 +500,7 @@ export default function CalendarPage() {
                           </div>
                         ))}
                         {dayMeetings.length > 2 && (
-                          <div className="text-[10px] text-gray-500 px-1">
+                          <div className="text-[10px] text-tastelanc-text-faint px-1">
                             +{dayMeetings.length - 2} more
                           </div>
                         )}
@@ -517,7 +517,7 @@ export default function CalendarPage() {
         <div className="lg:w-80">
           <Card className="p-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-white">
+              <h3 className="text-sm font-semibold text-tastelanc-text-primary">
                 {selectedDate
                   ? new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', {
                       weekday: 'long', month: 'long', day: 'numeric',
@@ -527,7 +527,7 @@ export default function CalendarPage() {
               {selectedDate && (
                 <button
                   onClick={() => openCreateModal(selectedDate)}
-                  className="p-1.5 text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
+                  className="p-1.5 text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light rounded-lg transition-colors"
                   title="Add meeting"
                 >
                   <Plus className="w-4 h-4" />
@@ -536,7 +536,7 @@ export default function CalendarPage() {
             </div>
 
             {selectedDateMeetings.length === 0 ? (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-tastelanc-text-faint">
                 {selectedDate ? 'No meetings scheduled' : 'Click a day to view meetings'}
               </p>
             ) : (
@@ -548,13 +548,13 @@ export default function CalendarPage() {
                     onClick={() => openEditModal(m)}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <h4 className="text-sm font-medium text-white">{m.title}</h4>
-                      <Pencil className="w-3.5 h-3.5 text-gray-600 group-hover:text-gray-400 flex-shrink-0 mt-0.5" />
+                      <h4 className="text-sm font-medium text-tastelanc-text-primary">{m.title}</h4>
+                      <Pencil className="w-3.5 h-3.5 text-tastelanc-text-faint group-hover:text-tastelanc-text-muted flex-shrink-0 mt-0.5" />
                     </div>
                     {(m.start_time || m.end_time) && (
                       <div className="flex items-center gap-1.5 mt-1.5">
-                        <Clock className="w-3 h-3 text-gray-500" />
-                        <span className="text-xs text-gray-400">
+                        <Clock className="w-3 h-3 text-tastelanc-text-faint" />
+                        <span className="text-xs text-tastelanc-text-muted">
                           {formatTime(m.start_time)}
                           {m.end_time ? ` – ${formatTime(m.end_time)}` : ''}
                         </span>
@@ -576,7 +576,7 @@ export default function CalendarPage() {
                           <Link
                             href={`/sales/leads/${m.lead_id}`}
                             onClick={(e) => e.stopPropagation()}
-                            className="p-1 text-gray-500 hover:text-white rounded transition-colors"
+                            className="p-1 text-tastelanc-text-faint hover:text-tastelanc-text-primary rounded transition-colors"
                             title="View lead"
                           >
                             <ExternalLink className="w-3 h-3" />
@@ -585,7 +585,7 @@ export default function CalendarPage() {
                             <Link
                               href={`/sales/leads/${m.lead_id}`}
                               onClick={(e) => e.stopPropagation()}
-                              className="p-1 text-gray-500 hover:text-blue-400 rounded transition-colors"
+                              className="p-1 text-tastelanc-text-faint hover:text-blue-400 rounded transition-colors"
                               title="Email lead"
                             >
                               <Mail className="w-3 h-3" />
@@ -601,12 +601,12 @@ export default function CalendarPage() {
                       </div>
                     )}
                     {m.description && (
-                      <p className="text-xs text-gray-500 mt-1.5 line-clamp-2">{m.description}</p>
+                      <p className="text-xs text-tastelanc-text-faint mt-1.5 line-clamp-2">{m.description}</p>
                     )}
                     {m.creator_name && (
                       <div className="flex items-center gap-1.5 mt-1.5">
-                        <User className="w-3 h-3 text-gray-600" />
-                        <span className="text-[11px] text-gray-600">Set by {m.creator_name}</span>
+                        <User className="w-3 h-3 text-tastelanc-text-faint" />
+                        <span className="text-[11px] text-tastelanc-text-faint">Set by {m.creator_name}</span>
                       </div>
                     )}
                   </div>
@@ -625,10 +625,10 @@ export default function CalendarPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-tastelanc-surface-light flex-shrink-0">
-              <h2 className="text-lg font-bold text-white">
+              <h2 className="text-lg font-bold text-tastelanc-text-primary">
                 {editingMeeting ? 'Edit Meeting' : 'New Meeting'}
               </h2>
-              <button onClick={() => setShowModal(false)} className="p-1.5 text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors">
+              <button onClick={() => setShowModal(false)} className="p-1.5 text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light rounded-lg transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -636,59 +636,59 @@ export default function CalendarPage() {
             <div className="p-4 overflow-y-auto flex-1">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Title</label>
+                  <label className="block text-xs text-tastelanc-text-faint uppercase tracking-wider mb-1.5">Title</label>
                   <input
                     type="text"
                     value={formTitle}
                     onChange={(e) => setFormTitle(e.target.value)}
                     placeholder="Meeting with..."
-                    className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                    className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                     autoFocus
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Date</label>
+                  <label className="block text-xs text-tastelanc-text-faint uppercase tracking-wider mb-1.5">Date</label>
                   <input
                     type="date"
                     value={formDate}
                     onChange={(e) => setFormDate(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent [color-scheme:dark]"
+                    className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent [color-scheme:dark]"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Start Time</label>
+                    <label className="block text-xs text-tastelanc-text-faint uppercase tracking-wider mb-1.5">Start Time</label>
                     <input
                       type="time"
                       value={formStartTime}
                       onChange={(e) => setFormStartTime(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent [color-scheme:dark]"
+                      className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent [color-scheme:dark]"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">End Time</label>
+                    <label className="block text-xs text-tastelanc-text-faint uppercase tracking-wider mb-1.5">End Time</label>
                     <input
                       type="time"
                       value={formEndTime}
                       onChange={(e) => setFormEndTime(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent [color-scheme:dark]"
+                      className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent [color-scheme:dark]"
                     />
                   </div>
                 </div>
 
                 {/* Assign To — full width, prominent */}
                 <div className="md:col-span-2">
-                  <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
-                    Assign To <span className="text-gray-600 normal-case">(creates a lead for this rep)</span>
+                  <label className="block text-xs text-tastelanc-text-faint uppercase tracking-wider mb-1.5">
+                    Assign To <span className="text-tastelanc-text-faint normal-case">(creates a lead for this rep)</span>
                   </label>
                   <div className="relative">
-                    <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tastelanc-text-faint" />
                     <select
                       value={formAssignedTo}
                       onChange={(e) => setFormAssignedTo(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent appearance-none"
+                      className="w-full pl-9 pr-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent appearance-none"
                     >
                       <option value="">Unassigned</option>
                       {salesReps.map((rep) => (
@@ -707,11 +707,11 @@ export default function CalendarPage() {
                 </div>
 
                 <div className="relative">
-                  <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
-                    Link to Lead <span className="text-gray-600">(optional)</span>
+                  <label className="block text-xs text-tastelanc-text-faint uppercase tracking-wider mb-1.5">
+                    Link to Lead <span className="text-tastelanc-text-faint">(optional)</span>
                   </label>
                   <div className="relative">
-                    <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tastelanc-text-faint" />
                     <input
                       type="text"
                       value={formLeadSearch}
@@ -722,12 +722,12 @@ export default function CalendarPage() {
                       }}
                       onFocus={() => setShowLeadDropdown(true)}
                       placeholder="Search leads..."
-                      className="w-full pl-9 pr-8 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                      className="w-full pl-9 pr-8 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                     />
                     {formLeadId && (
                       <button
                         onClick={() => { setFormLeadId(''); setFormLeadSearch(''); setLeads([]); }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-500 hover:text-white"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-tastelanc-text-faint hover:text-tastelanc-text-primary"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -736,7 +736,7 @@ export default function CalendarPage() {
                   {showLeadDropdown && formLeadSearch && !formLeadId && (
                     <div className="absolute z-10 mt-1 w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg shadow-lg max-h-40 overflow-y-auto">
                       {leadSearchLoading ? (
-                        <p className="px-3 py-2 text-sm text-gray-500">Searching…</p>
+                        <p className="px-3 py-2 text-sm text-tastelanc-text-faint">Searching…</p>
                       ) : leads.length > 0 ? (
                         leads.map((l) => (
                           <button
@@ -751,25 +751,25 @@ export default function CalendarPage() {
                                 setFormRestaurantSearch(l.restaurant_name);
                               }
                             }}
-                            className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-tastelanc-surface-light hover:text-white transition-colors flex items-center gap-2"
+                            className="w-full text-left px-3 py-2 text-sm text-tastelanc-text-secondary hover:bg-tastelanc-surface-light hover:text-tastelanc-text-primary transition-colors flex items-center gap-2"
                           >
-                            <Briefcase className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+                            <Briefcase className="w-3.5 h-3.5 text-tastelanc-text-faint flex-shrink-0" />
                             {l.business_name}
                           </button>
                         ))
                       ) : (
-                        <p className="px-3 py-2 text-sm text-gray-500">No leads found</p>
+                        <p className="px-3 py-2 text-sm text-tastelanc-text-faint">No leads found</p>
                       )}
                     </div>
                   )}
                 </div>
 
                 <div className="relative">
-                  <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
-                    Link to Restaurant <span className="text-gray-600">(optional)</span>
+                  <label className="block text-xs text-tastelanc-text-faint uppercase tracking-wider mb-1.5">
+                    Link to Restaurant <span className="text-tastelanc-text-faint">(optional)</span>
                   </label>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tastelanc-text-faint" />
                     <input
                       type="text"
                       value={formRestaurantSearch}
@@ -780,12 +780,12 @@ export default function CalendarPage() {
                       }}
                       onFocus={() => setShowRestaurantDropdown(true)}
                       placeholder="Search restaurants..."
-                      className="w-full pl-9 pr-8 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                      className="w-full pl-9 pr-8 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                     />
                     {formRestaurantId && (
                       <button
                         onClick={() => { setFormRestaurantId(''); setFormRestaurantSearch(''); }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-500 hover:text-white"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-tastelanc-text-faint hover:text-tastelanc-text-primary"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -794,7 +794,7 @@ export default function CalendarPage() {
                   {showRestaurantDropdown && formRestaurantSearch && !formRestaurantId && (
                     <div className="absolute z-10 mt-1 w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg shadow-lg max-h-40 overflow-y-auto">
                       {restaurantSearchLoading ? (
-                        <p className="px-3 py-2 text-sm text-gray-500">Searching…</p>
+                        <p className="px-3 py-2 text-sm text-tastelanc-text-faint">Searching…</p>
                       ) : restaurants.length > 0 ? (
                         restaurants.map((r) => (
                           <button
@@ -804,29 +804,29 @@ export default function CalendarPage() {
                               setFormRestaurantSearch(r.name);
                               setShowRestaurantDropdown(false);
                             }}
-                            className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-tastelanc-surface-light hover:text-white transition-colors flex items-center gap-2"
+                            className="w-full text-left px-3 py-2 text-sm text-tastelanc-text-secondary hover:bg-tastelanc-surface-light hover:text-tastelanc-text-primary transition-colors flex items-center gap-2"
                           >
-                            <Store className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+                            <Store className="w-3.5 h-3.5 text-tastelanc-text-faint flex-shrink-0" />
                             {r.name}
                           </button>
                         ))
                       ) : (
-                        <p className="px-3 py-2 text-sm text-gray-500">No restaurants found</p>
+                        <p className="px-3 py-2 text-sm text-tastelanc-text-faint">No restaurants found</p>
                       )}
                     </div>
                   )}
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">
-                    Notes <span className="text-gray-600">(optional)</span>
+                  <label className="block text-xs text-tastelanc-text-faint uppercase tracking-wider mb-1.5">
+                    Notes <span className="text-tastelanc-text-faint">(optional)</span>
                   </label>
                   <textarea
                     value={formDescription}
                     onChange={(e) => setFormDescription(e.target.value)}
                     placeholder="Meeting agenda, notes..."
                     rows={2}
-                    className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent resize-y"
+                    className="w-full px-3 py-2.5 bg-tastelanc-bg border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent resize-y"
                   />
                 </div>
               </div>
@@ -847,7 +847,7 @@ export default function CalendarPage() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-gray-400 hover:text-white transition-colors text-sm"
+                  className="px-4 py-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors text-sm"
                 >
                   Cancel
                 </button>

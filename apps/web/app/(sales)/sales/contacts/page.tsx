@@ -196,8 +196,8 @@ export default function SalesContactsPage() {
       <div className="flex items-center justify-center py-12">
         <div className="text-center max-w-md">
           <Mail className="w-12 h-12 text-red-400 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-white mb-2">Couldn&apos;t load contacts</h2>
-          <p className="text-gray-400 text-sm mb-6">
+          <h2 className="text-lg font-semibold text-tastelanc-text-primary mb-2">Couldn&apos;t load contacts</h2>
+          <p className="text-tastelanc-text-muted text-sm mb-6">
             We had trouble fetching contact inquiries. Please try again.
           </p>
           <button
@@ -216,16 +216,16 @@ export default function SalesContactsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary flex items-center gap-3">
             <Mail className="w-8 h-8 text-tastelanc-accent" />
             Contact Inquiries
           </h1>
           <div className="flex items-center gap-2 mt-1">
-            <p className="text-gray-400">
+            <p className="text-tastelanc-text-muted">
               {contacts.length} total{unreadCount > 0 && ` · ${unreadCount} unread`} · {convertedCount} converted
             </p>
             <Tooltip content="These are businesses that reached out through the contact form on the website. Convert them to leads to start the sales process and track your outreach." position="bottom">
-              <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
+              <HelpCircle className="w-4 h-4 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
             </Tooltip>
           </div>
         </div>
@@ -249,13 +249,13 @@ export default function SalesContactsPage() {
       <Card className="p-3 mb-5">
         <div className="flex flex-col md:flex-row gap-3">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tastelanc-text-muted" />
             <input
               type="text"
               placeholder="Search by name, email, or message..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              className="w-full pl-10 pr-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
             />
           </div>
           <div className="flex gap-2">
@@ -271,7 +271,7 @@ export default function SalesContactsPage() {
                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   statusFilter === opt.value
                     ? 'bg-tastelanc-accent text-white'
-                    : 'bg-tastelanc-surface-light text-gray-400 hover:text-white'
+                    : 'bg-tastelanc-surface-light text-tastelanc-text-muted hover:text-tastelanc-text-primary'
                 }`}
               >
                 {opt.label}
@@ -284,11 +284,11 @@ export default function SalesContactsPage() {
       {/* Contacts List */}
       {filteredContacts.length === 0 ? (
         <Card className="p-12 text-center">
-          <Users className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">
+          <Users className="w-12 h-12 text-tastelanc-text-faint mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-2">
             {contacts.length === 0 ? 'No inquiries yet' : 'No matching inquiries'}
           </h3>
-          <p className="text-gray-400">
+          <p className="text-tastelanc-text-muted">
             {contacts.length === 0
               ? 'Contact form submissions will appear here'
               : 'Try adjusting your search or filters'}
@@ -300,12 +300,12 @@ export default function SalesContactsPage() {
           <div className="flex items-center gap-3 px-2">
             <button
               onClick={toggleSelectAll}
-              className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+              className="flex items-center gap-2 text-xs text-tastelanc-text-faint hover:text-tastelanc-text-secondary transition-colors"
             >
               <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
                 selectedIds.size === filteredContacts.length && filteredContacts.length > 0
                   ? 'bg-tastelanc-accent border-tastelanc-accent'
-                  : 'border-gray-600'
+                  : 'border-tastelanc-border'
               }`}>
                 {selectedIds.size === filteredContacts.length && filteredContacts.length > 0 && (
                   <svg className="w-3 h-3 text-white" viewBox="0 0 12 12"><path d="M10 3L4.5 8.5 2 6" stroke="currentColor" strokeWidth="2" fill="none" /></svg>
@@ -333,7 +333,7 @@ export default function SalesContactsPage() {
                     className="mt-1 flex-shrink-0"
                   >
                     <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                      isSelected ? 'bg-tastelanc-accent border-tastelanc-accent' : 'border-gray-600 hover:border-gray-400'
+                      isSelected ? 'bg-tastelanc-accent border-tastelanc-accent' : 'border-tastelanc-border hover:border-tastelanc-border-light'
                     }`}>
                       {isSelected && (
                         <svg className="w-3 h-3 text-white" viewBox="0 0 12 12"><path d="M10 3L4.5 8.5 2 6" stroke="currentColor" strokeWidth="2" fill="none" /></svg>
@@ -353,7 +353,7 @@ export default function SalesContactsPage() {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h3 className={`font-semibold ${isUnread ? 'text-white' : 'text-gray-300'}`}>
+                      <h3 className={`font-semibold ${isUnread ? 'text-tastelanc-text-primary' : 'text-tastelanc-text-secondary'}`}>
                         {contact.business_name || contact.name}
                       </h3>
                       {contact.interested_plan && (
@@ -364,19 +364,19 @@ export default function SalesContactsPage() {
                       {isConverted && (
                         <Badge className="bg-green-500/20 text-green-400 text-xs">Converted</Badge>
                       )}
-                      <span className="text-xs text-gray-600 ml-auto flex-shrink-0">
+                      <span className="text-xs text-tastelanc-text-faint ml-auto flex-shrink-0">
                         {new Date(contact.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-3 text-sm text-gray-400 mb-1.5">
+                    <div className="flex items-center gap-3 text-sm text-tastelanc-text-muted mb-1.5">
                       <span>{contact.name}</span>
-                      <span className="text-gray-600">·</span>
+                      <span className="text-tastelanc-text-faint">·</span>
                       <span className="truncate">{contact.email}</span>
                     </div>
 
                     {contact.message && (
-                      <p className={`text-sm line-clamp-2 ${isUnread ? 'text-gray-300' : 'text-gray-500'}`}>
+                      <p className={`text-sm line-clamp-2 ${isUnread ? 'text-tastelanc-text-secondary' : 'text-tastelanc-text-faint'}`}>
                         {contact.message}
                       </p>
                     )}
@@ -387,7 +387,7 @@ export default function SalesContactsPage() {
                     <a
                       href={`mailto:${contact.email}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="p-2 text-gray-500 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
+                      className="p-2 text-tastelanc-text-faint hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light rounded-lg transition-colors"
                       title="Send Email"
                     >
                       <Mail className="w-4 h-4" />
@@ -396,7 +396,7 @@ export default function SalesContactsPage() {
                       <a
                         href={`tel:${contact.phone}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="p-2 text-gray-500 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
+                        className="p-2 text-tastelanc-text-faint hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light rounded-lg transition-colors"
                         title="Call"
                       >
                         <Phone className="w-4 h-4" />

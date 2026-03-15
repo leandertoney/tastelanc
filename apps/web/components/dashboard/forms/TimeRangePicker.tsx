@@ -40,15 +40,15 @@ export default function TimeRangePicker({
 
       {/* Visual indicator */}
       {startTime && endTime && (
-        <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
-          <span className="text-white font-medium">
+        <div className="flex items-center justify-center gap-2 text-sm text-tastelanc-text-muted">
+          <span className="text-tastelanc-text-primary font-medium">
             {formatDisplayTime(startTime)}
           </span>
           <ArrowRight className="w-4 h-4 text-lancaster-gold" />
-          <span className="text-white font-medium">
+          <span className="text-tastelanc-text-primary font-medium">
             {formatDisplayTime(endTime)}
           </span>
-          <span className="text-gray-500 ml-2">
+          <span className="text-tastelanc-text-faint ml-2">
             ({calculateDuration(startTime, endTime)})
           </span>
         </div>

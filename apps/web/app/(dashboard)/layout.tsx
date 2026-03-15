@@ -24,12 +24,14 @@ import {
   TrendingUp,
   HelpCircle,
   ListChecks,
+  Megaphone,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { signOut } from '@/lib/supabase/auth';
 import { RestaurantProvider, useRestaurant } from '@/contexts/RestaurantContext';
 import { OnboardingProvider, OnboardingWizard } from '@/components/dashboard/onboarding';
 import { Tooltip } from '@/components/ui';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 const navItems = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, hint: 'Your restaurant performance summary and quick stats' },
   { href: '/dashboard/profile', label: 'Profile', icon: Store, hint: 'Update your name, description, photos, hours, and contact info' },
@@ -40,6 +42,7 @@ const navItems = [
   { href: '/dashboard/features', label: 'Features', icon: ListChecks, hint: 'Toggle amenities like private dining, live piano, and more — helps diners find you' },
   { href: '/dashboard/menu', label: 'Menu', icon: UtensilsCrossed, hint: 'Build and maintain your digital menu with sections and items' },
   { href: '/dashboard/insights', label: 'Market Insights', icon: Lightbulb, hint: 'See how your restaurant compares in your local market' },
+  { href: '/dashboard/marketing', label: 'Marketing', icon: Megaphone, hint: 'Send email campaigns and push notifications to your audience' },
   { href: '/dashboard/team', label: 'Team', icon: Users, hint: 'Invite and manage team members who can edit your content' },
   { href: '/dashboard/subscription', label: 'Subscription', icon: CreditCard, hint: 'View your plan details, billing, and upgrade options' },
 ];
@@ -218,7 +221,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
               <span className={sidebarCollapsed ? 'lg:hidden' : ''}>TasteLanc</span>
             </Link>
             {!sidebarCollapsed && (
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-tastelanc-text-faint mt-1">
                 {subtitleText}
               </p>
             )}
@@ -248,13 +251,13 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                     </span>
                   )}
                 </div>
-                <span className={`text-white text-sm font-medium truncate max-w-[120px] ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
+                <span className={`text-tastelanc-text-primary text-sm font-medium truncate max-w-[120px] ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
                   {isLoading ? 'Loading...' : restaurantName}
                 </span>
               </div>
               {showRestaurantSwitcher && !sidebarCollapsed && (
                 <ChevronDown
-                  className={`w-4 h-4 text-gray-400 transition-transform ${
+                  className={`w-4 h-4 text-tastelanc-text-muted transition-transform ${
                     restaurantMenuOpen ? 'rotate-180' : ''
                   }`}
                 />
@@ -263,7 +266,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
             {/* Restaurant Dropdown */}
             {restaurantMenuOpen && showRestaurantSwitcher && !sidebarCollapsed && (
-              <div className="mt-2 bg-tastelanc-surface-light rounded-lg border border-gray-700 overflow-hidden">
+              <div className="mt-2 bg-tastelanc-surface-light rounded-lg border border-tastelanc-border overflow-hidden">
                 {restaurants.map((r) => {
                   const isSelected = r.id === restaurant?.id;
                   return (
@@ -275,12 +278,12 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                       }}
                       className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${
                         isSelected
-                          ? 'bg-tastelanc-accent/10 text-white'
-                          : 'text-gray-300 hover:bg-tastelanc-bg hover:text-white'
+                          ? 'bg-tastelanc-accent/10 text-tastelanc-text-primary'
+                          : 'text-tastelanc-text-secondary hover:bg-tastelanc-bg hover:text-tastelanc-text-primary'
                       }`}
                     >
                       <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        isSelected ? 'bg-tastelanc-accent' : 'bg-gray-600'
+                        isSelected ? 'bg-tastelanc-accent' : 'bg-tastelanc-surface-light'
                       }`}>
                         <span className="text-white font-bold text-xs">
                           {r.name.charAt(0)}
@@ -318,7 +321,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                         className={`flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 rounded-lg transition-colors flex-1 ${
                           isActive
                             ? 'bg-tastelanc-accent text-white'
-                            : 'text-gray-400 hover:text-white hover:bg-tastelanc-surface-light'
+                            : 'text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light'
                         }`}
                       >
                         <Icon className="w-5 h-5 flex-shrink-0" />
@@ -327,7 +330,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                       {item.hint && !sidebarCollapsed && (
                         <Tooltip content={item.hint} position="right">
                           <span className="absolute right-2 opacity-0 group-hover/nav:opacity-100 transition-opacity cursor-help">
-                            <HelpCircle className="w-3.5 h-3.5 text-gray-600 hover:text-gray-400" />
+                            <HelpCircle className="w-3.5 h-3.5 text-tastelanc-text-faint hover:text-tastelanc-text-muted" />
                           </span>
                         </Tooltip>
                       )}
@@ -341,19 +344,19 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           {/* User Info */}
           <div className={`${sidebarCollapsed ? 'lg:p-2' : ''} p-4 border-t border-tastelanc-surface-light`}>
             <div className={`flex items-center gap-3 mb-4 ${sidebarCollapsed ? 'lg:justify-center lg:px-0 lg:mb-2' : ''} px-3`}>
-              <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0" title={sidebarCollapsed ? displayName : undefined}>
+              <div className="w-8 h-8 bg-tastelanc-surface-light rounded-full flex items-center justify-center flex-shrink-0" title={sidebarCollapsed ? displayName : undefined}>
                 <User className="w-4 h-4 text-white" />
               </div>
               <div className={`flex-1 min-w-0 ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
-                <p className="text-sm text-white truncate">{displayName}</p>
-                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                <p className="text-sm text-tastelanc-text-primary truncate">{displayName}</p>
+                <p className="text-xs text-tastelanc-text-faint truncate">{user?.email}</p>
               </div>
             </div>
             {restaurant?.slug && (
               <Link
                 href={`/restaurants/${restaurant.slug}`}
                 title={sidebarCollapsed ? 'View Public Page' : undefined}
-                className={`flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors`}
+                className={`flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors`}
               >
                 <Store className="w-5 h-5 flex-shrink-0" />
                 <span className={sidebarCollapsed ? 'lg:hidden' : ''}>View Public Page</span>
@@ -381,7 +384,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
               <button
                 onClick={handleSignOut}
                 title={sidebarCollapsed ? 'Sign Out' : undefined}
-                className={`w-full flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 text-gray-400 hover:text-red-400 transition-colors`}
+                className={`w-full flex items-center ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''} gap-3 px-3 py-2 text-tastelanc-text-muted hover:text-red-400 transition-colors`}
               >
                 <LogOut className="w-5 h-5 flex-shrink-0" />
                 <span className={sidebarCollapsed ? 'lg:hidden' : ''}>Sign Out</span>
@@ -398,21 +401,24 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           <div className="flex items-center justify-between px-4 py-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 text-gray-400 hover:text-white"
+              className="lg:hidden p-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary"
             >
               <Menu className="w-6 h-6" />
             </button>
             <div className="flex-1 lg:ml-0 ml-4">
-              <h1 className="text-lg font-semibold text-white">
+              <h1 className="text-lg font-semibold text-tastelanc-text-primary">
                 {filteredNavItems.find((item) => item.href === pathname)?.label || 'Dashboard'}
               </h1>
             </div>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 text-gray-400 hover:text-white"
-            >
-              {sidebarOpen && <X className="w-6 h-6" />}
-            </button>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="lg:hidden p-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary"
+              >
+                {sidebarOpen && <X className="w-6 h-6" />}
+              </button>
+            </div>
           </div>
         </header>
 

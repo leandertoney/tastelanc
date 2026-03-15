@@ -232,7 +232,7 @@ export default function InstagramPostsPage() {
       {/* Header + Stats + Nav — compact single row */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-4">
-          <h1 className="text-lg font-bold text-white flex items-center gap-2">
+          <h1 className="text-lg font-bold text-tastelanc-text-primary flex items-center gap-2">
             <Instagram className="w-5 h-5 text-pink-400" />
             Instagram Posts
           </h1>
@@ -244,14 +244,14 @@ export default function InstagramPostsPage() {
                 className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                   marketSlug === m.slug
                     ? 'bg-tastelanc-accent text-white'
-                    : 'text-gray-400 hover:text-white'
+                    : 'text-tastelanc-text-muted hover:text-tastelanc-text-primary'
                 }`}
               >
                 {m.label}
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-3 text-xs text-gray-400">
+          <div className="flex items-center gap-3 text-xs text-tastelanc-text-muted">
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> {stats?.published || 0} published</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500 inline-block" /> {stats?.drafts || 0} drafts</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> {stats?.failed || 0} failed</span>
@@ -262,28 +262,28 @@ export default function InstagramPostsPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={prevPeriod}
-            className="p-1.5 text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
+            className="p-1.5 text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light rounded-lg transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <h2 className="text-sm font-semibold text-white min-w-[220px] text-center">
+          <h2 className="text-sm font-semibold text-tastelanc-text-primary min-w-[220px] text-center">
             {week1Label} – {week2Label}
           </h2>
           <button
             onClick={nextPeriod}
-            className="p-1.5 text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
+            className="p-1.5 text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light rounded-lg transition-colors"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
           <button
             onClick={goToday}
-            className="px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
+            className="px-2 py-1 text-xs text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light rounded-lg transition-colors"
           >
             Today
           </button>
           <button
             onClick={() => { setIsLoading(true); fetchPosts(); }}
-            className="p-1.5 text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
+            className="p-1.5 text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light rounded-lg transition-colors"
             title="Refresh"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -401,7 +401,7 @@ function WeekRow({
   return (
     <div className="mb-3">
       <div className="flex items-center justify-between mb-1.5">
-        <h3 className="text-xs font-semibold text-gray-400">{label}</h3>
+        <h3 className="text-xs font-semibold text-tastelanc-text-muted">{label}</h3>
         <div className="flex items-center gap-2">
           {draftPosts.length > 0 && (
             <button
@@ -448,10 +448,10 @@ function WeekRow({
               {/* Day header */}
               <div className={`px-2 py-1 border-b ${isToday ? 'border-tastelanc-accent/30' : 'border-tastelanc-surface-light'}`}>
                 <div className="flex items-baseline gap-1.5">
-                  <p className={`text-sm font-bold ${isToday ? 'text-tastelanc-accent' : 'text-white'}`}>
+                  <p className={`text-sm font-bold ${isToday ? 'text-tastelanc-accent' : 'text-tastelanc-text-primary'}`}>
                     {day.getDate()}
                   </p>
-                  <p className="text-[9px] uppercase tracking-wider text-gray-500">
+                  <p className="text-[9px] uppercase tracking-wider text-tastelanc-text-faint">
                     {day.toLocaleDateString('en-US', { weekday: 'short' })}
                   </p>
                 </div>
@@ -500,11 +500,11 @@ function PostSlotCard({ post, slot, dateKey, generating, onClick }: {
           <Loader2 className="w-4 h-4 animate-spin text-tastelanc-accent mx-auto" />
         ) : (
           <>
-            <p className="text-[10px] uppercase text-gray-600 flex items-center justify-center gap-1">
+            <p className="text-[10px] uppercase text-tastelanc-text-faint flex items-center justify-center gap-1">
               {slot === 'am' ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
               {slot === 'am' ? '11:30 AM' : '5:30 PM'}
             </p>
-            <p className="text-[10px] text-gray-500 mt-0.5">Click to generate</p>
+            <p className="text-[10px] text-tastelanc-text-faint mt-0.5">Click to generate</p>
           </>
         )}
       </button>
@@ -517,7 +517,7 @@ function PostSlotCard({ post, slot, dateKey, generating, onClick }: {
     : post.status === 'failed' ? { label: 'Failed', className: 'bg-red-500/20 text-red-400', Icon: AlertTriangle }
     : { label: 'Draft', className: 'bg-yellow-500/20 text-yellow-400', Icon: null };
 
-  const typeColor = CONTENT_TYPE_COLORS[post.content_type] || 'bg-gray-500/20 text-gray-400';
+  const typeColor = CONTENT_TYPE_COLORS[post.content_type] || 'bg-tastelanc-surface-light/50 text-tastelanc-text-muted';
 
   return (
     <button
@@ -525,7 +525,7 @@ function PostSlotCard({ post, slot, dateKey, generating, onClick }: {
       className="w-full rounded-lg border border-tastelanc-surface-light hover:border-tastelanc-accent/50 p-1.5 text-left transition-colors group"
     >
       <div className="flex items-center justify-between mb-0.5">
-        <span className="text-[10px] uppercase text-gray-500 flex items-center gap-1">
+        <span className="text-[10px] uppercase text-tastelanc-text-faint flex items-center gap-1">
           {slot === 'am' ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
           {slot.toUpperCase()}
         </span>
@@ -584,12 +584,12 @@ function PostDetailModal({ post, onClose, onStatusChange, onPublishNow }: {
         <div className="p-6 border-b border-tastelanc-surface-light flex items-center justify-between">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <h2 className="text-xl font-bold text-white">
+              <h2 className="text-xl font-bold text-tastelanc-text-primary">
                 {CONTENT_TYPE_LABELS[post.content_type] || post.content_type}
               </h2>
               {statusBadge}
             </div>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-tastelanc-text-muted">
               {new Date(post.post_date + 'T12:00:00').toLocaleDateString('en-US', {
                 weekday: 'long',
                 month: 'long',
@@ -602,7 +602,7 @@ function PostDetailModal({ post, onClose, onStatusChange, onPublishNow }: {
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white text-2xl leading-none px-2"
+            className="text-tastelanc-text-muted hover:text-tastelanc-text-primary text-2xl leading-none px-2"
           >
             &times;
           </button>
@@ -611,7 +611,7 @@ function PostDetailModal({ post, onClose, onStatusChange, onPublishNow }: {
         {/* Slide Previews */}
         {post.media_urls?.length > 0 && (
           <div className="p-6 border-b border-tastelanc-surface-light">
-            <h3 className="text-sm font-semibold text-gray-400 mb-3 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-tastelanc-text-muted mb-3 flex items-center gap-2">
               <ImageIcon className="w-4 h-4" />
               Slides ({post.media_urls.length})
             </h3>
@@ -628,9 +628,9 @@ function PostDetailModal({ post, onClose, onStatusChange, onPublishNow }: {
 
         {/* Caption */}
         <div className="p-6 border-b border-tastelanc-surface-light">
-          <h3 className="text-sm font-semibold text-gray-400 mb-3">Caption</h3>
+          <h3 className="text-sm font-semibold text-tastelanc-text-muted mb-3">Caption</h3>
           <div className="bg-tastelanc-surface-light rounded-lg p-4">
-            <p className="text-white text-sm whitespace-pre-wrap leading-relaxed">
+            <p className="text-tastelanc-text-primary text-sm whitespace-pre-wrap leading-relaxed">
               {post.caption || 'No caption generated'}
             </p>
           </div>
@@ -638,7 +638,7 @@ function PostDetailModal({ post, onClose, onStatusChange, onPublishNow }: {
 
         {/* Meta + Actions */}
         <div className="p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="text-sm text-gray-500 space-y-1">
+          <div className="text-sm text-tastelanc-text-faint space-y-1">
             {post.published_at && (
               <p>Published: {new Date(post.published_at).toLocaleString()}</p>
             )}
@@ -651,10 +651,10 @@ function PostDetailModal({ post, onClose, onStatusChange, onPublishNow }: {
             {post.engagement_metrics && Object.keys(post.engagement_metrics).length > 0 && (
               <div className="flex gap-4 mt-2">
                 {post.engagement_metrics.likes != null && (
-                  <span className="text-white font-semibold">{post.engagement_metrics.likes} likes</span>
+                  <span className="text-tastelanc-text-primary font-semibold">{post.engagement_metrics.likes} likes</span>
                 )}
                 {post.engagement_metrics.comments != null && (
-                  <span className="text-white font-semibold">{post.engagement_metrics.comments} comments</span>
+                  <span className="text-tastelanc-text-primary font-semibold">{post.engagement_metrics.comments} comments</span>
                 )}
               </div>
             )}
@@ -689,7 +689,7 @@ function PostDetailModal({ post, onClose, onStatusChange, onPublishNow }: {
             {(post.status === 'draft' || post.status === 'approved') && (
               <button
                 onClick={() => onStatusChange(post.id, 'draft')}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-gray-600 text-gray-300 rounded-lg transition-colors text-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface-light text-tastelanc-text-secondary rounded-lg transition-colors text-sm"
               >
                 Regenerate
               </button>

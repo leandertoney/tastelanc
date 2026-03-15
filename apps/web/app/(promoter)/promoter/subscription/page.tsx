@@ -62,19 +62,19 @@ export default function PromoterSubscriptionPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-2xl font-bold text-white">Subscription</h1>
-        <p className="text-gray-400 mt-1">Manage your self-promoter subscription</p>
+        <h1 className="text-2xl font-bold text-tastelanc-text-primary">Subscription</h1>
+        <p className="text-tastelanc-text-muted mt-1">Manage your self-promoter subscription</p>
       </div>
 
       {/* Current Plan */}
       <Card className="p-6">
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h2 className="text-lg font-semibold text-white mb-1">Self-Promoter Plan</h2>
-            <p className="text-gray-400 text-sm">Monthly subscription</p>
+            <h2 className="text-lg font-semibold text-tastelanc-text-primary mb-1">Self-Promoter Plan</h2>
+            <p className="text-tastelanc-text-muted text-sm">Monthly subscription</p>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-bold text-white">$50<span className="text-gray-400 text-base font-normal">/mo</span></p>
+            <p className="text-2xl font-bold text-tastelanc-text-primary">$50<span className="text-tastelanc-text-muted text-base font-normal">/mo</span></p>
           </div>
         </div>
 
@@ -86,8 +86,8 @@ export default function PromoterSubscriptionPage() {
                 <CheckCircle className="w-5 h-5 text-green-400" />
               </div>
               <div>
-                <p className="text-white font-medium">Active Subscription</p>
-                <p className="text-gray-400 text-sm">Your subscription is active and in good standing</p>
+                <p className="text-tastelanc-text-primary font-medium">Active Subscription</p>
+                <p className="text-tastelanc-text-muted text-sm">Your subscription is active and in good standing</p>
               </div>
             </>
           ) : (
@@ -96,8 +96,8 @@ export default function PromoterSubscriptionPage() {
                 <AlertCircle className="w-5 h-5 text-amber-400" />
               </div>
               <div>
-                <p className="text-white font-medium">No Active Subscription</p>
-                <p className="text-gray-400 text-sm">Contact support to activate your subscription</p>
+                <p className="text-tastelanc-text-primary font-medium">No Active Subscription</p>
+                <p className="text-tastelanc-text-muted text-sm">Contact support to activate your subscription</p>
               </div>
             </>
           )}
@@ -105,7 +105,7 @@ export default function PromoterSubscriptionPage() {
 
         {/* Features */}
         <div className="mb-6">
-          <h3 className="text-sm font-medium text-gray-400 mb-3">Plan includes:</h3>
+          <h3 className="text-sm font-medium text-tastelanc-text-muted mb-3">Plan includes:</h3>
           <ul className="space-y-2">
             {[
               'Unlimited event listings',
@@ -114,7 +114,7 @@ export default function PromoterSubscriptionPage() {
               'Events displayed in TasteLanc app',
               'Promotion to local audience',
             ].map((feature, i) => (
-              <li key={i} className="flex items-center gap-2 text-gray-300 text-sm">
+              <li key={i} className="flex items-center gap-2 text-tastelanc-text-secondary text-sm">
                 <CheckCircle className="w-4 h-4 text-purple-400 flex-shrink-0" />
                 {feature}
               </li>
@@ -127,7 +127,7 @@ export default function PromoterSubscriptionPage() {
           <button
             onClick={handleManageSubscription}
             disabled={isLoadingPortal}
-            className="w-full flex items-center justify-center gap-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-white py-3 rounded-lg transition-colors"
+            className="w-full flex items-center justify-center gap-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-tastelanc-text-primary py-3 rounded-lg transition-colors"
           >
             {isLoadingPortal ? (
               <>
@@ -147,8 +147,8 @@ export default function PromoterSubscriptionPage() {
 
       {/* Help */}
       <Card className="p-6">
-        <h2 className="text-lg font-semibold text-white mb-2">Need Help?</h2>
-        <p className="text-gray-400 text-sm mb-4">
+        <h2 className="text-lg font-semibold text-tastelanc-text-primary mb-2">Need Help?</h2>
+        <p className="text-tastelanc-text-muted text-sm mb-4">
           If you have questions about your subscription or need assistance, please contact our support team.
         </p>
         <a

@@ -24,7 +24,7 @@ const STATUS_OPTIONS = [
   { value: 'planned', label: 'Planned', color: 'bg-purple-500' },
   { value: 'in_progress', label: 'In Progress', color: 'bg-orange-500' },
   { value: 'completed', label: 'Completed', color: 'bg-green-500' },
-  { value: 'declined', label: 'Declined', color: 'bg-gray-500' },
+  { value: 'declined', label: 'Declined', color: 'bg-tastelanc-surface-light' },
 ];
 
 const STATUS_BADGE_VARIANT: Record<string, 'default' | 'accent' | 'gold'> = {
@@ -126,11 +126,11 @@ export default function AdminFeatureRequestsPage() {
   return (
     <div>
       <div className="mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
+        <h1 className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary flex items-center gap-2">
           <Lightbulb className="w-7 h-7 text-tastelanc-accent" />
           Feature Requests
         </h1>
-        <p className="text-gray-400 mt-1 text-sm md:text-base">
+        <p className="text-tastelanc-text-muted mt-1 text-sm md:text-base">
           {requests.length} total{unreadCount > 0 && ` (${unreadCount} new)`}
         </p>
       </div>
@@ -142,7 +142,7 @@ export default function AdminFeatureRequestsPage() {
           className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
             statusFilter === 'all'
               ? 'bg-tastelanc-accent text-white'
-              : 'bg-tastelanc-surface text-gray-400 hover:text-white'
+              : 'bg-tastelanc-surface text-tastelanc-text-muted hover:text-tastelanc-text-primary'
           }`}
         >
           All ({requests.length})
@@ -156,7 +156,7 @@ export default function AdminFeatureRequestsPage() {
               className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
                 statusFilter === option.value
                   ? 'bg-tastelanc-accent text-white'
-                  : 'bg-tastelanc-surface text-gray-400 hover:text-white'
+                  : 'bg-tastelanc-surface text-tastelanc-text-muted hover:text-tastelanc-text-primary'
               }`}
             >
               {option.label} ({count})
@@ -167,9 +167,9 @@ export default function AdminFeatureRequestsPage() {
 
       {filteredRequests.length === 0 ? (
         <Card className="p-8 md:p-12 text-center">
-          <MessageSquare className="w-10 h-10 md:w-12 md:h-12 text-gray-600 mx-auto mb-4" />
-          <h3 className="text-base md:text-lg font-medium text-white mb-2">No feature requests</h3>
-          <p className="text-gray-400 text-sm md:text-base">
+          <MessageSquare className="w-10 h-10 md:w-12 md:h-12 text-tastelanc-text-faint mx-auto mb-4" />
+          <h3 className="text-base md:text-lg font-medium text-tastelanc-text-primary mb-2">No feature requests</h3>
+          <p className="text-tastelanc-text-muted text-sm md:text-base">
             {statusFilter === 'all'
               ? "When users submit feature requests, they'll appear here."
               : `No ${statusFilter} requests found.`}
@@ -190,12 +190,12 @@ export default function AdminFeatureRequestsPage() {
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold text-white">{request.title}</h3>
+                      <h3 className="font-semibold text-tastelanc-text-primary">{request.title}</h3>
                       {!request.read_at && (
                         <Badge variant="accent" className="text-xs">New</Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 text-gray-500 text-xs mt-1">
+                    <div className="flex items-center gap-2 text-tastelanc-text-faint text-xs mt-1">
                       <Calendar className="w-3 h-3" />
                       {new Date(request.created_at).toLocaleString('en-US', {
                         month: 'short',
@@ -218,7 +218,7 @@ export default function AdminFeatureRequestsPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => deleteRequest(request.id)}
-                    className="p-2 text-gray-500 hover:text-red-400 transition-colors"
+                    className="p-2 text-tastelanc-text-faint hover:text-red-400 transition-colors"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -228,7 +228,7 @@ export default function AdminFeatureRequestsPage() {
 
               {/* Description */}
               <div className="bg-tastelanc-surface-light/50 rounded-lg p-3 md:p-4 mb-4">
-                <p className="text-gray-300 whitespace-pre-wrap text-sm md:text-base">
+                <p className="text-tastelanc-text-secondary whitespace-pre-wrap text-sm md:text-base">
                   {request.description}
                 </p>
               </div>
@@ -237,12 +237,12 @@ export default function AdminFeatureRequestsPage() {
               <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                 {/* Status */}
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">Status:</span>
+                  <span className="text-xs text-tastelanc-text-faint">Status:</span>
                   <select
                     value={request.status}
                     onChange={(e) => updateRequest(request.id, { status: e.target.value as any })}
                     disabled={updatingId === request.id}
-                    className="bg-tastelanc-surface border border-tastelanc-surface-light rounded px-2 py-1 text-sm text-white focus:outline-none focus:ring-1 focus:ring-tastelanc-accent"
+                    className="bg-tastelanc-surface border border-tastelanc-surface-light rounded px-2 py-1 text-sm text-tastelanc-text-primary focus:outline-none focus:ring-1 focus:ring-tastelanc-accent"
                   >
                     {STATUS_OPTIONS.map(option => (
                       <option key={option.value} value={option.value}>
@@ -254,7 +254,7 @@ export default function AdminFeatureRequestsPage() {
 
                 {/* Priority */}
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">Priority:</span>
+                  <span className="text-xs text-tastelanc-text-faint">Priority:</span>
                   <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
@@ -267,7 +267,7 @@ export default function AdminFeatureRequestsPage() {
                           className={`w-4 h-4 ${
                             request.priority && star <= request.priority
                               ? 'text-yellow-400 fill-yellow-400'
-                              : 'text-gray-600'
+                              : 'text-tastelanc-text-faint'
                           }`}
                         />
                       </button>
@@ -304,7 +304,7 @@ export default function AdminFeatureRequestsPage() {
                       updateRequest(request.id, { admin_notes: e.target.value || null });
                     }
                   }}
-                  className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-3 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-tastelanc-accent resize-none"
+                  className="w-full bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-3 text-sm text-tastelanc-text-secondary placeholder-tastelanc-text-faint focus:outline-none focus:ring-1 focus:ring-tastelanc-accent resize-none"
                   rows={2}
                 />
               </div>

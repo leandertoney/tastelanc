@@ -456,7 +456,7 @@ export default function LeadDetailPage({
   if (!lead) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-xl font-semibold text-white mb-2">Lead not found</h2>
+        <h2 className="text-xl font-semibold text-tastelanc-text-primary mb-2">Lead not found</h2>
         <button onClick={() => router.back()} className="text-tastelanc-accent hover:underline">
           Go back
         </button>
@@ -464,7 +464,7 @@ export default function LeadDetailPage({
     );
   }
 
-  const inputClass = 'w-full px-3 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent';
+  const inputClass = 'w-full px-3 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent';
 
   return (
     <div>
@@ -481,20 +481,20 @@ export default function LeadDetailPage({
         <div className="flex items-center gap-4">
           <button
             onClick={handleBackNavigation}
-            className="p-2 text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded-lg transition-colors"
+            className="p-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-white">{lead.business_name}</h1>
+            <h1 className="text-2xl font-bold text-tastelanc-text-primary">{lead.business_name}</h1>
             <div className="flex items-center gap-3 mt-1">
               {formatCategory(lead.category) && (
-                <span className="text-sm text-gray-400">{formatCategory(lead.category)}</span>
+                <span className="text-sm text-tastelanc-text-muted">{formatCategory(lead.category)}</span>
               )}
-              <span className="text-gray-600">|</span>
-              <span className="text-sm text-gray-500">Source: {lead.source}</span>
-              <span className="text-gray-600">|</span>
-              <span className="text-sm text-gray-500">Added {new Date(lead.created_at).toLocaleDateString()}</span>
+              <span className="text-tastelanc-text-faint">|</span>
+              <span className="text-sm text-tastelanc-text-faint">Source: {lead.source}</span>
+              <span className="text-tastelanc-text-faint">|</span>
+              <span className="text-sm text-tastelanc-text-faint">Added {new Date(lead.created_at).toLocaleDateString()}</span>
             </div>
           </div>
         </div>
@@ -514,7 +514,7 @@ export default function LeadDetailPage({
               <button
                 onClick={() => { if (!ownership?.isLocked) { setEditMode(true); setEditForm(lead); } }}
                 disabled={ownership?.isLocked}
-                className={`flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-gray-300 hover:text-white rounded-lg transition-colors border border-tastelanc-surface-light ${ownership?.isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-tastelanc-text-secondary hover:text-tastelanc-text-primary rounded-lg transition-colors border border-tastelanc-surface-light ${ownership?.isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <Pencil className="w-4 h-4" />
                 Edit
@@ -524,7 +524,7 @@ export default function LeadDetailPage({
             <>
               <button
                 onClick={handleCancelEdit}
-                className="flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary rounded-lg transition-colors"
               >
                 <X className="w-4 h-4" />
                 Cancel
@@ -573,7 +573,7 @@ export default function LeadDetailPage({
           <Lock className="w-5 h-5 text-red-400 flex-shrink-0" />
           <div>
             <p className="text-sm font-medium text-red-400">This lead is owned by {lead.assigned_to_name}</p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-tastelanc-text-faint">
               You can view but not edit. It will become available in {14 - ownership.daysSinceUpdate} day{14 - ownership.daysSinceUpdate !== 1 ? 's' : ''} if no activity.
             </p>
           </div>
@@ -585,7 +585,7 @@ export default function LeadDetailPage({
           <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0" />
           <div>
             <p className="text-sm font-medium text-yellow-400">Follow up needed</p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-tastelanc-text-faint">
               This lead hasn&apos;t been updated in {ownership.daysSinceUpdate} days. Other reps can claim it after 14 days.
             </p>
           </div>
@@ -598,7 +598,7 @@ export default function LeadDetailPage({
             <Unlock className="w-5 h-5 text-green-400 flex-shrink-0" />
             <div>
               <p className="text-sm font-medium text-green-400">This lead is available</p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-tastelanc-text-faint">
                 Inactive for {ownership.daysSinceUpdate} days. You can claim it.
               </p>
             </div>
@@ -639,7 +639,7 @@ export default function LeadDetailPage({
       {/* Status + Linked Business bar */}
       <div className="flex items-center gap-4 mb-6">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-400">Status:</span>
+          <span className="text-sm text-tastelanc-text-muted">Status:</span>
           <div className="flex gap-1">
             {STATUS_OPTIONS.map((status) => (
               <button
@@ -651,7 +651,7 @@ export default function LeadDetailPage({
                 } ${
                   lead.status === status.value
                     ? status.color
-                    : 'text-gray-500 hover:bg-tastelanc-surface-light hover:text-gray-300'
+                    : 'text-tastelanc-text-faint hover:bg-tastelanc-surface-light hover:text-tastelanc-text-secondary'
                 }`}
               >
                 {status.label}
@@ -662,7 +662,7 @@ export default function LeadDetailPage({
 
         {lead.restaurants && (
           <>
-            <span className="text-gray-600">|</span>
+            <span className="text-tastelanc-text-faint">|</span>
             <div className="flex items-center gap-2">
               <Store className="w-4 h-4 text-green-400" />
               <span className="text-sm text-green-400">{lead.restaurants.name}</span>
@@ -677,11 +677,11 @@ export default function LeadDetailPage({
         )}
         {!lead.restaurants && lead.google_place_id && (
           <>
-            <span className="text-gray-600">|</span>
+            <span className="text-tastelanc-text-faint">|</span>
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-blue-400" />
               <span className="text-sm text-blue-400">Google Places</span>
-              <span className="text-xs text-gray-500">Not yet in directory</span>
+              <span className="text-xs text-tastelanc-text-faint">Not yet in directory</span>
             </div>
           </>
         )}
@@ -689,11 +689,11 @@ export default function LeadDetailPage({
 
       {/* Lead Details Card */}
       <Card className="p-6 mb-6">
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">Lead Details</h2>
+        <h2 className="text-sm font-semibold text-tastelanc-text-muted uppercase tracking-wide mb-4">Lead Details</h2>
         {editMode ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Business Name</label>
+              <label className="block text-xs text-tastelanc-text-faint mb-1">Business Name</label>
               <input
                 type="text"
                 value={editForm.business_name || ''}
@@ -702,7 +702,7 @@ export default function LeadDetailPage({
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Contact Name</label>
+              <label className="block text-xs text-tastelanc-text-faint mb-1">Contact Name</label>
               <input
                 type="text"
                 value={editForm.contact_name || ''}
@@ -711,7 +711,7 @@ export default function LeadDetailPage({
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Category</label>
+              <label className="block text-xs text-tastelanc-text-faint mb-1">Category</label>
               <select
                 value={editForm.category || 'restaurant'}
                 onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
@@ -725,7 +725,7 @@ export default function LeadDetailPage({
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Email</label>
+              <label className="block text-xs text-tastelanc-text-faint mb-1">Email</label>
               <input
                 type="text"
                 value={editForm.email || ''}
@@ -734,7 +734,7 @@ export default function LeadDetailPage({
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Phone</label>
+              <label className="block text-xs text-tastelanc-text-faint mb-1">Phone</label>
               <input
                 type="tel"
                 value={editForm.phone || ''}
@@ -743,7 +743,7 @@ export default function LeadDetailPage({
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Website</label>
+              <label className="block text-xs text-tastelanc-text-faint mb-1">Website</label>
               <input
                 type="text"
                 value={editForm.website || ''}
@@ -752,7 +752,7 @@ export default function LeadDetailPage({
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Address</label>
+              <label className="block text-xs text-tastelanc-text-faint mb-1">Address</label>
               <input
                 type="text"
                 value={editForm.address || ''}
@@ -761,7 +761,7 @@ export default function LeadDetailPage({
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">City</label>
+              <label className="block text-xs text-tastelanc-text-faint mb-1">City</label>
               <input
                 type="text"
                 value={editForm.city || ''}
@@ -771,7 +771,7 @@ export default function LeadDetailPage({
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-gray-500 mb-1">State</label>
+                <label className="block text-xs text-tastelanc-text-faint mb-1">State</label>
                 <input
                   type="text"
                   value={editForm.state || ''}
@@ -780,7 +780,7 @@ export default function LeadDetailPage({
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">ZIP</label>
+                <label className="block text-xs text-tastelanc-text-faint mb-1">ZIP</label>
                 <input
                   type="text"
                   value={editForm.zip_code || ''}
@@ -790,7 +790,7 @@ export default function LeadDetailPage({
               </div>
             </div>
             <div className="md:col-span-3">
-              <label className="block text-xs text-gray-500 mb-1">Notes</label>
+              <label className="block text-xs text-tastelanc-text-faint mb-1">Notes</label>
               <textarea
                 value={editForm.notes || ''}
                 onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
@@ -800,7 +800,7 @@ export default function LeadDetailPage({
             </div>
             {/* Tags Editor */}
             <div className="md:col-span-3">
-              <label className="block text-xs text-gray-500 mb-1">Tags</label>
+              <label className="block text-xs text-tastelanc-text-faint mb-1">Tags</label>
               <div className="flex flex-wrap gap-2 mb-2">
                 {(editForm.tags || []).map((tag) => (
                   <span
@@ -810,7 +810,7 @@ export default function LeadDetailPage({
                     {tag}
                     <button
                       onClick={() => removeTag(tag)}
-                      className="hover:text-white transition-colors"
+                      className="hover:text-tastelanc-text-primary transition-colors"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -829,7 +829,7 @@ export default function LeadDetailPage({
                 <button
                   onClick={addTag}
                   disabled={!tagInput.trim()}
-                  className="px-3 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-gray-300 hover:text-white rounded-lg transition-colors disabled:opacity-30"
+                  className="px-3 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-tastelanc-text-secondary hover:text-tastelanc-text-primary rounded-lg transition-colors disabled:opacity-30"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -842,16 +842,16 @@ export default function LeadDetailPage({
               <Field label="Contact Name" value={lead.contact_name ? `${lead.contact_name}${lead.contact_title ? ` — ${lead.contact_title}` : ''}` : null} />
               <Field label="Business Email">
                 {lead.email ? (
-                  <a href={`mailto:${lead.email}`} className="text-sm text-white hover:text-tastelanc-accent flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-gray-500" />
+                  <a href={`mailto:${lead.email}`} className="text-sm text-tastelanc-text-primary hover:text-tastelanc-accent flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-tastelanc-text-faint" />
                     {lead.email}
                   </a>
                 ) : null}
               </Field>
               <Field label="Business Phone">
                 {lead.phone ? (
-                  <a href={`tel:${lead.phone}`} className="text-sm text-white hover:text-tastelanc-accent flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-gray-500" />
+                  <a href={`tel:${lead.phone}`} className="text-sm text-tastelanc-text-primary hover:text-tastelanc-accent flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-tastelanc-text-faint" />
                     {lead.phone}
                   </a>
                 ) : null}
@@ -862,17 +862,17 @@ export default function LeadDetailPage({
                     href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-white hover:text-tastelanc-accent flex items-center gap-1.5"
+                    className="text-sm text-tastelanc-text-primary hover:text-tastelanc-accent flex items-center gap-1.5"
                   >
-                    <Globe className="w-3.5 h-3.5 text-gray-500" />
+                    <Globe className="w-3.5 h-3.5 text-tastelanc-text-faint" />
                     {lead.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}
                   </a>
                 ) : null}
               </Field>
               <Field label="Address">
                 {(lead.address || lead.city) ? (
-                  <span className="text-sm text-white flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+                  <span className="text-sm text-tastelanc-text-primary flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-tastelanc-text-faint flex-shrink-0" />
                     {[lead.address, lead.city, lead.state, lead.zip_code].filter(Boolean).join(', ')}
                   </span>
                 ) : null}
@@ -911,7 +911,7 @@ export default function LeadDetailPage({
             {/* Tags display */}
             {lead.tags && lead.tags.length > 0 && (
               <div className="mt-4 pt-4 border-t border-tastelanc-surface-light">
-                <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                <p className="text-xs text-tastelanc-text-faint mb-2 flex items-center gap-1">
                   <Tag className="w-3 h-3" />
                   Tags
                 </p>
@@ -929,8 +929,8 @@ export default function LeadDetailPage({
             )}
             {lead.notes && (
               <div className="mt-4 pt-4 border-t border-tastelanc-surface-light">
-                <p className="text-xs text-gray-500 mb-1">Notes</p>
-                <p className="text-sm text-gray-300 whitespace-pre-wrap">{lead.notes}</p>
+                <p className="text-xs text-tastelanc-text-faint mb-1">Notes</p>
+                <p className="text-sm text-tastelanc-text-secondary whitespace-pre-wrap">{lead.notes}</p>
               </div>
             )}
           </>
@@ -941,7 +941,7 @@ export default function LeadDetailPage({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Log Activity */}
         <Card className="p-6 lg:col-span-1">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">Log Activity</h2>
+          <h2 className="text-sm font-semibold text-tastelanc-text-muted uppercase tracking-wide mb-4">Log Activity</h2>
           <div className="flex flex-wrap gap-2 mb-4">
             {ACTIVITY_TYPES.map((type) => {
               const Icon = type.icon;
@@ -952,7 +952,7 @@ export default function LeadDetailPage({
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
                     activityType === type.value
                       ? 'bg-tastelanc-accent text-white'
-                      : 'bg-tastelanc-surface-light text-gray-400 hover:text-white'
+                      : 'bg-tastelanc-surface-light text-tastelanc-text-muted hover:text-tastelanc-text-primary'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -983,9 +983,9 @@ export default function LeadDetailPage({
 
         {/* Activity Timeline */}
         <Card className="p-6 lg:col-span-2">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">Activity History</h2>
+          <h2 className="text-sm font-semibold text-tastelanc-text-muted uppercase tracking-wide mb-4">Activity History</h2>
           {activities.length === 0 ? (
-            <p className="text-gray-500 text-sm text-center py-8">No activity logged yet</p>
+            <p className="text-tastelanc-text-faint text-sm text-center py-8">No activity logged yet</p>
           ) : (
             <div className="space-y-0">
               {activities.map((activity, index) => {
@@ -1009,17 +1009,17 @@ export default function LeadDetailPage({
                           : 'bg-tastelanc-surface-light'
                       }`}>
                         <Icon className={`w-4 h-4 ${
-                          isStatusChange ? 'text-lancaster-gold' : isEmailReply ? 'text-blue-400' : 'text-gray-400'
+                          isStatusChange ? 'text-lancaster-gold' : isEmailReply ? 'text-blue-400' : 'text-tastelanc-text-muted'
                         }`} />
                       </div>
                       {!isLast && <div className="w-px flex-1 bg-tastelanc-surface-light min-h-[16px]" />}
                     </div>
                     <div className="pb-4 flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className={`text-xs font-medium capitalize ${isEmailReply ? 'text-blue-400' : 'text-gray-300'}`}>
+                        <span className={`text-xs font-medium capitalize ${isEmailReply ? 'text-blue-400' : 'text-tastelanc-text-secondary'}`}>
                           {isEmailReply ? 'Reply Received' : activity.activity_type.replace('_', ' ')}
                         </span>
-                        <span className="text-xs text-gray-600">
+                        <span className="text-xs text-tastelanc-text-faint">
                           {new Date(activity.created_at).toLocaleString()}
                         </span>
                         {/* Edit/Delete actions for non-status-change, non-reply activities */}
@@ -1030,7 +1030,7 @@ export default function LeadDetailPage({
                                 setEditingActivityId(activity.id);
                                 setEditingActivityText(activity.description || '');
                               }}
-                              className="p-1 text-gray-500 hover:text-white rounded transition-colors"
+                              className="p-1 text-tastelanc-text-faint hover:text-tastelanc-text-primary rounded transition-colors"
                               title="Edit"
                             >
                               <Pencil className="w-3 h-3" />
@@ -1038,7 +1038,7 @@ export default function LeadDetailPage({
                             <button
                               onClick={() => handleDeleteActivity(activity.id)}
                               disabled={deletingActivityId === activity.id}
-                              className="p-1 text-gray-500 hover:text-red-400 rounded transition-colors"
+                              className="p-1 text-tastelanc-text-faint hover:text-red-400 rounded transition-colors"
                               title="Delete"
                             >
                               {deletingActivityId === activity.id ? (
@@ -1072,12 +1072,12 @@ export default function LeadDetailPage({
                       {isEmailReply ? (
                         <div className="mt-1">
                           {activity.metadata?.from_email && (
-                            <p className="text-xs text-gray-500 mb-1">
+                            <p className="text-xs text-tastelanc-text-faint mb-1">
                               From: {activity.metadata.from_name || activity.metadata.from_email}
                             </p>
                           )}
                           {activity.description && (
-                            <p className="text-sm text-gray-400">{activity.description}</p>
+                            <p className="text-sm text-tastelanc-text-muted">{activity.description}</p>
                           )}
                           {replyData?.body_text && (
                             <div className="mt-2">
@@ -1094,7 +1094,7 @@ export default function LeadDetailPage({
                                 {isExpanded ? 'Hide full reply' : 'Show full reply'}
                               </button>
                               {isExpanded && (
-                                <div className="mt-2 p-3 bg-blue-500/5 border border-blue-500/10 rounded-lg text-sm text-gray-300 whitespace-pre-wrap max-h-64 overflow-y-auto">
+                                <div className="mt-2 p-3 bg-blue-500/5 border border-blue-500/10 rounded-lg text-sm text-tastelanc-text-secondary whitespace-pre-wrap max-h-64 overflow-y-auto">
                                   {replyData.body_text}
                                 </div>
                               )}
@@ -1107,7 +1107,7 @@ export default function LeadDetailPage({
                             type="text"
                             value={editingActivityText}
                             onChange={(e) => setEditingActivityText(e.target.value)}
-                            className="flex-1 px-2 py-1 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded text-sm text-white focus:outline-none focus:ring-1 focus:ring-tastelanc-accent"
+                            className="flex-1 px-2 py-1 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded text-sm text-tastelanc-text-primary focus:outline-none focus:ring-1 focus:ring-tastelanc-accent"
                             autoFocus
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') handleEditActivity(activity.id);
@@ -1122,7 +1122,7 @@ export default function LeadDetailPage({
                           </button>
                           <button
                             onClick={() => { setEditingActivityId(null); setEditingActivityText(''); }}
-                            className="px-2 py-1 text-gray-400 text-xs rounded transition-colors hover:text-white"
+                            className="px-2 py-1 text-tastelanc-text-muted text-xs rounded transition-colors hover:text-tastelanc-text-primary"
                           >
                             Cancel
                           </button>
@@ -1130,12 +1130,12 @@ export default function LeadDetailPage({
                       ) : (
                         <>
                           {activity.description && (
-                            <p className="text-sm text-gray-400">{activity.description}</p>
+                            <p className="text-sm text-tastelanc-text-muted">{activity.description}</p>
                           )}
                           {activity.activity_type === 'email' && activity.metadata && (
                             <div className="flex items-center gap-3 mt-1">
                               {activity.metadata.sender_name && (
-                                <span className="text-xs text-gray-500">
+                                <span className="text-xs text-tastelanc-text-faint">
                                   Sent as {activity.metadata.sender_name}
                                 </span>
                               )}
@@ -1178,11 +1178,11 @@ export default function LeadDetailPage({
 }
 
 function Field({ label, value, children }: { label: string; value?: string | null; children?: React.ReactNode }) {
-  const content = children || (value ? <span className="text-sm text-white">{value}</span> : null);
+  const content = children || (value ? <span className="text-sm text-tastelanc-text-primary">{value}</span> : null);
   return (
     <div>
-      <p className="text-xs text-gray-500 mb-1">{label}</p>
-      {content || <span className="text-sm text-gray-600">—</span>}
+      <p className="text-xs text-tastelanc-text-faint mb-1">{label}</p>
+      {content || <span className="text-sm text-tastelanc-text-faint">—</span>}
     </div>
   );
 }

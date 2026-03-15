@@ -51,18 +51,18 @@ export default function SortableMenuItem({ item, onEdit, onDelete }: SortableMen
         <button
           {...attributes}
           {...listeners}
-          className="touch-none text-gray-500 hover:text-gray-300 cursor-grab active:cursor-grabbing"
+          className="touch-none text-tastelanc-text-faint hover:text-tastelanc-text-secondary cursor-grab active:cursor-grabbing"
           aria-label="Drag to reorder"
         >
           <GripVertical className="w-4 h-4" />
         </button>
         <div>
           <div className="flex items-center gap-2">
-            <p className="text-white font-medium">{item.name}</p>
+            <p className="text-tastelanc-text-primary font-medium">{item.name}</p>
             {item.is_featured && <Badge variant="accent">Featured</Badge>}
             {!item.is_available && <Badge>Unavailable</Badge>}
           </div>
-          {item.description && <p className="text-gray-400 text-sm">{item.description}</p>}
+          {item.description && <p className="text-tastelanc-text-muted text-sm">{item.description}</p>}
           {item.dietary_flags.length > 0 && (
             <div className="flex gap-1 mt-1">
               {item.dietary_flags.map((flag) => (
@@ -75,15 +75,15 @@ export default function SortableMenuItem({ item, onEdit, onDelete }: SortableMen
         </div>
       </div>
       <div className="flex items-center gap-4">
-        {item.price !== null && <span className="text-gray-300">${item.price.toFixed(2)}</span>}
+        {item.price !== null && <span className="text-tastelanc-text-secondary">${item.price.toFixed(2)}</span>}
         {item.price_description && !item.price && (
-          <span className="text-gray-400 text-sm">{item.price_description}</span>
+          <span className="text-tastelanc-text-muted text-sm">{item.price_description}</span>
         )}
         <div className="flex items-center gap-2">
-          <button onClick={() => onEdit(item)} className="text-gray-400 hover:text-white">
+          <button onClick={() => onEdit(item)} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary">
             <Pencil className="w-4 h-4" />
           </button>
-          <button onClick={() => onDelete(item.id)} className="text-gray-400 hover:text-red-400">
+          <button onClick={() => onDelete(item.id)} className="text-tastelanc-text-muted hover:text-red-400">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>

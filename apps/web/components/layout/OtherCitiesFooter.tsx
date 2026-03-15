@@ -54,13 +54,13 @@ export default function OtherCitiesFooter() {
 
   return (
     <div>
-      <h4 className="font-semibold text-white mb-3">Other Cities</h4>
-      <ul className="space-y-2 text-sm text-gray-400">
+      <h4 className="font-semibold text-tastelanc-text-primary mb-3">Other Cities</h4>
+      <ul className="space-y-2 text-sm text-tastelanc-text-muted">
         {cities.map((city) => (
           <li key={city.slug}>
             <a
               href={`https://${city.domain}`}
-              className="hover:text-white transition-colors inline-flex items-center gap-1.5"
+              className="hover:text-tastelanc-text-primary transition-colors inline-flex items-center gap-1.5"
             >
               <MapPin className="w-3.5 h-3.5" />
               {city.name}

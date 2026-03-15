@@ -211,14 +211,14 @@ export default function HappyHoursPage() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-tastelanc-text-primary flex items-center gap-2">
             <Clock className="w-6 h-6 text-lancaster-gold" />
             Happy Hours
           </h2>
           <div className="flex items-center gap-2 mt-1">
-            <p className="text-gray-400">Manage your happy hour specials</p>
+            <p className="text-tastelanc-text-muted">Manage your happy hour specials</p>
             <Tooltip content="Happy hours are one of the most viewed features in the app. Add drink and food deals with prices, select the days and times, and upload an eye-catching image to attract more customers." position="bottom">
-              <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
+              <HelpCircle className="w-4 h-4 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
             </Tooltip>
           </div>
         </div>
@@ -251,41 +251,41 @@ export default function HappyHoursPage() {
       {editingHappyHour && restaurant?.id && (
         <Card className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-white">Edit Happy Hour</h3>
-            <button onClick={() => setEditingHappyHour(null)} className="text-gray-400 hover:text-white">
+            <h3 className="text-lg font-semibold text-tastelanc-text-primary">Edit Happy Hour</h3>
+            <button onClick={() => setEditingHappyHour(null)} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary">
               <X className="w-5 h-5" />
             </button>
           </div>
           <div className="space-y-5">
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                 Happy Hour Name *
               </label>
               <input
                 type="text"
                 value={editingHappyHour.name}
                 onChange={(e) => setEditingHappyHour({ ...editingHappyHour, name: e.target.value })}
-                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
               />
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                 Description
               </label>
               <textarea
                 value={editingHappyHour.description || ''}
                 onChange={(e) => setEditingHappyHour({ ...editingHappyHour, description: e.target.value })}
                 rows={2}
-                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold resize-none"
+                className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold resize-none"
               />
             </div>
 
             {/* Days */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-3">
                 Which days? *
               </label>
               <DaySelector
@@ -296,7 +296,7 @@ export default function HappyHoursPage() {
 
             {/* Time Range */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                 Time *
               </label>
               <TimeRangePicker
@@ -311,7 +311,7 @@ export default function HappyHoursPage() {
 
             {/* Image Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                 Custom Image
               </label>
               <HappyHourImageUpload
@@ -343,13 +343,13 @@ export default function HappyHoursPage() {
         <div className="flex items-start gap-3 p-4 bg-lancaster-gold/5 border border-lancaster-gold/20 rounded-lg">
           <Clock className="w-5 h-5 text-lancaster-gold flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm text-gray-300">
-              <span className="text-white font-medium">Multiple time slots?</span>{' '}
+            <p className="text-sm text-tastelanc-text-secondary">
+              <span className="text-tastelanc-text-primary font-medium">Multiple time slots?</span>{' '}
               Create a separate entry for each time window (e.g., 4-6pm weekdays and 9-11pm Thu-Sat).
               Tap the <Copy className="w-3 h-3 inline" /> icon to quickly duplicate an existing entry.
             </p>
           </div>
-          <button onClick={() => setShowMultiSlotTip(false)} className="text-gray-500 hover:text-white flex-shrink-0">
+          <button onClick={() => setShowMultiSlotTip(false)} className="text-tastelanc-text-faint hover:text-tastelanc-text-primary flex-shrink-0">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -362,37 +362,37 @@ export default function HappyHoursPage() {
             <div className="flex items-start justify-between mb-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-lg font-semibold text-white">{hh.name}</h3>
+                  <h3 className="text-lg font-semibold text-tastelanc-text-primary">{hh.name}</h3>
                   <Badge variant={hh.is_active ? 'accent' : 'default'}>
                     {hh.is_active ? 'Active' : 'Inactive'}
                   </Badge>
                 </div>
-                {hh.description && <p className="text-gray-400 text-sm">{hh.description}</p>}
+                {hh.description && <p className="text-tastelanc-text-muted text-sm">{hh.description}</p>}
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => toggleActive(hh.id, hh.is_active)}
-                  className="text-gray-400 hover:text-white text-sm"
+                  className="text-tastelanc-text-muted hover:text-tastelanc-text-primary text-sm"
                 >
                   {hh.is_active ? 'Deactivate' : 'Activate'}
                 </button>
                 <button
                   onClick={() => setEditingHappyHour(hh)}
-                  className="text-gray-400 hover:text-white"
+                  className="text-tastelanc-text-muted hover:text-tastelanc-text-primary"
                   title="Edit"
                 >
                   <Pencil className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => duplicateHappyHour(hh)}
-                  className="text-gray-400 hover:text-white"
+                  className="text-tastelanc-text-muted hover:text-tastelanc-text-primary"
                   title="Duplicate with different times"
                 >
                   <Copy className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => deleteHappyHour(hh.id)}
-                  className="text-gray-400 hover:text-red-400"
+                  className="text-tastelanc-text-muted hover:text-red-400"
                   title="Delete"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -403,7 +403,7 @@ export default function HappyHoursPage() {
             <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-lancaster-gold" />
-                <span className="text-gray-300">
+                <span className="text-tastelanc-text-secondary">
                   {formatTime(hh.start_time)} - {formatTime(hh.end_time)}
                 </span>
               </div>
@@ -418,16 +418,16 @@ export default function HappyHoursPage() {
 
             {hh.happy_hour_items && hh.happy_hour_items.length > 0 && (
               <div className="mt-4 pt-4 border-t border-tastelanc-surface-light">
-                <p className="text-sm text-gray-400 mb-2">Specials:</p>
+                <p className="text-sm text-tastelanc-text-muted mb-2">Specials:</p>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {hh.happy_hour_items.map((item) => (
                     <div
                       key={item.id}
                       className="flex items-center justify-between p-2 bg-tastelanc-surface rounded"
                     >
-                      <span className="text-white text-sm">{item.name}</span>
+                      <span className="text-tastelanc-text-primary text-sm">{item.name}</span>
                       <span className="text-lancaster-gold text-sm">
-                        <span className="line-through text-gray-500 mr-1">
+                        <span className="line-through text-tastelanc-text-faint mr-1">
                           ${item.original_price}
                         </span>
                         ${item.discounted_price}
@@ -444,8 +444,8 @@ export default function HappyHoursPage() {
       {happyHours.length === 0 && !showWizard && (
         <Card className="p-12 text-center">
           <Beer className="w-12 h-12 text-lancaster-gold mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">No happy hours yet</h3>
-          <p className="text-gray-400 mb-4">
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-2">No happy hours yet</h3>
+          <p className="text-tastelanc-text-muted mb-4">
             Create your first happy hour to attract more customers
           </p>
           <Button onClick={() => setShowWizard(true)}>

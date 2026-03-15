@@ -24,7 +24,7 @@ export default async function RosieHappyHoursTonight() {
     .filter((h) => (h.days_of_week || []).includes(today as any))
     .map((h) => ({ h, r: restaurants.find((x) => x.id === h.restaurant_id) }))
     .filter(({ r }) => r);
-  if (!filtered.length) return <main className="p-8 text-white">No happy hours tonight.</main>;
+  if (!filtered.length) return <main className="p-8 text-tastelanc-text-primary">No happy hours tonight.</main>;
 
   const urls = filtered.map(({ r }) => `${siteUrl}/restaurants/${r!.slug}`);
   const jsonLd = itemListJsonLd(urls);
@@ -33,18 +33,18 @@ export default async function RosieHappyHoursTonight() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <main className="max-w-5xl mx-auto px-4 py-10 text-white">
+      <main className="max-w-5xl mx-auto px-4 py-10 text-tastelanc-text-primary">
         {leadershipLine(claim)}
         <h1 className="text-3xl font-bold">{BRAND.aiName}&apos;s Happy Hours Tonight</h1>
-        <p className="text-gray-400 mt-2">Tonight’s drink and food deals.</p>
+        <p className="text-tastelanc-text-muted mt-2">Tonight’s drink and food deals.</p>
         {restaurantCTAButtons()}
         <div className="space-y-4 mt-6">
           {filtered.map(({ h, r }) => (
             <a key={h.id} href={`/restaurants/${r!.slug}`} className="block p-4 bg-tastelanc-surface rounded-lg">
-              <h2 className="text-xl font-semibold text-white">{r!.name} — {h.name}</h2>
-              <p className="text-sm text-gray-400">{h.start_time} - {h.end_time}</p>
-              {h.description && <p className="text-gray-300 text-sm mt-1">{h.description}</p>}
-              <ul className="text-sm text-gray-300 mt-2 space-y-1">
+              <h2 className="text-xl font-semibold text-tastelanc-text-primary">{r!.name} — {h.name}</h2>
+              <p className="text-sm text-tastelanc-text-muted">{h.start_time} - {h.end_time}</p>
+              {h.description && <p className="text-tastelanc-text-secondary text-sm mt-1">{h.description}</p>}
+              <ul className="text-sm text-tastelanc-text-secondary mt-2 space-y-1">
                 {hhItems.filter((i) => i.happy_hour_id === h.id).map((i) => (
                   <li key={i.id}>- {i.name} {i.description ? `• ${i.description}` : ''} {i.price ? `• $${i.price.toFixed(2)}` : ''}</li>
                 ))}

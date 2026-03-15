@@ -45,7 +45,7 @@ export default async function BlogPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       {/* Page Header with AI */}
-      <section className="border-b border-gray-800 py-12 md:py-20 px-4">
+      <section className="border-b border-tastelanc-border py-12 md:py-20 px-4">
         <div className="max-w-6xl mx-auto">
           {/* AI Intro - Clean and Simple */}
           <div className="text-center mb-10">
@@ -63,29 +63,29 @@ export default async function BlogPage() {
                   <Sparkles className="w-10 h-10 text-tastelanc-accent" />
                 </div>
               )}
-              <h1 className="text-4xl md:text-6xl font-bold text-white">
+              <h1 className="text-4xl md:text-6xl font-bold text-tastelanc-text-primary">
                 Taste {BRAND.countyShort}
               </h1>
             </div>
-            <p className="text-gray-400 text-lg md:text-xl max-w-3xl mx-auto">
+            <p className="text-tastelanc-text-muted text-lg md:text-xl max-w-3xl mx-auto">
               {BRAND.countyShort}&apos;s food scene, unfiltered. No fluff, no paid promos—just {BRAND.aiName}&apos;s honest take on what&apos;s actually good.
             </p>
           </div>
 
           {/* Category Filters */}
-          <div className="flex flex-wrap justify-center gap-2 md:gap-3 border-t border-gray-800 pt-8">
+          <div className="flex flex-wrap justify-center gap-2 md:gap-3 border-t border-tastelanc-border pt-8">
             <span className="bg-tastelanc-accent text-white px-4 py-2 rounded-full text-base font-medium">All</span>
-            <Link href="/blog/tag/hidden-gems" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors">Hidden Gems</Link>
-            <Link href="/blog/tag/date-night" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors">Date Night</Link>
-            <Link href="/blog/tag/family" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors">Family</Link>
-            <Link href="/blog/tag/happy-hours" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors">Happy Hours</Link>
-            <Link href="/blog/tag/brunch" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors">Brunch</Link>
-            <Link href="/blog/tag/nightlife" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors">Nightlife</Link>
-            <Link href="/blog/tag/events" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors">Events</Link>
-            <Link href="/blog/tag/live-music" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors">Live Music</Link>
-            <Link href="/blog/tag/late-night" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors">Late Night</Link>
-            <Link href="/blog/tag/budget-eats" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors">Budget Eats</Link>
-            <Link href="/blog/tag/best-of" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-gray-300 hover:text-white px-4 py-2 rounded-full text-base font-medium transition-colors">Best Of</Link>
+            <Link href="/blog/tag/hidden-gems" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors">Hidden Gems</Link>
+            <Link href="/blog/tag/date-night" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors">Date Night</Link>
+            <Link href="/blog/tag/family" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors">Family</Link>
+            <Link href="/blog/tag/happy-hours" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors">Happy Hours</Link>
+            <Link href="/blog/tag/brunch" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors">Brunch</Link>
+            <Link href="/blog/tag/nightlife" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors">Nightlife</Link>
+            <Link href="/blog/tag/events" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors">Events</Link>
+            <Link href="/blog/tag/live-music" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors">Live Music</Link>
+            <Link href="/blog/tag/late-night" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors">Late Night</Link>
+            <Link href="/blog/tag/budget-eats" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors">Budget Eats</Link>
+            <Link href="/blog/tag/best-of" className="bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-secondary hover:text-tastelanc-text-primary px-4 py-2 rounded-full text-base font-medium transition-colors">Best Of</Link>
           </div>
         </div>
       </section>
@@ -107,8 +107,8 @@ export default async function BlogPage() {
                 <Sparkles className="w-8 h-8 text-tastelanc-accent" />
               )}
             </div>
-            <h2 className="text-xl font-semibold text-white mb-2">Coming Soon</h2>
-            <p className="text-gray-400">
+            <h2 className="text-xl font-semibold text-tastelanc-text-primary mb-2">Coming Soon</h2>
+            <p className="text-tastelanc-text-muted">
               {authorName} is cooking up some content. Check back soon for guides, reviews, and insider tips.
             </p>
           </div>
@@ -156,13 +156,13 @@ export default async function BlogPage() {
                     </h2>
 
                     {/* Summary */}
-                    <p className="text-gray-200 text-base md:text-lg mb-6 line-clamp-2 max-w-3xl">
+                    <p className="text-tastelanc-text-secondary text-base md:text-lg mb-6 line-clamp-2 max-w-3xl">
                       {posts[0].summary}
                     </p>
 
                     {/* Author & Meta */}
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm text-gray-400">
+                      <div className="flex items-center gap-2 text-sm text-tastelanc-text-muted">
                         <span>{authorName}</span>
                         <span>•</span>
                         <span>{formatDate(posts[0].created_at)}</span>
@@ -224,13 +224,13 @@ export default async function BlogPage() {
                         </h3>
 
                         {/* Summary */}
-                        <p className="text-gray-300 text-sm mb-3 line-clamp-2 group-hover:text-gray-200 transition-colors">
+                        <p className="text-tastelanc-text-secondary text-sm mb-3 line-clamp-2 group-hover:text-tastelanc-text-secondary transition-colors">
                           {post.summary}
                         </p>
 
                         {/* Author & Meta */}
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                          <div className="flex items-center gap-2 text-xs text-tastelanc-text-muted">
                             <span>{authorName}</span>
                             <span>•</span>
                             <span>{formatDate(post.created_at)}</span>
@@ -253,10 +253,10 @@ export default async function BlogPage() {
 
         {/* CTA Section */}
         <div className="mt-16 text-center bg-gradient-to-r from-tastelanc-surface to-tastelanc-surface-light p-8 md:p-10 rounded-lg border border-amber-500/10">
-          <h2 className="text-2xl font-bold text-white mb-3">
+          <h2 className="text-2xl font-bold text-tastelanc-text-primary mb-3">
             Get {BRAND.countyShort}&apos;s Best Dining Intel
           </h2>
-          <p className="text-gray-400 mb-6 max-w-md mx-auto">
+          <p className="text-tastelanc-text-muted mb-6 max-w-md mx-auto">
             Join {BRAND.name} for real-time happy hours, specials, and personalized recommendations from {BRAND.aiName}.
           </p>
           {BRAND.appStoreUrls.ios ? (
@@ -270,7 +270,7 @@ export default async function BlogPage() {
               <ArrowRight className="w-4 h-4" />
             </a>
           ) : (
-            <span className="text-gray-400 font-medium">App Coming Soon</span>
+            <span className="text-tastelanc-text-muted font-medium">App Coming Soon</span>
           )}
         </div>
       </main>

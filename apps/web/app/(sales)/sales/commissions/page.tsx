@@ -103,14 +103,14 @@ export default function CommissionsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary flex items-center gap-3">
             <DollarSign className="w-8 h-8 text-green-400" />
             Commissions
           </h1>
           <div className="flex items-center gap-2 mt-1">
-            <p className="text-gray-400">Track your earnings and payouts</p>
+            <p className="text-tastelanc-text-muted">Track your earnings and payouts</p>
             <Tooltip content="You earn 15% on your first 6 signups per 30-day period, then 20% on all signups after that. Renewals pay 50% of your current rate. Pay period runs Sunday–Saturday, paid the following Friday." position="bottom">
-              <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
+              <HelpCircle className="w-4 h-4 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
             </Tooltip>
           </div>
         </div>
@@ -122,7 +122,7 @@ export default function CommissionsPage() {
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 periodFilter === p
                   ? 'bg-tastelanc-accent text-white'
-                  : 'bg-tastelanc-surface-light text-gray-400 hover:text-white'
+                  : 'bg-tastelanc-surface-light text-tastelanc-text-muted hover:text-tastelanc-text-primary'
               }`}
             >
               {p === 'current' ? 'This Week' : p === 'last' ? 'Last Week' : 'All Time'}
@@ -143,11 +143,11 @@ export default function CommissionsPage() {
               <Card className="p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Clock className="w-4 h-4 text-yellow-400" />
-                  <span className="text-xs text-gray-400 uppercase tracking-wider">Pending</span>
+                  <span className="text-xs text-tastelanc-text-muted uppercase tracking-wider">Pending</span>
                 </div>
                 <div className="text-2xl font-bold text-yellow-400">{formatCurrency(summary.totalPending)}</div>
                 {summary.payPeriod && (
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-tastelanc-text-faint mt-1">
                     Pays {formatDate(summary.payPeriod.payDate)}
                   </p>
                 )}
@@ -155,24 +155,24 @@ export default function CommissionsPage() {
               <Card className="p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle className="w-4 h-4 text-green-400" />
-                  <span className="text-xs text-gray-400 uppercase tracking-wider">Paid</span>
+                  <span className="text-xs text-tastelanc-text-muted uppercase tracking-wider">Paid</span>
                 </div>
                 <div className="text-2xl font-bold text-green-400">{formatCurrency(summary.totalPaid)}</div>
               </Card>
               <Card className="p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className="w-4 h-4 text-white" />
-                  <span className="text-xs text-gray-400 uppercase tracking-wider">Total Earned</span>
+                  <DollarSign className="w-4 h-4 text-tastelanc-text-primary" />
+                  <span className="text-xs text-tastelanc-text-muted uppercase tracking-wider">Total Earned</span>
                 </div>
-                <div className="text-2xl font-bold text-white">{formatCurrency(summary.totalEarned)}</div>
+                <div className="text-2xl font-bold text-tastelanc-text-primary">{formatCurrency(summary.totalEarned)}</div>
               </Card>
               <Card className="p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-lancaster-gold" />
-                  <span className="text-xs text-gray-400 uppercase tracking-wider">Current Tier</span>
+                  <span className="text-xs text-tastelanc-text-muted uppercase tracking-wider">Current Tier</span>
                 </div>
                 <div className="text-2xl font-bold text-lancaster-gold">{summary.currentTier}</div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-tastelanc-text-faint mt-1">
                   {summary.signupsIn30Days} signup{summary.signupsIn30Days !== 1 ? 's' : ''} in 30 days
                 </p>
               </Card>
@@ -185,12 +185,12 @@ export default function CommissionsPage() {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Star className="w-4 h-4 text-lancaster-gold" />
-                  <span className="text-sm font-medium text-white">Progress to 20% Tier</span>
+                  <span className="text-sm font-medium text-tastelanc-text-primary">Progress to 20% Tier</span>
                   <Tooltip content="Get 7+ signups in a rolling 30-day window to unlock 20% commission on all sales. Tiers reset every 30 days." position="right">
-                    <HelpCircle className="w-3.5 h-3.5 text-gray-600 hover:text-gray-400 cursor-help" />
+                    <HelpCircle className="w-3.5 h-3.5 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
                   </Tooltip>
                 </div>
-                <span className="text-sm text-gray-400">
+                <span className="text-sm text-tastelanc-text-muted">
                   {summary.signupsUntilBonus} more signup{summary.signupsUntilBonus !== 1 ? 's' : ''} needed
                 </span>
               </div>
@@ -201,27 +201,27 @@ export default function CommissionsPage() {
                 />
               </div>
               <div className="flex justify-between mt-1">
-                <span className="text-[10px] text-gray-500">15% (1-6)</span>
-                <span className="text-[10px] text-gray-500">20% (7+)</span>
+                <span className="text-[10px] text-tastelanc-text-faint">15% (1-6)</span>
+                <span className="text-[10px] text-tastelanc-text-faint">20% (7+)</span>
               </div>
             </Card>
           )}
 
           {/* Commission Rate Reference */}
           <Card className="p-4 mb-5">
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-tastelanc-text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
               Rate Card
               <Tooltip content="Your payout for each plan and length. The Renewal column shows what you earn when a restaurant re-signs (50% of your current tier rate)." position="right">
-                <HelpCircle className="w-3.5 h-3.5 text-gray-600 hover:text-gray-400 cursor-help" />
+                <HelpCircle className="w-3.5 h-3.5 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
               </Tooltip>
             </h3>
             <div className="grid md:grid-cols-2 gap-4">
               {PLANS.map((plan) => (
                 <div key={plan.name}>
-                  <h4 className="text-sm font-medium text-white mb-2">{plan.name} Plan</h4>
+                  <h4 className="text-sm font-medium text-tastelanc-text-primary mb-2">{plan.name} Plan</h4>
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="text-gray-500">
+                      <tr className="text-tastelanc-text-faint">
                         <th className="text-left py-1 pr-2">Length</th>
                         <th className="text-right py-1 px-2">Cost</th>
                         <th className="text-right py-1 px-2">@15%</th>
@@ -232,11 +232,11 @@ export default function CommissionsPage() {
                     <tbody>
                       {plan.pricing.map((p) => (
                         <tr key={p.lengthMonths} className="border-t border-tastelanc-surface-light">
-                          <td className="py-1.5 pr-2 text-gray-300">{p.lengthLabel}</td>
-                          <td className="py-1.5 px-2 text-right text-gray-400">{formatCurrency(p.cost)}</td>
-                          <td className="py-1.5 px-2 text-right text-white">{formatCurrency(p.payout15)}</td>
+                          <td className="py-1.5 pr-2 text-tastelanc-text-secondary">{p.lengthLabel}</td>
+                          <td className="py-1.5 px-2 text-right text-tastelanc-text-muted">{formatCurrency(p.cost)}</td>
+                          <td className="py-1.5 px-2 text-right text-tastelanc-text-primary">{formatCurrency(p.payout15)}</td>
                           <td className="py-1.5 px-2 text-right text-lancaster-gold">{formatCurrency(p.payout20)}</td>
-                          <td className="py-1.5 pl-2 text-right text-gray-500">
+                          <td className="py-1.5 pl-2 text-right text-tastelanc-text-faint">
                             {formatCurrency(summary?.currentRate === 0.20 ? p.renewal20 : p.renewal15)}
                           </td>
                         </tr>
@@ -251,10 +251,10 @@ export default function CommissionsPage() {
           {/* Commissions Table */}
           <Card className="overflow-hidden">
             <div className="px-4 py-3 border-b border-tastelanc-surface-light">
-              <h3 className="text-sm font-semibold text-white">
+              <h3 className="text-sm font-semibold text-tastelanc-text-primary">
                 {periodFilter === 'current' ? 'This Week' : periodFilter === 'last' ? 'Last Week' : 'All'} Sales
                 {summary?.payPeriod && periodFilter !== 'all' && (
-                  <span className="text-gray-500 font-normal ml-2">
+                  <span className="text-tastelanc-text-faint font-normal ml-2">
                     {formatDate(summary.payPeriod.start)} – {formatDate(summary.payPeriod.end)}
                   </span>
                 )}
@@ -262,14 +262,14 @@ export default function CommissionsPage() {
             </div>
             {commissions.length === 0 ? (
               <div className="p-8 text-center">
-                <DollarSign className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-                <p className="text-gray-400">No commissions for this period</p>
+                <DollarSign className="w-10 h-10 text-tastelanc-text-faint mx-auto mb-3" />
+                <p className="text-tastelanc-text-muted">No commissions for this period</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-tastelanc-surface-light text-xs text-gray-500 uppercase tracking-wider">
+                    <tr className="border-b border-tastelanc-surface-light text-xs text-tastelanc-text-faint uppercase tracking-wider">
                       <th className="text-left px-4 py-2">Business</th>
                       <th className="text-left px-4 py-2">Plan</th>
                       <th className="text-right px-4 py-2">Sale</th>
@@ -285,11 +285,11 @@ export default function CommissionsPage() {
                       const sc = STATUS_CONFIG[c.status] || STATUS_CONFIG.pending;
                       return (
                         <tr key={c.id} className="hover:bg-tastelanc-surface-light/30 transition-colors">
-                          <td className="px-4 py-3 text-sm text-white font-medium">{c.business_name}</td>
-                          <td className="px-4 py-3 text-sm text-gray-300">
+                          <td className="px-4 py-3 text-sm text-tastelanc-text-primary font-medium">{c.business_name}</td>
+                          <td className="px-4 py-3 text-sm text-tastelanc-text-secondary">
                             {c.plan_name} – {getLengthLabel(c.length_months)}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-400 text-right">
+                          <td className="px-4 py-3 text-sm text-tastelanc-text-muted text-right">
                             {formatCurrency(Number(c.sale_amount))}
                           </td>
                           <td className="px-4 py-3 text-sm text-green-400 text-right font-medium">
@@ -313,7 +313,7 @@ export default function CommissionsPage() {
                           <td className="px-4 py-3 text-center">
                             <Badge className={`${sc.color} text-xs`}>{sc.label}</Badge>
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-500 text-right">
+                          <td className="px-4 py-3 text-sm text-tastelanc-text-faint text-right">
                             {formatDate(c.sale_date)}
                           </td>
                         </tr>

@@ -96,7 +96,7 @@ export default function TimePicker({
   return (
     <div ref={containerRef} className={cn('relative', className)}>
       {label && (
-        <label className="block text-sm font-medium text-gray-300 mb-2">
+        <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
           {label}
         </label>
       )}
@@ -107,16 +107,16 @@ export default function TimePicker({
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           'w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-all',
-          'bg-tastelanc-surface text-white',
+          'bg-tastelanc-surface text-tastelanc-text-primary',
           isOpen
             ? 'border-lancaster-gold ring-2 ring-lancaster-gold/20'
-            : 'border-tastelanc-surface-light hover:border-gray-600'
+            : 'border-tastelanc-surface-light hover:border-tastelanc-border'
         )}
       >
-        <span className={value ? 'text-white' : 'text-gray-500'}>
+        <span className={value ? 'text-tastelanc-text-primary' : 'text-tastelanc-text-faint'}>
           {value ? formatTimeDisplay(value) : 'Select time'}
         </span>
-        <Clock className="w-5 h-5 text-gray-400" />
+        <Clock className="w-5 h-5 text-tastelanc-text-muted" />
       </button>
 
       {/* Dropdown — 3-column picker */}
@@ -125,7 +125,7 @@ export default function TimePicker({
           <div className="flex divide-x divide-tastelanc-surface-light">
             {/* Hours */}
             <div className="flex-1 max-h-56 overflow-y-auto py-2">
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 text-center mb-1">Hr</p>
+              <p className="text-[10px] uppercase tracking-wider text-tastelanc-text-faint text-center mb-1">Hr</p>
               {HOURS.map((h) => (
                 <button
                   key={h}
@@ -135,7 +135,7 @@ export default function TimePicker({
                     'w-full py-2 text-center text-sm transition-all',
                     selectedHour === h
                       ? 'bg-lancaster-gold text-black font-semibold'
-                      : 'text-gray-300 hover:bg-tastelanc-surface hover:text-white'
+                      : 'text-tastelanc-text-secondary hover:bg-tastelanc-surface hover:text-tastelanc-text-primary'
                   )}
                 >
                   {h}
@@ -145,7 +145,7 @@ export default function TimePicker({
 
             {/* Minutes */}
             <div className="flex-1 py-2">
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 text-center mb-1">Min</p>
+              <p className="text-[10px] uppercase tracking-wider text-tastelanc-text-faint text-center mb-1">Min</p>
               {MINUTES.map((m) => (
                 <button
                   key={m}
@@ -155,7 +155,7 @@ export default function TimePicker({
                     'w-full py-2 text-center text-sm transition-all',
                     selectedMinute === m
                       ? 'bg-lancaster-gold text-black font-semibold'
-                      : 'text-gray-300 hover:bg-tastelanc-surface hover:text-white'
+                      : 'text-tastelanc-text-secondary hover:bg-tastelanc-surface hover:text-tastelanc-text-primary'
                   )}
                 >
                   :{m}
@@ -165,7 +165,7 @@ export default function TimePicker({
 
             {/* AM / PM */}
             <div className="flex-1 py-2">
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 text-center mb-1">&nbsp;</p>
+              <p className="text-[10px] uppercase tracking-wider text-tastelanc-text-faint text-center mb-1">&nbsp;</p>
               {(['AM', 'PM'] as const).map((p) => (
                 <button
                   key={p}
@@ -175,7 +175,7 @@ export default function TimePicker({
                     'w-full py-2 text-center text-sm transition-all',
                     selectedPeriod === p
                       ? 'bg-lancaster-gold text-black font-semibold'
-                      : 'text-gray-300 hover:bg-tastelanc-surface hover:text-white'
+                      : 'text-tastelanc-text-secondary hover:bg-tastelanc-surface hover:text-tastelanc-text-primary'
                   )}
                 >
                   {p}

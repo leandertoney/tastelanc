@@ -102,7 +102,7 @@ export default function ClaimPage() {
           <h1 className="text-2xl font-bold text-white mb-2">
             {error.includes('expired') ? 'Link Expired' : 'Unable to Load'}
           </h1>
-          <p className="text-gray-400">{error}</p>
+          <p className="text-tastelanc-text-muted">{error}</p>
         </div>
       </div>
     );
@@ -141,22 +141,22 @@ export default function ClaimPage() {
 
           {event_details.venue_name && (
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-gray-400">📍</span>
-              <span className="text-gray-300">{event_details.venue_name}</span>
+              <span className="text-tastelanc-text-muted">📍</span>
+              <span className="text-tastelanc-text-secondary">{event_details.venue_name}</span>
             </div>
           )}
 
           {event_details.date && (
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-gray-400">📅</span>
-              <span className="text-gray-300">{event_details.date}</span>
+              <span className="text-tastelanc-text-muted">📅</span>
+              <span className="text-tastelanc-text-secondary">{event_details.date}</span>
             </div>
           )}
 
           {event_details.time_start && (
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-gray-400">🕐</span>
-              <span className="text-gray-300">
+              <span className="text-tastelanc-text-muted">🕐</span>
+              <span className="text-tastelanc-text-secondary">
                 {event_details.time_start}
                 {event_details.time_end ? ` - ${event_details.time_end}` : ''}
               </span>
@@ -165,13 +165,13 @@ export default function ClaimPage() {
 
           {event_details.performers && (
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-gray-400">🎤</span>
-              <span className="text-gray-300">{event_details.performers}</span>
+              <span className="text-tastelanc-text-muted">🎤</span>
+              <span className="text-tastelanc-text-secondary">{event_details.performers}</span>
             </div>
           )}
 
           {event_details.description && (
-            <p className="text-gray-400 mt-4 text-sm leading-relaxed">
+            <p className="text-tastelanc-text-muted mt-4 text-sm leading-relaxed">
               {event_details.description}
             </p>
           )}
@@ -180,7 +180,7 @@ export default function ClaimPage() {
         {/* What Happens Next */}
         <div className="bg-[#252525] rounded-xl p-6 mb-6 border border-white/10">
           <h3 className="text-lg font-semibold text-white mb-3">What happens next</h3>
-          <ul className="space-y-2 text-sm text-gray-400">
+          <ul className="space-y-2 text-sm text-tastelanc-text-muted">
             <li className="flex items-start gap-2">
               <span className="text-[#A41E22] mt-0.5">✓</span>
               Your event will be listed on TasteLanc
@@ -217,7 +217,7 @@ export default function ClaimPage() {
               : 'Claim & Publish'}
         </button>
 
-        <p className="text-center text-gray-500 text-xs mt-4">
+        <p className="text-center text-tastelanc-text-faint text-xs mt-4">
           By claiming, you confirm you are authorized to list this event.
         </p>
       </div>

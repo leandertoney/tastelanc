@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Menu, Shield } from 'lucide-react';
 import AdminSidebar from './AdminSidebar';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 export default function AdminLayoutClient({
   children,
@@ -23,23 +24,24 @@ export default function AdminLayoutClient({
       />
 
       <div className="flex-1 flex flex-col min-w-0 md:pl-[68px]">
-        {/* Mobile Header */}
-        <header className="md:hidden sticky top-0 bg-tastelanc-surface border-b border-tastelanc-surface-light z-30">
+        {/* Header */}
+        <header className="sticky top-0 bg-tastelanc-surface border-b border-tastelanc-surface-light z-30">
           <div className="flex items-center justify-between px-4 py-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="text-gray-400 hover:text-white p-2 -ml-2"
+              className="md:hidden text-tastelanc-text-muted hover:text-tastelanc-text-primary p-2 -ml-2"
               aria-label="Open menu"
             >
               <Menu className="w-6 h-6" />
             </button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 md:hidden">
               <div className="w-8 h-8 bg-tastelanc-accent rounded-lg flex items-center justify-center">
                 <Shield className="w-4 h-4 text-white" />
               </div>
-              <span className="text-lg font-bold text-white">Admin</span>
+              <span className="text-lg font-bold text-tastelanc-text-primary">Admin</span>
             </div>
-            <div className="w-10" /> {/* Spacer for centering */}
+            <div className="hidden md:block flex-1" />
+            <ThemeToggle />
           </div>
         </header>
 

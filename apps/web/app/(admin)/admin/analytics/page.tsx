@@ -194,8 +194,8 @@ export default async function AdminAnalyticsPage() {
   return (
     <div>
       <div className="mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-white">Platform Analytics</h1>
-        <p className="text-gray-400 mt-1 text-sm md:text-base">Master view of all platform activity</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">Platform Analytics</h1>
+        <p className="text-tastelanc-text-muted mt-1 text-sm md:text-base">Master view of all platform activity</p>
       </div>
 
       {/* Overview Stats */}
@@ -205,10 +205,10 @@ export default async function AdminAnalyticsPage() {
             <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
               <Eye className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
             </div>
-            <span className="text-gray-400 text-xs md:text-sm">Today</span>
+            <span className="text-tastelanc-text-muted text-xs md:text-sm">Today</span>
           </div>
-          <p className="text-xl md:text-3xl font-bold text-white">{analytics.pageViewsToday.toLocaleString()}</p>
-          <p className="text-gray-500 text-xs md:text-sm">page views</p>
+          <p className="text-xl md:text-3xl font-bold text-tastelanc-text-primary">{analytics.pageViewsToday.toLocaleString()}</p>
+          <p className="text-tastelanc-text-faint text-xs md:text-sm">page views</p>
         </Card>
 
         <Card className="p-4 md:p-6">
@@ -216,10 +216,10 @@ export default async function AdminAnalyticsPage() {
             <div className="w-8 h-8 md:w-10 md:h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
               <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
             </div>
-            <span className="text-gray-400 text-xs md:text-sm">7 days</span>
+            <span className="text-tastelanc-text-muted text-xs md:text-sm">7 days</span>
           </div>
-          <p className="text-xl md:text-3xl font-bold text-white">{analytics.pageViews7d.toLocaleString()}</p>
-          <p className="text-gray-500 text-xs md:text-sm">page views</p>
+          <p className="text-xl md:text-3xl font-bold text-tastelanc-text-primary">{analytics.pageViews7d.toLocaleString()}</p>
+          <p className="text-tastelanc-text-faint text-xs md:text-sm">page views</p>
         </Card>
 
         <Card className="p-4 md:p-6">
@@ -227,10 +227,10 @@ export default async function AdminAnalyticsPage() {
             <div className="w-8 h-8 md:w-10 md:h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
               <Calendar className="w-4 h-4 md:w-5 md:h-5 text-purple-500" />
             </div>
-            <span className="text-gray-400 text-xs md:text-sm">30 days</span>
+            <span className="text-tastelanc-text-muted text-xs md:text-sm">30 days</span>
           </div>
-          <p className="text-xl md:text-3xl font-bold text-white">{analytics.pageViews30d.toLocaleString()}</p>
-          <p className="text-gray-500 text-xs md:text-sm">page views</p>
+          <p className="text-xl md:text-3xl font-bold text-tastelanc-text-primary">{analytics.pageViews30d.toLocaleString()}</p>
+          <p className="text-tastelanc-text-faint text-xs md:text-sm">page views</p>
         </Card>
 
         <Card className="p-4 md:p-6">
@@ -238,19 +238,19 @@ export default async function AdminAnalyticsPage() {
             <div className="w-8 h-8 md:w-10 md:h-10 bg-tastelanc-accent/20 rounded-lg flex items-center justify-center">
               <MousePointer className="w-4 h-4 md:w-5 md:h-5 text-tastelanc-accent" />
             </div>
-            <span className="text-gray-400 text-xs md:text-sm">30 days</span>
+            <span className="text-tastelanc-text-muted text-xs md:text-sm">30 days</span>
           </div>
-          <p className="text-xl md:text-3xl font-bold text-white">{analytics.clicks30d.toLocaleString()}</p>
-          <p className="text-gray-500 text-xs md:text-sm">total clicks</p>
+          <p className="text-xl md:text-3xl font-bold text-tastelanc-text-primary">{analytics.clicks30d.toLocaleString()}</p>
+          <p className="text-tastelanc-text-faint text-xs md:text-sm">total clicks</p>
         </Card>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4 md:gap-8">
         {/* Top Restaurants */}
         <Card className="p-4 md:p-6">
-          <h2 className="text-lg md:text-xl font-semibold text-white mb-4 md:mb-6">Top Restaurants (30d)</h2>
+          <h2 className="text-lg md:text-xl font-semibold text-tastelanc-text-primary mb-4 md:mb-6">Top Restaurants (30d)</h2>
           {analytics.topRestaurants.length === 0 ? (
-            <p className="text-gray-500 text-center py-8 text-sm">No data yet</p>
+            <p className="text-tastelanc-text-faint text-center py-8 text-sm">No data yet</p>
           ) : (
             <div className="space-y-2 md:space-y-3">
               {analytics.topRestaurants.map((restaurant, index) => (
@@ -259,12 +259,12 @@ export default async function AdminAnalyticsPage() {
                   className="flex items-center justify-between p-2 md:p-3 rounded-lg bg-tastelanc-surface-light/50"
                 >
                   <div className="flex items-center gap-2 md:gap-3 min-w-0">
-                    <span className="w-5 h-5 md:w-6 md:h-6 bg-tastelanc-surface rounded-full flex items-center justify-center text-xs text-gray-400 flex-shrink-0">
+                    <span className="w-5 h-5 md:w-6 md:h-6 bg-tastelanc-surface rounded-full flex items-center justify-center text-xs text-tastelanc-text-muted flex-shrink-0">
                       {index + 1}
                     </span>
-                    <span className="text-white text-sm truncate">{restaurant.name}</span>
+                    <span className="text-tastelanc-text-primary text-sm truncate">{restaurant.name}</span>
                   </div>
-                  <span className="text-gray-400 text-xs md:text-sm whitespace-nowrap ml-2">{restaurant.count.toLocaleString()}</span>
+                  <span className="text-tastelanc-text-muted text-xs md:text-sm whitespace-nowrap ml-2">{restaurant.count.toLocaleString()}</span>
                 </div>
               ))}
             </div>
@@ -273,9 +273,9 @@ export default async function AdminAnalyticsPage() {
 
         {/* Page Type Breakdown */}
         <Card className="p-4 md:p-6">
-          <h2 className="text-lg md:text-xl font-semibold text-white mb-4 md:mb-6">Views by Page Type</h2>
+          <h2 className="text-lg md:text-xl font-semibold text-tastelanc-text-primary mb-4 md:mb-6">Views by Page Type</h2>
           {Object.keys(analytics.pageTypeStats).length === 0 ? (
-            <p className="text-gray-500 text-center py-8 text-sm">No data yet</p>
+            <p className="text-tastelanc-text-faint text-center py-8 text-sm">No data yet</p>
           ) : (
             <div className="space-y-3 md:space-y-4">
               {Object.entries(analytics.pageTypeStats)
@@ -285,8 +285,8 @@ export default async function AdminAnalyticsPage() {
                   return (
                     <div key={type}>
                       <div className="flex justify-between mb-1">
-                        <span className="text-gray-400 capitalize text-sm">{type.replace('_', ' ')}</span>
-                        <span className="text-white text-sm">{count.toLocaleString()}</span>
+                        <span className="text-tastelanc-text-muted capitalize text-sm">{type.replace('_', ' ')}</span>
+                        <span className="text-tastelanc-text-primary text-sm">{count.toLocaleString()}</span>
                       </div>
                       <div className="h-2 bg-tastelanc-surface-light rounded-full overflow-hidden">
                         <div
@@ -303,17 +303,17 @@ export default async function AdminAnalyticsPage() {
 
         {/* Click Type Breakdown */}
         <Card className="p-4 md:p-6 lg:col-span-2">
-          <h2 className="text-lg md:text-xl font-semibold text-white mb-4 md:mb-6">Clicks by Type (30d)</h2>
+          <h2 className="text-lg md:text-xl font-semibold text-tastelanc-text-primary mb-4 md:mb-6">Clicks by Type (30d)</h2>
           {Object.keys(analytics.clickTypeStats).length === 0 ? (
-            <p className="text-gray-500 text-center py-8 text-sm">No click data yet</p>
+            <p className="text-tastelanc-text-faint text-center py-8 text-sm">No click data yet</p>
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
               {Object.entries(analytics.clickTypeStats)
                 .sort((a, b) => b[1] - a[1])
                 .map(([type, count]) => (
                   <div key={type} className="p-3 md:p-4 rounded-lg bg-tastelanc-surface-light/50">
-                    <p className="text-xl md:text-2xl font-bold text-white">{count.toLocaleString()}</p>
-                    <p className="text-gray-400 text-xs md:text-sm capitalize">{type.replace('_', ' ')}</p>
+                    <p className="text-xl md:text-2xl font-bold text-tastelanc-text-primary">{count.toLocaleString()}</p>
+                    <p className="text-tastelanc-text-muted text-xs md:text-sm capitalize">{type.replace('_', ' ')}</p>
                   </div>
                 ))}
             </div>
@@ -324,11 +324,11 @@ export default async function AdminAnalyticsPage() {
       {/* Visibility Fairness Section */}
       <div className="mt-6 md:mt-8">
         <div className="mb-4 md:mb-6">
-          <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-xl md:text-2xl font-bold text-tastelanc-text-primary flex items-center gap-2">
             <Layers className="w-5 h-5 md:w-6 md:h-6" />
             Visibility Fairness (7d)
           </h2>
-          <p className="text-gray-400 mt-1 text-sm">Fair rotation metrics for sales conversations and monitoring</p>
+          <p className="text-tastelanc-text-muted mt-1 text-sm">Fair rotation metrics for sales conversations and monitoring</p>
         </div>
 
         {/* Impressions stat */}
@@ -337,18 +337,18 @@ export default async function AdminAnalyticsPage() {
             <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
               <Layers className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
             </div>
-            <span className="text-gray-400 text-xs md:text-sm">7 days</span>
+            <span className="text-tastelanc-text-muted text-xs md:text-sm">7 days</span>
           </div>
-          <p className="text-xl md:text-3xl font-bold text-white">{analytics.impressions7d.toLocaleString()}</p>
-          <p className="text-gray-500 text-xs md:text-sm">total section impressions</p>
+          <p className="text-xl md:text-3xl font-bold text-tastelanc-text-primary">{analytics.impressions7d.toLocaleString()}</p>
+          <p className="text-tastelanc-text-faint text-xs md:text-sm">total section impressions</p>
         </Card>
 
         <div className="grid lg:grid-cols-2 gap-4 md:gap-8">
           {/* Tier Averages */}
           <Card className="p-4 md:p-6">
-            <h3 className="text-lg md:text-xl font-semibold text-white mb-4 md:mb-6">Avg Impressions by Tier</h3>
+            <h3 className="text-lg md:text-xl font-semibold text-tastelanc-text-primary mb-4 md:mb-6">Avg Impressions by Tier</h3>
             {analytics.tierAverages.length === 0 ? (
-              <p className="text-gray-500 text-center py-8 text-sm">No impression data yet</p>
+              <p className="text-tastelanc-text-faint text-center py-8 text-sm">No impression data yet</p>
             ) : (
               <div className="space-y-3 md:space-y-4">
                 {analytics.tierAverages.map((tier) => {
@@ -357,23 +357,23 @@ export default async function AdminAnalyticsPage() {
                   const tierColors: Record<string, string> = {
                     elite: 'bg-yellow-500',
                     premium: 'bg-blue-500',
-                    basic: 'bg-gray-500',
+                    basic: 'bg-tastelanc-surface-light',
                   };
                   return (
                     <div key={tier.tier}>
                       <div className="flex justify-between mb-1">
-                        <span className="text-gray-300 capitalize text-sm">
+                        <span className="text-tastelanc-text-secondary capitalize text-sm">
                           {tier.tier} ({tier.restaurants} restaurants)
                         </span>
-                        <span className="text-white text-sm">{tier.avgImpressions.toLocaleString()} avg</span>
+                        <span className="text-tastelanc-text-primary text-sm">{tier.avgImpressions.toLocaleString()} avg</span>
                       </div>
                       <div className="h-2 bg-tastelanc-surface-light rounded-full overflow-hidden">
                         <div
-                          className={`h-full rounded-full ${tierColors[tier.tier] || 'bg-gray-500'}`}
+                          className={`h-full rounded-full ${tierColors[tier.tier] || 'bg-tastelanc-surface-light'}`}
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
-                      <p className="text-gray-500 text-xs mt-1">Avg position: #{tier.avgPosition}</p>
+                      <p className="text-tastelanc-text-faint text-xs mt-1">Avg position: #{tier.avgPosition}</p>
                     </div>
                   );
                 })}
@@ -383,12 +383,12 @@ export default async function AdminAnalyticsPage() {
 
           {/* Outlier Detection */}
           <Card className="p-4 md:p-6">
-            <h3 className="text-lg md:text-xl font-semibold text-white mb-4 md:mb-6 flex items-center gap-2">
+            <h3 className="text-lg md:text-xl font-semibold text-tastelanc-text-primary mb-4 md:mb-6 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-yellow-500" />
               Visibility Outliers
             </h3>
             {analytics.outliers.length === 0 ? (
-              <p className="text-gray-500 text-center py-8 text-sm">
+              <p className="text-tastelanc-text-faint text-center py-8 text-sm">
                 No outliers detected. All restaurants are within normal visibility ranges.
               </p>
             ) : (
@@ -399,8 +399,8 @@ export default async function AdminAnalyticsPage() {
                     className="flex items-center justify-between p-2 md:p-3 rounded-lg bg-tastelanc-surface-light/50"
                   >
                     <div className="min-w-0">
-                      <span className="text-white text-sm truncate block">{outlier.name}</span>
-                      <span className="text-gray-500 text-xs capitalize">{outlier.tier}</span>
+                      <span className="text-tastelanc-text-primary text-sm truncate block">{outlier.name}</span>
+                      <span className="text-tastelanc-text-faint text-xs capitalize">{outlier.tier}</span>
                     </div>
                     <div className="text-right ml-2">
                       <span className={`text-sm font-medium ${
@@ -408,7 +408,7 @@ export default async function AdminAnalyticsPage() {
                       }`}>
                         {outlier.type === 'over-exposed' ? '+' : ''}{Math.round((outlier.ratio - 1) * 100)}%
                       </span>
-                      <p className="text-gray-500 text-xs">
+                      <p className="text-tastelanc-text-faint text-xs">
                         {outlier.impressions.toLocaleString()} imps
                       </p>
                     </div>
@@ -420,21 +420,21 @@ export default async function AdminAnalyticsPage() {
 
           {/* Sales Tool: Top by Impressions */}
           <Card className="p-4 md:p-6 lg:col-span-2">
-            <h3 className="text-lg md:text-xl font-semibold text-white mb-4 md:mb-6">Top Restaurants by Visibility (7d)</h3>
-            <p className="text-gray-500 text-xs mb-4">Use this data in sales conversations to show the value of paid tiers</p>
+            <h3 className="text-lg md:text-xl font-semibold text-tastelanc-text-primary mb-4 md:mb-6">Top Restaurants by Visibility (7d)</h3>
+            <p className="text-tastelanc-text-faint text-xs mb-4">Use this data in sales conversations to show the value of paid tiers</p>
             {analytics.topByImpressions.length === 0 ? (
-              <p className="text-gray-500 text-center py-8 text-sm">No impression data yet</p>
+              <p className="text-tastelanc-text-faint text-center py-8 text-sm">No impression data yet</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-tastelanc-surface-light">
-                      <th className="text-left text-gray-400 font-medium py-2 pr-4">#</th>
-                      <th className="text-left text-gray-400 font-medium py-2 pr-4">Restaurant</th>
-                      <th className="text-left text-gray-400 font-medium py-2 pr-4">Tier</th>
-                      <th className="text-right text-gray-400 font-medium py-2 pr-4">Impressions</th>
-                      <th className="text-right text-gray-400 font-medium py-2 pr-4">Avg Pos</th>
-                      <th className="text-right text-gray-400 font-medium py-2">CTR</th>
+                      <th className="text-left text-tastelanc-text-muted font-medium py-2 pr-4">#</th>
+                      <th className="text-left text-tastelanc-text-muted font-medium py-2 pr-4">Restaurant</th>
+                      <th className="text-left text-tastelanc-text-muted font-medium py-2 pr-4">Tier</th>
+                      <th className="text-right text-tastelanc-text-muted font-medium py-2 pr-4">Impressions</th>
+                      <th className="text-right text-tastelanc-text-muted font-medium py-2 pr-4">Avg Pos</th>
+                      <th className="text-right text-tastelanc-text-muted font-medium py-2">CTR</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -442,16 +442,16 @@ export default async function AdminAnalyticsPage() {
                       const tierColors: Record<string, string> = {
                         elite: 'text-yellow-400',
                         premium: 'text-blue-400',
-                        basic: 'text-gray-400',
+                        basic: 'text-tastelanc-text-muted',
                       };
                       return (
                         <tr key={i} className="border-b border-tastelanc-surface-light/50">
-                          <td className="text-gray-500 py-2 pr-4">{i + 1}</td>
-                          <td className="text-white py-2 pr-4">{r.name}</td>
-                          <td className={`py-2 pr-4 capitalize ${tierColors[r.tier] || 'text-gray-400'}`}>{r.tier}</td>
-                          <td className="text-white text-right py-2 pr-4">{r.impressions.toLocaleString()}</td>
-                          <td className="text-gray-300 text-right py-2 pr-4">#{r.avgPosition}</td>
-                          <td className="text-gray-300 text-right py-2">{r.ctr}%</td>
+                          <td className="text-tastelanc-text-faint py-2 pr-4">{i + 1}</td>
+                          <td className="text-tastelanc-text-primary py-2 pr-4">{r.name}</td>
+                          <td className={`py-2 pr-4 capitalize ${tierColors[r.tier] || 'text-tastelanc-text-muted'}`}>{r.tier}</td>
+                          <td className="text-tastelanc-text-primary text-right py-2 pr-4">{r.impressions.toLocaleString()}</td>
+                          <td className="text-tastelanc-text-secondary text-right py-2 pr-4">#{r.avgPosition}</td>
+                          <td className="text-tastelanc-text-secondary text-right py-2">{r.ctr}%</td>
                         </tr>
                       );
                     })}

@@ -31,17 +31,17 @@ export default function CareersPage() {
         {/* Header */}
         <div className="text-center mb-12">
           <Badge variant="accent" className="mb-4">We&apos;re Hiring</Badge>
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-tastelanc-text-primary mb-4">
             Join the {BRAND.name} Team
           </h1>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          <p className="text-xl text-tastelanc-text-muted max-w-2xl mx-auto">
             Help us connect {BRAND.countyShort}&apos;s best restaurants with the community. We&apos;re looking for passionate, self-motivated people who love the local food scene.
           </p>
         </div>
 
         {/* Open Position */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-white mb-6">Open Positions</h2>
+          <h2 className="text-2xl font-bold text-tastelanc-text-primary mb-6">Open Positions</h2>
 
           <Card className="overflow-hidden">
             {/* Role Header */}
@@ -50,8 +50,8 @@ export default function CareersPage() {
               className="w-full p-6 flex items-center justify-between text-left hover:bg-tastelanc-surface-light/50 transition-colors"
             >
               <div>
-                <h3 className="text-xl font-semibold text-white mb-1">Restaurant Partnership Manager</h3>
-                <div className="flex flex-wrap gap-3 text-sm text-gray-400">
+                <h3 className="text-xl font-semibold text-tastelanc-text-primary mb-1">Restaurant Partnership Manager</h3>
+                <div className="flex flex-wrap gap-3 text-sm text-tastelanc-text-muted">
                   <span className="flex items-center gap-1">
                     <MapPin className="w-4 h-4" /> {BRAND.countyShort}, {BRAND.state} &mdash; In Person
                   </span>
@@ -64,9 +64,9 @@ export default function CareersPage() {
                 </div>
               </div>
               {expandedRole === 'rpm' ? (
-                <ChevronUp className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                <ChevronUp className="w-5 h-5 text-tastelanc-text-muted flex-shrink-0" />
               ) : (
-                <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                <ChevronDown className="w-5 h-5 text-tastelanc-text-muted flex-shrink-0" />
               )}
             </button>
 
@@ -76,22 +76,22 @@ export default function CareersPage() {
                 <div className="pt-6 space-y-8">
                   {/* Summary */}
                   <div>
-                    <h4 className="text-lg font-semibold text-white mb-3">About the Role</h4>
-                    <p className="text-gray-400 leading-relaxed">
+                    <h4 className="text-lg font-semibold text-tastelanc-text-primary mb-3">About the Role</h4>
+                    <p className="text-tastelanc-text-muted leading-relaxed">
                       We are seeking a dynamic and proactive Restaurant Partnership Manager to lead the development and management of strategic partnerships with restaurant clients. In this role, you will drive growth by fostering strong relationships, identifying new business opportunities, and ensuring seamless collaboration between our organization and partner restaurants.
                     </p>
-                    <p className="text-gray-400 leading-relaxed mt-3">
+                    <p className="text-tastelanc-text-muted leading-relaxed mt-3">
                       The Restaurant Partnership Manager is responsible for building relationships with local restaurants, onboarding them onto the {BRAND.name} platform, and helping them leverage the app to drive real foot traffic, visibility, and repeat customers. This is a relationship-first role, not traditional ad sales. You&apos;ll work directly with owners and managers to position {BRAND.name} as a long-term marketing partner.
                     </p>
                   </div>
 
                   {/* Key Responsibilities */}
                   <div>
-                    <h4 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                    <h4 className="text-lg font-semibold text-tastelanc-text-primary mb-3 flex items-center gap-2">
                       <Briefcase className="w-5 h-5 text-tastelanc-accent" />
                       Key Responsibilities
                     </h4>
-                    <ul className="space-y-2 text-gray-400">
+                    <ul className="space-y-2 text-tastelanc-text-muted">
                       <li className="flex items-start gap-2">
                         <span className="text-tastelanc-accent mt-1">&#10003;</span>
                         Identify and engage local restaurants, bars, caf&eacute;s, and hospitality venues
@@ -121,17 +121,17 @@ export default function CareersPage() {
 
                   {/* Skills Grid */}
                   <div>
-                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <h4 className="text-lg font-semibold text-tastelanc-text-primary mb-4 flex items-center gap-2">
                       <Users className="w-5 h-5 text-tastelanc-accent" />
                       Key Skills &amp; Competencies
                     </h4>
                     <div className="grid md:grid-cols-2 gap-6">
                       <div className="bg-tastelanc-surface rounded-lg p-4">
-                        <h5 className="font-semibold text-white mb-3 flex items-center gap-2">
+                        <h5 className="font-semibold text-tastelanc-text-primary mb-3 flex items-center gap-2">
                           <Handshake className="w-4 h-4 text-lancaster-gold" />
                           Relationship &amp; Communication
                         </h5>
-                        <ul className="space-y-1.5 text-sm text-gray-400">
+                        <ul className="space-y-1.5 text-sm text-tastelanc-text-muted">
                           <li>Build trust quickly with restaurant owners and managers</li>
                           <li>Strong verbal communication (in-person, phone, casual meetings)</li>
                           <li>Active listening to understand each restaurant&apos;s goals</li>
@@ -140,11 +140,11 @@ export default function CareersPage() {
                       </div>
 
                       <div className="bg-tastelanc-surface rounded-lg p-4">
-                        <h5 className="font-semibold text-white mb-3 flex items-center gap-2">
+                        <h5 className="font-semibold text-tastelanc-text-primary mb-3 flex items-center gap-2">
                           <Megaphone className="w-4 h-4 text-lancaster-gold" />
                           Hospitality &amp; Local Market
                         </h5>
-                        <ul className="space-y-1.5 text-sm text-gray-400">
+                        <ul className="space-y-1.5 text-sm text-tastelanc-text-muted">
                           <li>Understanding of restaurant operations and promotions</li>
                           <li>Familiarity with the local food, bar, and nightlife scene</li>
                           <li>Awareness of seasonal trends, events, and foot-traffic drivers</li>
@@ -153,11 +153,11 @@ export default function CareersPage() {
                       </div>
 
                       <div className="bg-tastelanc-surface rounded-lg p-4">
-                        <h5 className="font-semibold text-white mb-3 flex items-center gap-2">
+                        <h5 className="font-semibold text-tastelanc-text-primary mb-3 flex items-center gap-2">
                           <DollarSign className="w-4 h-4 text-lancaster-gold" />
                           Sales &amp; Organization
                         </h5>
-                        <ul className="space-y-1.5 text-sm text-gray-400">
+                        <ul className="space-y-1.5 text-sm text-tastelanc-text-muted">
                           <li>Confident presenting offerings and closing deals</li>
                           <li>Ability to overcome objections and handle follow-ups</li>
                           <li>Comfortable working toward commission-based income</li>
@@ -166,11 +166,11 @@ export default function CareersPage() {
                       </div>
 
                       <div className="bg-tastelanc-surface rounded-lg p-4">
-                        <h5 className="font-semibold text-white mb-3 flex items-center gap-2">
+                        <h5 className="font-semibold text-tastelanc-text-primary mb-3 flex items-center gap-2">
                           <Clock className="w-4 h-4 text-lancaster-gold" />
                           Self-Management
                         </h5>
-                        <ul className="space-y-1.5 text-sm text-gray-400">
+                        <ul className="space-y-1.5 text-sm text-tastelanc-text-muted">
                           <li>Manage outreach, follow-ups, and onboarding steps</li>
                           <li>Consistent communication with partners after signup</li>
                           <li>Comfortable tracking progress, commissions, and renewals</li>
@@ -182,13 +182,13 @@ export default function CareersPage() {
 
                   {/* Compensation */}
                   <div>
-                    <h4 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                    <h4 className="text-lg font-semibold text-tastelanc-text-primary mb-3 flex items-center gap-2">
                       <DollarSign className="w-5 h-5 text-tastelanc-accent" />
                       Compensation &amp; Benefits
                     </h4>
-                    <div className="bg-tastelanc-surface rounded-lg p-4 space-y-3 text-gray-400">
+                    <div className="bg-tastelanc-surface rounded-lg p-4 space-y-3 text-tastelanc-text-muted">
                       <p>
-                        This is a <span className="text-white font-medium">100% commission-based role</span> with no cap on earnings. Income is directly tied to performance, with the flexibility to earn based on your effort, consistency, and results.
+                        This is a <span className="text-tastelanc-text-primary font-medium">100% commission-based role</span> with no cap on earnings. Income is directly tied to performance, with the flexibility to earn based on your effort, consistency, and results.
                       </p>
                       <ul className="space-y-1.5 text-sm">
                         <li className="flex items-start gap-2">
@@ -237,8 +237,8 @@ export default function CareersPage() {
         {/* Application Form */}
         <div id="apply" className="scroll-mt-8">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-white mb-2">Apply Now</h2>
-            <p className="text-gray-400">
+            <h2 className="text-2xl font-bold text-tastelanc-text-primary mb-2">Apply Now</h2>
+            <p className="text-tastelanc-text-muted">
               Interested in joining our team? Fill out the form below and we&apos;ll be in touch.
             </p>
           </div>
@@ -253,8 +253,8 @@ export default function CareersPage() {
         {otherMarkets.length > 0 && (
           <div className="mt-16 pt-12 border-t border-tastelanc-surface-light">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-white mb-2">Opportunities in Other Markets</h2>
-              <p className="text-gray-400">
+              <h2 className="text-2xl font-bold text-tastelanc-text-primary mb-2">Opportunities in Other Markets</h2>
+              <p className="text-tastelanc-text-muted">
                 We&apos;re expanding! Check out openings in these markets.
               </p>
             </div>
@@ -265,10 +265,10 @@ export default function CareersPage() {
                   href={`/careers/${market.slug}`}
                   className="group block bg-tastelanc-surface hover:bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-xl p-5 transition-colors"
                 >
-                  <h3 className="text-lg font-semibold text-white group-hover:text-tastelanc-accent transition-colors">
+                  <h3 className="text-lg font-semibold text-tastelanc-text-primary group-hover:text-tastelanc-accent transition-colors">
                     {market.brand_name || `Taste${market.city_name}`}
                   </h3>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <p className="text-sm text-tastelanc-text-muted mt-1">
                     {market.city_name}, {market.state}
                   </p>
                   <div className="flex items-center gap-1 text-sm text-tastelanc-accent mt-3">

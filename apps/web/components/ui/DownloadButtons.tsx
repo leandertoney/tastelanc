@@ -36,7 +36,7 @@ export function DownloadButtons({ variant = 'full', className = '', showIcon = t
 
   if (!HAS_APP) {
     return (
-      <div className={`text-gray-400 text-sm font-medium ${className}`}>
+      <div className={`text-tastelanc-text-muted text-sm font-medium ${className}`}>
         {BRAND.name} App — Coming Soon
       </div>
     );
@@ -85,7 +85,7 @@ export function DownloadButtons({ variant = 'full', className = '', showIcon = t
               href={IOS_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="block px-4 py-3 text-white hover:bg-tastelanc-accent transition-colors"
+              className="block px-4 py-3 text-tastelanc-text-primary hover:bg-tastelanc-accent hover:text-white transition-colors"
               onClick={() => setShowDropdown(false)}
             >
               Download for iOS
@@ -94,7 +94,7 @@ export function DownloadButtons({ variant = 'full', className = '', showIcon = t
               href={ANDROID_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="block px-4 py-3 text-white hover:bg-green-600 transition-colors border-t border-tastelanc-surface-light"
+              className="block px-4 py-3 text-tastelanc-text-primary hover:bg-green-600 hover:text-white transition-colors border-t border-tastelanc-surface-light"
               onClick={() => setShowDropdown(false)}
             >
               Download for Android
@@ -124,13 +124,13 @@ export function DownloadButtons({ variant = 'full', className = '', showIcon = t
           >
             <button
               onClick={() => setShowModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+              className="absolute top-4 right-4 text-tastelanc-text-muted hover:text-tastelanc-text-primary"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-xl font-bold text-white mb-2 text-center">Download {BRAND.name}</h3>
-            <p className="text-gray-400 text-sm mb-6 text-center">Choose your platform</p>
+            <h3 className="text-xl font-bold text-tastelanc-text-primary mb-2 text-center">Download {BRAND.name}</h3>
+            <p className="text-tastelanc-text-muted text-sm mb-6 text-center">Choose your platform</p>
 
             <div className="space-y-3">
               <a
@@ -198,7 +198,7 @@ export function NavDownloadLink({ className = '' }: { className?: string }) {
               href={IOS_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="block px-4 py-3 text-white hover:bg-tastelanc-accent transition-colors text-sm"
+              className="block px-4 py-3 text-tastelanc-text-primary hover:bg-tastelanc-accent hover:text-white transition-colors text-sm"
               onClick={() => setShowDropdown(false)}
             >
               iOS (App Store)
@@ -209,7 +209,7 @@ export function NavDownloadLink({ className = '' }: { className?: string }) {
               href={ANDROID_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className={`block px-4 py-3 text-white hover:bg-green-600 transition-colors text-sm ${IOS_URL ? 'border-t border-tastelanc-surface-light' : ''}`}
+              className={`block px-4 py-3 text-tastelanc-text-primary hover:bg-green-600 hover:text-white transition-colors text-sm ${IOS_URL ? 'border-t border-tastelanc-surface-light' : ''}`}
               onClick={() => setShowDropdown(false)}
             >
               Android (Google Play)

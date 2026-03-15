@@ -101,7 +101,7 @@ const ACTIVITY_ICONS: Record<string, { icon: typeof PhoneCall; label: string; co
   call: { icon: PhoneCall, label: 'Called', color: 'text-green-400' },
   email: { icon: Mail, label: 'Emailed', color: 'text-blue-400' },
   meeting: { icon: Video, label: 'Met', color: 'text-purple-400' },
-  note: { icon: FileText, label: 'Note', color: 'text-gray-400' },
+  note: { icon: FileText, label: 'Note', color: 'text-tastelanc-text-muted' },
   follow_up: { icon: CalendarCheck, label: 'Follow-up', color: 'text-yellow-400' },
 };
 
@@ -285,7 +285,7 @@ export default function SalesLeadsPage() {
     const isSorted = column && sortBy === column;
     return (
       <th
-        className={`px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap ${column ? 'cursor-pointer select-none hover:text-gray-200 transition-colors' : ''} ${className || ''}`}
+        className={`px-3 py-3 text-left text-xs font-semibold text-tastelanc-text-muted uppercase tracking-wider whitespace-nowrap ${column ? 'cursor-pointer select-none hover:text-tastelanc-text-secondary transition-colors' : ''} ${className || ''}`}
         onClick={() => column && handleSort(column)}
       >
         <span className="flex items-center gap-1">
@@ -293,7 +293,7 @@ export default function SalesLeadsPage() {
           {column && (
             isSorted
               ? (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)
-              : <ChevronsUpDown className="w-3 h-3 text-gray-600" />
+              : <ChevronsUpDown className="w-3 h-3 text-tastelanc-text-faint" />
           )}
         </span>
       </th>
@@ -305,14 +305,14 @@ export default function SalesLeadsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary flex items-center gap-3">
             <Briefcase className="w-8 h-8 text-tastelanc-accent" />
             Business Leads
           </h1>
           <div className="flex items-center gap-2 mt-1">
-            <p className="text-gray-400">Manage outreach and restaurant partnerships</p>
+            <p className="text-tastelanc-text-muted">Manage outreach and restaurant partnerships</p>
             <Tooltip content="Your lead pipeline. Change status by clicking the status badge on each row. Click a lead name to view details, log activities, or send emails. Leads idle 7+ days get a follow-up nudge; 14+ days become claimable by other reps." position="bottom">
-              <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
+              <HelpCircle className="w-4 h-4 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
             </Tooltip>
           </div>
         </div>
@@ -320,7 +320,7 @@ export default function SalesLeadsPage() {
           {leads.length > 0 && (
             <button
               onClick={handleExportCSV}
-              className="flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-gray-300 hover:text-white rounded-lg transition-colors border border-tastelanc-surface-light"
+              className="flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface text-tastelanc-text-secondary hover:text-tastelanc-text-primary rounded-lg transition-colors border border-tastelanc-surface-light"
             >
               <Download className="w-4 h-4" />
               Export CSV
@@ -340,28 +340,28 @@ export default function SalesLeadsPage() {
       {stats && (
         <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-5">
           <Card className="p-3">
-            <div className="text-2xl font-bold text-white">{stats.total}</div>
-            <div className="text-xs text-gray-400">Total Leads</div>
+            <div className="text-2xl font-bold text-tastelanc-text-primary">{stats.total}</div>
+            <div className="text-xs text-tastelanc-text-muted">Total Leads</div>
           </Card>
           <Card className="p-3">
             <div className="text-2xl font-bold text-blue-400">{stats.new}</div>
-            <div className="text-xs text-gray-400">New</div>
+            <div className="text-xs text-tastelanc-text-muted">New</div>
           </Card>
           <Card className="p-3">
             <div className="text-2xl font-bold text-yellow-400">{stats.contacted}</div>
-            <div className="text-xs text-gray-400">Contacted</div>
+            <div className="text-xs text-tastelanc-text-muted">Contacted</div>
           </Card>
           <Card className="p-3">
             <div className="text-2xl font-bold text-green-400">{stats.interested}</div>
-            <div className="text-xs text-gray-400">Interested</div>
+            <div className="text-xs text-tastelanc-text-muted">Interested</div>
           </Card>
           <Card className="p-3">
             <div className="text-2xl font-bold text-red-400">{stats.notInterested}</div>
-            <div className="text-xs text-gray-400">Not Interested</div>
+            <div className="text-xs text-tastelanc-text-muted">Not Interested</div>
           </Card>
           <Card className="p-3">
             <div className="text-2xl font-bold text-lancaster-gold">{stats.converted}</div>
-            <div className="text-xs text-gray-400">Converted</div>
+            <div className="text-xs text-tastelanc-text-muted">Converted</div>
           </Card>
         </div>
       )}
@@ -370,13 +370,13 @@ export default function SalesLeadsPage() {
       <Card className="p-3 mb-5">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-tastelanc-text-muted" />
             <input
               type="text"
               placeholder="Search leads..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              className="w-full pl-10 pr-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
             />
           </div>
           <div className="flex gap-3">
@@ -388,7 +388,7 @@ export default function SalesLeadsPage() {
                   setMarketFilter(e.target.value);
                   setRepFilter('all'); // Reset rep filter when market changes
                 }}
-                className="px-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="px-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               >
                 <option value="all">All Markets</option>
                 {markets.map((m) => (
@@ -402,7 +402,7 @@ export default function SalesLeadsPage() {
             <select
               value={repFilter}
               onChange={(e) => setRepFilter(e.target.value)}
-              className="px-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              className="px-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
             >
               <option value="all">All Reps</option>
               <option value="mine">My Leads</option>
@@ -415,7 +415,7 @@ export default function SalesLeadsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              className="px-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
             >
               <option value="all">All Status</option>
               <option value="new">New</option>
@@ -438,8 +438,8 @@ export default function SalesLeadsPage() {
       ) : fetchError && filteredLeads.length === 0 ? (
         <Card className="p-12 text-center">
           <Users className="w-12 h-12 text-red-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">Couldn&apos;t load leads</h3>
-          <p className="text-gray-400 mb-4">Something went wrong. Please try again.</p>
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-2">Couldn&apos;t load leads</h3>
+          <p className="text-tastelanc-text-muted mb-4">Something went wrong. Please try again.</p>
           <button
             onClick={() => fetchLeads(1)}
             className="inline-flex items-center gap-2 px-4 py-2 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white rounded-lg transition-colors"
@@ -449,9 +449,9 @@ export default function SalesLeadsPage() {
         </Card>
       ) : filteredLeads.length === 0 ? (
         <Card className="p-12 text-center">
-          <Users className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">No leads found</h3>
-          <p className="text-gray-400 mb-4">
+          <Users className="w-12 h-12 text-tastelanc-text-faint mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-2">No leads found</h3>
+          <p className="text-tastelanc-text-muted mb-4">
             {search || statusFilter !== 'all' || repFilter !== 'all' || marketFilter !== 'all'
               ? 'Try adjusting your filters'
               : 'Add your first business lead to get started'}
@@ -510,7 +510,7 @@ export default function SalesLeadsPage() {
                       <td className={`${tdClass} overflow-hidden`}>
                         <Link
                           href={`/sales/leads/${lead.id}`}
-                          className="font-medium text-white hover:text-tastelanc-accent transition-colors truncate flex items-center gap-1.5"
+                          className="font-medium text-tastelanc-text-primary hover:text-tastelanc-accent transition-colors truncate flex items-center gap-1.5"
                           title={lead.business_name}
                         >
                           {lead.has_unread_replies && (
@@ -524,7 +524,7 @@ export default function SalesLeadsPage() {
                       <td className={`${tdClass} overflow-hidden`}>
                         <div className="truncate">
                           {lead.contact_name && (
-                            <span className="text-white" title={lead.contact_name}>{lead.contact_name}</span>
+                            <span className="text-tastelanc-text-primary" title={lead.contact_name}>{lead.contact_name}</span>
                           )}
                           {lead.email && (
                             <Link
@@ -536,7 +536,7 @@ export default function SalesLeadsPage() {
                             </Link>
                           )}
                           {!lead.contact_name && !lead.email && (
-                            <span className="text-gray-600">—</span>
+                            <span className="text-tastelanc-text-faint">—</span>
                           )}
                         </div>
                       </td>
@@ -544,17 +544,17 @@ export default function SalesLeadsPage() {
                       {/* Phone */}
                       <td className={`${tdClass} overflow-hidden`}>
                         {lead.phone ? (
-                          <a href={`tel:${lead.phone}`} className="text-gray-300 hover:text-white truncate block" title={lead.phone}>
+                          <a href={`tel:${lead.phone}`} className="text-tastelanc-text-secondary hover:text-tastelanc-text-primary truncate block" title={lead.phone}>
                             {lead.phone}
                           </a>
                         ) : (
-                          <span className="text-gray-600">—</span>
+                          <span className="text-tastelanc-text-faint">—</span>
                         )}
                       </td>
 
                       {/* City */}
-                      <td className={`${tdClass} text-gray-400`}>
-                        {lead.city || <span className="text-gray-600">—</span>}
+                      <td className={`${tdClass} text-tastelanc-text-muted`}>
+                        {lead.city || <span className="text-tastelanc-text-faint">—</span>}
                       </td>
 
                       {/* Status */}
@@ -582,9 +582,9 @@ export default function SalesLeadsPage() {
                       <td className={`${tdClass} overflow-hidden`}>
                         {lead.assigned_to_name ? (
                           <div className="flex flex-col gap-0.5">
-                            <span className="text-gray-300 truncate block" title={lead.assigned_to_name}>
+                            <span className="text-tastelanc-text-secondary truncate block" title={lead.assigned_to_name}>
                               {lead.assigned_to === currentUserId ? (
-                                <span className="text-white">{lead.assigned_to_name}</span>
+                                <span className="text-tastelanc-text-primary">{lead.assigned_to_name}</span>
                               ) : (
                                 <span className="flex items-center gap-1">
                                   {(() => {
@@ -592,7 +592,7 @@ export default function SalesLeadsPage() {
                                     return aging.isStale ? (
                                       <Unlock className="w-3 h-3 text-green-400 flex-shrink-0" />
                                     ) : (
-                                      <Lock className="w-3 h-3 text-gray-500 flex-shrink-0" />
+                                      <Lock className="w-3 h-3 text-tastelanc-text-faint flex-shrink-0" />
                                     );
                                   })()}
                                   <span className="truncate">{lead.assigned_to_name}</span>
@@ -613,21 +613,21 @@ export default function SalesLeadsPage() {
                             })()}
                           </div>
                         ) : (
-                          <span className="text-gray-600">—</span>
+                          <span className="text-tastelanc-text-faint">—</span>
                         )}
                       </td>
 
                       {/* Last Contact */}
-                      <td className={`${tdClass} text-gray-400`}>
+                      <td className={`${tdClass} text-tastelanc-text-muted`}>
                         {lead.last_contacted_at ? (
                           formatRelativeDate(lead.last_contacted_at)
                         ) : (
-                          <span className="text-gray-600">—</span>
+                          <span className="text-tastelanc-text-faint">—</span>
                         )}
                       </td>
 
                       {/* Added */}
-                      <td className={`${tdClass} text-gray-500`} title={formatDate(lead.created_at)}>
+                      <td className={`${tdClass} text-tastelanc-text-faint`} title={formatDate(lead.created_at)}>
                         {formatShortDate(lead.created_at)}
                       </td>
 
@@ -646,7 +646,7 @@ export default function SalesLeadsPage() {
                           {lead.phone && (
                             <a
                               href={`tel:${lead.phone}`}
-                              className="p-1 text-gray-500 hover:text-white rounded transition-colors"
+                              className="p-1 text-tastelanc-text-faint hover:text-tastelanc-text-primary rounded transition-colors"
                               title="Call"
                             >
                               <Phone className="w-3.5 h-3.5" />
@@ -661,7 +661,7 @@ export default function SalesLeadsPage() {
                           </Link>
                           <Link
                             href={`/sales/leads/${lead.id}`}
-                            className="p-1 text-gray-500 hover:text-tastelanc-accent rounded transition-colors"
+                            className="p-1 text-tastelanc-text-faint hover:text-tastelanc-accent rounded transition-colors"
                             title="View Details"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
@@ -678,14 +678,14 @@ export default function SalesLeadsPage() {
           {/* Pagination */}
           {pagination.totalPages > 1 && (
             <div className="flex items-center justify-between px-4 py-3 border-t border-tastelanc-surface-light">
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-tastelanc-text-faint">
                 Showing {(pagination.page - 1) * pagination.limit + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
               </span>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => goToPage(pagination.page - 1)}
                   disabled={pagination.page <= 1}
-                  className="p-1.5 rounded text-gray-400 hover:text-white hover:bg-tastelanc-surface-light disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="p-1.5 rounded text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -698,7 +698,7 @@ export default function SalesLeadsPage() {
                   }, [])
                   .map((item, idx) =>
                     item === 'ellipsis' ? (
-                      <span key={`e-${idx}`} className="px-1 text-gray-600">…</span>
+                      <span key={`e-${idx}`} className="px-1 text-tastelanc-text-faint">…</span>
                     ) : (
                       <button
                         key={item}
@@ -706,7 +706,7 @@ export default function SalesLeadsPage() {
                         className={`min-w-[28px] h-7 rounded text-sm font-medium transition-colors ${
                           pagination.page === item
                             ? 'bg-tastelanc-accent text-white'
-                            : 'text-gray-400 hover:text-white hover:bg-tastelanc-surface-light'
+                            : 'text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light'
                         }`}
                       >
                         {item}
@@ -716,7 +716,7 @@ export default function SalesLeadsPage() {
                 <button
                   onClick={() => goToPage(pagination.page + 1)}
                   disabled={pagination.page >= pagination.totalPages}
-                  className="p-1.5 rounded text-gray-400 hover:text-white hover:bg-tastelanc-surface-light disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="p-1.5 rounded text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>

@@ -27,7 +27,7 @@ function getRelativeTime(dateString: string): string {
 }
 
 const ACTION_DOT_COLORS: Record<string, string> = {
-  city_added: 'bg-gray-400',
+  city_added: 'bg-tastelanc-text-muted',
   research_started: 'bg-blue-400',
   research_completed: 'bg-blue-500',
   brand_generated: 'bg-purple-400',
@@ -38,10 +38,10 @@ const ACTION_DOT_COLORS: Record<string, string> = {
   job_listing_rejected: 'bg-red-400',
   city_approved: 'bg-green-500',
   city_rejected: 'bg-red-500',
-  city_put_on_hold: 'bg-gray-400',
+  city_put_on_hold: 'bg-tastelanc-text-muted',
   market_created: 'bg-emerald-500',
   status_changed: 'bg-orange-400',
-  note_added: 'bg-gray-400',
+  note_added: 'bg-tastelanc-text-muted',
 };
 
 interface ActivityTimelineProps {
@@ -52,7 +52,7 @@ export default function ActivityTimeline({ activities }: ActivityTimelineProps) 
   if (!activities || activities.length === 0) {
     return (
       <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-8 text-center">
-        <p className="text-gray-500">No activity recorded yet.</p>
+        <p className="text-tastelanc-text-faint">No activity recorded yet.</p>
       </div>
     );
   }
@@ -61,7 +61,7 @@ export default function ActivityTimeline({ activities }: ActivityTimelineProps) 
     <div className="space-y-0">
       {activities.map((entry, index) => {
         const isLast = index === activities.length - 1;
-        const dotColor = ACTION_DOT_COLORS[entry.action] || 'bg-gray-400';
+        const dotColor = ACTION_DOT_COLORS[entry.action] || 'bg-tastelanc-text-muted';
 
         return (
           <div key={entry.id} className="flex gap-4">
@@ -73,10 +73,10 @@ export default function ActivityTimeline({ activities }: ActivityTimelineProps) 
 
             {/* Content */}
             <div className="pb-6 min-w-0 flex-1">
-              <p className="text-sm text-gray-300 leading-relaxed">
+              <p className="text-sm text-tastelanc-text-secondary leading-relaxed">
                 {entry.description || entry.action.replace(/_/g, ' ')}
               </p>
-              <p className="text-xs text-gray-600 mt-1">
+              <p className="text-xs text-tastelanc-text-faint mt-1">
                 {getRelativeTime(entry.created_at)}
               </p>
             </div>

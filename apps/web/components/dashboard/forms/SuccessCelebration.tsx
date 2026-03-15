@@ -99,12 +99,12 @@ export default function SuccessCelebration({
           showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         )}
       >
-        <h3 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
+        <h3 className="text-2xl font-bold text-tastelanc-text-primary flex items-center justify-center gap-2">
           {title}
           <PartyPopper className="w-6 h-6 text-lancaster-gold" />
         </h3>
         {subtitle && (
-          <p className="text-gray-400">{subtitle}</p>
+          <p className="text-tastelanc-text-muted">{subtitle}</p>
         )}
       </div>
 
@@ -123,7 +123,7 @@ export default function SuccessCelebration({
               'flex items-center gap-2 px-5 py-2.5 rounded-lg transition-colors',
               emphasizeAddAnother
                 ? 'bg-lancaster-gold text-black font-medium hover:bg-lancaster-gold/90'
-                : 'bg-tastelanc-surface text-white hover:bg-tastelanc-surface-light'
+                : 'bg-tastelanc-surface text-tastelanc-text-primary hover:bg-tastelanc-surface-light'
             )}
           >
             <Plus className="w-4 h-4" />
@@ -136,7 +136,7 @@ export default function SuccessCelebration({
           className={cn(
             'flex items-center gap-2 px-5 py-2.5 rounded-lg transition-colors',
             emphasizeAddAnother
-              ? 'bg-tastelanc-surface text-white hover:bg-tastelanc-surface-light'
+              ? 'bg-tastelanc-surface text-tastelanc-text-primary hover:bg-tastelanc-surface-light'
               : 'bg-lancaster-gold text-black font-medium hover:bg-lancaster-gold/90'
           )}
         >

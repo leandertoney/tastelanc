@@ -176,8 +176,8 @@ export default function DashboardPage() {
       <div className="flex items-center justify-center min-h-[400px] p-6">
         <div className="text-center max-w-md">
           <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-white mb-2">Couldn&apos;t load dashboard</h2>
-          <p className="text-gray-400 text-sm mb-6">
+          <h2 className="text-lg font-semibold text-tastelanc-text-primary mb-2">Couldn&apos;t load dashboard</h2>
+          <p className="text-tastelanc-text-muted text-sm mb-6">
             We had trouble fetching your dashboard data. Please check your connection and try again.
           </p>
           <button
@@ -242,11 +242,11 @@ export default function DashboardPage() {
     <div className="space-y-8">
       {/* Stats Header with Refresh */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Overview</h2>
+        <h2 className="text-lg font-semibold text-tastelanc-text-primary">Overview</h2>
         <button
           onClick={() => fetchAll(true)}
           disabled={isRefreshing}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-400 hover:text-white rounded-lg hover:bg-tastelanc-surface-light transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-tastelanc-text-muted hover:text-tastelanc-text-primary rounded-lg hover:bg-tastelanc-surface-light transition-colors disabled:opacity-50"
           title="Refresh data"
         >
           <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -262,15 +262,15 @@ export default function DashboardPage() {
             <Card key={stat.label} className="p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm">{stat.label}</p>
-                  <p className="text-2xl font-bold text-white mt-1">{stat.value}</p>
+                  <p className="text-tastelanc-text-muted text-sm">{stat.label}</p>
+                  <p className="text-2xl font-bold text-tastelanc-text-primary mt-1">{stat.value}</p>
                 </div>
                 <div className="p-2 bg-tastelanc-surface rounded-lg">
                   <Icon className="w-5 h-5 text-tastelanc-accent" />
                 </div>
               </div>
               {stat.change && (
-                <p className={`text-sm mt-2 ${stat.change.startsWith('+') && stat.change !== '+0%' ? 'text-green-400' : 'text-gray-500'}`}>
+                <p className={`text-sm mt-2 ${stat.change.startsWith('+') && stat.change !== '+0%' ? 'text-green-400' : 'text-tastelanc-text-faint'}`}>
                   {stat.change} {stat.changePeriod}
                 </p>
               )}
@@ -288,28 +288,28 @@ export default function DashboardPage() {
           <div className="blur-md pointer-events-none select-none p-6" aria-hidden="true">
             <div className="flex items-center gap-6">
               <div className="w-20 h-20 rounded-full border-4 border-tastelanc-surface-light flex items-center justify-center flex-shrink-0">
-                <span className="text-2xl font-bold text-white">73</span>
+                <span className="text-2xl font-bold text-tastelanc-text-primary">73</span>
               </div>
               <div className="flex-1 space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-300">Menu Items</span>
+                  <span className="text-tastelanc-text-secondary">Menu Items</span>
                   <div className="flex gap-4">
-                    <span className="text-white font-medium">5</span>
-                    <span className="text-gray-500">28 avg</span>
+                    <span className="text-tastelanc-text-primary font-medium">5</span>
+                    <span className="text-tastelanc-text-faint">28 avg</span>
                   </div>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-300">Happy Hours</span>
+                  <span className="text-tastelanc-text-secondary">Happy Hours</span>
                   <div className="flex gap-4">
-                    <span className="text-white font-medium">1</span>
-                    <span className="text-gray-500">4 avg</span>
+                    <span className="text-tastelanc-text-primary font-medium">1</span>
+                    <span className="text-tastelanc-text-faint">4 avg</span>
                   </div>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-300">Events</span>
+                  <span className="text-tastelanc-text-secondary">Events</span>
                   <div className="flex gap-4">
-                    <span className="text-white font-medium">0</span>
-                    <span className="text-gray-500">3 avg</span>
+                    <span className="text-tastelanc-text-primary font-medium">0</span>
+                    <span className="text-tastelanc-text-faint">3 avg</span>
                   </div>
                 </div>
               </div>
@@ -320,8 +320,8 @@ export default function DashboardPage() {
               <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full flex items-center justify-center">
                 <Crown className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-1">Market Insights</h3>
-              <p className="text-gray-400 text-sm mb-4 max-w-xs mx-auto">
+              <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-1">Market Insights</h3>
+              <p className="text-tastelanc-text-muted text-sm mb-4 max-w-xs mx-auto">
                 See how you compare to competitors and get AI-powered growth recommendations.
               </p>
               <Link
@@ -337,7 +337,7 @@ export default function DashboardPage() {
       ) : (
         <Card className="p-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-tastelanc-text-primary flex items-center gap-2">
               <Lightbulb className="w-5 h-5 text-tastelanc-accent" />
               Market Insights
             </h3>
@@ -348,7 +348,7 @@ export default function DashboardPage() {
               View Full Insights <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
-          <p className="text-gray-400 text-sm mt-2">
+          <p className="text-tastelanc-text-muted text-sm mt-2">
             Check your visibility score, see how you compare to top performers, and get growth recommendations.
           </p>
         </Card>
@@ -371,20 +371,20 @@ export default function DashboardPage() {
               {/* Conversion Funnel - Top of Analytics */}
               {analyticsData.conversionFunnel && (
                 <Card className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-6 flex items-center gap-2">
                     Conversion Funnel (30d)
                     <Tooltip content="How users discover your restaurant: Impressions (seen in listings) → Detail Views (clicked your page) → Actions (called, visited website, etc.)" position="right">
-                      <HelpCircle className="w-3.5 h-3.5 text-gray-600 hover:text-gray-400 cursor-help" />
+                      <HelpCircle className="w-3.5 h-3.5 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
                     </Tooltip>
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="text-center">
-                      <p className="text-2xl sm:text-3xl font-bold text-white">{analyticsData.conversionFunnel.impressions.toLocaleString()}</p>
-                      <p className="text-gray-400 text-sm mt-1">Seen in App</p>
+                      <p className="text-2xl sm:text-3xl font-bold text-tastelanc-text-primary">{analyticsData.conversionFunnel.impressions.toLocaleString()}</p>
+                      <p className="text-tastelanc-text-muted text-sm mt-1">Seen in App</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-2xl sm:text-3xl font-bold text-white">{analyticsData.conversionFunnel.detailViews.toLocaleString()}</p>
-                      <p className="text-gray-400 text-sm mt-1">Viewed Profile</p>
+                      <p className="text-2xl sm:text-3xl font-bold text-tastelanc-text-primary">{analyticsData.conversionFunnel.detailViews.toLocaleString()}</p>
+                      <p className="text-tastelanc-text-muted text-sm mt-1">Viewed Profile</p>
                       <p className="text-tastelanc-accent text-xs mt-0.5">
                         {analyticsData.conversionFunnel.impressions > 0
                           ? `${Math.round((analyticsData.conversionFunnel.detailViews / analyticsData.conversionFunnel.impressions) * 1000) / 10}%`
@@ -392,8 +392,8 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-2xl sm:text-3xl font-bold text-white">{analyticsData.conversionFunnel.clicks.toLocaleString()}</p>
-                      <p className="text-gray-400 text-sm mt-1">Took Action</p>
+                      <p className="text-2xl sm:text-3xl font-bold text-tastelanc-text-primary">{analyticsData.conversionFunnel.clicks.toLocaleString()}</p>
+                      <p className="text-tastelanc-text-muted text-sm mt-1">Took Action</p>
                       <p className="text-green-400 text-xs mt-0.5">
                         {analyticsData.conversionFunnel.detailViews > 0
                           ? `${Math.round((analyticsData.conversionFunnel.clicks / analyticsData.conversionFunnel.detailViews) * 1000) / 10}%`
@@ -408,7 +408,7 @@ export default function DashboardPage() {
                         <div className="bg-tastelanc-accent" style={{ flex: Math.max(analyticsData.conversionFunnel.clickRate / 100, 0.05) }} />
                         <div className="bg-green-500 rounded-r-full" style={{ flex: Math.max((analyticsData.conversionFunnel.viewRate * analyticsData.conversionFunnel.clickRate) / 10000, 0.02) }} />
                       </div>
-                      <div className="flex justify-between mt-2 text-xs text-gray-500">
+                      <div className="flex justify-between mt-2 text-xs text-tastelanc-text-faint">
                         <span>Impressions</span>
                         <span>Profile Views</span>
                         <span>Actions</span>
@@ -422,9 +422,9 @@ export default function DashboardPage() {
               <div className="grid lg:grid-cols-2 gap-8">
                 {/* Weekly Impressions Chart */}
                 <Card className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-6">Weekly Impressions</h3>
+                  <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-6">Weekly Impressions</h3>
                   {dailyImpressions.every(d => d.impressions === 0) ? (
-                    <div className="h-48 flex items-center justify-center text-gray-500">
+                    <div className="h-48 flex items-center justify-center text-tastelanc-text-faint">
                       No impressions data yet. Impressions will appear as your restaurant shows up in the app.
                     </div>
                   ) : (
@@ -436,7 +436,7 @@ export default function DashboardPage() {
                             style={{ height: `${Math.max((dayData.impressions / maxImpressions) * 100, 4)}%` }}
                             title={`${dayData.impressions} impressions`}
                           />
-                          <span className="text-xs text-gray-400 mt-2 flex-shrink-0">{dayData.day}</span>
+                          <span className="text-xs text-tastelanc-text-muted mt-2 flex-shrink-0">{dayData.day}</span>
                         </div>
                       ))}
                     </div>
@@ -445,9 +445,9 @@ export default function DashboardPage() {
 
                 {/* Click Breakdown */}
                 <Card className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-6">User Interactions</h3>
+                  <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-6">User Interactions</h3>
                   {analyticsData.stats.totalClicks === 0 ? (
-                    <div className="h-48 flex items-center justify-center text-gray-500">
+                    <div className="h-48 flex items-center justify-center text-tastelanc-text-faint">
                       No interaction data yet. Clicks will appear as users engage with your listing.
                     </div>
                   ) : (
@@ -458,11 +458,11 @@ export default function DashboardPage() {
                         return (
                           <div key={click.type}>
                             <div className="flex justify-between text-sm mb-1">
-                              <span className="text-gray-300 flex items-center gap-2">
+                              <span className="text-tastelanc-text-secondary flex items-center gap-2">
                                 <Icon className="w-4 h-4" />
                                 {click.type}
                               </span>
-                              <span className="text-gray-400">{click.count.toLocaleString()}</span>
+                              <span className="text-tastelanc-text-muted">{click.count.toLocaleString()}</span>
                             </div>
                             <div className="w-full bg-tastelanc-surface rounded-full h-2">
                               <div
@@ -487,10 +487,10 @@ export default function DashboardPage() {
         {/* Profile Completion */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-tastelanc-text-primary flex items-center gap-2">
               Profile Completion
               <Tooltip content="Complete every item to maximize your visibility in the app. Restaurants with full profiles get more views and favorites from users." position="top">
-                <HelpCircle className="w-3.5 h-3.5 text-gray-600 hover:text-gray-400 cursor-help" />
+                <HelpCircle className="w-3.5 h-3.5 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
               </Tooltip>
             </h3>
             <Badge variant="accent">{profileCompletion?.percentage || 0}%</Badge>
@@ -504,12 +504,12 @@ export default function DashboardPage() {
           <ul className="space-y-2">
             {profileCompletion?.items.map((item, index) => (
               <li key={index} className="flex items-center gap-2 text-sm">
-                <span className={`w-4 h-4 rounded-full flex items-center justify-center ${item.completed ? 'bg-green-500' : 'bg-gray-600'}`}>
-                  <span className={`text-xs ${item.completed ? 'text-white' : 'text-gray-400'}`}>
+                <span className={`w-4 h-4 rounded-full flex items-center justify-center ${item.completed ? 'bg-green-500' : 'bg-tastelanc-surface-light'}`}>
+                  <span className={`text-xs ${item.completed ? 'text-white' : 'text-tastelanc-text-muted'}`}>
                     {item.completed ? '✓' : '○'}
                   </span>
                 </span>
-                <span className={item.completed ? 'text-gray-300' : 'text-gray-500'}>
+                <span className={item.completed ? 'text-tastelanc-text-secondary' : 'text-tastelanc-text-faint'}>
                   {item.label}
                 </span>
               </li>
@@ -525,7 +525,7 @@ export default function DashboardPage() {
 
         {/* Alerts & Tips */}
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Tips & Alerts</h3>
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-4">Tips & Alerts</h3>
           <div className="space-y-4">
             {stats?.upcomingEvents === 0 && (
               <div className="flex gap-3 p-3 bg-yellow-900/20 border border-yellow-600/30 rounded-lg">
@@ -541,8 +541,8 @@ export default function DashboardPage() {
             <div className="flex gap-3 p-3 bg-tastelanc-surface rounded-lg">
               <Sparkles className="w-5 h-5 text-tastelanc-accent flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-gray-200 text-sm font-medium">Pro tip: Add happy hour specials</p>
-                <p className="text-gray-400 text-xs mt-1">
+                <p className="text-tastelanc-text-secondary text-sm font-medium">Pro tip: Add happy hour specials</p>
+                <p className="text-tastelanc-text-muted text-xs mt-1">
                   Restaurants with happy hours get 3x more engagement.
                 </p>
               </div>
@@ -550,8 +550,8 @@ export default function DashboardPage() {
             <div className="flex gap-3 p-3 bg-tastelanc-surface rounded-lg">
               <Calendar className="w-5 h-5 text-tastelanc-accent flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-gray-200 text-sm font-medium">Schedule recurring events</p>
-                <p className="text-gray-400 text-xs mt-1">
+                <p className="text-tastelanc-text-secondary text-sm font-medium">Schedule recurring events</p>
+                <p className="text-tastelanc-text-muted text-xs mt-1">
                   Weekly trivia nights and live music attract regulars.
                 </p>
               </div>
@@ -566,8 +566,8 @@ export default function DashboardPage() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <Badge variant="gold" className="mb-2">Upgrade Available</Badge>
-              <h3 className="text-lg font-semibold text-white">Unlock Premium Features</h3>
-              <p className="text-gray-400 text-sm mt-1">
+              <h3 className="text-lg font-semibold text-tastelanc-text-primary">Unlock Premium Features</h3>
+              <p className="text-tastelanc-text-muted text-sm mt-1">
                 Get analytics, priority placement, and more with a premium subscription.
               </p>
             </div>

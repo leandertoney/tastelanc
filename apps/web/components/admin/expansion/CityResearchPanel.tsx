@@ -89,8 +89,8 @@ function ScoreBreakdown({ city }: { city: ExpansionCity }) {
       {/* Overall score */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-sm font-medium text-gray-300">Market Potential Score</span>
-          <span className="text-sm font-bold text-white">
+          <span className="text-sm font-medium text-tastelanc-text-secondary">Market Potential Score</span>
+          <span className="text-sm font-bold text-tastelanc-text-primary">
             {overallScore}/100{' '}
             <span className="text-xs font-normal" style={{ color: scoreColor(overallScore) }}>
               {scoreLabel(overallScore)}
@@ -108,7 +108,7 @@ function ScoreBreakdown({ city }: { city: ExpansionCity }) {
       {/* Toggle */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors mb-3"
+        className="flex items-center gap-1.5 text-xs text-tastelanc-text-faint hover:text-tastelanc-text-secondary transition-colors mb-3"
       >
         {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         {expanded ? 'Hide' : 'Show'} Score Breakdown
@@ -128,14 +128,14 @@ function ScoreBreakdown({ city }: { city: ExpansionCity }) {
               <div key={key}>
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
-                    <Icon className="w-3.5 h-3.5 text-gray-500" />
-                    <span className="text-xs text-gray-400">
-                      {label} <span className="text-gray-600">({weightPct}% weight = {weightedPts} pts)</span>
+                    <Icon className="w-3.5 h-3.5 text-tastelanc-text-faint" />
+                    <span className="text-xs text-tastelanc-text-muted">
+                      {label} <span className="text-tastelanc-text-faint">({weightPct}% weight = {weightedPts} pts)</span>
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`text-[10px] font-medium ${strengthColor}`}>{strengthLabel}</span>
-                    <span className="text-xs font-semibold text-gray-300">{score}/100</span>
+                    <span className="text-xs font-semibold text-tastelanc-text-secondary">{score}/100</span>
                   </div>
                 </div>
                 <div className="w-full h-2 bg-tastelanc-surface-light rounded-full overflow-hidden">
@@ -145,7 +145,7 @@ function ScoreBreakdown({ city }: { city: ExpansionCity }) {
                   />
                 </div>
                 {reason && (
-                  <p className="text-[11px] text-gray-600 mt-1 leading-relaxed whitespace-pre-line">{reason}</p>
+                  <p className="text-[11px] text-tastelanc-text-faint mt-1 leading-relaxed whitespace-pre-line">{reason}</p>
                 )}
               </div>
             );
@@ -164,8 +164,8 @@ function ScoreBar({ score }: { score: number }) {
   return (
     <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-sm font-medium text-gray-300">Market Potential Score</span>
-        <span className="text-sm font-bold text-white">
+        <span className="text-sm font-medium text-tastelanc-text-secondary">Market Potential Score</span>
+        <span className="text-sm font-bold text-tastelanc-text-primary">
           {score}/100{' '}
           <span className="text-xs font-normal" style={{ color: scoreColor(score) }}>
             {scoreLabel(score)}
@@ -204,18 +204,18 @@ function StatCard({
     <div className="bg-tastelanc-surface-light rounded-lg p-3">
       <div className="flex items-center gap-2 mb-1">
         <Icon className="w-4 h-4 text-tastelanc-accent" />
-        <span className="text-xs text-gray-500">{label}</span>
+        <span className="text-xs text-tastelanc-text-faint">{label}</span>
         {badge && (
           <span className="text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full font-medium">
             {badge}
           </span>
         )}
       </div>
-      <p className="text-lg font-bold text-white">
+      <p className="text-lg font-bold text-tastelanc-text-primary">
         {typeof value === 'number' ? value.toLocaleString() : value}
       </p>
       {subValue && (
-        <p className="text-[11px] text-gray-600 mt-0.5">{subValue}</p>
+        <p className="text-[11px] text-tastelanc-text-faint mt-0.5">{subValue}</p>
       )}
     </div>
   );
@@ -225,12 +225,12 @@ function TagList({ label, items }: { label: string; items: string[] }) {
   if (!items || items.length === 0) return null;
   return (
     <div>
-      <h4 className="text-sm font-medium text-gray-300 mb-2">{label}</h4>
+      <h4 className="text-sm font-medium text-tastelanc-text-secondary mb-2">{label}</h4>
       <div className="flex flex-wrap gap-2">
         {items.map((item, i) => (
           <span
             key={i}
-            className="px-2.5 py-1 bg-tastelanc-surface-light text-gray-300 text-xs rounded-full"
+            className="px-2.5 py-1 bg-tastelanc-surface-light text-tastelanc-text-secondary text-xs rounded-full"
           >
             {item}
           </span>
@@ -244,8 +244,8 @@ function ProseSection({ label, text }: { label: string; text: string | null | un
   if (!text) return null;
   return (
     <div>
-      <h4 className="text-sm font-medium text-gray-300 mb-1.5">{label}</h4>
-      <p className="text-sm text-gray-400 leading-relaxed">{text}</p>
+      <h4 className="text-sm font-medium text-tastelanc-text-secondary mb-1.5">{label}</h4>
+      <p className="text-sm text-tastelanc-text-muted leading-relaxed">{text}</p>
     </div>
   );
 }
@@ -274,7 +274,7 @@ function DataCompletenessBar({ completeness }: { completeness: Record<string, bo
             className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${
               ok
                 ? `bg-${color}-500/20 text-${color}-400`
-                : 'bg-gray-700/30 text-gray-600'
+                : 'bg-tastelanc-surface/30 text-tastelanc-text-faint'
             }`}
             style={ok ? {} : { opacity: 0.6 }}
           >
@@ -299,14 +299,14 @@ function CollegeGrid({ colleges }: { colleges: CollegeInfo[] }) {
   return (
     <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5">
       <div className="flex items-center justify-between mb-4">
-        <h4 className="text-sm font-medium text-gray-300 flex items-center gap-2">
+        <h4 className="text-sm font-medium text-tastelanc-text-secondary flex items-center gap-2">
           <GraduationCap className="w-4 h-4 text-tastelanc-accent" />
           Colleges & Universities
           <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded-full font-medium">
             College Scorecard
           </span>
         </h4>
-        <span className="text-xs text-gray-500">
+        <span className="text-xs text-tastelanc-text-faint">
           {colleges.length} institutions &middot; {totalEnrollment.toLocaleString()} total enrollment
         </span>
       </div>
@@ -323,7 +323,7 @@ function CollegeGrid({ colleges }: { colleges: CollegeInfo[] }) {
               }`}
             >
               <div className="flex items-start justify-between gap-2 mb-1">
-                <span className="text-sm font-medium text-white leading-tight">{college.name}</span>
+                <span className="text-sm font-medium text-tastelanc-text-primary leading-tight">{college.name}</span>
                 {college.is_research_university && (
                   <span className="flex-shrink-0" aria-label="Research University">
                     <Star className="w-4 h-4 text-yellow-400" />
@@ -331,17 +331,17 @@ function CollegeGrid({ colleges }: { colleges: CollegeInfo[] }) {
                 )}
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-gray-400">{college.enrollment.toLocaleString()} students</span>
+                <span className="text-xs text-tastelanc-text-muted">{college.enrollment.toLocaleString()} students</span>
                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
                   college.type === 'public'
                     ? 'bg-blue-500/20 text-blue-400'
                     : college.type === 'private_nonprofit'
                     ? 'bg-purple-500/20 text-purple-400'
-                    : 'bg-gray-500/20 text-gray-400'
+                    : 'bg-tastelanc-surface-light/50 text-tastelanc-text-muted'
                 }`}>
                   {college.type === 'public' ? 'Public' : college.type === 'private_nonprofit' ? 'Private' : 'For-Profit'}
                 </span>
-                <span className="text-[10px] text-gray-600">{college.degree_level}</span>
+                <span className="text-[10px] text-tastelanc-text-faint">{college.degree_level}</span>
                 {isSeminarTarget && (
                   <span className="text-[10px] px-1.5 py-0.5 bg-tastelanc-accent/20 text-tastelanc-accent rounded-full font-medium">
                     Hiring Seminar Target
@@ -349,7 +349,7 @@ function CollegeGrid({ colleges }: { colleges: CollegeInfo[] }) {
                 )}
               </div>
               {college.city && (
-                <span className="text-[10px] text-gray-600 mt-1 block">{college.city}</span>
+                <span className="text-[10px] text-tastelanc-text-faint mt-1 block">{college.city}</span>
               )}
             </div>
           );
@@ -366,7 +366,7 @@ function CollegeGrid({ colleges }: { colleges: CollegeInfo[] }) {
 function TourismEconomyPanel({ data }: { data: TourismEconomicData }) {
   return (
     <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5">
-      <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+      <h4 className="text-sm font-medium text-tastelanc-text-secondary mb-3 flex items-center gap-2">
         <TrendingUp className="w-4 h-4 text-tastelanc-accent" />
         Tourism & Economy
         <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded-full font-medium">
@@ -377,25 +377,25 @@ function TourismEconomyPanel({ data }: { data: TourismEconomicData }) {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {data.hospitality_gdp_millions !== null && (
           <div className="bg-tastelanc-surface-light rounded-lg p-3">
-            <span className="text-[10px] text-gray-500 uppercase tracking-wide">Hospitality GDP</span>
-            <p className="text-lg font-bold text-white">${data.hospitality_gdp_millions.toLocaleString()}M</p>
+            <span className="text-[10px] text-tastelanc-text-faint uppercase tracking-wide">Hospitality GDP</span>
+            <p className="text-lg font-bold text-tastelanc-text-primary">${data.hospitality_gdp_millions.toLocaleString()}M</p>
             {data.hospitality_pct_of_gdp !== null && (
-              <p className="text-[11px] text-gray-500">{data.hospitality_pct_of_gdp}% of county economy</p>
+              <p className="text-[11px] text-tastelanc-text-faint">{data.hospitality_pct_of_gdp}% of county economy</p>
             )}
           </div>
         )}
 
         {data.arts_entertainment_gdp_millions !== null && (
           <div className="bg-tastelanc-surface-light rounded-lg p-3">
-            <span className="text-[10px] text-gray-500 uppercase tracking-wide">Arts/Entertainment GDP</span>
-            <p className="text-lg font-bold text-white">${data.arts_entertainment_gdp_millions.toLocaleString()}M</p>
+            <span className="text-[10px] text-tastelanc-text-faint uppercase tracking-wide">Arts/Entertainment GDP</span>
+            <p className="text-lg font-bold text-tastelanc-text-primary">${data.arts_entertainment_gdp_millions.toLocaleString()}M</p>
           </div>
         )}
 
         {data.total_county_gdp_millions !== null && (
           <div className="bg-tastelanc-surface-light rounded-lg p-3">
-            <span className="text-[10px] text-gray-500 uppercase tracking-wide">Total County GDP</span>
-            <p className="text-lg font-bold text-white">${data.total_county_gdp_millions.toLocaleString()}M</p>
+            <span className="text-[10px] text-tastelanc-text-faint uppercase tracking-wide">Total County GDP</span>
+            <p className="text-lg font-bold text-tastelanc-text-primary">${data.total_county_gdp_millions.toLocaleString()}M</p>
           </div>
         )}
       </div>
@@ -428,7 +428,7 @@ function VenueBreakdownPanel({
 
   return (
     <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5">
-      <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+      <h4 className="text-sm font-medium text-tastelanc-text-secondary mb-3 flex items-center gap-2">
         <UtensilsCrossed className="w-4 h-4 text-tastelanc-accent" />
         Venue Breakdown
         <span className="text-[10px] px-1.5 py-0.5 bg-teal-500/20 text-teal-400 rounded-full font-medium">
@@ -438,7 +438,7 @@ function VenueBreakdownPanel({
 
       {/* Cross-reference with Google */}
       {(googleRestaurants || googleBars) ? (
-        <p className="text-[11px] text-gray-500 mb-3">
+        <p className="text-[11px] text-tastelanc-text-faint mb-3">
           Cross-reference: Google Places {googleRestaurants?.toLocaleString() || '?'} restaurants, {googleBars?.toLocaleString() || '?'} bars
           &bull; OSM {venueBreakdown.restaurants} restaurants, {venueBreakdown.bars} bars
         </p>
@@ -448,9 +448,9 @@ function VenueBreakdownPanel({
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
         {venueTypes.map(({ key, label, icon: Icon, count }) => (
           <div key={key} className="bg-tastelanc-surface-light rounded-lg p-2 text-center">
-            <Icon className="w-4 h-4 text-gray-500 mx-auto mb-1" />
-            <p className="text-sm font-bold text-white">{count}</p>
-            <p className="text-[10px] text-gray-500">{label}</p>
+            <Icon className="w-4 h-4 text-tastelanc-text-faint mx-auto mb-1" />
+            <p className="text-sm font-bold text-tastelanc-text-primary">{count}</p>
+            <p className="text-[10px] text-tastelanc-text-faint">{label}</p>
           </div>
         ))}
       </div>
@@ -458,14 +458,14 @@ function VenueBreakdownPanel({
       {/* Cuisine distribution */}
       {cuisineDistribution && cuisineDistribution.length > 0 && (
         <div>
-          <h5 className="text-xs text-gray-500 mb-2">Top Cuisines</h5>
+          <h5 className="text-xs text-tastelanc-text-faint mb-2">Top Cuisines</h5>
           <div className="flex flex-wrap gap-1.5">
             {cuisineDistribution.slice(0, 12).map((c, i) => (
               <span
                 key={i}
-                className="text-[11px] px-2 py-0.5 bg-tastelanc-surface-light text-gray-300 rounded-full"
+                className="text-[11px] px-2 py-0.5 bg-tastelanc-surface-light text-tastelanc-text-secondary rounded-full"
               >
-                {c.cuisine} <span className="text-gray-600">({c.count})</span>
+                {c.cuisine} <span className="text-tastelanc-text-faint">({c.count})</span>
               </span>
             ))}
           </div>
@@ -492,8 +492,8 @@ export default function CityResearchPanel({
   if (!hasResearch) {
     return (
       <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-8 text-center">
-        <Search className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-        <p className="text-gray-400 mb-4">
+        <Search className="w-10 h-10 text-tastelanc-text-faint mx-auto mb-3" />
+        <p className="text-tastelanc-text-muted mb-4">
           No research data yet.{onReResearch ? ' Click Research to get started.' : ''}
         </p>
         {onReResearch && (
@@ -552,7 +552,7 @@ export default function CityResearchPanel({
         <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-4">
           <div className="flex items-center gap-2 mb-2">
             <CheckCircle2 className="w-4 h-4 text-tastelanc-accent" />
-            <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wide">Data Sources Collected</h4>
+            <h4 className="text-xs font-medium text-tastelanc-text-muted uppercase tracking-wide">Data Sources Collected</h4>
           </div>
           <DataCompletenessBar completeness={dataCompleteness} />
         </div>
@@ -563,7 +563,7 @@ export default function CityResearchPanel({
         <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5">
           <div className="flex items-center gap-2 mb-3">
             <MapPin className="w-4 h-4 text-tastelanc-accent" />
-            <h4 className="text-sm font-medium text-gray-300">Regional Cluster</h4>
+            <h4 className="text-sm font-medium text-tastelanc-text-secondary">Regional Cluster</h4>
             {regionName && (
               <span className="text-xs px-2 py-0.5 bg-tastelanc-accent/20 text-tastelanc-accent rounded-full font-medium">
                 {regionName}
@@ -574,14 +574,14 @@ export default function CityResearchPanel({
             {clusterTowns.map((town, i) => (
               <span
                 key={i}
-                className="px-2.5 py-1 bg-tastelanc-surface-light text-gray-300 text-xs rounded-full"
+                className="px-2.5 py-1 bg-tastelanc-surface-light text-tastelanc-text-secondary text-xs rounded-full"
               >
                 {town}
               </span>
             ))}
           </div>
           {clusterPop && (
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-tastelanc-text-faint mt-1">
               Combined population: {clusterPop.toLocaleString()}
             </p>
           )}
@@ -680,8 +680,8 @@ export default function CityResearchPanel({
 
         return (
           <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5">
-            <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
-              <ExternalLink className="w-4 h-4 text-gray-500" />
+            <h4 className="text-sm font-medium text-tastelanc-text-secondary mb-3 flex items-center gap-2">
+              <ExternalLink className="w-4 h-4 text-tastelanc-text-faint" />
               All Data Sources ({sources.length})
             </h4>
             <div className="space-y-2">
@@ -689,7 +689,7 @@ export default function CityResearchPanel({
                 <div key={i} className="flex items-start gap-3 text-xs">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-300 font-medium truncate">{source.name}</span>
+                      <span className="text-tastelanc-text-secondary font-medium truncate">{source.name}</span>
                       {source.source_type === 'verified' ? (
                         <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
                       ) : source.name?.includes('Census') || source.name?.includes('Google') || source.name?.includes('College') || source.name?.includes('BEA') || source.name?.includes('OpenStreetMap') ? (
@@ -698,7 +698,7 @@ export default function CityResearchPanel({
                         <Bot className="w-3 h-3 text-yellow-500 flex-shrink-0" />
                       )}
                     </div>
-                    <span className="text-gray-500">{source.data_point}</span>
+                    <span className="text-tastelanc-text-faint">{source.data_point}</span>
                   </div>
                   <a
                     href={source.url}
@@ -718,7 +718,7 @@ export default function CityResearchPanel({
       {/* Prose sections (AI synthesized from real data) */}
       <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5 space-y-5">
         {hasDeepResearch && (
-          <p className="text-[10px] text-gray-600 uppercase tracking-wide flex items-center gap-1">
+          <p className="text-[10px] text-tastelanc-text-faint uppercase tracking-wide flex items-center gap-1">
             <Bot className="w-3 h-3" /> AI-synthesized from verified data
           </p>
         )}
@@ -743,7 +743,7 @@ export default function CityResearchPanel({
           <button
             onClick={onReResearch}
             disabled={isResearching}
-            className="px-4 py-2 bg-tastelanc-surface-light text-gray-300 rounded-lg text-sm font-medium hover:bg-tastelanc-surface-light/80 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-4 py-2 bg-tastelanc-surface-light text-tastelanc-text-secondary rounded-lg text-sm font-medium hover:bg-tastelanc-surface-light/80 hover:text-tastelanc-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isResearching ? (
               <>

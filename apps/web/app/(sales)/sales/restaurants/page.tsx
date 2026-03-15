@@ -166,7 +166,7 @@ export default function SalesRestaurantsPage() {
   const SortHeader = ({ column, children, className = '' }: { column: SortColumn; children: React.ReactNode; className?: string }) => (
     <button
       onClick={() => handleSort(column)}
-      className={`flex items-center gap-1 text-xs font-medium text-gray-400 hover:text-white transition-colors uppercase tracking-wider ${className}`}
+      className={`flex items-center gap-1 text-xs font-medium text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors uppercase tracking-wider ${className}`}
     >
       {children}
       {sortBy === column ? (
@@ -181,7 +181,7 @@ export default function SalesRestaurantsPage() {
     switch (tierName) {
       case 'elite': return 'bg-lancaster-gold/20 text-lancaster-gold';
       case 'premium': return 'bg-tastelanc-accent/20 text-tastelanc-accent';
-      default: return 'bg-tastelanc-surface-light text-gray-400';
+      default: return 'bg-tastelanc-surface-light text-tastelanc-text-muted';
     }
   };
 
@@ -189,11 +189,11 @@ export default function SalesRestaurantsPage() {
     <div>
       {/* Header */}
       <div className="mb-5">
-        <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+        <h1 className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary flex items-center gap-3">
           <Store className="w-8 h-8 text-tastelanc-accent" />
           Restaurant Directory
         </h1>
-        <p className="text-gray-400 mt-1">
+        <p className="text-tastelanc-text-muted mt-1">
           {stats ? `${stats.total} restaurants` : 'Browse and create leads from platform restaurants'}
         </p>
       </div>
@@ -202,16 +202,16 @@ export default function SalesRestaurantsPage() {
       {stats && (
         <div className="grid grid-cols-3 gap-3 mb-5">
           <Card className="p-3">
-            <div className="text-xl font-bold text-white">{stats.total}</div>
-            <div className="text-xs text-gray-400">Total</div>
+            <div className="text-xl font-bold text-tastelanc-text-primary">{stats.total}</div>
+            <div className="text-xs text-tastelanc-text-muted">Total</div>
           </Card>
           <Card className="p-3">
             <div className="text-xl font-bold text-green-400">{stats.active}</div>
-            <div className="text-xs text-gray-400">Active</div>
+            <div className="text-xs text-tastelanc-text-muted">Active</div>
           </Card>
           <Card className="p-3">
             <div className="text-xl font-bold text-emerald-400">{stats.direct_contacts}</div>
-            <div className="text-xs text-gray-400">Direct Contacts</div>
+            <div className="text-xs text-tastelanc-text-muted">Direct Contacts</div>
           </Card>
         </div>
       )}
@@ -220,13 +220,13 @@ export default function SalesRestaurantsPage() {
       <Card className="p-3 mb-5">
         <div className="flex flex-col md:flex-row gap-3">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tastelanc-text-muted" />
             <input
               type="text"
               placeholder="Search by name or city..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+              className="w-full pl-10 pr-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
             />
           </div>
           <div className="flex gap-3">
@@ -234,7 +234,7 @@ export default function SalesRestaurantsPage() {
               <select
                 value={marketFilter}
                 onChange={(e) => setMarketFilter(e.target.value)}
-                className="px-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                className="px-4 py-2 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
               >
                 <option value="all">All Markets</option>
                 {markets.map((m) => (
@@ -249,7 +249,7 @@ export default function SalesRestaurantsPage() {
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
                 contactFilter
                   ? 'bg-emerald-600 text-white'
-                  : 'bg-tastelanc-surface-light text-gray-400 hover:text-white'
+                  : 'bg-tastelanc-surface-light text-tastelanc-text-muted hover:text-tastelanc-text-primary'
               }`}
             >
               <User className="w-3.5 h-3.5" />
@@ -266,9 +266,9 @@ export default function SalesRestaurantsPage() {
         </div>
       ) : restaurants.length === 0 ? (
         <Card className="p-12 text-center">
-          <Store className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">No restaurants found</h3>
-          <p className="text-gray-400">Try adjusting your search or filters</p>
+          <Store className="w-12 h-12 text-tastelanc-text-faint mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-2">No restaurants found</h3>
+          <p className="text-tastelanc-text-muted">Try adjusting your search or filters</p>
         </Card>
       ) : (
         <>
@@ -293,16 +293,16 @@ export default function SalesRestaurantsPage() {
                       <SortHeader column="city">City</SortHeader>
                     </th>
                     <th className="text-left p-3">
-                      <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Contact</span>
+                      <span className="text-xs font-medium text-tastelanc-text-muted uppercase tracking-wider">Contact</span>
                     </th>
                     <th className="text-left p-3">
-                      <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Tier</span>
+                      <span className="text-xs font-medium text-tastelanc-text-muted uppercase tracking-wider">Tier</span>
                     </th>
                     <th className="text-left p-3">
                       <SortHeader column="is_active">Status</SortHeader>
                     </th>
                     <th className="text-right p-3">
-                      <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</span>
+                      <span className="text-xs font-medium text-tastelanc-text-muted uppercase tracking-wider">Actions</span>
                     </th>
                   </tr>
                 </thead>
@@ -310,23 +310,23 @@ export default function SalesRestaurantsPage() {
                   {restaurants.map((r) => (
                     <tr key={r.id} className="border-b border-tastelanc-surface-light/50 hover:bg-tastelanc-surface-light/30 transition-colors">
                       <td className="p-3">
-                        <span className="font-medium text-white truncate block">{r.name}</span>
+                        <span className="font-medium text-tastelanc-text-primary truncate block">{r.name}</span>
                       </td>
                       <td className="p-3">
                         {r.city ? (
-                          <span className="text-sm text-gray-400 flex items-center gap-1">
+                          <span className="text-sm text-tastelanc-text-muted flex items-center gap-1">
                             <MapPin className="w-3 h-3 flex-shrink-0" />
                             <span className="truncate">{r.city}</span>
                           </span>
                         ) : (
-                          <span className="text-sm text-gray-600">—</span>
+                          <span className="text-sm text-tastelanc-text-faint">—</span>
                         )}
                       </td>
                       <td className="p-3">
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
                             {r.phone && (
-                              <a href={`tel:${r.phone}`} className="text-gray-400 hover:text-white transition-colors" title={r.phone}>
+                              <a href={`tel:${r.phone}`} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors" title={r.phone}>
                                 <Phone className="w-3.5 h-3.5" />
                               </a>
                             )}
@@ -335,7 +335,7 @@ export default function SalesRestaurantsPage() {
                                 href={r.website.startsWith('http') ? r.website : `https://${r.website}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-gray-400 hover:text-white transition-colors"
+                                className="text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
                                 title="Website"
                               >
                                 <Globe className="w-3.5 h-3.5" />
@@ -346,7 +346,7 @@ export default function SalesRestaurantsPage() {
                                 <Mail className="w-3.5 h-3.5" />
                               </a>
                             )}
-                            {!r.phone && !r.website && !r.contact_name && !r.business_email && <span className="text-sm text-gray-600">—</span>}
+                            {!r.phone && !r.website && !r.contact_name && !r.business_email && <span className="text-sm text-tastelanc-text-faint">—</span>}
                           </div>
                           {r.contact_name && (
                             <div className="flex items-center gap-1" title={`${r.contact_name}${r.contact_title ? ` — ${r.contact_title}` : ''}${r.contact_phone ? ` | ${r.contact_phone}` : ''}`}>
@@ -362,7 +362,7 @@ export default function SalesRestaurantsPage() {
                             {r.tiers.name}
                           </Badge>
                         ) : (
-                          <span className="text-sm text-gray-600">—</span>
+                          <span className="text-sm text-tastelanc-text-faint">—</span>
                         )}
                       </td>
                       <td className="p-3">
@@ -410,14 +410,14 @@ export default function SalesRestaurantsPage() {
           {/* Pagination */}
           {pagination && pagination.totalPages > 1 && (
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-400">
+              <span className="text-sm text-tastelanc-text-muted">
                 Showing {(pagination.page - 1) * pagination.limit + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
               </span>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => goToPage(pagination.page - 1)}
                   disabled={pagination.page <= 1}
-                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-tastelanc-surface-light disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="p-2 rounded-lg text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -430,7 +430,7 @@ export default function SalesRestaurantsPage() {
                   }, [])
                   .map((item, i) =>
                     item === 'ellipsis' ? (
-                      <span key={`e${i}`} className="px-2 text-gray-600">...</span>
+                      <span key={`e${i}`} className="px-2 text-tastelanc-text-faint">...</span>
                     ) : (
                       <button
                         key={item}
@@ -438,7 +438,7 @@ export default function SalesRestaurantsPage() {
                         className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
                           pagination.page === item
                             ? 'bg-tastelanc-accent text-white'
-                            : 'text-gray-400 hover:text-white hover:bg-tastelanc-surface-light'
+                            : 'text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light'
                         }`}
                       >
                         {item}
@@ -448,7 +448,7 @@ export default function SalesRestaurantsPage() {
                 <button
                   onClick={() => goToPage(pagination.page + 1)}
                   disabled={pagination.page >= pagination.totalPages}
-                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-tastelanc-surface-light disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="p-2 rounded-lg text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>

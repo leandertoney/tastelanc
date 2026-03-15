@@ -18,43 +18,43 @@ export default function DeleteAccountPage() {
           <div className="w-12 h-12 bg-tastelanc-accent/20 rounded-xl flex items-center justify-center">
             <Trash2 className="w-6 h-6 text-tastelanc-accent" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white">Delete Your {BRAND.name} Account</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-tastelanc-text-primary">Delete Your {BRAND.name} Account</h1>
         </div>
 
-        <p className="text-gray-400 text-lg mb-8">
+        <p className="text-tastelanc-text-muted text-lg mb-8">
           To delete your {BRAND.name} account and all associated data, please follow the steps below.
         </p>
 
         <div className="bg-tastelanc-surface rounded-xl p-6 mb-8">
-          <h2 className="text-xl font-semibold text-white mb-4">How to Request Account Deletion</h2>
+          <h2 className="text-xl font-semibold text-tastelanc-text-primary mb-4">How to Request Account Deletion</h2>
           <ol className="space-y-4">
             <li className="flex items-start gap-3">
               <span className="flex-shrink-0 w-6 h-6 bg-tastelanc-accent rounded-full flex items-center justify-center text-white text-sm font-bold">1</span>
               <div>
-                <p className="text-white font-medium">Email us at info@{BRAND.domain}</p>
-                <p className="text-gray-400 text-sm">Use the subject line: &quot;Delete My Account&quot;</p>
+                <p className="text-tastelanc-text-primary font-medium">Email us at info@{BRAND.domain}</p>
+                <p className="text-tastelanc-text-muted text-sm">Use the subject line: &quot;Delete My Account&quot;</p>
               </div>
             </li>
             <li className="flex items-start gap-3">
               <span className="flex-shrink-0 w-6 h-6 bg-tastelanc-accent rounded-full flex items-center justify-center text-white text-sm font-bold">2</span>
               <div>
-                <p className="text-white font-medium">Include your account email</p>
-                <p className="text-gray-400 text-sm">Provide the email address associated with your {BRAND.name} account</p>
+                <p className="text-tastelanc-text-primary font-medium">Include your account email</p>
+                <p className="text-tastelanc-text-muted text-sm">Provide the email address associated with your {BRAND.name} account</p>
               </div>
             </li>
             <li className="flex items-start gap-3">
               <span className="flex-shrink-0 w-6 h-6 bg-tastelanc-accent rounded-full flex items-center justify-center text-white text-sm font-bold">3</span>
               <div>
-                <p className="text-white font-medium">Wait for confirmation</p>
-                <p className="text-gray-400 text-sm">We will process your request within 7 business days</p>
+                <p className="text-tastelanc-text-primary font-medium">Wait for confirmation</p>
+                <p className="text-tastelanc-text-muted text-sm">We will process your request within 7 business days</p>
               </div>
             </li>
           </ol>
         </div>
 
         <div className="bg-tastelanc-surface rounded-xl p-6 mb-8">
-          <h2 className="text-xl font-semibold text-white mb-4">What Gets Deleted</h2>
-          <ul className="space-y-3 text-gray-300">
+          <h2 className="text-xl font-semibold text-tastelanc-text-primary mb-4">What Gets Deleted</h2>
+          <ul className="space-y-3 text-tastelanc-text-secondary">
             <li className="flex items-center gap-2">
               <span className="text-tastelanc-accent">&#10003;</span>
               Your account and login credentials
@@ -82,8 +82,8 @@ export default function DeleteAccountPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-tastelanc-accent flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-white font-medium">This action is permanent</p>
-              <p className="text-gray-400 text-sm mt-1">
+              <p className="text-tastelanc-text-primary font-medium">This action is permanent</p>
+              <p className="text-tastelanc-text-muted text-sm mt-1">
                 Once your account is deleted, this cannot be undone. You will need to create a new account if you wish to use {BRAND.name} again.
               </p>
             </div>
@@ -91,7 +91,7 @@ export default function DeleteAccountPage() {
         </div>
 
         <div className="text-center">
-          <p className="text-gray-400 mb-4">Questions? Contact us at</p>
+          <p className="text-tastelanc-text-muted mb-4">Questions? Contact us at</p>
           <a
             href={`mailto:info@${BRAND.domain}`}
             className="inline-flex items-center gap-2 text-tastelanc-accent hover:underline text-lg"

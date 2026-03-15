@@ -33,17 +33,17 @@ export default async function CategoryDayPage({ params }: { params: { category: 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <main className="max-w-5xl mx-auto px-4 py-10 text-white">
+      <main className="max-w-5xl mx-auto px-4 py-10 text-tastelanc-text-primary">
         {leadershipLine(claim)}
         <h1 className="text-3xl font-bold">{params.category.replace(/-/g, ' ')} on {day}</h1>
-        <p className="text-gray-400 mt-2">{BRAND.countyShort} restaurants in this category for {day} outings.</p>
+        <p className="text-tastelanc-text-muted mt-2">{BRAND.countyShort} restaurants in this category for {day} outings.</p>
         {restaurantCTAButtons()}
         <div className="grid md:grid-cols-2 gap-6 mt-6">
           {filtered.map((r) => (
             <a key={r.id} href={`/restaurants/${r.slug}`} className="p-4 bg-tastelanc-surface rounded-lg block">
-              <h2 className="text-xl font-semibold text-white">{r.name}</h2>
-              {(r.custom_description || r.description) && <p className="text-sm text-gray-300 mt-1 line-clamp-2">{r.custom_description || r.description}</p>}
-              <p className="text-xs text-gray-500 mt-1">{r.categories?.join(', ')}</p>
+              <h2 className="text-xl font-semibold text-tastelanc-text-primary">{r.name}</h2>
+              {(r.custom_description || r.description) && <p className="text-sm text-tastelanc-text-secondary mt-1 line-clamp-2">{r.custom_description || r.description}</p>}
+              <p className="text-xs text-tastelanc-text-faint mt-1">{r.categories?.join(', ')}</p>
             </a>
           ))}
         </div>

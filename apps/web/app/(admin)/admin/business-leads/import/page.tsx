@@ -241,12 +241,12 @@ export default function ImportBusinessLeadsPage() {
       <div className="mb-6">
         <Link
           href="/admin/business-leads"
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-4"
+          className="inline-flex items-center gap-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Leads
         </Link>
-        <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+        <h1 className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary flex items-center gap-3">
           <Upload className="w-8 h-8 text-tastelanc-accent" />
           Import Leads from CSV
         </h1>
@@ -254,27 +254,27 @@ export default function ImportBusinessLeadsPage() {
 
       {/* Instructions */}
       <Card className="p-6 mb-6">
-        <h2 className="font-semibold text-white mb-3">CSV Format Requirements</h2>
-        <p className="text-gray-400 text-sm mb-4">
+        <h2 className="font-semibold text-tastelanc-text-primary mb-3">CSV Format Requirements</h2>
+        <p className="text-tastelanc-text-muted text-sm mb-4">
           Your CSV file must include the following columns:
         </p>
         <div className="grid md:grid-cols-2 gap-4 text-sm">
           <div>
-            <h3 className="text-white font-medium mb-2">Required Columns:</h3>
-            <ul className="space-y-1 text-gray-400">
+            <h3 className="text-tastelanc-text-primary font-medium mb-2">Required Columns:</h3>
+            <ul className="space-y-1 text-tastelanc-text-muted">
               <li>• <code className="text-tastelanc-accent">business_name</code> - Business name</li>
               <li>• <code className="text-tastelanc-accent">email</code> - Email address</li>
             </ul>
           </div>
           <div>
-            <h3 className="text-white font-medium mb-2">Optional Columns:</h3>
-            <ul className="space-y-1 text-gray-400">
-              <li>• <code className="text-gray-500">contact_name</code> - Contact person</li>
-              <li>• <code className="text-gray-500">phone</code> - Phone number</li>
-              <li>• <code className="text-gray-500">website</code> - Website URL</li>
-              <li>• <code className="text-gray-500">city, state, zip_code</code></li>
-              <li>• <code className="text-gray-500">category</code> - restaurant, bar, cafe, etc.</li>
-              <li>• <code className="text-gray-500">notes, tags</code></li>
+            <h3 className="text-tastelanc-text-primary font-medium mb-2">Optional Columns:</h3>
+            <ul className="space-y-1 text-tastelanc-text-muted">
+              <li>• <code className="text-tastelanc-text-faint">contact_name</code> - Contact person</li>
+              <li>• <code className="text-tastelanc-text-faint">phone</code> - Phone number</li>
+              <li>• <code className="text-tastelanc-text-faint">website</code> - Website URL</li>
+              <li>• <code className="text-tastelanc-text-faint">city, state, zip_code</code></li>
+              <li>• <code className="text-tastelanc-text-faint">category</code> - restaurant, bar, cafe, etc.</li>
+              <li>• <code className="text-tastelanc-text-faint">notes, tags</code></li>
             </ul>
           </div>
         </div>
@@ -291,9 +291,9 @@ export default function ImportBusinessLeadsPage() {
       <Card className="p-6 mb-6">
         {!file ? (
           <label className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-tastelanc-surface-light rounded-lg cursor-pointer hover:border-tastelanc-accent transition-colors">
-            <FileSpreadsheet className="w-12 h-12 text-gray-500 mb-4" />
-            <p className="text-white font-medium mb-1">Click to upload CSV file</p>
-            <p className="text-gray-400 text-sm">or drag and drop</p>
+            <FileSpreadsheet className="w-12 h-12 text-tastelanc-text-faint mb-4" />
+            <p className="text-tastelanc-text-primary font-medium mb-1">Click to upload CSV file</p>
+            <p className="text-tastelanc-text-muted text-sm">or drag and drop</p>
             <input
               ref={fileInputRef}
               type="file"
@@ -308,8 +308,8 @@ export default function ImportBusinessLeadsPage() {
               <div className="flex items-center gap-3">
                 <FileSpreadsheet className="w-8 h-8 text-tastelanc-accent" />
                 <div>
-                  <p className="text-white font-medium">{file.name}</p>
-                  <p className="text-gray-400 text-sm">
+                  <p className="text-tastelanc-text-primary font-medium">{file.name}</p>
+                  <p className="text-tastelanc-text-muted text-sm">
                     {parsedLeads.length} leads found
                   </p>
                 </div>
@@ -318,38 +318,38 @@ export default function ImportBusinessLeadsPage() {
                 onClick={clearFile}
                 className="p-2 hover:bg-tastelanc-surface rounded-lg transition-colors"
               >
-                <X className="w-5 h-5 text-gray-400" />
+                <X className="w-5 h-5 text-tastelanc-text-muted" />
               </button>
             </div>
 
             {/* Preview */}
             {parsedLeads.length > 0 && (
               <div className="mb-4">
-                <h3 className="text-white font-medium mb-2">Preview (first 5 leads):</h3>
+                <h3 className="text-tastelanc-text-primary font-medium mb-2">Preview (first 5 leads):</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-tastelanc-surface-light">
-                        <th className="text-left py-2 px-3 text-gray-400">Business</th>
-                        <th className="text-left py-2 px-3 text-gray-400">Contact</th>
-                        <th className="text-left py-2 px-3 text-gray-400">Email</th>
-                        <th className="text-left py-2 px-3 text-gray-400">City</th>
+                        <th className="text-left py-2 px-3 text-tastelanc-text-muted">Business</th>
+                        <th className="text-left py-2 px-3 text-tastelanc-text-muted">Contact</th>
+                        <th className="text-left py-2 px-3 text-tastelanc-text-muted">Email</th>
+                        <th className="text-left py-2 px-3 text-tastelanc-text-muted">City</th>
                       </tr>
                     </thead>
                     <tbody>
                       {parsedLeads.slice(0, 5).map((lead, i) => (
                         <tr key={i} className="border-b border-tastelanc-surface-light/50">
-                          <td className="py-2 px-3 text-white">{lead.business_name}</td>
-                          <td className="py-2 px-3 text-gray-300">{lead.contact_name || '-'}</td>
-                          <td className="py-2 px-3 text-gray-300">{lead.email}</td>
-                          <td className="py-2 px-3 text-gray-300">{lead.city || 'Lancaster'}</td>
+                          <td className="py-2 px-3 text-tastelanc-text-primary">{lead.business_name}</td>
+                          <td className="py-2 px-3 text-tastelanc-text-secondary">{lead.contact_name || '-'}</td>
+                          <td className="py-2 px-3 text-tastelanc-text-secondary">{lead.email}</td>
+                          <td className="py-2 px-3 text-tastelanc-text-secondary">{lead.city || 'Lancaster'}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
                 {parsedLeads.length > 5 && (
-                  <p className="text-gray-500 text-sm mt-2">
+                  <p className="text-tastelanc-text-faint text-sm mt-2">
                     ... and {parsedLeads.length - 5} more leads
                   </p>
                 )}
@@ -393,33 +393,33 @@ export default function ImportBusinessLeadsPage() {
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-4">
             <CheckCircle className="w-6 h-6 text-green-400" />
-            <h3 className="text-lg font-semibold text-white">Import Complete</h3>
+            <h3 className="text-lg font-semibold text-tastelanc-text-primary">Import Complete</h3>
           </div>
 
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div className="text-center p-3 bg-green-500/10 rounded-lg">
               <div className="text-2xl font-bold text-green-400">{result.imported}</div>
-              <div className="text-sm text-gray-400">Imported</div>
+              <div className="text-sm text-tastelanc-text-muted">Imported</div>
             </div>
             <div className="text-center p-3 bg-yellow-500/10 rounded-lg">
               <div className="text-2xl font-bold text-yellow-400">{result.skipped?.length || 0}</div>
-              <div className="text-sm text-gray-400">Skipped</div>
+              <div className="text-sm text-tastelanc-text-muted">Skipped</div>
             </div>
             <div className="text-center p-3 bg-red-500/10 rounded-lg">
               <div className="text-2xl font-bold text-red-400">{result.errors?.length || 0}</div>
-              <div className="text-sm text-gray-400">Errors</div>
+              <div className="text-sm text-tastelanc-text-muted">Errors</div>
             </div>
           </div>
 
           {result.skipped && result.skipped.length > 0 && (
             <div className="mb-4">
-              <h4 className="text-white font-medium mb-2">Skipped (already exist):</h4>
-              <div className="text-sm text-gray-400 max-h-32 overflow-y-auto">
+              <h4 className="text-tastelanc-text-primary font-medium mb-2">Skipped (already exist):</h4>
+              <div className="text-sm text-tastelanc-text-muted max-h-32 overflow-y-auto">
                 {result.skipped.slice(0, 10).map((s, i) => (
                   <div key={i}>Row {s.row}: {s.email}</div>
                 ))}
                 {result.skipped.length > 10 && (
-                  <div className="text-gray-500">... and {result.skipped.length - 10} more</div>
+                  <div className="text-tastelanc-text-faint">... and {result.skipped.length - 10} more</div>
                 )}
               </div>
             </div>
@@ -427,7 +427,7 @@ export default function ImportBusinessLeadsPage() {
 
           {result.errors && result.errors.length > 0 && (
             <div className="mb-4">
-              <h4 className="text-white font-medium mb-2">Errors:</h4>
+              <h4 className="text-tastelanc-text-primary font-medium mb-2">Errors:</h4>
               <div className="text-sm text-red-400 max-h-32 overflow-y-auto">
                 {result.errors.map((e, i) => (
                   <div key={i}>Row {e.row}: {e.error}</div>
@@ -436,7 +436,7 @@ export default function ImportBusinessLeadsPage() {
             </div>
           )}
 
-          <p className="text-gray-400 text-sm">
+          <p className="text-tastelanc-text-muted text-sm">
             Redirecting to leads page...
           </p>
         </Card>

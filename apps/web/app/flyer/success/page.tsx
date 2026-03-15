@@ -14,10 +14,10 @@ function FlyerSuccessContent() {
           <span className="text-4xl">🎉</span>
         </div>
         <h1 className="text-3xl font-bold text-white mb-3">Event Promoted!</h1>
-        <p className="text-gray-400 mb-2">
+        <p className="text-tastelanc-text-muted mb-2">
           Your payment was successful. Your event will be featured on TasteLanc with push notifications to locals and tourists.
         </p>
-        <p className="text-gray-500 text-sm mb-8">
+        <p className="text-tastelanc-text-faint text-sm mb-8">
           You can close this window and return to the app.
         </p>
         <a

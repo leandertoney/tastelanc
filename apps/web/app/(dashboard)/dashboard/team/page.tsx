@@ -133,11 +133,11 @@ export default function TeamPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-tastelanc-text-primary flex items-center gap-3">
               <Users className="w-7 h-7 text-tastelanc-accent" />
               Team
             </h1>
-            <p className="text-gray-400 mt-1">Manage who has access to your restaurant dashboard</p>
+            <p className="text-tastelanc-text-muted mt-1">Manage who has access to your restaurant dashboard</p>
           </div>
           {canManage && (
             <button
@@ -155,8 +155,8 @@ export default function TeamPage() {
         {isMember && !isOwner && !isAdmin && (
           <Card>
             <CardContent className="py-8 text-center">
-              <Shield className="w-10 h-10 text-gray-500 mx-auto mb-3" />
-              <p className="text-gray-400">
+              <Shield className="w-10 h-10 text-tastelanc-text-faint mx-auto mb-3" />
+              <p className="text-tastelanc-text-muted">
                 You&apos;re a manager for this restaurant. Only the restaurant owner can manage team members.
               </p>
             </CardContent>
@@ -167,7 +167,7 @@ export default function TeamPage() {
         {showInviteForm && canManage && (
           <Card>
             <CardHeader>
-              <h2 className="text-lg font-semibold text-white">Invite Team Member</h2>
+              <h2 className="text-lg font-semibold text-tastelanc-text-primary">Invite Team Member</h2>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-3">
@@ -178,7 +178,7 @@ export default function TeamPage() {
                     onChange={(e) => setInviteEmail(e.target.value)}
                     placeholder="Enter email address"
                     required
-                    className="w-full px-4 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                    className="w-full px-4 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                   />
                 </div>
                 <button
@@ -199,12 +199,12 @@ export default function TeamPage() {
                     setShowInviteForm(false);
                     setInviteEmail('');
                   }}
-                  className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+                  className="px-4 py-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
                 >
                   Cancel
                 </button>
               </form>
-              <p className="text-gray-500 text-sm mt-3">
+              <p className="text-tastelanc-text-faint text-sm mt-3">
                 They&apos;ll receive an email to set up their account. Managers can edit content but cannot manage team members or billing.
               </p>
             </CardContent>
@@ -225,10 +225,10 @@ export default function TeamPage() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-white">
+                <h2 className="text-lg font-semibold text-tastelanc-text-primary">
                   Team Members ({memberCount + 1})
                 </h2>
-                <span className="text-gray-500 text-sm">
+                <span className="text-tastelanc-text-faint text-sm">
                   {memberCount}/5 managers
                 </span>
               </div>
@@ -241,7 +241,7 @@ export default function TeamPage() {
                     <Crown className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <p className="text-white font-medium">{teamData.owner.email || 'Owner'}</p>
+                    <p className="text-tastelanc-text-primary font-medium">{teamData.owner.email || 'Owner'}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">
                         Owner
@@ -256,10 +256,10 @@ export default function TeamPage() {
                 <div key={member.id} className="flex flex-col sm:flex-row sm:items-center justify-between py-3 gap-2">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-tastelanc-surface rounded-full flex items-center justify-center">
-                      <Users className="w-5 h-5 text-gray-400" />
+                      <Users className="w-5 h-5 text-tastelanc-text-muted" />
                     </div>
                     <div>
-                      <p className="text-white font-medium">{member.email}</p>
+                      <p className="text-tastelanc-text-primary font-medium">{member.email}</p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">
                           Manager
@@ -274,7 +274,7 @@ export default function TeamPage() {
                             Active
                           </span>
                         )}
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-tastelanc-text-faint">
                           Invited {new Date(member.invited_at).toLocaleDateString()}
                         </span>
                       </div>
@@ -285,7 +285,7 @@ export default function TeamPage() {
                       <button
                         onClick={() => handleResend(member.id)}
                         disabled={resendingId === member.id}
-                        className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+                        className="p-2 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors disabled:opacity-50"
                         title="Resend invite"
                       >
                         {resendingId === member.id ? (
@@ -298,7 +298,7 @@ export default function TeamPage() {
                     <button
                       onClick={() => handleRemove(member.id, member.email)}
                       disabled={removingId === member.id}
-                      className="p-2 text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50"
+                      className="p-2 text-tastelanc-text-muted hover:text-red-400 transition-colors disabled:opacity-50"
                       title="Remove member"
                     >
                       {removingId === member.id ? (
@@ -314,9 +314,9 @@ export default function TeamPage() {
               {/* Empty state */}
               {teamData.members.length === 0 && (
                 <div className="py-8 text-center">
-                  <UserPlus className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-                  <p className="text-gray-400">No team members yet</p>
-                  <p className="text-gray-500 text-sm mt-1">Invite managers to help run your dashboard</p>
+                  <UserPlus className="w-10 h-10 text-tastelanc-text-faint mx-auto mb-3" />
+                  <p className="text-tastelanc-text-muted">No team members yet</p>
+                  <p className="text-tastelanc-text-faint text-sm mt-1">Invite managers to help run your dashboard</p>
                 </div>
               )}
             </CardContent>

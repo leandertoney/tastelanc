@@ -402,7 +402,7 @@ export default function ExpansionPipelinePage() {
       label: 'Total Pipeline',
       value: stats?.total ?? 0,
       icon: Globe,
-      colorClass: 'text-white',
+      colorClass: 'text-tastelanc-text-primary',
       bgClass: 'bg-white/10',
       filter: null as string | null,
     },
@@ -445,11 +445,11 @@ export default function ExpansionPipelinePage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary flex items-center gap-3">
             <Globe className="w-8 h-8 text-tastelanc-accent" />
             City Expansion
           </h1>
-          <p className="text-gray-400 mt-1">
+          <p className="text-tastelanc-text-muted mt-1">
             Autonomous agent runs every 6 hours — review and approve below
           </p>
         </div>
@@ -459,7 +459,7 @@ export default function ExpansionPipelinePage() {
               <button
                 onClick={handleRunAgent}
                 disabled={isRunningAgent}
-                className="flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg transition-colors text-sm font-medium text-gray-300 disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg transition-colors text-sm font-medium text-tastelanc-text-secondary disabled:opacity-50"
               >
                 {isRunningAgent ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -470,7 +470,7 @@ export default function ExpansionPipelinePage() {
               </button>
               <button
                 onClick={() => setShowAddModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg transition-colors text-sm font-medium text-gray-300"
+                className="flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg transition-colors text-sm font-medium text-tastelanc-text-secondary"
               >
                 <Plus className="w-4 h-4" />
                 Add City
@@ -486,8 +486,8 @@ export default function ExpansionPipelinePage() {
           <Bot className="w-5 h-5 text-emerald-400" />
         </div>
         <div className="flex-1">
-          <p className="text-sm font-medium text-white">Expansion Agent Active</p>
-          <p className="text-xs text-gray-500">
+          <p className="text-sm font-medium text-tastelanc-text-primary">Expansion Agent Active</p>
+          <p className="text-xs text-tastelanc-text-faint">
             Runs every 6 hours — auto-suggests cities, researches markets, generates brands & job listings
           </p>
         </div>
@@ -513,8 +513,8 @@ export default function ExpansionPipelinePage() {
                 <stat.icon className={`w-5 h-5 ${stat.colorClass}`} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{stat.value}</p>
-                <p className="text-xs text-gray-500">{stat.label}</p>
+                <p className="text-2xl font-bold text-tastelanc-text-primary">{stat.value}</p>
+                <p className="text-xs text-tastelanc-text-faint">{stat.label}</p>
               </div>
             </div>
           </button>
@@ -526,7 +526,7 @@ export default function ExpansionPipelinePage() {
         <div className="bg-tastelanc-surface rounded-xl border border-amber-500/20 p-4 mb-6">
           <div className="flex items-center gap-3 mb-3">
             <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-            <p className="text-sm font-medium text-white">
+            <p className="text-sm font-medium text-tastelanc-text-primary">
               {attentionCount} item{attentionCount !== 1 ? 's' : ''} need{attentionCount === 1 ? 's' : ''} your attention
             </p>
           </div>
@@ -566,13 +566,13 @@ export default function ExpansionPipelinePage() {
       {showVoteQueue && citiesNeedingVote.length > 0 && (
         <div className="bg-tastelanc-surface rounded-xl border border-blue-500/20 p-4 mb-6">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-white flex items-center gap-2">
+            <p className="text-sm font-medium text-tastelanc-text-primary flex items-center gap-2">
               <MapPin className="w-4 h-4 text-blue-400" />
               Vote on Markets ({citiesNeedingVote.length})
             </p>
             <button
               onClick={() => setShowVoteQueue(false)}
-              className="text-gray-500 hover:text-white transition-colors"
+              className="text-tastelanc-text-faint hover:text-tastelanc-text-primary transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -584,8 +584,8 @@ export default function ExpansionPipelinePage() {
                 className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-white/5 transition-colors"
               >
                 <Link href={`/admin/expansion/${city.id}`} className="flex-1 min-w-0 hover:underline">
-                  <span className="text-sm text-white">{city.city_name}, {city.state}</span>
-                  <span className="ml-2 text-xs text-gray-500">{city.market_potential_score ?? '?'}/100</span>
+                  <span className="text-sm text-tastelanc-text-primary">{city.city_name}, {city.state}</span>
+                  <span className="ml-2 text-xs text-tastelanc-text-faint">{city.market_potential_score ?? '?'}/100</span>
                 </Link>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
@@ -620,7 +620,7 @@ export default function ExpansionPipelinePage() {
       <div className="flex gap-3 mb-6">
         <Link
           href="/admin/expansion/jobs"
-          className="flex items-center gap-2 px-4 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-sm text-gray-300 hover:text-white hover:border-tastelanc-accent/50 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-secondary hover:text-tastelanc-text-primary hover:border-tastelanc-accent/50 transition-colors"
         >
           <Briefcase className="w-4 h-4" />
           All Job Listings
@@ -630,13 +630,13 @@ export default function ExpansionPipelinePage() {
       {/* Search Bar */}
       <div className="mb-6">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-tastelanc-text-muted" />
           <input
             type="text"
             placeholder="Search cities by name, county, or state..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface border border-tastelanc-surface-light rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+            className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface border border-tastelanc-surface-light rounded-xl text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
           />
         </div>
       </div>
@@ -644,15 +644,15 @@ export default function ExpansionPipelinePage() {
       {/* Active Filter Indicator */}
       {statusFilter && (
         <div className="flex items-center gap-2 mb-4">
-          <span className="text-xs text-gray-400">
-            Showing: <span className="text-white font-medium">
+          <span className="text-xs text-tastelanc-text-muted">
+            Showing: <span className="text-tastelanc-text-primary font-medium">
               {statusFilter === 'in_progress' ? 'In Progress' : statusFilter === 'brand_ready' ? 'Ready for Review' : statusFilter === 'approved' ? 'Approved' : statusFilter === 'live' ? 'Live' : statusFilter}
             </span>
             {' '}({filteredCities.length} {filteredCities.length === 1 ? 'city' : 'cities'})
           </span>
           <button
             onClick={() => setStatusFilter(null)}
-            className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium rounded bg-tastelanc-surface-light text-gray-400 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium rounded bg-tastelanc-surface-light text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
           >
             <X className="w-3 h-3" />
             Clear
@@ -663,13 +663,13 @@ export default function ExpansionPipelinePage() {
       {/* City List */}
       {filteredCities.length === 0 ? (
         <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-12 text-center">
-          <Bot className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">
+          <Bot className="w-12 h-12 text-tastelanc-text-faint mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-2">
             {searchQuery
               ? 'No cities match your search'
               : 'Agent is building your pipeline'}
           </h3>
-          <p className="text-gray-400 mb-4">
+          <p className="text-tastelanc-text-muted mb-4">
             {searchQuery
               ? 'Try a different search term'
               : 'The expansion agent will auto-suggest and research cities. You can also manually trigger it or add a city.'}
@@ -690,7 +690,7 @@ export default function ExpansionPipelinePage() {
               </button>
               <button
                 onClick={() => setShowAddModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg transition-colors text-sm font-medium text-gray-300"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg transition-colors text-sm font-medium text-tastelanc-text-secondary"
               >
                 <Plus className="w-4 h-4" />
                 Add City Manually
@@ -709,8 +709,8 @@ export default function ExpansionPipelinePage() {
       {/* Recent Activity */}
       {activities.length > 0 && (
         <div className="mt-8">
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-gray-400" />
+          <h2 className="text-lg font-semibold text-tastelanc-text-primary mb-4 flex items-center gap-2">
+            <Clock className="w-5 h-5 text-tastelanc-text-muted" />
             Agent Activity Log
           </h2>
           <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light divide-y divide-tastelanc-surface-light">
@@ -720,7 +720,7 @@ export default function ExpansionPipelinePage() {
                 <div key={activity.id} className="px-4 py-3 flex items-start gap-3">
                   <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${isAutomatic ? 'bg-emerald-400' : 'bg-tastelanc-accent'}`} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white">
+                    <p className="text-sm text-tastelanc-text-primary">
                       {isAutomatic && (
                         <span className="text-xs bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded mr-2">
                           Agent
@@ -730,10 +730,10 @@ export default function ExpansionPipelinePage() {
                         {ACTION_LABELS[activity.action] || activity.action}
                       </span>
                       {activity.description && (
-                        <span className="text-gray-400"> — {activity.description}</span>
+                        <span className="text-tastelanc-text-muted"> — {activity.description}</span>
                       )}
                     </p>
-                    <p className="text-xs text-gray-600 mt-0.5">
+                    <p className="text-xs text-tastelanc-text-faint mt-0.5">
                       {formatTimeAgo(activity.created_at)}
                     </p>
                   </div>

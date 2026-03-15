@@ -132,10 +132,10 @@ export default function RecommendationsPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
         <AlertCircle className="w-12 h-12 text-red-400" />
-        <p className="text-gray-400">{error}</p>
+        <p className="text-tastelanc-text-muted">{error}</p>
         <button
           onClick={fetchData}
-          className="px-4 py-2 bg-tastelanc-surface rounded-lg text-white hover:bg-tastelanc-surface-light transition-colors"
+          className="px-4 py-2 bg-tastelanc-surface rounded-lg text-tastelanc-text-primary hover:bg-tastelanc-surface-light transition-colors"
         >
           Retry
         </button>
@@ -151,8 +151,8 @@ export default function RecommendationsPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Community Recommendations</h1>
-        <p className="text-gray-400 mt-1">
+        <h1 className="text-2xl font-bold text-tastelanc-text-primary">Community Recommendations</h1>
+        <p className="text-tastelanc-text-muted mt-1">
           Video recommendations from your community on the Pulse feed
         </p>
       </div>
@@ -160,9 +160,9 @@ export default function RecommendationsPage() {
       {/* Ownership disclaimer */}
       <div className="flex items-start gap-3 bg-tastelanc-surface/50 border border-tastelanc-surface-light rounded-lg px-4 py-3">
         <Info className="w-5 h-5 text-tastelanc-accent shrink-0 mt-0.5" />
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-tastelanc-text-muted">
           Community recommendations are user-generated content owned and moderated by{' '}
-          <span className="text-white font-medium">{restaurant?.name ? 'TasteLanc' : 'TasteLanc'}</span>.
+          <span className="text-tastelanc-text-primary font-medium">{restaurant?.name ? 'TasteLanc' : 'TasteLanc'}</span>.
           Videos cannot be edited or removed by business owners.
         </p>
       </div>
@@ -200,7 +200,7 @@ export default function RecommendationsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {data.topByViews.length > 0 && (
             <Card className="p-6">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-4 flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-tastelanc-accent" />
                 Most Viewed
               </h3>
@@ -213,7 +213,7 @@ export default function RecommendationsPage() {
           )}
           {data.topByLikes.length > 0 && (
             <Card className="p-6">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-4 flex items-center gap-2">
                 <Heart className="w-5 h-5 text-red-400" />
                 Most Liked
               </h3>
@@ -230,7 +230,7 @@ export default function RecommendationsPage() {
       {/* All Recommendations Grid */}
       {data.recommendations.length > 0 ? (
         <div>
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-4 flex items-center gap-2">
             <Users className="w-5 h-5 text-tastelanc-accent" />
             All Recommendations ({data.recommendations.length})
           </h3>
@@ -242,9 +242,9 @@ export default function RecommendationsPage() {
         </div>
       ) : (
         <Card className="p-12 text-center">
-          <Film className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">No recommendations yet</h3>
-          <p className="text-gray-400 text-sm max-w-md mx-auto">
+          <Film className="w-12 h-12 text-tastelanc-text-faint mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-2">No recommendations yet</h3>
+          <p className="text-tastelanc-text-muted text-sm max-w-md mx-auto">
             When community members post video recommendations for your restaurant on the Pulse feed,
             they&apos;ll appear here with view and like analytics.
           </p>
@@ -267,12 +267,12 @@ function StatCard({
 }) {
   return (
     <Card className="p-5">
-      <div className="flex items-center gap-2 text-gray-400 mb-2">
+      <div className="flex items-center gap-2 text-tastelanc-text-muted mb-2">
         {icon}
         <span className="text-xs font-medium uppercase tracking-wider">{label}</span>
       </div>
-      <div className="text-2xl font-bold text-white">{value}</div>
-      {subtext && <p className="text-xs text-gray-500 mt-1">{subtext}</p>}
+      <div className="text-2xl font-bold text-tastelanc-text-primary">{value}</div>
+      {subtext && <p className="text-xs text-tastelanc-text-faint mt-1">{subtext}</p>}
     </Card>
   );
 }
@@ -289,19 +289,19 @@ function TopItemRow({
   const tagLabel = item.captionTag ? TAG_LABELS[item.captionTag] : null;
   const metricValue = metric === 'views' ? item.viewCount : item.likeCount;
   const metricIcon = metric === 'views'
-    ? <Eye className="w-3.5 h-3.5 text-gray-500" />
+    ? <Eye className="w-3.5 h-3.5 text-tastelanc-text-faint" />
     : <Heart className="w-3.5 h-3.5 text-red-400" />;
 
   return (
     <div className="flex items-center gap-3 py-2 border-b border-tastelanc-surface-light last:border-0">
-      <span className="text-sm font-bold text-gray-500 w-6 text-center">{rank}</span>
+      <span className="text-sm font-bold text-tastelanc-text-faint w-6 text-center">{rank}</span>
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-white truncate">
+        <p className="text-sm text-tastelanc-text-primary truncate">
           {tagLabel || item.caption || 'No caption'}
         </p>
-        <p className="text-xs text-gray-500">by {item.author}</p>
+        <p className="text-xs text-tastelanc-text-faint">by {item.author}</p>
       </div>
-      <div className="flex items-center gap-1 text-sm text-gray-400">
+      <div className="flex items-center gap-1 text-sm text-tastelanc-text-muted">
         {metricIcon}
         <span>{metricValue.toLocaleString()}</span>
       </div>
@@ -326,7 +326,7 @@ function RecCard({ rec }: { rec: RecommendationItem }) {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-tastelanc-surface">
-            <Play className="w-8 h-8 text-gray-600" />
+            <Play className="w-8 h-8 text-tastelanc-text-faint" />
           </div>
         )}
         {/* Duration badge */}
@@ -346,13 +346,13 @@ function RecCard({ rec }: { rec: RecommendationItem }) {
           </span>
         )}
         {rec.caption && (
-          <p className="text-xs text-gray-300 line-clamp-2">{rec.caption}</p>
+          <p className="text-xs text-tastelanc-text-secondary line-clamp-2">{rec.caption}</p>
         )}
-        <div className="flex items-center justify-between text-[10px] text-gray-500">
+        <div className="flex items-center justify-between text-[10px] text-tastelanc-text-faint">
           <span>{rec.author.displayName}</span>
           <span>{timeAgo(rec.createdAt)}</span>
         </div>
-        <div className="flex items-center gap-3 text-[10px] text-gray-500 pt-1">
+        <div className="flex items-center gap-3 text-[10px] text-tastelanc-text-faint pt-1">
           <span className="flex items-center gap-1">
             <Eye className="w-3 h-3" /> {rec.viewCount}
           </span>

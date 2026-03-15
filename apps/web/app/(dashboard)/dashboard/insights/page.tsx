@@ -94,8 +94,8 @@ function ScoreGauge({ score, size = 128 }: { score: number; size?: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-4xl font-bold text-white">{score}</span>
-        <span className="text-xs text-gray-400 mt-1">/ 100</span>
+        <span className="text-4xl font-bold text-tastelanc-text-primary">{score}</span>
+        <span className="text-xs text-tastelanc-text-muted mt-1">/ 100</span>
       </div>
     </div>
   );
@@ -120,12 +120,12 @@ function BenchmarkRow({
   return (
     <div className="py-3 border-b border-tastelanc-surface-light last:border-0">
       <div className="flex items-center justify-between text-sm mb-2">
-        <span className="text-gray-300">{label}</span>
+        <span className="text-tastelanc-text-secondary">{label}</span>
         <div className="flex items-center gap-4 text-right">
-          <span className="text-white font-medium w-12 sm:w-16 text-right">
+          <span className="text-tastelanc-text-primary font-medium w-12 sm:w-16 text-right">
             {isBoolean ? (yours ? 'Yes' : 'No') : yours}
           </span>
-          <span className="text-gray-500 w-12 sm:w-16 text-right">
+          <span className="text-tastelanc-text-faint w-12 sm:w-16 text-right">
             {isBoolean ? `${Math.round(topAvg * 100)}%` : Math.round(topAvg)}
           </span>
         </div>
@@ -137,7 +137,7 @@ function BenchmarkRow({
             style={{ width: `${(yoursNum / maxVal) * 50}%` }}
           />
           <div
-            className="bg-gray-600 rounded-r-full"
+            className="bg-tastelanc-surface-light rounded-r-full"
             style={{ width: `${(topAvg / maxVal) * 50}%` }}
           />
         </div>
@@ -185,26 +185,26 @@ function BlurredPreview() {
         <Card className="p-8">
           <div className="flex items-center gap-8">
             <div className="w-40 h-40 rounded-full border-8 border-tastelanc-surface-light flex items-center justify-center">
-              <span className="text-4xl font-bold text-white">73</span>
+              <span className="text-4xl font-bold text-tastelanc-text-primary">73</span>
             </div>
             <div>
-              <h3 className="text-xl font-semibold text-white">Your Visibility Score</h3>
-              <p className="text-gray-400 mt-1">Performing better than 68% of Bars in Lancaster</p>
-              <p className="text-gray-500 text-sm mt-2">Compared to 14 Bars in Lancaster</p>
+              <h3 className="text-xl font-semibold text-tastelanc-text-primary">Your Visibility Score</h3>
+              <p className="text-tastelanc-text-muted mt-1">Performing better than 68% of Bars in Lancaster</p>
+              <p className="text-tastelanc-text-faint text-sm mt-2">Compared to 14 Bars in Lancaster</p>
             </div>
           </div>
         </Card>
 
         {/* Fake benchmarks */}
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">You vs. Top Performers</h3>
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-4">You vs. Top Performers</h3>
           <div className="space-y-3">
             {['Menu Items', 'Happy Hours', 'Specials', 'Events', 'Photos'].map(label => (
               <div key={label} className="flex justify-between py-2">
-                <span className="text-gray-300">{label}</span>
+                <span className="text-tastelanc-text-secondary">{label}</span>
                 <div className="flex gap-4">
-                  <span className="text-white">12</span>
-                  <span className="text-gray-500">28</span>
+                  <span className="text-tastelanc-text-primary">12</span>
+                  <span className="text-tastelanc-text-faint">28</span>
                 </div>
               </div>
             ))}
@@ -213,11 +213,11 @@ function BlurredPreview() {
 
         {/* Fake trending */}
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Trending in Your Category</h3>
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-4">Trending in Your Category</h3>
           <div className="space-y-3">
             {['Restaurant A', 'Restaurant B', 'Restaurant C'].map(name => (
               <div key={name} className="flex items-center justify-between py-2">
-                <span className="text-gray-300">{name}</span>
+                <span className="text-tastelanc-text-secondary">{name}</span>
                 <span className="px-2 py-1 rounded-full text-xs bg-orange-500/20 text-orange-400">Trending</span>
               </div>
             ))}
@@ -231,8 +231,8 @@ function BlurredPreview() {
           <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full flex items-center justify-center">
             <Crown className="w-10 h-10 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-3">Unlock Market Insights</h2>
-          <p className="text-gray-400 mb-6 leading-relaxed">
+          <h2 className="text-2xl font-bold text-tastelanc-text-primary mb-3">Unlock Market Insights</h2>
+          <p className="text-tastelanc-text-muted mb-6 leading-relaxed">
             Restaurants using Elite average 2x more visibility. See how you compare, discover what top performers are doing, and get AI-powered growth recommendations.
           </p>
           <Link
@@ -242,7 +242,7 @@ function BlurredPreview() {
             <Crown className="w-5 h-5" />
             Upgrade to Elite
           </Link>
-          <p className="mt-4 text-gray-500 text-sm">
+          <p className="mt-4 text-tastelanc-text-faint text-sm">
             Starting at $350 for 3 months
           </p>
         </div>
@@ -291,11 +291,11 @@ export default function MarketInsightsPage() {
     return (
       <div className="space-y-8">
         <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-tastelanc-text-primary flex items-center gap-2">
             <Lightbulb className="w-6 h-6" />
             Market Insights
           </h2>
-          <p className="text-gray-400 mt-1">See how you compare and grow your visibility</p>
+          <p className="text-tastelanc-text-muted mt-1">See how you compare and grow your visibility</p>
         </div>
         <BlurredPreview />
       </div>
@@ -306,11 +306,11 @@ export default function MarketInsightsPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+        <h2 className="text-2xl font-bold text-tastelanc-text-primary flex items-center gap-2">
           <Lightbulb className="w-6 h-6" />
           Market Insights
         </h2>
-        <p className="text-gray-400 mt-1">See how you compare and grow your visibility</p>
+        <p className="text-tastelanc-text-muted mt-1">See how you compare and grow your visibility</p>
       </div>
 
       {loading ? (
@@ -368,9 +368,9 @@ export default function MarketInsightsPage() {
             <div className="flex flex-col md:flex-row items-center gap-8">
               <ScoreGauge score={data.visibilityScore} />
               <div className="text-center md:text-left">
-                <h3 className="text-xl font-semibold text-white">Your Visibility Score</h3>
-                <p className="text-gray-300 mt-2 text-lg">{data.comparisonText}</p>
-                <p className="text-gray-500 text-sm mt-2">
+                <h3 className="text-xl font-semibold text-tastelanc-text-primary">Your Visibility Score</h3>
+                <p className="text-tastelanc-text-secondary mt-2 text-lg">{data.comparisonText}</p>
+                <p className="text-tastelanc-text-faint text-sm mt-2">
                   Compared to {data.competitiveSet.totalCount} {data.competitiveSet.category} in {data.competitiveSet.city}
                 </p>
               </div>
@@ -383,8 +383,8 @@ export default function MarketInsightsPage() {
             {data.benchmarks && (
               <Card className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-white">You vs. Top Performers</h3>
-                  <div className="flex gap-4 text-xs text-gray-500">
+                  <h3 className="text-lg font-semibold text-tastelanc-text-primary">You vs. Top Performers</h3>
+                  <div className="flex gap-4 text-xs text-tastelanc-text-faint">
                     <span>You</span>
                     <span>Top 10 Avg</span>
                   </div>
@@ -434,7 +434,7 @@ export default function MarketInsightsPage() {
 
             {/* Trending Now */}
             <Card className="p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">
+              <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-4">
                 Trending in {data.competitiveSet.category} This Week
               </h3>
               {data.trending.length > 0 ? (
@@ -444,13 +444,13 @@ export default function MarketInsightsPage() {
                       key={i}
                       className="flex items-center justify-between py-3 border-b border-tastelanc-surface-light last:border-0"
                     >
-                      <span className="text-gray-300">{item.name}</span>
+                      <span className="text-tastelanc-text-secondary">{item.name}</span>
                       <TrendBadge badge={item.badge} />
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="py-8 text-center text-gray-500">
+                <div className="py-8 text-center text-tastelanc-text-faint">
                   <TrendingUp className="w-8 h-8 mx-auto mb-2 opacity-50" />
                   <p>No trending activity in your category this week.</p>
                   <p className="text-sm mt-1">Check back next week for updates.</p>
@@ -462,8 +462,8 @@ export default function MarketInsightsPage() {
           {/* SECTION 4: AI Growth Recommendations */}
           {data.recommendations.length > 0 && (
             <Card className="p-6">
-              <h3 className="text-lg font-semibold text-white mb-1">Growth Recommendations</h3>
-              <p className="text-gray-500 text-sm mb-6">
+              <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-1">Growth Recommendations</h3>
+              <p className="text-tastelanc-text-faint text-sm mb-6">
                 Based on what top performers in your category are doing
               </p>
               <div className="space-y-4">
@@ -474,7 +474,7 @@ export default function MarketInsightsPage() {
                   >
                     <PriorityDot priority={rec.priority} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-gray-300 text-sm">{rec.message}</p>
+                      <p className="text-tastelanc-text-secondary text-sm">{rec.message}</p>
                     </div>
                     <Link
                       href={rec.action}
@@ -493,8 +493,8 @@ export default function MarketInsightsPage() {
           {data.recommendations.length === 0 && (
             <Card className="p-6 text-center border border-green-500/20">
               <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto mb-3" />
-              <h3 className="text-lg font-semibold text-white mb-1">You&apos;re ahead of the game</h3>
-              <p className="text-gray-400">
+              <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-1">You&apos;re ahead of the game</h3>
+              <p className="text-tastelanc-text-muted">
                 Your content matches or exceeds top performers in your category. Keep it up!
               </p>
             </Card>

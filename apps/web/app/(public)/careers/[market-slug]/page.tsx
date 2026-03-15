@@ -216,7 +216,7 @@ export default async function MarketCareersPage({
                   />
                 </div>
               )}
-              <h1 className="text-4xl md:text-5xl font-bold text-white">
+              <h1 className="text-4xl md:text-5xl font-bold text-tastelanc-text-primary">
                 <span
                   style={accentColor ? { color: accentColor } : undefined}
                   className={!accentColor ? 'text-tastelanc-accent' : undefined}
@@ -227,14 +227,14 @@ export default async function MarketCareersPage({
               </h1>
             </div>
 
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+            <p className="text-xl text-tastelanc-text-muted max-w-2xl mx-auto">
               {brandTagline}. Join our team and help connect local restaurants with the community.
             </p>
           </div>
 
           {/* ───────────── Job Listings ───────────── */}
           <div className="mb-12">
-            <h2 className="text-2xl font-bold text-white mb-6">
+            <h2 className="text-2xl font-bold text-tastelanc-text-primary mb-6">
               Open Positions
             </h2>
 
@@ -262,8 +262,8 @@ export default async function MarketCareersPage({
 
           {/* ───────────── Application Form ───────────── */}
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-white mb-2">Apply Now</h2>
-            <p className="text-gray-400">
+            <h2 className="text-2xl font-bold text-tastelanc-text-primary mb-2">Apply Now</h2>
+            <p className="text-tastelanc-text-muted">
               Interested in joining the {brandName} team? Fill out the form below and we&apos;ll be in touch.
             </p>
           </div>

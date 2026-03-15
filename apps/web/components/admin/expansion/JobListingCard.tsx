@@ -17,7 +17,7 @@ const JOB_STATUS_CONFIG: Record<string, { label: string; className: string }> = 
   draft: { label: 'Draft', className: 'bg-blue-500/20 text-blue-400' },
   approved: { label: 'Approved', className: 'bg-green-500/20 text-green-400' },
   posted: { label: 'Posted', className: 'bg-emerald-500/20 text-emerald-400' },
-  closed: { label: 'Closed', className: 'bg-gray-500/20 text-gray-400' },
+  closed: { label: 'Closed', className: 'bg-tastelanc-surface-light/50 text-tastelanc-text-muted' },
 };
 
 const ROLE_TYPE_LABELS: Record<string, string> = {
@@ -48,11 +48,11 @@ export default function JobListingCard({
     <div className="bg-tastelanc-surface rounded-xl border border-tastelanc-surface-light p-5">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
-        <h3 className="text-lg font-semibold text-white flex-1 min-w-0 truncate">
+        <h3 className="text-lg font-semibold text-tastelanc-text-primary flex-1 min-w-0 truncate">
           {job.title}
         </h3>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="px-2.5 py-0.5 bg-tastelanc-surface-light text-gray-300 text-xs rounded-full font-medium">
+          <span className="px-2.5 py-0.5 bg-tastelanc-surface-light text-tastelanc-text-secondary text-xs rounded-full font-medium">
             {roleLabel}
           </span>
           <span
@@ -64,7 +64,7 @@ export default function JobListingCard({
       </div>
 
       {/* Meta info */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-gray-400 mb-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-tastelanc-text-muted mb-3">
         {job.location && (
           <span className="flex items-center gap-1">
             <MapPin className="w-3.5 h-3.5" />
@@ -101,17 +101,17 @@ export default function JobListingCard({
       {isExpanded && (
         <div className="mb-4 space-y-4">
           {/* Description */}
-          <div className="text-sm text-gray-400 leading-relaxed whitespace-pre-wrap">
+          <div className="text-sm text-tastelanc-text-muted leading-relaxed whitespace-pre-wrap">
             {job.description}
           </div>
 
           {/* Requirements */}
           {job.requirements && job.requirements.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium text-gray-300 mb-2">Requirements</h4>
+              <h4 className="text-sm font-medium text-tastelanc-text-secondary mb-2">Requirements</h4>
               <ul className="list-disc list-inside space-y-1">
                 {job.requirements.map((req, i) => (
-                  <li key={i} className="text-sm text-gray-400">
+                  <li key={i} className="text-sm text-tastelanc-text-muted">
                     {req}
                   </li>
                 ))}
@@ -124,8 +124,8 @@ export default function JobListingCard({
       {/* Admin notes */}
       {job.admin_notes && (
         <div className="mb-3 p-3 bg-tastelanc-surface-light rounded-lg">
-          <p className="text-xs text-gray-500 mb-1">Admin Notes</p>
-          <p className="text-sm text-gray-400">{job.admin_notes}</p>
+          <p className="text-xs text-tastelanc-text-faint mb-1">Admin Notes</p>
+          <p className="text-sm text-tastelanc-text-muted">{job.admin_notes}</p>
         </div>
       )}
 

@@ -38,7 +38,7 @@ function StatusDot({ status }: { status: string }) {
     error: 'bg-red-500',
   };
   return (
-    <span className={`inline-block w-2.5 h-2.5 rounded-full ${colors[status] || 'bg-gray-500'}`} />
+    <span className={`inline-block w-2.5 h-2.5 rounded-full ${colors[status] || 'bg-tastelanc-surface-light'}`} />
   );
 }
 
@@ -55,8 +55,8 @@ function OverallStatusBanner({ status }: { status: string }) {
     <div className={`${c.bg} border rounded-xl p-5 flex items-center gap-4`}>
       <Icon className={`w-8 h-8 ${status === 'healthy' ? 'text-green-500' : status === 'degraded' ? 'text-yellow-500' : 'text-red-500'}`} />
       <div>
-        <h2 className="text-xl font-bold text-white">{c.label}</h2>
-        <p className="text-sm text-gray-400">Last checked just now (refresh for latest)</p>
+        <h2 className="text-xl font-bold text-tastelanc-text-primary">{c.label}</h2>
+        <p className="text-sm text-tastelanc-text-muted">Last checked just now (refresh for latest)</p>
       </div>
     </div>
   );
@@ -145,15 +145,15 @@ export default async function SystemHealthPage() {
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">System Health</h1>
-          <p className="text-gray-400 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-tastelanc-text-primary">System Health</h1>
+          <p className="text-tastelanc-text-muted text-sm mt-1">
             Monitoring critical services and infrastructure
           </p>
         </div>
         {overallUptime !== null && (
           <div className="text-right">
-            <p className="text-3xl font-bold text-white">{overallUptime}%</p>
-            <p className="text-xs text-gray-500">24h Uptime</p>
+            <p className="text-3xl font-bold text-tastelanc-text-primary">{overallUptime}%</p>
+            <p className="text-xs text-tastelanc-text-faint">24h Uptime</p>
           </div>
         )}
       </div>
@@ -162,15 +162,15 @@ export default async function SystemHealthPage() {
       {latestCheck ? (
         <OverallStatusBanner status={latestCheck.overall_status} />
       ) : (
-        <div className="bg-tastelanc-surface-light border border-gray-700 rounded-xl p-5 text-center">
-          <p className="text-gray-400">No health check data yet. The first check will run within 15 minutes.</p>
+        <div className="bg-tastelanc-surface-light border border-tastelanc-border rounded-xl p-5 text-center">
+          <p className="text-tastelanc-text-muted">No health check data yet. The first check will run within 15 minutes.</p>
         </div>
       )}
 
       {/* Service Status Grid */}
       {checks && checks.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">Services</h3>
+          <h3 className="text-sm font-medium text-tastelanc-text-muted uppercase tracking-wider mb-3">Services</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {checks.map((check) => {
               const Icon = SERVICE_ICONS[check.name] || Activity;
@@ -183,17 +183,17 @@ export default async function SystemHealthPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-lg bg-tastelanc-surface-light flex items-center justify-center">
-                          <Icon className="w-4.5 h-4.5 text-gray-400" />
+                          <Icon className="w-4.5 h-4.5 text-tastelanc-text-muted" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-white">{check.name}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">{check.message}</p>
+                          <p className="text-sm font-medium text-tastelanc-text-primary">{check.name}</p>
+                          <p className="text-xs text-tastelanc-text-faint mt-0.5">{check.message}</p>
                         </div>
                       </div>
                       <StatusDot status={check.status} />
                     </div>
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-tastelanc-surface-light">
-                      <span className="text-xs text-gray-500">{check.latencyMs}ms</span>
+                      <span className="text-xs text-tastelanc-text-faint">{check.latencyMs}ms</span>
                       {uptimePct !== null && (
                         <span className={`text-xs font-medium ${uptimePct >= 99 ? 'text-green-400' : uptimePct >= 95 ? 'text-yellow-400' : 'text-red-400'}`}>
                           {uptimePct}% uptime
@@ -212,7 +212,7 @@ export default async function SystemHealthPage() {
       {recentChecks && recentChecks.length > 0 && (
         <Card>
           <CardHeader>
-            <h3 className="text-sm font-medium text-white">24-Hour Status Timeline</h3>
+            <h3 className="text-sm font-medium text-tastelanc-text-primary">24-Hour Status Timeline</h3>
           </CardHeader>
           <CardContent>
             <div className="flex gap-px items-end h-8">
@@ -234,8 +234,8 @@ export default async function SystemHealthPage() {
               })}
             </div>
             <div className="flex justify-between mt-2">
-              <span className="text-xs text-gray-500">24h ago</span>
-              <span className="text-xs text-gray-500">Now</span>
+              <span className="text-xs text-tastelanc-text-faint">24h ago</span>
+              <span className="text-xs text-tastelanc-text-faint">Now</span>
             </div>
           </CardContent>
         </Card>
@@ -245,15 +245,15 @@ export default async function SystemHealthPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-white">Recent Alerts</h3>
+            <h3 className="text-sm font-medium text-tastelanc-text-primary">Recent Alerts</h3>
             {recentAlerts && (
-              <span className="text-xs text-gray-500">{recentAlerts.length} alerts</span>
+              <span className="text-xs text-tastelanc-text-faint">{recentAlerts.length} alerts</span>
             )}
           </div>
         </CardHeader>
         <CardContent>
           {!recentAlerts || recentAlerts.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-4">No alerts yet — that&apos;s a good sign!</p>
+            <p className="text-sm text-tastelanc-text-faint text-center py-4">No alerts yet — that&apos;s a good sign!</p>
           ) : (
             <div className="space-y-2">
               {recentAlerts.map((alert: any) => (
@@ -269,17 +269,17 @@ export default async function SystemHealthPage() {
                     <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white truncate">
+                    <p className="text-sm text-tastelanc-text-primary truncate">
                       <span className="font-medium">{alert.service_name}</span>
-                      <span className="text-gray-400 ml-2">
+                      <span className="text-tastelanc-text-muted ml-2">
                         {alert.alert_type === 'recovered' ? 'recovered' : alert.alert_type}
                       </span>
                     </p>
                     {alert.details?.message && (
-                      <p className="text-xs text-gray-500 truncate">{alert.details.message}</p>
+                      <p className="text-xs text-tastelanc-text-faint truncate">{alert.details.message}</p>
                     )}
                   </div>
-                  <span className="text-xs text-gray-500 flex-shrink-0">
+                  <span className="text-xs text-tastelanc-text-faint flex-shrink-0">
                     {new Date(alert.sent_at).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
@@ -296,7 +296,7 @@ export default async function SystemHealthPage() {
 
       {/* Check Details */}
       {latestCheck && (
-        <div className="text-xs text-gray-600 text-center">
+        <div className="text-xs text-tastelanc-text-faint text-center">
           Last check: {new Date(latestCheck.checked_at).toLocaleString()} | Duration: {latestCheck.duration_ms}ms |{' '}
           {latestCheck.alerts_sent ? 'Alerts sent' : 'No alerts'}
         </div>

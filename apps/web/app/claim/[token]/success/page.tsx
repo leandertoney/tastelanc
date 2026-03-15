@@ -6,7 +6,7 @@ export default function ClaimSuccessPage() {
           <span className="text-4xl">✓</span>
         </div>
         <h1 className="text-3xl font-bold text-white mb-3">Event Published!</h1>
-        <p className="text-gray-400 mb-8">
+        <p className="text-tastelanc-text-muted mb-8">
           Your event is now live on TasteLanc. Locals and tourists in Lancaster will be able to discover it.
         </p>
         <a

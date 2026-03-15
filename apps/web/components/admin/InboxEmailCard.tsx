@@ -15,7 +15,7 @@ const CATEGORY_CONFIG: Record<string, { label: string; className: string }> = {
   inquiry: { label: 'Inquiry', className: 'bg-blue-500/20 text-blue-400' },
   lead: { label: 'Lead', className: 'bg-green-500/20 text-green-400' },
   spam: { label: 'Spam', className: 'bg-red-500/20 text-red-400' },
-  other: { label: 'Other', className: 'bg-gray-500/20 text-gray-400' },
+  other: { label: 'Other', className: 'bg-tastelanc-surface-light/50 text-tastelanc-text-muted' },
 };
 
 /** Strip quoted reply content from an email */
@@ -96,7 +96,7 @@ export default function InboxEmailCard({
       >
         <div className="mt-0.5 shrink-0">
           {email.is_read ? (
-            <MailOpen className="w-4 h-4 text-gray-500" />
+            <MailOpen className="w-4 h-4 text-tastelanc-text-faint" />
           ) : (
             <Mail className="w-4 h-4 text-tastelanc-accent" />
           )}
@@ -104,7 +104,7 @@ export default function InboxEmailCard({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
-            <span className={`font-medium truncate ${email.is_read ? 'text-gray-300' : 'text-white'}`}>
+            <span className={`font-medium truncate ${email.is_read ? 'text-tastelanc-text-secondary' : 'text-tastelanc-text-primary'}`}>
               {email.from_name || email.from_email}
             </span>
             {!email.is_read && (
@@ -114,27 +114,27 @@ export default function InboxEmailCard({
               {category.label}
             </span>
             {hasAttachments && (
-              <Paperclip className="w-3 h-3 text-gray-500 shrink-0" />
+              <Paperclip className="w-3 h-3 text-tastelanc-text-faint shrink-0" />
             )}
           </div>
 
-          <p className={`text-sm truncate ${email.is_read ? 'text-gray-400' : 'text-gray-200'}`}>
+          <p className={`text-sm truncate ${email.is_read ? 'text-tastelanc-text-muted' : 'text-tastelanc-text-secondary'}`}>
             {email.subject || '(no subject)'}
           </p>
 
           {!expanded && email.body_text && (
-            <p className="text-xs text-gray-500 truncate mt-0.5">
+            <p className="text-xs text-tastelanc-text-faint truncate mt-0.5">
               {extractCleanBody(email.body_text, email.body_html).slice(0, 120)}
             </p>
           )}
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs text-gray-500">{getRelativeTime(email.created_at)}</span>
+          <span className="text-xs text-tastelanc-text-faint">{getRelativeTime(email.created_at)}</span>
           {expanded ? (
-            <ChevronUp className="w-4 h-4 text-gray-500" />
+            <ChevronUp className="w-4 h-4 text-tastelanc-text-faint" />
           ) : (
-            <ChevronDown className="w-4 h-4 text-gray-500" />
+            <ChevronDown className="w-4 h-4 text-tastelanc-text-faint" />
           )}
         </div>
       </button>
@@ -142,22 +142,22 @@ export default function InboxEmailCard({
       {/* Expanded content */}
       {expanded && (
         <div className="px-4 pb-4 border-t border-tastelanc-surface-light pt-3">
-          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400 mb-3">
-            <span>From: <span className="text-gray-300">{email.from_email}</span></span>
-            <span>To: <span className="text-gray-300">{email.to_email}</span></span>
+          <div className="flex flex-wrap items-center gap-3 text-xs text-tastelanc-text-muted mb-3">
+            <span>From: <span className="text-tastelanc-text-secondary">{email.from_email}</span></span>
+            <span>To: <span className="text-tastelanc-text-secondary">{email.to_email}</span></span>
             <span>{new Date(email.created_at).toLocaleString()}</span>
           </div>
 
-          <div className="bg-tastelanc-surface-light rounded-lg p-4 text-sm text-gray-300 whitespace-pre-wrap max-h-80 overflow-y-auto">
+          <div className="bg-tastelanc-surface-light rounded-lg p-4 text-sm text-tastelanc-text-secondary whitespace-pre-wrap max-h-80 overflow-y-auto">
             {extractCleanBody(email.body_text, email.body_html) || '(empty body)'}
           </div>
 
           {hasAttachments && (
             <div className="mt-3">
-              <p className="text-xs text-gray-500 mb-1">Attachments:</p>
+              <p className="text-xs text-tastelanc-text-faint mb-1">Attachments:</p>
               <div className="flex flex-wrap gap-2">
                 {(email.attachments as Array<{ filename: string; size: number }>).map((att, i) => (
-                  <span key={i} className="flex items-center gap-1 px-2 py-1 bg-tastelanc-surface-light rounded text-xs text-gray-300">
+                  <span key={i} className="flex items-center gap-1 px-2 py-1 bg-tastelanc-surface-light rounded text-xs text-tastelanc-text-secondary">
                     <Paperclip className="w-3 h-3" />
                     {att.filename}
                   </span>
@@ -171,7 +171,7 @@ export default function InboxEmailCard({
             <select
               value={email.category}
               onChange={(e) => onCategoryChange(email.id, e.target.value)}
-              className="px-2 py-1 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded text-sm text-white focus:outline-none focus:border-tastelanc-accent"
+              className="px-2 py-1 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded text-sm text-tastelanc-text-primary focus:outline-none focus:border-tastelanc-accent"
             >
               <option value="inquiry">Inquiry</option>
               <option value="lead">Lead</option>
@@ -181,7 +181,7 @@ export default function InboxEmailCard({
 
             <button
               onClick={() => onArchive(email.id)}
-              className="flex items-center gap-1 px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-tastelanc-surface-light rounded transition-colors"
+              className="flex items-center gap-1 px-3 py-1 text-sm text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light rounded transition-colors"
             >
               <Archive className="w-4 h-4" />
               Archive

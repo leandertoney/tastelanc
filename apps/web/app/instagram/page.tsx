@@ -31,14 +31,14 @@ export default function InstagramLandingPage({
   const utmSuffix = `?utm_source=${utmSource}&utm_medium=${utmMedium}&utm_campaign=${utmCampaign}`;
 
   return (
-    <main className="min-h-screen bg-[rgb(var(--brand-bg))] text-white flex flex-col items-center justify-center px-6 py-16">
+    <main className="min-h-screen bg-[rgb(var(--brand-bg))] text-tastelanc-text-primary flex flex-col items-center justify-center px-6 py-16">
       <div className="max-w-md w-full text-center space-y-8">
         {/* Logo / Brand */}
         <div>
           <h1 className="text-4xl font-bold text-[rgb(var(--brand-accent))]">
             {BRAND.name}
           </h1>
-          <p className="text-lg text-gray-300 mt-2">
+          <p className="text-lg text-tastelanc-text-secondary mt-2">
             {BRAND.countyShort}&apos;s restaurant discovery app
           </p>
         </div>
@@ -49,28 +49,28 @@ export default function InstagramLandingPage({
             <span className="text-2xl">🍻</span>
             <div>
               <p className="font-semibold">Happy Hours</p>
-              <p className="text-sm text-gray-400">Find what&apos;s running right now</p>
+              <p className="text-sm text-tastelanc-text-muted">Find what&apos;s running right now</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <span className="text-2xl">🎵</span>
             <div>
               <p className="font-semibold">Live Music & Events</p>
-              <p className="text-sm text-gray-400">Tonight&apos;s lineup, every night</p>
+              <p className="text-sm text-tastelanc-text-muted">Tonight&apos;s lineup, every night</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <span className="text-2xl">🔥</span>
             <div>
               <p className="font-semibold">Specials & Deals</p>
-              <p className="text-sm text-gray-400">Exclusive offers from local spots</p>
+              <p className="text-sm text-tastelanc-text-muted">Exclusive offers from local spots</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <span className="text-2xl">📍</span>
             <div>
               <p className="font-semibold">100% Local</p>
-              <p className="text-sm text-gray-400">Built for {BRAND.countyShort}, PA — not some generic app</p>
+              <p className="text-sm text-tastelanc-text-muted">Built for {BRAND.countyShort}, PA — not some generic app</p>
             </div>
           </div>
         </div>
@@ -100,7 +100,7 @@ export default function InstagramLandingPage({
         </div>
 
         {/* Explore web version */}
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-tastelanc-text-faint">
           or{' '}
           <Link
             href={`/${utmSuffix}`}

@@ -11,7 +11,7 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   approved: { label: 'Approved', className: 'bg-green-500/20 text-green-400' },
   setup_in_progress: { label: 'Setting Up', className: 'bg-orange-500/20 text-orange-400' },
   live: { label: 'Live', className: 'bg-emerald-500/20 text-emerald-400' },
-  on_hold: { label: 'On Hold', className: 'bg-gray-500/20 text-gray-400' },
+  on_hold: { label: 'On Hold', className: 'bg-tastelanc-surface-light/50 text-tastelanc-text-muted' },
   rejected: { label: 'Rejected', className: 'bg-red-500/20 text-red-400' },
 };
 
@@ -48,10 +48,10 @@ export default function ExpansionPipelineCard({ city, reviews, onStatusChange }:
           {/* City Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-1.5 flex-wrap">
-              <h3 className="font-semibold text-white truncate text-lg group-hover:text-tastelanc-accent transition-colors">
+              <h3 className="font-semibold text-tastelanc-text-primary truncate text-lg group-hover:text-tastelanc-accent transition-colors">
                 {city.city_name}
               </h3>
-              <span className="text-gray-500 text-sm flex-shrink-0">{city.state}</span>
+              <span className="text-tastelanc-text-faint text-sm flex-shrink-0">{city.state}</span>
               <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${statusConfig.className}`}>
                 {statusConfig.label}
               </span>
@@ -78,17 +78,17 @@ export default function ExpansionPipelineCard({ city, reviews, onStatusChange }:
                 {reviews.map((r) => (
                   <div
                     key={r.reviewer_email}
-                    className="flex items-center gap-1 text-[11px] text-gray-400"
+                    className="flex items-center gap-1 text-[11px] text-tastelanc-text-muted"
                     title={`${r.reviewer_name}: ${r.vote === 'not_now' ? 'Not Now' : r.vote.charAt(0).toUpperCase() + r.vote.slice(1)}`}
                   >
-                    <span className={`w-2 h-2 rounded-full ${VOTE_COLORS[r.vote] || 'bg-gray-500'}`} />
+                    <span className={`w-2 h-2 rounded-full ${VOTE_COLORS[r.vote] || 'bg-tastelanc-surface-light'}`} />
                     <span>{r.reviewer_name.charAt(0)}</span>
                   </div>
                 ))}
               </div>
             )}
 
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-gray-400">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-tastelanc-text-muted">
               <span className="flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5" />
                 {city.county} County
@@ -115,8 +115,8 @@ export default function ExpansionPipelineCard({ city, reviews, onStatusChange }:
             {city.market_potential_score !== null && (
               <div className="flex items-center gap-2 flex-shrink-0">
                 <div className="text-right">
-                  <p className="text-xs text-gray-500">Score</p>
-                  <p className="text-sm font-bold text-white">{city.market_potential_score}/100</p>
+                  <p className="text-xs text-tastelanc-text-faint">Score</p>
+                  <p className="text-sm font-bold text-tastelanc-text-primary">{city.market_potential_score}/100</p>
                 </div>
                 <div className="w-16 h-2 bg-tastelanc-surface-light rounded-full overflow-hidden">
                   <div
@@ -135,7 +135,7 @@ export default function ExpansionPipelineCard({ city, reviews, onStatusChange }:
               </div>
             )}
 
-            <ArrowUpRight className="w-4 h-4 text-gray-600 group-hover:text-tastelanc-accent transition-colors flex-shrink-0" />
+            <ArrowUpRight className="w-4 h-4 text-tastelanc-text-faint group-hover:text-tastelanc-accent transition-colors flex-shrink-0" />
           </div>
         </div>
       </div>

@@ -129,9 +129,9 @@ export default function PendingReviewPage() {
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <ClipboardCheck className="w-8 h-8 text-lancaster-gold" />
-          <h1 className="text-3xl font-bold text-white">Pending Review</h1>
+          <h1 className="text-3xl font-bold text-tastelanc-text-primary">Pending Review</h1>
         </div>
-        <p className="text-gray-400">
+        <p className="text-tastelanc-text-muted">
           {venues.length} venue{venues.length !== 1 ? 's' : ''} awaiting approval
         </p>
       </div>
@@ -139,8 +139,8 @@ export default function PendingReviewPage() {
       {venues.length === 0 ? (
         <Card className="p-12 text-center">
           <Check className="w-12 h-12 text-green-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-white mb-2">All caught up!</h3>
-          <p className="text-gray-400">No venues are pending review at this time.</p>
+          <h3 className="text-lg font-medium text-tastelanc-text-primary mb-2">All caught up!</h3>
+          <p className="text-tastelanc-text-muted">No venues are pending review at this time.</p>
         </Card>
       ) : (
         <div className="space-y-6">
@@ -156,29 +156,29 @@ export default function PendingReviewPage() {
                   />
                 ) : (
                   <div className="w-20 h-20 bg-tastelanc-surface-light rounded-lg flex items-center justify-center">
-                    <Store className="w-10 h-10 text-gray-600" />
+                    <Store className="w-10 h-10 text-tastelanc-text-faint" />
                   </div>
                 )}
 
                 <div className="flex-1">
-                  <h3 className="text-xl font-semibold text-white mb-1">{venue.name}</h3>
-                  <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                  <h3 className="text-xl font-semibold text-tastelanc-text-primary mb-1">{venue.name}</h3>
+                  <div className="flex items-center gap-2 text-sm text-tastelanc-text-muted mb-2">
                     <MapPin className="w-4 h-4" />
                     <span>
                       {venue.address}, {venue.city}, {venue.state} {venue.zip_code}
                     </span>
                   </div>
                   {venue.description && (
-                    <p className="text-sm text-gray-500 mb-4 line-clamp-2">{venue.description}</p>
+                    <p className="text-sm text-tastelanc-text-faint mb-4 line-clamp-2">{venue.description}</p>
                   )}
 
                   {/* Category Selection - Grouped */}
                   <div className="mb-4 space-y-3">
-                    <p className="text-sm text-gray-400">Select categories:</p>
+                    <p className="text-sm text-tastelanc-text-muted">Select categories:</p>
 
                     {/* Cuisines */}
                     <div>
-                      <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">{CATEGORY_GROUPS.cuisines}</p>
+                      <p className="text-xs uppercase tracking-wider text-tastelanc-text-faint mb-1">{CATEGORY_GROUPS.cuisines}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {CATEGORIES_BY_GROUP.cuisines.map((cat) => {
                           const isSelected = (selectedCategories[venue.id] || []).includes(cat.value);
@@ -189,7 +189,7 @@ export default function PendingReviewPage() {
                               className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
                                 isSelected
                                   ? 'bg-tastelanc-accent text-white'
-                                  : 'bg-tastelanc-surface-light text-gray-400 hover:bg-tastelanc-surface-light/80 hover:text-white'
+                                  : 'bg-tastelanc-surface-light text-tastelanc-text-muted hover:bg-tastelanc-surface-light/80 hover:text-tastelanc-text-primary'
                               }`}
                             >
                               {cat.label}
@@ -201,7 +201,7 @@ export default function PendingReviewPage() {
 
                     {/* Meal Time */}
                     <div>
-                      <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">{CATEGORY_GROUPS.meal_time}</p>
+                      <p className="text-xs uppercase tracking-wider text-tastelanc-text-faint mb-1">{CATEGORY_GROUPS.meal_time}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {CATEGORIES_BY_GROUP.meal_time.map((cat) => {
                           const isSelected = (selectedCategories[venue.id] || []).includes(cat.value);
@@ -212,7 +212,7 @@ export default function PendingReviewPage() {
                               className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
                                 isSelected
                                   ? 'bg-tastelanc-accent text-white'
-                                  : 'bg-tastelanc-surface-light text-gray-400 hover:bg-tastelanc-surface-light/80 hover:text-white'
+                                  : 'bg-tastelanc-surface-light text-tastelanc-text-muted hover:bg-tastelanc-surface-light/80 hover:text-tastelanc-text-primary'
                               }`}
                             >
                               {cat.label}
@@ -224,7 +224,7 @@ export default function PendingReviewPage() {
 
                     {/* Drinks & Bars */}
                     <div>
-                      <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">{CATEGORY_GROUPS.drinks}</p>
+                      <p className="text-xs uppercase tracking-wider text-tastelanc-text-faint mb-1">{CATEGORY_GROUPS.drinks}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {CATEGORIES_BY_GROUP.drinks.map((cat) => {
                           const isSelected = (selectedCategories[venue.id] || []).includes(cat.value);
@@ -235,7 +235,7 @@ export default function PendingReviewPage() {
                               className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
                                 isSelected
                                   ? 'bg-tastelanc-accent text-white'
-                                  : 'bg-tastelanc-surface-light text-gray-400 hover:bg-tastelanc-surface-light/80 hover:text-white'
+                                  : 'bg-tastelanc-surface-light text-tastelanc-text-muted hover:bg-tastelanc-surface-light/80 hover:text-tastelanc-text-primary'
                               }`}
                             >
                               {cat.label}
@@ -247,7 +247,7 @@ export default function PendingReviewPage() {
 
                     {/* Features */}
                     <div>
-                      <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">{CATEGORY_GROUPS.features}</p>
+                      <p className="text-xs uppercase tracking-wider text-tastelanc-text-faint mb-1">{CATEGORY_GROUPS.features}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {CATEGORIES_BY_GROUP.features.map((cat) => {
                           const isSelected = (selectedCategories[venue.id] || []).includes(cat.value);
@@ -258,7 +258,7 @@ export default function PendingReviewPage() {
                               className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
                                 isSelected
                                   ? 'bg-tastelanc-accent text-white'
-                                  : 'bg-tastelanc-surface-light text-gray-400 hover:bg-tastelanc-surface-light/80 hover:text-white'
+                                  : 'bg-tastelanc-surface-light text-tastelanc-text-muted hover:bg-tastelanc-surface-light/80 hover:text-tastelanc-text-primary'
                               }`}
                             >
                               {cat.label}
@@ -299,7 +299,7 @@ export default function PendingReviewPage() {
                   </div>
                 </div>
 
-                <div className="text-right text-sm text-gray-500">
+                <div className="text-right text-sm text-tastelanc-text-faint">
                   Added {new Date(venue.created_at).toLocaleDateString()}
                 </div>
               </div>

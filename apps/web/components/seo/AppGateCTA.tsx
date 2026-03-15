@@ -31,13 +31,13 @@ export function AppGateCTA({ hiddenCount, contentType, children }: AppGateCTAPro
 
       {/* Gate CTA */}
       <div className="relative bg-gradient-to-br from-tastelanc-surface to-tastelanc-card rounded-2xl p-8 text-center border border-tastelanc-surface-light">
-        <p className="text-2xl font-bold text-white mb-2">
+        <p className="text-2xl font-bold text-tastelanc-text-primary mb-2">
           {hiddenCount}+ more {contentType}
         </p>
-        <p className="text-gray-400 mb-1">
+        <p className="text-tastelanc-text-muted mb-1">
           See all {contentType} in the {BRAND.name} app
         </p>
-        <p className="text-gray-500 text-sm mb-6">
+        <p className="text-tastelanc-text-faint text-sm mb-6">
           Get personalized recommendations from {BRAND.aiName}, your AI dining guide
         </p>
 

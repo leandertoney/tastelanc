@@ -292,9 +292,9 @@ function SalesCheckoutContent() {
     <div className="max-w-xl mx-auto">
       <div className="mb-8">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-white">New Sale</h1>
+          <h1 className="text-2xl font-bold text-tastelanc-text-primary">New Sale</h1>
           <Tooltip content="Build a checkout link for one or more restaurants. Add restaurants to the cart, select plans, and generate a Stripe payment link to send to the business owner. Multi-restaurant bundles get automatic discounts." position="bottom">
-            <HelpCircle className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-help" />
+            <HelpCircle className="w-4 h-4 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
           </Tooltip>
         </div>
       </div>
@@ -305,8 +305,8 @@ function SalesCheckoutContent() {
             <div className="w-14 h-14 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-7 h-7 text-green-400" />
             </div>
-            <h2 className="text-xl font-semibold text-white mb-1">Checkout Ready</h2>
-            <p className="text-gray-400 text-sm">
+            <h2 className="text-xl font-semibold text-tastelanc-text-primary mb-1">Checkout Ready</h2>
+            <p className="text-tastelanc-text-muted text-sm">
               {cart.length} restaurant{cart.length !== 1 ? 's' : ''} &mdash; ${total.toLocaleString()}
               {discountPercent > 0 && ` (${discountPercent}% off)`}
             </p>
@@ -323,11 +323,11 @@ function SalesCheckoutContent() {
             </a>
             <button
               onClick={() => copyToClipboard(checkoutUrl)}
-              className="w-full inline-flex items-center justify-center gap-2 bg-tastelanc-surface hover:bg-tastelanc-surface-light text-white px-6 py-3 rounded-lg transition-colors"
+              className="w-full inline-flex items-center justify-center gap-2 bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-primary px-6 py-3 rounded-lg transition-colors"
             >
               {copied ? <><Check className="w-4 h-4 text-green-400" /> Copied!</> : <><Copy className="w-4 h-4" /> Copy Link</>}
             </button>
-            <button onClick={resetForm} className="w-full text-sm text-gray-400 hover:text-white transition-colors py-2">
+            <button onClick={resetForm} className="w-full text-sm text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors py-2">
               Start New Sale
             </button>
           </div>
@@ -339,11 +339,11 @@ function SalesCheckoutContent() {
             {[1, 2, 3].map((s) => (
               <div key={s} className="flex items-center gap-2 flex-1">
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                  s < step ? 'bg-green-500 text-white' : s === step ? 'bg-tastelanc-accent text-white' : 'bg-tastelanc-surface-light text-gray-500'
+                  s < step ? 'bg-green-500 text-white' : s === step ? 'bg-tastelanc-accent text-white' : 'bg-tastelanc-surface-light text-tastelanc-text-faint'
                 }`}>
                   {s < step ? <Check className="w-3.5 h-3.5" /> : s}
                 </div>
-                <span className={`text-xs hidden sm:block ${s === step ? 'text-white' : 'text-gray-500'}`}>
+                <span className={`text-xs hidden sm:block ${s === step ? 'text-tastelanc-text-primary' : 'text-tastelanc-text-faint'}`}>
                   {s === 1 ? 'Customer' : s === 2 ? 'Restaurants' : 'Review'}
                 </span>
                 {s < 3 && <div className={`flex-1 h-px ${s < step ? 'bg-green-500' : 'bg-tastelanc-surface-light'}`} />}
@@ -354,28 +354,28 @@ function SalesCheckoutContent() {
           {/* Step 1 */}
           {step === 1 && (
             <Card className="p-6">
-              <h2 className="text-lg font-semibold text-white mb-5">Customer Info</h2>
+              <h2 className="text-lg font-semibold text-tastelanc-text-primary mb-5">Customer Info</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Email *</label>
+                  <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Email *</label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tastelanc-text-faint" />
                     <input type="email" value={email} onChange={(e) => { setEmail(e.target.value); setStepError(''); }}
                       placeholder="owner@restaurant.com"
-                      className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent" />
+                      className="w-full pl-10 pr-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Contact Name</label>
+                  <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Contact Name</label>
                   <input type="text" value={contactName} onChange={(e) => setContactName(e.target.value)}
                     placeholder="John Smith"
-                    className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent" />
+                    className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Phone</label>
+                  <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Phone</label>
                   <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
                     placeholder="(717) 555-0123"
-                    className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent" />
+                    className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent" />
                 </div>
                 {stepError && <p className="text-red-400 text-sm">{stepError}</p>}
                 <button onClick={handleNextStep}
@@ -391,7 +391,7 @@ function SalesCheckoutContent() {
             <div className="space-y-4">
               {cart.length > 0 && (
                 <Card className="p-4">
-                  <p className="text-sm font-medium text-gray-400 mb-3">
+                  <p className="text-sm font-medium text-tastelanc-text-muted mb-3">
                     {cart.length} restaurant{cart.length !== 1 ? 's' : ''} added
                     {discountPercent > 0 && <span className="text-green-400 ml-2">({discountPercent}% multi-location discount)</span>}
                   </p>
@@ -399,11 +399,11 @@ function SalesCheckoutContent() {
                     {cart.map((item) => (
                       <div key={item.id} className="flex items-center justify-between bg-tastelanc-surface-light rounded-lg px-3 py-2.5">
                         <div className="min-w-0 flex-1">
-                          <p className="text-white text-sm font-medium truncate">{item.restaurantName}</p>
-                          <p className="text-gray-400 text-xs capitalize">{item.plan} &middot; {DURATIONS.find(d => d.id === item.duration)?.label}</p>
+                          <p className="text-tastelanc-text-primary text-sm font-medium truncate">{item.restaurantName}</p>
+                          <p className="text-tastelanc-text-muted text-xs capitalize">{item.plan} &middot; {DURATIONS.find(d => d.id === item.duration)?.label}</p>
                         </div>
-                        <span className="text-white text-sm font-semibold ml-3">${item.price}</span>
-                        <button onClick={() => handleRemoveFromCart(item.id)} className="text-gray-500 hover:text-red-400 transition-colors ml-2">
+                        <span className="text-tastelanc-text-primary text-sm font-semibold ml-3">${item.price}</span>
+                        <button onClick={() => handleRemoveFromCart(item.id)} className="text-tastelanc-text-faint hover:text-red-400 transition-colors ml-2">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -411,7 +411,7 @@ function SalesCheckoutContent() {
                   </div>
                   {!showAddForm && (
                     <button onClick={() => setShowAddForm(true)}
-                      className="w-full mt-3 py-2.5 border-2 border-dashed border-tastelanc-surface-light hover:border-tastelanc-accent text-gray-400 hover:text-white rounded-lg transition-colors flex items-center justify-center gap-2">
+                      className="w-full mt-3 py-2.5 border-2 border-dashed border-tastelanc-surface-light hover:border-tastelanc-accent text-tastelanc-text-muted hover:text-tastelanc-text-primary rounded-lg transition-colors flex items-center justify-center gap-2">
                       <Plus className="w-4 h-4" /> Add Another Restaurant
                     </button>
                   )}
@@ -421,48 +421,48 @@ function SalesCheckoutContent() {
               {(showAddForm || cart.length === 0) && (
                 <Card className="p-6">
                   <div className="flex items-center justify-between mb-5">
-                    <h2 className="text-lg font-semibold text-white">{cart.length === 0 ? 'Add Restaurant' : 'Add Another Restaurant'}</h2>
+                    <h2 className="text-lg font-semibold text-tastelanc-text-primary">{cart.length === 0 ? 'Add Restaurant' : 'Add Another Restaurant'}</h2>
                     {cart.length > 0 && (
-                      <button onClick={() => setShowAddForm(false)} className="text-gray-400 hover:text-white transition-colors">
+                      <button onClick={() => setShowAddForm(false)} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors">
                         <X className="w-5 h-5" />
                       </button>
                     )}
                   </div>
                   <div className="space-y-4">
                     <div ref={dropdownRef} className="relative">
-                      <label className="block text-sm font-medium text-gray-300 mb-1">Restaurant</label>
+                      <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Restaurant</label>
                       {currentRestaurantId && !isDropdownOpen ? (
                         <div onClick={() => setIsDropdownOpen(true)}
-                          className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-accent rounded-lg text-white cursor-pointer flex items-center justify-between">
+                          className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-accent rounded-lg text-tastelanc-text-primary cursor-pointer flex items-center justify-between">
                           <span className="truncate">{currentRestaurantData?.name} ({currentRestaurantData?.city}, {currentRestaurantData?.state})</span>
-                          <button onClick={(e) => { e.stopPropagation(); setCurrentRestaurantId(''); setRestaurantSearch(''); }} className="text-gray-400 hover:text-white ml-2">
+                          <button onClick={(e) => { e.stopPropagation(); setCurrentRestaurantId(''); setRestaurantSearch(''); }} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary ml-2">
                             <X className="w-4 h-4" />
                           </button>
                         </div>
                       ) : (
                         <div className="relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tastelanc-text-faint" />
                           <input type="text" value={restaurantSearch}
                             onChange={(e) => { setRestaurantSearch(e.target.value); setIsDropdownOpen(true); }}
                             onFocus={() => setIsDropdownOpen(true)}
                             placeholder={isLoadingRestaurants ? 'Loading...' : 'Search restaurants...'}
                             disabled={isLoadingRestaurants}
-                            className="w-full pl-10 pr-10 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent" />
-                          <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                            className="w-full pl-10 pr-10 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent" />
+                          <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tastelanc-text-faint transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
                         </div>
                       )}
                       {isDropdownOpen && (
                         <div className="absolute z-50 w-full mt-1 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg shadow-lg max-h-48 overflow-y-auto">
                           {filteredRestaurants.length === 0 ? (
-                            <div className="px-4 py-3 text-gray-500 text-sm">{restaurantSearch ? 'No restaurants found' : 'No restaurants available'}</div>
+                            <div className="px-4 py-3 text-tastelanc-text-faint text-sm">{restaurantSearch ? 'No restaurants found' : 'No restaurants available'}</div>
                           ) : (
                             filteredRestaurants.map((r) => (
                               <button key={r.id}
                                 onClick={() => { setCurrentRestaurantId(r.id); setRestaurantSearch(''); setIsDropdownOpen(false); }}
                                 className={`w-full px-4 py-2.5 text-left hover:bg-tastelanc-surface-light transition-colors ${
-                                  currentRestaurantId === r.id ? 'bg-tastelanc-accent/20 text-white' : 'text-gray-300'
+                                  currentRestaurantId === r.id ? 'bg-tastelanc-accent/20 text-tastelanc-text-primary' : 'text-tastelanc-text-secondary'
                                 }`}>
-                                {r.name} <span className="text-gray-500">({r.city}, {r.state})</span>
+                                {r.name} <span className="text-tastelanc-text-faint">({r.city}, {r.state})</span>
                               </button>
                             ))
                           )}
@@ -473,12 +473,12 @@ function SalesCheckoutContent() {
                     <hr className="border-tastelanc-surface-light" />
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Plan</label>
+                      <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">Plan</label>
                       <div className="grid grid-cols-3 gap-3">
                         {(['premium', 'elite', 'coffee_shop'] as const).map((plan) => (
                           <button key={plan} onClick={() => { setCurrentPlan(plan); if (plan === 'coffee_shop') setCurrentDuration('monthly'); }}
                             className={`p-3 rounded-lg border-2 text-center transition-all ${
-                              currentPlan === plan ? 'border-tastelanc-accent bg-tastelanc-accent/10 text-white' : 'border-tastelanc-surface-light text-gray-300 hover:border-gray-600'
+                              currentPlan === plan ? 'border-tastelanc-accent bg-tastelanc-accent/10 text-tastelanc-text-primary' : 'border-tastelanc-surface-light text-tastelanc-text-secondary hover:border-tastelanc-border'
                             }`}>
                             <span className="font-semibold text-sm capitalize">{plan === 'coffee_shop' ? 'Coffee Shop' : plan}</span>
                           </button>
@@ -487,17 +487,17 @@ function SalesCheckoutContent() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Duration</label>
+                      <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">Duration</label>
                       <div className={`grid gap-2 ${currentPlan === 'coffee_shop' ? 'grid-cols-1' : 'grid-cols-4'}`}>
                         {DURATIONS.filter((d) => currentPlan !== 'coffee_shop' || d.id === 'monthly').map((d) => {
                           const price = PRICES[currentPlan]?.[d.id] || 0;
                           return (
                             <button key={d.id} onClick={() => setCurrentDuration(d.id)}
                               className={`p-2.5 rounded-lg border-2 text-center transition-all ${
-                                currentDuration === d.id ? 'border-tastelanc-accent bg-tastelanc-accent/10' : 'border-tastelanc-surface-light hover:border-gray-600'
+                                currentDuration === d.id ? 'border-tastelanc-accent bg-tastelanc-accent/10' : 'border-tastelanc-surface-light hover:border-tastelanc-border'
                               }`}>
-                              <p className="text-xs text-gray-300">{d.label}</p>
-                              <p className="text-sm font-bold text-white">${price}</p>
+                              <p className="text-xs text-tastelanc-text-secondary">{d.label}</p>
+                              <p className="text-sm font-bold text-tastelanc-text-primary">${price}</p>
                             </button>
                           );
                         })}
@@ -519,7 +519,7 @@ function SalesCheckoutContent() {
 
               <div className="flex gap-3">
                 <button onClick={() => { setStep(1); setStepError(''); }}
-                  className="flex-1 bg-tastelanc-surface hover:bg-tastelanc-surface-light text-white py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2">
+                  className="flex-1 bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-primary py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2">
                   <ArrowLeft className="w-4 h-4" /> Back
                 </button>
                 <button onClick={handleNextStep}
@@ -534,28 +534,28 @@ function SalesCheckoutContent() {
           {step === 3 && (
             <div className="space-y-4">
               <Card className="p-6">
-                <h2 className="text-lg font-semibold text-white mb-5">Review Order</h2>
+                <h2 className="text-lg font-semibold text-tastelanc-text-primary mb-5">Review Order</h2>
                 <div className="mb-5 pb-4 border-b border-tastelanc-surface-light">
-                  <p className="text-sm text-gray-400 mb-1">Customer</p>
-                  <p className="text-white font-medium">{contactName || email}</p>
-                  <p className="text-gray-400 text-sm">{email}</p>
-                  {phone && <p className="text-gray-400 text-sm">{phone}</p>}
+                  <p className="text-sm text-tastelanc-text-muted mb-1">Customer</p>
+                  <p className="text-tastelanc-text-primary font-medium">{contactName || email}</p>
+                  <p className="text-tastelanc-text-muted text-sm">{email}</p>
+                  {phone && <p className="text-tastelanc-text-muted text-sm">{phone}</p>}
                 </div>
                 <div className="space-y-2 mb-5">
                   {cart.map((item) => (
                     <div key={item.id} className="flex items-center justify-between py-2">
                       <div>
-                        <p className="text-white text-sm">{item.restaurantName}</p>
-                        <p className="text-gray-500 text-xs capitalize">{item.plan} &middot; {DURATIONS.find(d => d.id === item.duration)?.label}</p>
+                        <p className="text-tastelanc-text-primary text-sm">{item.restaurantName}</p>
+                        <p className="text-tastelanc-text-faint text-xs capitalize">{item.plan} &middot; {DURATIONS.find(d => d.id === item.duration)?.label}</p>
                       </div>
-                      <span className="text-white text-sm">${item.price}</span>
+                      <span className="text-tastelanc-text-primary text-sm">${item.price}</span>
                     </div>
                   ))}
                 </div>
                 <div className="border-t border-tastelanc-surface-light pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Subtotal</span>
-                    <span className="text-white">${subtotal.toLocaleString()}</span>
+                    <span className="text-tastelanc-text-muted">Subtotal</span>
+                    <span className="text-tastelanc-text-primary">${subtotal.toLocaleString()}</span>
                   </div>
                   {discountPercent > 0 && (
                     <div className="flex justify-between text-sm">
@@ -564,8 +564,8 @@ function SalesCheckoutContent() {
                     </div>
                   )}
                   <div className="flex justify-between pt-2 border-t border-tastelanc-surface-light">
-                    <span className="text-white font-semibold">Total</span>
-                    <span className="text-xl font-bold text-white">${total.toLocaleString()}</span>
+                    <span className="text-tastelanc-text-primary font-semibold">Total</span>
+                    <span className="text-xl font-bold text-tastelanc-text-primary">${total.toLocaleString()}</span>
                   </div>
                 </div>
               </Card>
@@ -576,7 +576,7 @@ function SalesCheckoutContent() {
 
               <div className="flex gap-3">
                 <button onClick={() => { setStep(2); setError(''); }}
-                  className="flex-1 bg-tastelanc-surface hover:bg-tastelanc-surface-light text-white py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2">
+                  className="flex-1 bg-tastelanc-surface hover:bg-tastelanc-surface-light text-tastelanc-text-primary py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2">
                   <ArrowLeft className="w-4 h-4" /> Back
                 </button>
                 <button onClick={handleCreateCheckout} disabled={isProcessing}

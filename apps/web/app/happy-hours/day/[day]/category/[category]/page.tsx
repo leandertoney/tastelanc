@@ -37,18 +37,18 @@ export default async function HappyHoursByDayCategory({ params }: { params: { da
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <main className="max-w-5xl mx-auto px-4 py-10 text-white">
+      <main className="max-w-5xl mx-auto px-4 py-10 text-tastelanc-text-primary">
         {leadershipLine(claim)}
         <h1 className="text-3xl font-bold">Happy Hours on {day} • {params.category.replace(/-/g, ' ')}</h1>
-        <p className="text-gray-400 mt-2">{BRAND.countyShort} happy hours by day and category.</p>
+        <p className="text-tastelanc-text-muted mt-2">{BRAND.countyShort} happy hours by day and category.</p>
         {restaurantCTAButtons()}
         <div className="space-y-4 mt-6">
           {filtered.map(({ h, r }) => (
             <a key={h.id} href={`/restaurants/${r!.slug}`} className="block p-4 bg-tastelanc-surface rounded-lg">
-              <h2 className="text-xl font-semibold text-white">{r!.name} — {h.name}</h2>
-              <p className="text-sm text-gray-400">{h.start_time} - {h.end_time}</p>
-              {h.description && <p className="text-gray-300 text-sm mt-1">{h.description}</p>}
-              <ul className="text-sm text-gray-300 mt-2 space-y-1">
+              <h2 className="text-xl font-semibold text-tastelanc-text-primary">{r!.name} — {h.name}</h2>
+              <p className="text-sm text-tastelanc-text-muted">{h.start_time} - {h.end_time}</p>
+              {h.description && <p className="text-tastelanc-text-secondary text-sm mt-1">{h.description}</p>}
+              <ul className="text-sm text-tastelanc-text-secondary mt-2 space-y-1">
                 {hhItems.filter((i) => i.happy_hour_id === h.id).map((i) => (
                   <li key={i.id}>- {i.name} {i.description ? `• ${i.description}` : ''} {i.price ? `• $${i.price.toFixed(2)}` : ''}</li>
                 ))}

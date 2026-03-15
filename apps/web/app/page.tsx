@@ -243,7 +243,7 @@ export default function HomePage() {
             )}
           </div>
           {(BRAND.appStoreUrls.ios || BRAND.appStoreUrls.android) && (
-            <p className="text-gray-400 text-sm">Available on iOS and Android</p>
+            <p className="text-tastelanc-text-muted text-sm">Available on iOS and Android</p>
           )}
         </div>
       </section>
@@ -280,12 +280,12 @@ export default function HomePage() {
                   <Sparkles className="w-3 h-3 text-tastelanc-accent" />
                   <span className="text-tastelanc-accent font-medium text-xs">AI-Powered</span>
                 </div>
-                <h3 className="text-2xl font-bold text-white">
+                <h3 className="text-2xl font-bold text-tastelanc-text-primary">
                   Meet <span className="text-tastelanc-accent">{BRAND.aiName}</span>
                 </h3>
               </div>
             </div>
-            <p className="text-lg text-gray-300 mb-6">
+            <p className="text-lg text-tastelanc-text-secondary mb-6">
               Your personal {BRAND.countyShort} dining and nightlife expert. Ask {BRAND.aiName} anything about restaurants, happy hours, events, and the best places to eat and drink.
             </p>
             <ul className="space-y-3 mb-8">
@@ -299,7 +299,7 @@ export default function HomePage() {
                   <div className="w-5 h-5 rounded-full bg-tastelanc-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Check className="w-3 h-3 text-tastelanc-accent" />
                   </div>
-                  <span className="text-gray-400 text-sm">{item}</span>
+                  <span className="text-tastelanc-text-muted text-sm">{item}</span>
                 </li>
               ))}
             </ul>
@@ -311,7 +311,7 @@ export default function HomePage() {
               Chat with {BRAND.aiName} Now
               <ArrowRight className="w-5 h-5" />
             </button>
-            <p className="text-gray-500 text-sm mt-3 text-center">Free to try - no sign up required</p>
+            <p className="text-tastelanc-text-faint text-sm mt-3 text-center">Free to try - no sign up required</p>
 
             {/* Additional AI benefits - Mobile */}
             <div className="mt-6 pt-6 border-t border-tastelanc-accent/20">
@@ -324,7 +324,7 @@ export default function HomePage() {
                 ].map((item, index) => (
                   <div key={index} className="flex items-start gap-2">
                     <Sparkles className="w-4 h-4 text-tastelanc-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-400 text-sm">{item}</span>
+                    <span className="text-tastelanc-text-muted text-sm">{item}</span>
                   </div>
                 ))}
               </div>
@@ -362,10 +362,10 @@ export default function HomePage() {
                 <Sparkles className="w-4 h-4 text-tastelanc-accent" />
                 <span className="text-tastelanc-accent font-medium text-sm">AI-Powered Assistant</span>
               </div>
-              <h3 className="text-4xl font-bold text-white mb-4">
+              <h3 className="text-4xl font-bold text-tastelanc-text-primary mb-4">
                 Meet <span className="text-tastelanc-accent">{BRAND.aiName}</span>
               </h3>
-              <p className="text-xl text-gray-300 mb-6">
+              <p className="text-xl text-tastelanc-text-secondary mb-6">
                 Your personal {BRAND.countyShort} dining and nightlife expert. Ask {BRAND.aiName} anything about restaurants, happy hours, events, and the best places to eat and drink.
               </p>
               <ul className="space-y-3 mb-8">
@@ -379,7 +379,7 @@ export default function HomePage() {
                     <div className="w-5 h-5 rounded-full bg-tastelanc-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Check className="w-3 h-3 text-tastelanc-accent" />
                     </div>
-                    <span className="text-gray-400">{item}</span>
+                    <span className="text-tastelanc-text-muted">{item}</span>
                   </li>
                 ))}
               </ul>
@@ -391,7 +391,7 @@ export default function HomePage() {
                 Chat with {BRAND.aiName} Now
                 <ArrowRight className="w-5 h-5" />
               </button>
-              <p className="text-gray-500 text-sm mt-3">Free to try - no sign up required</p>
+              <p className="text-tastelanc-text-faint text-sm mt-3">Free to try - no sign up required</p>
 
               {/* Additional AI benefits */}
               <div className="mt-8 pt-8 border-t border-tastelanc-accent/20">
@@ -404,7 +404,7 @@ export default function HomePage() {
                   ].map((item, index) => (
                     <div key={index} className="flex items-start gap-2">
                       <Sparkles className="w-4 h-4 text-tastelanc-accent flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-400 text-sm">{item}</span>
+                      <span className="text-tastelanc-text-muted text-sm">{item}</span>
                     </div>
                   ))}
                 </div>
@@ -415,9 +415,9 @@ export default function HomePage() {
       </section>
 
       {/* Authority Section - do not alter other homepage content */}
-      <section className="max-w-5xl mx-auto px-4 py-12 text-white">
+      <section className="max-w-5xl mx-auto px-4 py-12 text-tastelanc-text-primary">
         <h2 className="text-3xl font-bold mb-3">{BRAND.countyShort}&apos;s #1 Food &amp; Nightlife App.</h2>
-        <p className="text-gray-300">
+        <p className="text-tastelanc-text-secondary">
           {BRAND.name} is the most comprehensive guide for restaurants, events, specials, and nightlife — powered by {BRAND.aiName},{' '}
           {BRAND.countyShort}&apos;s first AI dining companion. The app gives you even more with real-time alerts, personalized picks,
           and exclusive insights.
@@ -460,10 +460,10 @@ export default function HomePage() {
               <Zap className="w-4 h-4 text-orange-400" />
               <span className="text-orange-400 font-medium text-sm">Live & Updated</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-tastelanc-text-primary mb-4">
               Find What&apos;s Good Tonight
             </h2>
-            <p className="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl text-tastelanc-text-secondary max-w-2xl mx-auto">
               A smarter way to explore {BRAND.countyShort} — from after-work drinks to late-night plans. Everything happening right now, in one place that actually feels alive.
             </p>
           </div>
@@ -494,7 +494,7 @@ export default function HomePage() {
                     </div>
                     <div className="text-center sm:text-left">
                       <h3 className="text-lg sm:text-xl font-bold text-orange-400 mb-1">{item.title}</h3>
-                      <p className="text-gray-300 text-base sm:text-lg leading-relaxed">{item.text}</p>
+                      <p className="text-tastelanc-text-secondary text-base sm:text-lg leading-relaxed">{item.text}</p>
                     </div>
                   </div>
                 </div>
@@ -556,10 +556,10 @@ export default function HomePage() {
               <MapPin className="w-4 h-4 text-lancaster-gold" />
               <span className="text-lancaster-gold font-medium text-sm">Location-Aware</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-tastelanc-text-primary mb-4">
               Your {BRAND.countyShort}, Your Way
             </h2>
-            <p className="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl text-tastelanc-text-secondary max-w-2xl mx-auto">
               {BRAND.name} learns what you like and makes the city feel smaller, closer, and easier to enjoy. Tap a pin to see how we connect you to {BRAND.countyShort}.
             </p>
           </div>
@@ -627,7 +627,7 @@ export default function HomePage() {
                   }`}>
                     <div className="bg-tastelanc-card border border-lancaster-gold/30 rounded-xl p-4 shadow-xl">
                       <h4 className="font-bold text-lancaster-gold mb-1">{pin.label}</h4>
-                      <p className="text-gray-300 text-sm">{pin.desc}</p>
+                      <p className="text-tastelanc-text-secondary text-sm">{pin.desc}</p>
                     </div>
                     {/* Arrow pointing up */}
                     <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-tastelanc-card border-l border-t border-lancaster-gold/30 transform rotate-45" />
@@ -642,7 +642,7 @@ export default function HomePage() {
               </svg>
             </div>
 
-            <p className="text-center text-gray-500 text-sm mt-4">Click a pin to learn more</p>
+            <p className="text-center text-tastelanc-text-faint text-sm mt-4">Click a pin to learn more</p>
           </div>
 
           {/* Mobile Layout - Stacked Cards */}
@@ -674,9 +674,9 @@ export default function HomePage() {
                     <item.icon className="w-5 h-5" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-bold text-white">{item.label}</h4>
+                    <h4 className="font-bold text-tastelanc-text-primary">{item.label}</h4>
                     <p className={`text-sm transition-all ${
-                      activePin === index ? 'text-gray-300' : 'text-gray-500'
+                      activePin === index ? 'text-tastelanc-text-secondary' : 'text-tastelanc-text-faint'
                     }`}>{item.desc}</p>
                   </div>
                   <ChevronRight className={`w-5 h-5 text-lancaster-gold transition-transform ${
@@ -720,10 +720,10 @@ export default function HomePage() {
       <section id="app-preview" className="py-20 px-4 bg-tastelanc-bg" ref={carouselRef}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-tastelanc-text-primary mb-4">
               See the App in Action
             </h2>
-            <p className="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl text-tastelanc-text-secondary max-w-2xl mx-auto">
               A quick look at what makes {BRAND.name} feel effortless — fast picks, live happenings, and an interface built for going out, not reading about going out.
             </p>
           </div>
@@ -828,10 +828,10 @@ export default function HomePage() {
 
           {/* Screen Title & Description */}
           <div className="text-center mt-8">
-            <h3 className="text-2xl font-semibold text-white mb-2">
+            <h3 className="text-2xl font-semibold text-tastelanc-text-primary mb-2">
               {APP_SCREENS[activeScreen].title}
             </h3>
-            <p className="text-gray-400 text-lg max-w-md mx-auto">
+            <p className="text-tastelanc-text-muted text-lg max-w-md mx-auto">
               {APP_SCREENS[activeScreen].description}
             </p>
           </div>
@@ -858,7 +858,7 @@ export default function HomePage() {
       <section className="py-20 px-4 bg-tastelanc-surface">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-tastelanc-text-primary mb-4">
               How {BRAND.name} Works
             </h2>
           </div>
@@ -885,8 +885,8 @@ export default function HomePage() {
                 <div className="w-12 h-12 bg-tastelanc-accent rounded-full flex items-center justify-center mx-auto mb-4 text-white font-bold text-xl">
                   {item.step}
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">{item.title}</h3>
-                <p className="text-gray-400">{item.description}</p>
+                <h3 className="text-xl font-semibold text-tastelanc-text-primary mb-2">{item.title}</h3>
+                <p className="text-tastelanc-text-muted">{item.description}</p>
               </div>
             ))}
           </div>
@@ -949,10 +949,10 @@ export default function HomePage() {
           <span className="text-tastelanc-accent text-sm font-semibold uppercase tracking-wider">
             Local Business Partners
           </span>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mt-2 mb-6">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-tastelanc-text-primary mt-2 mb-6">
             Own a Restaurant or Bar<span className="block sm:inline"> in {BRAND.countyShort}?</span>
           </h2>
-          <p className="text-gray-400 text-lg mb-8 max-w-2xl mx-auto">
+          <p className="text-tastelanc-text-muted text-lg mb-8 max-w-2xl mx-auto">
             We&apos;re building something special for the {BRAND.countyShort} food and drink scene.
             If you&apos;re interested in being part of it, we&apos;d love to hear from you.
           </p>
@@ -961,10 +961,10 @@ export default function HomePage() {
             <div className="w-16 h-16 bg-tastelanc-accent/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
               <Star className="w-8 h-8 text-tastelanc-accent" />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-3">
+            <h3 className="text-xl font-semibold text-tastelanc-text-primary mb-3">
               Partner With {BRAND.name}
             </h3>
-            <p className="text-gray-400 mb-6">
+            <p className="text-tastelanc-text-muted mb-6">
               Join a growing community of local establishments connecting with new customers every day.
             </p>
             <Link

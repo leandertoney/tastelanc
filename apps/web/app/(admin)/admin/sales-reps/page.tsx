@@ -136,11 +136,11 @@ export default function AdminSalesRepsPage() {
     <div>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary flex items-center gap-3">
             <Users className="w-8 h-8 text-tastelanc-accent" />
             Sales Reps
           </h1>
-          <p className="text-gray-400 mt-1">Manage your sales team accounts</p>
+          <p className="text-tastelanc-text-muted mt-1">Manage your sales team accounts</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
@@ -172,46 +172,46 @@ export default function AdminSalesRepsPage() {
       {/* Create Form */}
       {showForm && (
         <Card className="p-6 mb-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Create Sales Rep Account</h2>
+          <h2 className="text-lg font-semibold text-tastelanc-text-primary mb-4">Create Sales Rep Account</h2>
           <form onSubmit={handleCreate} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Name *</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Name *</label>
                 <input
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="Full name"
-                  className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Email *</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Email *</label>
                 <input
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   placeholder="rep@example.com"
-                  className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Phone</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Phone</label>
                 <input
                   type="tel"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   placeholder="(717) 555-0123"
-                  className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Market *</label>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-1">Market *</label>
                 <select
                   value={form.market_id}
                   onChange={(e) => setForm({ ...form, market_id: e.target.value })}
                   required
-                  className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  className="w-full px-4 py-2.5 bg-tastelanc-surface-light border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
                 >
                   <option value="">Select a market…</option>
                   {markets.map((m) => (
@@ -236,7 +236,7 @@ export default function AdminSalesRepsPage() {
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="px-6 py-2.5 bg-tastelanc-surface-light text-gray-400 hover:text-white rounded-lg transition-colors"
+                className="px-6 py-2.5 bg-tastelanc-surface-light text-tastelanc-text-muted hover:text-tastelanc-text-primary rounded-lg transition-colors"
               >
                 Cancel
               </button>
@@ -252,9 +252,9 @@ export default function AdminSalesRepsPage() {
         </div>
       ) : reps.length === 0 ? (
         <Card className="p-12 text-center">
-          <Users className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">No sales reps yet</h3>
-          <p className="text-gray-400 mb-4">Add your first sales team member</p>
+          <Users className="w-12 h-12 text-tastelanc-text-faint mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-2">No sales reps yet</h3>
+          <p className="text-tastelanc-text-muted mb-4">Add your first sales team member</p>
           <button
             onClick={() => setShowForm(true)}
             className="inline-flex items-center gap-2 px-4 py-2 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white rounded-lg transition-colors"
@@ -270,12 +270,12 @@ export default function AdminSalesRepsPage() {
               <div className="flex flex-col md:flex-row md:items-center gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-1">
-                    <h3 className="font-semibold text-white">{rep.name}</h3>
+                    <h3 className="font-semibold text-tastelanc-text-primary">{rep.name}</h3>
                     <Badge className={rep.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}>
                       {rep.is_active ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-tastelanc-text-muted">
                     <span className="flex items-center gap-1">
                       <Mail className="w-3 h-3" /> {rep.email}
                     </span>
@@ -293,7 +293,7 @@ export default function AdminSalesRepsPage() {
                         {rep.market_ids.map((mid) => markets.find((m) => m.id === mid)?.name || 'Unknown').join(', ')}
                       </span>
                     )}
-                    <span className="text-gray-600">
+                    <span className="text-tastelanc-text-faint">
                       Joined {new Date(rep.created_at).toLocaleDateString()}
                     </span>
                   </div>

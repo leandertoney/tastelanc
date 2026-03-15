@@ -43,18 +43,18 @@ export default async function RestaurantEvents({ params }: { params: { slug: str
       {schemaEvents.map((j, i) => (
         <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(j) }} />
       ))}
-      <main className="max-w-4xl mx-auto px-4 py-10 text-white">
+      <main className="max-w-4xl mx-auto px-4 py-10 text-tastelanc-text-primary">
         {leadershipLine(claim)}
         <h1 className="text-3xl font-bold">{restaurant.name} Events</h1>
-        <p className="text-gray-400 mt-1">{restaurant.address}, {restaurant.city}, {restaurant.state}</p>
+        <p className="text-tastelanc-text-muted mt-1">{restaurant.address}, {restaurant.city}, {restaurant.state}</p>
         {restaurantCTAButtons()}
         <div className="space-y-4 mt-6">
           {events.map((e) => (
             <div key={e.id} className="p-4 bg-tastelanc-surface rounded-lg">
               <h2 className="text-xl font-semibold">{e.name}</h2>
-              <p className="text-sm text-gray-400">{(e.event_date || e.days_of_week?.join(', '))} • {e.start_time}{e.end_time ? ` - ${e.end_time}` : ''}</p>
-              {e.description && <p className="text-gray-300 text-sm mt-1">{e.description}</p>}
-              {e.cover_charge && <p className="text-sm text-gray-300 mt-1">Cover: ${e.cover_charge.toFixed(2)}</p>}
+              <p className="text-sm text-tastelanc-text-muted">{(e.event_date || e.days_of_week?.join(', '))} • {e.start_time}{e.end_time ? ` - ${e.end_time}` : ''}</p>
+              {e.description && <p className="text-tastelanc-text-secondary text-sm mt-1">{e.description}</p>}
+              {e.cover_charge && <p className="text-sm text-tastelanc-text-secondary mt-1">Cover: ${e.cover_charge.toFixed(2)}</p>}
             </div>
           ))}
         </div>

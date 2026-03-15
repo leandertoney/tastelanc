@@ -207,7 +207,7 @@ export default function SpecialWizard({ restaurantId, onClose, onSubmit }: Speci
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
               Special Name *
             </label>
             <input
@@ -215,29 +215,29 @@ export default function SpecialWizard({ restaurantId, onClose, onSubmit }: Speci
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="e.g., Taco Tuesday"
-              className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+              className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
               autoFocus
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
               Description
-              <span className="text-gray-500 font-normal ml-1">(optional)</span>
+              <span className="text-tastelanc-text-faint font-normal ml-1">(optional)</span>
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="e.g., $2 tacos all day"
               rows={2}
-              className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold resize-none"
+              className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold resize-none"
             />
           </div>
 
           {/* Days */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-3">
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-3">
               Which days? *
             </label>
             <DaySelector
@@ -248,9 +248,9 @@ export default function SpecialWizard({ restaurantId, onClose, onSubmit }: Speci
 
           {/* Time Range (optional) */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
               Time Available
-              <span className="text-gray-500 font-normal ml-1">(optional - leave blank for all day)</span>
+              <span className="text-tastelanc-text-faint font-normal ml-1">(optional - leave blank for all day)</span>
             </label>
             <TimeRangePicker
               startTime={formData.start_time}
@@ -264,9 +264,9 @@ export default function SpecialWizard({ restaurantId, onClose, onSubmit }: Speci
 
           {/* Image Upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
               Custom Image
-              <span className="text-gray-500 font-normal ml-1">(optional)</span>
+              <span className="text-tastelanc-text-faint font-normal ml-1">(optional)</span>
             </label>
             <SpecialImageUpload
               value={formData.image_url}
@@ -278,36 +278,36 @@ export default function SpecialWizard({ restaurantId, onClose, onSubmit }: Speci
           {/* Price (optional) */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                 Original Price
-                <span className="text-gray-500 font-normal ml-1">(optional)</span>
+                <span className="text-tastelanc-text-faint font-normal ml-1">(optional)</span>
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-tastelanc-text-faint">$</span>
                 <input
                   type="number"
                   value={formData.original_price}
                   onChange={(e) => setFormData({ ...formData, original_price: e.target.value })}
                   placeholder="0.00"
                   step="0.01"
-                  className="w-full pl-7 pr-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+                  className="w-full pl-7 pr-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
                 Special Price
-                <span className="text-gray-500 font-normal ml-1">(optional)</span>
+                <span className="text-tastelanc-text-faint font-normal ml-1">(optional)</span>
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-tastelanc-text-faint">$</span>
                 <input
                   type="number"
                   value={formData.special_price}
                   onChange={(e) => setFormData({ ...formData, special_price: e.target.value })}
                   placeholder="0.00"
                   step="0.01"
-                  className="w-full pl-7 pr-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+                  className="w-full pl-7 pr-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
                 />
               </div>
             </div>
@@ -342,26 +342,26 @@ export default function SpecialWizard({ restaurantId, onClose, onSubmit }: Speci
             <div className="p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="w-5 h-5 text-lancaster-gold" />
-                <h3 className="text-lg font-semibold text-white">{formData.name}</h3>
+                <h3 className="text-lg font-semibold text-tastelanc-text-primary">{formData.name}</h3>
               </div>
               {formData.description && (
-                <p className="text-gray-400 text-sm mb-3">{formData.description}</p>
+                <p className="text-tastelanc-text-muted text-sm mb-3">{formData.description}</p>
               )}
 
             <div className="flex flex-wrap gap-2 text-sm">
               {formData.start_time && formData.end_time && (
-                <span className="px-2 py-1 bg-tastelanc-bg rounded text-gray-300">
+                <span className="px-2 py-1 bg-tastelanc-bg rounded text-tastelanc-text-secondary">
                   {formatTimeDisplay(formData.start_time)} - {formatTimeDisplay(formData.end_time)}
                 </span>
               )}
               {!formData.start_time && !formData.end_time && (
-                <span className="px-2 py-1 bg-tastelanc-bg rounded text-gray-300">
+                <span className="px-2 py-1 bg-tastelanc-bg rounded text-tastelanc-text-secondary">
                   All Day
                 </span>
               )}
               {formData.original_price && formData.special_price && (
                 <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded">
-                  <span className="line-through text-gray-500 mr-1">
+                  <span className="line-through text-tastelanc-text-faint mr-1">
                     ${formData.original_price}
                   </span>
                   ${formData.special_price}

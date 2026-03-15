@@ -259,7 +259,7 @@ export default function RosieChatModal({ isOpen, onClose }: RosieChatModalProps)
           </div>
 
           <div className="flex-1">
-            <h2 id="chat-title" className="text-white font-semibold">
+            <h2 id="chat-title" className="text-tastelanc-text-primary font-semibold">
               {`Chat with ${BRAND.aiName}`}
             </h2>
             <p className="text-tastelanc-muted text-xs">
@@ -270,7 +270,7 @@ export default function RosieChatModal({ isOpen, onClose }: RosieChatModalProps)
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="p-2 text-tastelanc-muted hover:text-white hover:bg-tastelanc-surface-light rounded-full transition-colors"
+            className="p-2 text-tastelanc-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light rounded-full transition-colors"
             aria-label="Close chat"
           >
             <X className="w-5 h-5" />
@@ -302,10 +302,10 @@ export default function RosieChatModal({ isOpen, onClose }: RosieChatModalProps)
           {/* Limit reached message */}
           {limitReached && !isOnWaitlist && (
             <div className="bg-tastelanc-card border border-lancaster-gold/30 rounded-xl p-4 text-center">
-              <p className="text-white text-sm mb-2">
+              <p className="text-tastelanc-text-primary text-sm mb-2">
                 Loving our chat?
               </p>
-              <p className="text-gray-300 text-sm mb-4">
+              <p className="text-tastelanc-text-secondary text-sm mb-4">
                 {`Get unlimited ${BRAND.aiName} + real-time happy hours, specials, and personalized recommendations in the ${BRAND.name} app!`}
               </p>
               <Link
@@ -334,7 +334,7 @@ export default function RosieChatModal({ isOpen, onClose }: RosieChatModalProps)
                 onKeyDown={handleKeyPress}
                 placeholder={`Ask ${BRAND.aiName} anything...`}
                 disabled={isLoading}
-                className="flex-1 bg-tastelanc-card border border-tastelanc-surface-light rounded-xl px-4 py-3 text-white text-sm placeholder:text-tastelanc-muted focus:outline-none focus:ring-2 focus:ring-tastelanc-accent/50 disabled:opacity-50"
+                className="flex-1 bg-tastelanc-card border border-tastelanc-surface-light rounded-xl px-4 py-3 text-tastelanc-text-primary text-sm placeholder:text-tastelanc-muted focus:outline-none focus:ring-2 focus:ring-tastelanc-accent/50 disabled:opacity-50"
               />
               <button
                 type="submit"

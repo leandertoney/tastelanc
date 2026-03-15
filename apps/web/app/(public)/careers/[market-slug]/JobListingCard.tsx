@@ -44,10 +44,10 @@ export function JobListingCard({
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-1 flex-wrap">
-            <h3 className="text-xl font-semibold text-white">{job.title}</h3>
+            <h3 className="text-xl font-semibold text-tastelanc-text-primary">{job.title}</h3>
             <Badge variant="default">{job.roleType}</Badge>
           </div>
-          <div className="flex flex-wrap gap-3 text-sm text-gray-400">
+          <div className="flex flex-wrap gap-3 text-sm text-tastelanc-text-muted">
             <span className="flex items-center gap-1">
               <MapPin className="w-4 h-4 flex-shrink-0" />
               {job.location}
@@ -66,9 +66,9 @@ export function JobListingCard({
           </div>
         </div>
         {isExpanded ? (
-          <ChevronUp className="w-5 h-5 text-gray-400 flex-shrink-0 ml-4" />
+          <ChevronUp className="w-5 h-5 text-tastelanc-text-muted flex-shrink-0 ml-4" />
         ) : (
-          <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0 ml-4" />
+          <ChevronDown className="w-5 h-5 text-tastelanc-text-muted flex-shrink-0 ml-4" />
         )}
       </button>
 
@@ -78,7 +78,7 @@ export function JobListingCard({
           <div className="pt-6 space-y-6">
             {/* Description */}
             <div>
-              <h4 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+              <h4 className="text-lg font-semibold text-tastelanc-text-primary mb-3 flex items-center gap-2">
                 <Briefcase
                   className={`w-5 h-5 ${!accentColor ? 'text-tastelanc-accent' : ''}`}
                   style={accentColor ? { color: accentColor } : undefined}
@@ -86,9 +86,9 @@ export function JobListingCard({
                 About the Role
               </h4>
               <div
-                className="text-gray-400 leading-relaxed prose prose-invert prose-sm max-w-none
-                  prose-p:text-gray-400 prose-li:text-gray-400 prose-strong:text-white
-                  prose-headings:text-white prose-a:text-tastelanc-accent"
+                className="text-tastelanc-text-muted leading-relaxed prose prose-invert prose-sm max-w-none
+                  prose-p:text-tastelanc-text-muted prose-li:text-tastelanc-text-muted prose-strong:text-tastelanc-text-primary
+                  prose-headings:text-tastelanc-text-primary prose-a:text-tastelanc-accent"
                 dangerouslySetInnerHTML={{ __html: formatDescription(job.description) }}
               />
             </div>
@@ -96,10 +96,10 @@ export function JobListingCard({
             {/* Requirements */}
             {job.requirements && job.requirements.length > 0 && (
               <div>
-                <h4 className="text-lg font-semibold text-white mb-3">
+                <h4 className="text-lg font-semibold text-tastelanc-text-primary mb-3">
                   Requirements
                 </h4>
-                <ul className="space-y-2 text-gray-400">
+                <ul className="space-y-2 text-tastelanc-text-muted">
                   {job.requirements.map((req, i) => (
                     <li key={i} className="flex items-start gap-2">
                       <span
@@ -118,14 +118,14 @@ export function JobListingCard({
             {/* Compensation summary (if present) */}
             {job.compensationSummary && (
               <div>
-                <h4 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <h4 className="text-lg font-semibold text-tastelanc-text-primary mb-3 flex items-center gap-2">
                   <DollarSign
                     className={`w-5 h-5 ${!accentColor ? 'text-tastelanc-accent' : ''}`}
                     style={accentColor ? { color: accentColor } : undefined}
                   />
                   Compensation
                 </h4>
-                <p className="text-gray-400">{job.compensationSummary}</p>
+                <p className="text-tastelanc-text-muted">{job.compensationSummary}</p>
               </div>
             )}
 
