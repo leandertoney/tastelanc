@@ -78,6 +78,16 @@ export function hasEventsAccess(tier: SubscriptionTier | null): boolean {
 }
 
 /**
+ * Check if restaurant has access to video recommendations / reels
+ *
+ * @param tier - Current subscription tier
+ * @returns true if Premium or Elite tier
+ */
+export function hasRecommendationsAccess(tier: SubscriptionTier | null): boolean {
+  return hasTierAccess(tier, 'premium');
+}
+
+/**
  * Get the display name for a tier
  *
  * @param tier - Subscription tier

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-access';
 import AdminRestaurantActions from '@/components/admin/AdminRestaurantActions';
+import AdminRestaurantVideos from '@/components/admin/AdminRestaurantVideos';
 import {
   ArrowLeft,
   Store,
@@ -223,6 +224,9 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
           </div>
         )}
       </div>
+
+      {/* Community Videos */}
+      <AdminRestaurantVideos restaurantId={restaurant.id} />
 
       {/* Metadata */}
       <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-6">

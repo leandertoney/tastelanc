@@ -59,6 +59,7 @@ import {
   hasSpecialsAccess,
   hasHappyHourAccess,
   hasEventsAccess,
+  hasRecommendationsAccess,
   type SubscriptionTier,
 } from '../lib/tier-access';
 
@@ -315,13 +316,25 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
 
   // Build tabs dynamically — must be before early returns to respect hooks rules
   const hasFeatures = restaurant?.features && restaurant.features.length > 0;
+  const recsGated = tierGatingEnabled && !hasRecommendationsAccess(tierName);
+
   const tabs: Tab[] = useMemo(() => {
-    const baseTabs = getBaseTabs();
+    let baseTabs = getBaseTabs();
+    if (recsGated) {
+      baseTabs = baseTabs.filter(t => t.key !== 'recommendations');
+    }
     if (hasFeatures) {
       return [...baseTabs, { key: 'features', label: 'Features' }];
     }
     return baseTabs;
-  }, [hasFeatures]);
+  }, [hasFeatures, recsGated]);
+
+  // If the active tab was removed (e.g. recs gated), switch to first available tab
+  useEffect(() => {
+    if (tabs.length > 0 && !tabs.some(t => t.key === activeTab)) {
+      setActiveTab(tabs[0].key);
+    }
+  }, [tabs, activeTab]);
 
   if (loading) {
     return (
@@ -777,8 +790,8 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
         </TouchableOpacity>
       )}
 
-      {/* Floating Recommend Button */}
-      {userId && (
+      {/* Floating Recommend Button — hidden for basic tier restaurants */}
+      {userId && !recsGated && (
         <TouchableOpacity
           style={styles.recommendFab}
           onPress={() => navigation.navigate('VideoRecommendCapture', {

@@ -8,6 +8,7 @@ import {
   Clock,
   Instagram,
   Eye,
+  EyeOff,
   Heart,
   RefreshCw,
   Loader2,
@@ -17,6 +18,7 @@ import {
   Send,
   Shield,
   Edit3,
+  Trash2,
 } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 
@@ -29,6 +31,7 @@ interface Recommendation {
   duration_seconds: number;
   view_count: number;
   like_count: number;
+  is_visible: boolean;
   ig_status: string;
   ig_scheduled_at: string | null;
   ig_post_id: string | null;
@@ -71,6 +74,7 @@ export default function RecommendationQueuePage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [editingCaption, setEditingCaption] = useState<string | null>(null);
   const [captionDraft, setCaptionDraft] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const fetchQueue = useCallback(async () => {
     setLoading(true);
@@ -90,7 +94,7 @@ export default function RecommendationQueuePage() {
     fetchQueue();
   }, [fetchQueue]);
 
-  const handleAction = async (recId: string, action: 'approve' | 'reject' | 'reset', captionOverride?: string) => {
+  const handleAction = async (recId: string, action: 'approve' | 'reject' | 'reset' | 'hide' | 'unhide' | 'delete', captionOverride?: string) => {
     setActionLoading(recId);
     const body: Record<string, string> = { recommendation_id: recId, action };
     if (captionOverride) body.ig_caption_override = captionOverride;
@@ -251,6 +255,12 @@ export default function RecommendationQueuePage() {
                           <StatusIcon className="w-3.5 h-3.5" />
                           {status.label}
                         </span>
+                        {!rec.is_visible && rec.ig_status !== 'pending' && rec.ig_status !== 'rejected' && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-500/20 text-gray-400">
+                            <EyeOff className="w-3 h-3" />
+                            Hidden
+                          </span>
+                        )}
                         {countdown && rec.ig_status === 'ai_approved' && (
                           <span className="text-xs text-blue-400 bg-blue-500/10 px-2 py-1 rounded-full">
                             {countdown}
@@ -351,7 +361,7 @@ export default function RecommendationQueuePage() {
                       </div>
                     )}
 
-                    {/* Reset for rejected/posted */}
+                    {/* Reset for rejected */}
                     {rec.ig_status === 'rejected' && (
                       <button
                         onClick={() => handleAction(rec.id, 'reset')}
@@ -362,6 +372,57 @@ export default function RecommendationQueuePage() {
                         Reset to Pending
                       </button>
                     )}
+
+                    {/* Hide / Unhide / Delete — available on all statuses */}
+                    <div className="flex items-center gap-2 pt-1 border-t border-tastelanc-surface-light mt-1">
+                      {rec.is_visible ? (
+                        <button
+                          onClick={() => handleAction(rec.id, 'hide')}
+                          disabled={actionLoading === rec.id}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-tastelanc-surface text-tastelanc-text-secondary text-xs font-medium rounded-lg hover:text-tastelanc-text-primary transition-colors disabled:opacity-50"
+                        >
+                          <EyeOff className="w-3.5 h-3.5" />
+                          Hide
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleAction(rec.id, 'unhide')}
+                          disabled={actionLoading === rec.id}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-tastelanc-surface text-tastelanc-text-secondary text-xs font-medium rounded-lg hover:text-tastelanc-text-primary transition-colors disabled:opacity-50"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          Unhide
+                        </button>
+                      )}
+                      {deleteConfirm === rec.id ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-red-400">Delete permanently?</span>
+                          <button
+                            onClick={() => { handleAction(rec.id, 'delete'); setDeleteConfirm(null); }}
+                            disabled={actionLoading === rec.id}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-500 transition-colors disabled:opacity-50"
+                          >
+                            {actionLoading === rec.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                            Confirm
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm(null)}
+                            className="px-3 py-1.5 text-tastelanc-text-muted text-xs hover:text-tastelanc-text-primary transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setDeleteConfirm(rec.id)}
+                          disabled={actionLoading === rec.id}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/10 text-red-400 text-xs font-medium rounded-lg hover:bg-red-600/20 transition-colors disabled:opacity-50"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Card>

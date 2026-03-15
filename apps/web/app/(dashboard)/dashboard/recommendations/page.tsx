@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Card } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
+import TierGate from '@/components/TierGate';
 import Image from 'next/image';
 
 interface RecommendationItem {
@@ -148,6 +149,7 @@ export default function RecommendationsPage() {
   const { stats } = data;
 
   return (
+    <TierGate requiredTier="premium" feature="Video Recommendations" description="Upgrade to Premium to see community video recommendations, analytics, and engagement stats for your restaurant.">
     <div className="space-y-8">
       {/* Header */}
       <div>
@@ -251,6 +253,7 @@ export default function RecommendationsPage() {
         </Card>
       )}
     </div>
+    </TierGate>
   );
 }
 
