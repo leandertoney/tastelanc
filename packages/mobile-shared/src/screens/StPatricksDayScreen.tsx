@@ -321,13 +321,10 @@ export default function StPatricksDayScreen() {
       if (existing) { existing.specials.push(s); }
       else { map.set(s.restaurant.id, { restaurantId: s.restaurant.id, restaurantName: s.restaurant.name, specials: [s] }); }
     }
-    // Sort by earliest event_date first, then by number of specials as tiebreaker
-    return Array.from(map.values()).sort((a, b) => {
-      const aDate = a.specials.reduce((min, s) => s.event_date < min ? s.event_date : min, a.specials[0].event_date);
-      const bDate = b.specials.reduce((min, s) => s.event_date < min ? s.event_date : min, b.specials[0].event_date);
-      if (aDate !== bDate) return aDate.localeCompare(bDate);
-      return b.specials.length - a.specials.length;
-    });
+    // Sort alphabetically by restaurant/bar name
+    return Array.from(map.values()).sort((a, b) =>
+      a.restaurantName.localeCompare(b.restaurantName)
+    );
   }, [specials]);
 
   const handlePress = useCallback((id: string) => {
