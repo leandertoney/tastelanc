@@ -5,6 +5,7 @@ import { Users, UserPlus, Trash2, RefreshCw, Mail, Shield, Crown, Loader2 } from
 import { Card, CardContent, CardHeader } from '@/components/ui';
 import TierGate from '@/components/TierGate';
 import { useRestaurant } from '@/contexts/RestaurantContext';
+import { useModal } from '@/components/dashboard/ModalProvider';
 import { toast } from 'sonner';
 import type { RestaurantMember } from '@/types/database';
 
@@ -15,6 +16,7 @@ interface TeamData {
 
 export default function TeamPage() {
   const { restaurant, buildApiUrl, isOwner, isAdmin, isMember } = useRestaurant();
+  const modal = useModal();
   const [teamData, setTeamData] = useState<TeamData | null>(null);
   const [loading, setLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -79,7 +81,8 @@ export default function TeamPage() {
   };
 
   const handleRemove = async (memberId: string, memberEmail: string) => {
-    if (!confirm(`Remove ${memberEmail} from the team?`)) return;
+    const confirmed = await modal.confirm({ title: 'Remove Team Member', description: `Remove ${memberEmail} from the team?`, confirmLabel: 'Remove', variant: 'danger' });
+    if (!confirmed) return;
 
     setRemovingId(memberId);
     try {

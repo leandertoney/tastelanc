@@ -30,6 +30,7 @@ export interface BatchEmailParams {
   subject: string;
   html: string;
   text?: string;
+  from?: string;
   replyTo?: string;
   headers?: Record<string, string>;
 }
@@ -65,7 +66,7 @@ export async function sendBatchEmails(emails: BatchEmailParams[]) {
     try {
       const result = await resend.batch.send(
         batch.map((email) => ({
-          from: EMAIL_CONFIG.from,
+          from: email.from || EMAIL_CONFIG.from,
           to: email.to,
           subject: email.subject,
           html: email.html,

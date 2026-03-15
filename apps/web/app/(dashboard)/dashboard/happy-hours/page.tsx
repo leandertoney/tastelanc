@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Trash2, Clock, Beer, Loader2, Pencil, X, Copy, HelpCircle } from 'lucide-react';
 import { Button, Card, Badge, Tooltip } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
+import { useModal } from '@/components/dashboard/ModalProvider';
 import { HappyHourWizard, HappyHourFormData } from '@/components/dashboard/forms';
 import HappyHourImageUpload from '@/components/dashboard/forms/HappyHourImageUpload';
 import DaySelector from '@/components/dashboard/forms/DaySelector';
@@ -32,6 +33,7 @@ interface HappyHour {
 
 export default function HappyHoursPage() {
   const { restaurant, buildApiUrl } = useRestaurant();
+  const modal = useModal();
   const [happyHours, setHappyHours] = useState<HappyHour[]>([]);
   const [showWizard, setShowWizard] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -98,7 +100,8 @@ export default function HappyHoursPage() {
   };
 
   const deleteHappyHour = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this happy hour?')) return;
+    const confirmed = await modal.confirm({ title: 'Delete Happy Hour', description: 'Are you sure you want to delete this happy hour?', confirmLabel: 'Delete', variant: 'danger' });
+    if (!confirmed) return;
 
     try {
       const response = await fetch(buildApiUrl(`/api/dashboard/happy-hours/${id}`), {

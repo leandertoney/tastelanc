@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Check, Crown, Sparkles, Star, Zap, ExternalLink, Loader2 } from 'lucide-react';
 import { Button, Card, Badge } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
+import { useModal } from '@/components/dashboard/ModalProvider';
 
 const PLANS = [
   {
@@ -80,6 +81,7 @@ const PRICE_KEY_MAP: Record<string, Record<BillingPeriod, string>> = {
 
 export default function SubscriptionPage() {
   const { tierName, restaurant, buildApiUrl } = useRestaurant();
+  const modal = useModal();
   const currentPlan = tierName || 'basic';
   const hasActiveSubscription = !!restaurant?.stripe_subscription_id;
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('yearly');
@@ -108,10 +110,10 @@ export default function SubscriptionPage() {
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert(data.error || 'Failed to start checkout. Please try again.');
+        modal.alert({ type: 'error', text: data.error || 'Failed to start checkout. Please try again.' });
       }
     } catch {
-      alert('Something went wrong. Please try again or contact support.');
+      modal.alert({ type: 'error', text: 'Something went wrong. Please try again or contact support.' });
     } finally {
       setUpgradeLoading(null);
     }
@@ -127,10 +129,10 @@ export default function SubscriptionPage() {
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert(data.error || 'Unable to open billing portal. Please contact support.');
+        modal.alert({ type: 'error', text: data.error || 'Unable to open billing portal. Please contact support.' });
       }
     } catch {
-      alert('Something went wrong. Please try again or contact support.');
+      modal.alert({ type: 'error', text: 'Something went wrong. Please try again or contact support.' });
     } finally {
       setPortalLoading(false);
     }

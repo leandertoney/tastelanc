@@ -195,7 +195,8 @@ export async function GET() {
     // Fetch all profiles with admin roles
     const { data: adminProfiles } = await serviceClient
       .from('profiles')
-      .select('id, role, admin_market_id, email, display_name');
+      .select('id, role, admin_market_id, email, display_name')
+      .in('role', ['super_admin', 'co_founder', 'market_admin', 'sales_rep']);
 
     // Fetch all sales reps
     const { data: salesReps } = await serviceClient

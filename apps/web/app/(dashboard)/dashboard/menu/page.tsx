@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, GripVertical, UtensilsCrossed, Loader2, X, Link2, Image, FileText, Check, AlertCircle, HelpCircle } from 'lucide-react';
 import { Button, Card, Badge, Tooltip } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
+import { useModal } from '@/components/dashboard/ModalProvider';
 import TierGate from '@/components/TierGate';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
@@ -78,6 +79,7 @@ const DIETARY_FLAGS = [
 
 export default function MenuPage() {
   const { restaurant, buildApiUrl } = useRestaurant();
+  const modal = useModal();
   const [menus, setMenus] = useState<Menu[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -299,7 +301,8 @@ export default function MenuPage() {
   };
 
   const handleDeleteMenu = async (menuId: string) => {
-    if (!confirm('Are you sure you want to delete this menu? All sections and items will be deleted.')) return;
+    const confirmed = await modal.confirm({ title: 'Delete Menu', description: 'Are you sure you want to delete this menu? All sections and items will be deleted.', confirmLabel: 'Delete', variant: 'danger' });
+    if (!confirmed) return;
 
     try {
       const response = await fetch(buildApiUrl(`/api/dashboard/menus/${menuId}`), {
@@ -385,7 +388,8 @@ export default function MenuPage() {
   };
 
   const handleDeleteSection = async (sectionId: string, menuId: string) => {
-    if (!confirm('Are you sure you want to delete this section? All items will be deleted.')) return;
+    const confirmed = await modal.confirm({ title: 'Delete Section', description: 'Are you sure you want to delete this section? All items will be deleted.', confirmLabel: 'Delete', variant: 'danger' });
+    if (!confirmed) return;
 
     try {
       const response = await fetch(buildApiUrl(`/api/dashboard/menus/sections/${sectionId}`), {
@@ -485,7 +489,8 @@ export default function MenuPage() {
   };
 
   const handleDeleteItem = async (itemId: string) => {
-    if (!confirm('Are you sure you want to delete this item?')) return;
+    const confirmed = await modal.confirm({ title: 'Delete Item', description: 'Are you sure you want to delete this item?', confirmLabel: 'Delete', variant: 'danger' });
+    if (!confirmed) return;
 
     try {
       const response = await fetch(buildApiUrl(`/api/dashboard/menus/items/${itemId}`), {

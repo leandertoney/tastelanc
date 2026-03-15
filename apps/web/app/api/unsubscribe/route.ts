@@ -27,6 +27,36 @@ export async function GET(request: Request) {
       );
     }
 
+    // Handle restaurant-specific unsubscribes
+    if (type === 'restaurant') {
+      const restaurantIdParam = searchParams.get('restaurant_id');
+      if (!restaurantIdParam) {
+        return NextResponse.redirect(
+          new URL('/unsubscribe?error=missing_restaurant', request.url)
+        );
+      }
+
+      const { error: restError } = await supabase
+        .from('restaurant_contacts')
+        .update({
+          is_unsubscribed: true,
+          unsubscribed_at: new Date().toISOString(),
+        })
+        .eq('restaurant_id', restaurantIdParam)
+        .eq('email', email.toLowerCase());
+
+      if (restError) {
+        console.error('Restaurant unsubscribe error:', restError);
+        return NextResponse.redirect(
+          new URL('/unsubscribe?error=failed', request.url)
+        );
+      }
+
+      return NextResponse.redirect(
+        new URL('/unsubscribe?success=true', request.url)
+      );
+    }
+
     // Determine which table to use based on type
     const tableName = type === 'b2b' ? 'b2b_unsubscribes' : 'email_unsubscribes';
 

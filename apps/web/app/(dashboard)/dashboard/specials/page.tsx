@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Trash2, Sparkles, Loader2, Pencil, X, HelpCircle } from 'lucide-react';
 import { Button, Card, Badge, Tooltip } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
+import { useModal } from '@/components/dashboard/ModalProvider';
 import { SpecialWizard, SpecialFormData } from '@/components/dashboard/forms';
 import SpecialImageUpload from '@/components/dashboard/forms/SpecialImageUpload';
 import DaySelector from '@/components/dashboard/forms/DaySelector';
@@ -36,6 +37,7 @@ interface Special {
 
 export default function SpecialsPage() {
   const { restaurant, buildApiUrl } = useRestaurant();
+  const modal = useModal();
   const [specials, setSpecials] = useState<Special[]>([]);
   const [showWizard, setShowWizard] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -103,7 +105,8 @@ export default function SpecialsPage() {
   };
 
   const deleteSpecial = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this special?')) return;
+    const confirmed = await modal.confirm({ title: 'Delete Special', description: 'Are you sure you want to delete this special?', confirmLabel: 'Delete', variant: 'danger' });
+    if (!confirmed) return;
 
     try {
       const response = await fetch(buildApiUrl(`/api/dashboard/specials/${id}`), {

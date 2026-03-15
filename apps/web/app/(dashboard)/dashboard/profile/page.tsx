@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Save, Upload, MapPin, Phone, Globe, Mail, AlertCircle, Loader2, Clock, Image as ImageIcon, Star, Trash2, Check, KeyRound, HelpCircle } from 'lucide-react';
 import { Button, Card, Badge, Tooltip } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
+import { useModal } from '@/components/dashboard/ModalProvider';
 import { toast } from 'sonner';
 import type { RestaurantCategory, DayOfWeek } from '@/types/database';
 
@@ -146,6 +147,7 @@ const defaultHours: HoursEntry[] = DAYS.map((day) => ({
 
 export default function ProfilePage() {
   const { restaurant, restaurantId, isLoading: contextLoading, refreshRestaurant, buildApiUrl } = useRestaurant();
+  const modal = useModal();
 
   // Profile form state
   const [formData, setFormData] = useState<FormData>({
@@ -403,7 +405,8 @@ export default function ProfilePage() {
   };
 
   const deletePhoto = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this photo?')) return;
+    const confirmed = await modal.confirm({ title: 'Delete Photo', description: 'Are you sure you want to delete this photo?', confirmLabel: 'Delete', variant: 'danger' });
+    if (!confirmed) return;
     try {
       const response = await fetch(buildApiUrl(`/api/dashboard/photos/${id}`), { method: 'DELETE' });
       const { error } = await parseApiResponse(response, 'delete your photo');
