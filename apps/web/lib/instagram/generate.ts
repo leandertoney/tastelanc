@@ -485,7 +485,7 @@ async function generateWeeklyRoundup(
       .from('holiday_specials')
       .select(`
         name, category, special_price, discount_description, description,
-        restaurant:restaurants!inner(name, market_id)
+        restaurant:restaurants!inner(name, cover_image_url, market_id)
       `)
       .eq('is_active', true)
       .eq('holiday_tag', holidayTag)
@@ -498,8 +498,9 @@ async function generateWeeklyRoundup(
       const byRestaurant = new Map<string, HolidaySpecialSlide>();
       for (const s of rawSpecials) {
         const rName = (s.restaurant as any)?.name || 'Unknown';
+        const coverUrl = (s.restaurant as any)?.cover_image_url || null;
         if (!byRestaurant.has(rName)) {
-          byRestaurant.set(rName, { restaurant_name: rName, specials: [] });
+          byRestaurant.set(rName, { restaurant_name: rName, cover_image_url: coverUrl, specials: [] });
         }
         byRestaurant.get(rName)!.specials.push({
           name: s.name,
@@ -662,7 +663,7 @@ async function buildAndSavePost(
         appName,
         marketName,
         holidayLabel: params.holidayLabel || "St. Patrick's Day",
-        dateLabel: `MARCH 17TH`,
+        dateLabel: new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric' }).format(date).toUpperCase(),
       });
     } else if (isWeeklyRoundup) {
       const holidayTag = params.subType?.includes(':') ? params.subType.split(':').pop() : null;

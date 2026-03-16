@@ -110,6 +110,7 @@ export interface SlideCandidate {
 
 export interface HolidaySpecialSlide {
   restaurant_name: string;
+  cover_image_url: string | null;
   specials: { name: string; category: string; price: string | null; description: string | null }[];
 }
 
