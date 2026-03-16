@@ -31,7 +31,7 @@ import {
 } from './prompts';
 import { DayTheme } from './types';
 import { selectMedia, recordMediaUsage } from './media';
-import { generateCarouselSlides } from './overlay';
+import { generateCarouselSlides, composeWeeklyRoundupSlides } from './overlay';
 import { SlideCandidate, HeadlineParts } from './types';
 
 const MIN_CANDIDATES_FOR_POST = 3; // Need at least 3 total to make "hidden count" compelling
@@ -593,17 +593,33 @@ async function buildAndSavePost(
   }));
 
   // Generate composited carousel slides (cover + 3 restaurants + CTA)
+  // Use weekly roundup slides for the magazine-style layout
+  const isWeeklyRoundup = opts.dayTheme === 'weekly_roundup' || params.subType?.startsWith('weekly_roundup');
+  const holidayTag = params.subType?.includes(':') ? params.subType.split(':').pop() : null;
+
   let carouselUrls: string[];
   try {
-    carouselUrls = await generateCarouselSlides({
-      supabase,
-      market,
-      candidates: slideCandidates,
-      headline,
-      totalCount: params.totalCount,
-      date: today,
-      contentType: params.contentType,
-    });
+    if (isWeeklyRoundup) {
+      carouselUrls = await composeWeeklyRoundupSlides({
+        supabase,
+        market,
+        candidates: slideCandidates,
+        headline,
+        totalCount: params.totalCount,
+        date: today,
+        holidayTag,
+      });
+    } else {
+      carouselUrls = await generateCarouselSlides({
+        supabase,
+        market,
+        candidates: slideCandidates,
+        headline,
+        totalCount: params.totalCount,
+        date: today,
+        contentType: params.contentType,
+      });
+    }
   } catch (err: any) {
     console.error('[Instagram] Carousel generation failed, falling back to raw images:', err.message);
     // Fallback: use raw candidate images

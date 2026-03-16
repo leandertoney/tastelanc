@@ -12,9 +12,60 @@ import { getMarketDisplayName, getAppName } from './prompts';
 const SIZE = 1080;
 const JPEG_QUALITY = 92;
 
-// Brand colors
+// Brand colors (default)
 const ACCENT = '#E8C547'; // warm gold accent
 const ACCENT_DIM = 'rgba(232,197,71,0.8)';
+
+// Holiday color themes — keyed by holiday_tag base (without year suffix)
+interface HolidayTheme {
+  accent: string;
+  accentDim: string;
+  bgDark: string;
+  bgGradient: [string, string]; // top, bottom
+  decorEmoji: string;
+  coverPrompt: string; // DALL-E prompt for the cover image
+}
+
+const HOLIDAY_THEMES: Record<string, HolidayTheme> = {
+  'st-patricks': {
+    accent: '#2ECC40',
+    accentDim: 'rgba(46,204,64,0.8)',
+    bgDark: '#0A2A0A',
+    bgGradient: ['#0D3D0D', '#0A1F0A'],
+    decorEmoji: '☘️',
+    coverPrompt: 'A vibrant St. Patricks Day celebration scene at a cozy local bar, green beer on a wooden bar counter, shamrock decorations, warm ambient lighting, festive atmosphere, no text or words, photorealistic, 4k',
+  },
+  'cinco-de-mayo': {
+    accent: '#E84142',
+    accentDim: 'rgba(232,65,66,0.8)',
+    bgDark: '#1A0A0A',
+    bgGradient: ['#2A0F0F', '#1A0A0A'],
+    decorEmoji: '🎉',
+    coverPrompt: 'A vibrant Cinco de Mayo fiesta scene, colorful papel picado banners, margaritas and tacos on a festive table, warm Mexican restaurant ambiance, no text or words, photorealistic, 4k',
+  },
+  'fourth-of-july': {
+    accent: '#3498DB',
+    accentDim: 'rgba(52,152,219,0.8)',
+    bgDark: '#0A1520',
+    bgGradient: ['#0F2030', '#0A1520'],
+    decorEmoji: '🇺🇸',
+    coverPrompt: 'A patriotic American summer BBQ scene, red white and blue decorations, grilled food and cold drinks on a picnic table, fireworks in the sky, no text or words, photorealistic, 4k',
+  },
+  'halloween': {
+    accent: '#E67E22',
+    accentDim: 'rgba(230,126,34,0.8)',
+    bgDark: '#1A120A',
+    bgGradient: ['#2A1A0F', '#1A120A'],
+    decorEmoji: '🎃',
+    coverPrompt: 'A spooky Halloween themed bar with carved pumpkins, orange and purple lighting, festive cocktails, cozy autumn atmosphere, no text or words, photorealistic, 4k',
+  },
+};
+
+function getHolidayTheme(holidayTag: string | null): HolidayTheme | null {
+  if (!holidayTag) return null;
+  const base = holidayTag.replace(/-\d{4}$/, '');
+  return HOLIDAY_THEMES[base] || null;
+}
 
 // Install Inter fonts via fontconfig so librsvg/Pango can find them.
 // Data URI @font-face in SVG is unreliable with librsvg on serverless.
@@ -94,6 +145,452 @@ function loadLogoBuffer(marketSlug: string): Buffer {
     return readFileSync(logoPath);
   }
   throw new Error(`Logo not found at ${logoPath}`);
+}
+
+// ============================================================
+// DALL-E AI Cover Image Generation
+// ============================================================
+
+async function generateAICoverImage(prompt: string): Promise<Buffer | null> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    console.error('[Instagram] No OPENAI_API_KEY — skipping AI cover image');
+    return null;
+  }
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'dall-e-3',
+        prompt,
+        n: 1,
+        size: '1024x1024',
+        quality: 'standard',
+      }),
+    });
+
+    const data = await response.json();
+    if (data.error) {
+      console.error('[Instagram] DALL-E error:', data.error.message);
+      return null;
+    }
+
+    const imageUrl = data.data?.[0]?.url;
+    if (!imageUrl) return null;
+
+    return await fetchImageBuffer(imageUrl);
+  } catch (err: any) {
+    console.error('[Instagram] DALL-E generation failed:', err.message);
+    return null;
+  }
+}
+
+// ============================================================
+// Weekly Roundup Slides — Magazine Issue Style
+// Holiday-adaptive colors, AI cover, distinct from regular posts
+// ============================================================
+
+export async function composeWeeklyRoundupSlides(opts: {
+  supabase: SupabaseClient;
+  market: MarketConfig;
+  candidates: SlideCandidate[];
+  headline: HeadlineParts;
+  totalCount: number;
+  date: string;
+  holidayTag?: string | null;
+}): Promise<string[]> {
+  const { supabase, market, candidates, headline, totalCount, date, holidayTag } = opts;
+  const appName = getAppName(market.market_slug);
+  const marketName = getMarketDisplayName(market.market_slug);
+  const theme = getHolidayTheme(holidayTag || null);
+
+  // Colors — holiday-adaptive or default
+  const accent = theme?.accent || ACCENT;
+  const accentDim = theme?.accentDim || ACCENT_DIM;
+
+  // Load logo
+  let logoBuffer: Buffer;
+  try {
+    logoBuffer = loadLogoBuffer(market.market_slug);
+  } catch {
+    logoBuffer = await sharp({ create: { width: 200, height: 200, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).png().toBuffer();
+  }
+
+  // Generate AI cover image if holiday, otherwise use best candidate photo
+  let coverImage: Buffer | null = null;
+  if (theme) {
+    console.log(`[Instagram] Generating AI cover for holiday: ${holidayTag}`);
+    coverImage = await generateAICoverImage(theme.coverPrompt);
+  }
+
+  // Fallback: use candidate images
+  const STOCK_PREFIXES = ['https://tastelanc.com/images/events/', 'https://tastelanc.com/images/entertainment/', 'https://tastecumberland.com/images/events/'];
+  const imageBuffers = await Promise.all(
+    candidates.map(async (c) => {
+      const urls = [c.image_url, c.cover_image_url].filter(Boolean) as string[];
+      for (const url of urls) {
+        if (STOCK_PREFIXES.some(p => url.startsWith(p))) continue;
+        try { return await fetchImageBuffer(url); } catch { continue; }
+      }
+      return null;
+    })
+  );
+
+  if (!coverImage) {
+    coverImage = imageBuffers.find(b => b !== null) || null;
+  }
+
+  // Build slides
+  const slides: Buffer[] = [];
+
+  // Slide 1: Magazine Cover
+  slides.push(await composeRoundupCover(coverImage, headline, logoBuffer, appName, marketName, accent, accentDim, theme));
+
+  // Slides 2-4: Individual restaurant/special cards
+  for (let i = 0; i < candidates.length; i++) {
+    slides.push(await composeRoundupCard(
+      imageBuffers[i], candidates[i], logoBuffer, accent, accentDim, i + 1, candidates.length, theme
+    ));
+  }
+
+  // Final slide: CTA
+  const ctaBg = imageBuffers.filter(b => b !== null).pop() || coverImage;
+  slides.push(await composeRoundupCTA(appName, totalCount, logoBuffer, ctaBg, accent, accentDim, theme));
+
+  // Upload
+  const timestamp = Date.now();
+  const storagePath = `instagram/${market.market_slug}/${date}/${timestamp}`;
+  const urls = await Promise.all(
+    slides.map((buf, i) => uploadSlide(supabase, buf, `${storagePath}/slide-${i}.jpg`))
+  );
+
+  return urls;
+}
+
+async function composeRoundupCover(
+  imageBuffer: Buffer | null,
+  headline: HeadlineParts,
+  logoBuffer: Buffer,
+  appName: string,
+  marketName: string,
+  accent: string,
+  accentDim: string,
+  theme: HolidayTheme | null
+): Promise<Buffer> {
+  let base: sharp.Sharp;
+  if (imageBuffer) {
+    base = sharp(imageBuffer).resize(SIZE, SIZE, { fit: 'cover', position: 'centre' });
+  } else {
+    const [r, g, b] = theme ? hexToRgb(theme.bgDark) : [20, 20, 25];
+    base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: { r, g, b } } });
+  }
+
+  // Dramatic overlay with accent-tinted gradient
+  const overlaySvg = Buffer.from(`
+    <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="rndCover" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:black;stop-opacity:0.75"/>
+          <stop offset="30%" style="stop-color:black;stop-opacity:0.4"/>
+          <stop offset="60%" style="stop-color:black;stop-opacity:0.4"/>
+          <stop offset="100%" style="stop-color:black;stop-opacity:0.85"/>
+        </linearGradient>
+      </defs>
+      <rect width="${SIZE}" height="${SIZE}" fill="url(#rndCover)"/>
+      ${theme ? `<rect width="${SIZE}" height="${SIZE}" fill="${accent}" opacity="0.08"/>` : ''}
+    </svg>`);
+
+  const centerX = SIZE / 2;
+  const holidayDecor = theme?.decorEmoji || '';
+
+  // The magazine issue layout — bold, editorial
+  const textSvg = Buffer.from(`
+    <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
+      ${svgFontStyles()}
+
+      <!-- Thin accent border frame -->
+      <rect x="30" y="30" width="${SIZE - 60}" height="${SIZE - 60}"
+            fill="none" stroke="${accent}" stroke-width="2" opacity="0.4"/>
+
+      <!-- Masthead: app name -->
+      <text x="${centerX}" y="110"
+            font-family="Inter" font-weight="700" font-size="42"
+            fill="white" text-anchor="middle" letter-spacing="14">
+        ${escapeXml(appName.toUpperCase())}
+      </text>
+
+      <!-- Accent rule under masthead -->
+      <rect x="${centerX - 180}" y="130" width="360" height="3" fill="${accent}"/>
+
+      <!-- Issue tagline -->
+      <text x="${centerX}" y="175"
+            font-family="Inter" font-weight="400" font-size="20" font-style="italic"
+            fill="${accentDim}" text-anchor="middle" letter-spacing="2">
+        WEEKLY ROUNDUP
+      </text>
+
+      <!-- Big hero text — what's the vibe this week -->
+      <text x="${centerX}" y="480"
+            font-family="Inter" font-weight="700" font-size="72"
+            fill="white" text-anchor="middle">
+        ${escapeXml(headline.dayLabel.toUpperCase())}
+      </text>
+
+      <!-- Accent category label -->
+      <text x="${centerX}" y="560"
+            font-family="Inter" font-weight="700" font-size="48"
+            fill="${accent}" text-anchor="middle" letter-spacing="4">
+        ${escapeXml(headline.label.toUpperCase())}
+      </text>
+
+      ${theme ? `
+      <!-- Holiday badge -->
+      <rect x="${centerX - 200}" y="610" width="400" height="60" rx="30" ry="30"
+            fill="${accent}" opacity="0.2"/>
+      <rect x="${centerX - 200}" y="610" width="400" height="60" rx="30" ry="30"
+            fill="none" stroke="${accent}" stroke-width="2" opacity="0.6"/>
+      <text x="${centerX}" y="650"
+            font-family="Inter" font-weight="700" font-size="26"
+            fill="${accent}" text-anchor="middle" letter-spacing="3">
+        ${escapeXml(headline.label.toUpperCase())} EDITION
+      </text>
+      ` : ''}
+
+      <!-- Count badge -->
+      <text x="${centerX}" y="${SIZE - 170}"
+            font-family="Inter" font-weight="700" font-size="120"
+            fill="white" text-anchor="middle" opacity="0.15">
+        ${escapeXml(String(headline.count))}+
+      </text>
+
+      <!-- In [market] -->
+      <text x="${centerX}" y="${SIZE - 110}"
+            font-family="Inter" font-weight="400" font-size="24"
+            fill="rgba(255,255,255,0.6)" text-anchor="middle" letter-spacing="3">
+        IN ${escapeXml(marketName.toUpperCase())}
+      </text>
+
+      <!-- Swipe CTA -->
+      <text x="${centerX}" y="${SIZE - 55}"
+            font-family="Inter" font-weight="400" font-size="20"
+            fill="rgba(255,255,255,0.5)" text-anchor="middle" letter-spacing="4">
+        SWIPE FOR THIS WEEK&apos;S PICKS  &#x276F;
+      </text>
+    </svg>`);
+
+  const resizedLogo = await sharp(logoBuffer)
+    .resize(80, 80, { fit: 'cover' })
+    .png()
+    .toBuffer();
+
+  return base
+    .jpeg({ quality: JPEG_QUALITY })
+    .toBuffer()
+    .then(buf => sharp(buf)
+      .composite([
+        { input: overlaySvg, top: 0, left: 0 },
+        { input: resizedLogo, top: 40, left: 50 },
+        { input: textSvg, top: 0, left: 0 },
+      ])
+      .jpeg({ quality: JPEG_QUALITY })
+      .toBuffer()
+    );
+}
+
+async function composeRoundupCard(
+  imageBuffer: Buffer | null,
+  candidate: SlideCandidate,
+  logoBuffer: Buffer,
+  accent: string,
+  accentDim: string,
+  slideNum: number,
+  totalSlides: number,
+  theme: HolidayTheme | null
+): Promise<Buffer> {
+  const base = imageBuffer
+    ? sharp(imageBuffer).resize(SIZE, SIZE, { fit: 'cover', position: 'centre' })
+    : (() => {
+        const [r, g, b] = theme ? hexToRgb(theme.bgDark) : [25, 25, 30];
+        return sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: { r, g, b } } });
+      })();
+
+  const gradientSvg = Buffer.from(`
+    <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="rndCard" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:black;stop-opacity:0.1"/>
+          <stop offset="50%" style="stop-color:black;stop-opacity:0.15"/>
+          <stop offset="75%" style="stop-color:black;stop-opacity:0.65"/>
+          <stop offset="100%" style="stop-color:black;stop-opacity:0.93"/>
+        </linearGradient>
+      </defs>
+      <rect width="${SIZE}" height="${SIZE}" fill="url(#rndCard)"/>
+      ${theme ? `<rect width="${SIZE}" height="${SIZE}" fill="${accent}" opacity="0.05"/>` : ''}
+    </svg>`);
+
+  const nameLines = wrapText(candidate.restaurant_name, 22);
+  const nameSvg = nameLines.map((line, i) =>
+    `<text x="70" y="${SIZE - 145 - (nameLines.length - 1 - i) * 58}"
+           font-family="Inter" font-weight="700" font-size="48"
+           fill="white" text-anchor="start">
+       ${escapeXml(line)}
+     </text>`
+  ).join('\n');
+
+  const textSvg = Buffer.from(`
+    <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
+      ${svgFontStyles()}
+
+      <!-- Slide counter -->
+      <rect x="40" y="40" width="70" height="36" rx="4" ry="4" fill="${accent}"/>
+      <text x="75" y="66"
+            font-family="Inter" font-weight="700" font-size="20"
+            fill="#111111" text-anchor="middle">
+        ${slideNum}/${totalSlides}
+      </text>
+
+      <!-- Accent side bar -->
+      <rect x="50" y="${SIZE - 200}" width="4" height="130" fill="${accent}"/>
+
+      <!-- Restaurant name -->
+      ${nameSvg}
+
+      <!-- Detail text -->
+      <circle cx="82" cy="${SIZE - 75}" r="4" fill="${accent}"/>
+      <text x="98" y="${SIZE - 65}"
+            font-family="Inter" font-weight="400" font-size="26" font-style="italic"
+            fill="${accentDim}" text-anchor="start">
+        ${escapeXml(candidate.detail_text)}
+      </text>
+    </svg>`);
+
+  const smallLogo = await sharp(logoBuffer)
+    .resize(55, 55, { fit: 'cover' })
+    .png()
+    .toBuffer();
+
+  return base
+    .jpeg({ quality: JPEG_QUALITY })
+    .toBuffer()
+    .then(buf => sharp(buf)
+      .composite([
+        { input: gradientSvg, top: 0, left: 0 },
+        { input: smallLogo, top: 40, left: SIZE - 100 },
+        { input: textSvg, top: 0, left: 0 },
+      ])
+      .jpeg({ quality: JPEG_QUALITY })
+      .toBuffer()
+    );
+}
+
+async function composeRoundupCTA(
+  appName: string,
+  totalCount: number,
+  logoBuffer: Buffer,
+  backgroundImage: Buffer | null,
+  accent: string,
+  accentDim: string,
+  theme: HolidayTheme | null
+): Promise<Buffer> {
+  let base: sharp.Sharp;
+  if (backgroundImage) {
+    const blurred = await sharp(backgroundImage)
+      .resize(SIZE, SIZE, { fit: 'cover', position: 'centre' })
+      .blur(35)
+      .modulate({ brightness: 0.2 })
+      .toBuffer();
+    base = sharp(blurred);
+  } else {
+    const [r, g, b] = theme ? hexToRgb(theme.bgDark) : [18, 18, 22];
+    base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: { r, g, b } } });
+  }
+
+  const resizedLogo = await sharp(logoBuffer)
+    .resize(200, 200, { fit: 'cover' })
+    .png()
+    .toBuffer();
+
+  const textSvg = Buffer.from(`
+    <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
+      ${svgFontStyles()}
+
+      <!-- Border frame -->
+      <rect x="30" y="30" width="${SIZE - 60}" height="${SIZE - 60}"
+            fill="none" stroke="${accent}" stroke-width="2" opacity="0.3"/>
+
+      <!-- See all X -->
+      <text x="${SIZE / 2}" y="560"
+            font-family="Inter" font-weight="700" font-size="52"
+            fill="white" text-anchor="middle">
+        See all ${totalCount}+
+      </text>
+
+      <!-- Accent rule -->
+      <rect x="${SIZE / 2 - 80}" y="585" width="160" height="3" fill="${accent}"/>
+
+      <!-- Subtitle -->
+      <text x="${SIZE / 2}" y="640"
+            font-family="Inter" font-weight="400" font-size="28" font-style="italic"
+            fill="${accentDim}" text-anchor="middle">
+        this week on ${escapeXml(appName)}
+      </text>
+
+      <!-- Download -->
+      <text x="${SIZE / 2}" y="700"
+            font-family="Inter" font-weight="400" font-size="22"
+            fill="rgba(255,255,255,0.5)" text-anchor="middle">
+        Free on the App Store &amp; Google Play
+      </text>
+
+      <!-- CTA button -->
+      <rect x="${SIZE / 2 - 140}" y="740" width="280" height="56" rx="28" ry="28"
+            fill="${accent}"/>
+      <text x="${SIZE / 2}" y="776"
+            font-family="Inter" font-weight="700" font-size="24"
+            fill="#111111" text-anchor="middle" letter-spacing="2">
+        LINK IN BIO
+      </text>
+
+      ${theme ? `
+      <!-- Holiday tab callout -->
+      <text x="${SIZE / 2}" y="850"
+            font-family="Inter" font-weight="400" font-size="20"
+            fill="${accent}" text-anchor="middle" letter-spacing="1">
+        Check the holiday tab for all the deals ${theme.decorEmoji}
+      </text>
+      ` : ''}
+    </svg>`);
+
+  const darkOverlay = Buffer.from(`
+    <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
+      <rect width="${SIZE}" height="${SIZE}" fill="rgba(0,0,0,0.55)"/>
+      ${theme ? `<rect width="${SIZE}" height="${SIZE}" fill="${accent}" opacity="0.06"/>` : ''}
+    </svg>`);
+
+  const logoLeft = Math.round((SIZE - 200) / 2);
+
+  return base
+    .jpeg({ quality: JPEG_QUALITY })
+    .toBuffer()
+    .then(buf => sharp(buf)
+      .composite([
+        { input: darkOverlay, top: 0, left: 0 },
+        { input: resizedLogo, top: 250, left: logoLeft },
+        { input: textSvg, top: 0, left: 0 },
+      ])
+      .jpeg({ quality: JPEG_QUALITY })
+      .toBuffer()
+    );
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '');
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
 }
 
 // ============================================================
