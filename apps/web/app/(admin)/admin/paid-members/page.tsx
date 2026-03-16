@@ -2,10 +2,11 @@ import { createClient } from '@/lib/supabase/server';
 import { getAllStripeClients, ALL_CONSUMER_PRICE_IDS, SELF_PROMOTER_PRICE_IDS } from '@/lib/stripe';
 import { BRAND } from '@/config/market';
 import { Card, Badge } from '@/components/ui';
-import { Store, CheckCircle, CreditCard, Calendar, ExternalLink, Users, Clock, Gift, ArrowRight, MapPin } from 'lucide-react';
+import { Store, CheckCircle, CreditCard, Calendar, ExternalLink, Users, Clock, Gift, ArrowRight, MapPin, Phone, Globe, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { verifyAdminAccess } from '@/lib/auth/admin-access';
 import AdminMarketFilter from '@/components/admin/AdminMarketFilter';
+import PaidMembersSearch from '@/components/admin/PaidMembersSearch';
 
 interface PromotionalRestaurant {
   id: string;
@@ -21,6 +22,7 @@ interface StripeSubscription {
   id: string;
   name: string;
   email: string;
+  phone: string | null;
   amount: number;
   interval: string;
   intervalCount: number;
@@ -32,6 +34,19 @@ interface StripeSubscription {
   plan?: string;
   marketId?: string | null;
   marketName?: string | null;
+  restaurantName?: string | null;
+  restaurantAddress?: string | null;
+  restaurantWebsite?: string | null;
+}
+
+interface RestaurantContactInfo {
+  restaurantName: string;
+  phone: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  zipCode: string | null;
+  website: string | null;
 }
 
 // Helper to check if price ID is a consumer subscription
@@ -59,13 +74,32 @@ async function getMarketLookupMaps() {
 
   const { data: restaurants } = await supabase
     .from('restaurants')
-    .select('id, stripe_subscription_id, stripe_customer_id, market_id, markets(id, name, slug)')
+    .select('id, name, stripe_subscription_id, stripe_customer_id, market_id, phone, address, city, state, zip_code, website, markets(id, name, slug)')
     .not('stripe_subscription_id', 'is', null);
 
   const subIdToMarket: Record<string, { marketId: string; marketName: string }> = {};
   const customerIdToMarket: Record<string, { marketId: string; marketName: string }> = {};
+  const subIdToContact: Record<string, RestaurantContactInfo> = {};
+  const customerIdToContact: Record<string, RestaurantContactInfo> = {};
 
   for (const r of restaurants || []) {
+    const contact: RestaurantContactInfo = {
+      restaurantName: r.name,
+      phone: r.phone || null,
+      address: r.address || null,
+      city: r.city || null,
+      state: r.state || null,
+      zipCode: r.zip_code || null,
+      website: r.website || null,
+    };
+
+    if (r.stripe_subscription_id) {
+      subIdToContact[r.stripe_subscription_id] = contact;
+    }
+    if (r.stripe_customer_id) {
+      customerIdToContact[r.stripe_customer_id] = contact;
+    }
+
     if (!r.market_id) continue;
     const market = r.markets as unknown as { id: string; name: string; slug: string } | null;
     const marketInfo = { marketId: r.market_id, marketName: market?.name || 'Unknown' };
@@ -78,12 +112,14 @@ async function getMarketLookupMaps() {
     }
   }
 
-  return { subIdToMarket, customerIdToMarket };
+  return { subIdToMarket, customerIdToMarket, subIdToContact, customerIdToContact };
 }
 
 async function getStripeSubscriptions(
   subIdToMarket: Record<string, { marketId: string; marketName: string }>,
   customerIdToMarket: Record<string, { marketId: string; marketName: string }>,
+  subIdToContact: Record<string, RestaurantContactInfo>,
+  customerIdToContact: Record<string, RestaurantContactInfo>,
   markets: { id: string; name: string; slug: string }[]
 ) {
   const restaurants: StripeSubscription[] = [];
@@ -140,6 +176,22 @@ async function getStripeSubscriptions(
       // Look up market: DB match first, then fall back to the Stripe account's market
       const marketInfo = subIdToMarket[sub.id] || customerIdToMarket[customer.id] || accountMarket;
 
+      // Look up restaurant contact info from DB
+      const restaurantContact = subIdToContact[sub.id] || customerIdToContact[customer.id] || null;
+
+      // Phone: Stripe customer phone first, DB restaurant phone as fallback
+      const phone = customer.phone || restaurantContact?.phone || null;
+
+      // Format restaurant address from DB if available
+      let restaurantAddress: string | null = null;
+      if (restaurantContact) {
+        const parts = [restaurantContact.address, restaurantContact.city, restaurantContact.state].filter(Boolean);
+        if (parts.length > 0) {
+          restaurantAddress = parts.join(', ');
+          if (restaurantContact.zipCode) restaurantAddress += ` ${restaurantContact.zipCode}`;
+        }
+      }
+
       // Determine plan from Stripe product name (most reliable) or price amount
       let plan = getPlanFromPrice(priceId, amount);
       const productName = sub.items.data[0]?.price?.product;
@@ -154,6 +206,7 @@ async function getStripeSubscriptions(
         id: sub.id,
         name,
         email,
+        phone,
         amount,
         interval,
         intervalCount,
@@ -165,6 +218,9 @@ async function getStripeSubscriptions(
         plan,
         marketId: marketInfo?.marketId || null,
         marketName: marketInfo?.marketName || null,
+        restaurantName: restaurantContact?.restaurantName || null,
+        restaurantAddress,
+        restaurantWebsite: restaurantContact?.website || null,
       };
 
       if (isConsumerPrice(priceId)) {
@@ -247,7 +303,7 @@ async function getMarkets() {
 export default async function AdminPaidMembersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ market?: string }>;
+  searchParams: Promise<{ market?: string; q?: string; type?: string; status?: string }>;
 }) {
   const supabase = await createClient();
   const admin = await verifyAdminAccess(supabase);
@@ -256,7 +312,7 @@ export default async function AdminPaidMembersPage({
   // Determine effective market filter
   const selectedMarket = admin.scopedMarketId || params.market || 'all';
 
-  const [{ subIdToMarket, customerIdToMarket }, markets, promotionalRestaurants] = await Promise.all([
+  const [{ subIdToMarket, customerIdToMarket, subIdToContact, customerIdToContact }, markets, promotionalRestaurants] = await Promise.all([
     getMarketLookupMaps(),
     getMarkets(),
     getPromotionalRestaurants(admin.scopedMarketId || (selectedMarket !== 'all' ? selectedMarket : null)),
@@ -265,18 +321,64 @@ export default async function AdminPaidMembersPage({
   const { restaurants: allRestaurants, consumers, selfPromoters } = await getStripeSubscriptions(
     subIdToMarket,
     customerIdToMarket,
+    subIdToContact,
+    customerIdToContact,
     markets
   );
 
+  const canViewStripe = admin.role === 'super_admin' || admin.role === 'co_founder';
+  const searchQuery = params.q?.toLowerCase().trim() || '';
+  const typeFilter = params.type || 'all';
+  const statusFilter = params.status || 'all';
+
   // Filter restaurants by market if a market is selected
-  const restaurants = selectedMarket === 'all'
+  let restaurants = selectedMarket === 'all'
     ? allRestaurants
     : allRestaurants.filter(r => r.marketId === selectedMarket);
 
   // Filter promotional restaurants by market too
-  const filteredPromotional = selectedMarket === 'all'
+  let filteredPromotional = selectedMarket === 'all'
     ? promotionalRestaurants
     : promotionalRestaurants.filter(r => r.market_id === selectedMarket);
+
+  // Apply search filter across all lists
+  let filteredConsumers = consumers;
+  let filteredSelfPromoters = selfPromoters;
+
+  if (searchQuery) {
+    const matchSub = (s: StripeSubscription) =>
+      s.name.toLowerCase().includes(searchQuery) ||
+      (s.restaurantName && s.restaurantName.toLowerCase().includes(searchQuery)) ||
+      s.email.toLowerCase().includes(searchQuery) ||
+      (s.phone && s.phone.includes(searchQuery)) ||
+      (s.restaurantAddress && s.restaurantAddress.toLowerCase().includes(searchQuery)) ||
+      (s.plan && s.plan.toLowerCase().includes(searchQuery));
+
+    restaurants = restaurants.filter(matchSub);
+    filteredConsumers = consumers.filter(matchSub);
+    filteredSelfPromoters = selfPromoters.filter(matchSub);
+    filteredPromotional = filteredPromotional.filter(p =>
+      p.name.toLowerCase().includes(searchQuery) ||
+      (p.city && p.city.toLowerCase().includes(searchQuery)) ||
+      (p.state && p.state.toLowerCase().includes(searchQuery))
+    );
+  }
+
+  // Apply status filter
+  if (statusFilter !== 'all') {
+    restaurants = restaurants.filter(r => r.status === statusFilter);
+    filteredConsumers = filteredConsumers.filter(c => c.status === statusFilter);
+    filteredSelfPromoters = filteredSelfPromoters.filter(s => s.status === statusFilter);
+  }
+
+  // Apply type filter — hide sections that don't match
+  const showRestaurants = typeFilter === 'all' || typeFilter === 'restaurants';
+  const showConsumers = typeFilter === 'all' || typeFilter === 'consumers';
+  const showSelfPromoters = typeFilter === 'all' || typeFilter === 'self-promoters';
+  const showPromotional = typeFilter === 'all' || typeFilter === 'promotional';
+
+  const hasActiveFilters = searchQuery || typeFilter !== 'all' || statusFilter !== 'all';
+  const filteredTotal = (showRestaurants ? restaurants.length : 0) + (showConsumers ? filteredConsumers.length : 0) + (showSelfPromoters ? filteredSelfPromoters.length : 0) + (showPromotional ? filteredPromotional.length : 0);
 
   // Calculate per-market restaurant counts for tab badges
   const marketCounts: Record<string, { count: number; mrr: number }> = {};
@@ -299,7 +401,10 @@ export default async function AdminPaidMembersPage({
         <div>
           <h1 className="text-3xl font-bold text-tastelanc-text-primary">Paid Members</h1>
           <p className="text-tastelanc-text-muted mt-1">
-            {totalCount} subscriptions from Stripe (active + trialing)
+            {hasActiveFilters
+              ? `${filteredTotal} result${filteredTotal !== 1 ? 's' : ''} found`
+              : `${totalCount} subscriptions from Stripe (active + trialing)`
+            }
           </p>
         </div>
         {!admin.scopedMarketId && markets.length > 1 && (
@@ -309,6 +414,11 @@ export default async function AdminPaidMembersPage({
             basePath="/admin/paid-members"
           />
         )}
+      </div>
+
+      {/* Search & Filters */}
+      <div className="mb-8">
+        <PaidMembersSearch />
       </div>
 
       {/* Revenue Stats */}
@@ -414,6 +524,7 @@ export default async function AdminPaidMembersPage({
       )}
 
       {/* Restaurant Subscriptions */}
+      {showRestaurants && (
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-tastelanc-text-primary mb-4 flex items-center gap-2">
           <Store className="w-5 h-5 text-blue-500" />
@@ -423,7 +534,7 @@ export default async function AdminPaidMembersPage({
           <Card className="p-8 text-center">
             <Store className="w-12 h-12 text-tastelanc-text-faint mx-auto mb-4" />
             <p className="text-tastelanc-text-muted">
-              {selectedMarket === 'all' ? 'No restaurant subscriptions yet' : 'No subscriptions in this market yet'}
+              {searchQuery ? 'No matching restaurant subscriptions' : selectedMarket === 'all' ? 'No restaurant subscriptions yet' : 'No subscriptions in this market yet'}
             </p>
           </Card>
         ) : (
@@ -437,7 +548,7 @@ export default async function AdminPaidMembersPage({
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-lg font-semibold text-tastelanc-text-primary">{sub.name}</h3>
+                        <h3 className="text-lg font-semibold text-tastelanc-text-primary">{sub.restaurantName || sub.name}</h3>
                         {sub.status === 'active' ? (
                           <CheckCircle className="w-4 h-4 text-green-400" />
                         ) : (
@@ -454,8 +565,29 @@ export default async function AdminPaidMembersPage({
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-tastelanc-text-muted">{sub.email}</p>
-                      <p className="text-xs text-tastelanc-text-faint mt-1 font-mono">{sub.id}</p>
+                      {sub.restaurantName && sub.restaurantName !== sub.name && (
+                        <p className="text-sm text-tastelanc-text-muted -mt-0.5 mb-1">Contact: {sub.name}</p>
+                      )}
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+                        <a href={`mailto:${sub.email}`} className="text-sm text-blue-400 hover:underline flex items-center gap-1">
+                          <Mail className="w-3 h-3" /> {sub.email}
+                        </a>
+                        {sub.phone && (
+                          <a href={`tel:${sub.phone}`} className="text-sm text-green-400 hover:underline flex items-center gap-1">
+                            <Phone className="w-3 h-3" /> {sub.phone}
+                          </a>
+                        )}
+                        {sub.restaurantWebsite && (
+                          <a href={sub.restaurantWebsite.startsWith('http') ? sub.restaurantWebsite : `https://${sub.restaurantWebsite}`} target="_blank" rel="noopener noreferrer" className="text-sm text-purple-400 hover:underline flex items-center gap-1">
+                            <Globe className="w-3 h-3" /> Website
+                          </a>
+                        )}
+                      </div>
+                      {sub.restaurantAddress && (
+                        <p className="text-xs text-tastelanc-text-faint mt-1 flex items-center gap-1">
+                          <MapPin className="w-3 h-3" /> {sub.restaurantAddress}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="text-right">
@@ -468,14 +600,16 @@ export default async function AdminPaidMembersPage({
                       <Calendar className="w-3 h-3" />
                       Since {new Date(sub.createdAt).toLocaleDateString()}
                     </p>
-                    <Link
-                      href={`https://dashboard.stripe.com/subscriptions/${sub.id}`}
-                      target="_blank"
-                      className="text-xs text-blue-400 hover:underline flex items-center gap-1 justify-end mt-2"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      View in Stripe
-                    </Link>
+                    {canViewStripe && (
+                      <Link
+                        href={`https://dashboard.stripe.com/subscriptions/${sub.id}`}
+                        target="_blank"
+                        className="text-xs text-blue-400 hover:underline flex items-center gap-1 justify-end mt-2"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        View in Stripe
+                      </Link>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -483,9 +617,10 @@ export default async function AdminPaidMembersPage({
           </div>
         )}
       </div>
+      )}
 
       {/* Promotional/Demo Accounts */}
-      {filteredPromotional.length > 0 && (
+      {showPromotional && filteredPromotional.length > 0 && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-tastelanc-text-primary mb-4 flex items-center gap-2">
             <Gift className="w-5 h-5 text-yellow-500" />
@@ -542,34 +677,43 @@ export default async function AdminPaidMembersPage({
       )}
 
       {/* Consumer Subscriptions */}
+      {showConsumers && (
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-tastelanc-text-primary mb-4 flex items-center gap-2">
           <Users className="w-5 h-5 text-purple-500" />
           {BRAND.premiumName} Subscribers
         </h2>
-        {consumers.length === 0 ? (
+        {filteredConsumers.length === 0 ? (
           <Card className="p-8 text-center">
             <Users className="w-12 h-12 text-tastelanc-text-faint mx-auto mb-4" />
-            <p className="text-tastelanc-text-muted">No consumer subscriptions yet</p>
+            <p className="text-tastelanc-text-muted">{searchQuery ? 'No matching consumer subscriptions' : 'No consumer subscriptions yet'}</p>
           </Card>
         ) : (
           <Card className="overflow-hidden">
             <table className="w-full">
               <thead className="bg-tastelanc-surface-light">
                 <tr>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Email</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Contact</th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Plan</th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Status</th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Since</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Actions</th>
+                  {canViewStripe && (
+                    <th className="text-right px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Actions</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-tastelanc-surface-light">
-                {consumers.map((sub) => (
+                {filteredConsumers.map((sub) => (
                   <tr key={sub.id} className="hover:bg-tastelanc-surface-light/50">
                     <td className="px-4 py-3">
-                      <p className="text-tastelanc-text-primary">{sub.email}</p>
-                      <p className="text-xs text-tastelanc-text-faint font-mono">{sub.id}</p>
+                      <a href={`mailto:${sub.email}`} className="text-tastelanc-text-primary hover:text-blue-400 hover:underline flex items-center gap-1">
+                        <Mail className="w-3 h-3 text-blue-400" /> {sub.email}
+                      </a>
+                      {sub.phone && (
+                        <a href={`tel:${sub.phone}`} className="text-xs text-green-400 hover:underline flex items-center gap-1 mt-0.5">
+                          <Phone className="w-3 h-3" /> {sub.phone}
+                        </a>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant="default" className="bg-purple-500/20 text-purple-400">
@@ -586,15 +730,17 @@ export default async function AdminPaidMembersPage({
                     <td className="px-4 py-3 text-tastelanc-text-muted text-sm">
                       {new Date(sub.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`https://dashboard.stripe.com/subscriptions/${sub.id}`}
-                        target="_blank"
-                        className="text-xs text-blue-400 hover:underline"
-                      >
-                        View in Stripe
-                      </Link>
-                    </td>
+                    {canViewStripe && (
+                      <td className="px-4 py-3 text-right">
+                        <Link
+                          href={`https://dashboard.stripe.com/subscriptions/${sub.id}`}
+                          target="_blank"
+                          className="text-xs text-blue-400 hover:underline"
+                        >
+                          View in Stripe
+                        </Link>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -602,9 +748,10 @@ export default async function AdminPaidMembersPage({
           </Card>
         )}
       </div>
+      )}
 
       {/* Self-Promoter Subscriptions */}
-      {selfPromoters.length > 0 && (
+      {showSelfPromoters && filteredSelfPromoters.length > 0 && (
         <div>
           <h2 className="text-xl font-semibold text-tastelanc-text-primary mb-4 flex items-center gap-2">
             <Users className="w-5 h-5 text-orange-500" />
@@ -614,19 +761,28 @@ export default async function AdminPaidMembersPage({
             <table className="w-full">
               <thead className="bg-tastelanc-surface-light">
                 <tr>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Name/Email</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Name / Contact</th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Plan</th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Status</th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Since</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Actions</th>
+                  {canViewStripe && (
+                    <th className="text-right px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Actions</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-tastelanc-surface-light">
-                {selfPromoters.map((sub) => (
+                {filteredSelfPromoters.map((sub) => (
                   <tr key={sub.id} className="hover:bg-tastelanc-surface-light/50">
                     <td className="px-4 py-3">
                       <p className="text-tastelanc-text-primary">{sub.name}</p>
-                      <p className="text-xs text-tastelanc-text-faint">{sub.email}</p>
+                      <a href={`mailto:${sub.email}`} className="text-xs text-blue-400 hover:underline flex items-center gap-1">
+                        <Mail className="w-3 h-3" /> {sub.email}
+                      </a>
+                      {sub.phone && (
+                        <a href={`tel:${sub.phone}`} className="text-xs text-green-400 hover:underline flex items-center gap-1 mt-0.5">
+                          <Phone className="w-3 h-3" /> {sub.phone}
+                        </a>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant="default" className="bg-orange-500/20 text-orange-400">
@@ -643,15 +799,17 @@ export default async function AdminPaidMembersPage({
                     <td className="px-4 py-3 text-tastelanc-text-muted text-sm">
                       {new Date(sub.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`https://dashboard.stripe.com/subscriptions/${sub.id}`}
-                        target="_blank"
-                        className="text-xs text-blue-400 hover:underline"
-                      >
-                        View in Stripe
-                      </Link>
-                    </td>
+                    {canViewStripe && (
+                      <td className="px-4 py-3 text-right">
+                        <Link
+                          href={`https://dashboard.stripe.com/subscriptions/${sub.id}`}
+                          target="_blank"
+                          className="text-xs text-blue-400 hover:underline"
+                        >
+                          View in Stripe
+                        </Link>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
