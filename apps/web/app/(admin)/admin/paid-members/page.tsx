@@ -422,15 +422,17 @@ export default async function AdminPaidMembersPage({
       </div>
 
       {/* Revenue Stats */}
-      <div className="grid md:grid-cols-6 gap-6 mb-8">
-        <Card className="p-6 bg-gradient-to-br from-green-500/10 to-transparent border-green-500/30">
-          <div className="flex items-center gap-3 mb-2">
-            <CreditCard className="w-5 h-5 text-green-400" />
-            <span className="text-tastelanc-text-muted">{selectedMarket === 'all' ? 'Total' : ''} MRR</span>
-          </div>
-          <p className="text-3xl font-bold text-green-400">${totalMRR.toFixed(0)}</p>
-          <p className="text-xs text-tastelanc-text-faint mt-1">ARR: ${(totalMRR * 12).toLocaleString()}</p>
-        </Card>
+      <div className={`grid gap-6 mb-8 ${canViewStripe ? 'md:grid-cols-6' : 'md:grid-cols-4'}`}>
+        {canViewStripe && (
+          <Card className="p-6 bg-gradient-to-br from-green-500/10 to-transparent border-green-500/30">
+            <div className="flex items-center gap-3 mb-2">
+              <CreditCard className="w-5 h-5 text-green-400" />
+              <span className="text-tastelanc-text-muted">{selectedMarket === 'all' ? 'Total' : ''} MRR</span>
+            </div>
+            <p className="text-3xl font-bold text-green-400">${totalMRR.toFixed(0)}</p>
+            <p className="text-xs text-tastelanc-text-faint mt-1">ARR: ${(totalMRR * 12).toLocaleString()}</p>
+          </Card>
+        )}
 
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-2">
@@ -438,7 +440,7 @@ export default async function AdminPaidMembersPage({
             <span className="text-tastelanc-text-muted">Restaurants</span>
           </div>
           <p className="text-3xl font-bold text-tastelanc-text-primary">{restaurants.length}</p>
-          <p className="text-xs text-tastelanc-text-faint mt-1">${restaurantMRR.toFixed(0)}/mo</p>
+          {canViewStripe && <p className="text-xs text-tastelanc-text-faint mt-1">${restaurantMRR.toFixed(0)}/mo</p>}
         </Card>
 
         <Card className="p-6">
@@ -447,7 +449,7 @@ export default async function AdminPaidMembersPage({
             <span className="text-tastelanc-text-muted">{BRAND.premiumName}</span>
           </div>
           <p className="text-3xl font-bold text-tastelanc-text-primary">{consumers.length}</p>
-          <p className="text-xs text-tastelanc-text-faint mt-1">${consumerMRR.toFixed(0)}/mo</p>
+          {canViewStripe && <p className="text-xs text-tastelanc-text-faint mt-1">${consumerMRR.toFixed(0)}/mo</p>}
         </Card>
 
         {selfPromoters.length > 0 && (
@@ -457,7 +459,7 @@ export default async function AdminPaidMembersPage({
               <span className="text-tastelanc-text-muted">Self-Promoters</span>
             </div>
             <p className="text-3xl font-bold text-tastelanc-text-primary">{selfPromoters.length}</p>
-            <p className="text-xs text-tastelanc-text-faint mt-1">${selfPromoterMRR.toFixed(0)}/mo</p>
+            {canViewStripe && <p className="text-xs text-tastelanc-text-faint mt-1">${selfPromoterMRR.toFixed(0)}/mo</p>}
           </Card>
         )}
 
@@ -468,7 +470,6 @@ export default async function AdminPaidMembersPage({
               <span className="text-tastelanc-text-muted">Demo/Free</span>
             </div>
             <p className="text-3xl font-bold text-yellow-400">{filteredPromotional.length}</p>
-            <p className="text-xs text-tastelanc-text-faint mt-1">$0/mo (promotional)</p>
           </Card>
         )}
 
@@ -502,7 +503,7 @@ export default async function AdminPaidMembersPage({
                       {mc.count} restaurant{mc.count !== 1 ? 's' : ''}
                     </Badge>
                   </div>
-                  <p className="text-xs text-green-400 mt-2 ml-7">${mc.mrr.toFixed(0)}/mo MRR</p>
+                  {canViewStripe && <p className="text-xs text-green-400 mt-2 ml-7">${mc.mrr.toFixed(0)}/mo MRR</p>}
                 </Card>
               </Link>
             );
@@ -591,11 +592,15 @@ export default async function AdminPaidMembersPage({
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-tastelanc-text-primary">
-                      ${sub.amount}
-                      <span className="text-sm font-normal text-tastelanc-text-muted">/{formatInterval(sub.interval, sub.intervalCount)}</span>
-                    </p>
-                    <p className="text-xs text-green-400 mt-0.5">${sub.mrr.toFixed(0)}/mo MRR</p>
+                    {canViewStripe && (
+                      <>
+                        <p className="text-2xl font-bold text-tastelanc-text-primary">
+                          ${sub.amount}
+                          <span className="text-sm font-normal text-tastelanc-text-muted">/{formatInterval(sub.interval, sub.intervalCount)}</span>
+                        </p>
+                        <p className="text-xs text-green-400 mt-0.5">${sub.mrr.toFixed(0)}/mo MRR</p>
+                      </>
+                    )}
                     <p className="text-xs text-tastelanc-text-faint flex items-center gap-1 justify-end mt-1">
                       <Calendar className="w-3 h-3" />
                       Since {new Date(sub.createdAt).toLocaleDateString()}
@@ -694,7 +699,7 @@ export default async function AdminPaidMembersPage({
               <thead className="bg-tastelanc-surface-light">
                 <tr>
                   <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Contact</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Plan</th>
+                  {canViewStripe && <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Plan</th>}
                   <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Status</th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Since</th>
                   {canViewStripe && (
@@ -715,11 +720,13 @@ export default async function AdminPaidMembersPage({
                         </a>
                       )}
                     </td>
-                    <td className="px-4 py-3">
-                      <Badge variant="default" className="bg-purple-500/20 text-purple-400">
-                        ${sub.amount}/{formatInterval(sub.interval, sub.intervalCount)}
-                      </Badge>
-                    </td>
+                    {canViewStripe && (
+                      <td className="px-4 py-3">
+                        <Badge variant="default" className="bg-purple-500/20 text-purple-400">
+                          ${sub.amount}/{formatInterval(sub.interval, sub.intervalCount)}
+                        </Badge>
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       {sub.status === 'active' ? (
                         <Badge variant="default" className="bg-green-500/20 text-green-400">Active</Badge>
@@ -762,7 +769,7 @@ export default async function AdminPaidMembersPage({
               <thead className="bg-tastelanc-surface-light">
                 <tr>
                   <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Name / Contact</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Plan</th>
+                  {canViewStripe && <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Plan</th>}
                   <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Status</th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-tastelanc-text-muted">Since</th>
                   {canViewStripe && (
@@ -784,11 +791,13 @@ export default async function AdminPaidMembersPage({
                         </a>
                       )}
                     </td>
-                    <td className="px-4 py-3">
-                      <Badge variant="default" className="bg-orange-500/20 text-orange-400">
-                        ${sub.amount}/mo
-                      </Badge>
-                    </td>
+                    {canViewStripe && (
+                      <td className="px-4 py-3">
+                        <Badge variant="default" className="bg-orange-500/20 text-orange-400">
+                          ${sub.amount}/mo
+                        </Badge>
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       {sub.status === 'active' ? (
                         <Badge variant="default" className="bg-green-500/20 text-green-400">Active</Badge>
