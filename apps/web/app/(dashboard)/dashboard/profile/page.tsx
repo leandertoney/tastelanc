@@ -456,9 +456,9 @@ export default function ProfilePage() {
       </div>
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 flex items-center gap-3">
+        <div className="bg-zinc-900 border border-red-500/30 rounded-lg p-4 flex items-center gap-3">
           <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-          <p className="text-red-400">{error}</p>
+          <p className="text-zinc-200">{error}</p>
         </div>
       )}
 
@@ -719,9 +719,9 @@ export default function ProfilePage() {
         </h3>
 
         {hoursError && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 flex items-center gap-3 mb-4">
+          <div className="bg-zinc-900 border border-red-500/30 rounded-lg p-4 flex items-center gap-3 mb-4">
             <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-            <p className="text-red-400">{hoursError}</p>
+            <p className="text-zinc-200">{hoursError}</p>
           </div>
         )}
 

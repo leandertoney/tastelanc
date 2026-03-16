@@ -232,7 +232,7 @@ export default function HappyHoursPage() {
       </div>
 
       {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400">
+        <div className="p-4 bg-zinc-900 border border-red-500/30 rounded-lg text-zinc-200">
           {error}
         </div>
       )}

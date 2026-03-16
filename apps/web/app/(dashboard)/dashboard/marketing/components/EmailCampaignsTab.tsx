@@ -231,7 +231,7 @@ export default function EmailCampaignsTab({ restaurantId, tierName }: EmailCampa
       draft: 'bg-tastelanc-surface-light text-tastelanc-text-secondary',
       sending: 'bg-yellow-600 text-yellow-100',
       sent: 'bg-green-600 text-green-100',
-      failed: 'bg-red-600 text-red-100',
+      failed: 'bg-red-600 text-white',
     };
     return (
       <span className={`text-xs px-2 py-0.5 rounded-full ${variants[status] || variants.draft}`}>

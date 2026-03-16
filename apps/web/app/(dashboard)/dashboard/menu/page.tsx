@@ -845,7 +845,7 @@ export default function MenuPage() {
         </div>
 
         {error && (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400">
+          <div className="p-4 bg-zinc-900 border border-red-500/30 rounded-lg text-zinc-200">
             {error}
             <button onClick={() => setError(null)} className="ml-2 underline">
               Dismiss

@@ -59,7 +59,7 @@ export default function ConfirmModal({
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg ${
               variant === 'danger'
-                ? 'bg-red-500/15'
+                ? 'bg-zinc-800'
                 : 'bg-tastelanc-accent/15'
             }`}>
               <AlertTriangle className={`w-5 h-5 ${
