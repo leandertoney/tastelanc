@@ -39,11 +39,17 @@ export async function middleware(request: NextRequest) {
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, admin_market_ids')
+      .select('role, admin_market_ids, last_seen_at')
       .eq('id', user.id)
       .single();
 
     profileRole = profile?.role || null;
+
+    // Update last_seen_at (throttled: at most once per 5 minutes)
+    const lastSeen = profile?.last_seen_at ? new Date(profile.last_seen_at).getTime() : 0;
+    if (Date.now() - lastSeen > 5 * 60 * 1000) {
+      supabase.from('profiles').update({ last_seen_at: new Date().toISOString() }).eq('id', user.id).then(() => {});
+    }
 
     if (profile?.role === 'super_admin' || profile?.role === 'co_founder') {
       isAdmin = true;

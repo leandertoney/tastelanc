@@ -195,7 +195,7 @@ export async function GET() {
     // Fetch all profiles with admin roles
     const { data: adminProfiles } = await serviceClient
       .from('profiles')
-      .select('id, role, admin_market_ids, email, display_name')
+      .select('id, role, admin_market_ids, email, display_name, last_seen_at')
       .in('role', ['super_admin', 'co_founder', 'market_admin', 'sales_rep']);
 
     // Fetch all sales reps
@@ -256,7 +256,7 @@ export async function GET() {
           isSalesRep: false,
           salesRepData: null,
           leadCount: leadCountMap[p.id] || 0,
-          lastSignInAt: lastSignInMap[p.id] || null,
+          lastSignInAt: p.last_seen_at || lastSignInMap[p.id] || null,
           marketNames: p.role === 'super_admin' || p.role === 'co_founder'
             ? ['All Markets']
             : (p.admin_market_ids as string[] | null)?.map((id: string) => marketMap[id] || 'Unknown') || [],

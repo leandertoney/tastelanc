@@ -51,7 +51,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/self-promoters', icon: Music, label: 'Self-Promoters', highlight: true },
   { href: '/admin/sponsored-ads', icon: Megaphone, label: 'Sponsored Ads', highlight: true },
   // TEAM - People management
-  { href: '/admin/team', icon: Users, label: 'Team', highlight: true, section: 'Team' },
+  { href: '/admin/team', icon: Users, label: 'Team', highlight: true, section: 'Team', superOnly: true },
   // CONTENT - Restaurant management
   { href: '/admin/restaurants', icon: Store, label: 'All Restaurants', section: 'Content' },
   // MARKETING
