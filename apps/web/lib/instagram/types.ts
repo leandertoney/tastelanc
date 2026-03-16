@@ -1,7 +1,24 @@
 // Instagram Agent v1 types
 
 export type ContentType = 'tonight_today' | 'weekend_preview' | 'category_roundup' | 'upcoming_events';
-export type PostStatus = 'draft' | 'published' | 'failed';
+export type PostStatus = 'draft' | 'pending_review' | 'approved' | 'rejected' | 'published' | 'failed';
+
+// Weekly content calendar — each weekday has a unique theme
+export type DayTheme =
+  | 'weekly_roundup'        // Monday: Magazine-style "This Week's Issue"
+  | 'happy_hour_spotlight'  // Tuesday: Deep dive on standout happy hours
+  | 'hidden_gems'           // Wednesday: Lesser-known spots, new finds
+  | 'weekend_preview'       // Thursday: What's happening Fri-Sun
+  | 'specials_deals';       // Friday: Best food/drink specials
+
+export interface WeeklyThemeConfig {
+  dayOfWeek: number;        // 1=Mon, 2=Tue, ..., 5=Fri
+  theme: DayTheme;
+  label: string;
+  contentType: ContentType;
+  forceSubtype?: string;
+  description: string;
+}
 
 export interface InstagramAccount {
   id: string;
@@ -33,6 +50,8 @@ export interface InstagramPost {
   error_message: string | null;
   created_at: string;
   published_at: string | null;
+  scheduled_publish_at: string | null;
+  day_theme: DayTheme | null;
 }
 
 export interface GenerationMetadata {

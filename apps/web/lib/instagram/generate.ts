@@ -22,8 +22,13 @@ import {
   getMarketDisplayName,
   getAppName,
   getTodaysRoundupCategory,
+  getThemeForDay,
+  DEFAULT_PUBLISH_HOUR_ET,
+  DEFAULT_PUBLISH_MINUTE_ET,
+  APPROVAL_TIMEOUT_HOURS,
   EVENT_TYPE_INSTAGRAM_LABELS,
 } from './prompts';
+import { DayTheme } from './types';
 import { selectMedia, recordMediaUsage } from './media';
 import { generateCarouselSlides } from './overlay';
 import { SlideCandidate, HeadlineParts } from './types';
@@ -38,6 +43,8 @@ interface GenerateOptions {
   forceType?: ContentType;
   forceSubtype?: string; // 'events', 'happy_hour', 'special'
   postSlot?: string; // 'am' or 'pm'
+  scheduledPublishAt?: string; // ISO timestamp for auto-publish
+  dayTheme?: DayTheme;
 }
 
 export async function generateInstagramPost(opts: GenerateOptions): Promise<GenerationResult> {
@@ -526,17 +533,27 @@ async function buildAndSavePost(
   };
 
   // Upsert post record
-  const postData = {
+  // New approval flow: posts start as 'pending_review' and auto-publish
+  // at scheduled_publish_at unless a human rejects them
+  const postData: Record<string, unknown> = {
     market_id: market.market_id,
     post_date: today,
     content_type: params.contentType,
     selected_entity_ids: params.visible.map(c => c.entity_id),
     caption,
     media_urls: carouselUrls,
-    status: 'draft' as const,
+    status: opts.scheduledPublishAt ? 'pending_review' : 'draft',
     generation_metadata: metadata,
     post_slot: opts.postSlot || 'am',
   };
+
+  // Add scheduling fields if provided
+  if (opts.scheduledPublishAt) {
+    postData.scheduled_publish_at = opts.scheduledPublishAt;
+  }
+  if (opts.dayTheme) {
+    postData.day_theme = opts.dayTheme;
+  }
 
   const { data: post, error: insertError } = await supabase
     .from('instagram_posts')

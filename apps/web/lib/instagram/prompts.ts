@@ -2,7 +2,7 @@
 // Rules: concise, local, utility-first, no cringe, no generic AI food-blog tone
 // Always push toward app install, never reveal the full list, mention hidden quantity
 
-import { ContentType } from './types';
+import { ContentType, DayTheme, WeeklyThemeConfig } from './types';
 
 interface PromptContext {
   marketName: string;        // "Lancaster" or "Cumberland County"
@@ -123,11 +123,71 @@ export function buildCaptionPrompt(ctx: PromptContext): { system: string; user: 
   return { system: SYSTEM_PROMPT, user };
 }
 
+// ============================================
+// Weekly Content Calendar
+// ============================================
+// 1 post/day, Monday–Friday only. Each day has a unique theme.
+// Saturday & Sunday: no scheduled posts (special/holiday posts only).
+
+export const WEEKLY_CONTENT_CALENDAR: WeeklyThemeConfig[] = [
+  {
+    dayOfWeek: 1, // Monday
+    theme: 'weekly_roundup',
+    label: 'The Weekly Roundup',
+    contentType: 'tonight_today',
+    description: 'Magazine-style carousel: the mood this week — happy hours, specials, events, and top picks all in one issue',
+  },
+  {
+    dayOfWeek: 2, // Tuesday
+    theme: 'happy_hour_spotlight',
+    label: 'Happy Hour Spotlight',
+    contentType: 'tonight_today',
+    forceSubtype: 'happy_hour',
+    description: 'Deep dive on 3-4 standout happy hours happening this week',
+  },
+  {
+    dayOfWeek: 3, // Wednesday
+    theme: 'hidden_gems',
+    label: 'Hidden Gems',
+    contentType: 'category_roundup',
+    forceSubtype: 'hidden_gems',
+    description: 'Lesser-known restaurants, new openings, underrated spots',
+  },
+  {
+    dayOfWeek: 4, // Thursday
+    theme: 'weekend_preview',
+    label: 'Weekend Preview',
+    contentType: 'weekend_preview',
+    description: "What's happening Fri-Sun: events, specials, live music",
+  },
+  {
+    dayOfWeek: 5, // Friday
+    theme: 'specials_deals',
+    label: 'Specials & Deals',
+    contentType: 'tonight_today',
+    forceSubtype: 'special',
+    description: 'Best food & drink specials for the weekend',
+  },
+];
+
+export function getThemeForDay(date: Date): WeeklyThemeConfig | null {
+  const dayOfWeek = date.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  return WEEKLY_CONTENT_CALENDAR.find(t => t.dayOfWeek === dayOfWeek) || null;
+}
+
+// Default publish time: 11:30 AM ET
+export const DEFAULT_PUBLISH_HOUR_ET = 11;
+export const DEFAULT_PUBLISH_MINUTE_ET = 30;
+
+// Approval timeout: 2 hours before publish time
+export const APPROVAL_TIMEOUT_HOURS = 2;
+
 // Market name mapping
 export function getMarketDisplayName(slug: string): string {
   const map: Record<string, string> = {
     'lancaster-pa': 'Lancaster',
     'cumberland-pa': 'Cumberland County',
+    'fayetteville-nc': 'Fayetteville',
   };
   return map[slug] || slug;
 }
@@ -136,6 +196,7 @@ export function getAppName(slug: string): string {
   const map: Record<string, string> = {
     'lancaster-pa': 'TasteLanc',
     'cumberland-pa': 'TasteCumberland',
+    'fayetteville-nc': 'TasteFayetteville',
   };
   return map[slug] || 'TasteLanc';
 }

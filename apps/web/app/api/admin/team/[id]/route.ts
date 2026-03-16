@@ -33,7 +33,7 @@ export async function PUT(
       );
     }
 
-    const { profile_role, admin_market_id, market_ids, is_active, name, phone } = body;
+    const { profile_role, market_ids, is_active, name, phone } = body;
 
     // Guard rail: cannot promote to super_admin or co_founder
     if (profile_role === 'super_admin' || profile_role === 'co_founder') {
@@ -43,10 +43,10 @@ export async function PUT(
       );
     }
 
-    // Validate: market_admin requires admin_market_id
-    if (profile_role === 'market_admin' && !admin_market_id) {
+    // Validate: market_admin requires at least one market
+    if (profile_role === 'market_admin' && (!market_ids || market_ids.length === 0)) {
       return NextResponse.json(
-        { error: 'Market admin requires a market assignment' },
+        { error: 'Market admin requires at least one market assignment' },
         { status: 400 }
       );
     }
@@ -55,7 +55,7 @@ export async function PUT(
     if (profile_role !== undefined) {
       const profileUpdate: Record<string, unknown> = {
         role: profile_role || null,
-        admin_market_id: profile_role === 'market_admin' ? admin_market_id : null,
+        admin_market_ids: profile_role === 'market_admin' ? market_ids : null,
       };
 
       const { error: profileErr } = await serviceClient

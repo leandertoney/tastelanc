@@ -58,11 +58,14 @@ export async function GET(request: Request) {
   const total = posts?.length || 0;
   const published = posts?.filter(p => p.status === 'published').length || 0;
   const drafts = posts?.filter(p => p.status === 'draft').length || 0;
+  const pendingReview = posts?.filter(p => p.status === 'pending_review').length || 0;
+  const approved = posts?.filter(p => p.status === 'approved').length || 0;
+  const rejected = posts?.filter(p => p.status === 'rejected').length || 0;
   const failed = posts?.filter(p => p.status === 'failed').length || 0;
 
   return NextResponse.json({
     posts: posts || [],
     market,
-    stats: { total, published, drafts, failed },
+    stats: { total, published, drafts, pendingReview, approved, rejected, failed },
   });
 }

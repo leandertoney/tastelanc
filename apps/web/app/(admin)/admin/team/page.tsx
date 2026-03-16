@@ -25,8 +25,8 @@ interface TeamMember {
   name: string;
   email: string;
   profileRole: 'super_admin' | 'co_founder' | 'market_admin' | null;
-  adminMarketId: string | null;
-  adminMarketName: string | null;
+  adminMarketIds: string[] | null;
+  adminMarketNames: string[] | null;
   isSalesRep: boolean;
   salesRepData: {
     market_ids: string[];
@@ -114,7 +114,7 @@ export default function TeamPage() {
       // Check sales rep market_ids
       if (m.salesRepData?.market_ids?.includes(filterMarketId)) return true;
       // Check admin market
-      if (m.adminMarketId === filterMarketId) return true;
+      if (m.adminMarketIds?.includes(filterMarketId)) return true;
       return false;
     });
   }, [members, filterMarketId]);
@@ -124,7 +124,7 @@ export default function TeamPage() {
     setEditForm({
       name: member.name || '',
       phone: member.salesRepData?.phone || '',
-      market_ids: member.salesRepData?.market_ids || (member.adminMarketId ? [member.adminMarketId] : []),
+      market_ids: member.salesRepData?.market_ids || member.adminMarketIds || [],
       is_active: member.salesRepData?.is_active ?? true,
     });
   };

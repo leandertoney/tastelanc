@@ -39,7 +39,7 @@ export async function middleware(request: NextRequest) {
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, admin_market_id')
+      .select('role, admin_market_ids')
       .eq('id', user.id)
       .single();
 
@@ -48,12 +48,12 @@ export async function middleware(request: NextRequest) {
     if (profile?.role === 'super_admin' || profile?.role === 'co_founder') {
       isAdmin = true;
     } else if (profile?.role === 'market_admin') {
-      // Resolve current market to check if this admin belongs here
+      // Resolve current market to check if this admin has access
       const marketSlug = process.env.NEXT_PUBLIC_MARKET_SLUG || 'lancaster-pa';
       const { data: marketRow } = await supabase
         .from('markets').select('id')
         .eq('slug', marketSlug).eq('is_active', true).single();
-      if (marketRow && profile.admin_market_id === marketRow.id) {
+      if (marketRow && (profile.admin_market_ids as string[] | null)?.includes(marketRow.id)) {
         isAdmin = true;
       }
     }

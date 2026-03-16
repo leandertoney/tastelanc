@@ -20,8 +20,10 @@ export async function GET(request: Request) {
     const repFilter = searchParams.get('rep');
 
     // Determine effective market scope
-    // market_admin can only see their market; super_admin can filter or see all
-    const effectiveMarketId = admin.scopedMarketId || (marketFilter && marketFilter !== 'all' ? marketFilter : null);
+    // market_admin can only see their markets; super_admin can filter or see all
+    const effectiveMarketIds = marketFilter && marketFilter !== 'all'
+      ? [marketFilter]
+      : admin.scopedMarketIds || null;
 
     // Build query — use range to avoid Supabase 1000-row default limit
     let query = supabase
@@ -30,8 +32,8 @@ export async function GET(request: Request) {
       .order('created_at', { ascending: false })
       .range(0, 4999);
 
-    if (effectiveMarketId) {
-      query = query.eq('market_id', effectiveMarketId);
+    if (effectiveMarketIds) {
+      query = query.in('market_id', effectiveMarketIds);
     }
 
     if (status && status !== 'all') {
@@ -93,7 +95,7 @@ export async function GET(request: Request) {
     const countResults = await Promise.all(
       statuses.map(async (s) => {
         let q = supabase.from('business_leads').select('id', { count: 'exact', head: true }).eq('status', s);
-        if (effectiveMarketId) q = q.eq('market_id', effectiveMarketId);
+        if (effectiveMarketIds) q = q.in('market_id', effectiveMarketIds);
         const { count } = await q;
         return { status: s, count: count ?? 0 };
       })
@@ -114,7 +116,7 @@ export async function GET(request: Request) {
 
     // Fetch available markets for the filter dropdown (super_admin only)
     let markets: { id: string; slug: string; name: string }[] = [];
-    if (!admin.scopedMarketId) {
+    if (!admin.scopedMarketIds) {
       const { data: marketRows } = await supabase
         .from('markets')
         .select('id, slug, name')
@@ -142,7 +144,7 @@ export async function GET(request: Request) {
       stats,
       markets,
       reps,
-      isScopedAdmin: !!admin.scopedMarketId,
+      isScopedAdmin: !!admin.scopedMarketIds,
     });
   } catch (error) {
     console.error('Error in business leads API:', error);

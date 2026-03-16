@@ -24,11 +24,34 @@ export async function PATCH(
   const body = await request.json();
   const serviceClient = createServiceRoleClient();
 
+  // Build update payload — support status, scheduled_publish_at, caption edits
+  const updateData: Record<string, unknown> = {};
+
+  if (body.status) {
+    const validStatuses = ['draft', 'pending_review', 'approved', 'rejected', 'published', 'failed'];
+    if (!validStatuses.includes(body.status)) {
+      return NextResponse.json({ error: `Invalid status: ${body.status}` }, { status: 400 });
+    }
+    updateData.status = body.status;
+  }
+
+  if (body.scheduled_publish_at !== undefined) {
+    updateData.scheduled_publish_at = body.scheduled_publish_at;
+  }
+
+  if (body.caption !== undefined) {
+    updateData.caption = body.caption;
+  }
+
+  if (Object.keys(updateData).length === 0) {
+    return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
+  }
+
   const { data, error } = await serviceClient
     .from('instagram_posts')
-    .update({ status: body.status })
+    .update(updateData)
     .eq('id', params.id)
-    .select('id, status')
+    .select('id, status, scheduled_publish_at, day_theme')
     .single();
 
   if (error) {

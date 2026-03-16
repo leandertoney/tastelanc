@@ -92,14 +92,14 @@ async function getStripeRevenue() {
   }
 }
 
-async function getAdminStats(scopedMarketId: string | null) {
+async function getAdminStats(scopedMarketIds: string[] | null) {
   const supabase = await createClient();
 
   // Get total restaurants — super_admin sees all, market_admin sees only their market
   let restaurantCountQuery = supabase
     .from('restaurants')
     .select('*', { count: 'exact', head: true });
-  if (scopedMarketId) restaurantCountQuery = restaurantCountQuery.eq('market_id', scopedMarketId);
+  if (scopedMarketIds) restaurantCountQuery = restaurantCountQuery.in('market_id', scopedMarketIds);
   const { count: totalRestaurants } = await restaurantCountQuery;
 
   // Get active paid restaurants (those with Stripe subscriptions)
@@ -107,19 +107,19 @@ async function getAdminStats(scopedMarketId: string | null) {
     .from('restaurants')
     .select('*', { count: 'exact', head: true })
     .not('stripe_subscription_id', 'is', null);
-  if (scopedMarketId) activeSubQuery = activeSubQuery.eq('market_id', scopedMarketId);
+  if (scopedMarketIds) activeSubQuery = activeSubQuery.in('market_id', scopedMarketIds);
   const { count: activeSubscriptions } = await activeSubQuery;
 
   // Get total page views (last 30 days) — scope by market via restaurant join
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  let pageViewQuery = scopedMarketId
+  let pageViewQuery = scopedMarketIds
     ? supabase
         .from('analytics_page_views')
         .select('*, restaurants!inner(market_id)', { count: 'exact', head: true })
         .gte('viewed_at', thirtyDaysAgo.toISOString())
-        .eq('restaurants.market_id', scopedMarketId)
+        .in('restaurants.market_id', scopedMarketIds)
     : supabase
         .from('analytics_page_views')
         .select('*', { count: 'exact', head: true })
@@ -130,14 +130,14 @@ async function getAdminStats(scopedMarketId: string | null) {
   let contactCountQuery = supabase
     .from('contact_submissions')
     .select('*', { count: 'exact', head: true });
-  if (scopedMarketId) contactCountQuery = contactCountQuery.eq('market_id', scopedMarketId);
+  if (scopedMarketIds) contactCountQuery = contactCountQuery.in('market_id', scopedMarketIds);
   const { count: totalContacts } = await contactCountQuery;
 
   let unreadContactQuery = supabase
     .from('contact_submissions')
     .select('*', { count: 'exact', head: true })
     .is('read_at', null);
-  if (scopedMarketId) unreadContactQuery = unreadContactQuery.eq('market_id', scopedMarketId);
+  if (scopedMarketIds) unreadContactQuery = unreadContactQuery.in('market_id', scopedMarketIds);
   const { count: unreadContacts } = await unreadContactQuery;
 
   // Get recent contacts — scoped by market_id
@@ -146,7 +146,7 @@ async function getAdminStats(scopedMarketId: string | null) {
     .select('*')
     .order('created_at', { ascending: false })
     .limit(5);
-  if (scopedMarketId) recentContactQuery = recentContactQuery.eq('market_id', scopedMarketId);
+  if (scopedMarketIds) recentContactQuery = recentContactQuery.in('market_id', scopedMarketIds);
   const { data: recentContacts } = await recentContactQuery;
 
   // Get paid restaurants by tier
@@ -154,7 +154,7 @@ async function getAdminStats(scopedMarketId: string | null) {
     .from('restaurants')
     .select('tier_id, tiers(name)')
     .not('stripe_subscription_id', 'is', null);
-  if (scopedMarketId) paidTierQuery = paidTierQuery.eq('market_id', scopedMarketId);
+  if (scopedMarketIds) paidTierQuery = paidTierQuery.in('market_id', scopedMarketIds);
   const { data: paidRestaurantsByTier } = await paidTierQuery;
 
   const signupsByPlan = {
@@ -176,7 +176,7 @@ async function getAdminStats(scopedMarketId: string | null) {
   let waitlistQuery = supabase
     .from('early_access_signups')
     .select('*', { count: 'exact', head: true });
-  if (scopedMarketId) waitlistQuery = waitlistQuery.eq('market_id', scopedMarketId);
+  if (scopedMarketIds) waitlistQuery = waitlistQuery.in('market_id', scopedMarketIds);
   const { count: totalWaitlistSignups } = await waitlistQuery;
 
   // Get today's waitlist signups (using EST timezone)
@@ -191,7 +191,7 @@ async function getAdminStats(scopedMarketId: string | null) {
     .from('early_access_signups')
     .select('*', { count: 'exact', head: true })
     .gte('created_at', todayStartUTC.toISOString());
-  if (scopedMarketId) todayWaitlistQuery = todayWaitlistQuery.eq('market_id', scopedMarketId);
+  if (scopedMarketIds) todayWaitlistQuery = todayWaitlistQuery.in('market_id', scopedMarketIds);
   const { count: todayWaitlistSignups } = await todayWaitlistQuery;
 
   // Get recent waitlist signups — scoped by market_id
@@ -200,7 +200,7 @@ async function getAdminStats(scopedMarketId: string | null) {
     .select('*')
     .order('created_at', { ascending: false })
     .limit(5);
-  if (scopedMarketId) recentWaitlistQuery = recentWaitlistQuery.eq('market_id', scopedMarketId);
+  if (scopedMarketIds) recentWaitlistQuery = recentWaitlistQuery.in('market_id', scopedMarketIds);
   const { data: recentWaitlistSignups } = await recentWaitlistQuery;
 
   return {
@@ -225,7 +225,7 @@ export default async function AdminDashboardPage() {
   const canSeeFinancials = admin.role === 'super_admin' || admin.role === 'co_founder';
 
   const [stats, stripeRevenue] = await Promise.all([
-    getAdminStats(admin.scopedMarketId),
+    getAdminStats(admin.scopedMarketIds),
     canSeeFinancials ? getStripeRevenue() : Promise.resolve({ mrr: 0, arr: 0, totalSubscriptions: 0, restaurantCount: 0, consumerCount: 0, selfPromoterCount: 0 }),
   ]);
 

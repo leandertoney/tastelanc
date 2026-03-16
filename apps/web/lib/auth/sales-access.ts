@@ -39,7 +39,7 @@ export async function verifySalesAccess(
   // Check profile role for admin tiers
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, admin_market_id')
+    .select('role, admin_market_ids')
     .eq('id', user.id)
     .maybeSingle();
 
@@ -54,8 +54,8 @@ export async function verifySalesAccess(
   let marketIds: string[] | null = null;
   if (isSuperAdmin) {
     marketIds = null; // unrestricted
-  } else if (isMarketAdmin && profile?.admin_market_id) {
-    marketIds = [profile.admin_market_id];
+  } else if (isMarketAdmin && profile?.admin_market_ids) {
+    marketIds = profile.admin_market_ids as string[];
   } else if (isSalesRep) {
     const serviceClient = createServiceRoleClient();
     const { data: rep } = await serviceClient

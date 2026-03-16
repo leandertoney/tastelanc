@@ -50,12 +50,12 @@ export default async function AdminRestaurantsPage({
   const admin = await verifyAdminAccess(supabase);
   const params = await searchParams;
 
-  // Market scoping: admin.scopedMarketId for market_admins, or URL param for super_admins
-  const effectiveMarketId = admin.scopedMarketId || (params.market && params.market !== 'all' ? params.market : null);
+  // Market scoping: admin.scopedMarketIds for market_admins, or URL param for super_admins
+  const effectiveMarketId = admin.scopedMarketIds?.[0] || (params.market && params.market !== 'all' ? params.market : null);
 
   const [{ restaurants, count }, markets] = await Promise.all([
     getRestaurants(effectiveMarketId),
-    admin.scopedMarketId ? Promise.resolve([]) : getMarkets(),
+    admin.scopedMarketIds ? Promise.resolve([]) : getMarkets(),
   ]);
 
   const activeCount = restaurants.filter((r) => r.is_active).length;
@@ -73,7 +73,7 @@ export default async function AdminRestaurantsPage({
             </p>
           </div>
           {/* Market filter for super admins */}
-          {!admin.scopedMarketId && markets.length > 1 && (
+          {!admin.scopedMarketIds && markets.length > 1 && (
             <AdminMarketFilter markets={markets} currentMarket={params.market || 'all'} basePath="/admin/restaurants" />
           )}
         </div>

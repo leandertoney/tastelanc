@@ -242,7 +242,7 @@ function formatInterval(interval: string, intervalCount: number): string {
   return `${intervalCount}mo`;
 }
 
-async function getPromotionalRestaurants(scopedMarketId: string | null): Promise<PromotionalRestaurant[]> {
+async function getPromotionalRestaurants(scopedMarketIds: string[] | null): Promise<PromotionalRestaurant[]> {
   try {
     const supabase = await createClient();
 
@@ -264,8 +264,8 @@ async function getPromotionalRestaurants(scopedMarketId: string | null): Promise
       .is('stripe_subscription_id', null)
       .order('name');
 
-    if (scopedMarketId) {
-      query = query.eq('market_id', scopedMarketId);
+    if (scopedMarketIds) {
+      query = query.in('market_id', scopedMarketIds);
     }
 
     const { data, error } = await query;
@@ -310,12 +310,16 @@ export default async function AdminPaidMembersPage({
   const params = await searchParams;
 
   // Determine effective market filter
-  const selectedMarket = admin.scopedMarketId || params.market || 'all';
+  const selectedMarket = params.market || 'all';
+  // Effective market IDs for filtering: URL param takes precedence, then admin scope
+  const effectiveMarketIds = selectedMarket !== 'all'
+    ? [selectedMarket]
+    : admin.scopedMarketIds || null;
 
   const [{ subIdToMarket, customerIdToMarket, subIdToContact, customerIdToContact }, markets, promotionalRestaurants] = await Promise.all([
     getMarketLookupMaps(),
     getMarkets(),
-    getPromotionalRestaurants(admin.scopedMarketId || (selectedMarket !== 'all' ? selectedMarket : null)),
+    getPromotionalRestaurants(effectiveMarketIds),
   ]);
 
   const { restaurants: allRestaurants, consumers, selfPromoters } = await getStripeSubscriptions(
@@ -331,15 +335,15 @@ export default async function AdminPaidMembersPage({
   const typeFilter = params.type || 'all';
   const statusFilter = params.status || 'all';
 
-  // Filter restaurants by market if a market is selected
-  let restaurants = selectedMarket === 'all'
-    ? allRestaurants
-    : allRestaurants.filter(r => r.marketId === selectedMarket);
+  // Filter restaurants by effective market scope
+  let restaurants = effectiveMarketIds
+    ? allRestaurants.filter(r => r.marketId && effectiveMarketIds.includes(r.marketId))
+    : allRestaurants;
 
   // Filter promotional restaurants by market too
-  let filteredPromotional = selectedMarket === 'all'
-    ? promotionalRestaurants
-    : promotionalRestaurants.filter(r => r.market_id === selectedMarket);
+  let filteredPromotional = effectiveMarketIds
+    ? promotionalRestaurants.filter(r => r.market_id && effectiveMarketIds.includes(r.market_id))
+    : promotionalRestaurants;
 
   // Apply search filter across all lists
   let filteredConsumers = consumers;
@@ -392,8 +396,8 @@ export default async function AdminPaidMembersPage({
   const restaurantMRR = restaurants.reduce((sum, r) => sum + r.mrr, 0);
   const consumerMRR = consumers.reduce((sum, c) => sum + c.mrr, 0);
   const selfPromoterMRR = selfPromoters.reduce((sum, s) => sum + s.mrr, 0);
-  const totalMRR = (selectedMarket === 'all' ? allRestaurants.reduce((s, r) => s + r.mrr, 0) : restaurantMRR) + consumerMRR + selfPromoterMRR;
-  const totalCount = (selectedMarket === 'all' ? allRestaurants.length : restaurants.length) + consumers.length + selfPromoters.length;
+  const totalMRR = restaurantMRR + consumerMRR + selfPromoterMRR;
+  const totalCount = restaurants.length + consumers.length + selfPromoters.length;
 
   return (
     <div>
@@ -407,10 +411,10 @@ export default async function AdminPaidMembersPage({
             }
           </p>
         </div>
-        {!admin.scopedMarketId && markets.length > 1 && (
+        {!admin.scopedMarketIds && markets.length > 1 && (
           <AdminMarketFilter
             markets={markets}
-            currentMarket={selectedMarket}
+            currentMarket={params.market || 'all'}
             basePath="/admin/paid-members"
           />
         )}
@@ -427,7 +431,7 @@ export default async function AdminPaidMembersPage({
           <Card className="p-6 bg-gradient-to-br from-green-500/10 to-transparent border-green-500/30">
             <div className="flex items-center gap-3 mb-2">
               <CreditCard className="w-5 h-5 text-green-400" />
-              <span className="text-tastelanc-text-muted">{selectedMarket === 'all' ? 'Total' : ''} MRR</span>
+              <span className="text-tastelanc-text-muted">{!effectiveMarketIds ? 'Total' : ''} MRR</span>
             </div>
             <p className="text-3xl font-bold text-green-400">${totalMRR.toFixed(0)}</p>
             <p className="text-xs text-tastelanc-text-faint mt-1">ARR: ${(totalMRR * 12).toLocaleString()}</p>
@@ -484,7 +488,7 @@ export default async function AdminPaidMembersPage({
       </div>
 
       {/* Per-Market Breakdown (only show when viewing all markets) */}
-      {selectedMarket === 'all' && markets.length > 1 && Object.keys(marketCounts).length > 0 && (
+      {!effectiveMarketIds && markets.length > 1 && Object.keys(marketCounts).length > 0 && (
         <div className="grid md:grid-cols-3 gap-4 mb-8">
           {markets.map(m => {
             const mc = marketCounts[m.id];
@@ -560,7 +564,7 @@ export default async function AdminPaidMembersPage({
                         <Badge variant="default" className={`text-xs ${sub.plan === 'Elite' ? 'bg-purple-500/20 text-purple-400' : 'bg-lancaster-gold/20 text-lancaster-gold'}`}>
                           {sub.plan}
                         </Badge>
-                        {selectedMarket === 'all' && sub.marketName && (
+                        {!effectiveMarketIds && sub.marketName && (
                           <Badge variant="default" className="text-xs bg-blue-500/10 text-blue-400">
                             {sub.marketName}
                           </Badge>

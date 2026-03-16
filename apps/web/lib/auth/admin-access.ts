@@ -6,7 +6,7 @@ export interface AdminAccessResult {
   role: 'super_admin' | 'co_founder' | 'market_admin' | null;
   userId: string;
   marketId: string;           // Current deploy's market (always set)
-  scopedMarketId: string | null; // null = see all markets, string = scoped to this market
+  scopedMarketIds: string[] | null; // null = see all markets, string[] = scoped to these markets
 }
 
 // Cached market ID — resolved once per process, reused across requests
@@ -23,8 +23,8 @@ async function resolveMarketId(supabase: SupabaseClient): Promise<string> {
 
 /**
  * Verifies that the current user has admin access for the current market deploy.
- * - super_admin: full access on any deploy
- * - market_admin: access only if admin_market_id matches this deploy's market
+ * - super_admin / co_founder: full access on any deploy, scopedMarketIds = null
+ * - market_admin: access only if admin_market_ids includes this deploy's market
  *
  * Throws { status, message } on failure for route handlers to catch.
  */
@@ -43,17 +43,18 @@ export async function verifyAdminAccess(
   // 3. Fetch profile role
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, admin_market_id')
+    .select('role, admin_market_ids')
     .eq('id', user.id)
     .maybeSingle();
 
   const role = profile?.role as 'super_admin' | 'co_founder' | 'market_admin' | null;
+  const adminMarketIds = profile?.admin_market_ids as string[] | null;
 
   // 4. Authorize
   let isAuthorized = false;
   if (role === 'super_admin' || role === 'co_founder') {
     isAuthorized = true;
-  } else if (role === 'market_admin' && profile?.admin_market_id === marketId) {
+  } else if (role === 'market_admin' && adminMarketIds?.includes(marketId)) {
     isAuthorized = true;
   }
 
@@ -66,7 +67,7 @@ export async function verifyAdminAccess(
     role,
     userId: user.id,
     marketId,
-    scopedMarketId: (role === 'super_admin' || role === 'co_founder') ? null : marketId,
+    scopedMarketIds: (role === 'super_admin' || role === 'co_founder') ? null : adminMarketIds,
   };
 }
 
@@ -80,7 +81,7 @@ export async function isUserAdmin(supabase: SupabaseClient): Promise<boolean> {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, admin_market_id')
+    .select('role, admin_market_ids')
     .eq('id', user.id)
     .maybeSingle();
 
@@ -88,7 +89,7 @@ export async function isUserAdmin(supabase: SupabaseClient): Promise<boolean> {
   if (profile.role === 'super_admin' || profile.role === 'co_founder') return true;
   if (profile.role === 'market_admin') {
     const marketId = await resolveMarketId(supabase);
-    return profile.admin_market_id === marketId;
+    return (profile.admin_market_ids as string[] | null)?.includes(marketId) ?? false;
   }
   return false;
 }

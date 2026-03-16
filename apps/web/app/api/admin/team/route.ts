@@ -81,7 +81,7 @@ export async function POST(request: Request) {
         email,
         display_name: name,
         role: role || null,
-        admin_market_id: role === 'market_admin' && market_ids?.length === 1 ? market_ids[0] : null,
+        admin_market_ids: role === 'market_admin' && market_ids?.length > 0 ? market_ids : null,
       }, { onConflict: 'id' });
 
     // Set profile role if provided
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
         .update({
           role,
           display_name: name,
-          admin_market_id: role === 'market_admin' && market_ids?.length === 1 ? market_ids[0] : null,
+          admin_market_ids: role === 'market_admin' && market_ids?.length > 0 ? market_ids : null,
         })
         .eq('id', userId);
     }
@@ -195,7 +195,7 @@ export async function GET() {
     // Fetch all profiles with admin roles
     const { data: adminProfiles } = await serviceClient
       .from('profiles')
-      .select('id, role, admin_market_id, email, display_name')
+      .select('id, role, admin_market_ids, email, display_name')
       .in('role', ['super_admin', 'co_founder', 'market_admin', 'sales_rep']);
 
     // Fetch all sales reps
@@ -251,15 +251,15 @@ export async function GET() {
           name: p.display_name || p.email || 'Unknown',
           email: p.email || '',
           profileRole: p.role,
-          adminMarketId: p.admin_market_id,
-          adminMarketName: p.admin_market_id ? marketMap[p.admin_market_id] || null : null,
+          adminMarketIds: p.admin_market_ids || null,
+          adminMarketNames: (p.admin_market_ids as string[] | null)?.map((id: string) => marketMap[id] || 'Unknown') || null,
           isSalesRep: false,
           salesRepData: null,
           leadCount: leadCountMap[p.id] || 0,
           lastSignInAt: lastSignInMap[p.id] || null,
           marketNames: p.role === 'super_admin' || p.role === 'co_founder'
             ? ['All Markets']
-            : p.admin_market_id ? [marketMap[p.admin_market_id] || 'Unknown'] : [],
+            : (p.admin_market_ids as string[] | null)?.map((id: string) => marketMap[id] || 'Unknown') || [],
         });
       }
     }
@@ -292,8 +292,8 @@ export async function GET() {
             name: rep.name,
             email: rep.email,
             profileRole: null,
-            adminMarketId: null,
-            adminMarketName: null,
+            adminMarketIds: null,
+            adminMarketNames: null,
             isSalesRep: true,
             salesRepData: {
               market_ids: rep.market_ids || [],

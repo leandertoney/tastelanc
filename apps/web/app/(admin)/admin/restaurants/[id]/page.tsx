@@ -42,10 +42,10 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
     `)
     .eq('id', id);
 
-  // market_admin: filter to their scoped market
-  // super_admin: scopedMarketId is null, no filter (can see all markets)
-  if (admin.scopedMarketId) {
-    query = query.eq('market_id', admin.scopedMarketId);
+  // market_admin: filter to their scoped markets
+  // super_admin: scopedMarketIds is null, no filter (can see all markets)
+  if (admin.scopedMarketIds) {
+    query = query.in('market_id', admin.scopedMarketIds);
   }
 
   const { data: restaurant, error } = await query.single();

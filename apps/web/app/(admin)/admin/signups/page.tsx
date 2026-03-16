@@ -3,7 +3,7 @@ import { Card, Badge } from '@/components/ui';
 import { Users, CreditCard, Calendar, TrendingUp } from 'lucide-react';
 import { verifyAdminAccess } from '@/lib/auth/admin-access';
 
-async function getSignups(scopedMarketId: string | null) {
+async function getSignups(scopedMarketIds: string[] | null) {
   const supabase = await createClient();
 
   // Get all subscriptions with tier and restaurant info
@@ -12,12 +12,12 @@ async function getSignups(scopedMarketId: string | null) {
     .select(`
       *,
       tiers(name, display_name),
-      restaurants${scopedMarketId ? '!inner' : ''}(name, slug, market_id)
+      restaurants${scopedMarketIds ? '!inner' : ''}(name, slug, market_id)
     `)
     .order('created_at', { ascending: false });
 
-  if (scopedMarketId) {
-    query = query.eq('restaurants.market_id', scopedMarketId);
+  if (scopedMarketIds) {
+    query = query.in('restaurants.market_id', scopedMarketIds);
   }
 
   const { data: subscriptions, error } = await query;
@@ -45,7 +45,7 @@ async function getSignups(scopedMarketId: string | null) {
 export default async function AdminSignupsPage() {
   const supabase = await createClient();
   const admin = await verifyAdminAccess(supabase);
-  const { subscriptions, stats } = await getSignups(admin.scopedMarketId);
+  const { subscriptions, stats } = await getSignups(admin.scopedMarketIds);
 
   return (
     <div>

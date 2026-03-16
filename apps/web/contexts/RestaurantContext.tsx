@@ -99,11 +99,11 @@ export function RestaurantProvider({ children }: RestaurantProviderProps) {
       // Check admin role from profiles table
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role, admin_market_id')
+        .select('role, admin_market_ids')
         .eq('id', user.id)
         .maybeSingle();
       const userIsAdmin = profile?.role === 'super_admin' || profile?.role === 'co_founder' ||
-        (profile?.role === 'market_admin' && profile?.admin_market_id === marketId);
+        (profile?.role === 'market_admin' && !!marketId && (profile?.admin_market_ids as string[] | null)?.includes(marketId) === true);
       setIsAdmin(userIsAdmin);
 
       // If admin mode with specific restaurant ID

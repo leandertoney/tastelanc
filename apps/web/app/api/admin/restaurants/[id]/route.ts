@@ -50,8 +50,8 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       .select('id')
       .eq('id', id);
 
-    if (admin.scopedMarketId) {
-      checkQuery = checkQuery.eq('market_id', admin.scopedMarketId);
+    if (admin.scopedMarketIds) {
+      checkQuery = checkQuery.in('market_id', admin.scopedMarketIds);
     }
 
     const { data: existing } = await checkQuery.single();

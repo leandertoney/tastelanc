@@ -20,8 +20,8 @@ export async function GET() {
       .select('id, name, city, state, owner_id')
       .order('name', { ascending: true });
 
-    if (admin.scopedMarketId) {
-      query = query.eq('market_id', admin.scopedMarketId);
+    if (admin.scopedMarketIds) {
+      query = query.in('market_id', admin.scopedMarketIds);
     }
 
     const { data: restaurants, error } = await query;
