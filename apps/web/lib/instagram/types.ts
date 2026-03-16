@@ -108,6 +108,11 @@ export interface SlideCandidate {
   cover_image_url: string | null;
 }
 
+export interface HolidaySpecialSlide {
+  restaurant_name: string;
+  specials: { name: string; category: string; price: string | null; description: string | null }[];
+}
+
 export interface MarketConfig {
   market_id: string;
   market_slug: string;

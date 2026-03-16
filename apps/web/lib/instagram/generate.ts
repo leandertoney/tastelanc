@@ -31,7 +31,8 @@ import {
 } from './prompts';
 import { DayTheme } from './types';
 import { selectMedia, recordMediaUsage } from './media';
-import { generateCarouselSlides, composeWeeklyRoundupSlides } from './overlay';
+import { generateCarouselSlides, composeWeeklyRoundupSlides, composeHolidayPosterSlides } from './overlay';
+import { HolidaySpecialSlide } from './types';
 import { SlideCandidate, HeadlineParts } from './types';
 
 const MIN_CANDIDATES_FOR_POST = 3; // Need at least 3 total to make "hidden count" compelling
@@ -474,6 +475,43 @@ async function generateWeeklyRoundup(
     ? `This Week + ${holidayLabel}`
     : 'This Week';
 
+  // If there are holiday specials, fetch the raw data for poster-style slides
+  let holidaySlideData: HolidaySpecialSlide[] | undefined;
+  if (hasHoliday && holidayTag) {
+    const fromStr = date.toISOString().split('T')[0];
+    const toStr = weekEnd.toISOString().split('T')[0];
+
+    const { data: rawSpecials } = await supabase
+      .from('holiday_specials')
+      .select(`
+        name, category, special_price, discount_description, description,
+        restaurant:restaurants!inner(name, market_id)
+      `)
+      .eq('is_active', true)
+      .eq('holiday_tag', holidayTag)
+      .eq('restaurant.market_id', market.market_id)
+      .gte('event_date', fromStr)
+      .lte('event_date', toStr);
+
+    if (rawSpecials && rawSpecials.length > 0) {
+      // Group by restaurant
+      const byRestaurant = new Map<string, HolidaySpecialSlide>();
+      for (const s of rawSpecials) {
+        const rName = (s.restaurant as any)?.name || 'Unknown';
+        if (!byRestaurant.has(rName)) {
+          byRestaurant.set(rName, { restaurant_name: rName, specials: [] });
+        }
+        byRestaurant.get(rName)!.specials.push({
+          name: s.name,
+          category: s.category,
+          price: s.special_price ? String(s.special_price) : null,
+          description: s.discount_description || s.description || null,
+        });
+      }
+      holidaySlideData = Array.from(byRestaurant.values());
+    }
+  }
+
   return await buildAndSavePost(opts, {
     contentType: 'tonight_today', // Use existing content type for DB compatibility
     visible,
@@ -484,6 +522,9 @@ async function generateWeeklyRoundup(
     decisionPath: hasHoliday
       ? `${decisionPath}:with_holiday:${holidayTag}`
       : decisionPath,
+    holidaySlideData,
+    holidayTag: holidayTag || undefined,
+    holidayLabel: holidayLabel || undefined,
   });
 }
 
@@ -515,6 +556,9 @@ interface BuildPostParams {
   subType: string;
   subTypeLabel: string;
   decisionPath: string;
+  holidaySlideData?: HolidaySpecialSlide[];
+  holidayTag?: string;
+  holidayLabel?: string;
 }
 
 async function buildAndSavePost(
@@ -592,14 +636,36 @@ async function buildAndSavePost(
     cover_image_url: c.cover_image_url,
   }));
 
-  // Generate composited carousel slides (cover + 3 restaurants + CTA)
-  // Use weekly roundup slides for the magazine-style layout
+  // Generate composited carousel slides
   const isWeeklyRoundup = opts.dayTheme === 'weekly_roundup' || params.subType?.startsWith('weekly_roundup');
-  const holidayTag = params.subType?.includes(':') ? params.subType.split(':').pop() : null;
+  const hasHolidayPoster = params.holidaySlideData && params.holidaySlideData.length > 0;
 
   let carouselUrls: string[];
   try {
-    if (isWeeklyRoundup) {
+    if (hasHolidayPoster) {
+      // Holiday poster slides — typographic poster cards matching the mobile app design
+      const marketName = getMarketDisplayName(market.market_slug);
+      const appName = getAppName(market.market_slug);
+      const dateLabel = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric' }).format(date)
+        .toUpperCase().replace(/(\d+)/, (_, d) => {
+          const n = parseInt(d);
+          const suffix = n === 1 || n === 21 || n === 31 ? 'ST' : n === 2 || n === 22 ? 'ND' : n === 3 || n === 23 ? 'RD' : 'TH';
+          return `${n}${suffix}`;
+        });
+
+      carouselUrls = await composeHolidayPosterSlides({
+        supabase,
+        market,
+        holidaySlides: params.holidaySlideData!,
+        totalRestaurants: params.holidaySlideData!.length,
+        date: today,
+        appName,
+        marketName,
+        holidayLabel: params.holidayLabel || "St. Patrick's Day",
+        dateLabel: `MARCH 17TH`,
+      });
+    } else if (isWeeklyRoundup) {
+      const holidayTag = params.subType?.includes(':') ? params.subType.split(':').pop() : null;
       carouselUrls = await composeWeeklyRoundupSlides({
         supabase,
         market,
@@ -622,7 +688,6 @@ async function buildAndSavePost(
     }
   } catch (err: any) {
     console.error('[Instagram] Carousel generation failed, falling back to raw images:', err.message);
-    // Fallback: use raw candidate images
     carouselUrls = media.urls.filter(Boolean);
   }
 

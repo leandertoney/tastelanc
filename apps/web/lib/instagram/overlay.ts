@@ -6,7 +6,7 @@ import sharp from 'sharp';
 import { readFileSync, existsSync, copyFileSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { SlideCandidate, MarketConfig, HeadlineParts } from './types';
+import { SlideCandidate, MarketConfig, HeadlineParts, HolidaySpecialSlide } from './types';
 import { getMarketDisplayName, getAppName } from './prompts';
 
 const SIZE = 1080;
@@ -286,8 +286,8 @@ async function composeRoundupCover(
   if (imageBuffer) {
     base = sharp(imageBuffer).resize(SIZE, SIZE, { fit: 'cover', position: 'centre' });
   } else {
-    const [r, g, b] = theme ? hexToRgb(theme.bgDark) : [20, 20, 25];
-    base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: { r, g, b } } });
+    const bg = theme ? hexToRgb(theme.bgDark) : { r: 20, g: 20, b: 25 };
+    base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: bg } });
   }
 
   // Dramatic overlay with accent-tinted gradient
@@ -415,8 +415,8 @@ async function composeRoundupCard(
   const base = imageBuffer
     ? sharp(imageBuffer).resize(SIZE, SIZE, { fit: 'cover', position: 'centre' })
     : (() => {
-        const [r, g, b] = theme ? hexToRgb(theme.bgDark) : [25, 25, 30];
-        return sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: { r, g, b } } });
+        const bg = theme ? hexToRgb(theme.bgDark) : { r: 25, g: 25, b: 30 };
+        return sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: bg } });
       })();
 
   const gradientSvg = Buffer.from(`
@@ -506,8 +506,8 @@ async function composeRoundupCTA(
       .toBuffer();
     base = sharp(blurred);
   } else {
-    const [r, g, b] = theme ? hexToRgb(theme.bgDark) : [18, 18, 22];
-    base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: { r, g, b } } });
+    const bg = theme ? hexToRgb(theme.bgDark) : { r: 18, g: 18, b: 22 };
+    base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: bg } });
   }
 
   const resizedLogo = await sharp(logoBuffer)
@@ -588,9 +588,394 @@ async function composeRoundupCTA(
     );
 }
 
-function hexToRgb(hex: string): [number, number, number] {
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const h = hex.replace('#', '');
-  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16) };
+}
+
+// ============================================================
+// Holiday Poster Slides — mirrors the mobile app's poster card design
+// Pure typographic — NO restaurant photos, only text + decorations
+// ============================================================
+
+// St. Patrick's Day palette (matches StPatricksDayScreen.tsx)
+const SPD = {
+  bg: '#0F2B0F',
+  bgDark: '#0D1F0D',
+  gold: '#D4AF37',
+  goldLight: '#E8D48B',
+  goldMuted: 'rgba(212,175,55,0.4)',
+  goldRule: 'rgba(212,175,55,0.3)',
+  cornerDecor: 'rgba(212,175,55,0.5)',
+  shamrock: '#2ECC40',
+  textPrimary: '#E8F5E8',
+  textMuted: '#5A8A5A',
+};
+
+/**
+ * Generate holiday poster-style carousel slides.
+ * Each slide is a typographic poster card showing a restaurant's specials.
+ * Design mirrors the in-app StPatricksDayScreen poster cards.
+ */
+export async function composeHolidayPosterSlides(opts: {
+  supabase: SupabaseClient;
+  market: MarketConfig;
+  holidaySlides: HolidaySpecialSlide[];
+  totalRestaurants: number;
+  date: string;
+  appName: string;
+  marketName: string;
+  holidayLabel: string;
+  dateLabel: string;
+}): Promise<string[]> {
+  const { supabase, market, holidaySlides, totalRestaurants, date, appName, marketName, holidayLabel, dateLabel } = opts;
+
+  let logoBuffer: Buffer;
+  try {
+    logoBuffer = loadLogoBuffer(market.market_slug);
+  } catch {
+    logoBuffer = await sharp({ create: { width: 200, height: 200, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).png().toBuffer();
+  }
+
+  const slides: Buffer[] = [];
+
+  // Slide 1: Cover
+  slides.push(await composePosterCover(appName, marketName, holidayLabel, dateLabel, logoBuffer));
+
+  // Slides 2-4: Restaurant special cards (up to 3)
+  for (const rs of holidaySlides.slice(0, 3)) {
+    slides.push(await composePosterSpecialCard(rs, appName, dateLabel));
+  }
+
+  // Final slide: CTA
+  const remaining = totalRestaurants - Math.min(holidaySlides.length, 3);
+  slides.push(await composePosterCTA(appName, remaining, holidayLabel, logoBuffer));
+
+  // Upload
+  const timestamp = Date.now();
+  const storagePath = `instagram/${market.market_slug}/${date}/${timestamp}`;
+  const urls = await Promise.all(
+    slides.map((buf, i) => uploadSlide(supabase, buf, `${storagePath}/slide-${i}.jpg`))
+  );
+
+  return urls;
+}
+
+async function composePosterCover(
+  appName: string,
+  marketName: string,
+  holidayLabel: string,
+  dateLabel: string,
+  logoBuffer: Buffer
+): Promise<Buffer> {
+  const base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: hexToRgb(SPD.bg) } });
+  const cx = SIZE / 2;
+
+  const resizedLogo = await sharp(logoBuffer).resize(90, 90, { fit: 'cover' }).png().toBuffer();
+
+  const svg = Buffer.from(`
+    <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
+      ${svgFontStyles()}
+
+      <!-- Gold border frame -->
+      <rect x="40" y="40" width="${SIZE - 80}" height="${SIZE - 80}"
+            fill="none" stroke="${SPD.gold}" stroke-width="2.5"/>
+
+      <!-- Corner brackets (L-shaped) -->
+      ${cornerBracketsSvg(SIZE, 55, 60, 3, SPD.cornerDecor, ['tl', 'tr', 'bl', 'br'])}
+
+      <!-- Background shamrocks -->
+      <text x="850" y="250" font-size="120" fill="${SPD.shamrock}" opacity="0.04"
+            transform="rotate(15,850,250)">&#9752;</text>
+      <text x="200" y="800" font-size="90" fill="${SPD.shamrock}" opacity="0.03"
+            transform="rotate(-25,200,800)">&#9752;</text>
+
+      <!-- Masthead -->
+      <text x="${cx}" y="180"
+            font-family="Inter" font-weight="700" font-size="38"
+            fill="white" text-anchor="middle" letter-spacing="12">
+        ${escapeXml(appName.toUpperCase())}
+      </text>
+
+      <!-- Gold rule -->
+      <rect x="${cx - 160}" y="200" width="320" height="2" fill="${SPD.goldRule}"/>
+
+      <!-- Holiday header with shamrock dividers -->
+      <line x1="200" y1="330" x2="420" y2="330" stroke="${SPD.goldRule}" stroke-width="1"/>
+      <text x="${cx}" y="336"
+            font-family="Inter" font-weight="700" font-size="16"
+            fill="${SPD.goldMuted}" text-anchor="middle" letter-spacing="4">
+        &#9752; ${escapeXml(holidayLabel.toUpperCase())} &#9752;
+      </text>
+      <line x1="660" y1="330" x2="880" y2="330" stroke="${SPD.goldRule}" stroke-width="1"/>
+
+      <!-- Hero text -->
+      <text x="${cx}" y="500"
+            font-family="Inter" font-weight="900" font-size="72"
+            fill="${SPD.gold}" text-anchor="middle" letter-spacing="2">
+        THIS WEEK
+      </text>
+      <text x="${cx}" y="580"
+            font-family="Inter" font-weight="700" font-size="44"
+            fill="${SPD.textPrimary}" text-anchor="middle" letter-spacing="3">
+        IN ${escapeXml(marketName.toUpperCase())}
+      </text>
+
+      <!-- Shamrock divider -->
+      <line x1="300" y1="640" x2="490" y2="640" stroke="${SPD.goldRule}" stroke-width="1"/>
+      <text x="${cx}" y="646" font-family="Inter" font-size="14" fill="${SPD.goldMuted}" text-anchor="middle">&#9752;</text>
+      <line x1="590" y1="640" x2="780" y2="640" stroke="${SPD.goldRule}" stroke-width="1"/>
+
+      <!-- Subtitle -->
+      <text x="${cx}" y="720"
+            font-family="Inter" font-weight="400" font-size="26" font-style="italic"
+            fill="${SPD.shamrock}" text-anchor="middle">
+        Specials, Brunch &amp; Live Music
+      </text>
+
+      <!-- Date -->
+      <text x="${cx}" y="780"
+            font-family="Inter" font-weight="600" font-size="20"
+            fill="${SPD.goldMuted}" text-anchor="middle" letter-spacing="3">
+        ${escapeXml(dateLabel.toUpperCase())}
+      </text>
+
+      <!-- Swipe CTA -->
+      <text x="${cx}" y="${SIZE - 80}"
+            font-family="Inter" font-weight="400" font-size="18"
+            fill="rgba(255,255,255,0.4)" text-anchor="middle" letter-spacing="4">
+        SWIPE FOR DEALS  &#x276F;
+      </text>
+    </svg>`);
+
+  return base
+    .jpeg({ quality: JPEG_QUALITY })
+    .toBuffer()
+    .then(buf => sharp(buf)
+      .composite([
+        { input: resizedLogo, top: 70, left: Math.round((SIZE - 90) / 2) },
+        { input: svg, top: 0, left: 0 },
+      ])
+      .jpeg({ quality: JPEG_QUALITY })
+      .toBuffer()
+    );
+}
+
+async function composePosterSpecialCard(
+  slide: HolidaySpecialSlide,
+  appName: string,
+  dateLabel: string
+): Promise<Buffer> {
+  const base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: hexToRgb(SPD.bg) } });
+  const cx = SIZE / 2;
+
+  // Build specials SVG content
+  let specialsSvg = '';
+  let yPos = 520;
+  const maxSpecials = Math.min(slide.specials.length, 4);
+
+  for (let i = 0; i < maxSpecials; i++) {
+    const s = slide.specials[i];
+    // Extract price from name (e.g., "$3 Irish Jello Shots" → price="$3", deal="IRISH JELLO SHOTS")
+    const priceMatch = s.name.match(/^\$(\d+(?:\.\d{2})?)\s+(.+)/) || s.name.match(/(.+)\s+\$(\d+(?:\.\d{2})?)$/);
+    const hasExplicitPrice = s.price && parseFloat(s.price) > 0;
+
+    if (hasExplicitPrice || priceMatch) {
+      const price = hasExplicitPrice ? `$${Math.round(parseFloat(s.price!))}` : (priceMatch![1].startsWith('$') ? priceMatch![1] : `$${priceMatch![2]}`);
+      const dealName = hasExplicitPrice
+        ? s.name.replace(/\$\d+(?:\.\d{2})?\s*/g, '').trim()
+        : (priceMatch![1].startsWith('$') ? priceMatch![2] : priceMatch![1]).trim();
+
+      specialsSvg += `
+        <text x="${cx - 10}" y="${yPos}"
+              font-family="Inter" font-weight="900" font-size="56"
+              fill="${SPD.gold}" text-anchor="end">${escapeXml(price)}</text>
+        <text x="${cx + 10}" y="${yPos}"
+              font-family="Inter" font-weight="700" font-size="28"
+              fill="${SPD.textPrimary}" text-anchor="start"
+              letter-spacing="1">${escapeXml(dealName.toUpperCase())}</text>
+      `;
+    } else {
+      // No price — show name centered
+      specialsSvg += `
+        <text x="${cx}" y="${yPos}"
+              font-family="Inter" font-weight="800" font-size="30"
+              fill="${SPD.textPrimary}" text-anchor="middle"
+              letter-spacing="2">${escapeXml(s.name.toUpperCase())}</text>
+      `;
+    }
+
+    if (s.description) {
+      yPos += 30;
+      specialsSvg += `
+        <text x="${cx}" y="${yPos}"
+              font-family="Inter" font-weight="400" font-size="18" font-style="italic"
+              fill="${SPD.textMuted}" text-anchor="middle">${escapeXml(s.description)}</text>
+      `;
+    }
+
+    // Green divider between specials
+    if (i < maxSpecials - 1) {
+      yPos += 35;
+      specialsSvg += `
+        <line x1="350" y1="${yPos}" x2="730" y2="${yPos}"
+              stroke="${SPD.shamrock}" stroke-width="1" opacity="0.15"/>
+      `;
+      yPos += 40;
+    }
+  }
+
+  const svg = Buffer.from(`
+    <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
+      ${svgFontStyles()}
+
+      <!-- Gold border frame -->
+      <rect x="60" y="60" width="${SIZE - 120}" height="${SIZE - 120}"
+            fill="none" stroke="${SPD.gold}" stroke-width="2"/>
+
+      <!-- Corner brackets -->
+      ${cornerBracketsSvg(SIZE, 75, 50, 2.5, SPD.cornerDecor, ['tl', 'tr', 'bl', 'br'])}
+
+      <!-- Background shamrocks -->
+      <text x="880" y="200" font-size="80" fill="${SPD.shamrock}" opacity="0.04"
+            transform="rotate(15,880,200)">&#9752;</text>
+      <text x="150" y="900" font-size="60" fill="${SPD.shamrock}" opacity="0.03"
+            transform="rotate(-20,150,900)">&#9752;</text>
+
+      <!-- Holiday header -->
+      <line x1="250" y1="140" x2="420" y2="140" stroke="${SPD.goldRule}" stroke-width="1"/>
+      <text x="${cx}" y="146"
+            font-family="Inter" font-weight="700" font-size="14"
+            fill="${SPD.goldMuted}" text-anchor="middle" letter-spacing="4">
+        ST. PATRICK&apos;S DAY 2026
+      </text>
+      <line x1="660" y1="140" x2="830" y2="140" stroke="${SPD.goldRule}" stroke-width="1"/>
+
+      <!-- Restaurant name -->
+      <text x="${cx}" y="280"
+            font-family="Inter" font-weight="900" font-size="${slide.restaurant_name.length > 20 ? 38 : 48}"
+            fill="${SPD.gold}" text-anchor="middle"
+            letter-spacing="1">${escapeXml(slide.restaurant_name.toUpperCase())}</text>
+
+      <!-- Shamrock divider -->
+      <line x1="280" y1="330" x2="470" y2="330" stroke="${SPD.goldRule}" stroke-width="1"/>
+      <text x="${cx}" y="336" font-family="Inter" font-size="12" fill="${SPD.goldMuted}" text-anchor="middle">&#9752;</text>
+      <line x1="610" y1="330" x2="800" y2="330" stroke="${SPD.goldRule}" stroke-width="1"/>
+
+      <!-- Specials -->
+      ${specialsSvg}
+
+      <!-- Bottom shamrock divider -->
+      <line x1="280" y1="${SIZE - 180}" x2="470" y2="${SIZE - 180}" stroke="${SPD.goldRule}" stroke-width="1"/>
+      <text x="${cx}" y="${SIZE - 174}" font-family="Inter" font-size="12" fill="${SPD.goldMuted}" text-anchor="middle">&#9752;</text>
+      <line x1="610" y1="${SIZE - 180}" x2="800" y2="${SIZE - 180}" stroke="${SPD.goldRule}" stroke-width="1"/>
+
+      <!-- Brand footer -->
+      <text x="${cx}" y="${SIZE - 120}"
+            font-family="Inter" font-weight="600" font-size="14"
+            fill="${SPD.goldMuted}" text-anchor="middle" letter-spacing="3">
+        ${escapeXml(appName.toUpperCase())}  &#183;  ${escapeXml(dateLabel.toUpperCase())}
+      </text>
+    </svg>`);
+
+  return base
+    .jpeg({ quality: JPEG_QUALITY })
+    .toBuffer()
+    .then(buf => sharp(buf)
+      .composite([{ input: svg, top: 0, left: 0 }])
+      .jpeg({ quality: JPEG_QUALITY })
+      .toBuffer()
+    );
+}
+
+async function composePosterCTA(
+  appName: string,
+  remainingCount: number,
+  holidayLabel: string,
+  logoBuffer: Buffer
+): Promise<Buffer> {
+  const base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: hexToRgb(SPD.bgDark) } });
+  const cx = SIZE / 2;
+
+  const resizedLogo = await sharp(logoBuffer).resize(180, 180, { fit: 'cover' }).png().toBuffer();
+
+  const moreText = remainingCount > 0
+    ? `+ ${remainingCount} more bars celebrating`
+    : 'See all the deals';
+
+  const svg = Buffer.from(`
+    <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
+      ${svgFontStyles()}
+
+      <!-- Gold border frame -->
+      <rect x="40" y="40" width="${SIZE - 80}" height="${SIZE - 80}"
+            fill="none" stroke="${SPD.gold}" stroke-width="2"/>
+
+      <!-- Corner brackets -->
+      ${cornerBracketsSvg(SIZE, 55, 60, 3, SPD.cornerDecor, ['tl', 'tr', 'bl', 'br'])}
+
+      <!-- Background shamrocks -->
+      <text x="200" y="300" font-size="140" fill="${SPD.shamrock}" opacity="0.04"
+            transform="rotate(-10,200,300)">&#9752;</text>
+      <text x="800" y="700" font-size="100" fill="${SPD.shamrock}" opacity="0.03"
+            transform="rotate(20,800,700)">&#9752;</text>
+
+      <!-- More bars text -->
+      <text x="${cx}" y="550"
+            font-family="Inter" font-weight="700" font-size="36"
+            fill="${SPD.textPrimary}" text-anchor="middle">
+        ${escapeXml(moreText)}
+      </text>
+
+      <!-- Shamrock divider -->
+      <line x1="300" y1="590" x2="470" y2="590" stroke="${SPD.goldRule}" stroke-width="1"/>
+      <text x="${cx}" y="596" font-family="Inter" font-size="14" fill="${SPD.goldMuted}" text-anchor="middle">&#9752;</text>
+      <line x1="610" y1="590" x2="780" y2="590" stroke="${SPD.goldRule}" stroke-width="1"/>
+
+      <!-- CTA text -->
+      <text x="${cx}" y="660"
+            font-family="Inter" font-weight="400" font-size="24" font-style="italic"
+            fill="${SPD.shamrock}" text-anchor="middle">
+        Open ${escapeXml(appName)} &#x2192; ${escapeXml(holidayLabel)} tab
+      </text>
+
+      <!-- Download text -->
+      <text x="${cx}" y="720"
+            font-family="Inter" font-weight="400" font-size="18"
+            fill="rgba(255,255,255,0.4)" text-anchor="middle">
+        Free on the App Store &amp; Google Play
+      </text>
+
+      <!-- Gold CTA button -->
+      <rect x="${cx - 130}" y="770" width="260" height="54" rx="27" ry="27"
+            fill="${SPD.gold}"/>
+      <text x="${cx}" y="804"
+            font-family="Inter" font-weight="700" font-size="22"
+            fill="#0D1F0D" text-anchor="middle" letter-spacing="2">
+        LINK IN BIO
+      </text>
+
+      <!-- Holiday label at bottom -->
+      <text x="${cx}" y="${SIZE - 80}"
+            font-family="Inter" font-weight="600" font-size="14"
+            fill="${SPD.goldMuted}" text-anchor="middle" letter-spacing="4">
+        &#9752; ${escapeXml(holidayLabel.toUpperCase())} 2026 &#9752;
+      </text>
+    </svg>`);
+
+  const logoLeft = Math.round((SIZE - 180) / 2);
+
+  return base
+    .jpeg({ quality: JPEG_QUALITY })
+    .toBuffer()
+    .then(buf => sharp(buf)
+      .composite([
+        { input: resizedLogo, top: 230, left: logoLeft },
+        { input: svg, top: 0, left: 0 },
+      ])
+      .jpeg({ quality: JPEG_QUALITY })
+      .toBuffer()
+    );
 }
 
 // ============================================================
