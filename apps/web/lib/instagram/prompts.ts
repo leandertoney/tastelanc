@@ -104,8 +104,57 @@ Tone: excited but not over the top. Like telling a friend what's going on this w
 Hashtags should include #${ctx.marketName.replace(/\s+/g, '')}PA and 2-4 relevant tags.`;
 }
 
+function buildWeeklyRoundupPrompt(ctx: PromptContext): string {
+  const items = ctx.visibleNames.map(n => `• ${n}`).join('\n');
+  const isHoliday = ctx.subType?.includes(':');
+  const holidayName = isHoliday ? ctx.subTypeLabel?.split(' + ')[1] : null;
+
+  if (holidayName) {
+    return `Write an Instagram caption for ${ctx.appName}'s weekly roundup — a magazine-style "what's happening this week" post for ${ctx.marketName}, PA.
+
+This week features ${holidayName}! Make sure the holiday is front and center in the hook.
+
+Featured spots this week:
+${items}
+
+Total things happening: ${ctx.totalCount}+ happenings across happy hours, specials, events${holidayName ? `, and ${holidayName} celebrations` : ''}
+
+Structure:
+1. Hook that leads with ${holidayName} + what else is happening this week
+2. List ${ctx.visibleNames.length} highlighted spots with • (mention which ones are ${holidayName} specials)
+3. Tease that there's way more on the app
+4. CTA: open ${ctx.appName} to see the full week — plus the ${holidayName} tab for all the deals
+
+Tone: excited but not over the top. Like a friend giving you the weekly rundown.
+Hashtags: #${ctx.marketName.replace(/\s+/g, '')}PA #${holidayName.replace(/['\s]/g, '')} and 2-3 relevant tags.`;
+  }
+
+  return `Write an Instagram caption for ${ctx.appName}'s weekly roundup — a magazine-style "what's happening this week" post for ${ctx.marketName}, PA.
+
+Featured spots this week:
+${items}
+
+Total things happening: ${ctx.totalCount}+ happenings across happy hours, specials, and events
+
+Structure:
+1. Hook about what's happening this week in ${ctx.marketName}
+2. List ${ctx.visibleNames.length} highlighted spots with •
+3. Tease that there's way more on the app
+4. CTA: open ${ctx.appName} to see the full week
+
+Tone: excited but not over the top. Like a friend giving you the weekly rundown.
+Hashtags: #${ctx.marketName.replace(/\s+/g, '')}PA and 2-4 relevant tags.`;
+}
+
 export function buildCaptionPrompt(ctx: PromptContext): { system: string; user: string } {
   let user: string;
+
+  // Weekly roundup gets its own prompt
+  if (ctx.subType?.startsWith('weekly_roundup')) {
+    user = buildWeeklyRoundupPrompt(ctx);
+    return { system: SYSTEM_PROMPT, user };
+  }
+
   switch (ctx.contentType) {
     case 'tonight_today':
       user = buildTonightTodayPrompt(ctx);

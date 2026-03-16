@@ -524,6 +524,67 @@ export async function fetchUpcomingEventsCandidates(
   return { candidates: scored, memory };
 }
 
+/**
+ * Fetch active holiday specials for a date range (e.g., this week).
+ * Queries the holiday_specials table for any active holiday promotions.
+ */
+export async function fetchHolidaySpecialsCandidates(
+  supabase: SupabaseClient,
+  marketId: string,
+  fromDate: Date,
+  toDate: Date
+): Promise<{ candidates: ScoredCandidate[]; holidayTag: string | null; memory: Map<string, MemoryRow> }> {
+  const memory = await loadRecencyMemory(supabase, marketId);
+  const fromStr = fromDate.toISOString().split('T')[0];
+  const toStr = toDate.toISOString().split('T')[0];
+
+  const { data: specials } = await supabase
+    .from('holiday_specials')
+    .select(`
+      id, name, description, category, event_date, start_time, end_time,
+      special_price, discount_description, image_url, holiday_tag, created_at,
+      restaurant:restaurants!inner(id, name, slug, cover_image_url, average_rating, market_id, is_active,
+        tier:tiers(name)
+      )
+    `)
+    .eq('is_active', true)
+    .eq('restaurant.market_id', marketId)
+    .gte('event_date', fromStr)
+    .lte('event_date', toStr);
+
+  const holidayTag = specials?.[0]?.holiday_tag || null;
+
+  const scored = (specials || [])
+    .filter((s: any) => s.restaurant?.is_active)
+    .map((s: any) => {
+      const priceText = s.special_price ? `$${s.special_price}` : s.discount_description || '';
+      const detail = priceText ? `${s.name} ${priceText}` : s.name;
+      // Holiday specials get a freshness boost — they're timely by nature
+      return scoreCandidate({
+        restaurant_id: s.restaurant.id,
+        restaurant_name: s.restaurant.name,
+        restaurant_slug: s.restaurant.slug,
+        entity_id: s.id,
+        entity_type: 'special',
+        entity_name: s.name,
+        image_url: s.image_url,
+        cover_image_url: s.restaurant.cover_image_url,
+        tier_slug: s.restaurant.tier?.name || null,
+        average_rating: s.restaurant.average_rating,
+        created_at: s.created_at,
+        detail_text: detail.length > 40 ? detail.slice(0, 37) + '...' : detail,
+      }, memory);
+    });
+
+  // Boost holiday specials scores — they're the most timely content
+  for (const s of scored) {
+    s.score += 5; // Significant boost to ensure holidays surface
+    s.freshness = 3; // Max freshness
+  }
+
+  return { candidates: scored, holidayTag, memory };
+}
+
 export async function fetchCategoryRoundupCandidates(
   supabase: SupabaseClient,
   marketId: string,

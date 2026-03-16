@@ -10,8 +10,10 @@ ALTER TABLE instagram_posts
   ADD COLUMN IF NOT EXISTS scheduled_publish_at timestamptz,
   ADD COLUMN IF NOT EXISTS day_theme text;
 
--- Update existing drafts to pending_review if they have no scheduled_publish_at
--- (no-op for now, just schema change)
+-- Update status check constraint to include new statuses
+ALTER TABLE instagram_posts DROP CONSTRAINT IF EXISTS instagram_posts_status_check;
+ALTER TABLE instagram_posts ADD CONSTRAINT instagram_posts_status_check
+  CHECK (status = ANY (ARRAY['draft', 'pending_review', 'approved', 'rejected', 'published', 'failed']));
 
 -- Add index for the publish cron to efficiently find posts ready to auto-publish
 CREATE INDEX IF NOT EXISTS idx_instagram_posts_publish_ready

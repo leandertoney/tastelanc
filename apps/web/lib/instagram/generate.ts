@@ -15,6 +15,7 @@ import {
   fetchWeekendCandidates,
   fetchCategoryRoundupCandidates,
   fetchUpcomingEventsCandidates,
+  fetchHolidaySpecialsCandidates,
   selectTopCandidates,
 } from './scoring';
 import {
@@ -82,7 +83,11 @@ export async function generateInstagramPost(opts: GenerateOptions): Promise<Gene
   let decisionPath = '';
 
   // Decision flow
-  if (forceType) {
+  if (opts.dayTheme === 'weekly_roundup') {
+    // Monday Weekly Roundup: pulls from ALL sources for the week ahead
+    decisionPath = 'weekly_roundup';
+    result = await generateWeeklyRoundup(opts, decisionPath);
+  } else if (forceType) {
     decisionPath = `forced:${forceType}`;
     result = await generateByType(opts, forceType, dayOfWeek, today, decisionPath);
   } else {
@@ -410,6 +415,92 @@ async function generateUpcomingEvents(
     subTypeLabel: 'Events',
     decisionPath,
   });
+}
+
+/**
+ * Monday Weekly Roundup: "The Magazine Issue"
+ * Pulls from ALL content sources for the week ahead:
+ * - Happy hours (Mon-Sun)
+ * - Specials (Mon-Sun)
+ * - Events (Mon-Sun)
+ * - Holiday specials (if any fall this week)
+ *
+ * Selects a diverse mix across categories, prioritizing:
+ * 1. Holiday specials (most timely, highest boost)
+ * 2. Events (time-sensitive)
+ * 3. Happy hours & specials (evergreen but relevant)
+ */
+async function generateWeeklyRoundup(
+  opts: GenerateOptions,
+  decisionPath: string
+): Promise<GenerationResult> {
+  const { supabase, market, date } = opts;
+  const today = date.toISOString().split('T')[0];
+
+  // Build the week range (Mon-Sun from the target date)
+  const weekEnd = new Date(date);
+  weekEnd.setDate(date.getDate() + 6);
+
+  // Fetch holiday specials for this week
+  const { candidates: holidayCandidates, holidayTag } =
+    await fetchHolidaySpecialsCandidates(supabase, market.market_id, date, weekEnd);
+
+  // Fetch events for the week
+  const { candidates: eventCandidates } =
+    await fetchUpcomingEventsCandidates(supabase, market.market_id, date);
+
+  // Fetch today's happy hours and specials as a representative sample
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const dayOfWeek = dayNames[date.getDay()];
+  const { happyHours, specials } =
+    await fetchTonightCandidates(supabase, market.market_id, dayOfWeek, today);
+
+  // Combine all candidates
+  const allCandidates = [...holidayCandidates, ...eventCandidates, ...happyHours, ...specials];
+
+  if (allCandidates.length < MIN_CANDIDATES_FOR_POST) {
+    return { success: false, error: 'Not enough content for weekly roundup' };
+  }
+
+  // Select top candidates — aim for diversity across types
+  // Holiday specials already have a +5 score boost so they'll surface naturally
+  const { visible, totalCount } = selectTopCandidates(allCandidates, VISIBLE_COUNT, today);
+
+  // Build labels that reflect what's in the roundup
+  const hasHoliday = holidayCandidates.length > 0;
+  const holidayLabel = hasHoliday ? formatHolidayLabel(holidayTag) : null;
+
+  const subTypeLabel = hasHoliday
+    ? `This Week + ${holidayLabel}`
+    : 'This Week';
+
+  return await buildAndSavePost(opts, {
+    contentType: 'tonight_today', // Use existing content type for DB compatibility
+    visible,
+    totalCount,
+    dayLabel: 'This Week',
+    subType: hasHoliday ? `weekly_roundup:${holidayTag}` : 'weekly_roundup',
+    subTypeLabel,
+    decisionPath: hasHoliday
+      ? `${decisionPath}:with_holiday:${holidayTag}`
+      : decisionPath,
+  });
+}
+
+/** Convert holiday_tag like 'st-patricks-2026' to a display label */
+function formatHolidayLabel(tag: string | null): string {
+  if (!tag) return 'Holiday Specials';
+  const HOLIDAY_LABELS: Record<string, string> = {
+    'st-patricks': "St. Patrick's Day",
+    'cinco-de-mayo': 'Cinco de Mayo',
+    'easter': 'Easter',
+    'valentines': "Valentine's Day",
+    'fourth-of-july': '4th of July',
+    'halloween': 'Halloween',
+  };
+  // Strip year suffix (e.g., 'st-patricks-2026' → 'st-patricks')
+  const base = tag.replace(/-\d{4}$/, '');
+  return HOLIDAY_LABELS[base] || tag.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
 // ============================================
