@@ -4,6 +4,9 @@ import { verifyAdminAccess } from '@/lib/auth/admin-access';
 import { resend, getRecipientsBySegment, EMAIL_CONFIG } from '@/lib/resend';
 import { renderPromotionalEmail } from '@/lib/email-templates/promotional-template';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const HIRING_EMAIL = {
   subject: "We're Hiring! Join the TasteLanc Team",
   previewText: "Help us connect Lancaster's best restaurants with the community",

@@ -7,6 +7,9 @@ import { generateAdminTeamInviteEmail } from '@/lib/email-templates/team-invite-
 import { BRAND } from '@/config/market';
 import { SENDER_IDENTITIES } from '@/config/sender-identities';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();

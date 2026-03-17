@@ -5,6 +5,9 @@ import OpenAI from 'openai';
 import { createClient as createSupabaseAdmin } from '@supabase/supabase-js';
 import { MARKET_SLUG, BRAND } from '@/config/market';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY_BLOG || process.env.OPENAI_API_KEY!,
 });

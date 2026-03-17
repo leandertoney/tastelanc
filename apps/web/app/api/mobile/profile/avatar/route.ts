@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { createMobileClient } from '@/lib/supabase/mobile-auth';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const BUCKET = 'images';
 const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];

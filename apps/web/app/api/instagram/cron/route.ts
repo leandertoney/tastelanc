@@ -16,6 +16,9 @@ import {
   DEFAULT_PUBLISH_MINUTE_ET,
 } from '@/lib/instagram/prompts';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 /**
  * Compute the scheduled publish time in UTC for a given date.
  * Default: 11:30 AM ET on the target date.

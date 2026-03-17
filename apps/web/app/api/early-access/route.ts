@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { MARKET_SLUG } from '@/config/market';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Use service role key to bypass RLS for inserts
 function getSupabaseAdmin() {
   return createClient(

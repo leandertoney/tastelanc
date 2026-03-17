@@ -4,6 +4,9 @@ import { createServiceRoleClient } from '@/lib/supabase/admin';
 import { calculatePoints, checkPremiumStatus, validateRewardAction, PREMIUM_MULTIPLIER, BASE_POINTS } from '@/lib/rewards';
 import { RewardActionType } from '@/types/database';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface EarnPointsRequest {
   action_type: RewardActionType;
   restaurant_id?: string;

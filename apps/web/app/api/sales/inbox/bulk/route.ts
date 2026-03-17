@@ -4,6 +4,9 @@ import { verifySalesAccess } from '@/lib/auth/sales-access';
 import { getRepSenderEmails } from '@/lib/auth/rep-identity';
 import { INFO_INBOX_EMAILS } from '@/config/sender-identities';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 /**
  * Bulk operations on inbox conversations.
  *

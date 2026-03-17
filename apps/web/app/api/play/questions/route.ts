@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { generateQuestions } from '@/lib/game/question-generator';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const questions = await generateQuestions();

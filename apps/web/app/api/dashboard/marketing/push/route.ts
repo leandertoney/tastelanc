@@ -3,6 +3,9 @@ import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifyRestaurantAccess } from '@/lib/auth/restaurant-access';
 import { sendNotification } from '@/lib/notifications/gateway';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const TIER_PUSH_LIMITS: Record<string, number> = {
   premium: 4,
   elite: 8,

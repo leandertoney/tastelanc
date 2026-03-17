@@ -6,6 +6,9 @@ import { NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { fetchPostMetrics } from '@/lib/instagram/publish';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const isPgCron = body.source === 'pg_cron';

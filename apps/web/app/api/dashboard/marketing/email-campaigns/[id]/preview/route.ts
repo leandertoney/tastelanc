@@ -4,6 +4,9 @@ import { verifyRestaurantAccess } from '@/lib/auth/restaurant-access';
 import { BRAND, getMarketConfig } from '@/config/market';
 import { renderRestaurantCampaign } from '@/lib/email-templates/restaurant-campaign-template';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

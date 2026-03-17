@@ -3,6 +3,9 @@ import { createMobileClient } from '@/lib/supabase/mobile-auth';
 import { createServiceRoleClient } from '@/lib/supabase/admin';
 import { calculatePoints, checkPremiumStatus, PREMIUM_MULTIPLIER, BASE_POINTS } from '@/lib/rewards';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface AnswerRequest {
   question_id: string;
   answer: string;

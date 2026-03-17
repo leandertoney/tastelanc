@@ -3,6 +3,9 @@ import { createMobileClient } from '@/lib/supabase/mobile-auth';
 import { createServiceRoleClient } from '@/lib/supabase/admin';
 import OpenAI from 'openai';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_FLYER || process.env.OPENAI_API_KEY });
 
 const EXTRACTION_PROMPT = `You are analyzing an event flyer image. Extract structured event information and return ONLY valid JSON (no markdown, no code blocks).

@@ -4,6 +4,9 @@ import { verifyRestaurantAccess } from '@/lib/auth/restaurant-access';
 import { anthropic, CLAUDE_CONFIG } from '@/lib/anthropic';
 import { PDFParse } from 'pdf-parse';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const MENU_PARSE_PROMPT = `You are a menu parser. Extract menu data from the following text extracted from a PDF menu.
 
 Return ONLY valid JSON in this exact format (no markdown, no explanation):

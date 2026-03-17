@@ -3,6 +3,9 @@ import { createClient } from '@/lib/supabase/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-access';
 import { getStripe, SELF_PROMOTER_PRICE_IDS, SELF_PROMOTER_PRICES } from '@/lib/stripe';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function POST(request: Request) {
   try {
     // Verify admin is making this request

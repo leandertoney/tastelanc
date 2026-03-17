@@ -5,6 +5,9 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 async function verifyAdmin(supabase: ReturnType<typeof createServiceRoleClient>) {
   const authClient = await createClient();
   const { data: { user } } = await authClient.auth.getUser();

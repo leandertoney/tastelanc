@@ -3,6 +3,9 @@ import { createClient } from '@/lib/supabase/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-access';
 import { getStripe, RESTAURANT_PRICE_IDS, RESTAURANT_PRICES } from '@/lib/stripe';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Map plan and duration to price ID
 function getPriceId(plan: string, duration: string): string | null {
   const key = `${plan}_${duration}` as keyof typeof RESTAURANT_PRICE_IDS;

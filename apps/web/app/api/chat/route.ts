@@ -6,6 +6,9 @@ import { buildSystemPrompt } from '@/lib/rosie/system-prompt';
 import { ChatMessage, ROSIE_CONFIG } from '@/lib/rosie/types';
 import { MARKET_SLUG } from '@/config/market';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY_WEB_CHAT || process.env.OPENAI_API_KEY!,
 });

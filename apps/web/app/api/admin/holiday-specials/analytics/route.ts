@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { MARKET_SLUG } from '@/config/market';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 async function verifyAdmin(supabase: any) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;

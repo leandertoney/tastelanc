@@ -3,6 +3,9 @@ import { createMobileClient } from '@/lib/supabase/mobile-auth';
 import { ACTION_DISPLAY_NAMES } from '@/lib/rewards';
 import { RewardActionType } from '@/types/database';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(request: Request) {
   try {
     const supabase = createMobileClient(request);

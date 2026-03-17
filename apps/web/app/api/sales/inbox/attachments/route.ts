@@ -3,6 +3,9 @@ import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
 import { ALLOWED_ATTACHMENT_TYPES, MAX_FILE_SIZE } from '@/lib/types/attachments';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const ALLOWED_EXTENSIONS_SET = new Set([
   'pdf', 'jpg', 'jpeg', 'png', 'webp', 'gif',
   'doc', 'docx', 'xls', 'xlsx', 'csv', 'txt',

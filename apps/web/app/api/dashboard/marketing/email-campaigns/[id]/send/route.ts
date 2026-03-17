@@ -8,6 +8,9 @@ import {
   renderRestaurantCampaignPlainText,
 } from '@/lib/email-templates/restaurant-campaign-template';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const TIER_CAMPAIGN_LIMITS: Record<string, number> = {
   premium: 4,
   elite: 8,

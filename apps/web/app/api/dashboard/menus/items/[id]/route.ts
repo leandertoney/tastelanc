@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifyRestaurantAccess } from '@/lib/auth/restaurant-access';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 async function getRestaurantIdFromItem(supabase: ReturnType<typeof createServiceRoleClient>, itemId: string) {
   const { data: item, error } = await supabase
     .from('menu_items')

@@ -3,6 +3,9 @@ import { createClient } from '@/lib/supabase/server';
 import { verifyRestaurantAccess } from '@/lib/auth/restaurant-access';
 import { anthropic } from '@/lib/anthropic';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const MENU_VISION_PROMPT = `You are a menu parser. Extract menu data from this menu image.
 
 Return ONLY valid JSON in this exact format (no markdown, no explanation):

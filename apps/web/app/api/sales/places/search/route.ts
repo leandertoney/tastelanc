@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface SearchResult {
   source: 'directory' | 'google_places';
   restaurant_id?: string;

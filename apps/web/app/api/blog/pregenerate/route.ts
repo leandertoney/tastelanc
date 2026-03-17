@@ -11,6 +11,9 @@ import {
   type BlogContext,
 } from '@/lib/rosie/blog-system-prompt';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY_BLOG || process.env.OPENAI_API_KEY!,
 });

@@ -4,6 +4,9 @@ import { createMobileClient } from '@/lib/supabase/mobile-auth';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
 import { getLeadAge } from '@/lib/utils/lead-aging';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

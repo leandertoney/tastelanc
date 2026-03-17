@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { isUserAdmin } from '@/lib/auth/admin-access';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Verify self-promoter access
 async function verifySelfPromoterAccess(selfPromoterId: string) {
   const supabase = await createClient();

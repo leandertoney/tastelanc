@@ -9,6 +9,9 @@ import {
   DURATION_LABELS,
 } from '@/lib/stripe';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface CheckoutItem {
   restaurantId: string | null;
   restaurantName: string;

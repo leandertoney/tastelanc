@@ -3,6 +3,9 @@ import { createClient } from '@/lib/supabase/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-access';
 import { getStripe } from '@/lib/stripe';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Sync Stripe subscriptions to database
 export async function POST(request: Request) {
   try {

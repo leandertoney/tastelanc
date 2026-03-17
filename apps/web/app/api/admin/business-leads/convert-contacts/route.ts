@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-access';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Convert contact_submissions to business_leads
 export async function POST(request: Request) {
   try {

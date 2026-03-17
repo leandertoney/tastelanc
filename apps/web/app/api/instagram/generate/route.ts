@@ -7,6 +7,9 @@ import { createServiceRoleClient } from '@/lib/supabase/server';
 import { generateInstagramPost } from '@/lib/instagram/generate';
 import { ContentType, MarketConfig } from '@/lib/instagram/types';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function POST(request: Request) {
   // Auth
   const body = await request.json().catch(() => ({}));

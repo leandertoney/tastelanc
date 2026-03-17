@@ -5,6 +5,9 @@ import { verifyAdminAccess } from '@/lib/auth/admin-access';
 import { sendEmail } from '@/lib/resend';
 import { generateSalesRepInviteEmail } from '@/lib/email-templates/sales-rep-invite-template';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const supabase = await createClient();

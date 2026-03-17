@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifyRestaurantAccess } from '@/lib/auth/restaurant-access';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface ContentMetrics {
   menuItemCount: number;
   happyHourCount: number;

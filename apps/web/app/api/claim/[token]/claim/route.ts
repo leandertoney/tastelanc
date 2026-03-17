@@ -4,6 +4,9 @@ import { getStripe } from '@/lib/stripe';
 import { publishEventFromDraft } from '@/lib/flyer/publish-event';
 import { getEventPromotionPriceId } from '@/lib/flyer/stripe-prices';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
 
 export async function POST(

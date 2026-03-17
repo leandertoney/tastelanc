@@ -3,6 +3,9 @@ import { createClient as createSupabaseAdmin } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { MARKET_SLUG, BRAND, getMarketConfig, type MarketBrand } from '@/config/market';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -8,6 +8,9 @@ import { verifyReviewToken } from '@/lib/expansion-review-token';
 import { calculateConsensus, getTeamMember } from '@/config/expansion-team';
 import type { ReviewVote } from '@/config/expansion-team';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const VALID_VOTES: ReviewVote[] = ['interested', 'not_now', 'reject'];
 
 const VOTE_LABELS: Record<ReviewVote, string> = {

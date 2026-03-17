@@ -4,6 +4,9 @@ import { createServiceRoleClient } from '@/lib/supabase/admin';
 import { publishEventFromDraft } from '@/lib/flyer/publish-event';
 import crypto from 'crypto';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
 
 export async function POST(request: Request) {

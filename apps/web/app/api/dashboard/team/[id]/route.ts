@@ -5,6 +5,9 @@ import { verifyRestaurantAccess } from '@/lib/auth/restaurant-access';
 import { sendEmail } from '@/lib/resend';
 import { generateTeamInviteEmail } from '@/lib/email-templates/team-invite-template';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 /**
  * DELETE /api/dashboard/team/[id]?restaurant_id=...
  * Remove a team member (soft delete). Owner/admin only.

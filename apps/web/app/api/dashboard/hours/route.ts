@@ -3,6 +3,9 @@ import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifyRestaurantAccess } from '@/lib/auth/restaurant-access';
 import type { DayOfWeek } from '@/types/database';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const DAYS_OF_WEEK: DayOfWeek[] = [
   'monday',
   'tuesday',
