@@ -65,7 +65,7 @@ export async function POST(
       );
     }
 
-    const validTypes = ['call', 'email', 'meeting', 'note', 'follow_up'];
+    const validTypes = ['call', 'email', 'meeting', 'note', 'follow_up', 'instagram'];
     if (!validTypes.includes(activity_type)) {
       return NextResponse.json(
         { error: `Invalid activity_type. Must be one of: ${validTypes.join(', ')}` },

@@ -29,6 +29,7 @@ import {
   Reply,
   ChevronDown,
   ChevronUp,
+  Instagram,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Card, Badge } from '@/components/ui';
@@ -119,6 +120,7 @@ const STATUS_OPTIONS = [
 const ACTIVITY_TYPES = [
   { value: 'call', label: 'Call', icon: PhoneCall },
   { value: 'email', label: 'Email', icon: Mail },
+  { value: 'instagram', label: 'Instagram', icon: Instagram },
   { value: 'meeting', label: 'Meeting', icon: Video },
   { value: 'note', label: 'Note', icon: FileText },
   { value: 'follow_up', label: 'Follow-up', icon: CalendarCheck },
@@ -128,6 +130,7 @@ const ACTIVITY_ICONS: Record<string, typeof PhoneCall> = {
   call: PhoneCall,
   email: Mail,
   email_reply: Reply,
+  instagram: Instagram,
   meeting: Video,
   note: FileText,
   follow_up: CalendarCheck,

@@ -52,6 +52,7 @@ const ACTIVITY_ICONS: Record<string, string> = {
   email: 'mail-outline',
   email_reply: 'mail-open-outline',
   call: 'call-outline',
+  instagram: 'logo-instagram',
   note: 'document-text-outline',
   status_change: 'swap-horizontal-outline',
 };

@@ -29,6 +29,7 @@ import {
   Unlock,
   Lock,
   HelpCircle,
+  Instagram,
 } from 'lucide-react';
 import { Card, Badge, Tooltip } from '@/components/ui';
 import { toast } from 'sonner';
@@ -100,6 +101,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof
 const ACTIVITY_ICONS: Record<string, { icon: typeof PhoneCall; label: string; color: string }> = {
   call: { icon: PhoneCall, label: 'Called', color: 'text-green-400' },
   email: { icon: Mail, label: 'Emailed', color: 'text-blue-400' },
+  instagram: { icon: Instagram, label: 'Instagram DM', color: 'text-pink-400' },
   meeting: { icon: Video, label: 'Met', color: 'text-purple-400' },
   note: { icon: FileText, label: 'Note', color: 'text-tastelanc-text-muted' },
   follow_up: { icon: CalendarCheck, label: 'Follow-up', color: 'text-yellow-400' },

@@ -108,27 +108,36 @@ async function scrapeWebsite(url: string, timeoutMs = 8000): Promise<string | nu
   }
 }
 
-// ─── Google Search fallback ─────────────────────────────────────────────
+// ─── DuckDuckGo Search fallback ─────────────────────────────────────────
 
-async function googleSearchInstagram(restaurantName: string, city: string): Promise<string | null> {
-  if (!googleApiKey) return null;
-
-  const query = `"${restaurantName}" "${city}" site:instagram.com`;
-  const url = `https://www.googleapis.com/customsearch/v1?key=${googleApiKey}&cx=${envVars.GOOGLE_CX || '017576662512468239146:omuauf_gy68'}&q=${encodeURIComponent(query)}&num=3`;
+async function searchInstagram(restaurantName: string, city: string): Promise<string | null> {
+  const query = `${restaurantName} ${city} instagram.com`;
+  const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
 
   try {
-    const res = await fetch(url);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      },
+    });
+
+    clearTimeout(timeout);
     if (!res.ok) return null;
 
-    const data = await res.json();
-    if (!data.items?.length) return null;
+    const html = await res.text();
+    const matches = html.matchAll(/instagram\.com\/([a-zA-Z0-9_.]{2,30})/g);
+    const seen = new Set<string>();
 
-    for (const item of data.items) {
-      const link: string = item.link || '';
-      const match = link.match(/instagram\.com\/([a-zA-Z0-9_.]{1,30})\/?$/);
-      if (match && !IGNORE_HANDLES.has(match[1].toLowerCase())) {
-        return match[1].toLowerCase();
+    for (const match of matches) {
+      const handle = match[1].toLowerCase().replace(/\/$/, '');
+      if (!IGNORE_HANDLES.has(handle) && !seen.has(handle) && !/^\d+$/.test(handle)) {
+        return handle; // Return first valid match
       }
+      seen.add(handle);
     }
 
     return null;
@@ -320,7 +329,7 @@ async function main() {
       total: restaurants.length,
       alreadyHad: 0,
       foundFromWebsite: 0,
-      foundFromGoogle: 0,
+      foundFromSearch: 0,
       verified: 0,
       failed: 0,
       skipped: 0,
@@ -360,14 +369,13 @@ async function main() {
           }
         }
 
-        // Step 2: Google search fallback (skip for now to avoid quota issues)
-        // Can be enabled with GOOGLE_CX env var
-        if (!handle && envVars.GOOGLE_CX) {
+        // Step 2: DuckDuckGo search fallback
+        if (!handle) {
           const city = restaurant.city || '';
-          handle = await googleSearchInstagram(restaurant.name, city);
-          if (handle) source = 'google';
-          // Rate limit Google searches
-          await new Promise(r => setTimeout(r, 200));
+          handle = await searchInstagram(restaurant.name, city);
+          if (handle) source = 'search';
+          // Rate limit searches
+          await new Promise(r => setTimeout(r, 300));
         }
 
         if (!handle) {
@@ -398,7 +406,7 @@ async function main() {
         }
 
         if (source === 'website') stats.foundFromWebsite++;
-        if (source === 'google') stats.foundFromGoogle++;
+        if (source === 'google') stats.foundFromSearch++;
 
         results.push({
           id: restaurant.id,
@@ -437,7 +445,7 @@ async function main() {
     console.log(`  ─── Results ───`);
     console.log(`  Already had handle: ${stats.alreadyHad}`);
     console.log(`  Found from website: ${stats.foundFromWebsite}`);
-    console.log(`  Found from Google:  ${stats.foundFromGoogle}`);
+    console.log(`  Found from search:  ${stats.foundFromSearch}`);
     console.log(`  Verified on IG:     ${stats.verified}`);
     console.log(`  Not found:          ${stats.failed}`);
     console.log('');
