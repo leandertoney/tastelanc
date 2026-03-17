@@ -59,7 +59,8 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/instagram-posts', icon: Instagram, label: 'Instagram Posts', highlight: true },
   { href: '/admin/recommendation-queue', icon: Film, label: 'Reel Queue', highlight: true },
   // INSIGHTS - Analytics and feedback
-  { href: '/admin/analytics', icon: BarChart3, label: 'Analytics', section: 'Insights' },
+  { href: '/admin/traffic', icon: Globe, label: 'Web Traffic', highlight: true, section: 'Insights' },
+  { href: '/admin/analytics', icon: BarChart3, label: 'Visibility' },
   { href: '/admin/app-users', icon: Smartphone, label: 'App Users', highlight: true },
   { href: '/admin/feature-requests', icon: Lightbulb, label: 'Feature Requests', highlight: true },
   { href: '/admin/system-health', icon: Activity, label: 'System Health', highlight: true },
