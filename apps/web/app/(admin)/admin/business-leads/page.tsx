@@ -473,13 +473,13 @@ export default function BusinessLeadsPage() {
                       {lead.contact_name && (
                         <span>{lead.contact_name}</span>
                       )}
-                      <a
-                        href={`mailto:${lead.email}`}
+                      <Link
+                        href={`/sales/inbox?compose=true&to=${encodeURIComponent(lead.email)}&business=${encodeURIComponent(lead.business_name || '')}`}
                         className="flex items-center gap-1 hover:text-tastelanc-text-primary"
                       >
                         <Mail className="w-3 h-3" />
                         {lead.email}
-                      </a>
+                      </Link>
                       {lead.phone && (
                         <a
                           href={`tel:${lead.phone}`}
@@ -548,13 +548,13 @@ export default function BusinessLeadsPage() {
                         ))}
                       </select>
                     )}
-                    <a
-                      href={`mailto:${lead.email}`}
+                    <Link
+                      href={`/sales/inbox?compose=true&to=${encodeURIComponent(lead.email)}&business=${encodeURIComponent(lead.business_name || '')}`}
                       className="p-2 bg-tastelanc-surface-light hover:bg-tastelanc-surface rounded-lg transition-colors"
                       title="Send Email"
                     >
                       <Mail className="w-4 h-4 text-tastelanc-text-primary" />
-                    </a>
+                    </Link>
                     <Link
                       href={`/admin/sales?email=${encodeURIComponent(lead.email)}&name=${encodeURIComponent(lead.contact_name || lead.business_name)}&phone=${encodeURIComponent(lead.phone || '')}&businessName=${encodeURIComponent(lead.business_name)}`}
                       className="p-2 bg-green-500/20 hover:bg-green-500/30 rounded-lg transition-colors"

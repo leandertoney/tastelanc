@@ -574,9 +574,9 @@ export default async function AdminPaidMembersPage({
                         <p className="text-sm text-tastelanc-text-muted -mt-0.5 mb-1">Contact: {sub.name}</p>
                       )}
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
-                        <a href={`mailto:${sub.email}`} className="text-sm text-blue-400 hover:underline flex items-center gap-1">
+                        <Link href={`/sales/inbox?compose=true&to=${encodeURIComponent(sub.email)}&name=${encodeURIComponent(sub.name || '')}`} className="text-sm text-blue-400 hover:underline flex items-center gap-1">
                           <Mail className="w-3 h-3" /> {sub.email}
-                        </a>
+                        </Link>
                         {sub.phone && (
                           <a href={`tel:${sub.phone}`} className="text-sm text-green-400 hover:underline flex items-center gap-1">
                             <Phone className="w-3 h-3" /> {sub.phone}
@@ -715,9 +715,9 @@ export default async function AdminPaidMembersPage({
                 {filteredConsumers.map((sub) => (
                   <tr key={sub.id} className="hover:bg-tastelanc-surface-light/50">
                     <td className="px-4 py-3">
-                      <a href={`mailto:${sub.email}`} className="text-tastelanc-text-primary hover:text-blue-400 hover:underline flex items-center gap-1">
+                      <Link href={`/sales/inbox?compose=true&to=${encodeURIComponent(sub.email)}&name=${encodeURIComponent(sub.name || '')}`} className="text-tastelanc-text-primary hover:text-blue-400 hover:underline flex items-center gap-1">
                         <Mail className="w-3 h-3 text-blue-400" /> {sub.email}
-                      </a>
+                      </Link>
                       {sub.phone && (
                         <a href={`tel:${sub.phone}`} className="text-xs text-green-400 hover:underline flex items-center gap-1 mt-0.5">
                           <Phone className="w-3 h-3" /> {sub.phone}
@@ -786,9 +786,9 @@ export default async function AdminPaidMembersPage({
                   <tr key={sub.id} className="hover:bg-tastelanc-surface-light/50">
                     <td className="px-4 py-3">
                       <p className="text-tastelanc-text-primary">{sub.name}</p>
-                      <a href={`mailto:${sub.email}`} className="text-xs text-blue-400 hover:underline flex items-center gap-1">
+                      <Link href={`/sales/inbox?compose=true&to=${encodeURIComponent(sub.email)}&name=${encodeURIComponent(sub.name || '')}`} className="text-xs text-blue-400 hover:underline flex items-center gap-1">
                         <Mail className="w-3 h-3" /> {sub.email}
-                      </a>
+                      </Link>
                       {sub.phone && (
                         <a href={`tel:${sub.phone}`} className="text-xs text-green-400 hover:underline flex items-center gap-1 mt-0.5">
                           <Phone className="w-3 h-3" /> {sub.phone}

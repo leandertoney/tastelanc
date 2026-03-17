@@ -412,10 +412,10 @@ export default function SalesDashboard() {
                     </a>
                   )}
                   {contact.contact_email && (
-                    <a href={`mailto:${contact.contact_email}`} className="text-tastelanc-accent hover:text-tastelanc-accent/80 flex items-center gap-1">
+                    <Link href={`/sales/inbox?compose=true&to=${encodeURIComponent(contact.contact_email)}`} className="text-tastelanc-accent hover:text-tastelanc-accent/80 flex items-center gap-1">
                       <Mail className="w-3 h-3" />
                       {contact.contact_email}
-                    </a>
+                    </Link>
                   )}
                   {contact.city && (
                     <span className="text-tastelanc-text-faint">{contact.city}</span>

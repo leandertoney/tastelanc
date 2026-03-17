@@ -135,9 +135,9 @@ export default async function AdminSelfPromotersPage() {
                     <td className="px-4 py-3">
                       <div className="text-sm">
                         {sp.email && (
-                          <a href={`mailto:${sp.email}`} className="text-blue-400 hover:text-blue-300 block">
+                          <Link href={`/sales/inbox?compose=true&to=${encodeURIComponent(sp.email)}&name=${encodeURIComponent(sp.name || '')}`} className="text-blue-400 hover:text-blue-300 block">
                             {sp.email}
-                          </a>
+                          </Link>
                         )}
                         {sp.phone && <span className="text-tastelanc-text-muted">{sp.phone}</span>}
                       </div>

@@ -12,7 +12,7 @@ export const EXPANSION_TEAM: TeamMember[] = [
   {
     name: 'Leander',
     email: 'leandertoney@gmail.com',
-    senderIdentity: 'leander@tastelanc.com',
+    senderIdentity: 'lt@tastelanc.com',
     role: 'Founder',
   },
   {

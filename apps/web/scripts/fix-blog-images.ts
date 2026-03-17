@@ -157,11 +157,12 @@ async function main() {
   console.log('\n🔧 FIXING BROKEN BLOG IMAGES\n');
   console.log('━'.repeat(50));
 
-  // Get all blog posts with OpenAI blob URLs (expired)
+  // Get all blog posts with expired URLs (DALL-E blob URLs or Google Places URLs)
   const { data: posts, error } = await supabase
     .from('blog_posts')
     .select('id, slug, title, cover_image_url')
-    .like('cover_image_url', '%oaidalleapiprodscus.blob.core.windows.net%');
+    .eq('status', 'published')
+    .or('cover_image_url.like.%oaidalleapiprodscus.blob.core.windows.net%,cover_image_url.like.%gps-cs-s%,cover_image_url.like.%gps-proxy%,cover_image_url.like.%googleusercontent%');
 
   if (error) {
     console.error('Error fetching posts:', error);

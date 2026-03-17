@@ -93,7 +93,7 @@ export default async function AdminContactsPage() {
               {/* Contact Info - Stack on mobile */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 mb-4 text-sm">
                 <a
-                  href={`mailto:${contact.email}`}
+                  href={`/sales/inbox?compose=true&to=${encodeURIComponent(contact.email)}&name=${encodeURIComponent(contact.name || '')}`}
                   className="text-tastelanc-text-muted hover:text-tastelanc-text-primary flex items-center gap-1 truncate"
                 >
                   <Mail className="w-4 h-4 flex-shrink-0" />
@@ -140,7 +140,7 @@ export default async function AdminContactsPage() {
                     <MarkAsReadButton contactId={contact.id} />
                   )}
                   <a
-                    href={`mailto:${contact.email}?subject=RE: ${BRAND.name} Partnership Inquiry`}
+                    href={`/sales/inbox?compose=true&to=${encodeURIComponent(contact.email)}&name=${encodeURIComponent(contact.name || '')}`}
                     className="text-sm text-tastelanc-accent hover:underline"
                   >
                     Reply

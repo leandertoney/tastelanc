@@ -1,4 +1,4 @@
-import { SENDER_IDENTITIES, getAllSenderEmails, type SenderIdentity } from '@/config/sender-identities';
+import { SENDER_IDENTITIES, getAllSenderEmails, getIdentityEmails, type SenderIdentity } from '@/config/sender-identities';
 import { BRAND } from '@/config/market';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 
@@ -44,7 +44,7 @@ export async function getUserIdentity(
         name: rep.name?.split(' ')[0] || localPart,
         email: rep.preferred_sender_email,
         replyEmail: `${localPart}@${BRAND.replyDomain}`,
-        title: 'Sales Representative',
+        title: '',
       };
     }
   }
@@ -81,7 +81,7 @@ export async function getUserIdentity(
       name: profile.display_name.split(' ')[0],
       email: `${firstName}@${BRAND.domain}`,
       replyEmail: `${firstName}@${BRAND.replyDomain}`,
-      title: access.isAdmin ? 'Founder' : 'Sales Representative',
+      title: '',
     };
   }
 
@@ -103,7 +103,7 @@ export async function getRepSenderEmails(
   }
 
   const identity = await getUserIdentity(serviceClient, access);
-  if (identity) return [identity.email, identity.replyEmail];
+  if (identity) return getIdentityEmails(identity);
 
   return [];
 }

@@ -106,7 +106,7 @@ export async function POST(request: Request) {
       body: emailBody,
       businessName: recipientName || undefined,
       senderName: fromName,
-      senderTitle: validSender?.title || repIdentity?.title || (isDomainEmail ? 'Sales Representative' : undefined),
+      senderTitle: validSender?.title || repIdentity?.title || undefined,
     };
     const html = renderProfessionalEmail(emailProps);
     const text = renderProfessionalEmailPlainText(emailProps);

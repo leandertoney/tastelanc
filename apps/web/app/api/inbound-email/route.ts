@@ -192,9 +192,11 @@ async function resolveEmailToUserId(
     }
   }
 
-  // 2. Check SENDER_IDENTITIES → match to profiles
+  // 2. Check SENDER_IDENTITIES (including aliases) → match to profiles
   const matchedIdentity = SENDER_IDENTITIES.find(
-    s => s.email.toLowerCase() === normalizedEmail || s.replyEmail.toLowerCase() === normalizedEmail
+    s => s.email.toLowerCase() === normalizedEmail
+      || s.replyEmail.toLowerCase() === normalizedEmail
+      || s.aliases?.some(a => a.toLowerCase() === normalizedEmail)
   );
 
   if (matchedIdentity) {

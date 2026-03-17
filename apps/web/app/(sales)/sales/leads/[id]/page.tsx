@@ -860,10 +860,10 @@ export default function LeadDetailPage({
               <Field label="Contact Name" value={lead.contact_name ? `${lead.contact_name}${lead.contact_title ? ` — ${lead.contact_title}` : ''}` : null} />
               <Field label="Business Email">
                 {lead.email ? (
-                  <a href={`mailto:${lead.email}`} className="text-sm text-tastelanc-text-primary hover:text-tastelanc-accent flex items-center gap-1.5">
+                  <Link href={`/sales/inbox?compose=true&to=${encodeURIComponent(lead.email)}&business=${encodeURIComponent(lead.business_name || '')}`} className="text-sm text-tastelanc-text-primary hover:text-tastelanc-accent flex items-center gap-1.5">
                     <Mail className="w-3.5 h-3.5 text-tastelanc-text-faint" />
                     {lead.email}
-                  </a>
+                  </Link>
                 ) : null}
               </Field>
               <Field label="Business Phone">
@@ -947,10 +947,10 @@ export default function LeadDetailPage({
                   )}
                   {lead.contact_email && (
                     <Field label="Personal Email">
-                      <a href={`mailto:${lead.contact_email}`} className="text-sm text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5">
+                      <Link href={`/sales/inbox?compose=true&to=${encodeURIComponent(lead.contact_email)}&name=${encodeURIComponent(lead.contact_name || '')}&business=${encodeURIComponent(lead.business_name || '')}`} className="text-sm text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5">
                         <Mail className="w-3.5 h-3.5" />
                         {lead.contact_email}
-                      </a>
+                      </Link>
                     </Field>
                   )}
                 </div>

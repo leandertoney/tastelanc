@@ -110,7 +110,7 @@ export async function POST(request: Request) {
       body: emailBody,
       businessName: recipientName || undefined,
       senderName: senderName || BRAND.name,
-      senderTitle: validSender?.title || (isDomainEmail ? 'Sales Representative' : undefined),
+      senderTitle: validSender?.title || undefined,
     };
     const html = renderProfessionalEmail(emailProps);
     const text = renderProfessionalEmailPlainText(emailProps);

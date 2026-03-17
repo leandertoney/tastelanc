@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Mail,
   Phone,
@@ -384,14 +385,14 @@ export default function SalesContactsPage() {
 
                   {/* Quick actions */}
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    <a
-                      href={`mailto:${contact.email}`}
+                    <Link
+                      href={`/sales/inbox?compose=true&to=${encodeURIComponent(contact.email)}&name=${encodeURIComponent(contact.name || '')}`}
                       onClick={(e) => e.stopPropagation()}
                       className="p-2 text-tastelanc-text-faint hover:text-tastelanc-text-primary hover:bg-tastelanc-surface-light rounded-lg transition-colors"
                       title="Send Email"
                     >
                       <Mail className="w-4 h-4" />
-                    </a>
+                    </Link>
                     {contact.phone && (
                       <a
                         href={`tel:${contact.phone}`}
