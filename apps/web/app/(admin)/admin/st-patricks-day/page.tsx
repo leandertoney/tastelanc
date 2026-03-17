@@ -77,6 +77,15 @@ const EMPTY_FORM = {
   discount_description: '',
 };
 
+interface SpecialRow {
+  name: string;
+  category: string;
+  special_price: string;
+  description: string;
+}
+
+const EMPTY_ROW: SpecialRow = { name: '', category: 'drink', special_price: '', description: '' };
+
 export default function StPatricksDayPage() {
   const [specials, setSpecials] = useState<HolidaySpecial[]>([]);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -86,6 +95,7 @@ export default function StPatricksDayPage() {
   const [restaurantSearch, setRestaurantSearch] = useState('');
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const [multiRows, setMultiRows] = useState<SpecialRow[]>([{ ...EMPTY_ROW }]);
   const [submitting, setSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<'specials' | 'analytics'>('specials');
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
@@ -146,6 +156,7 @@ export default function StPatricksDayPage() {
     setShowForm(false);
     setEditingId(null);
     setFormData(EMPTY_FORM);
+    setMultiRows([{ ...EMPTY_ROW }]);
     setSelectedRestaurant(null);
     setRestaurantSearch('');
   };
@@ -169,12 +180,12 @@ export default function StPatricksDayPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedRestaurant || !formData.name.trim()) return;
+    if (!selectedRestaurant) return;
 
     setSubmitting(true);
     try {
       if (editingId) {
-        // Update existing
+        // Update existing (single special)
         const res = await fetch('/api/admin/holiday-specials', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -196,28 +207,31 @@ export default function StPatricksDayPage() {
           fetchSpecials();
         }
       } else {
-        // Create new
-        const res = await fetch('/api/admin/holiday-specials', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            restaurant_id: selectedRestaurant.id,
-            holiday_tag: 'st-patricks-2026',
-            name: formData.name,
-            description: formData.description || null,
-            category: formData.category,
-            event_date: formData.event_date,
-            start_time: formData.start_time || null,
-            end_time: formData.end_time || null,
-            original_price: formData.original_price ? parseFloat(formData.original_price) : null,
-            special_price: formData.special_price ? parseFloat(formData.special_price) : null,
-            discount_description: formData.discount_description || null,
-          }),
-        });
-        if (res.ok) {
-          resetForm();
-          fetchSpecials();
+        // Create multiple specials at once
+        const validRows = multiRows.filter(r => r.name.trim());
+        if (validRows.length === 0) return;
+
+        for (const row of validRows) {
+          await fetch('/api/admin/holiday-specials', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              restaurant_id: selectedRestaurant.id,
+              holiday_tag: 'st-patricks-2026',
+              name: row.name,
+              description: row.description || null,
+              category: row.category,
+              event_date: formData.event_date,
+              start_time: formData.start_time || null,
+              end_time: formData.end_time || null,
+              original_price: null,
+              special_price: row.special_price ? parseFloat(row.special_price) : null,
+              discount_description: null,
+            }),
+          });
         }
+        resetForm();
+        fetchSpecials();
       }
     } catch (err) {
       console.error('Failed to save special:', err);
@@ -538,36 +552,129 @@ export default function StPatricksDayPage() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              {/* Special Name */}
-              <div>
-                <label className="block text-sm text-zinc-400 mb-1">Special Name</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={e => setFormData(f => ({ ...f, name: e.target.value }))}
-                  placeholder="e.g. $3 Green Beer"
-                  required
-                  className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none"
-                />
-              </div>
+            {editingId ? (
+              /* Single-special edit form */
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm text-zinc-400 mb-1">Special Name</label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={e => setFormData(f => ({ ...f, name: e.target.value }))}
+                      placeholder="e.g. $3 Green Beer"
+                      required
+                      className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-zinc-400 mb-1">Category</label>
+                    <select
+                      value={formData.category}
+                      onChange={e => setFormData(f => ({ ...f, category: e.target.value }))}
+                      className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-zinc-400 focus:outline-none"
+                    >
+                      <option value="drink">Drink Special</option>
+                      <option value="food">Food Special</option>
+                      <option value="combo">Combo Deal</option>
+                      <option value="entertainment">Entertainment</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-zinc-400 mb-1">Special Price</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.special_price}
+                      onChange={e => setFormData(f => ({ ...f, special_price: e.target.value }))}
+                      placeholder="$0.00"
+                      className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none"
+                    />
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm text-zinc-400 mb-1">Description (optional)</label>
+                  <input
+                    type="text"
+                    value={formData.description}
+                    onChange={e => setFormData(f => ({ ...f, description: e.target.value }))}
+                    placeholder="Traditional Irish Breakfast"
+                    className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none"
+                  />
+                </div>
+              </>
+            ) : (
+              /* Multi-special add form */
+              <>
+                <div className="mb-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm text-zinc-400">Specials</label>
+                    <span className="text-xs text-zinc-500">Add all specials for this bar at once</span>
+                  </div>
+                  {multiRows.map((row, i) => (
+                    <div key={i} className="flex gap-2 mb-2 items-center">
+                      <input
+                        type="text"
+                        value={row.name}
+                        onChange={e => {
+                          const updated = [...multiRows];
+                          updated[i] = { ...updated[i], name: e.target.value };
+                          setMultiRows(updated);
+                        }}
+                        placeholder="e.g. $3 Green Beer"
+                        className="flex-1 px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none text-sm"
+                      />
+                      <select
+                        value={row.category}
+                        onChange={e => {
+                          const updated = [...multiRows];
+                          updated[i] = { ...updated[i], category: e.target.value };
+                          setMultiRows(updated);
+                        }}
+                        className="w-36 px-2 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white text-sm focus:border-zinc-400 focus:outline-none"
+                      >
+                        <option value="drink">Drink</option>
+                        <option value="food">Food</option>
+                        <option value="combo">Combo</option>
+                        <option value="entertainment">Entertainment</option>
+                      </select>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={row.special_price}
+                        onChange={e => {
+                          const updated = [...multiRows];
+                          updated[i] = { ...updated[i], special_price: e.target.value };
+                          setMultiRows(updated);
+                        }}
+                        placeholder="Price"
+                        className="w-24 px-2 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none text-sm"
+                      />
+                      {multiRows.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setMultiRows(multiRows.filter((_, j) => j !== i))}
+                          className="p-1.5 text-zinc-500 hover:text-red-400 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setMultiRows([...multiRows, { ...EMPTY_ROW }])}
+                    className="flex items-center gap-1.5 text-sm text-emerald-400 hover:text-emerald-300 mt-1 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Add another special
+                  </button>
+                </div>
+              </>
+            )}
 
-              {/* Category */}
-              <div>
-                <label className="block text-sm text-zinc-400 mb-1">Category</label>
-                <select
-                  value={formData.category}
-                  onChange={e => setFormData(f => ({ ...f, category: e.target.value }))}
-                  className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-zinc-400 focus:outline-none"
-                >
-                  <option value="drink">Drink Special</option>
-                  <option value="food">Food Special</option>
-                  <option value="combo">Combo Deal</option>
-                  <option value="entertainment">Entertainment</option>
-                </select>
-              </div>
-
-              {/* Event Date */}
+            {/* Shared: Event Date + Times */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 mt-4">
               <div>
                 <label className="block text-sm text-zinc-400 mb-1">Event Date</label>
                 <input
@@ -578,23 +685,8 @@ export default function StPatricksDayPage() {
                   className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-zinc-400 focus:outline-none"
                 />
               </div>
-            </div>
-
-            {/* Description */}
-            <div className="mb-4">
-              <label className="block text-sm text-zinc-400 mb-1">Description (optional)</label>
-              <textarea
-                value={formData.description}
-                onChange={e => setFormData(f => ({ ...f, description: e.target.value }))}
-                placeholder="Green beer, Irish car bombs, Shamrock shots..."
-                rows={2}
-                className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none resize-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
               <div>
-                <label className="block text-sm text-zinc-400 mb-1">Start Time</label>
+                <label className="block text-sm text-zinc-400 mb-1">Start Time (optional)</label>
                 <input
                   type="time"
                   value={formData.start_time}
@@ -603,7 +695,7 @@ export default function StPatricksDayPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-zinc-400 mb-1">End Time</label>
+                <label className="block text-sm text-zinc-400 mb-1">End Time (optional)</label>
                 <input
                   type="time"
                   value={formData.end_time}
@@ -611,39 +703,6 @@ export default function StPatricksDayPage() {
                   className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-zinc-400 focus:outline-none"
                 />
               </div>
-              <div>
-                <label className="block text-sm text-zinc-400 mb-1">Original Price</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.original_price}
-                  onChange={e => setFormData(f => ({ ...f, original_price: e.target.value }))}
-                  placeholder="$0.00"
-                  className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-zinc-400 mb-1">Special Price</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.special_price}
-                  onChange={e => setFormData(f => ({ ...f, special_price: e.target.value }))}
-                  placeholder="$0.00"
-                  className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm text-zinc-400 mb-1">Discount Description (optional)</label>
-              <input
-                type="text"
-                value={formData.discount_description}
-                onChange={e => setFormData(f => ({ ...f, discount_description: e.target.value }))}
-                placeholder="e.g. BOGO, 50% off, $2 off"
-                className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none"
-              />
             </div>
 
             <div className="flex gap-3">
