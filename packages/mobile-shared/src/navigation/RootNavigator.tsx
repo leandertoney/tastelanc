@@ -34,6 +34,8 @@ import ComposeEmailScreen from '../screens/sales/ComposeEmailScreen';
 import LeadDetailScreen from '../screens/sales/LeadDetailScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import StPatricksDayScreen from '../screens/StPatricksDayScreen';
+import CouponsViewAllScreen from '../screens/CouponsViewAllScreen';
+import MyCouponsScreen from '../screens/MyCouponsScreen';
 
 // Wrap each screen so crashes show inline error instead of killing the app
 const SafeRestaurantDetail = withScreenErrorBoundary(RestaurantDetailScreen, 'RestaurantDetail');
@@ -67,6 +69,8 @@ const SafeComposeEmail = withScreenErrorBoundary(ComposeEmailScreen, 'ComposeEma
 const SafeLeadDetail = withScreenErrorBoundary(LeadDetailScreen, 'LeadDetail');
 const SafeSettings = withScreenErrorBoundary(SettingsScreen, 'Settings');
 const SafeStPatricksDay = withScreenErrorBoundary(StPatricksDayScreen, 'StPatricksDay');
+const SafeCouponsViewAll = withScreenErrorBoundary(CouponsViewAllScreen, 'CouponsViewAll');
+const SafeMyCoupons = withScreenErrorBoundary(MyCouponsScreen, 'MyCoupons');
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -122,6 +126,16 @@ export default function RootNavigator() {
         name="EntertainmentViewAll"
         component={SafeEntertainmentViewAll}
         options={{ title: 'Entertainment' }}
+      />
+      <Stack.Screen
+        name="CouponsViewAll"
+        component={SafeCouponsViewAll}
+        options={{ title: 'Coupons' }}
+      />
+      <Stack.Screen
+        name="MyCoupons"
+        component={SafeMyCoupons}
+        options={{ title: 'My Coupons' }}
       />
       <Stack.Screen
         name="FeaturedViewAll"

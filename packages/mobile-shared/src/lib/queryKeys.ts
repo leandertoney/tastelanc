@@ -67,6 +67,13 @@ export const queryKeys = {
     restaurant: (restaurantId: string) => ['socialProof', 'restaurant', restaurantId] as const,
     trending: ['socialProof', 'trending'] as const,
   },
+  coupons: {
+    all: ['coupons'] as const,
+    active: (marketId?: string | null) => ['coupons', 'active', marketId] as const,
+    list: (marketId?: string | null) => ['coupons', 'list', marketId] as const,
+    byRestaurant: (restaurantId: string) => ['coupons', restaurantId] as const,
+    myClaims: ['coupons', 'myClaims'] as const,
+  },
   ads: {
     active: ['ads', 'active'] as const,
   },

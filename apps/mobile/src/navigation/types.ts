@@ -59,6 +59,8 @@ export type RootStackParamList = {
   EventsViewAll: undefined;
   EntertainmentViewAll: undefined;
   FeaturedViewAll: undefined;
+  CouponsViewAll: undefined;
+  MyCoupons: undefined;
   CuisinesViewAll: undefined;
   CuisineDetail: { cuisine: CuisineType };
   // Event detail

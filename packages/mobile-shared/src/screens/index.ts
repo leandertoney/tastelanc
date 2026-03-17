@@ -30,6 +30,8 @@ export { default as SpecialsViewAllScreen } from './SpecialsViewAllScreen';
 export { default as EventsViewAllScreen } from './EventsViewAllScreen';
 export { default as EntertainmentViewAllScreen } from './EntertainmentViewAllScreen';
 export { default as BlogViewAllScreen } from './BlogViewAllScreen';
+export { default as CouponsViewAllScreen } from './CouponsViewAllScreen';
+export { default as MyCouponsScreen } from './MyCouponsScreen';
 
 // Analytics / Dashboard screens
 export { default as VisitInsightsScreen } from './VisitInsightsScreen';

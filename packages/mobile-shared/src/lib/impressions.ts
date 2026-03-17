@@ -18,7 +18,9 @@ export type SectionName =
   | 'happy_hours_view_all'
   | 'featured_view_all'
   | 'st_patricks_day'
-  | 'holiday_specials';
+  | 'holiday_specials'
+  | 'coupons'
+  | 'coupons_view_all';
 
 interface PendingImpression {
   restaurant_id: string;
