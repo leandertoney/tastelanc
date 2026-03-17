@@ -24,7 +24,7 @@ export async function GET(
     // Fetch lead with linked restaurant and market
     const { data: lead, error } = await serviceClient
       .from('business_leads')
-      .select('*, restaurants(id, name, is_active, tier_id, tiers(name)), markets(slug)')
+      .select('*, restaurants(id, name, is_active, tier_id, tiers(name), instagram_handle, instagram_handle_verified, instagram_followers), markets(slug)')
       .eq('id', id)
       .single();
 

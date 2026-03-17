@@ -85,6 +85,9 @@ interface Lead {
     is_active: boolean;
     tier_id: string | null;
     tiers: { name: string } | null;
+    instagram_handle: string | null;
+    instagram_handle_verified: boolean;
+    instagram_followers: number | null;
   } | null;
   markets?: { slug: string } | null;
 }
@@ -675,6 +678,18 @@ export default function LeadDetailPage({
               <Badge className={`text-xs ${lead.restaurants.is_active ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
                 {lead.restaurants.is_active ? 'Active' : 'Inactive'}
               </Badge>
+              {lead.restaurants.instagram_handle && (
+                <a
+                  href={`https://instagram.com/${lead.restaurants.instagram_handle}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-xs text-pink-400 hover:text-pink-300"
+                  title={`@${lead.restaurants.instagram_handle}`}
+                >
+                  <Instagram className="w-3.5 h-3.5" />
+                  @{lead.restaurants.instagram_handle}
+                </a>
+              )}
             </div>
           </>
         )}
@@ -870,6 +885,36 @@ export default function LeadDetailPage({
                     <Globe className="w-3.5 h-3.5 text-tastelanc-text-faint" />
                     {lead.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}
                   </a>
+                ) : null}
+              </Field>
+              <Field label="Instagram">
+                {lead.restaurants?.instagram_handle ? (
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={`https://instagram.com/${lead.restaurants.instagram_handle}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-tastelanc-text-primary hover:text-pink-400 flex items-center gap-1.5"
+                    >
+                      <Instagram className="w-3.5 h-3.5 text-pink-400" />
+                      @{lead.restaurants.instagram_handle}
+                    </a>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`@${lead.restaurants!.instagram_handle}`);
+                        toast.success('Handle copied!');
+                      }}
+                      className="text-xs text-tastelanc-text-faint hover:text-tastelanc-text-secondary px-1.5 py-0.5 rounded bg-tastelanc-surface-light"
+                      title="Copy handle"
+                    >
+                      Copy
+                    </button>
+                    {lead.restaurants.instagram_followers && lead.restaurants.instagram_followers > 0 && (
+                      <span className="text-xs text-tastelanc-text-faint">
+                        {lead.restaurants.instagram_followers.toLocaleString()} followers
+                      </span>
+                    )}
+                  </div>
                 ) : null}
               </Field>
               <Field label="Address">
