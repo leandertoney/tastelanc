@@ -19,6 +19,7 @@
 import { createClient } from '@supabase/supabase-js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { migrateImagesBatch } from './lib/ensure-permanent-image';
 
 // ─── Config ────────────────────────────────────────────────────────────────
 
@@ -516,7 +517,7 @@ async function main() {
     const { data: inserted, error: insertError } = await supabase
       .from('restaurants')
       .upsert(restaurantInserts, { onConflict: 'slug', ignoreDuplicates: false })
-      .select('id, name, slug');
+      .select('id, name, slug, cover_image_url');
 
     if (insertError) {
       console.error(`  ❌ Batch ${Math.floor(i / BATCH_SIZE) + 1} error:`, insertError.message);
@@ -526,6 +527,11 @@ async function main() {
     }
 
     stats.restaurantsImported += inserted?.length || 0;
+
+    // Migrate external image URLs to permanent Supabase Storage
+    if (inserted && inserted.length > 0) {
+      await migrateImagesBatch(supabase, inserted);
+    }
 
     // Step 5: Import contacts for each restaurant in this batch
     if (inserted && inserted.length > 0) {

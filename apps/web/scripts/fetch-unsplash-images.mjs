@@ -134,9 +134,30 @@ async function main() {
       continue;
     }
 
+    // Download and upload to Supabase Storage for a permanent URL
+    let permanentUrl = imageUrl;
+    try {
+      const imgRes = await fetch(imageUrl);
+      if (imgRes.ok) {
+        const buffer = Buffer.from(await imgRes.arrayBuffer());
+        const fileName = `restaurants/${r.id}/cover.jpg`;
+        const { error: uploadErr } = await supabase.storage
+          .from('images')
+          .upload(fileName, buffer, { contentType: 'image/jpeg', upsert: true });
+        if (!uploadErr) {
+          const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName);
+          permanentUrl = urlData.publicUrl;
+        } else {
+          console.log(`   ⚠ Storage upload failed, using Unsplash URL: ${uploadErr.message}`);
+        }
+      }
+    } catch (err) {
+      console.log(`   ⚠ Download failed, using Unsplash URL: ${err.message}`);
+    }
+
     const { error: updateError } = await supabase
       .from('restaurants')
-      .update({ cover_image_url: imageUrl })
+      .update({ cover_image_url: permanentUrl })
       .eq('id', r.id);
 
     if (updateError) {

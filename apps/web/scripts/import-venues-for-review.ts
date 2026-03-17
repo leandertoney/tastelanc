@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
 import { parse } from 'csv-parse/sync';
+import { ensurePermanentImageUrl } from './lib/ensure-permanent-image';
 
 // Read .env.local
 const envContent = readFileSync('.env.local', 'utf8');
@@ -137,15 +138,23 @@ async function importVenuesForReview() {
       secondary_color: '#1F2937',
     };
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('restaurants')
-      .insert(venue);
+      .insert(venue)
+      .select('id, cover_image_url');
 
     if (error) {
       console.log(`ERROR: ${name} - ${error.message}`);
     } else {
       console.log(`ADDED: ${name} (inactive, needs review)`);
       inserted++;
+      // Migrate external image to permanent Supabase Storage
+      if (data?.[0]?.cover_image_url) {
+        const permanentUrl = await ensurePermanentImageUrl(supabase, data[0].cover_image_url, data[0].id);
+        if (permanentUrl) {
+          await supabase.from('restaurants').update({ cover_image_url: permanentUrl }).eq('id', data[0].id);
+        }
+      }
     }
   }
 

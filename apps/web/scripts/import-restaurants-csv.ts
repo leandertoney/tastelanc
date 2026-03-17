@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
 import { parse } from 'csv-parse/sync';
+import { migrateImagesBatch } from './lib/ensure-permanent-image';
 
 // Read .env.local
 const envContent = readFileSync('.env.local', 'utf8');
@@ -387,21 +388,29 @@ async function importRestaurants(dryRun: boolean = false) {
   const batchSize = 50;
   let inserted = 0;
   let failed = 0;
+  const allInserted: Array<{ id: string; name: string; cover_image_url: string | null }> = [];
 
   for (let i = 0; i < toInsert.length; i += batchSize) {
     const batch = toInsert.slice(i, i + batchSize);
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('restaurants')
-      .insert(batch);
+      .insert(batch)
+      .select('id, name, cover_image_url');
 
     if (error) {
       console.error(`Error inserting batch ${Math.floor(i / batchSize) + 1}:`, error.message);
       failed += batch.length;
     } else {
-      inserted += batch.length;
+      inserted += (data?.length || batch.length);
+      if (data) allInserted.push(...data);
       console.log(`Inserted ${inserted}/${toInsert.length}...`);
     }
+  }
+
+  // Migrate external image URLs to permanent Supabase Storage
+  if (allInserted.length > 0) {
+    await migrateImagesBatch(supabase, allInserted);
   }
 
   console.log(`\n=== COMPLETE ===`);

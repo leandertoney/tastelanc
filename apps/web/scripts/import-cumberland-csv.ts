@@ -15,6 +15,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { parse } from 'csv-parse/sync';
+import { migrateImagesBatch } from './lib/ensure-permanent-image';
 
 // ─────────────────────────────────────────────────────────
 // CITY CONFIG — Change these 4 values for a new market
@@ -803,6 +804,7 @@ async function importRestaurants() {
   const batchSize = 50;
   let inserted = 0;
   let failed = 0;
+  const allInserted: Array<{ id: string; name: string; cover_image_url: string | null }> = [];
 
   for (let i = 0; i < insertReady.length; i += batchSize) {
     const batch = insertReady.slice(i, i + batchSize).map(r => {
@@ -810,24 +812,31 @@ async function importRestaurants() {
       return record;
     });
 
-    const { error } = await supabase.from('restaurants').insert(batch);
+    const { data, error } = await supabase.from('restaurants').insert(batch).select('id, name, cover_image_url');
 
     if (error) {
       console.error(`  ❌ Batch ${Math.floor(i / batchSize) + 1} failed: ${error.message}`);
       // Try one-by-one to identify the problem row
       for (const record of batch) {
-        const { error: singleError } = await supabase.from('restaurants').insert(record);
+        const { data: singleData, error: singleError } = await supabase.from('restaurants').insert(record).select('id, name, cover_image_url');
         if (singleError) {
           console.error(`    ❌ ${record.name}: ${singleError.message}`);
           failed++;
         } else {
           inserted++;
+          if (singleData) allInserted.push(...singleData);
         }
       }
     } else {
-      inserted += batch.length;
+      inserted += (data?.length || batch.length);
+      if (data) allInserted.push(...data);
       console.log(`  Inserted ${inserted}/${insertReady.length}...`);
     }
+  }
+
+  // Migrate external image URLs to permanent Supabase Storage
+  if (allInserted.length > 0) {
+    await migrateImagesBatch(supabase, allInserted);
   }
 
   // Safety check: Lancaster count unchanged
