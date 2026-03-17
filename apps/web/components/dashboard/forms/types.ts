@@ -94,6 +94,22 @@ export interface SpecialFormData {
   image_url?: string;
 }
 
+export interface CouponFormData {
+  title: string;
+  description: string;
+  discount_type: 'percent_off' | 'dollar_off' | 'bogo' | 'free_item' | 'custom';
+  discount_value: string;
+  original_price: string;
+  days_of_week: DayOfWeek[];
+  start_date: string;
+  end_date: string;
+  start_time: string;
+  end_time: string;
+  max_claims_total: string;
+  max_claims_per_user: string;
+  image_url?: string;
+}
+
 // Smart Defaults
 export interface SmartDefault {
   time: string;

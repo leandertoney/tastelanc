@@ -21,6 +21,7 @@ export { default as SuccessCelebration } from './SuccessCelebration';
 export { default as EventWizard } from './EventWizard';
 export { default as HappyHourWizard } from './HappyHourWizard';
 export { default as SpecialWizard } from './SpecialWizard';
+export { default as CouponWizard } from './CouponWizard';
 
 // Types
 export * from './types';
