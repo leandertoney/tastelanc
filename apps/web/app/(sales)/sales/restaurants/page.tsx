@@ -19,6 +19,7 @@ import {
   Settings,
   User,
   Mail,
+  Instagram,
 } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 import { toast } from 'sonner';
@@ -43,6 +44,7 @@ interface Restaurant {
   categories: string | null;
   market_id: string | null;
   business_email: string | null;
+  instagram_handle: string | null;
 }
 
 interface Stats {
@@ -346,7 +348,18 @@ export default function SalesRestaurantsPage() {
                                 <Mail className="w-3.5 h-3.5" />
                               </a>
                             )}
-                            {!r.phone && !r.website && !r.contact_name && !r.business_email && <span className="text-sm text-tastelanc-text-faint">—</span>}
+                            {r.instagram_handle && (
+                              <a
+                                href={`https://instagram.com/${r.instagram_handle}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-pink-400 hover:text-pink-300 transition-colors"
+                                title={`@${r.instagram_handle}`}
+                              >
+                                <Instagram className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                            {!r.phone && !r.website && !r.contact_name && !r.business_email && !r.instagram_handle && <span className="text-sm text-tastelanc-text-faint">—</span>}
                           </div>
                           {r.contact_name && (
                             <div className="flex items-center gap-1" title={`${r.contact_name}${r.contact_title ? ` — ${r.contact_title}` : ''}${r.contact_phone ? ` | ${r.contact_phone}` : ''}`}>
