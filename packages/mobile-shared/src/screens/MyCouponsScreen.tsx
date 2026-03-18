@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Modal,
   Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,8 +21,8 @@ import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
 import {
   getMyClaims,
-  getClaimCode,
   cancelClaim,
+  redeemClaim,
   formatDiscount,
   type CouponClaim,
 } from '../lib/coupons';
@@ -38,66 +39,43 @@ function RedeemCodeModal({
   claim: CouponClaim | null;
   onClose: () => void;
 }) {
-  const [code, setCode] = useState<string | null>(null);
-  const [expiresIn, setExpiresIn] = useState(60);
-  const [loading, setLoading] = useState(false);
-  const [isRedeemed, setIsRedeemed] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [phase, setPhase] = useState<'confirm' | 'redeeming' | 'success'>('confirm');
+  const [confirmationCode, setConfirmationCode] = useState<string | null>(null);
   const colors = getColors();
   const styles = useRedeemStyles();
   const queryClient = useQueryClient();
 
-  const handleRedeemed = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    setIsRedeemed(true);
-    // Refresh the claims list so the card flips to "Redeemed" status
-    queryClient.invalidateQueries({ queryKey: queryKeys.coupons.myClaims });
-    // Auto-close after 3 seconds
-    setTimeout(() => onClose(), 3000);
-  }, [onClose, queryClient]);
-
-  const fetchCode = useCallback(async () => {
-    if (!claim) return;
-    setLoading(true);
-    try {
-      const data = await getClaimCode(claim.id);
-      setCode(data.code);
-      setExpiresIn(data.expires_in);
-
-      // Start countdown
-      if (timerRef.current) clearInterval(timerRef.current);
-      let remaining = data.expires_in;
-      timerRef.current = setInterval(() => {
-        remaining -= 1;
-        if (remaining <= 0) {
-          if (timerRef.current) clearInterval(timerRef.current);
-          fetchCode();
-        } else {
-          setExpiresIn(remaining);
-        }
-      }, 1000);
-    } catch (err: any) {
-      // If server says already redeemed, show success and close
-      if (err?.message?.includes('redeemed') || err?.message?.includes('already been')) {
-        handleRedeemed();
-      } else {
-        console.warn('Failed to fetch code:', err);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [claim, handleRedeemed]);
-
+  // Reset state when modal opens
   useEffect(() => {
-    if (visible && claim) {
-      setIsRedeemed(false);
-      setCode(null);
-      fetchCode();
+    if (visible) {
+      setPhase('confirm');
+      setConfirmationCode(null);
     }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [visible, claim, fetchCode]);
+  }, [visible]);
+
+  // Auto-close after 4 seconds on success
+  useEffect(() => {
+    if (phase === 'success') {
+      const timer = setTimeout(() => onClose(), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [phase, onClose]);
+
+  const handleRedeem = useCallback(async () => {
+    if (!claim) return;
+    setPhase('redeeming');
+    try {
+      const result = await redeemClaim(claim.id);
+      setConfirmationCode(result.confirmation_code);
+      setPhase('success');
+      queryClient.invalidateQueries({ queryKey: queryKeys.coupons.myClaims });
+    } catch (err: any) {
+      setPhase('confirm');
+      Alert.alert('Could not redeem', err.message || 'Please try again.');
+    }
+  }, [claim, queryClient]);
+
+  const handleClose = useCallback(() => onClose(), [onClose]);
 
   if (!claim) return null;
 
@@ -108,51 +86,50 @@ function RedeemCodeModal({
       <View style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
 
-          {isRedeemed ? (
-            <View style={styles.content}>
-              <View style={styles.redeemedIcon}>
-                <Ionicons name="checkmark-circle" size={80} color="#22c55e" />
-              </View>
-              <Text style={styles.redeemedTitle}>Coupon Redeemed!</Text>
-              <Text style={styles.restaurantName}>{coupon.restaurant.name}</Text>
-              <Text style={styles.couponTitle}>{coupon.title}</Text>
-              <Text style={styles.discountText}>{formatDiscount(coupon)}</Text>
-            </View>
-          ) : (
-            <View style={styles.content}>
+          {phase === 'confirm' && (
+            <View style={styles.confirmContainer}>
               <Text style={styles.restaurantName}>{coupon.restaurant.name}</Text>
               <Text style={styles.couponTitle}>{coupon.title}</Text>
               <Text style={styles.discountText}>{formatDiscount(coupon)}</Text>
 
-              {coupon.description && (
-                <Text style={styles.description}>{coupon.description}</Text>
-              )}
-
-              <View style={styles.codeContainer}>
-                {loading && !code ? (
-                  <ActivityIndicator size="large" color={colors.accent} />
-                ) : code ? (
-                  <>
-                    <Text style={styles.codeLabel}>Show this code to your server</Text>
-                    <Text style={styles.code}>{code}</Text>
-                    <View style={styles.timerRow}>
-                      <Ionicons name="time-outline" size={14} color={colors.textMuted} />
-                      <Text style={styles.timer}>New code in {expiresIn}s</Text>
-                    </View>
-                  </>
-                ) : (
-                  <Text style={styles.codeLabel}>Unable to generate code</Text>
-                )}
+              <View style={styles.couponPreview}>
+                {coupon.description ? (
+                  <Text style={styles.description}>{coupon.description}</Text>
+                ) : null}
               </View>
 
-              <Text style={styles.hint}>
-                The code changes every 60 seconds for security
+              <TouchableOpacity style={styles.redeemButton} onPress={handleRedeem} activeOpacity={0.85}>
+                <Text style={styles.redeemButtonText}>Redeem Now</Text>
+              </TouchableOpacity>
+              <Text style={styles.redeemSubtext}>
+                Show your server this screen, then tap Redeem Now together
               </Text>
+            </View>
+          )}
+
+          {phase === 'redeeming' && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.accent} />
+            </View>
+          )}
+
+          {phase === 'success' && (
+            <View style={styles.successContainer}>
+              <Ionicons name="checkmark-circle" size={80} color="#22c55e" />
+              <Text style={styles.successTitle}>Redeemed!</Text>
+              <Text style={styles.restaurantName}>{coupon.restaurant.name}</Text>
+              <Text style={styles.couponTitle}>{coupon.title}</Text>
+              {confirmationCode && (
+                <View style={styles.confirmationSection}>
+                  <Text style={styles.confirmationLabel}>Confirmation #</Text>
+                  <Text style={styles.confirmationCode}>{confirmationCode}</Text>
+                </View>
+              )}
             </View>
           )}
         </SafeAreaView>
@@ -319,17 +296,6 @@ const useRedeemStyles = createLazyStyles((colors) => ({
   safeArea: {
     flex: 1,
   },
-  redeemedIcon: {
-    alignItems: 'center' as const,
-    marginBottom: 16,
-  },
-  redeemedTitle: {
-    fontSize: 26,
-    fontWeight: '800' as const,
-    color: '#22c55e',
-    textAlign: 'center' as const,
-    marginBottom: 12,
-  },
   header: {
     flexDirection: 'row' as const,
     justifyContent: 'flex-end' as const,
@@ -343,16 +309,11 @@ const useRedeemStyles = createLazyStyles((colors) => ({
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
   },
-  content: {
-    flex: 1,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    paddingHorizontal: spacing.lg,
-  },
   restaurantName: {
     fontSize: 16,
     color: colors.textMuted,
     marginBottom: 4,
+    textAlign: 'center' as const,
   },
   couponTitle: {
     fontSize: 22,
@@ -366,49 +327,88 @@ const useRedeemStyles = createLazyStyles((colors) => ({
     fontWeight: '600' as const,
     color: colors.accent,
     marginBottom: 16,
+    textAlign: 'center' as const,
   },
   description: {
     fontSize: 14,
     color: colors.textMuted,
     textAlign: 'center' as const,
-    marginBottom: 24,
   },
-  codeContainer: {
+  // Phase: confirm
+  confirmContainer: {
+    flex: 1,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingHorizontal: spacing.lg,
+  },
+  couponPreview: {
     backgroundColor: colors.cardBg,
     borderRadius: radius.lg,
-    padding: 32,
-    alignItems: 'center' as const,
-    width: '100%' as const,
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: colors.accent,
+    padding: spacing.md,
+    marginVertical: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.accent + '30',
     borderStyle: 'dashed' as const,
-  },
-  codeLabel: {
-    fontSize: 14,
-    color: colors.textMuted,
-    marginBottom: 12,
-  },
-  code: {
-    fontSize: 48,
-    fontWeight: '800' as const,
-    color: colors.accent,
-    letterSpacing: 8,
-  },
-  timerRow: {
-    flexDirection: 'row' as const,
+    width: '100%' as const,
     alignItems: 'center' as const,
-    gap: 4,
-    marginTop: 12,
+    minHeight: 48,
+    justifyContent: 'center' as const,
   },
-  timer: {
-    fontSize: 13,
+  redeemButton: {
+    backgroundColor: colors.accent,
+    paddingVertical: 16,
+    borderRadius: radius.full,
+    alignItems: 'center' as const,
+    marginTop: spacing.lg,
+    width: '100%' as const,
+  },
+  redeemButtonText: {
+    color: colors.textOnAccent,
+    fontSize: 17,
+    fontWeight: '700' as const,
+  },
+  redeemSubtext: {
     color: colors.textMuted,
+    fontSize: 12,
+    textAlign: 'center' as const,
+    marginTop: spacing.sm,
   },
-  hint: {
+  // Phase: redeeming
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+  },
+  // Phase: success
+  successContainer: {
+    flex: 1,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingHorizontal: spacing.lg,
+  },
+  successTitle: {
+    fontSize: 28,
+    fontWeight: '800' as const,
+    color: '#22c55e',
+    marginTop: spacing.md,
+    textAlign: 'center' as const,
+  },
+  confirmationSection: {
+    marginTop: spacing.lg,
+    alignItems: 'center' as const,
+  },
+  confirmationLabel: {
     fontSize: 12,
     color: colors.textMuted,
-    textAlign: 'center' as const,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 1,
+  },
+  confirmationCode: {
+    fontSize: 24,
+    fontWeight: '700' as const,
+    color: colors.text,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    marginTop: 4,
   },
 }));
 

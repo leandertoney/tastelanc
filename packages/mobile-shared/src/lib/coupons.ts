@@ -235,6 +235,20 @@ export async function getClaimCode(claimId: string): Promise<{ code: string; exp
 }
 
 /**
+ * Redeem a claimed coupon (user-initiated flow).
+ */
+export async function redeemClaim(claimId: string): Promise<{ confirmation_code: string }> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${COUPONS_API_BASE}/claims/${claimId}/redeem`, {
+    method: 'POST',
+    headers,
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Failed to redeem coupon');
+  return data;
+}
+
+/**
  * Cancel a claimed coupon.
  */
 export async function cancelClaim(claimId: string): Promise<void> {
