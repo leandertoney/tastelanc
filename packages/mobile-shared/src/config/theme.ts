@@ -17,6 +17,7 @@ let _supabase: SupabaseClient | null = null;
 let _anonKey: string | null = null;
 let _neighborhoodBoundaries: NeighborhoodBoundary[] = [];
 let _marketCenter: { latitude: number; longitude: number } | null = null;
+let _themeKey: string = 'dark';
 
 /**
  * Initialize the theme singleton. Call this once at app startup,
@@ -44,6 +45,20 @@ export function initTheme(
 export function getColors(): ColorTokens {
   if (!_colors) throw new Error('[mobile-shared] initTheme() must be called before getColors()');
   return _colors;
+}
+
+/** Get the current theme key (e.g. 'dark', 'dim', 'light'). Used for cache-busting in createLazyStyles. */
+export function getThemeKey(): string {
+  return _themeKey;
+}
+
+/**
+ * Update the active color tokens and theme key at runtime (called by ThemeContext when the user switches themes).
+ * This also triggers re-renders in all components using createLazyStyles (via useThemeKey subscription).
+ */
+export function setActiveColors(colors: ColorTokens, key: string): void {
+  _colors = colors;
+  _themeKey = key;
 }
 
 /** Get the current brand config. Throws if initTheme() hasn't been called. */

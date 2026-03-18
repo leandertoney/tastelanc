@@ -4,6 +4,8 @@ export type {
   AppBrand,
   AppAssets,
   ColorTokens,
+  ColorSchemes,
+  ThemeMode,
   BrandPalette,
 } from './types/config';
 
@@ -15,7 +17,10 @@ export type { Spacing, Typography, Radius } from './constants/spacing';
 export { stagger, duration, spring, reveal, easing, pulse, transforms, animationConfigs } from './constants/animations';
 
 // Theme singleton
-export { initTheme, getColors, getBrand, getAssets, getSupabase, getNeighborhoodBoundaries, isThemeInitialized } from './config/theme';
+export { initTheme, getColors, getBrand, getAssets, getSupabase, getNeighborhoodBoundaries, isThemeInitialized, getThemeKey, setActiveColors } from './config/theme';
+
+// Theme context (dynamic theme switching)
+export { ThemeProvider, useTheme, useThemeKey } from './context/ThemeContext';
 
 // React Context
 export { AppConfigProvider, useAppConfig, useColors, useBrand, useAssets } from './config/context';

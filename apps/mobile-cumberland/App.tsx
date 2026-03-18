@@ -7,12 +7,13 @@ import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Updates from 'expo-updates';
 import { initTheme } from '@tastelanc/mobile-shared/src/config/theme';
+import { ThemeProvider } from '@tastelanc/mobile-shared/src/context/ThemeContext';
 import Navigation from './src/navigation';
 import { ErrorBoundary } from './src/components';
 import { queryClient } from './src/lib/queryClient';
 import { initSentry, Sentry } from './src/lib/sentry';
 import { saveCrash, getAndClearLastCrash } from './src/lib/crashLog';
-import { colors } from './src/constants/colors';
+import { colors, colorSchemes } from './src/constants/colors';
 import { BRAND } from './src/config/brand';
 import { supabase } from './src/lib/supabase';
 import { env } from './src/lib/env';
@@ -81,15 +82,17 @@ function App() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <GestureHandlerRootView style={styles.container}>
-        <SafeAreaProvider>
-          <ErrorBoundary level="screen" fallback={<RootErrorFallback />}>
-            <Navigation />
-          </ErrorBoundary>
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
-    </QueryClientProvider>
+    <ThemeProvider colorSchemes={colorSchemes}>
+      <QueryClientProvider client={queryClient}>
+        <GestureHandlerRootView style={styles.container}>
+          <SafeAreaProvider>
+            <ErrorBoundary level="screen" fallback={<RootErrorFallback />}>
+              <Navigation />
+            </ErrorBoundary>
+          </SafeAreaProvider>
+        </GestureHandlerRootView>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 

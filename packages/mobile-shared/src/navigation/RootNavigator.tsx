@@ -1,6 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { RootStackParamList } from './types';
-import { getColors, getBrand } from '../config/theme';
+import { getBrand } from '../config/theme';
 import { withScreenErrorBoundary } from '../components/ErrorBoundary';
 import BottomTabNavigator from './BottomTabNavigator';
 import RestaurantDetailScreen from '../screens/RestaurantDetailScreen';
@@ -75,16 +75,11 @@ const SafeMyCoupons = withScreenErrorBoundary(MyCouponsScreen, 'MyCoupons');
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
-  const colors = getColors();
   const brand = getBrand();
 
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: {
-          backgroundColor: colors.primary,
-        },
-        headerTintColor: colors.text,
         headerTitleStyle: {
           fontWeight: '600' as const,
         },
@@ -158,7 +153,6 @@ export default function RootNavigator() {
         options={{
           title: 'Event',
           headerTransparent: true,
-          headerTintColor: colors.text,
         }}
       />
       {/* Feature Request */}

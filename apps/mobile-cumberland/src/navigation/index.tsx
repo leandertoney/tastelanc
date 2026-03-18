@@ -1,6 +1,7 @@
 import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
+import { useNavigationTheme } from '@tastelanc/mobile-shared/src/hooks/useNavigationTheme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationActionsProvider } from '@tastelanc/mobile-shared/src/context/NavigationActionsContext';
 import RootNavigator from './RootNavigator';
@@ -50,11 +51,12 @@ function NotificationHandler({ children }: { children: React.ReactNode }) {
 function NavigationInner({ hasCompletedOnboarding }: { hasCompletedOnboarding: boolean }) {
   // Initialize Radar visit tracking (listens for geofence events)
   useRadarVisits();
+  const navTheme = useNavigationTheme();
 
   console.log('[NavigationInner] Rendering with hasCompletedOnboarding:', hasCompletedOnboarding);
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navTheme}>
       <NotificationHandler>
         {hasCompletedOnboarding ? (
           <>

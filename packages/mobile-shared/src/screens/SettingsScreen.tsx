@@ -19,6 +19,8 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getColors, getBrand, getSupabase } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
+import { useTheme } from '../context/ThemeContext';
+import type { ThemeMode } from '../types/config';
 import { radius, typography } from '../constants/spacing';
 import { useNavigationActions } from '../context/NavigationActionsContext';
 import { useAuth } from '../hooks/useAuth';
@@ -121,6 +123,8 @@ export default function SettingsScreen() {
   const { userId, user, isAnonymous } = useAuth();
   const { isSalesRep } = useSalesRole();
   const { data: unreadData } = useUnreadCount();
+
+  const { themeMode, setThemeMode, availableModes } = useTheme();
 
   const [notificationPermission, setNotificationPermission] = useState<string>('undetermined');
   const [locationEnabled, setLocationEnabled] = useState(true);
@@ -278,6 +282,51 @@ export default function SettingsScreen() {
             </View>
           </>
         )}
+
+        {/* Appearance Section */}
+        <SectionHeader title="Appearance" />
+        <View style={styles.section}>
+          <View style={styles.appearanceRow}>
+            {(availableModes.filter(m => m !== 'system') as ThemeMode[]).map((mode) => {
+              const isActive = themeMode === mode;
+              const label = mode === 'dark' ? 'Dark' : mode === 'dim' ? 'Dim' : 'Light';
+              const icon = mode === 'dark' ? 'moon' : mode === 'dim' ? 'contrast' : 'sunny';
+              return (
+                <TouchableOpacity
+                  key={mode}
+                  style={[styles.themePill, isActive && styles.themePillActive]}
+                  onPress={() => setThemeMode(mode)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={icon as any}
+                    size={16}
+                    color={isActive ? colors.textOnAccent : colors.textMuted}
+                    style={styles.themePillIcon}
+                  />
+                  <Text style={[styles.themePillLabel, isActive && styles.themePillLabelActive]}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+            <TouchableOpacity
+              style={[styles.themePill, themeMode === 'system' && styles.themePillActive]}
+              onPress={() => setThemeMode('system')}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="phone-portrait-outline"
+                size={16}
+                color={themeMode === 'system' ? colors.textOnAccent : colors.textMuted}
+                style={styles.themePillIcon}
+              />
+              <Text style={[styles.themePillLabel, themeMode === 'system' && styles.themePillLabelActive]}>
+                System
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* Preferences Section */}
         <SectionHeader title="Preferences" />
@@ -500,4 +549,36 @@ const useStyles = createLazyStyles((colors) => ({
   versionSubtext: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
   devNote: { paddingHorizontal: 20, paddingVertical: 8 },
   devNoteText: { fontSize: 11, color: colors.textSecondary, fontFamily: 'monospace' },
+  appearanceRow: {
+    flexDirection: 'row' as const,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  themePill: {
+    flex: 1,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.cardBgElevated,
+    gap: 5,
+  },
+  themePillActive: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+  themePillIcon: {},
+  themePillLabel: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: colors.textMuted,
+  },
+  themePillLabelActive: {
+    color: colors.textOnAccent,
+  },
 }));

@@ -26,6 +26,7 @@ export { default as OnboardingPremiumScreen } from './OnboardingPremiumScreen';
 export { default as OnboardingRosieAskScreen } from './OnboardingRosieAskScreen';
 export { default as OnboardingReviewAskScreen } from './OnboardingReviewAskScreen';
 export { default as OnboardingPremiumIntroScreen } from './OnboardingPremiumIntroScreen';
+export { default as OnboardingThemePickerScreen } from './OnboardingThemePickerScreen';
 
 // Legacy (backward compatibility)
 export { default as OnboardingFrequencyScreen } from './OnboardingFrequencyScreen';

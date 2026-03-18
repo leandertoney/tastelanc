@@ -159,11 +159,17 @@ export default function StPatricksDayBanner() {
         const { data: m } = await supabase.from('markets').select('id').eq('slug', brand.marketSlug).single();
         marketId = m?.id || null;
       }
+      // Only return dates that haven't fully passed yet (allow same day + 1 day grace)
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 1);
+      const cutoffStr = cutoff.toISOString().split('T')[0];
+
       let query = supabase
         .from('holiday_specials')
         .select('event_date, restaurant:restaurants!inner(market_id)')
         .eq('holiday_tag', 'st-patricks-2026')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .gte('event_date', cutoffStr);
       if (marketId) query = query.eq('restaurant.market_id', marketId);
       const { data } = await query;
       if (!data) return [];

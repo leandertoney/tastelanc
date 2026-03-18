@@ -24,6 +24,7 @@ import {
   OnboardingRosieAskScreen,
   OnboardingReviewAskScreen,
   OnboardingPremiumIntroScreen,
+  OnboardingThemePickerScreen,
   // Legacy (keeping for backward compatibility)
   OnboardingFrequencyScreen,
   OnboardingDiscoveryScreen,
@@ -70,6 +71,7 @@ export default function OnboardingNavigator() {
       <Stack.Screen name="OnboardingRosieAsk" component={OnboardingRosieAskScreen} />
       <Stack.Screen name="OnboardingReviewAsk" component={OnboardingReviewAskScreen} />
       <Stack.Screen name="OnboardingPremiumIntro" component={OnboardingPremiumIntroScreen} />
+      <Stack.Screen name="OnboardingThemePicker" component={OnboardingThemePickerScreen} />
 
       {/* Legacy screens (backward compatibility) */}
       <Stack.Screen name="OnboardingFrequency" component={OnboardingFrequencyScreen} />

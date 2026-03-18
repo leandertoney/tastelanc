@@ -60,6 +60,21 @@ export interface MarketFeatures {
   dailySpecialsCarousel?: boolean;
 }
 
+/** Which theme variant the user has chosen (or 'system' to follow OS). */
+export type ThemeMode = 'dark' | 'dim' | 'light' | 'system';
+
+/**
+ * All color schemes for a single app.
+ * `dark` is required; `dim` and `light` are optional (omit if not designed).
+ * `default` sets the app's out-of-box theme.
+ */
+export interface ColorSchemes {
+  dark: ColorTokens;
+  dim?: ColorTokens;
+  light?: ColorTokens;
+  default: ThemeMode;
+}
+
 export interface ColorTokens {
   // Primary backgrounds
   primary: string;
@@ -129,6 +144,9 @@ export interface ColorTokens {
   // Legacy
   background: string;
   backgroundAlt: string;
+
+  // Status bar — 'light-content' for dark themes, 'dark-content' for light themes
+  statusBarStyle?: 'light-content' | 'dark-content';
 }
 
 /**

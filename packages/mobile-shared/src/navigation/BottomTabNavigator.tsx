@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { BottomTabParamList, RootStackParamList } from './types';
 import { getColors } from '../config/theme';
+import { useThemeKey } from '../context/ThemeContext';
 import HeaderLogo from '../components/HeaderLogo';
 import HeaderGreeting from '../components/HeaderGreeting';
 import { withScreenErrorBoundary } from '../components/ErrorBoundary';
@@ -44,6 +45,7 @@ const getTabIcon = (routeName: keyof BottomTabParamList, focused: boolean): Icon
 };
 
 function ProfileHeaderRight() {
+  useThemeKey(); // re-render on theme change so icon color stays correct
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const colors = getColors();
   return (
@@ -58,6 +60,7 @@ function ProfileHeaderRight() {
 }
 
 export default function BottomTabNavigator() {
+  useThemeKey(); // re-render on theme change so tab bar colors update
   const colors = getColors();
   const { isSalesRep } = useSalesRole();
 
@@ -71,16 +74,10 @@ export default function BottomTabNavigator() {
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.tabInactive,
         tabBarStyle: {
-          backgroundColor: colors.tabBarBg,
-          borderTopColor: colors.tabBarBorder,
           borderTopWidth: 1,
         },
         headerShown: true,
         headerLeft: () => <HeaderLogo />,
-        headerStyle: {
-          backgroundColor: colors.primary,
-        },
-        headerTintColor: colors.text,
         headerTitleStyle: {
           fontWeight: '600' as const,
         },

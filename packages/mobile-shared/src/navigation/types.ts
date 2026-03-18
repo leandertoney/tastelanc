@@ -137,6 +137,7 @@ export type OnboardingStackParamList = {
   OnboardingRosieAsk: undefined;
   OnboardingReviewAsk: undefined;
   OnboardingPremiumIntro: undefined;
+  OnboardingThemePicker: undefined;
   // Legacy (keeping for backward compatibility during transition)
   OnboardingFrequency: undefined;
   OnboardingDiscovery: undefined;

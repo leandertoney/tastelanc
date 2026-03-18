@@ -50,7 +50,7 @@ export default function OnboardingPremiumIntroScreen({ navigation }: Props) {
 
   const handleContinue = async () => {
     await completeOnboarding();
-    finishOnboarding();
+    navigation.navigate('OnboardingThemePicker');
   };
 
   return (
