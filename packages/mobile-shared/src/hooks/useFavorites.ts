@@ -68,7 +68,7 @@ export function useToggleFavorite() {
         .select('id')
         .eq('user_id', userId)
         .eq('restaurant_id', restaurantId)
-        .single();
+        .maybeSingle();
 
       if (existing) {
         // Remove

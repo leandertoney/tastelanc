@@ -26,9 +26,8 @@ import ClusteredMapView from 'react-native-map-clustering';
 import { getColors, getSupabase, getAssets, getNeighborhoodBoundaries, getMarketCenter } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius } from '../constants/spacing';
-import { getFavorites, toggleFavorite } from '../lib/favorites';
+import { useFavorites, useToggleFavorite } from '../hooks/useFavorites';
 import { tieredFairRotate, getTierName } from '../lib/fairRotation';
-import { useAuth } from '../hooks/useAuth';
 import { useMarket } from '../context/MarketContext';
 import {
   useUserLocation,
@@ -83,7 +82,6 @@ export default function SearchScreen() {
   const assets = getAssets();
   const NEIGHBORHOOD_BOUNDARIES = getNeighborhoodBoundaries();
   const navigation = useNavigation<NavigationProp>();
-  const { userId } = useAuth();
   const { market, marketId } = useMarket();
   const { location, permissionStatus, requestPermission } = useUserLocation();
 
@@ -107,7 +105,8 @@ export default function SearchScreen() {
   const [featureFilterVisible, setFeatureFilterVisible] = useState(false);
   const [restaurants, setRestaurants] = useState<RestaurantWithTier[]>([]);
   const [loading, setLoading] = useState(false);
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const { data: favorites = [] } = useFavorites();
+  const toggleFavoriteMutation = useToggleFavorite();
 
   // Map state
   const mapRef = useRef<MapView>(null);
@@ -152,17 +151,10 @@ export default function SearchScreen() {
     }
   }, [location, mapReady]);
 
-  // Load favorites and initial restaurants on mount and when market changes
+  // Load restaurants on mount and when market changes
   useEffect(() => {
-    const loadInitialData = async () => {
-      if (userId) {
-        const favs = await getFavorites(userId);
-        setFavorites(favs);
-      }
-      loadAllRestaurants();
-    };
-    loadInitialData();
-  }, [userId, marketId]);
+    loadAllRestaurants();
+  }, [marketId]);
 
   const loadAllRestaurants = async () => {
     setLoading(true);
@@ -295,14 +287,10 @@ export default function SearchScreen() {
   );
 
   const handleFavoritePress = useCallback(
-    async (restaurantId: string) => {
-      if (!userId) return;
-      const newState = await toggleFavorite(userId, restaurantId);
-      setFavorites((prev) =>
-        newState ? [...prev, restaurantId] : prev.filter((id) => id !== restaurantId)
-      );
+    (restaurantId: string) => {
+      toggleFavoriteMutation.mutate(restaurantId);
     },
-    [userId]
+    [toggleFavoriteMutation]
   );
 
   const handleRestaurantPress = useCallback(
