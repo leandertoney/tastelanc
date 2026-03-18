@@ -52,6 +52,7 @@ import VideoRecommendationFeed from '../components/VideoRecommendationFeed';
 import type { Tab } from '../components';
 import { formatCategoryName, formatTime, formatFeatureName, getFeatureIconName } from '../lib/formatters';
 import { isTierGatingEnabled } from '../lib/feature-flags';
+import { getRestaurantCoupons, formatDiscount, claimCoupon, type Coupon } from '../lib/coupons';
 import { useRecordVisit } from '../hooks/useRadarVisits';
 import { useUserLocation, calculateDistance } from '../hooks/useUserLocation';
 import {
@@ -84,6 +85,7 @@ function getBaseTabs(): Tab[] {
     { key: 'recommendations', label: 'Recs' },
     ...(hasFeature('happyHours') ? [{ key: 'happy_hours' as const, label: 'Happy Hours' }] : []),
     { key: 'specials', label: 'Specials' },
+    { key: 'coupons', label: 'Coupons' },
     { key: 'events', label: 'Events' },
     { key: 'menu', label: 'Menu' },
   ];
@@ -109,6 +111,8 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const [hours, setHours] = useState<RestaurantHours[]>([]);
   const [happyHours, setHappyHours] = useState<HappyHour[]>([]);
   const [specials, setSpecials] = useState<Special[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [claimingCouponId, setClaimingCouponId] = useState<string | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [menus, setMenus] = useState<Menu[]>([]);
   const [menusLoading, setMenusLoading] = useState(false);
@@ -163,7 +167,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
       setTierName(tierData?.name || null);
 
       // Fetch related data in parallel
-      const [hoursRes, happyHoursRes, specialsRes, eventsData, menusRes] = await Promise.all([
+      const [hoursRes, happyHoursRes, specialsRes, eventsData, menusRes, couponsData] = await Promise.all([
         supabase.from('restaurant_hours').select('*').eq('restaurant_id', id),
         supabase.from('happy_hours').select('*, happy_hour_items(*)').eq('restaurant_id', id).eq('is_active', true),
         supabase.from('specials').select('*').eq('restaurant_id', id).eq('is_active', true),
@@ -174,12 +178,14 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
           .eq('restaurant_id', id)
           .eq('is_active', true)
           .order('display_order'),
+        getRestaurantCoupons(id),
       ]);
 
       if (hoursRes.data) setHours(hoursRes.data);
       if (happyHoursRes.data) setHappyHours(happyHoursRes.data);
       if (specialsRes.data) setSpecials(specialsRes.data);
       if (menusRes.data) setMenus(menusRes.data as Menu[]);
+      setCoupons(couponsData);
       // Map API events to Event type
       setEvents(eventsData.map(e => ({
         id: e.id,
@@ -363,8 +369,27 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   // Check if we have featured content
   const hasHappyHours = happyHours.length > 0;
   const hasSpecials = specials.length > 0;
+  const hasCoupons = coupons.length > 0;
   const hasEvents = events.length > 0;
-  const hasFeaturedContent = hasHappyHours || hasSpecials || hasEvents;
+  const hasFeaturedContent = hasHappyHours || hasSpecials || hasEvents || hasCoupons;
+
+  const handleClaimCoupon = async (couponId: string) => {
+    if (!userId) {
+      Alert.alert('Sign In Required', 'You need to sign in to claim coupons.');
+      return;
+    }
+    setClaimingCouponId(couponId);
+    try {
+      await claimCoupon(couponId);
+      Alert.alert('Coupon Claimed!', 'Check My Coupons in your profile to use it at the restaurant.');
+      // Remove from list since it's now claimed
+      setCoupons(prev => prev.filter(c => c.id !== couponId));
+    } catch (err: any) {
+      Alert.alert('Could not claim', err.message || 'Please try again.');
+    } finally {
+      setClaimingCouponId(null);
+    }
+  };
 
   // Get today's hours
   const today = getCurrentDay();
@@ -618,6 +643,71 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                   <Ionicons name="pricetag-outline" size={48} color={colors.textSecondary} />
                   <Text style={styles.emptyText}>No Specials</Text>
                   <Text style={styles.emptySubtext}>This restaurant hasn't added specials yet</Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Coupons Tab */}
+          {activeTab === 'coupons' && (
+            <View style={styles.tabSection}>
+              {coupons.length > 0 ? (
+                coupons.map((coupon) => (
+                  <View key={coupon.id} style={[styles.contentCard, { borderWidth: 1, borderColor: colors.accent + '30', borderStyle: 'dashed' }]}>
+                    {coupon.image_url && (
+                      <Image
+                        source={{ uri: coupon.image_url }}
+                        style={styles.contentImage}
+                        resizeMode="cover"
+                      />
+                    )}
+                    <View style={styles.contentCardBody}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Text style={styles.contentTitle}>{coupon.title}</Text>
+                        <View style={{ backgroundColor: colors.accent, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                          <Text style={{ color: colors.textOnAccent, fontSize: 13, fontWeight: '700' }}>
+                            {formatDiscount(coupon)}
+                          </Text>
+                        </View>
+                      </View>
+                      {coupon.description && (
+                        <Text style={styles.contentDescription}>{coupon.description}</Text>
+                      )}
+                      {coupon.days_of_week && coupon.days_of_week.length > 0 && (
+                        <Text style={styles.contentDays}>
+                          {coupon.days_of_week.length === 7 ? 'Every Day' :
+                            coupon.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
+                        </Text>
+                      )}
+                      {coupon.max_claims_total && (
+                        <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 4 }}>
+                          {coupon.max_claims_total - coupon.claims_count} of {coupon.max_claims_total} remaining
+                        </Text>
+                      )}
+                      <TouchableOpacity
+                        style={{
+                          marginTop: 12,
+                          backgroundColor: colors.accent,
+                          paddingVertical: 10,
+                          borderRadius: 8,
+                          alignItems: 'center',
+                          opacity: claimingCouponId === coupon.id ? 0.6 : 1,
+                        }}
+                        onPress={() => handleClaimCoupon(coupon.id)}
+                        disabled={claimingCouponId === coupon.id}
+                      >
+                        <Text style={{ color: colors.textOnAccent, fontWeight: '600', fontSize: 15 }}>
+                          {claimingCouponId === coupon.id ? 'Claiming...' : 'Claim Coupon'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <View style={styles.emptyState}>
+                  <Ionicons name="ticket-outline" size={48} color={colors.textSecondary} />
+                  <Text style={styles.emptyText}>No Coupons</Text>
+                  <Text style={styles.emptySubtext}>No coupons available right now</Text>
                 </View>
               )}
             </View>

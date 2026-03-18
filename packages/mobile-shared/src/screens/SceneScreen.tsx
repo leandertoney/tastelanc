@@ -250,10 +250,22 @@ interface HolidayTeaserItem {
   date: string;
 }
 
+interface CouponClaimItem {
+  kind: 'coupon_claim';
+  id: string;
+  restaurantId: string;
+  restaurantName: string;
+  couponTitle: string;
+  discountLabel: string;
+  remaining: number | null;
+  maxTotal: number | null;
+  date: string;
+}
+
 type PulseItem =
   | VideoItem | PhotoItem | ItineraryItem | BuzzItem | AdItem | ReelsShelfItem
   | SpecialItem | HappyHourItem | EventItem | NewRestaurantItem | BlogItem
-  | HolidayTeaserItem;
+  | HolidayTeaserItem | CouponClaimItem;
 
 // ─── Data fetching ─────────────────────────────────────────────────────────────
 
@@ -362,9 +374,20 @@ function usePulseFeed() {
             })
         : Promise.resolve({ data: [], error: null });
 
-      const [videosRes, adsRes, buzzRes, itinerariesRes, specialsRes, eventsRes, newRestaurantsRes, blogRes, happyHoursRes, holidayRes] = await Promise.all([
+      // Recent coupon claims (for social proof — anonymized "Someone just claimed...")
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      let couponClaimsQuery = supabase
+        .from('coupon_claims')
+        .select('id, claimed_at, coupon:coupons!inner(id, title, discount_type, discount_value, max_claims_total, claims_count, restaurant:restaurants!inner(id, name, market_id))')
+        .eq('status', 'claimed')
+        .gte('claimed_at', oneDayAgo)
+        .order('claimed_at', { ascending: false })
+        .limit(8);
+
+      const [videosRes, adsRes, buzzRes, itinerariesRes, specialsRes, eventsRes, newRestaurantsRes, blogRes, happyHoursRes, holidayRes, couponClaimsRes] = await Promise.all([
         videosQuery, adsQuery, buzzPromise, itinerariesQuery,
         specialsQuery, eventsQuery, newRestaurantsQuery, blogQuery, happyHoursPromise, holidayQuery,
+        couponClaimsQuery,
       ]);
 
       const items: PulseItem[] = [];
@@ -547,6 +570,37 @@ function usePulseFeed() {
           });
         });
       }
+
+      // ── Coupon claim social proof ("Someone just claimed...")
+      const couponClaims = couponClaimsRes.data || [];
+      // Deduplicate by coupon ID (show each coupon only once)
+      const seenCouponIds = new Set<string>();
+      couponClaims.forEach((claim: any) => {
+        const coupon = claim.coupon;
+        if (!coupon?.restaurant?.id || seenCouponIds.has(coupon.id)) return;
+        // Market filter
+        if (marketId && coupon.restaurant.market_id !== marketId) return;
+        seenCouponIds.add(coupon.id);
+        const remaining = coupon.max_claims_total ? coupon.max_claims_total - coupon.claims_count : null;
+        const discountLabel = coupon.discount_type === 'percent_off' && coupon.discount_value
+          ? `${coupon.discount_value}% Off`
+          : coupon.discount_type === 'dollar_off' && coupon.discount_value
+            ? `$${coupon.discount_value} Off`
+            : coupon.discount_type === 'bogo' ? 'BOGO'
+            : coupon.discount_type === 'free_item' ? 'Free Item'
+            : coupon.title;
+        items.push({
+          kind: 'coupon_claim',
+          id: `coupon-claim-${claim.id}`,
+          restaurantId: coupon.restaurant.id,
+          restaurantName: coupon.restaurant.name,
+          couponTitle: coupon.title,
+          discountLabel,
+          remaining,
+          maxTotal: coupon.max_claims_total,
+          date: claim.claimed_at,
+        });
+      });
 
       // Sort newest first
       items.sort((a, b) => {
@@ -1207,6 +1261,51 @@ function HolidayTeaserCard({ item, onPress }: { item: HolidayTeaserItem; onPress
   );
 }
 
+// ─── Coupon Claim social proof card ──────────────────────────────────────────
+
+function CouponClaimCard({ item, onPress }: { item: CouponClaimItem; onPress: () => void }) {
+  const styles = useStyles();
+  const colors = getColors();
+
+  const urgencyText = item.remaining != null && item.maxTotal != null
+    ? `Only ${item.remaining} of ${item.maxTotal} left!`
+    : null;
+
+  return (
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
+      <PostHeader
+        avatarIcon="ticket"
+        avatarBg={withAlpha(colors.accent, 0.15)}
+        title={item.restaurantName}
+        subtitle={`Someone just claimed · ${formatTimeAgo(item.date)}`}
+      />
+      <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.md }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          <View style={{ backgroundColor: colors.accent, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+            <Text style={{ color: colors.textOnAccent, fontSize: 13, fontWeight: '700' }}>
+              {item.discountLabel}
+            </Text>
+          </View>
+          <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600', flex: 1 }} numberOfLines={1}>
+            {item.couponTitle}
+          </Text>
+        </View>
+        {urgencyText && (
+          <Text style={{ color: '#ef4444', fontSize: 13, fontWeight: '600' }}>
+            {urgencyText}
+          </Text>
+        )}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 6 }}>
+          <Ionicons name="arrow-forward-circle" size={18} color={colors.accent} />
+          <Text style={{ color: colors.accent, fontSize: 14, fontWeight: '600' }}>
+            View Restaurant
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
 // ─── Social proof header ──────────────────────────────────────────────────────
 
 function SceneStatsHeader() {
@@ -1284,7 +1383,7 @@ export default function SceneScreen() {
     if (item.kind === 'reels_shelf') return activeFilter === 'all' || activeFilter === 'photos';
     if (activeFilter === 'all') return true;
     if (activeFilter === 'trending') return item.kind === 'buzz' || item.kind === 'new_restaurant';
-    if (activeFilter === 'deals') return item.kind === 'special' || item.kind === 'happy_hour' || item.kind === 'holiday_teaser';
+    if (activeFilter === 'deals') return item.kind === 'special' || item.kind === 'happy_hour' || item.kind === 'holiday_teaser' || item.kind === 'coupon_claim';
     if (activeFilter === 'events') return item.kind === 'event';
     if (activeFilter === 'photos') return item.kind === 'video' || item.kind === 'photo';
     if (activeFilter === 'itineraries') return item.kind === 'itinerary';
@@ -1328,6 +1427,8 @@ export default function SceneScreen() {
         return <BlogCard item={item} onPress={() => navigation.navigate('BlogDetail', { slug: item.slug })} />;
       case 'holiday_teaser':
         return <HolidayTeaserCard item={item} onPress={() => navigation.navigate('StPatricksDay')} />;
+      case 'coupon_claim':
+        return <CouponClaimCard item={item} onPress={() => handleItemPress(item.restaurantId)} />;
     }
   };
 

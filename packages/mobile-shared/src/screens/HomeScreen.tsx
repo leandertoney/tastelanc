@@ -37,7 +37,6 @@ import {
   TrendingRecommendationsSection,
   ErrorBoundary,
   StPatricksDayBanner,
-  CouponsSection,
 } from '../components';
 import CuisinesSection from '../components/CuisinesSection';
 import { getColors, getBrand, getAssets, hasFeature } from '../config/theme';
@@ -130,7 +129,6 @@ export default function HomeScreen() {
     queryClient.invalidateQueries({ queryKey: ['blog'] });
     queryClient.invalidateQueries({ queryKey: ['featuredAds', marketId] });
     queryClient.invalidateQueries({ queryKey: ['stPatricksDates'] });
-    queryClient.invalidateQueries({ queryKey: ['coupons'] });
     refetch();
   }, [queryClient, refetch, marketId]);
 
@@ -182,12 +180,7 @@ export default function HomeScreen() {
         <EntertainmentSection />
       </ErrorBoundary>
 
-      {/* Section 3: Coupons */}
-      <ErrorBoundary level="section">
-        <CouponsSection />
-      </ErrorBoundary>
-
-      {/* Section 4: Upcoming Events */}
+      {/* Section 3: Upcoming Events */}
       <ErrorBoundary level="section">
         <EventsSection />
       </ErrorBoundary>
