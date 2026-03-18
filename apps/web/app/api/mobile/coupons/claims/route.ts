@@ -1,22 +1,28 @@
 import { NextResponse } from 'next/server';
-import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const supabase = await createClient();
+    const serviceClient = createServiceRoleClient();
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Verify auth from Bearer token (mobile sends Authorization header, not cookies)
+    const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json(
+        { error: 'You must be signed in to view your coupons' },
+        { status: 401 }
+      );
+    }
+    const { data: { user }, error: authError } = await serviceClient.auth.getUser(token);
     if (authError || !user) {
       return NextResponse.json(
         { error: 'You must be signed in to view your coupons' },
         { status: 401 }
       );
     }
-
-    const serviceClient = createServiceRoleClient();
 
     const { data: claims, error } = await serviceClient
       .from('coupon_claims')

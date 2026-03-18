@@ -31,6 +31,7 @@ import { radius } from '../constants/spacing';
 import { fetchEvents } from '../lib/events';
 import { trackScreenView } from '../lib/analytics';
 import { useAuth } from '../hooks/useAuth';
+import { useEmailGate } from '../hooks/useEmailGate';
 import { useFavorites, useToggleFavorite } from '../hooks';
 import { useIsWishlisted, useToggleWishlist } from '../hooks/useWishlist';
 import {
@@ -98,6 +99,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const supabase = getSupabase();
   const { id } = route.params;
   const { userId } = useAuth();
+  const { requireEmailGate } = useEmailGate();
 
   // Use hooks for favorites - handles signup modal automatically
   const { data: favorites = [] } = useFavorites();
@@ -373,22 +375,19 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const hasEvents = events.length > 0;
   const hasFeaturedContent = hasHappyHours || hasSpecials || hasEvents || hasCoupons;
 
-  const handleClaimCoupon = async (couponId: string) => {
-    if (!userId) {
-      Alert.alert('Sign In Required', 'You need to sign in to claim coupons.');
-      return;
-    }
-    setClaimingCouponId(couponId);
-    try {
-      await claimCoupon(couponId);
-      Alert.alert('Coupon Claimed!', 'Check My Coupons in your profile to use it at the restaurant.');
-      // Remove from list since it's now claimed
-      setCoupons(prev => prev.filter(c => c.id !== couponId));
-    } catch (err: any) {
-      Alert.alert('Could not claim', err.message || 'Please try again.');
-    } finally {
-      setClaimingCouponId(null);
-    }
+  const handleClaimCoupon = (couponId: string) => {
+    requireEmailGate(async () => {
+      setClaimingCouponId(couponId);
+      try {
+        await claimCoupon(couponId);
+        Alert.alert('Coupon Claimed!', 'Check My Coupons in your profile to use it at the restaurant.');
+        setCoupons(prev => prev.filter(c => c.id !== couponId));
+      } catch (err: any) {
+        Alert.alert('Could not claim', err.message || 'Please try again.');
+      } finally {
+        setClaimingCouponId(null);
+      }
+    });
   };
 
   // Get today's hours
@@ -706,8 +705,8 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
               ) : (
                 <View style={styles.emptyState}>
                   <Ionicons name="ticket-outline" size={48} color={colors.textSecondary} />
-                  <Text style={styles.emptyText}>No Coupons</Text>
-                  <Text style={styles.emptySubtext}>No coupons available right now</Text>
+                  <Text style={styles.emptyText}>No Coupons Yet</Text>
+                  <Text style={styles.emptySubtext}>This restaurant hasn't added any deals yet — check back soon!</Text>
                 </View>
               )}
             </View>

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
@@ -17,18 +17,23 @@ export async function GET(
 ) {
   try {
     const { claimId } = await params;
-    const supabase = await createClient();
+    const serviceClient = createServiceRoleClient();
 
-    // Require authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Verify auth from Bearer token (mobile sends Authorization header, not cookies)
+    const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    const { data: { user }, error: authError } = await serviceClient.auth.getUser(token);
     if (authError || !user) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
-
-    const serviceClient = createServiceRoleClient();
 
     // Get the claim — only if it belongs to this user
     const { data: claim, error: claimError } = await serviceClient

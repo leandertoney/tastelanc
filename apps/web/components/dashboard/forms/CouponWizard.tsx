@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Percent, DollarSign, Gift, Ticket, Tag } from 'lucide-react';
 import { Button } from '@/components/ui';
 import StepWizard from './StepWizard';
@@ -105,6 +105,13 @@ export default function CouponWizard({ restaurantId, onClose, onSubmit }: Coupon
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Auto-close 2s after success unless user clicked "Add Another"
+  useEffect(() => {
+    if (!isSuccess) return;
+    const timer = setTimeout(() => onClose(), 2000);
+    return () => clearTimeout(timer);
+  }, [isSuccess, onClose]);
 
   const totalSteps = 3;
 
