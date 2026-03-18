@@ -115,6 +115,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const [specials, setSpecials] = useState<Special[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [claimingCouponId, setClaimingCouponId] = useState<string | null>(null);
+  const [claimedCouponIds, setClaimedCouponIds] = useState<Set<string>>(new Set());
   const [events, setEvents] = useState<Event[]>([]);
   const [menus, setMenus] = useState<Menu[]>([]);
   const [menusLoading, setMenusLoading] = useState(false);
@@ -380,8 +381,12 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
       setClaimingCouponId(couponId);
       try {
         await claimCoupon(couponId);
-        Alert.alert('Coupon Claimed!', 'Check My Coupons in your profile to use it at the restaurant.');
-        setCoupons(prev => prev.filter(c => c.id !== couponId));
+        // Mark as claimed locally and increment count — keeps the coupon visible
+        setClaimedCouponIds(prev => new Set([...prev, couponId]));
+        setCoupons(prev => prev.map(c =>
+          c.id === couponId ? { ...c, claims_count: c.claims_count + 1 } : c
+        ));
+        Alert.alert('Coupon Claimed!', 'Go to My Coupons in your profile to use it at the restaurant.');
       } catch (err: any) {
         Alert.alert('Could not claim', err.message || 'Please try again.');
       } finally {
@@ -686,17 +691,23 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                       <TouchableOpacity
                         style={{
                           marginTop: 12,
-                          backgroundColor: colors.accent,
+                          backgroundColor: claimedCouponIds.has(coupon.id) ? colors.cardBg : colors.accent,
                           paddingVertical: 10,
                           borderRadius: 8,
                           alignItems: 'center',
                           opacity: claimingCouponId === coupon.id ? 0.6 : 1,
+                          borderWidth: claimedCouponIds.has(coupon.id) ? 1 : 0,
+                          borderColor: colors.accent,
                         }}
-                        onPress={() => handleClaimCoupon(coupon.id)}
-                        disabled={claimingCouponId === coupon.id}
+                        onPress={() => !claimedCouponIds.has(coupon.id) && handleClaimCoupon(coupon.id)}
+                        disabled={claimingCouponId === coupon.id || claimedCouponIds.has(coupon.id)}
                       >
-                        <Text style={{ color: colors.textOnAccent, fontWeight: '600', fontSize: 15 }}>
-                          {claimingCouponId === coupon.id ? 'Claiming...' : 'Claim Coupon'}
+                        <Text style={{
+                          color: claimedCouponIds.has(coupon.id) ? colors.accent : colors.textOnAccent,
+                          fontWeight: '600',
+                          fontSize: 15,
+                        }}>
+                          {claimingCouponId === coupon.id ? 'Claiming...' : claimedCouponIds.has(coupon.id) ? 'Claimed ✓' : 'Claim Coupon'}
                         </Text>
                       </TouchableOpacity>
                     </View>
