@@ -41,10 +41,20 @@ function RedeemCodeModal({
   const [code, setCode] = useState<string | null>(null);
   const [expiresIn, setExpiresIn] = useState(60);
   const [loading, setLoading] = useState(false);
+  const [isRedeemed, setIsRedeemed] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const refreshRef = useRef<NodeJS.Timeout | null>(null);
   const colors = getColors();
   const styles = useRedeemStyles();
+  const queryClient = useQueryClient();
+
+  const handleRedeemed = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setIsRedeemed(true);
+    // Refresh the claims list so the card flips to "Redeemed" status
+    queryClient.invalidateQueries({ queryKey: queryKeys.coupons.myClaims });
+    // Auto-close after 3 seconds
+    setTimeout(() => onClose(), 3000);
+  }, [onClose, queryClient]);
 
   const fetchCode = useCallback(async () => {
     if (!claim) return;
@@ -66,20 +76,26 @@ function RedeemCodeModal({
           setExpiresIn(remaining);
         }
       }, 1000);
-    } catch (err) {
-      console.warn('Failed to fetch code:', err);
+    } catch (err: any) {
+      // If server says already redeemed, show success and close
+      if (err?.message?.includes('redeemed') || err?.message?.includes('already been')) {
+        handleRedeemed();
+      } else {
+        console.warn('Failed to fetch code:', err);
+      }
     } finally {
       setLoading(false);
     }
-  }, [claim]);
+  }, [claim, handleRedeemed]);
 
   useEffect(() => {
     if (visible && claim) {
+      setIsRedeemed(false);
+      setCode(null);
       fetchCode();
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (refreshRef.current) clearInterval(refreshRef.current);
     };
   }, [visible, claim, fetchCode]);
 
@@ -97,36 +113,48 @@ function RedeemCodeModal({
             </TouchableOpacity>
           </View>
 
-          <View style={styles.content}>
-            <Text style={styles.restaurantName}>{coupon.restaurant.name}</Text>
-            <Text style={styles.couponTitle}>{coupon.title}</Text>
-            <Text style={styles.discountText}>{formatDiscount(coupon)}</Text>
-
-            {coupon.description && (
-              <Text style={styles.description}>{coupon.description}</Text>
-            )}
-
-            <View style={styles.codeContainer}>
-              {loading && !code ? (
-                <ActivityIndicator size="large" color={colors.accent} />
-              ) : code ? (
-                <>
-                  <Text style={styles.codeLabel}>Show this code to your server</Text>
-                  <Text style={styles.code}>{code}</Text>
-                  <View style={styles.timerRow}>
-                    <Ionicons name="time-outline" size={14} color={colors.textMuted} />
-                    <Text style={styles.timer}>New code in {expiresIn}s</Text>
-                  </View>
-                </>
-              ) : (
-                <Text style={styles.codeLabel}>Unable to generate code</Text>
-              )}
+          {isRedeemed ? (
+            <View style={styles.content}>
+              <View style={styles.redeemedIcon}>
+                <Ionicons name="checkmark-circle" size={80} color="#22c55e" />
+              </View>
+              <Text style={styles.redeemedTitle}>Coupon Redeemed!</Text>
+              <Text style={styles.restaurantName}>{coupon.restaurant.name}</Text>
+              <Text style={styles.couponTitle}>{coupon.title}</Text>
+              <Text style={styles.discountText}>{formatDiscount(coupon)}</Text>
             </View>
+          ) : (
+            <View style={styles.content}>
+              <Text style={styles.restaurantName}>{coupon.restaurant.name}</Text>
+              <Text style={styles.couponTitle}>{coupon.title}</Text>
+              <Text style={styles.discountText}>{formatDiscount(coupon)}</Text>
 
-            <Text style={styles.hint}>
-              The code changes every 60 seconds for security
-            </Text>
-          </View>
+              {coupon.description && (
+                <Text style={styles.description}>{coupon.description}</Text>
+              )}
+
+              <View style={styles.codeContainer}>
+                {loading && !code ? (
+                  <ActivityIndicator size="large" color={colors.accent} />
+                ) : code ? (
+                  <>
+                    <Text style={styles.codeLabel}>Show this code to your server</Text>
+                    <Text style={styles.code}>{code}</Text>
+                    <View style={styles.timerRow}>
+                      <Ionicons name="time-outline" size={14} color={colors.textMuted} />
+                      <Text style={styles.timer}>New code in {expiresIn}s</Text>
+                    </View>
+                  </>
+                ) : (
+                  <Text style={styles.codeLabel}>Unable to generate code</Text>
+                )}
+              </View>
+
+              <Text style={styles.hint}>
+                The code changes every 60 seconds for security
+              </Text>
+            </View>
+          )}
         </SafeAreaView>
       </View>
     </Modal>
@@ -290,6 +318,17 @@ const useRedeemStyles = createLazyStyles((colors) => ({
   },
   safeArea: {
     flex: 1,
+  },
+  redeemedIcon: {
+    alignItems: 'center' as const,
+    marginBottom: 16,
+  },
+  redeemedTitle: {
+    fontSize: 26,
+    fontWeight: '800' as const,
+    color: '#22c55e',
+    textAlign: 'center' as const,
+    marginBottom: 12,
   },
   header: {
     flexDirection: 'row' as const,
