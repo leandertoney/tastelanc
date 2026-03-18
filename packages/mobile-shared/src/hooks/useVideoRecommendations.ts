@@ -13,22 +13,31 @@ import { toggleLike, flagRecommendation, deleteRecommendation } from '../lib/vid
 import type { VideoRecommendationWithUser, ReviewerStats } from '../types/database';
 
 /**
- * Fetch all visible recommendations for a restaurant.
+ * Fetch recommendations for a restaurant.
+ * Signed-in users see all approved posts + their own pending posts.
+ * Anonymous users see only approved posts.
  * Pinned recommendations appear first, then by newest.
  */
 export function useRestaurantRecommendations(restaurantId: string) {
   const { market } = useMarket();
+  const { userId } = useAuth();
   return useQuery({
-    queryKey: queryKeys.recommendations.byRestaurant(restaurantId),
+    queryKey: [...queryKeys.recommendations.byRestaurant(restaurantId), userId],
     queryFn: async (): Promise<VideoRecommendationWithUser[]> => {
       const supabase = getSupabase();
       let query = supabase
         .from('restaurant_recommendations')
         .select('*, profiles:user_id(display_name, avatar_url)')
         .eq('restaurant_id', restaurantId)
-        .eq('is_visible', true)
         .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false });
+
+      // Poster can always see their own pending/hidden posts; others see only approved
+      if (userId) {
+        query = query.or(`is_visible.eq.true,user_id.eq.${userId}`);
+      } else {
+        query = query.eq('is_visible', true);
+      }
 
       if (market?.id) {
         query = query.eq('market_id', market.id);
@@ -38,12 +47,13 @@ export function useRestaurantRecommendations(restaurantId: string) {
       if (error) throw error;
       return (data || []) as VideoRecommendationWithUser[];
     },
-    staleTime: 60 * 1000,
+    staleTime: 0, // Always refetch on mount so admin hide/unhide reflects immediately
   });
 }
 
 /**
- * Fetch all recommendations by a specific user.
+ * Fetch all recommendations by a specific user — including pending/hidden posts.
+ * Users should always see their own posts regardless of approval status.
  */
 export function useUserRecommendations(userId: string | null) {
   const { market } = useMarket();
@@ -56,7 +66,7 @@ export function useUserRecommendations(userId: string | null) {
         .from('restaurant_recommendations')
         .select('*, profiles:user_id(display_name, avatar_url)')
         .eq('user_id', userId)
-        .eq('is_visible', true)
+        // No is_visible filter — users see all their own posts including pending/hidden
         .order('created_at', { ascending: false });
 
       if (market?.id) {
@@ -68,7 +78,7 @@ export function useUserRecommendations(userId: string | null) {
       return (data || []) as VideoRecommendationWithUser[];
     },
     enabled: !!userId,
-    staleTime: 60 * 1000,
+    staleTime: 0,
   });
 }
 
@@ -96,7 +106,7 @@ export function useTrendingRecommendations(marketId?: string) {
       if (error) throw error;
       return (data || []) as VideoRecommendationWithUser[];
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000, // 30s — fast enough to reflect admin hide without hammering the DB
   });
 }
 

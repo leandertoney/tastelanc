@@ -25,8 +25,8 @@ export async function POST(request: Request) {
   const now = new Date().toISOString();
 
   // Find all recommendations ready to post:
-  // - ig_status is 'ai_approved' or 'admin_approved'
-  // - ig_scheduled_at has passed (or admin_approved posts immediately)
+  // - ig_status must be 'admin_approved' (AI approval alone is NOT sufficient — admin must explicitly approve)
+  // - ig_scheduled_at has passed
   const { data: readyRecs, error: fetchError } = await supabase
     .from('restaurant_recommendations')
     .select(`
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       ig_caption_override,
       restaurant:restaurants!inner(name, market:markets!inner(slug, name))
     `)
-    .or('ig_status.eq.ai_approved,ig_status.eq.admin_approved')
+    .eq('ig_status', 'admin_approved')
     .lte('ig_scheduled_at', now);
 
   if (fetchError) {

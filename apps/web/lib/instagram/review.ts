@@ -203,8 +203,6 @@ export async function reviewAndUpdateRecommendation(
     ? await reviewRecommendation(videoUrl, thumbnailUrl || null, caption || '', captionTag || undefined)
     : await reviewCaption(caption || '', captionTag || undefined);
 
-  const scheduledAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-
   // Build notes including transcript info if available
   let fullNotes = result.notes;
   if (result.transcript) {
@@ -212,12 +210,13 @@ export async function reviewAndUpdateRecommendation(
   }
 
   if (result.approved) {
+    // AI approval only flags content as safe — post stays hidden (is_visible=false)
+    // and ig_scheduled_at is NOT set. Admin must explicitly approve in the queue
+    // before the post becomes public in the app and is scheduled for Instagram.
     await supabase
       .from('restaurant_recommendations')
       .update({
-        is_visible: true, // Make visible in the app now that it's approved
         ig_status: 'ai_approved',
-        ig_scheduled_at: scheduledAt,
         ai_review_notes: fullNotes,
       })
       .eq('id', recommendationId);
