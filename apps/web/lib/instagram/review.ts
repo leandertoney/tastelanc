@@ -6,11 +6,18 @@ import OpenAI from 'openai';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { toFile } from 'openai/uploads';
 
+interface CaptionWord {
+  word: string;
+  start: number;
+  end: number;
+}
+
 interface ReviewResult {
   approved: boolean;
   notes: string;
   flags: string[];
   transcript?: string;
+  captionWords?: CaptionWord[];
 }
 
 const REVIEW_SYSTEM_PROMPT = `You are a content moderator for a local restaurant discovery app. Your job is to review user-generated video recommendations before they are auto-posted to the app's official Instagram account.
@@ -53,28 +60,41 @@ IMPORTANT: Be reasonably lenient with casual tone, slang, and enthusiasm. Only r
  * Downloads the video from the public URL and sends to Whisper API.
  * Returns the transcript text, or null if transcription fails.
  */
-async function transcribeVideoAudio(openai: OpenAI, videoUrl: string): Promise<string | null> {
+interface WhisperResult {
+  text: string | null;
+  words: CaptionWord[];
+}
+
+async function transcribeVideoAudio(openai: OpenAI, videoUrl: string): Promise<WhisperResult> {
   try {
-    // Download video from public Supabase Storage URL
     const response = await fetch(videoUrl);
     if (!response.ok) {
       console.warn('[AI Review] Failed to download video for transcription:', response.status);
-      return null;
+      return { text: null, words: [] };
     }
 
     const buffer = Buffer.from(await response.arrayBuffer());
     const file = await toFile(buffer, 'video.mp4', { type: 'video/mp4' });
 
+    // Request word-level timestamps for synchronized caption display
     const transcription = await openai.audio.transcriptions.create({
       model: 'whisper-1',
       file,
       language: 'en',
-    });
+      response_format: 'verbose_json',
+      timestamp_granularities: ['word'],
+    } as any);
 
-    return transcription.text || null;
+    const words: CaptionWord[] = ((transcription as any).words || []).map((w: any) => ({
+      word: w.word,
+      start: w.start,
+      end: w.end,
+    }));
+
+    return { text: (transcription as any).text || null, words };
   } catch (err: any) {
     console.warn('[AI Review] Whisper transcription failed:', err.message);
-    return null;
+    return { text: null, words: [] };
   }
 }
 
@@ -125,10 +145,11 @@ export async function reviewRecommendation(
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   // Run transcription and visual analysis in parallel
-  const [transcript, visualNotes] = await Promise.all([
+  const [whisper, visualNotes] = await Promise.all([
     transcribeVideoAudio(openai, videoUrl),
     thumbnailUrl ? analyzeVisualContent(openai, thumbnailUrl) : Promise.resolve(null),
   ]);
+  const transcript = whisper.text;
 
   // Build the review content with all available signals
   const reviewParts: string[] = [];
@@ -171,6 +192,7 @@ export async function reviewRecommendation(
       notes: parsed.notes || '',
       flags: Array.isArray(parsed.flags) ? parsed.flags : [],
       transcript: transcript || undefined,
+      captionWords: whisper.words.length > 0 ? whisper.words : undefined,
     };
   } catch (err: any) {
     console.error('AI review error:', err.message);
@@ -182,7 +204,28 @@ export async function reviewRecommendation(
  * Legacy caption-only review (fallback if video URL is unavailable).
  */
 export async function reviewCaption(caption: string, captionTag?: string): Promise<ReviewResult> {
-  return reviewRecommendation('', null, caption, captionTag);
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const reviewParts = [`Written caption: ${caption || '(no text caption)'}`];
+  if (captionTag) reviewParts.unshift(`Caption tag: ${captionTag}`);
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: REVIEW_SYSTEM_PROMPT },
+        { role: 'user', content: reviewParts.join('\n') },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.1,
+      max_tokens: 300,
+    });
+    const content = response.choices[0]?.message?.content;
+    if (!content) return { approved: false, notes: 'AI review failed — no response.', flags: ['ai_error'] };
+    const parsed = JSON.parse(content) as ReviewResult;
+    return { approved: parsed.approved === true, notes: parsed.notes || '', flags: Array.isArray(parsed.flags) ? parsed.flags : [] };
+  } catch (err: any) {
+    return { approved: false, notes: `AI review error: ${err.message}.`, flags: ['ai_error'] };
+  }
 }
 
 /**
@@ -202,6 +245,15 @@ export async function reviewAndUpdateRecommendation(
   const result = videoUrl
     ? await reviewRecommendation(videoUrl, thumbnailUrl || null, caption || '', captionTag || undefined)
     : await reviewCaption(caption || '', captionTag || undefined);
+
+  // Store caption words regardless of approval — user opted in during recording
+  // This is stored even for rejected content so admin can see the transcript
+  if (result.captionWords && result.captionWords.length > 0) {
+    await supabase
+      .from('restaurant_recommendations')
+      .update({ caption_data: result.captionWords })
+      .eq('id', recommendationId);
+  }
 
   // Build notes including transcript info if available
   let fullNotes = result.notes;

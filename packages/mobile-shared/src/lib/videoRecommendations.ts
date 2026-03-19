@@ -5,7 +5,7 @@
  * Thumbnails stored under `recommendation-videos/{user_id}/{uuid}_thumb.jpg`.
  */
 import { getSupabase, getAnonKey } from '../config/theme';
-import type { CaptionTag, VideoRecommendation } from '../types/database';
+import type { CaptionTag, VideoRecommendation, TextOverlay } from '../types/database';
 
 const BUCKET = 'recommendation-videos';
 const MAX_DURATION_SECONDS = 60;
@@ -89,6 +89,8 @@ export async function createRecommendation(params: {
   caption: string | null;
   captionTag: CaptionTag | null;
   durationSeconds: number;
+  captionsEnabled?: boolean;
+  textOverlays?: TextOverlay[];
 }): Promise<VideoRecommendation> {
   const supabase = getSupabase();
 
@@ -108,7 +110,11 @@ export async function createRecommendation(params: {
       caption: params.caption?.trim().slice(0, MAX_CAPTION_LENGTH) || null,
       caption_tag: params.captionTag,
       duration_seconds: Math.min(params.durationSeconds, MAX_DURATION_SECONDS),
-      is_visible: false, // Hidden until AI review approves
+      is_visible: false, // Hidden until admin approves
+      captions_enabled: params.captionsEnabled ?? false,
+      text_overlays: params.textOverlays && params.textOverlays.length > 0
+        ? params.textOverlays
+        : null,
     })
     .select()
     .single();

@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { publishReelToInstagram } from '@/lib/instagram/publish';
 import { getAppName, getMarketDisplayName } from '@/lib/instagram/prompts';
+import { burnInOverlays } from '@/lib/instagram/shotstack';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
     .from('restaurant_recommendations')
     .select(`
       id, video_url, thumbnail_url, caption, caption_tag, market_id, restaurant_id, ig_status,
-      ig_caption_override,
+      ig_caption_override, duration_seconds, captions_enabled, caption_data, text_overlays,
       restaurant:restaurants!inner(name, market:markets!inner(slug, name))
     `)
     .eq('ig_status', 'admin_approved')
@@ -91,11 +92,38 @@ export async function POST(request: Request) {
       marketSlug,
     });
 
+    // Burn in text overlays and/or closed captions if present
+    // Falls back to raw video if Shotstack is not configured or render fails
+    const hasOverlays = Array.isArray((rec as any).text_overlays) && (rec as any).text_overlays.length > 0;
+    const hasCaptions = (rec as any).captions_enabled && Array.isArray((rec as any).caption_data) && (rec as any).caption_data.length > 0;
+
+    let finalVideoUrl = rec.video_url;
+    if (hasOverlays || hasCaptions) {
+      const overlayColorMap: Record<string, string> = { white: '#FFFFFF', yellow: '#FACC15', black: '#111111', orange: '#F97316' };
+      const overlaySizeMap: Record<string, number> = { small: 14, medium: 18, large: 24 };
+
+      const rendered = await burnInOverlays({
+        videoUrl: rec.video_url,
+        durationSeconds: (rec as any).duration_seconds || 30,
+        textOverlays: hasOverlays
+          ? ((rec as any).text_overlays as any[]).map((o: any) => ({
+              text: o.text,
+              x: o.x,
+              y: o.y,
+              color: overlayColorMap[o.color] ?? '#FFFFFF',
+              fontSize: overlaySizeMap[o.size] ?? 18,
+            }))
+          : [],
+        captionWords: hasCaptions ? (rec as any).caption_data : [],
+      });
+      if (rendered) finalVideoUrl = rendered;
+    }
+
     // Publish as Reel
     const publishResult = await publishReelToInstagram(
       igAccount,
       igCaption,
-      rec.video_url,
+      finalVideoUrl,
       rec.thumbnail_url || undefined
     );
 

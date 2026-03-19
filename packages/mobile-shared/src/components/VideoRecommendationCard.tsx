@@ -3,7 +3,7 @@
  * Tapping opens a full-screen portrait modal with video playback,
  * captions, restaurant branding, and TasteLanc/TasteCumberland branding.
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -25,7 +25,34 @@ import { createLazyStyles } from '../utils/lazyStyles';
 import { radius } from '../constants/spacing';
 import { CAPTION_TAG_LABELS } from '../types/database';
 import { parseVideoUrls } from '../lib/videoRecommendations';
-import type { VideoRecommendationWithUser, CaptionTag } from '../types/database';
+import type { VideoRecommendationWithUser, CaptionTag, CaptionWord, TextOverlay, TextOverlayColor, TextOverlaySize } from '../types/database';
+
+const OVERLAY_COLOR_MAP: Record<TextOverlayColor, string> = {
+  white: '#FFFFFF',
+  yellow: '#FACC15',
+  black: '#111111',
+  orange: '#F97316',
+};
+
+const OVERLAY_FONT_SIZE_MAP: Record<TextOverlaySize, number> = {
+  small: 14,
+  medium: 18,
+  large: 24,
+};
+
+/** Group Whisper words into ~5-word chunks for readable subtitle display. */
+function buildCaptionChunks(words: CaptionWord[], chunkSize = 5) {
+  const chunks: { text: string; start: number; end: number }[] = [];
+  for (let i = 0; i < words.length; i += chunkSize) {
+    const group = words.slice(i, i + chunkSize);
+    chunks.push({
+      text: group.map(w => w.word).join(' ').trim(),
+      start: group[0].start,
+      end: group[group.length - 1].end,
+    });
+  }
+  return chunks;
+}
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - 48) / 2; // Half width with gaps
@@ -260,6 +287,36 @@ function FullscreenVideoModal({
   const brand = getBrand();
   const assets = getAssets();
   const timeAgo = getTimeAgo(recommendation.created_at);
+  const { width: SW, height: SH } = Dimensions.get('window');
+
+  // ── Synced captions ──
+  const [currentTime, setCurrentTime] = useState(0);
+
+  const captionChunks = useMemo(() => {
+    if (!recommendation.captions_enabled || !recommendation.caption_data?.length) return [];
+    return buildCaptionChunks(recommendation.caption_data);
+  }, [recommendation.captions_enabled, recommendation.caption_data]);
+
+  const activeChunk = useMemo(() =>
+    captionChunks.find(c => currentTime >= c.start && currentTime <= c.end) ?? null,
+    [captionChunks, currentTime],
+  );
+
+  useEffect(() => {
+    if (!captionChunks.length) return;
+    try {
+      (player as any).timeUpdateEventInterval = 0.1;
+    } catch {}
+    const sub = player.addListener('timeUpdate', ({ currentTime: t }: { currentTime: number }) => {
+      setCurrentTime(t);
+    });
+    return () => { try { sub.remove(); } catch {} };
+  }, [player, captionChunks.length]);
+
+  // Reset time tracking when modal closes
+  useEffect(() => {
+    if (!visible) setCurrentTime(0);
+  }, [visible]);
 
   return (
     <Modal
@@ -272,12 +329,7 @@ function FullscreenVideoModal({
       <StatusBar barStyle="light-content" />
       <View style={fs.container}>
         {/* Video */}
-        <VideoView
-          player={player}
-          style={fs.video}
-          contentFit="cover"
-          nativeControls={false}
-        />
+        <VideoView player={player} style={fs.video} contentFit="cover" nativeControls={false} />
 
         {/* Tap to play/pause */}
         <TouchableOpacity
@@ -291,6 +343,38 @@ function FullscreenVideoModal({
           }}
         />
 
+        {/* User text overlays — rendered using normalized coords */}
+        {recommendation.text_overlays?.map(overlay => (
+          <View
+            key={overlay.id}
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              left: overlay.x * SW,
+              top: overlay.y * SH,
+              zIndex: 9,
+            }}
+          >
+            <Text style={{
+              fontSize: OVERLAY_FONT_SIZE_MAP[overlay.size] ?? 18,
+              color: OVERLAY_COLOR_MAP[overlay.color] ?? '#FFF',
+              fontWeight: '700',
+              textShadowColor: '#000',
+              textShadowOffset: { width: 1, height: 1 },
+              textShadowRadius: 3,
+            }}>
+              {overlay.text}
+            </Text>
+          </View>
+        ))}
+
+        {/* Synced caption subtitle bar */}
+        {activeChunk && (
+          <View style={fs.captionBar} pointerEvents="none">
+            <Text style={fs.captionBarText}>{activeChunk.text}</Text>
+          </View>
+        )}
+
         {/* Top bar: close + brand */}
         <View style={[fs.topBar, { paddingTop: insets.top + 8 }]}>
           <TouchableOpacity onPress={onClose} style={fs.closeButton}>
@@ -302,7 +386,7 @@ function FullscreenVideoModal({
           </View>
         </View>
 
-        {/* Persistent watermark on video — always visible in screenshots/recordings */}
+        {/* Persistent watermark */}
         <View style={fs.watermark} pointerEvents="none">
           <Image source={assets.appIcon} style={fs.watermarkIcon} />
           <Text style={fs.watermarkText}>{brand.appName}</Text>
@@ -327,13 +411,10 @@ function FullscreenVideoModal({
 
         {/* Bottom overlay */}
         <View style={[fs.bottomOverlay, { paddingBottom: insets.bottom + 16 }]}>
-          {/* Restaurant branding */}
           <View style={fs.restaurantRow}>
             <RestaurantIconImage restaurant={restaurant} />
             <Text style={fs.restaurantName} numberOfLines={1}>{restaurant.name}</Text>
           </View>
-
-          {/* User info */}
           <View style={fs.userRow}>
             {avatarUrl ? (
               <Image source={{ uri: avatarUrl }} style={fs.avatar} />
@@ -345,8 +426,6 @@ function FullscreenVideoModal({
             <Text style={fs.userName}>{displayName}</Text>
             <Text style={fs.timeAgo}>{timeAgo}</Text>
           </View>
-
-          {/* Caption tag */}
           {tagLabel && (
             <View style={fs.tagRow}>
               <View style={fs.captionTag}>
@@ -354,13 +433,9 @@ function FullscreenVideoModal({
               </View>
             </View>
           )}
-
-          {/* Caption */}
           {recommendation.caption && (
             <Text style={fs.caption}>{recommendation.caption}</Text>
           )}
-
-          {/* Bottom brand bar */}
           <View style={fs.bottomBrand}>
             <Image source={assets.appIcon} style={fs.bottomBrandIcon} />
             <Text style={fs.bottomBrandText}>{brand.appName}</Text>
@@ -635,6 +710,25 @@ const fs = StyleSheet.create({
     color: 'rgba(255,255,255,0.7)',
     fontSize: 12,
     fontWeight: '500',
+  },
+  captionBar: {
+    position: 'absolute',
+    bottom: 180,
+    left: 16,
+    right: 16,
+    zIndex: 9,
+    alignItems: 'center',
+  },
+  captionBarText: {
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 6,
+    textAlign: 'center',
+    overflow: 'hidden',
   },
   watermark: {
     position: 'absolute',

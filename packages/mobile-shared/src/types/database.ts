@@ -317,6 +317,26 @@ export const ALL_CAPTION_TAGS: CaptionTag[] = [
   'go_to_spot',
 ];
 
+/** A single word with its start/end timestamp from Whisper transcription. */
+export interface CaptionWord {
+  word: string;
+  start: number; // seconds
+  end: number;   // seconds
+}
+
+export type TextOverlayColor = 'white' | 'yellow' | 'black' | 'orange';
+export type TextOverlaySize = 'small' | 'medium' | 'large';
+
+/** A user-placed text overlay on the video. Coordinates are normalized 0–1. */
+export interface TextOverlay {
+  id: string;
+  text: string;
+  x: number;              // normalized left edge (0 = left, 1 = right)
+  y: number;              // normalized top edge (0 = top, 1 = bottom)
+  color: TextOverlayColor;
+  size: TextOverlaySize;
+}
+
 export interface VideoRecommendation {
   id: string;
   user_id: string;
@@ -332,6 +352,9 @@ export interface VideoRecommendation {
   is_pinned: boolean;
   is_flagged: boolean;
   is_visible: boolean;
+  captions_enabled: boolean;
+  caption_data: CaptionWord[] | null;   // word-level timestamps from Whisper
+  text_overlays: TextOverlay[] | null;  // user-placed text overlays
   created_at: string;
   updated_at: string;
 }
