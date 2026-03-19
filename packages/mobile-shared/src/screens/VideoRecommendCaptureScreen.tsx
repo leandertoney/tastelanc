@@ -111,7 +111,7 @@ export default function VideoRecommendCaptureScreen({ route, navigation }: Props
 
   const navigateToPreview = useCallback((clipList: Clip[]) => {
     const total = clipList.reduce((s, c) => s + c.duration, 0);
-    navigation.navigate('VideoRecommendPreview', {
+    navigation.navigate('VideoEditor', {
       clips: clipList,
       restaurantId,
       restaurantName,

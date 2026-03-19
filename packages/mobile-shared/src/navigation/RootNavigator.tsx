@@ -27,12 +27,14 @@ import FlyerPreviewScreen from '../screens/flyer/FlyerPreviewScreen';
 import FlyerPublishChoiceScreen from '../screens/flyer/FlyerPublishChoiceScreen';
 import FlyerSuccessScreen from '../screens/flyer/FlyerSuccessScreen';
 import VideoRecommendCaptureScreen from '../screens/VideoRecommendCaptureScreen';
+import VideoEditorScreen from '../screens/VideoEditorScreen';
 import VideoRecommendPreviewScreen from '../screens/VideoRecommendPreviewScreen';
 import SalesDashboardScreen from '../screens/sales/SalesDashboardScreen';
 import EmailThreadScreen from '../screens/sales/EmailThreadScreen';
 import ComposeEmailScreen from '../screens/sales/ComposeEmailScreen';
 import LeadDetailScreen from '../screens/sales/LeadDetailScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import InAppBrowserScreen from '../screens/InAppBrowserScreen';
 import StPatricksDayScreen from '../screens/StPatricksDayScreen';
 import CouponsViewAllScreen from '../screens/CouponsViewAllScreen';
 import MyCouponsScreen from '../screens/MyCouponsScreen';
@@ -62,12 +64,14 @@ const SafeFlyerPreview = withScreenErrorBoundary(FlyerPreviewScreen, 'FlyerPrevi
 const SafeFlyerPublishChoice = withScreenErrorBoundary(FlyerPublishChoiceScreen, 'FlyerPublishChoice');
 const SafeFlyerSuccess = withScreenErrorBoundary(FlyerSuccessScreen, 'FlyerSuccess');
 const SafeVideoRecommendCapture = withScreenErrorBoundary(VideoRecommendCaptureScreen, 'VideoRecommendCapture');
+const SafeVideoEditor = withScreenErrorBoundary(VideoEditorScreen, 'VideoEditor');
 const SafeVideoRecommendPreview = withScreenErrorBoundary(VideoRecommendPreviewScreen, 'VideoRecommendPreview');
 const SafeSalesDashboard = withScreenErrorBoundary(SalesDashboardScreen, 'SalesDashboard');
 const SafeEmailThread = withScreenErrorBoundary(EmailThreadScreen, 'EmailThread');
 const SafeComposeEmail = withScreenErrorBoundary(ComposeEmailScreen, 'ComposeEmail');
 const SafeLeadDetail = withScreenErrorBoundary(LeadDetailScreen, 'LeadDetail');
 const SafeSettings = withScreenErrorBoundary(SettingsScreen, 'Settings');
+const SafeInAppBrowser = withScreenErrorBoundary(InAppBrowserScreen, 'InAppBrowser');
 const SafeStPatricksDay = withScreenErrorBoundary(StPatricksDayScreen, 'StPatricksDay');
 const SafeCouponsViewAll = withScreenErrorBoundary(CouponsViewAllScreen, 'CouponsViewAll');
 const SafeMyCoupons = withScreenErrorBoundary(MyCouponsScreen, 'MyCoupons');
@@ -235,6 +239,11 @@ export default function RootNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
+        name="VideoEditor"
+        component={SafeVideoEditor}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
         name="VideoRecommendPreview"
         component={SafeVideoRecommendPreview}
         options={{ headerShown: false }}
@@ -250,6 +259,12 @@ export default function RootNavigator() {
         name="Settings"
         component={SafeSettings}
         options={{ title: 'Settings' }}
+      />
+      {/* In-App Browser */}
+      <Stack.Screen
+        name="InAppBrowser"
+        component={SafeInAppBrowser}
+        options={{ headerShown: false }}
       />
       {/* Sales CRM */}
       <Stack.Screen
