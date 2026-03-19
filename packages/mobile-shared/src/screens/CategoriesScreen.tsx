@@ -1,6 +1,5 @@
 import { View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 
 export default function CategoriesScreen() {
@@ -19,22 +18,23 @@ export default function CategoriesScreen() {
 const useStyles = createLazyStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.primary,
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
     padding: 20,
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold' as const,
+    color: colors.text,
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: colors.textMuted,
     textAlign: 'center' as const,
   },
 }));

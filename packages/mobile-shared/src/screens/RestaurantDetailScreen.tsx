@@ -360,6 +360,15 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
       <View style={styles.centerContainer}>
         <Ionicons name="alert-circle-outline" size={48} color={colors.textSecondary} />
         <Text style={styles.errorText}>{error || 'Restaurant not found'}</Text>
+        {error && (
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => { setLoading(true); fetchRestaurantData(); }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   }
@@ -950,7 +959,9 @@ const useStyles = createLazyStyles((colors) => ({
   container: { flex: 1, backgroundColor: colors.primary },
   scrollView: { flex: 1 },
   centerContainer: { flex: 1, justifyContent: 'center' as const, alignItems: 'center' as const, backgroundColor: colors.primary },
-  errorText: { marginTop: 16, fontSize: 16, color: colors.textMuted },
+  errorText: { marginTop: 16, fontSize: 16, color: colors.textMuted, textAlign: 'center' as const, paddingHorizontal: 32 },
+  retryButton: { marginTop: 20, paddingHorizontal: 32, paddingVertical: 12, backgroundColor: colors.accent, borderRadius: 24 },
+  retryButtonText: { fontSize: 16, fontWeight: '600' as const, color: colors.textOnAccent },
   heroContainer: { width: SCREEN_WIDTH },
   heroImage: { width: '100%' as const, height: '100%' as const },
   backButton: { position: 'absolute' as const, top: 50, left: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center' as const, alignItems: 'center' as const, zIndex: 10 },

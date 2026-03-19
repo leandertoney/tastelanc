@@ -52,10 +52,7 @@ export function useRestaurants(options: UseRestaurantsOptions = {}) {
 
       const { data, error } = await query;
 
-      if (error) {
-        console.warn('useRestaurants query failed:', error.message);
-        return [];
-      }
+      if (error) throw new Error(error.message);
       return (data || []).map(transformRestaurantWithPhotos);
     },
     enabled,
@@ -77,10 +74,7 @@ export function useRestaurant(id: string, enabled = true) {
         .eq('id', id)
         .single();
 
-      if (error) {
-        console.warn('useRestaurant query failed:', error.message);
-        return null;
-      }
+      if (error) return null;
       return data ? transformRestaurantWithPhotos(data) : null;
     },
     enabled: enabled && !!id,
@@ -119,10 +113,7 @@ export function useRestaurantSearch(
 
       const { data, error } = await supabaseQuery;
 
-      if (error) {
-        console.warn('useRestaurantSearch query failed:', error.message);
-        return [];
-      }
+      if (error) throw new Error(error.message);
       return (data || []).map(transformRestaurantWithPhotos);
     },
     enabled: enabled && query.length >= 2,
@@ -149,10 +140,7 @@ export function usePrefetchRestaurant() {
           .eq('id', id)
           .single();
 
-        if (error) {
-          console.warn('usePrefetchRestaurant query failed:', error.message);
-          return null;
-        }
+        if (error) return null;
         return data ? transformRestaurantWithPhotos(data) : null;
       },
     });
