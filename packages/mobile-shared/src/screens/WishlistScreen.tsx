@@ -1,7 +1,7 @@
 /**
  * WishlistScreen — Bucket list of restaurants the user wants to visit
  */
-import { View, Text, FlatList, Image, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, Image, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
@@ -43,7 +43,8 @@ function useWishlistRestaurants() {
       }
 
       const { data, error } = await query;
-      if (error || !data) return [];
+      if (error) throw new Error(error.message);
+      if (!data) return [];
       return data
         .map((row: any) => row.restaurants)
         .filter(Boolean) as unknown as Restaurant[];
@@ -103,7 +104,7 @@ export default function WishlistScreen() {
   const styles = useStyles();
   const colors = getColors();
   const navigation = useNavigation<NavigationProp>();
-  const { data: restaurants = [], isLoading } = useWishlistRestaurants();
+  const { data: restaurants = [], isLoading, isError, refetch, isRefetching } = useWishlistRestaurants();
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -127,8 +128,25 @@ export default function WishlistScreen() {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <WishlistCard restaurant={item} />}
         contentContainerStyle={restaurants.length === 0 ? styles.emptyContainer : styles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
+          />
+        }
         ListEmptyComponent={
-          isLoading ? null : (
+          isLoading ? null : isError ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="cloud-offline-outline" size={48} color={colors.textSecondary} />
+              <Text style={styles.emptyTitle}>Couldn't Load Bucket List</Text>
+              <Text style={styles.emptySubtitle}>Check your connection and pull to refresh.</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={() => refetch()} activeOpacity={0.8}>
+                <Text style={styles.retryText}>Try Again</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
             <View style={styles.emptyState}>
               <Ionicons name="bookmark-outline" size={48} color={colors.textSecondary} />
               <Text style={styles.emptyTitle}>Nothing on your bucket list yet</Text>
@@ -248,5 +266,17 @@ const useStyles = createLazyStyles((colors) => ({
     color: colors.textMuted,
     textAlign: 'center' as const,
     lineHeight: 22,
+  },
+  retryButton: {
+    marginTop: spacing.md,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    backgroundColor: colors.accent,
+    borderRadius: 24,
+  },
+  retryText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: colors.textOnAccent,
   },
 }));

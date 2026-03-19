@@ -5,6 +5,7 @@ import {
   FlatList,
   RefreshControl,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
@@ -39,10 +40,7 @@ function useFavoriteRestaurants(favoriteIds: string[]) {
         .eq('is_active', true)
         .eq('market_id', marketId);
 
-      if (error) {
-        console.warn('useFavoriteRestaurants query failed:', error.message);
-        return [];
-      }
+      if (error) throw new Error(error.message);
 
       // Sort by the order they were favorited (most recent first)
       const sortedData = favoriteIds
@@ -52,6 +50,7 @@ function useFavoriteRestaurants(favoriteIds: string[]) {
       return sortedData;
     },
     enabled: favoriteIds.length > 0,
+    retry: 2,
   });
 }
 
@@ -92,6 +91,7 @@ export default function FavoritesScreen() {
   const {
     data: restaurants = [],
     isLoading: isLoadingRestaurants,
+    isError: isRestaurantsError,
     refetch: refetchRestaurants,
   } = useFavoriteRestaurants(favoriteIds);
   const toggleFavorite = useToggleFavorite();
@@ -150,6 +150,23 @@ export default function FavoritesScreen() {
     );
   }
 
+  if (isRestaurantsError && favoriteIds.length > 0) {
+    return (
+      <SafeAreaView style={styles.container} edges={['bottom']}>
+        <View style={styles.emptyState}>
+          <View style={styles.emptyIconContainer}>
+            <Ionicons name="cloud-offline-outline" size={64} color={colors.textSecondary} />
+          </View>
+          <Text style={styles.emptyTitle}>Couldn't Load Favorites</Text>
+          <Text style={styles.emptySubtitle}>Check your connection and try again.</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRefresh} activeOpacity={0.8}>
+            <Text style={styles.retryText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       {favoriteIds.length === 0 ? (
@@ -168,15 +185,6 @@ export default function FavoritesScreen() {
               tintColor={colors.accent}
               colors={[colors.accent]}
             />
-          }
-          ListEmptyComponent={
-            !isLoading ? (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptySubtitle}>
-                  Some favorites couldn't be loaded
-                </Text>
-              </View>
-            ) : null
           }
         />
       )}
@@ -231,5 +239,17 @@ const useStyles = createLazyStyles((colors) => ({
   loadingText: {
     fontSize: 16,
     color: colors.textMuted,
+  },
+  retryButton: {
+    marginTop: 20,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    backgroundColor: colors.accent,
+    borderRadius: 24,
+  },
+  retryText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: colors.textOnAccent,
   },
 }));

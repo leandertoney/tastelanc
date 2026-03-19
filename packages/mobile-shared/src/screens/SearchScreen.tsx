@@ -639,7 +639,26 @@ export default function SearchScreen() {
               !loading ? (
                 <View style={styles.sheetEmpty}>
                   <Ionicons name="restaurant-outline" size={32} color={colors.textSecondary} />
-                  <Text style={styles.sheetEmptyText}>No restaurants found</Text>
+                  <Text style={styles.sheetEmptyText}>
+                    {searchQuery.trim()
+                      ? `No results for "${searchQuery.trim()}"`
+                      : selectedCategory !== 'all' || selectedFeatures.length > 0
+                        ? 'No restaurants match your filters'
+                        : 'No restaurants found'}
+                  </Text>
+                  {(searchQuery.trim() || selectedCategory !== 'all' || selectedFeatures.length > 0) && (
+                    <TouchableOpacity
+                      style={styles.sheetEmptyClear}
+                      onPress={() => {
+                        setSearchQuery('');
+                        setSelectedCategory('all');
+                        setSelectedFeatures([]);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.sheetEmptyClearText}>Clear filters</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               ) : null
             }
@@ -696,5 +715,7 @@ const useStyles = createLazyStyles((colors) => ({
   clearNeighborhoodText: { fontSize: 13, color: colors.textMuted },
   sheetListContent: { paddingTop: 8, paddingBottom: 24 },
   sheetEmpty: { paddingVertical: 32, alignItems: 'center' as const, gap: 8 },
-  sheetEmptyText: { fontSize: 15, color: colors.textMuted },
+  sheetEmptyText: { fontSize: 15, color: colors.textMuted, textAlign: 'center' as const, paddingHorizontal: 16 },
+  sheetEmptyClear: { marginTop: 4, paddingHorizontal: 20, paddingVertical: 8, backgroundColor: colors.accent, borderRadius: 20 },
+  sheetEmptyClearText: { fontSize: 14, fontWeight: '600' as const, color: colors.textOnAccent },
 }));
