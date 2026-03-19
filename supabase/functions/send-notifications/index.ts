@@ -608,7 +608,7 @@ interface PickStrategy {
 
 const PICK_STRATEGIES_BY_DAY: Record<string, PickStrategy> = {
   monday:    { type: 'most_loved',      title: "Today's Most Loved",    emoji: '❤️' },
-  tuesday:   { type: 'happy_hour',      title: 'Happy Hour Pick',       emoji: '🍺' },
+  tuesday:   { type: 'specials',        title: "Today's Special",       emoji: '⭐' },
   wednesday: { type: 'hidden_gem',      title: 'Hidden Gem of the Day', emoji: '💎' },
   thursday:  { type: 'event_tonight',   title: 'Event Tonight',         emoji: '🎵' },
   friday:    { type: 'weekend_kickoff', title: 'Weekend Kickoff',       emoji: '🔥' },
@@ -631,7 +631,7 @@ async function sendTodaysPick(supabase: ReturnType<typeof createClient>, targetM
   reason?: string;
 }> {
   // Run Today's Pick independently for each active market
-  let query = supabase.from('markets').select('id, slug, name, app_slug, ai_name').eq('is_active', true);
+  let query = supabase.from('markets').select('id, slug, name, app_slug, ai_name, discovery_mode').eq('is_active', true);
 
   // If a specific market is requested, only process that one
   if (targetMarketSlug) {
@@ -653,7 +653,7 @@ async function sendTodaysPick(supabase: ReturnType<typeof createClient>, targetM
     }
     const info = { appSlug: market.app_slug, aiName: market.ai_name || market.name, label: market.name };
 
-    const result = await sendTodaysPickForMarket(supabase, market.id, market.slug, info);
+    const result = await sendTodaysPickForMarket(supabase, market.id, market.slug, info, !!market.discovery_mode);
     totalSent += result.sent;
     if (result.restaurant) lastRestaurant = result.restaurant;
     if (result.strategy) lastStrategy = result.strategy;
@@ -662,11 +662,166 @@ async function sendTodaysPick(supabase: ReturnType<typeof createClient>, targetM
   return { sent: totalSent, restaurant: lastRestaurant, strategy: lastStrategy };
 }
 
+// ── Discovery mode templates ──────────────────────────────────────────────────
+// Cycle by dayOfMonth % DISCOVERY_TEMPLATES.length (independent of day-of-week).
+// Never reference happy hours, events, or specials — no content gating needed.
+
+interface DiscoveryTemplate {
+  emoji: string;
+  titleLabel: string;
+  body: (name: string, bestFor?: string, category?: string, marketLabel?: string) => string;
+}
+
+const DISCOVERY_TEMPLATES: DiscoveryTemplate[] = [
+  {
+    emoji: '🗺️',
+    titleLabel: 'Discover',
+    body: (name) => `Have you tried ${name} yet? It's one of the area's local favorites — worth a visit.`,
+  },
+  {
+    emoji: '🌟',
+    titleLabel: 'Local Spotlight',
+    body: (name, _bestFor, category) =>
+      `Shining a light on ${name}. ${category ? category.charAt(0).toUpperCase() + category.slice(1) + ', local' : 'Local'} and a spot worth knowing.`,
+  },
+  {
+    emoji: '🔍',
+    titleLabel: "Today's Find",
+    body: (name, bestFor) =>
+      `Today's find: ${name}. ${bestFor ? `Known for ${bestFor.toLowerCase()}. ` : ''}Local, legit, and open today.`,
+  },
+  {
+    emoji: '👀',
+    titleLabel: 'Hidden in Plain Sight',
+    body: (name) => `You've probably driven past ${name} a dozen times. Today's the day to actually go in.`,
+  },
+  {
+    emoji: '❤️',
+    titleLabel: 'Eat Local',
+    body: (name, _bestFor, _category, marketLabel) =>
+      `${name} is the kind of place that keeps ${marketLabel ?? 'the area'}'s dining scene alive. Go support them.`,
+  },
+  {
+    emoji: '📍',
+    titleLabel: 'Worth the Trip',
+    body: (name, bestFor) =>
+      `Plan a meal at ${name}. ${bestFor ? `Perfect for ${bestFor.toLowerCase()}.` : 'A solid spot in the area.'}`,
+  },
+  {
+    emoji: '🏘️',
+    titleLabel: 'Community Pick',
+    body: (name) => `Real locals eat at ${name}. Have you been? Check it out in the app.`,
+  },
+];
+
+/**
+ * Discovery mode variant of sendTodaysPickForMarket.
+ * Features ALL active restaurants in the market with no tier or content gating.
+ * Applies the 5-day recency exclusion to avoid repeating restaurants.
+ * Called only when the market has discovery_mode = true.
+ */
+async function sendTodaysPickDiscovery(
+  supabase: ReturnType<typeof createClient>,
+  marketId: string,
+  marketSlug: string,
+  marketInfo: { appSlug: string; aiName: string; label: string },
+  dayOfMonth: number,
+): Promise<{
+  sent: number;
+  restaurant?: string;
+  strategy?: string;
+  reason?: string;
+}> {
+  const now = new Date();
+
+  // Fetch ALL active restaurants — no tier or content filter
+  const { data: allRestaurants, error: fetchError } = await supabase
+    .from('restaurants')
+    .select('id, name, best_for, categories')
+    .eq('market_id', marketId)
+    .eq('is_active', true)
+    .order('name')
+    .limit(500);
+
+  if (fetchError || !allRestaurants?.length) {
+    return { sent: 0, reason: `[Discovery] No active restaurants in ${marketInfo.label}` };
+  }
+
+  // Apply 5-day recency exclusion (same as mature mode)
+  const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: recentPickLogs } = await supabase
+    .from('notification_logs')
+    .select('details')
+    .eq('job_type', 'todays_pick')
+    .eq('market_slug', marketSlug)
+    .eq('status', 'completed')
+    .gte('created_at', fiveDaysAgo);
+
+  const recentlyFeaturedIds = new Set<string>();
+  for (const log of recentPickLogs || []) {
+    const restaurantId = (log.details as any)?.restaurant_id;
+    if (restaurantId) recentlyFeaturedIds.add(restaurantId);
+  }
+
+  const freshPool = allRestaurants.filter(r => !recentlyFeaturedIds.has(r.id));
+  const pool = freshPool.length > 0 ? freshPool : allRestaurants;
+
+  console.log(`[Discovery] ${marketInfo.label}: ${allRestaurants.length} total, ${pool.length} after recency exclusion`);
+
+  const picked = pool[dayOfMonth % pool.length];
+  const template = DISCOVERY_TEMPLATES[dayOfMonth % DISCOVERY_TEMPLATES.length];
+
+  const bestFor = picked.best_for?.[0] as string | undefined;
+  const category = picked.categories?.[0] as string | undefined;
+  const title = `${template.emoji} ${template.titleLabel}`;
+  const body = template.body(picked.name, bestFor, category, marketInfo.label);
+
+  // Fetch tokens for this market's app only
+  const groups = await getAllPushTokensGrouped(supabase);
+  const tokens = groups.get(marketInfo.appSlug) || [];
+  console.log(`[Discovery] ${marketInfo.label}: sending to ${tokens.length} tokens for ${marketInfo.appSlug}`);
+
+  if (tokens.length === 0) {
+    return { sent: 0, reason: `[Discovery] No push tokens for ${marketInfo.appSlug}` };
+  }
+
+  const etDateStr = now.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  const messages = tokens.map(token => ({
+    to: token,
+    sound: 'default' as const,
+    title,
+    body,
+    data: { screen: 'RestaurantDetail', restaurantId: picked.id },
+  }));
+
+  const gw = await sendViaGateway(supabase, {
+    notificationType: 'todays_pick',
+    marketSlug,
+    messages,
+    dedupKey: `todays_pick:${marketSlug}:${etDateStr}`,
+    details: {
+      restaurant: picked.name,
+      restaurant_id: picked.id,
+      strategy: 'discovery',
+      app_slug: marketInfo.appSlug,
+      discovery_mode: true,
+    },
+  });
+
+  return {
+    sent: gw.sent,
+    restaurant: picked.name,
+    strategy: 'discovery',
+    reason: gw.blocked ? gw.blockReason : undefined,
+  };
+}
+
 async function sendTodaysPickForMarket(
   supabase: ReturnType<typeof createClient>,
   marketId: string,
   marketSlug: string,
   marketInfo: { appSlug: string; aiName: string; label: string },
+  discoveryMode = false,
 ): Promise<{
   sent: number;
   restaurant?: string;
@@ -678,6 +833,12 @@ async function sendTodaysPickForMarket(
 
   const dayName = now.toLocaleDateString('en-US', { ...etLocale, weekday: 'long' }).toLowerCase();
   const dayOfMonth = parseInt(now.toLocaleDateString('en-US', { ...etLocale, day: 'numeric' }), 10);
+
+  // ── DISCOVERY MODE: early-stage market awareness rotation ──────────────────
+  if (discoveryMode) {
+    return await sendTodaysPickDiscovery(supabase, marketId, marketSlug, marketInfo, dayOfMonth);
+  }
+  // ── END DISCOVERY MODE ─────────────────────────────────────────────────────
 
   const strategy = PICK_STRATEGIES_BY_DAY[dayName];
   if (!strategy) {
@@ -733,6 +894,34 @@ async function sendTodaysPickForMarket(
     if (e.event_date === todayStr) return true;
     return e.days_of_week?.includes(dayName);
   });
+
+  // Fetch restaurants with active specials (any tier) — used for Tuesday's "specials" strategy
+  const { data: specialsData } = await supabase
+    .from('specials')
+    .select(`
+      id, name, description, discount_description,
+      restaurant:restaurants!inner(id, name, description, best_for, categories, tier_id, market_id)
+    `)
+    .eq('restaurant.market_id', marketId)
+    .eq('is_active', true)
+    .limit(50);
+
+  // Fetch restaurants featured in this market in the last 5 days (for recency exclusion)
+  const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: recentPickLogs } = await supabase
+    .from('notification_logs')
+    .select('details')
+    .eq('job_type', 'todays_pick')
+    .eq('market_slug', marketSlug)
+    .eq('status', 'completed')
+    .gte('created_at', fiveDaysAgo);
+
+  // Build set of recently-featured restaurant IDs to avoid repeating
+  const recentlyFeaturedIds = new Set<string>();
+  for (const log of recentPickLogs || []) {
+    const restaurantId = (log.details as any)?.restaurant_id;
+    if (restaurantId) recentlyFeaturedIds.add(restaurantId);
+  }
 
   // Build a deduplicated map of eligible restaurants with their context
   interface EligibleRestaurant {
@@ -814,19 +1003,55 @@ async function sendTodaysPickForMarket(
     }
   }
 
-  const eligible = Array.from(eligibleMap.values());
+  // Add/enrich with specials restaurants
+  interface EligibleRestaurantWithSpecials extends EligibleRestaurant {
+    hasSpecial?: boolean;
+    specialName?: string;
+    specialDescription?: string;
+  }
+  for (const sp of specialsData || []) {
+    const r = (sp as any).restaurant;
+    if (!r) continue;
+    const existing = eligibleMap.get(r.id) as EligibleRestaurantWithSpecials | undefined;
+    if (existing) {
+      (existing as EligibleRestaurantWithSpecials).hasSpecial = true;
+      (existing as EligibleRestaurantWithSpecials).specialName = sp.name;
+      (existing as EligibleRestaurantWithSpecials).specialDescription = sp.description || sp.discount_description;
+    } else {
+      (eligibleMap as Map<string, EligibleRestaurantWithSpecials>).set(r.id, {
+        id: r.id,
+        name: r.name,
+        description: r.description,
+        best_for: r.best_for,
+        categories: r.categories,
+        isPaid: PAID_TIER_IDS.includes(r.tier_id),
+        hasHappyHour: false,
+        hasEvent: false,
+        hasSpecial: true,
+        specialName: sp.name,
+        specialDescription: sp.description || sp.discount_description,
+      });
+    }
+  }
+
+  const eligible = Array.from(eligibleMap.values()) as EligibleRestaurantWithSpecials[];
   if (eligible.length === 0) {
     return { sent: 0, reason: 'No eligible restaurants (need paid tier or activity today)' };
   }
 
   // Sort by priority: paid+activity > paid > activity-only
   eligible.sort((a, b) => {
-    const scoreA = (a.isPaid ? 2 : 0) + (a.hasHappyHour || a.hasEvent ? 1 : 0);
-    const scoreB = (b.isPaid ? 2 : 0) + (b.hasHappyHour || b.hasEvent ? 1 : 0);
+    const scoreA = (a.isPaid ? 2 : 0) + (a.hasHappyHour || a.hasEvent || (a as any).hasSpecial ? 1 : 0);
+    const scoreB = (b.isPaid ? 2 : 0) + (b.hasHappyHour || b.hasEvent || (b as any).hasSpecial ? 1 : 0);
     return scoreB - scoreA;
   });
 
-  console.log(`Today's Pick (${marketInfo.label}): ${eligible.length} eligible restaurants`);
+  // Apply recency exclusion: remove restaurants featured in the last 5 days,
+  // unless that would leave the pool empty (always have at least one option).
+  const freshEligible = eligible.filter(e => !recentlyFeaturedIds.has(e.id));
+  const eligiblePool = freshEligible.length > 0 ? freshEligible : eligible;
+
+  console.log(`Today's Pick (${marketInfo.label}): ${eligible.length} eligible (${eligiblePool.length} after recency exclusion)`);
 
   // ── Pick from eligible pool based on day-of-week theme ─────────────────────
 
@@ -849,12 +1074,12 @@ async function sendTodaysPickForMarket(
       .select('restaurant_id')
       .eq('month', currentMonth);
 
-    let picked: EligibleRestaurant | null = null;
+    let picked: EligibleRestaurantWithSpecials | null = null;
     if (voteData?.length) {
-      const eligibleIds = new Set(eligible.map(e => e.id));
+      const poolIds = new Set(eligiblePool.map(e => e.id));
       const tally = new Map<string, number>();
       for (const v of voteData) {
-        if (eligibleIds.has(v.restaurant_id)) {
+        if (poolIds.has(v.restaurant_id)) {
           tally.set(v.restaurant_id, (tally.get(v.restaurant_id) || 0) + 1);
         }
       }
@@ -862,19 +1087,34 @@ async function sendTodaysPickForMarket(
         const sorted = [...tally.entries()].sort((a, b) => b[1] - a[1]);
         const topN = sorted.slice(0, Math.min(5, sorted.length));
         const winnerId = topN[dayOfMonth % topN.length][0];
-        picked = eligibleMap.get(winnerId) || null;
+        picked = (eligibleMap.get(winnerId) as EligibleRestaurantWithSpecials) || null;
       }
     }
-    if (!picked) picked = eligible[dayOfMonth % eligible.length];
+    if (!picked) picked = eligiblePool[dayOfMonth % eligiblePool.length];
     restaurantId = picked.id;
     restaurantName = picked.name;
     const extra = picked.best_for?.length ? ` Known for ${picked.best_for[0].toLowerCase()}.` : '';
     notifBody = `The community is loving ${picked.name} right now.${extra} Have you been?`;
 
+  } else if (strategy.type === 'specials') {
+    // Tuesday: highlight a restaurant with an active special
+    const withSpecials = eligiblePool.filter(e => (e as EligibleRestaurantWithSpecials).hasSpecial);
+    const pool = withSpecials.length ? withSpecials : eligiblePool;
+    const picked = pool[dayOfMonth % pool.length] as EligibleRestaurantWithSpecials;
+    restaurantId = picked.id;
+    restaurantName = picked.name;
+    if (picked.hasSpecial && picked.specialName) {
+      notifBody = picked.specialDescription
+        ? `${picked.name}: ${picked.specialName} — ${picked.specialDescription}`
+        : `${picked.name} has a special worth checking out today`;
+    } else {
+      notifBody = `${picked.name} is today's top pick in ${marketInfo.label}. Check it out!`;
+    }
+
   } else if (strategy.type === 'happy_hour') {
     // Prefer eligible restaurants that actually have a HH today
-    const withHH = eligible.filter(e => e.hasHappyHour);
-    const pool = withHH.length ? withHH : eligible;
+    const withHH = eligiblePool.filter(e => e.hasHappyHour);
+    const pool = withHH.length ? withHH : eligiblePool;
     const picked = pool[dayOfMonth % pool.length];
     restaurantId = picked.id;
     restaurantName = picked.name;
@@ -888,8 +1128,8 @@ async function sendTodaysPickForMarket(
 
   } else if (strategy.type === 'hidden_gem') {
     // Non-paid restaurants with activity today — the underdogs worth discovering
-    const gems = eligible.filter(e => !e.isPaid && (e.hasHappyHour || e.hasEvent));
-    const pool = gems.length ? gems : eligible;
+    const gems = eligiblePool.filter(e => !e.isPaid && (e.hasHappyHour || e.hasEvent || (e as EligibleRestaurantWithSpecials).hasSpecial));
+    const pool = gems.length ? gems : eligiblePool;
     const picked = pool[dayOfMonth % pool.length];
     restaurantId = picked.id;
     restaurantName = picked.name;
@@ -897,7 +1137,7 @@ async function sendTodaysPickForMarket(
 
   } else if (strategy.type === 'event_tonight') {
     // Prefer eligible restaurants with events
-    const withEvents = eligible.filter(e => e.hasEvent);
+    const withEvents = eligiblePool.filter(e => e.hasEvent);
     if (withEvents.length) {
       const picked = withEvents[dayOfMonth % withEvents.length];
       restaurantId = picked.id;
@@ -906,7 +1146,7 @@ async function sendTodaysPickForMarket(
       notifBody = `${picked.eventName} at ${picked.name}${timeStr}. Live entertainment in ${marketInfo.label} tonight`;
     } else {
       // No events — fall back to any eligible
-      const picked = eligible[dayOfMonth % eligible.length];
+      const picked = eligiblePool[dayOfMonth % eligiblePool.length];
       restaurantId = picked.id;
       restaurantName = picked.name;
       notifBody = `Check out ${picked.name} tonight in ${marketInfo.label}!`;
@@ -914,11 +1154,11 @@ async function sendTodaysPickForMarket(
 
   } else if (strategy.type === 'weekend_kickoff') {
     // Prefer bars/nightlife with happy hours for Friday
-    const withHH = eligible.filter(e => e.hasHappyHour);
-    const bars = (withHH.length ? withHH : eligible).filter(e =>
+    const withHH = eligiblePool.filter(e => e.hasHappyHour);
+    const bars = (withHH.length ? withHH : eligiblePool).filter(e =>
       e.categories?.some(c => ['bars', 'nightlife', 'rooftops'].includes(c))
     );
-    const pool = bars.length ? bars : (withHH.length ? withHH : eligible);
+    const pool = bars.length ? bars : (withHH.length ? withHH : eligiblePool);
     const picked = pool[dayOfMonth % pool.length];
     restaurantId = picked.id;
     restaurantName = picked.name;
@@ -926,10 +1166,10 @@ async function sendTodaysPickForMarket(
 
   } else if (strategy.type === 'date_night') {
     // Prefer dinner/upscale spots
-    const dinner = eligible.filter(e =>
+    const dinner = eligiblePool.filter(e =>
       e.categories?.some(c => ['dinner', 'rooftops', 'fine dining'].includes(c))
     );
-    const pool = dinner.length ? dinner : eligible;
+    const pool = dinner.length ? dinner : eligiblePool;
     const picked = pool[dayOfMonth % pool.length];
     restaurantId = picked.id;
     restaurantName = picked.name;
@@ -940,8 +1180,8 @@ async function sendTodaysPickForMarket(
 
   } else if (strategy.type === 'brunch') {
     // Prefer brunch spots
-    const brunch = eligible.filter(e => e.categories?.includes('brunch'));
-    const pool = brunch.length ? brunch : eligible;
+    const brunch = eligiblePool.filter(e => e.categories?.includes('brunch'));
+    const pool = brunch.length ? brunch : eligiblePool;
     const picked = pool[dayOfMonth % pool.length];
     restaurantId = picked.id;
     restaurantName = picked.name;
@@ -977,7 +1217,7 @@ async function sendTodaysPickForMarket(
     marketSlug,
     messages,
     dedupKey: `todays_pick:${marketSlug}:${etDateStr2}`,
-    details: { restaurant: restaurantName, strategy: strategy.type, app_slug: marketInfo.appSlug },
+    details: { restaurant: restaurantName, restaurant_id: restaurantId, strategy: strategy.type, app_slug: marketInfo.appSlug },
   });
 
   return {
