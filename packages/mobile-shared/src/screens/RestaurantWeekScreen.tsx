@@ -25,20 +25,27 @@ import { trackImpression } from '../lib/impressions';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const RW = {
-  bgDark: '#1A0C08',
-  cardBg: '#241008',
-  cardBorder: '#C8532A',
-  cardBorderInner: 'rgba(200,83,42,0.25)',
+  // Page background — deep warm terracotta-brown
+  bgDark: '#2C0F06',
+  // Cards match the banner exactly
+  cardBg: '#C8532A',
+  cardBorder: '#F0D060',
+  cardBorderInner: 'rgba(240,208,96,0.2)',
+  // Primary brand colors
   terracotta: '#C8532A',
   terracottaLight: '#D96B40',
-  terracottaMuted: 'rgba(200,83,42,0.45)',
+  terracottaDark: '#A84020',
+  terracottaMuted: 'rgba(200,83,42,0.4)',
   yellow: '#F0D060',
-  yellowMuted: 'rgba(240,208,96,0.55)',
-  textPrimary: '#FEF5D0',
-  textSecondary: '#C49060',
-  textMuted: '#7A5030',
-  rule: 'rgba(200,83,42,0.35)',
-  cornerDecor: 'rgba(240,208,96,0.4)',
+  yellowDim: 'rgba(240,208,96,0.75)',
+  yellowMuted: 'rgba(240,208,96,0.45)',
+  // Text — yellow on terracotta cards
+  textPrimary: '#F0D060',
+  textSecondary: 'rgba(240,208,96,0.75)',
+  textMuted: 'rgba(240,208,96,0.45)',
+  // Rules and decorations
+  rule: 'rgba(240,208,96,0.3)',
+  cornerDecor: 'rgba(240,208,96,0.5)',
 };
 
 interface HolidaySpecial {
@@ -334,7 +341,7 @@ export default function RestaurantWeekScreen() {
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <ForkParticles />
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color={RW.terracotta} />
+          <ActivityIndicator size="large" color={RW.yellow} />
           <Text style={styles.loadingText}>Loading Restaurant Week...</Text>
         </View>
       </SafeAreaView>
@@ -375,7 +382,7 @@ export default function RestaurantWeekScreen() {
         showsVerticalScrollIndicator={false}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={RW.terracotta} />}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={RW.yellow} />}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyEmoji}>🍽️</Text>
@@ -404,7 +411,7 @@ const useCardStyles = createLazyStyles(() => ({
     paddingVertical: 24,
     position: 'relative',
     overflow: 'hidden',
-    shadowColor: RW.terracotta,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.18,
     shadowRadius: 12,
@@ -432,7 +439,7 @@ const useCardStyles = createLazyStyles(() => ({
   eventLabel: {
     fontSize: 10,
     fontWeight: '700',
-    color: RW.terracottaMuted,
+    color: RW.yellowMuted,
     letterSpacing: 3,
     textAlign: 'center',
     marginHorizontal: 12,
@@ -454,7 +461,7 @@ const useCardStyles = createLazyStyles(() => ({
   },
   specialDivider: {
     height: 1,
-    backgroundColor: 'rgba(200,83,42,0.12)',
+    backgroundColor: 'rgba(0,0,0,0.18)',
     marginVertical: 2,
   },
 
@@ -512,21 +519,21 @@ const useCardStyles = createLazyStyles(() => ({
   brandText: {
     fontSize: 10,
     fontWeight: '600',
-    color: RW.terracottaMuted,
+    color: RW.yellowMuted,
     letterSpacing: 2,
     textTransform: 'uppercase',
   },
   brandDot: {
     fontSize: 10,
-    color: RW.terracottaMuted,
+    color: RW.yellowMuted,
   },
 
   sponsorBadge: {
     marginTop: 10,
     alignSelf: 'center',
-    backgroundColor: 'rgba(200,83,42,0.15)',
+    backgroundColor: 'rgba(0,0,0,0.2)',
     borderWidth: 1,
-    borderColor: 'rgba(200,83,42,0.4)',
+    borderColor: 'rgba(240,208,96,0.4)',
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 3,
@@ -534,7 +541,7 @@ const useCardStyles = createLazyStyles(() => ({
   sponsorText: {
     fontSize: 9,
     fontWeight: '700',
-    color: RW.terracotta,
+    color: RW.yellow,
     letterSpacing: 2,
     textTransform: 'uppercase',
   },
@@ -544,7 +551,7 @@ const useCardStyles = createLazyStyles(() => ({
 const useStyles = createLazyStyles(() => ({
   container: { flex: 1, backgroundColor: RW.bgDark },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
-  loadingText: { fontSize: 16, color: RW.textSecondary, fontWeight: '500' },
+  loadingText: { fontSize: 16, color: RW.yellowDim, fontWeight: '500' },
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -553,8 +560,8 @@ const useStyles = createLazyStyles(() => ({
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerEmoji: { fontSize: 22 },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: RW.textPrimary, letterSpacing: -0.5 },
-  headerSubtitle: { fontSize: 14, color: RW.textSecondary, textAlign: 'center', marginBottom: 6 },
+  headerTitle: { fontSize: 22, fontWeight: '800', color: RW.yellow, letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 14, color: RW.yellowDim, textAlign: 'center', marginBottom: 6 },
 
   sponsorRow: {
     alignItems: 'center',
@@ -563,10 +570,10 @@ const useStyles = createLazyStyles(() => ({
   sponsorLabel: {
     fontSize: 10,
     fontWeight: '700',
-    color: RW.terracotta,
+    color: RW.yellow,
     letterSpacing: 2.5,
     textTransform: 'uppercase',
-    backgroundColor: 'rgba(200,83,42,0.12)',
+    backgroundColor: 'rgba(200,83,42,0.35)',
     paddingHorizontal: 14,
     paddingVertical: 4,
     borderRadius: 20,
@@ -577,6 +584,6 @@ const useStyles = createLazyStyles(() => ({
 
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60, gap: 8 },
   emptyEmoji: { fontSize: 48, marginBottom: 8 },
-  emptyTitle: { fontSize: 20, fontWeight: '700', color: RW.textPrimary },
-  emptyText: { fontSize: 14, color: RW.textSecondary, textAlign: 'center', paddingHorizontal: 40 },
+  emptyTitle: { fontSize: 20, fontWeight: '700', color: RW.yellow },
+  emptyText: { fontSize: 14, color: RW.yellowDim, textAlign: 'center', paddingHorizontal: 40 },
 }));
