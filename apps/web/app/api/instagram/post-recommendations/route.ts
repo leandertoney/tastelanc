@@ -99,7 +99,7 @@ export async function POST(request: Request) {
 
     let finalVideoUrl = rec.video_url;
     if (hasOverlays || hasCaptions) {
-      const overlayColorMap: Record<string, string> = { white: '#FFFFFF', yellow: '#FACC15', black: '#111111', orange: '#F97316' };
+      // color is stored as hex directly (e.g. '#FACC15') — no mapping needed
       const overlaySizeMap: Record<string, number> = { small: 14, medium: 18, large: 24 };
 
       const rendered = await burnInOverlays({
@@ -110,8 +110,9 @@ export async function POST(request: Request) {
               text: o.text,
               x: o.x,
               y: o.y,
-              color: overlayColorMap[o.color] ?? '#FFFFFF',
-              fontSize: overlaySizeMap[o.size] ?? 18,
+              color: o.color ?? '#FFFFFF',
+              fontSize: Math.round((overlaySizeMap[o.size] ?? 18) * (o.scale ?? 1)),
+              align: o.align ?? 'center',
             }))
           : [],
         captionWords: hasCaptions ? (rec as any).caption_data : [],

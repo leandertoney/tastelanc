@@ -11,7 +11,8 @@
  *
  * "Next" navigates to VideoRecommendPreviewScreen with all overlay/caption data.
  */
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo, LayoutChangeEvent } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -21,14 +22,14 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
-  PanResponder,
-  Animated,
   Keyboard,
   KeyboardAvoidingView,
   InputAccessoryView,
   StyleSheet,
   StatusBar,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useSharedValue, useAnimatedStyle, runOnJS } from 'react-native-reanimated';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -37,19 +38,28 @@ import type { RootStackParamList } from '../navigation/types';
 import { getColors, getAnonKey } from '../config/theme';
 import { uploadRecommendationVideo } from '../lib/videoRecommendations';
 import { useAuth } from '../hooks/useAuth';
-import type { TextOverlay, TextOverlayColor, TextOverlaySize, CaptionWord } from '../types/database';
+import type { TextOverlay, TextOverlayColor, TextOverlaySize, TextOverlayAlign, CaptionWord } from '../types/database';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VideoEditor'>;
 
 const { width: SW, height: SH } = Dimensions.get('window');
+// Fixed width for all overlays — makes text alignment visible and centering consistent
+const OVERLAY_WIDTH = SW * 0.85;
 
 // ── Style constants ───────────────────────────────────────────────────────────
 
-const OVERLAY_COLORS: { value: TextOverlayColor; hex: string; label: string }[] = [
-  { value: 'white', hex: '#FFFFFF', label: 'White' },
-  { value: 'yellow', hex: '#FACC15', label: 'Yellow' },
-  { value: 'black', hex: '#111111', label: 'Black' },
-  { value: 'orange', hex: '#F97316', label: 'Orange' },
+// Standard TikTok-style color palette — 10 colors, fits in one row without scrolling
+const OVERLAY_COLORS: string[] = [
+  '#FFFFFF', // White
+  '#111111', // Black
+  '#FF3B30', // Red
+  '#FF2D78', // Pink
+  '#FF9500', // Orange
+  '#FFCC00', // Yellow
+  '#34C759', // Green
+  '#5AC8FA', // Teal
+  '#007AFF', // Blue
+  '#AF52DE', // Purple
 ];
 
 const OVERLAY_SIZES: { value: TextOverlaySize; fontSize: number; label: string }[] = [
@@ -62,75 +72,120 @@ function getFontSize(size: TextOverlaySize) {
   return OVERLAY_SIZES.find(s => s.value === size)?.fontSize ?? 22;
 }
 
-function getHex(color: TextOverlayColor) {
-  return OVERLAY_COLORS.find(c => c.value === color)?.hex ?? '#FFF';
-}
-
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
 const STYLE_TOOLBAR_ID = 'video-editor-toolbar';
 
 // ── Draggable overlay ─────────────────────────────────────────────────────────
+// Uses react-native-gesture-handler v2 Gesture API so Pan + Pinch run simultaneously.
+// GestureHandlerRootView is already set up in all three App.tsx files.
 
 function DraggableOverlay({
   overlay,
   onMove,
+  onScale,
+  onEdit,
   onDelete,
 }: {
   overlay: TextOverlay;
   onMove: (id: string, x: number, y: number) => void;
+  onScale: (id: string, scale: number) => void;
+  onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
-  const anim = useRef(new Animated.ValueXY({ x: overlay.x * SW, y: overlay.y * SH })).current;
   const fontSize = getFontSize(overlay.size);
-  const color = getHex(overlay.color);
-  const hasDarkBg = overlay.color === 'white' || overlay.color === 'yellow';
+  const color = overlay.color; // already hex
+  // Light colors need a dark shadow, dark colors need a light shadow
+  // Light colors need a dark shadow for contrast; dark colors get a light shadow
+  const isLight = color === '#FFFFFF' || color === '#FFCC00' || color === '#FF9500';
+  const shadowColor = isLight ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.4)';
 
-  const pan = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        anim.setOffset({ x: (anim.x as any)._value, y: (anim.y as any)._value });
-        anim.setValue({ x: 0, y: 0 });
-      },
-      onPanResponderMove: Animated.event([null, { dx: anim.x, dy: anim.y }], { useNativeDriver: false }),
-      onPanResponderRelease: () => {
-        anim.flattenOffset();
-        const x = Math.max(0, Math.min(SW - 20, (anim.x as any)._value as number));
-        const y = Math.max(0, Math.min(SH - 40, (anim.y as any)._value as number));
-        onMove(overlay.id, x / SW, y / SH);
-      },
+  // Shared values — live in the UI thread, not JS thread
+  // x = -1 is a sentinel meaning "auto-center on first layout"
+  const initialX = overlay.x < 0 ? 0 : overlay.x * SW;
+  const translateX = useSharedValue(initialX);
+  const translateY = useSharedValue(overlay.y * SH);
+  const savedX = useSharedValue(initialX);
+  const savedY = useSharedValue(overlay.y * SH);
+  const scale = useSharedValue(overlay.scale ?? 1);
+  const savedScale = useSharedValue(overlay.scale ?? 1);
+  const hasAutocentered = useRef(false);
+
+  // On first layout of a new overlay (x < 0), center the fixed-width block
+  const handleLayout = useCallback((_e: LayoutChangeEvent) => {
+    if (!hasAutocentered.current && overlay.x < 0) {
+      hasAutocentered.current = true;
+      const cx = (SW - OVERLAY_WIDTH) / 2;
+      translateX.value = cx;
+      savedX.value = cx;
+      runOnJS(onMove)(overlay.id, cx / SW, overlay.y);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const panGesture = Gesture.Pan()
+    .onUpdate((e) => {
+      translateX.value = savedX.value + e.translationX;
+      translateY.value = savedY.value + e.translationY;
     })
-  ).current;
+    .onEnd(() => {
+      savedX.value = translateX.value;
+      savedY.value = translateY.value;
+      const nx = Math.max(0, Math.min(1, translateX.value / SW));
+      const ny = Math.max(0, Math.min(1, translateY.value / SH));
+      runOnJS(onMove)(overlay.id, nx, ny);
+    });
+
+  const pinchGesture = Gesture.Pinch()
+    .onUpdate((e) => {
+      scale.value = Math.max(0.5, Math.min(4, savedScale.value * e.scale));
+    })
+    .onEnd(() => {
+      savedScale.value = scale.value;
+      runOnJS(onScale)(overlay.id, scale.value);
+    });
+
+  const tapGesture = Gesture.Tap()
+    .maxDuration(200)
+    .onEnd(() => runOnJS(onEdit)(overlay.id));
+
+  const longPressGesture = Gesture.LongPress()
+    .minDuration(500)
+    .onStart(() => runOnJS(onDelete)(overlay.id));
+
+  // Pan + Pinch simultaneously (two-finger drag+scale); Tap/LongPress exclusive
+  const composed = Gesture.Simultaneous(
+    panGesture,
+    pinchGesture,
+    Gesture.Exclusive(longPressGesture, tapGesture),
+  );
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
+  }));
 
   return (
-    <Animated.View
-      style={{ position: 'absolute', zIndex: 20, transform: anim.getTranslateTransform() }}
-      {...pan.panHandlers}
-    >
-      <TouchableOpacity
-        onLongPress={() =>
-          Alert.alert('Remove Text', `Remove "${overlay.text}"?`, [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Remove', style: 'destructive', onPress: () => onDelete(overlay.id) },
-          ])
-        }
-        activeOpacity={0.85}
-      >
+    <GestureDetector gesture={composed}>
+      <Animated.View style={[s.overlayWrap, animatedStyle]} onLayout={handleLayout}>
         <Text
           style={{
+            width: OVERLAY_WIDTH,
             fontSize,
             color,
             fontWeight: '800',
-            textShadowColor: hasDarkBg ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.4)',
+            textAlign: overlay.align ?? 'center',
+            textShadowColor: shadowColor,
             textShadowOffset: { width: 1, height: 1 },
             textShadowRadius: 4,
           }}
         >
           {overlay.text}
         </Text>
-      </TouchableOpacity>
-    </Animated.View>
+      </Animated.View>
+    </GestureDetector>
   );
 }
 
@@ -156,6 +211,12 @@ export default function VideoEditorScreen({ route, navigation }: Props) {
   // Video player — full screen, loops
   const player = useVideoPlayer(clips[0].uri, (p) => { p.loop = true; p.play(); });
 
+  // Pause when navigating to preview, resume when coming back — prevents dual playback
+  useFocusEffect(useCallback(() => {
+    try { player.play(); } catch {}
+    return () => { try { player.pause(); } catch {} };
+  }, [player]));
+
   // Multi-clip rotation
   useEffect(() => {
     if (clips.length <= 1) return;
@@ -175,9 +236,11 @@ export default function VideoEditorScreen({ route, navigation }: Props) {
   // ── Text overlay state ──
   const [overlays, setOverlays] = useState<TextOverlay[]>([]);
   const [isTyping, setIsTyping] = useState(false);   // keyboard open, editing new text
+  const [editingOverlayId, setEditingOverlayId] = useState<string | null>(null);
   const [draftText, setDraftText] = useState('');
-  const [draftColor, setDraftColor] = useState<TextOverlayColor>('white');
+  const [draftColor, setDraftColor] = useState<string>('#FFFFFF');
   const [draftSize, setDraftSize] = useState<TextOverlaySize>('medium');
+  const [draftAlign, setDraftAlign] = useState<TextOverlayAlign>('center');
   const inputRef = useRef<TextInput>(null);
 
   // ── Caption state ──
@@ -202,35 +265,72 @@ export default function VideoEditorScreen({ route, navigation }: Props) {
 
   // ── Text tool handlers ──
   const openTextTool = useCallback(() => {
+    setEditingOverlayId(null);
     setDraftText('');
+    setDraftAlign('center');
     setIsTyping(true);
     setTimeout(() => inputRef.current?.focus(), 50);
   }, []);
 
   const commitText = useCallback(() => {
     Keyboard.dismiss();
-    if (draftText.trim()) {
-      setOverlays(prev => [...prev, {
-        id: uid(),
-        text: draftText.trim(),
-        // Start at ~center of screen (normalized)
-        x: 0.1,
-        y: 0.35,
-        color: draftColor,
-        size: draftSize,
-      }]);
+    const trimmed = draftText.trim();
+    if (trimmed) {
+      if (editingOverlayId) {
+        // Update existing overlay — preserve position and scale
+        setOverlays(prev => prev.map(o =>
+          o.id === editingOverlayId
+            ? { ...o, text: trimmed, color: draftColor, size: draftSize, align: draftAlign }
+            : o
+        ));
+      } else {
+        // x: -1 = sentinel for "auto-center on first layout" in DraggableOverlay
+        setOverlays(prev => [...prev, {
+          id: uid(),
+          text: trimmed,
+          x: -1,
+          y: 0.35,
+          color: draftColor,
+          size: draftSize,
+          align: draftAlign,
+          scale: 1,
+        }]);
+      }
     }
     setDraftText('');
+    setEditingOverlayId(null);
     setIsTyping(false);
-  }, [draftText, draftColor, draftSize]);
+  }, [draftText, draftColor, draftSize, draftAlign, editingOverlayId]);
 
   const handleOverlayMove = useCallback((id: string, x: number, y: number) => {
     setOverlays(prev => prev.map(o => o.id === id ? { ...o, x, y } : o));
   }, []);
 
-  const handleOverlayDelete = useCallback((id: string) => {
-    setOverlays(prev => prev.filter(o => o.id !== id));
+  const handleOverlayScale = useCallback((id: string, newScale: number) => {
+    setOverlays(prev => prev.map(o => o.id === id ? { ...o, scale: newScale } : o));
   }, []);
+
+  // Tap an overlay → pre-fill draft and open keyboard to edit it
+  const handleOverlayEdit = useCallback((id: string) => {
+    const ov = overlays.find(o => o.id === id);
+    if (!ov) return;
+    setDraftText(ov.text);
+    setDraftColor(ov.color);
+    setDraftSize(ov.size);
+    setDraftAlign(ov.align ?? 'center');
+    setEditingOverlayId(id);
+    setIsTyping(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }, [overlays]);
+
+  // Long press → confirm delete
+  const handleOverlayDelete = useCallback((id: string) => {
+    const ov = overlays.find(o => o.id === id);
+    Alert.alert('Remove Text', `Remove "${ov?.text ?? 'this text'}"?`, [
+      { text: 'Keep', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => setOverlays(prev => prev.filter(o => o.id !== id)) },
+    ]);
+  }, [overlays]);
 
   // ── Caption (CC) handler ──
   const handleToggleCaptions = useCallback(async () => {
@@ -301,7 +401,7 @@ export default function VideoEditorScreen({ route, navigation }: Props) {
   }, [isTyping, commitText, navigation, clips, restaurantId, restaurantName, durationSeconds, overlays, captionWords, captionsEnabled]);
 
   const draftFontSize = getFontSize(draftSize);
-  const draftHex = getHex(draftColor);
+  const draftIsLight = draftColor === '#FFFFFF' || draftColor === '#FFCC00' || draftColor === '#FF9500';
 
   return (
     <View style={s.container}>
@@ -313,25 +413,44 @@ export default function VideoEditorScreen({ route, navigation }: Props) {
       {/* Dark scrim so text is readable */}
       <View style={s.scrim} pointerEvents="none" />
 
-      {/* Placed text overlays — draggable */}
-      {overlays.map(o => (
-        <DraggableOverlay key={o.id} overlay={o} onMove={handleOverlayMove} onDelete={handleOverlayDelete} />
+      {/* Placed text overlays — hide the one currently being edited (inline editor shows it) */}
+      {overlays.map(o => o.id === editingOverlayId ? null : (
+        <DraggableOverlay
+          key={o.id}
+          overlay={o}
+          onMove={handleOverlayMove}
+          onScale={handleOverlayScale}
+          onEdit={handleOverlayEdit}
+          onDelete={handleOverlayDelete}
+        />
       ))}
 
-      {/* Live draft text preview — shown while keyboard is open */}
-      {isTyping && draftText.length > 0 && (
-        <View style={s.draftPreview} pointerEvents="none">
-          <Text style={{
-            fontSize: draftFontSize,
-            color: draftHex,
-            fontWeight: '800',
-            textShadowColor: 'rgba(0,0,0,0.9)',
-            textShadowOffset: { width: 1, height: 1 },
-            textShadowRadius: 4,
-            textAlign: 'center',
-          }}>
-            {draftText}
-          </Text>
+      {/* Inline text editor — fully visible on video, TikTok-style */}
+      {isTyping && (
+        <View style={s.inlineEditorWrap} pointerEvents="box-none">
+          <TextInput
+            ref={inputRef}
+            style={[
+              s.inlineEditor,
+              {
+                fontSize: draftFontSize,
+                color: draftColor,
+                textAlign: draftAlign,
+                textShadowColor: draftIsLight ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.3)',
+                textShadowOffset: { width: 1, height: 1 },
+                textShadowRadius: 4,
+              },
+            ]}
+            value={draftText}
+            onChangeText={setDraftText}
+            multiline
+            autoFocus
+            selectionColor={draftColor}
+            inputAccessoryViewID={Platform.OS === 'ios' ? STYLE_TOOLBAR_ID : undefined}
+            maxLength={120}
+            placeholder="Type something..."
+            placeholderTextColor="rgba(255,255,255,0.45)"
+          />
         </View>
       )}
 
@@ -385,54 +504,31 @@ export default function VideoEditorScreen({ route, navigation }: Props) {
         </View>
       )}
 
-      {/* Text input + style toolbar — shown while typing */}
-      {isTyping && (
-        <KeyboardAvoidingView
-          style={StyleSheet.absoluteFill}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          pointerEvents="box-none"
-        >
-          <View style={s.typingContainer} pointerEvents="box-none">
-            {/* Invisible input — text appears as draftPreview on the video */}
-            <TextInput
-              ref={inputRef}
-              style={s.hiddenInput}
-              value={draftText}
-              onChangeText={setDraftText}
-              onSubmitEditing={commitText}
-              autoFocus
-              multiline={false}
-              returnKeyType="done"
-              blurOnSubmit
-              onBlur={commitText}
-              inputAccessoryViewID={Platform.OS === 'ios' ? STYLE_TOOLBAR_ID : undefined}
-              maxLength={80}
-            />
-          </View>
-        </KeyboardAvoidingView>
-      )}
-
       {/* iOS: style toolbar pinned above keyboard via InputAccessoryView */}
       {Platform.OS === 'ios' && isTyping && (
         <InputAccessoryView nativeID={STYLE_TOOLBAR_ID}>
           <StyleToolbar
             color={draftColor}
             size={draftSize}
+            align={draftAlign}
             onColorChange={setDraftColor}
             onSizeChange={setDraftSize}
+            onAlignChange={setDraftAlign}
             onDone={commitText}
           />
         </InputAccessoryView>
       )}
 
-      {/* Android: style toolbar rendered just above the bottom */}
+      {/* Android: style toolbar rendered at the bottom when keyboard is open */}
       {Platform.OS === 'android' && isTyping && (
         <View style={[s.androidToolbar, { bottom: insets.bottom + 8 }]}>
           <StyleToolbar
             color={draftColor}
             size={draftSize}
+            align={draftAlign}
             onColorChange={setDraftColor}
             onSizeChange={setDraftSize}
+            onAlignChange={setDraftAlign}
             onDone={commitText}
           />
         </View>
@@ -443,32 +539,49 @@ export default function VideoEditorScreen({ route, navigation }: Props) {
 
 // ── Style toolbar (above keyboard) ────────────────────────────────────────────
 
+const ALIGN_OPTIONS: { value: TextOverlayAlign; icon: string }[] = [
+  { value: 'left',   icon: '⬛\u200A⬜\u200A⬜' },
+  { value: 'center', icon: '⬜\u200A⬛\u200A⬜' },
+  { value: 'right',  icon: '⬜\u200A⬜\u200A⬛' },
+];
+
 function StyleToolbar({
   color,
   size,
+  align,
   onColorChange,
   onSizeChange,
+  onAlignChange,
   onDone,
 }: {
-  color: TextOverlayColor;
+  color: string;
   size: TextOverlaySize;
-  onColorChange: (c: TextOverlayColor) => void;
+  align: TextOverlayAlign;
+  onColorChange: (c: string) => void;
   onSizeChange: (s: TextOverlaySize) => void;
+  onAlignChange: (a: TextOverlayAlign) => void;
   onDone: () => void;
 }) {
   return (
     <View style={tb.container}>
-      {/* Color swatches */}
-      <View style={tb.row}>
-        {OVERLAY_COLORS.map(c => (
+      {/* Row 1: color swatches — 10 colors, fits without scrolling */}
+      <View style={tb.colorRow}>
+        {OVERLAY_COLORS.map(hex => (
           <TouchableOpacity
-            key={c.value}
-            style={[tb.swatch, { backgroundColor: c.hex }, color === c.value && tb.swatchSelected]}
-            onPress={() => onColorChange(c.value)}
+            key={hex}
+            style={[
+              tb.swatch,
+              { backgroundColor: hex },
+              hex === '#FFFFFF' && tb.swatchWhite,
+              color === hex && tb.swatchSelected,
+            ]}
+            onPress={() => onColorChange(hex)}
           />
         ))}
-        <View style={tb.divider} />
-        {/* Size buttons */}
+      </View>
+      {/* Row 2: size  |  align  |  Done */}
+      <View style={tb.row}>
+        <Text style={tb.rowLabel}>Size</Text>
         {OVERLAY_SIZES.map(s => (
           <TouchableOpacity
             key={s.value}
@@ -481,6 +594,18 @@ function StyleToolbar({
           </TouchableOpacity>
         ))}
         <View style={tb.divider} />
+        <Text style={tb.rowLabel}>Align</Text>
+        {ALIGN_OPTIONS.map(a => (
+          <TouchableOpacity
+            key={a.value}
+            style={[tb.sizeBtn, align === a.value && tb.sizeBtnSelected]}
+            onPress={() => onAlignChange(a.value)}
+          >
+            <Text style={[tb.alignBtnText, align === a.value && tb.sizeBtnTextSelected]}>
+              {a.value === 'left' ? '←' : a.value === 'center' ? '↔' : '→'}
+            </Text>
+          </TouchableOpacity>
+        ))}
         <TouchableOpacity style={tb.doneBtn} onPress={onDone}>
           <Text style={tb.doneBtnText}>Done</Text>
         </TouchableOpacity>
@@ -493,6 +618,7 @@ function StyleToolbar({
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
+  overlayWrap: { position: 'absolute', zIndex: 20 },
   scrim: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.15)',
@@ -535,10 +661,19 @@ const s = StyleSheet.create({
   },
   toolBtnText: { color: '#FFF', fontSize: 14, fontWeight: '800' },
   toolBtnTextActive: { color: '#22c55e' },
-  draftPreview: {
+  // Inline text editor — visible on video at vertical center, fully editable
+  inlineEditorWrap: {
     position: 'absolute', zIndex: 25,
-    left: 0, right: 0, top: '35%',
-    alignItems: 'center', paddingHorizontal: 20,
+    left: 0, right: 0, top: '30%',
+    alignItems: 'center',
+  },
+  inlineEditor: {
+    width: OVERLAY_WIDTH,        // same fixed width as placed overlay
+    fontWeight: '800',
+    backgroundColor: 'transparent',
+    padding: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.5)',
   },
   captionBar: {
     position: 'absolute', bottom: 140, left: 20, right: 20, zIndex: 25,
@@ -557,43 +692,53 @@ const s = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center', gap: 16,
   },
   loadingText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
-  typingContainer: {
-    flex: 1, justifyContent: 'flex-end',
-  },
-  hiddenInput: {
-    // Off-screen — text appears via draftPreview on the video instead
-    position: 'absolute',
-    bottom: -100,
-    left: 0,
-    right: 0,
-    opacity: 0,
-    height: 40,
-  },
   androidToolbar: { position: 'absolute', left: 0, right: 0, zIndex: 40 },
 });
 
 const tb = StyleSheet.create({
   container: {
-    backgroundColor: 'rgba(20,20,20,0.95)',
+    backgroundColor: 'rgba(15,15,15,0.96)',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.15)',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    borderTopColor: 'rgba(255,255,255,0.12)',
+    paddingBottom: 6,
   },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  swatch: { width: 30, height: 30, borderRadius: 15, borderWidth: 2, borderColor: 'transparent' },
-  swatchSelected: { borderColor: '#FFF', transform: [{ scale: 1.2 }] },
-  divider: { width: 1, height: 28, backgroundColor: 'rgba(255,255,255,0.2)', marginHorizontal: 2 },
+  // Row 1: horizontally scrollable color swatches
+  colorRow: {
+    flexDirection: 'row', alignItems: 'center',
+    gap: 10, paddingHorizontal: 14, paddingVertical: 10,
+  },
+  swatch: {
+    width: 28, height: 28, borderRadius: 14,
+    borderWidth: 2, borderColor: 'transparent',
+  },
+  swatchWhite: { borderColor: 'rgba(180,180,180,0.6)' },
+  swatchSelected: {
+    borderColor: '#FFF',
+    transform: [{ scale: 1.25 }],
+    shadowColor: '#FFF',
+    shadowOpacity: 0.6,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 4,
+  },
+  // Row 2: size + Done
+  row: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 14, paddingBottom: 4,
+  },
+  rowLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '600', marginRight: 2 },
   sizeBtn: {
-    width: 34, height: 34, borderRadius: 8, justifyContent: 'center', alignItems: 'center',
+    width: 36, height: 36, borderRadius: 8, justifyContent: 'center', alignItems: 'center',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
   },
-  sizeBtnSelected: { backgroundColor: 'rgba(255,255,255,0.2)', borderColor: '#FFF' },
+  sizeBtnSelected: { backgroundColor: 'rgba(255,255,255,0.18)', borderColor: '#FFF' },
   sizeBtnText: { color: 'rgba(255,255,255,0.7)', fontWeight: '700' },
   sizeBtnTextSelected: { color: '#FFF' },
+  alignBtnText: { color: 'rgba(255,255,255,0.7)', fontSize: 15, fontWeight: '700' },
+  divider: { width: 1, height: 26, backgroundColor: 'rgba(255,255,255,0.2)', marginHorizontal: 2 },
   doneBtn: {
-    marginLeft: 'auto' as any, paddingHorizontal: 16, paddingVertical: 8,
-    backgroundColor: '#FFF', borderRadius: 16,
+    marginLeft: 'auto' as any, paddingHorizontal: 18, paddingVertical: 8,
+    backgroundColor: '#FFF', borderRadius: 18,
   },
   doneBtnText: { color: '#000', fontSize: 14, fontWeight: '700' },
 });

@@ -324,17 +324,20 @@ export interface CaptionWord {
   end: number;   // seconds
 }
 
-export type TextOverlayColor = 'white' | 'yellow' | 'black' | 'orange';
+export type TextOverlayColor = string; // hex color, e.g. '#FFFFFF'
 export type TextOverlaySize = 'small' | 'medium' | 'large';
+export type TextOverlayAlign = 'left' | 'center' | 'right';
 
 /** A user-placed text overlay on the video. Coordinates are normalized 0–1. */
 export interface TextOverlay {
   id: string;
   text: string;
-  x: number;              // normalized left edge (0 = left, 1 = right)
+  x: number;              // normalized left edge (0 = left, 1 = right); -1 = auto-center on first render
   y: number;              // normalized top edge (0 = top, 1 = bottom)
-  color: TextOverlayColor;
+  color: TextOverlayColor; // hex string stored directly (e.g. '#FACC15')
   size: TextOverlaySize;
+  align?: TextOverlayAlign; // text alignment within the overlay (default 'center')
+  scale?: number;           // pinch-to-zoom multiplier on top of base font size (default 1.0)
 }
 
 export interface VideoRecommendation {

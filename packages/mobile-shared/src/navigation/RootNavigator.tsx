@@ -36,6 +36,7 @@ import LeadDetailScreen from '../screens/sales/LeadDetailScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import InAppBrowserScreen from '../screens/InAppBrowserScreen';
 import StPatricksDayScreen from '../screens/StPatricksDayScreen';
+import RestaurantWeekScreen from '../screens/RestaurantWeekScreen';
 import CouponsViewAllScreen from '../screens/CouponsViewAllScreen';
 import MyCouponsScreen from '../screens/MyCouponsScreen';
 
@@ -73,6 +74,7 @@ const SafeLeadDetail = withScreenErrorBoundary(LeadDetailScreen, 'LeadDetail');
 const SafeSettings = withScreenErrorBoundary(SettingsScreen, 'Settings');
 const SafeInAppBrowser = withScreenErrorBoundary(InAppBrowserScreen, 'InAppBrowser');
 const SafeStPatricksDay = withScreenErrorBoundary(StPatricksDayScreen, 'StPatricksDay');
+const SafeRestaurantWeek = withScreenErrorBoundary(RestaurantWeekScreen, 'RestaurantWeek');
 const SafeCouponsViewAll = withScreenErrorBoundary(CouponsViewAllScreen, 'CouponsViewAll');
 const SafeMyCoupons = withScreenErrorBoundary(MyCouponsScreen, 'MyCoupons');
 
@@ -252,6 +254,11 @@ export default function RootNavigator() {
       <Stack.Screen
         name="StPatricksDay"
         component={SafeStPatricksDay}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="RestaurantWeek"
+        component={SafeRestaurantWeek}
         options={{ headerShown: false }}
       />
       {/* Settings */}

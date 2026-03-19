@@ -53,6 +53,8 @@ export type RootStackParamList = {
   FlyerSuccess: { draftId: string; publishingPath: string; claimUrl?: string; venueName?: string };
   // Settings
   Settings: undefined;
+  // In-app browser
+  InAppBrowser: { url: string; title?: string };
   // Feature request
   FeatureRequest: undefined;
   // Personal history
@@ -65,14 +67,25 @@ export type RootStackParamList = {
   LeadDetail: { leadId: string };
   // Video Recommendations
   VideoRecommendCapture: { restaurantId: string; restaurantName: string };
-  VideoRecommendPreview: {
+  // Editor sits between capture and preview — TikTok-style full-screen editing
+  VideoEditor: {
     clips: { uri: string; duration: number }[];
     restaurantId: string;
     restaurantName: string;
     durationSeconds: number;
   };
+  VideoRecommendPreview: {
+    clips: { uri: string; duration: number }[];
+    restaurantId: string;
+    restaurantName: string;
+    durationSeconds: number;
+    textOverlays?: import('../types/database').TextOverlay[];
+    captionWords?: import('../types/database').CaptionWord[];
+    captionsEnabled?: boolean;
+  };
   // Holiday / Seasonal
   StPatricksDay: undefined;
+  RestaurantWeek: undefined;
   // Itinerary
   ItineraryBuilder: { date?: string };
   ItineraryCard: {

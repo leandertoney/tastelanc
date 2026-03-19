@@ -20,6 +20,7 @@ interface TextOverlayInput {
   y: number;           // 0–1 normalized
   color: string;       // hex
   fontSize: number;    // px
+  align?: string;      // 'left' | 'center' | 'right'
 }
 
 interface BurnInOptions {
@@ -137,7 +138,7 @@ function buildTracks(
       clips: textOverlays.map(overlay => ({
         asset: {
           type: 'html',
-          html: `<p style="font-family:sans-serif;font-weight:700;font-size:${overlay.fontSize}px;color:${overlay.color};text-shadow:1px 1px 3px rgba(0,0,0,0.8);margin:0;white-space:nowrap;">${escapeHtml(overlay.text)}</p>`,
+          html: `<p style="font-family:sans-serif;font-weight:700;font-size:${overlay.fontSize}px;color:${overlay.color};text-shadow:1px 1px 3px rgba(0,0,0,0.8);margin:0;text-align:${overlay.align ?? 'center'};width:100%;">${escapeHtml(overlay.text)}</p>`,
           width: 600,
           height: 80,
         },
@@ -145,7 +146,8 @@ function buildTracks(
         length: duration,
         position: 'custom',
         offset: {
-          x: (overlay.x - 0.5) * 2,  // Shotstack uses -1 to 1 offset from center
+          // x < 0 means "centered" sentinel — treat as 0.5 (center)
+          x: (Math.max(0, overlay.x) - 0.5) * 2,
           y: (0.5 - overlay.y) * 2,
         },
       })),
