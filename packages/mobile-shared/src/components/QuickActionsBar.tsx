@@ -16,6 +16,7 @@ interface QuickActionsBarProps {
   address?: string;
   onFavoritePress?: () => void;
   isFavorite?: boolean;
+  onWebsitePress?: (url: string) => void;
 }
 
 export default function QuickActionsBar({
@@ -28,6 +29,7 @@ export default function QuickActionsBar({
   address,
   onFavoritePress,
   isFavorite = false,
+  onWebsitePress,
 }: QuickActionsBarProps) {
   const colors = getColors();
   const brand = getBrand();
@@ -48,7 +50,11 @@ export default function QuickActionsBar({
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
         url = `https://${url}`;
       }
-      await WebBrowser.openBrowserAsync(url);
+      if (onWebsitePress) {
+        onWebsitePress(url);
+      } else {
+        await WebBrowser.openBrowserAsync(url);
+      }
     }
   };
 
@@ -88,6 +94,7 @@ export default function QuickActionsBar({
   };
 
   const handleFavorite = () => {
+    trackClick('favorite', restaurantId);
     if (onFavoritePress) {
       onFavoritePress();
     }

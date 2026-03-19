@@ -74,9 +74,10 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 // ─── Holiday metadata ─────────────────────────────────────────────────────────
 
 const HOLIDAY_META: Record<string, { label: string; emoji: string; accent: string; bg: string }> = {
-  'st-patricks':    { label: "St. Patrick's Day", emoji: '☘️',  accent: '#2ECC40', bg: '#0A3D0A' },
-  'cinco-de-mayo':  { label: 'Cinco de Mayo',     emoji: '🎉', accent: '#E84142', bg: '#1A0A0A' },
-  'easter':         { label: 'Easter',             emoji: '🐣', accent: '#9B59B6', bg: '#1A0F20' },
+  'st-patricks':       { label: "St. Patrick's Day", emoji: '☘️',  accent: '#2ECC40', bg: '#0A3D0A' },
+  'restaurant-week':   { label: 'Restaurant Week',   emoji: '🍽️', accent: '#C8532A', bg: '#1A0C08' },
+  'cinco-de-mayo':     { label: 'Cinco de Mayo',     emoji: '🎉', accent: '#E84142', bg: '#1A0A0A' },
+  'easter':            { label: 'Easter',             emoji: '🐣', accent: '#9B59B6', bg: '#1A0F20' },
   'valentines':     { label: "Valentine's Day",    emoji: '💕', accent: '#E74C8B', bg: '#1A0A12' },
   'fourth-of-july': { label: '4th of July',        emoji: '🇺🇸', accent: '#3498DB', bg: '#0A1520' },
   'halloween':      { label: 'Halloween',          emoji: '🎃', accent: '#E67E22', bg: '#1A120A' },
@@ -1425,8 +1426,11 @@ export default function SceneScreen() {
         return <NewRestaurantRow item={item} onPress={() => handleItemPress(item.restaurantId)} />;
       case 'blog':
         return <BlogCard item={item} onPress={() => navigation.navigate('BlogDetail', { slug: item.slug })} />;
-      case 'holiday_teaser':
-        return <HolidayTeaserCard item={item} onPress={() => navigation.navigate('StPatricksDay')} />;
+      case 'holiday_teaser': {
+        const holidayBase = (item.holidayTag || '').replace(/-\d{4}$/, '');
+        const holidayDest = holidayBase === 'restaurant-week' ? 'RestaurantWeek' : 'StPatricksDay';
+        return <HolidayTeaserCard item={item} onPress={() => navigation.navigate(holidayDest)} />;
+      }
       case 'coupon_claim':
         return <CouponClaimCard item={item} onPress={() => handleItemPress(item.restaurantId)} />;
     }

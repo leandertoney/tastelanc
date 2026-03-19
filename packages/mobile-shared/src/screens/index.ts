@@ -45,6 +45,7 @@ export { default as ItineraryCardScreen } from './ItineraryCardScreen';
 
 // Holiday / Seasonal
 export { default as StPatricksDayScreen } from './StPatricksDayScreen';
+export { default as RestaurantWeekScreen } from './RestaurantWeekScreen';
 
 // Splash
 export { default as SplashVideoScreen } from './SplashVideoScreen';

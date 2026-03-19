@@ -32,6 +32,7 @@ import { fetchEvents } from '../lib/events';
 import { trackScreenView } from '../lib/analytics';
 import { useAuth } from '../hooks/useAuth';
 import { useEmailGate } from '../hooks/useEmailGate';
+import { useMarket } from '../context/MarketContext';
 import { useFavorites, useToggleFavorite } from '../hooks';
 import { useIsWishlisted, useToggleWishlist } from '../hooks/useWishlist';
 import {
@@ -100,6 +101,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const { id } = route.params;
   const { userId } = useAuth();
   const { requireEmailGate } = useEmailGate();
+  const { marketId } = useMarket();
 
   // Use hooks for favorites - handles signup modal automatically
   const { data: favorites = [] } = useFavorites();
@@ -543,6 +545,10 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                   itemCount={happyHours.length}
                   previewText={happyHours.length > 0 ? 'Special pricing on drinks & food' : undefined}
                   userId={userId}
+                  categories={restaurant.categories}
+                  cuisine={restaurant.cuisine}
+                  marketId={marketId}
+                  onAlternativePress={(altId) => navigation.navigate('RestaurantDetail', { id: altId })}
                 />
               ) : happyHours.length > 0 ? (
                 happyHours.map((hh) => (
@@ -603,6 +609,10 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                   itemCount={specials.length}
                   previewText={specials.length > 0 ? 'Daily deals and offers' : undefined}
                   userId={userId}
+                  categories={restaurant.categories}
+                  cuisine={restaurant.cuisine}
+                  marketId={marketId}
+                  onAlternativePress={(altId) => navigation.navigate('RestaurantDetail', { id: altId })}
                 />
               ) : specials.length > 0 ? (
                 specials.map((special) => (
@@ -736,6 +746,10 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                   itemCount={events.length}
                   previewText={events.length > 0 ? 'Live music, trivia, and more' : undefined}
                   userId={userId}
+                  categories={restaurant.categories}
+                  cuisine={restaurant.cuisine}
+                  marketId={marketId}
+                  onAlternativePress={(altId) => navigation.navigate('RestaurantDetail', { id: altId })}
                 />
               ) : events.length > 0 ? (
                 events.map((event) => (
@@ -793,6 +807,10 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                   itemCount={menus.length}
                   previewText={menus.length > 0 ? 'Full menu with pricing' : undefined}
                   userId={userId}
+                  categories={restaurant.categories}
+                  cuisine={restaurant.cuisine}
+                  marketId={marketId}
+                  onAlternativePress={(altId) => navigation.navigate('RestaurantDetail', { id: altId })}
                 />
               ) : (
                 <MenuViewer
@@ -855,6 +873,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
             address={fullAddress}
             onFavoritePress={handleFavoritePress}
             isFavorite={isFavorite}
+            onWebsitePress={(url) => navigation.navigate('InAppBrowser', { url, title: restaurant.name })}
           />
         </View>
 

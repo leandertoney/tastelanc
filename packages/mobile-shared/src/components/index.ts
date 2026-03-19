@@ -36,4 +36,6 @@ export { default as VideoRecommendationFeed } from './VideoRecommendationFeed';
 export { default as TrendingRecommendationsSection } from './TrendingRecommendationsSection';
 export { default as TierLockedEmptyState } from './TierLockedEmptyState';
 export { default as StPatricksDayBanner } from './StPatricksDayBanner';
+export { default as RestaurantWeekBanner } from './RestaurantWeekBanner';
 export { default as CouponsSection } from './CouponsSection';
+export { default as BasicTierAlternativesSection } from './BasicTierAlternativesSection';

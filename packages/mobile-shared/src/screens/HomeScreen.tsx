@@ -37,6 +37,7 @@ import {
   TrendingRecommendationsSection,
   ErrorBoundary,
   StPatricksDayBanner,
+  RestaurantWeekBanner,
 } from '../components';
 import CuisinesSection from '../components/CuisinesSection';
 import { getColors, getBrand, getAssets, hasFeature } from '../config/theme';
@@ -129,6 +130,7 @@ export default function HomeScreen() {
     queryClient.invalidateQueries({ queryKey: ['blog'] });
     queryClient.invalidateQueries({ queryKey: ['featuredAds', marketId] });
     queryClient.invalidateQueries({ queryKey: ['stPatricksDates'] });
+    queryClient.invalidateQueries({ queryKey: ['restaurantWeekDates'] });
     refetch();
   }, [queryClient, refetch, marketId]);
 
@@ -164,6 +166,11 @@ export default function HomeScreen() {
       {/* St. Patrick's Day Banner (auto-hides outside March 10-18) */}
       <ErrorBoundary level="section">
         <StPatricksDayBanner />
+      </ErrorBoundary>
+
+      {/* Restaurant Week Banner (auto-hides when no active specials in DB) */}
+      <ErrorBoundary level="section">
+        <RestaurantWeekBanner />
       </ErrorBoundary>
 
       <Spacer size="lg" />
