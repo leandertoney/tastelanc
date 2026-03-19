@@ -130,6 +130,7 @@ export default function SettingsScreen() {
   const [locationEnabled, setLocationEnabled] = useState(true);
   const [isTestingVisit, setIsTestingVisit] = useState(false);
   const [isSeedingData, setIsSeedingData] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const appSlug = brand.marketSlug === 'lancaster-pa' ? 'tastelanc' : brand.marketSlug === 'cumberland-pa' ? 'taste-cumberland' : 'taste-fayetteville';
 
@@ -242,6 +243,71 @@ export default function SettingsScreen() {
     } catch (error) {
       Alert.alert('Error', `Failed: ${error}`);
     }
+  };
+
+  const handleDeleteAccount = () => {
+    if (isAnonymous || !userId) {
+      Alert.alert('Not Signed In', 'You must be signed in to delete an account.');
+      return;
+    }
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to permanently delete your account? All your data — check-ins, votes, rewards, and preferences — will be erased. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete My Account',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Final Confirmation',
+              `Type your email to confirm deletion.\n\nThis will permanently delete your ${brand.appName} account.`,
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Yes, Delete Forever',
+                  style: 'destructive',
+                  onPress: async () => {
+                    setIsDeletingAccount(true);
+                    try {
+                      const { data: sessionData } = await supabase.auth.getSession();
+                      const token = sessionData?.session?.access_token;
+                      if (!token) throw new Error('Not authenticated');
+
+                      const supabaseUrl = (supabase as any).supabaseUrl as string;
+                      const response = await fetch(
+                        `${supabaseUrl}/functions/v1/delete-account`,
+                        {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${token}`,
+                          },
+                        }
+                      );
+
+                      const result = await response.json();
+                      if (!response.ok || result.error) {
+                        throw new Error(result.error || 'Deletion failed');
+                      }
+
+                      // Sign out locally after successful deletion
+                      await supabase.auth.signOut();
+                    } catch (err: any) {
+                      setIsDeletingAccount(false);
+                      Alert.alert(
+                        'Deletion Failed',
+                        `Could not delete your account: ${err?.message || 'Unknown error'}. Please contact ${brand.supportEmail} for assistance.`
+                      );
+                    }
+                  },
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -448,6 +514,31 @@ export default function SettingsScreen() {
               }},
             ])}
           />
+          {!isAnonymous && (
+            <TouchableOpacity
+              style={[styles.settingItem, { opacity: isDeletingAccount ? 0.5 : 1 }]}
+              onPress={handleDeleteAccount}
+              disabled={isDeletingAccount}
+              activeOpacity={0.7}
+            >
+              <View style={styles.settingLeft}>
+                <View style={[styles.iconContainer, styles.iconContainerDanger]}>
+                  {isDeletingAccount ? (
+                    <ActivityIndicator size="small" color={colors.error} />
+                  ) : (
+                    <Ionicons name="person-remove-outline" size={20} color={colors.error} />
+                  )}
+                </View>
+                <View style={styles.settingTextContainer}>
+                  <Text style={[styles.settingLabel, styles.settingLabelDanger]}>
+                    {isDeletingAccount ? 'Deleting Account…' : 'Delete Account'}
+                  </Text>
+                  <Text style={styles.settingSubtitle}>Permanently erase all your data</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* DEV ONLY */}
