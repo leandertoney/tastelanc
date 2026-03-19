@@ -6,6 +6,7 @@ interface PageData {
   path: string;
   views: number;
   uniqueVisitors: number;
+  restaurantSlug?: string | null;
 }
 
 interface TopPagesTableProps {
@@ -45,11 +46,16 @@ function prettifyPath(path: string): string {
     .replace(/\b\w/g, c => c.toUpperCase());
 }
 
-function getLink(path: string): string | null {
+function getLink(path: string, restaurantSlug?: string | null): string | null {
   if (isMobilePath(path)) {
-    // Link to admin restaurant page if it has a UUID
-    const match = path.match(MOBILE_UUID_PATTERN);
-    if (match) return `/admin/restaurants/${match[1]}`;
+    if (!restaurantSlug) return null;
+    const clean = path.replace('/mobile/', '');
+    if (clean.startsWith('restauranthappyhours/')) return `/restaurants/${restaurantSlug}/happy-hours`;
+    if (clean.startsWith('restaurantspecials/')) return `/restaurants/${restaurantSlug}/specials`;
+    if (clean.startsWith('restaurantmenu/')) return `/restaurants/${restaurantSlug}/menu`;
+    if (clean.startsWith('restaurantdetail/')) return `/restaurants/${restaurantSlug}`;
+    // eventdetail and others link to the restaurant main page as fallback
+    if (MOBILE_UUID_PATTERN.test(path)) return `/restaurants/${restaurantSlug}`;
     return null;
   }
   // Web paths link directly
@@ -75,7 +81,7 @@ export default function TopPagesTable({ data, title = 'Top Pages' }: TopPagesTab
       <h3 className="text-tastelanc-text-primary font-semibold mb-4">{title}</h3>
       <div className="space-y-2.5 max-h-[320px] overflow-y-auto">
         {data.map((page, i) => {
-          const link = getLink(page.path);
+          const link = getLink(page.path, page.restaurantSlug);
           const mobile = isMobilePath(page.path);
           const label = prettifyPath(page.path);
 

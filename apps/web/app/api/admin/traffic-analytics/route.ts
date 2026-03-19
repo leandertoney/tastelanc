@@ -172,14 +172,42 @@ export async function GET(request: Request) {
       pageAgg.set(p.page_path, existing);
     }
 
-    const topPages = Array.from(pageAgg.entries())
+    const topPagesRanked = Array.from(pageAgg.entries())
       .map(([path, stats]) => ({ path, views: stats.views, uniqueVisitors: stats.uniqueVisitors }))
       .sort((a, b) => b.views - a.views)
       .slice(0, 20);
 
+    // Look up restaurant slugs for mobile paths that contain a UUID
+    const UUID_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+    const restaurantUuids = topPagesRanked
+      .filter(p => p.path.startsWith('/mobile/') && UUID_PATTERN.test(p.path))
+      .map(p => p.path.match(UUID_PATTERN)![0]);
+    const uniqueUuids = [...new Set(restaurantUuids)];
+
+    const slugMap = new Map<string, string>();
+    if (uniqueUuids.length > 0) {
+      const { data: slugRows } = await serviceClient
+        .from('restaurants')
+        .select('id, slug')
+        .in('id', uniqueUuids);
+      for (const row of slugRows || []) {
+        slugMap.set(row.id, row.slug);
+      }
+    }
+
+    const topPages = topPagesRanked.map(p => {
+      const uuidMatch = p.path.match(UUID_PATTERN);
+      const restaurantSlug = uuidMatch ? slugMap.get(uuidMatch[0]) || null : null;
+      return { ...p, restaurantSlug };
+    });
+
     const topLandingPages = Array.from(pageAgg.entries())
       .filter(([, stats]) => stats.landings > 0)
-      .map(([path, stats]) => ({ path, landings: stats.landings }))
+      .map(([path, stats]) => {
+        const uuidMatch = path.match(UUID_PATTERN);
+        const restaurantSlug = uuidMatch ? slugMap.get(uuidMatch[0]) || null : null;
+        return { path, landings: stats.landings, restaurantSlug };
+      })
       .sort((a, b) => b.landings - a.landings)
       .slice(0, 20);
 

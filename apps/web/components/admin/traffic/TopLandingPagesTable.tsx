@@ -5,6 +5,7 @@ import { Smartphone, Globe } from 'lucide-react';
 interface LandingPageData {
   path: string;
   landings: number;
+  restaurantSlug?: string | null;
 }
 
 interface TopLandingPagesTableProps {
@@ -41,10 +42,15 @@ function prettifyPath(path: string): string {
     .replace(/\b\w/g, c => c.toUpperCase());
 }
 
-function getLink(path: string): string | null {
+function getLink(path: string, restaurantSlug?: string | null): string | null {
   if (isMobilePath(path)) {
-    const match = path.match(MOBILE_UUID_PATTERN);
-    if (match) return `/admin/restaurants/${match[1]}`;
+    if (!restaurantSlug) return null;
+    const clean = path.replace('/mobile/', '');
+    if (clean.startsWith('restauranthappyhours/')) return `/restaurants/${restaurantSlug}/happy-hours`;
+    if (clean.startsWith('restaurantspecials/')) return `/restaurants/${restaurantSlug}/specials`;
+    if (clean.startsWith('restaurantmenu/')) return `/restaurants/${restaurantSlug}/menu`;
+    if (clean.startsWith('restaurantdetail/')) return `/restaurants/${restaurantSlug}`;
+    if (MOBILE_UUID_PATTERN.test(path)) return `/restaurants/${restaurantSlug}`;
     return null;
   }
   return path;
@@ -70,7 +76,7 @@ export default function TopLandingPagesTable({ data }: TopLandingPagesTableProps
       <p className="text-xs text-tastelanc-text-muted mb-3">First page visitors see when they arrive</p>
       <div className="space-y-2.5 max-h-[320px] overflow-y-auto">
         {data.map((page, i) => {
-          const link = getLink(page.path);
+          const link = getLink(page.path, page.restaurantSlug);
           const mobile = isMobilePath(page.path);
           const label = prettifyPath(page.path);
 
