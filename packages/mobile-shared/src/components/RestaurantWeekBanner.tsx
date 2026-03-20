@@ -149,6 +149,22 @@ export default function RestaurantWeekBanner() {
   const brand = getBrand();
   const shimmer = useRef(new Animated.Value(0)).current;
 
+  const { data: partyEvent } = useQuery({
+    queryKey: ['partyActiveEvent'],
+    queryFn: async () => {
+      const supabase = getSupabase();
+      const { data } = await supabase
+        .from('party_events')
+        .select('id, name, date, venue')
+        .eq('is_active', true)
+        .order('date', { ascending: true })
+        .limit(1)
+        .single();
+      return data ?? null;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   const { data: eventDates = [] } = useQuery({
     queryKey: ['restaurantWeekDates', brand.marketSlug],
     queryFn: async () => {
@@ -221,6 +237,20 @@ export default function RestaurantWeekBanner() {
             <Ionicons name="chevron-forward" size={22} color={RW_YELLOW} />
           </Animated.View>
         </View>
+
+        {/* Party teaser strip — shown when a party event is active */}
+        {partyEvent && (
+          <TouchableOpacity
+            style={styles.partyStrip}
+            onPress={(e) => { e.stopPropagation?.(); navigation.navigate('PartyRSVP'); }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.partyStripText}>
+              🎉  Post-Restaurant Week Industry Party · April 20 · {partyEvent.venue}
+            </Text>
+            <Ionicons name="chevron-forward" size={13} color={RW_YELLOW} />
+          </TouchableOpacity>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -307,5 +337,22 @@ const useStyles = createLazyStyles(() => ({
     backgroundColor: 'rgba(0,0,0,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  partyStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.15)',
+  },
+  partyStripText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: RW_YELLOW,
+    flex: 1,
+    textAlign: 'center',
   },
 }));
