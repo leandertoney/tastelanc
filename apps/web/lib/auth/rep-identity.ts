@@ -85,6 +85,11 @@ export async function getUserIdentity(
     };
   }
 
+  // 4. Admin fallback: use default sender identity so admins are never blocked
+  if (access.isAdmin) {
+    return SENDER_IDENTITIES[0];
+  }
+
   return null;
 }
 

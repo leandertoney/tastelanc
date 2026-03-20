@@ -53,7 +53,8 @@ export async function GET(request: Request) {
     }
 
     if (repEmails.length === 0 && inbox !== 'info') {
-      return NextResponse.json({ conversations: [] });
+      const userIdentity = await getUserIdentity(serviceClient, access);
+      return NextResponse.json({ conversations: [], isAdmin: access.isAdmin, userIdentity });
     }
 
     // Info@ inbox: only show inbound emails to info@/inbox@ addresses
