@@ -70,6 +70,7 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
   upcoming_events: 'Events',
   weekend_preview: 'Weekend Preview',
   category_roundup: 'Category Roundup',
+  party_teaser: '🎉 Party Teaser (Apr 20)',
 };
 
 // Day themes by weekday (0=Sun, 1=Mon, ..., 6=Sat)
@@ -129,6 +130,7 @@ export default function InstagramPostsPage() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [generatingDay, setGeneratingDay] = useState<string | null>(null);
   const [generatingWeek, setGeneratingWeek] = useState(false);
+  const [generatingPartyTeaser, setGeneratingPartyTeaser] = useState(false);
   const [marketSlug, setMarketSlug] = useState('lancaster-pa');
 
   const periodEnd = addDays(weekStart, 13);
@@ -162,6 +164,33 @@ export default function InstagramPostsPage() {
   const prevPeriod = () => setWeekStart(addDays(weekStart, -14));
   const nextPeriod = () => setWeekStart(addDays(weekStart, 14));
   const goToday = () => setWeekStart(getSunday(new Date()));
+
+  const generatePartyTeaserPost = async (targetDate: string) => {
+    setGeneratingPartyTeaser(true);
+    try {
+      const res = await fetch('/api/instagram/cron', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          market_slug: marketSlug,
+          target_date: targetDate,
+          force_type: 'party_teaser',
+        }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        alert(`Error: ${data.error}`);
+      } else {
+        fetchPosts();
+        alert(`Party teaser generated for ${targetDate}!`);
+      }
+    } catch (error) {
+      console.error('Error generating party teaser:', error);
+      alert('Failed to generate party teaser');
+    } finally {
+      setGeneratingPartyTeaser(false);
+    }
+  };
 
   const generateForDate = async (dateKey: string) => {
     setGeneratingDay(dateKey);
@@ -295,6 +324,37 @@ export default function InstagramPostsPage() {
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
+        </div>
+      </div>
+
+      {/* Party Teaser Quick-Generate — April 7–19, 2026 */}
+      <div className="bg-gradient-to-r from-[#C84B31]/10 to-transparent border border-[#C84B31]/30 rounded-xl p-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              🎉 Party Teasers — April 20 Launch Party
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">Generate FOMO posts for the Hemp Field Apothecary industry party. Pick a date below.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { date: '2026-04-07', label: 'Apr 7' },
+              { date: '2026-04-10', label: 'Apr 10' },
+              { date: '2026-04-14', label: 'Apr 14' },
+              { date: '2026-04-16', label: 'Apr 16' },
+              { date: '2026-04-18', label: 'Apr 18' },
+              { date: '2026-04-19', label: 'Apr 19' },
+            ].map(({ date: d, label }) => (
+              <button
+                key={d}
+                onClick={() => generatePartyTeaserPost(d)}
+                disabled={generatingPartyTeaser}
+                className="px-3 py-1.5 bg-[#C84B31]/20 text-[#C84B31] border border-[#C84B31]/40 rounded-lg text-xs font-medium hover:bg-[#C84B31]/30 disabled:opacity-50 transition-colors"
+              >
+                {generatingPartyTeaser ? '...' : label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

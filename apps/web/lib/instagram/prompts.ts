@@ -146,6 +146,88 @@ Tone: excited but not over the top. Like a friend giving you the weekly rundown.
 Hashtags: #${ctx.marketName.replace(/\s+/g, '')}PA and 2-4 relevant tags.`;
 }
 
+// Party teaser prompt — used for the April 20 TasteLanc Launch Party at Hemp Field Apothecary
+// Strategy: create FOMO for industry insiders. Do NOT reveal how to get an invite.
+// Tone: exclusive, low-key cool. "You either know or you don't."
+export interface PartyTeaserContext {
+  appName: string;
+  marketName: string;
+  postIndex: number; // 0-5, determines which angle to use
+  eventDate?: string; // e.g. "April 20"
+  venueName?: string; // e.g. "Hemp Field Apothecary Lounge"
+}
+
+const PARTY_TEASER_CAPTIONS = [
+  // Post 0 — April 7: First announce
+  (ctx: PartyTeaserContext) => `Something exclusive is happening in Lancaster on April 20th.
+
+Industry night. App-only entry.
+
+If you work in this city's restaurant scene, keep an eye on ${ctx.appName}.
+
+#LancasterPA #LancasterRestaurants #RestaurantLife`,
+
+  // Post 1 — April 10: After-party angle
+  (ctx: PartyTeaserContext) => `Restaurant Week ends Sunday.
+
+The real celebration starts Monday.
+
+April 20. The Lounge. Industry only.
+
+Check ${ctx.appName} if you got an invite.
+
+#LancasterPA #RestaurantWeek #LancasterEats`,
+
+  // Post 2 — April 14 (RW starts): "Those who know" angle
+  (ctx: PartyTeaserContext) => `Restaurant Week is here.
+
+15 restaurants. 7 days. A city full of good food.
+
+Those who help make it happen know where to be on April 20.
+
+📲 ${ctx.appName} — the invite is in there.
+
+#LancasterPA #RestaurantWeekLancaster #LancasterEats`,
+
+  // Post 3 — April 16: Venue hint
+  (ctx: PartyTeaserContext) => `The Lounge at Hemp Field Apothecary.
+
+Monday, April 20th.
+
+You know what day it is 🌿
+
+Industry invite only. Check your restaurant's ${ctx.appName} dashboard.
+
+#LancasterPA #420 #LancasterRestaurants #HempFieldApothecary`,
+
+  // Post 4 — April 18: Last chance
+  (ctx: PartyTeaserContext) => `Last chance to get your invite for Monday night.
+
+Restaurant managers — check your ${ctx.appName} dashboard.
+
+Staff — ask your manager for the code.
+
+April 20. The Lounge. ${ctx.appName} required at the door.
+
+#LancasterPA #RestaurantLife #LancasterEats`,
+
+  // Post 5 — April 19: Day-before hype
+  (ctx: PartyTeaserContext) => `Tomorrow night.
+
+The lounge.
+
+Industry only. App-only entry.
+
+See you there 🌿
+
+#LancasterPA #420 #LancasterRestaurants`,
+];
+
+export function buildPartyTeaserCaption(ctx: PartyTeaserContext): string {
+  const index = Math.min(ctx.postIndex, PARTY_TEASER_CAPTIONS.length - 1);
+  return PARTY_TEASER_CAPTIONS[index](ctx);
+}
+
 export function buildCaptionPrompt(ctx: PromptContext): { system: string; user: string } {
   let user: string;
 
@@ -167,6 +249,11 @@ export function buildCaptionPrompt(ctx: PromptContext): { system: string; user: 
       break;
     case 'upcoming_events':
       user = buildUpcomingEventsPrompt(ctx);
+      break;
+    case 'party_teaser':
+      // Party teaser uses pre-written captions, not AI generation
+      // This case is handled before buildCaptionPrompt is called — shouldn't reach here
+      user = '';
       break;
   }
   return { system: SYSTEM_PROMPT, user };

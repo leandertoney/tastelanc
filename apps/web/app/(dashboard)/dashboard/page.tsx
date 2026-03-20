@@ -25,6 +25,7 @@ import {
 import { Card, Badge, Tooltip } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import { useTierAccess } from '@/components/TierGate';
+import { PartyInviteCard } from './components/PartyInviteCard';
 
 interface DashboardStats {
   impressions30d: number;
@@ -240,6 +241,11 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* Party Invite Card — shown when restaurant is eligible and event is active */}
+      {restaurantId && (
+        <PartyInviteCard restaurantId={restaurantId} buildApiUrl={buildApiUrl} />
+      )}
+
       {/* Stats Header with Refresh */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-tastelanc-text-primary">Overview</h2>

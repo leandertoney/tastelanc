@@ -1,6 +1,6 @@
 // Instagram Agent v1 types
 
-export type ContentType = 'tonight_today' | 'weekend_preview' | 'category_roundup' | 'upcoming_events';
+export type ContentType = 'tonight_today' | 'weekend_preview' | 'category_roundup' | 'upcoming_events' | 'party_teaser';
 export type PostStatus = 'draft' | 'pending_review' | 'approved' | 'rejected' | 'published' | 'failed';
 
 // Weekly content calendar — each weekday has a unique theme

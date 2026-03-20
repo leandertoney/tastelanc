@@ -20,6 +20,7 @@ import {
 } from './scoring';
 import {
   buildCaptionPrompt,
+  buildPartyTeaserCaption,
   getMarketDisplayName,
   getAppName,
   getTodaysRoundupCategory,
@@ -84,7 +85,11 @@ export async function generateInstagramPost(opts: GenerateOptions): Promise<Gene
   let decisionPath = '';
 
   // Decision flow
-  if (opts.dayTheme === 'weekly_roundup') {
+  if (forceType === 'party_teaser') {
+    // Party teaser: short-circuit all candidate fetching, use pre-written captions
+    decisionPath = 'forced:party_teaser';
+    result = await generatePartyTeaser(opts, decisionPath);
+  } else if (opts.dayTheme === 'weekly_roundup') {
     // Monday Weekly Roundup: pulls from ALL sources for the week ahead
     decisionPath = 'weekly_roundup';
     result = await generateWeeklyRoundup(opts, decisionPath);
@@ -134,7 +139,90 @@ async function generateByType(
       return generateCategoryRoundup(opts, opts.date, decisionPath);
     case 'upcoming_events':
       return generateUpcomingEvents(opts, decisionPath);
+    case 'party_teaser':
+      return generatePartyTeaser(opts, decisionPath);
   }
+}
+
+// ============================================
+// Party Teaser Generator
+// ============================================
+// Generates a pre-written FOMO teaser for the April 20 industry party.
+// Does NOT require restaurant candidates — uses static overlay + pre-written copy.
+async function generatePartyTeaser(
+  opts: GenerateOptions,
+  decisionPath: string
+): Promise<GenerationResult> {
+  const { supabase, market, date, scheduledPublishAt } = opts;
+  const today = date.toISOString().split('T')[0];
+  const marketName = getMarketDisplayName(market.market_slug);
+  const appName = getAppName(market.market_slug);
+
+  // Determine which caption to use based on how many party_teaser posts already exist for this market
+  const { count: existingCount } = await supabase
+    .from('instagram_posts')
+    .select('id', { count: 'exact', head: true })
+    .eq('market_id', market.market_id)
+    .eq('content_type', 'party_teaser');
+
+  const postIndex = existingCount ?? 0;
+
+  const caption = buildPartyTeaserCaption({
+    appName,
+    marketName,
+    postIndex,
+    eventDate: 'April 20',
+    venueName: 'Hemp Field Apothecary Lounge',
+  });
+
+  // Use a dark branded overlay image — static asset served from the web app
+  // Admin can swap this out with a real photo from the venue
+  const mediaUrls: string[] = [];
+
+  // Determine publish time
+  const publishAt = scheduledPublishAt ?? (() => {
+    const pub = new Date(date);
+    pub.setUTCHours(DEFAULT_PUBLISH_HOUR_ET + 5, DEFAULT_PUBLISH_MINUTE_ET, 0, 0);
+    return pub.toISOString();
+  })();
+
+  const { data: post, error } = await supabase
+    .from('instagram_posts')
+    .insert({
+      market_id: market.market_id,
+      post_date: today,
+      content_type: 'party_teaser',
+      selected_entity_ids: [],
+      caption,
+      media_urls: mediaUrls,
+      status: 'pending_review',
+      scheduled_publish_at: publishAt,
+      day_theme: null,
+      generation_metadata: {
+        post_type: 'party_teaser',
+        total_candidates: 0,
+        total_hidden: 0,
+        visible_names: [],
+        decision_path: decisionPath,
+        model_used: 'static',
+        day_of_week: date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase(),
+        party_post_index: postIndex,
+      },
+    })
+    .select('id')
+    .single();
+
+  if (error || !post) {
+    return { success: false, error: `Failed to save party teaser: ${error?.message}` };
+  }
+
+  return {
+    success: true,
+    post_id: post.id,
+    content_type: 'party_teaser',
+    caption,
+    media_urls: mediaUrls,
+  };
 }
 
 async function generateTonightToday(

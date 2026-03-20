@@ -86,6 +86,9 @@ export type RootStackParamList = {
   // Holiday / Seasonal
   StPatricksDay: undefined;
   RestaurantWeek: undefined;
+  // Party RSVP
+  PartyRSVP: undefined;
+  PartyTicket: { qr_token: string; name?: string };
   // Itinerary
   ItineraryBuilder: { date?: string };
   ItineraryCard: {

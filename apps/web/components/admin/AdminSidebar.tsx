@@ -25,6 +25,7 @@ import {
   Activity,
   Film,
   Clover,
+  PartyPopper,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -56,6 +57,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/restaurants', icon: Store, label: 'All Restaurants', section: 'Content' },
   // MARKETING
   { href: '/admin/st-patricks-day', icon: Clover, label: "St. Pat's Day", highlight: true, section: 'Marketing' },
+  { href: '/admin/party', icon: PartyPopper, label: 'Launch Party 🎉', highlight: true },
   { href: '/admin/instagram-posts', icon: Instagram, label: 'Instagram Posts', highlight: true },
   { href: '/admin/recommendation-queue', icon: Film, label: 'Reel Queue', highlight: true },
   // INSIGHTS - Analytics and feedback

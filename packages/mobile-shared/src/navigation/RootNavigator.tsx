@@ -37,6 +37,8 @@ import SettingsScreen from '../screens/SettingsScreen';
 import InAppBrowserScreen from '../screens/InAppBrowserScreen';
 import StPatricksDayScreen from '../screens/StPatricksDayScreen';
 import RestaurantWeekScreen from '../screens/RestaurantWeekScreen';
+import PartyRSVPScreen from '../screens/PartyRSVPScreen';
+import PartyTicketScreen from '../screens/PartyTicketScreen';
 import CouponsViewAllScreen from '../screens/CouponsViewAllScreen';
 import MyCouponsScreen from '../screens/MyCouponsScreen';
 
@@ -75,6 +77,8 @@ const SafeSettings = withScreenErrorBoundary(SettingsScreen, 'Settings');
 const SafeInAppBrowser = withScreenErrorBoundary(InAppBrowserScreen, 'InAppBrowser');
 const SafeStPatricksDay = withScreenErrorBoundary(StPatricksDayScreen, 'StPatricksDay');
 const SafeRestaurantWeek = withScreenErrorBoundary(RestaurantWeekScreen, 'RestaurantWeek');
+const SafePartyRSVP = withScreenErrorBoundary(PartyRSVPScreen, 'PartyRSVP');
+const SafePartyTicket = withScreenErrorBoundary(PartyTicketScreen, 'PartyTicket');
 const SafeCouponsViewAll = withScreenErrorBoundary(CouponsViewAllScreen, 'CouponsViewAll');
 const SafeMyCoupons = withScreenErrorBoundary(MyCouponsScreen, 'MyCoupons');
 
@@ -259,6 +263,17 @@ export default function RootNavigator() {
       <Stack.Screen
         name="RestaurantWeek"
         component={SafeRestaurantWeek}
+        options={{ headerShown: false }}
+      />
+      {/* Party RSVP */}
+      <Stack.Screen
+        name="PartyRSVP"
+        component={SafePartyRSVP}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="PartyTicket"
+        component={SafePartyTicket}
         options={{ headerShown: false }}
       />
       {/* Settings */}
