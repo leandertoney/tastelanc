@@ -82,7 +82,7 @@ export function PartyInviteCard({ restaurantId, buildApiUrl }: {
       {/* Top banner */}
       <div className="bg-[#C84B31] px-5 py-2.5 flex items-center gap-2">
         <span className="text-white font-semibold text-sm">🎉 You're Invited</span>
-        <span className="text-[#ff9d87] text-xs ml-auto">Industry Event · App Exclusive</span>
+        <span className="text-[#ff9d87] text-xs ml-auto">Post-Restaurant Week · Industry Only · App Exclusive</span>
       </div>
 
       <div className="p-5 space-y-4">

@@ -66,8 +66,9 @@ export default function PartyBanner() {
           🎉
         </Animated.Text>
         <View style={styles.textGroup}>
+          <Text style={styles.eyebrow}>POST-RESTAURANT WEEK INDUSTRY PARTY</Text>
           <Text style={styles.title}>{event.name}</Text>
-          <Text style={styles.subtitle}>{eventDate} · {event.venue} · Industry Only</Text>
+          <Text style={styles.subtitle}>{eventDate} · {event.venue}</Text>
           <View style={styles.pill}>
             <Text style={styles.pillText}>GOT AN INVITE? TAP TO RSVP</Text>
           </View>
@@ -116,6 +117,13 @@ const useStyles = createLazyStyles(() => ({
   textGroup: {
     flex: 1,
     gap: 3,
+  },
+  eyebrow: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: 'rgba(240,208,96,0.6)',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   title: {
     fontSize: 16,
