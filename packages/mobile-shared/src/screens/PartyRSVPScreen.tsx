@@ -14,7 +14,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
-import { getColors, getBrand } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { useMarket } from '../context/MarketContext';
 
@@ -34,9 +33,15 @@ interface ValidatedCode {
   };
 }
 
+const RW_TERRACOTTA = '#C84B31';
+const RW_TERRACOTTA_DARK = '#8B2F1A';
+const RW_YELLOW = '#F0D060';
+const RW_YELLOW_DIM = 'rgba(240,208,96,0.65)';
+const BG_DARK = '#1C0800';
+const CARD_BG = 'rgba(255,255,255,0.06)';
+const CARD_BORDER = 'rgba(240,208,96,0.15)';
+
 export default function PartyRSVPScreen({ navigation }: Props) {
-  const colors = getColors();
-  const brand = getBrand();
   const { market } = useMarket();
 
   const [step, setStep] = useState<Step>('enter-code');
@@ -92,7 +97,6 @@ export default function PartyRSVPScreen({ navigation }: Props) {
         setStep('enter-name');
         return;
       }
-      // Navigate to ticket
       navigation.replace('PartyTicket', { qr_token: data.qr_token, name: data.name });
     } catch {
       Alert.alert('Error', 'Could not connect. Please try again.');
@@ -114,11 +118,12 @@ export default function PartyRSVPScreen({ navigation }: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.primary }}
+      style={{ flex: 1, backgroundColor: BG_DARK }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <LinearGradient
-        colors={[colors.primary, colors.primary + 'CC', '#1A0800']}
+        colors={[RW_TERRACOTTA_DARK, BG_DARK, BG_DARK]}
+        locations={[0, 0.35, 1]}
         style={{ flex: 1 }}
       >
         <ScrollView
@@ -126,22 +131,20 @@ export default function PartyRSVPScreen({ navigation }: Props) {
           keyboardShouldPersistTaps="handled"
         >
           {/* Header */}
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color={RW_YELLOW} />
           </TouchableOpacity>
 
           <View style={styles.logoArea}>
             <View style={styles.iconCircle}>
-              <Ionicons name="ticket-outline" size={36} color={colors.accent} />
+              <Text style={{ fontSize: 36 }}>🎉</Text>
             </View>
-            <Text style={styles.title}>Got an Invite?</Text>
+            <Text style={styles.eyebrow}>POST-RESTAURANT WEEK</Text>
+            <Text style={styles.title}>Industry Party</Text>
             <Text style={styles.subtitle}>
               {step === 'enter-code'
-                ? 'Enter your invite code from your restaurant to RSVP.'
-                : `${validatedCode?.event.name ?? 'TasteLanc Launch Party'}`}
+                ? 'Enter the invite code from your restaurant manager to RSVP.'
+                : validatedCode?.event.name ?? 'TasteLanc Launch Party'}
             </Text>
           </View>
 
@@ -153,26 +156,26 @@ export default function PartyRSVPScreen({ navigation }: Props) {
                 style={styles.input}
                 value={code}
                 onChangeText={text => setCode(text.toUpperCase())}
-                placeholder="HEMP-XXXXX-X-XXX"
-                placeholderTextColor={colors.textMuted}
+                placeholder="e.g. HEMP-XXXXX"
+                placeholderTextColor={RW_YELLOW_DIM}
                 autoCapitalize="characters"
                 autoCorrect={false}
                 returnKeyType="go"
                 onSubmitEditing={validateCode}
               />
               <TouchableOpacity
-                style={[styles.button, loading && styles.buttonDisabled]}
+                style={[styles.button, (loading || !code.trim()) && styles.buttonDisabled]}
                 onPress={validateCode}
                 disabled={loading || !code.trim()}
               >
                 {loading ? (
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator color={BG_DARK} size="small" />
                 ) : (
                   <Text style={styles.buttonText}>Verify Code</Text>
                 )}
               </TouchableOpacity>
               <Text style={styles.hint}>
-                Get your code from the restaurant manager or owner. Each code supports a limited number of RSVPs.
+                Get your code from your restaurant manager. Each code supports a limited number of RSVPs.
               </Text>
             </View>
           )}
@@ -183,15 +186,11 @@ export default function PartyRSVPScreen({ navigation }: Props) {
               {/* Event summary */}
               <View style={styles.eventBox}>
                 <View style={styles.eventRow}>
-                  <Ionicons name="calendar-outline" size={14} color={colors.accent} />
+                  <Ionicons name="calendar-outline" size={14} color={RW_YELLOW} />
                   <Text style={styles.eventText}>{eventDate}</Text>
                 </View>
                 <View style={styles.eventRow}>
-                  <Ionicons name="location-outline" size={14} color={colors.accent} />
-                  <Text style={styles.eventText}>{validatedCode.event.venue}</Text>
-                </View>
-                <View style={styles.eventRow}>
-                  <Ionicons name="people-outline" size={14} color={colors.accent} />
+                  <Ionicons name="people-outline" size={14} color={RW_YELLOW} />
                   <Text style={styles.eventText}>
                     {validatedCode.spots_remaining} spot{validatedCode.spots_remaining !== 1 ? 's' : ''} remaining on this code
                   </Text>
@@ -204,7 +203,7 @@ export default function PartyRSVPScreen({ navigation }: Props) {
                 value={name}
                 onChangeText={setName}
                 placeholder="First and last name"
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={RW_YELLOW_DIM}
                 autoCapitalize="words"
                 autoCorrect={false}
                 returnKeyType="done"
@@ -212,12 +211,12 @@ export default function PartyRSVPScreen({ navigation }: Props) {
                 editable={step === 'enter-name'}
               />
               <TouchableOpacity
-                style={[styles.button, (loading || step === 'confirming') && styles.buttonDisabled]}
+                style={[styles.button, (loading || step === 'confirming' || !name.trim()) && styles.buttonDisabled]}
                 onPress={submitRSVP}
                 disabled={loading || step === 'confirming' || !name.trim()}
               >
                 {loading || step === 'confirming' ? (
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator color={BG_DARK} size="small" />
                 ) : (
                   <Text style={styles.buttonText}>Confirm RSVP</Text>
                 )}
@@ -233,109 +232,121 @@ export default function PartyRSVPScreen({ navigation }: Props) {
   );
 }
 
-const getStyles = createLazyStyles(() => {
-  const colors = getColors();
-  return {
-    container: {
-      flexGrow: 1,
-      paddingHorizontal: 24,
-      paddingTop: 60,
-      paddingBottom: 40,
-    },
-    backButton: {
-      marginBottom: 24,
-      width: 40,
-      height: 40,
-      justifyContent: 'center',
-    },
-    logoArea: {
-      alignItems: 'center',
-      marginBottom: 32,
-    },
-    iconCircle: {
-      width: 72,
-      height: 72,
-      borderRadius: 36,
-      backgroundColor: colors.accent + '20',
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginBottom: 16,
-    },
-    title: {
-      fontSize: 28,
-      fontWeight: '700',
-      color: colors.text,
-      textAlign: 'center',
-    },
-    subtitle: {
-      fontSize: 15,
-      color: colors.textMuted,
-      textAlign: 'center',
-      marginTop: 8,
-      lineHeight: 22,
-    },
-    card: {
-      backgroundColor: colors.surface,
-      borderRadius: 20,
-      padding: 24,
-      gap: 12,
-    },
-    label: {
-      fontSize: 13,
-      fontWeight: '600',
-      color: colors.textMuted,
-      textTransform: 'uppercase',
-      letterSpacing: 0.8,
-    },
-    input: {
-      backgroundColor: colors.surfaceLight ?? colors.surface + 'AA',
-      borderRadius: 12,
-      paddingHorizontal: 16,
-      paddingVertical: 14,
-      color: colors.text,
-      fontSize: 16,
-      fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-      borderWidth: 1,
-      borderColor: colors.border ?? '#333',
-    },
-    button: {
-      backgroundColor: colors.accent,
-      borderRadius: 14,
-      paddingVertical: 16,
-      alignItems: 'center',
-      marginTop: 4,
-    },
-    buttonDisabled: {
-      opacity: 0.5,
-    },
-    buttonText: {
-      color: '#fff',
-      fontSize: 16,
-      fontWeight: '700',
-    },
-    hint: {
-      fontSize: 12,
-      color: colors.textFaint ?? colors.textMuted,
-      lineHeight: 18,
-      textAlign: 'center',
-    },
-    eventBox: {
-      backgroundColor: colors.accent + '15',
-      borderRadius: 12,
-      padding: 14,
-      gap: 8,
-      borderWidth: 1,
-      borderColor: colors.accent + '30',
-    },
-    eventRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
-    eventText: {
-      fontSize: 13,
-      color: colors.text,
-      flex: 1,
-    },
-  };
-});
+const getStyles = createLazyStyles(() => ({
+  container: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 40,
+  },
+  backButton: {
+    marginBottom: 24,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+  },
+  logoArea: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  iconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(200,75,49,0.25)',
+    borderWidth: 1,
+    borderColor: 'rgba(200,75,49,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  eyebrow: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: RW_YELLOW_DIM,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: RW_YELLOW,
+    textAlign: 'center',
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: RW_YELLOW_DIM,
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 20,
+  },
+  card: {
+    backgroundColor: CARD_BG,
+    borderRadius: 20,
+    padding: 24,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: CARD_BORDER,
+  },
+  label: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: RW_YELLOW_DIM,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+  },
+  input: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    color: RW_YELLOW,
+    fontSize: 17,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    borderWidth: 1,
+    borderColor: 'rgba(240,208,96,0.2)',
+    letterSpacing: 1,
+  },
+  button: {
+    backgroundColor: RW_TERRACOTTA,
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  buttonDisabled: {
+    opacity: 0.45,
+  },
+  buttonText: {
+    color: RW_YELLOW,
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  hint: {
+    fontSize: 12,
+    color: 'rgba(240,208,96,0.4)',
+    lineHeight: 18,
+    textAlign: 'center',
+  },
+  eventBox: {
+    backgroundColor: 'rgba(200,75,49,0.15)',
+    borderRadius: 12,
+    padding: 14,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(200,75,49,0.3)',
+  },
+  eventRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  eventText: {
+    fontSize: 13,
+    color: RW_YELLOW,
+    flex: 1,
+  },
+}));
