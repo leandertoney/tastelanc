@@ -204,8 +204,8 @@ export default function RestaurantWeekBanner() {
     ).start();
   }, [shimmer]);
 
-  // Only show when there are active specials in the database
-  if (!eventDates.length) return null;
+  // Only show on or after April 1, 2026 AND when there are active specials in the database
+  if (new Date() < new Date('2026-04-01T00:00:00') || !eventDates.length) return null;
 
   return (
     <View style={styles.showerContainer}>
