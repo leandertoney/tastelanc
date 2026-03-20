@@ -61,6 +61,14 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
   const [selectedSender, setSelectedSender] = useState<SenderIdentity | null>(defaultSender || (isAdmin ? SENDER_IDENTITIES[0] : null));
   const [senderDropdownOpen, setSenderDropdownOpen] = useState(false);
 
+  // If the modal opens before the API response arrives (race condition from URL-param auto-open),
+  // update selectedSender once the parent resolves the identity.
+  useEffect(() => {
+    if (defaultSender && !selectedSender) {
+      setSelectedSender(defaultSender);
+    }
+  }, [defaultSender?.email]);
+
   // Recipient
   const [recipientEmail, setRecipientEmail] = useState(initialDraft?.recipientEmail || replyTo?.recipientEmail || '');
   const [recipientName, setRecipientName] = useState(initialDraft?.recipientName || replyTo?.recipientName || '');
