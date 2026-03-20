@@ -245,10 +245,7 @@ export default function RestaurantWeekBanner() {
             onPress={(e) => { e.stopPropagation?.(); navigation.navigate('PartyRSVP'); }}
             activeOpacity={0.8}
           >
-            <Text style={styles.partyStripText}>
-              🎉  Post-Restaurant Week Industry Party · April 20 · {partyEvent.venue}
-            </Text>
-            <Ionicons name="chevron-forward" size={13} color={RW_YELLOW} />
+            <Text style={styles.partyStripText}>🎉 Industry after-party · Apr 20 · Tap to RSVP →</Text>
           </TouchableOpacity>
         )}
       </TouchableOpacity>
@@ -342,17 +339,15 @@ const useStyles = createLazyStyles(() => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-    marginTop: spacing.sm,
-    paddingTop: spacing.sm,
+    gap: 3,
+    marginTop: 6,
+    paddingTop: 5,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.15)',
+    borderTopColor: 'rgba(0,0,0,0.2)',
   },
   partyStripText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: RW_YELLOW,
-    flex: 1,
-    textAlign: 'center',
+    fontSize: 10,
+    fontWeight: '500',
+    color: 'rgba(240,208,96,0.7)',
   },
 }));
