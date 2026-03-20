@@ -204,8 +204,8 @@ export default function RestaurantWeekBanner() {
     ).start();
   }, [shimmer]);
 
-  // Only show when there are active specials in the database
-  if (!eventDates.length) return null;
+  // Only show for Lancaster (TasteLanc) and when there are active specials
+  if (brand.marketSlug !== 'lancaster-pa' || !eventDates.length) return null;
 
   return (
     <View style={styles.showerContainer}>
