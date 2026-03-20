@@ -109,26 +109,43 @@ function ForkBurst() {
   );
 }
 
-// Cutlery fan logo: spoon left, fork center-top, knife right — solid yellow, matches brand mark
+// Cutlery fan logo: fork center, spoon left, knife right — fan from handle base
 function CutleryLogo({ size = 48 }: { size?: number }) {
-  const iconSize = Math.round(size * 0.78);
+  const iconSize = Math.round(size * 0.9);
+  const pivot = iconSize / 2;
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      {/* Spoon — fanned left */}
+      {/* Spoon — fanned left, rotate around handle (bottom) */}
       <MaterialCommunityIcons
         name="silverware-spoon"
         size={iconSize}
         color={RW_YELLOW}
-        style={{ position: 'absolute', transform: [{ rotate: '-38deg' }], opacity: 0.92 }}
+        style={{
+          position: 'absolute',
+          opacity: 0.95,
+          transform: [
+            { translateY: pivot },
+            { rotate: '-42deg' },
+            { translateY: -pivot },
+          ],
+        }}
       />
-      {/* Knife — fanned right */}
+      {/* Knife — fanned right, rotate around handle (bottom) */}
       <MaterialCommunityIcons
         name="silverware-variant"
         size={iconSize}
         color={RW_YELLOW}
-        style={{ position: 'absolute', transform: [{ rotate: '38deg' }], opacity: 0.92 }}
+        style={{
+          position: 'absolute',
+          opacity: 0.95,
+          transform: [
+            { translateY: pivot },
+            { rotate: '42deg' },
+            { translateY: -pivot },
+          ],
+        }}
       />
-      {/* Fork — center, on top */}
+      {/* Fork — straight up, center, on top */}
       <MaterialCommunityIcons
         name="silverware-fork"
         size={iconSize}
