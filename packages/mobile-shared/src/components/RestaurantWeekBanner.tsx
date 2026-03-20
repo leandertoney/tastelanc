@@ -207,7 +207,7 @@ export default function RestaurantWeekBanner() {
 
         <View style={styles.content}>
           {/* Crossed utensils logo */}
-          <CutleryLogo size={52} />
+          <CutleryLogo size={36} />
 
           <View style={styles.textGroup}>
             <Text style={styles.title}>Restaurant Week</Text>
