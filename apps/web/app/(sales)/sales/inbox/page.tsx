@@ -29,6 +29,7 @@ import InboxEmailComposer from '@/components/sales/InboxEmailComposer';
 import InboxSentView from '@/components/sales/InboxSentView';
 import InboxDraftsView from '@/components/sales/InboxDraftsView';
 import { SENDER_IDENTITIES, type SenderIdentity } from '@/config/sender-identities';
+import { BRAND, MARKET_CONFIG } from '@/config/market';
 import { useFileAttachments } from '@/hooks/useFileAttachments';
 import { EditableAttachmentChips, ReadonlyAttachmentChips } from '@/components/sales/AttachmentChips';
 import { ALLOWED_EXTENSIONS } from '@/lib/types/attachments';
@@ -168,8 +169,10 @@ function InboxPage() {
   const composeTo = searchParams.get('to');
   const composeName = searchParams.get('name');
   const composeBusiness = searchParams.get('business');
+  const composeMarketParam = searchParams.get('market');
   const [showCompose, setShowCompose] = useState(false);
   const composeCold = searchParams.get('cold');
+  const [composeMarketSlug, setComposeMarketSlug] = useState<string | undefined>(undefined);
   const [composeInitialDraft, setComposeInitialDraft] = useState<{
     recipientEmail?: string;
     recipientName?: string;
@@ -182,21 +185,24 @@ function InboxPage() {
   useEffect(() => {
     if (composeParam === 'true' && composeTo && !composeParamHandled.current) {
       composeParamHandled.current = true;
+      const marketSlug = composeMarketParam || undefined;
+      const brand = marketSlug && MARKET_CONFIG[marketSlug] ? MARKET_CONFIG[marketSlug] : BRAND;
       const draft: typeof composeInitialDraft = {
         recipientEmail: composeTo,
         recipientName: composeName || composeBusiness || undefined,
       };
-      // Pre-fill cold outreach template
+      // Pre-fill cold outreach template using the correct market brand
       if (composeCold === 'true') {
         draft.subject = 'Local Restaurant Spotlight';
-        draft.body = `Hey! We run TasteLanc, a Lancaster-focused app highlighting real-time restaurant activity — happy hours, events, menus, specials, and more.\n\nIf you're interested in being featured, happy to share how it works and what's included.`;
+        draft.body = `Hey! We run ${brand.name}, a ${brand.countyShort}-focused app highlighting real-time restaurant activity — happy hours, events, menus, specials, and more.\n\nIf you're interested in being featured, happy to share how it works and what's included.`;
       }
+      setComposeMarketSlug(marketSlug);
       setComposeInitialDraft(draft);
       setShowCompose(true);
       // Clean up URL params without navigation
       router.replace('/sales/inbox', { scroll: false });
     }
-  }, [composeParam, composeTo, composeName, composeBusiness, router]);
+  }, [composeParam, composeTo, composeName, composeBusiness, composeMarketParam, router]);
 
   // Reply
   const [replyBody, setReplyBody] = useState('');
@@ -944,15 +950,18 @@ function InboxPage() {
           onClose={() => {
             setShowCompose(false);
             setComposeInitialDraft(undefined);
+            setComposeMarketSlug(undefined);
           }}
           onSent={() => {
             setShowCompose(false);
             setComposeInitialDraft(undefined);
+            setComposeMarketSlug(undefined);
             fetchConversations();
           }}
           isAdmin={isAdmin}
           defaultSender={selectedSender || undefined}
           initialDraft={composeInitialDraft}
+          marketSlug={composeMarketSlug}
         />
       )}
 

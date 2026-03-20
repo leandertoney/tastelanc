@@ -25,6 +25,7 @@ interface InboxEmailComposerProps {
   onSent: () => void;
   isAdmin?: boolean;
   defaultSender?: SenderIdentity;
+  marketSlug?: string;
   replyTo?: {
     recipientEmail: string;
     recipientName?: string;
@@ -53,7 +54,7 @@ const AI_IMPROVE_OPTIONS = [
   { key: 'grammar', label: 'Fix Grammar', instruction: 'Fix any grammar, spelling, or punctuation errors in this email. Do not change the tone or meaning.' },
 ] as const;
 
-export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSender, replyTo, draftId: initialDraftId, initialDraft, embedded }: InboxEmailComposerProps) {
+export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSender, marketSlug, replyTo, draftId: initialDraftId, initialDraft, embedded }: InboxEmailComposerProps) {
   const isReply = !!replyTo;
   const [step, setStep] = useState<Step>('compose');
 
@@ -178,6 +179,9 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
           action: 'generate',
           objective: 'b2b_cold_outreach',
           tone: 'professional',
+          marketSlug,
+          senderName: selectedSender?.name,
+          senderTitle: selectedSender?.title,
           recipientContext: {
             businessName: recipientName || recipientEmail,
           },
@@ -212,6 +216,7 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
           objective: 'b2b_cold_outreach',
           tone: 'professional',
           count: 5,
+          marketSlug,
           recipientContext: {
             businessName: recipientName || recipientEmail,
           },
@@ -247,6 +252,7 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
           content: body,
           instruction,
           audienceType: 'b2b',
+          marketSlug,
         }),
       });
 

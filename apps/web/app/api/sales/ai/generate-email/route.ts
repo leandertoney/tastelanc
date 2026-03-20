@@ -39,6 +39,8 @@ export async function POST(request: Request) {
           marketSlug: params.marketSlug,
           businessContext: params.businessContext,
           recipientContext: params.recipientContext,
+          senderName: params.senderName,
+          senderTitle: params.senderTitle,
         };
 
         if (!context.objective || !context.tone) {

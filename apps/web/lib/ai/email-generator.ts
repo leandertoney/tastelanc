@@ -42,6 +42,8 @@ export interface EmailGenerationContext {
     contactName?: string;
     city?: string;
   };
+  senderName?: string;
+  senderTitle?: string;
 }
 
 /** Resolve the brand config for a given market slug, falling back to build-time BRAND */
@@ -168,6 +170,12 @@ ${context.keyPoints?.length ? `Key points to include:\n${context.keyPoints.map(p
     if (rc.businessName) userPrompt += `\n- Business name: ${rc.businessName}`;
     if (rc.contactName) userPrompt += `\n- Contact name: ${rc.contactName}`;
     if (rc.city) userPrompt += `\n- City: ${rc.city}`;
+  }
+
+  if (context.senderName && context.audienceType === 'b2b') {
+    userPrompt += `\nSender (sign off the email with this name):`;
+    userPrompt += `\n- Name: ${context.senderName}`;
+    if (context.senderTitle) userPrompt += `\n- Title: ${context.senderTitle}`;
   }
 
   userPrompt += `
