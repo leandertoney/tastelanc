@@ -1,6 +1,6 @@
 import { TouchableOpacity, View, Text, Animated, Dimensions } from 'react-native';
 import { useEffect, useRef, useMemo } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -109,17 +109,32 @@ function ForkBurst() {
   );
 }
 
-// Crossed utensils logo: spoon (bowl upper-left) × fork (center) × knife (blade upper-right)
+// Cutlery fan logo: spoon left, fork center-top, knife right — solid yellow, matches brand mark
 function CutleryLogo({ size = 48 }: { size?: number }) {
-  const es = Math.round(size * 0.54);
+  const iconSize = Math.round(size * 0.78);
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      {/* Spoon — rotated -45° so bowl faces upper-left */}
-      <Text style={{ position: 'absolute', fontSize: es, transform: [{ rotate: '-45deg' }], opacity: 0.9 }}>🥄</Text>
-      {/* Fork — vertical center, on top */}
-      <Text style={{ position: 'absolute', fontSize: es, zIndex: 2 }}>🍴</Text>
-      {/* Knife — rotated +90° so blade faces upper-right */}
-      <Text style={{ position: 'absolute', fontSize: es, transform: [{ rotate: '90deg' }], opacity: 0.9 }}>🔪</Text>
+      {/* Spoon — fanned left */}
+      <MaterialCommunityIcons
+        name="silverware-spoon"
+        size={iconSize}
+        color={RW_YELLOW}
+        style={{ position: 'absolute', transform: [{ rotate: '-38deg' }], opacity: 0.92 }}
+      />
+      {/* Knife — fanned right */}
+      <MaterialCommunityIcons
+        name="silverware-variant"
+        size={iconSize}
+        color={RW_YELLOW}
+        style={{ position: 'absolute', transform: [{ rotate: '38deg' }], opacity: 0.92 }}
+      />
+      {/* Fork — center, on top */}
+      <MaterialCommunityIcons
+        name="silverware-fork"
+        size={iconSize}
+        color={RW_YELLOW}
+        style={{ position: 'absolute', zIndex: 2 }}
+      />
     </View>
   );
 }
