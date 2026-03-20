@@ -38,6 +38,7 @@ import {
   ErrorBoundary,
   StPatricksDayBanner,
   RestaurantWeekBanner,
+  PartyBanner,
 } from '../components';
 import CuisinesSection from '../components/CuisinesSection';
 import { getColors, getBrand, getAssets, hasFeature } from '../config/theme';
@@ -171,6 +172,11 @@ export default function HomeScreen() {
       {/* Restaurant Week Banner (auto-hides when no active specials in DB) */}
       <ErrorBoundary level="section">
         <RestaurantWeekBanner />
+      </ErrorBoundary>
+
+      {/* Party Banner (auto-hides when no active party event in DB) */}
+      <ErrorBoundary level="section">
+        <PartyBanner />
       </ErrorBoundary>
 
       <Spacer size="lg" />
