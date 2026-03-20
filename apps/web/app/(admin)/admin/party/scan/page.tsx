@@ -71,7 +71,7 @@ export default function PartyScanPage() {
           </div>
           <h1 className="text-2xl font-bold text-white">Door Scanner</h1>
           <p className="text-gray-400 mt-1 text-sm">TasteLanc Launch Party · April 20, 2026</p>
-          <p className="text-gray-500 text-xs mt-1">Hemp Field Apothecary Lounge</p>
+          <p className="text-gray-500 text-xs mt-1">Hempfield Apothetique · 100 W Walnut St</p>
         </div>
 
         {/* Scan result */}

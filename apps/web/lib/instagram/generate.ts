@@ -172,7 +172,7 @@ async function generatePartyTeaser(
     marketName,
     postIndex,
     eventDate: 'April 20',
-    venueName: 'Hemp Field Apothecary Lounge',
+    venueName: 'Hempfield Apothetique',
   });
 
   // Use a dark branded overlay image — static asset served from the web app

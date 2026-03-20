@@ -146,7 +146,7 @@ Tone: excited but not over the top. Like a friend giving you the weekly rundown.
 Hashtags: #${ctx.marketName.replace(/\s+/g, '')}PA and 2-4 relevant tags.`;
 }
 
-// Party teaser prompt — used for the April 20 TasteLanc Launch Party at Hemp Field Apothecary
+// Party teaser prompt — used for the April 20 TasteLanc Launch Party at Hempfield Apothetique
 // Strategy: create FOMO for industry insiders. Do NOT reveal how to get an invite.
 // Tone: exclusive, low-key cool. "You either know or you don't."
 export interface PartyTeaserContext {
@@ -154,7 +154,7 @@ export interface PartyTeaserContext {
   marketName: string;
   postIndex: number; // 0-5, determines which angle to use
   eventDate?: string; // e.g. "April 20"
-  venueName?: string; // e.g. "Hemp Field Apothecary Lounge"
+  venueName?: string; // e.g. "Hempfield Apothetique Lounge"
 }
 
 const PARTY_TEASER_CAPTIONS = [
@@ -190,7 +190,7 @@ Those who help make it happen know where to be on April 20.
 #LancasterPA #RestaurantWeekLancaster #LancasterEats`,
 
   // Post 3 — April 16: Venue hint
-  (ctx: PartyTeaserContext) => `The Lounge at Hemp Field Apothecary.
+  (ctx: PartyTeaserContext) => `The Lounge at Hempfield Apothetique.
 
 Monday, April 20th.
 

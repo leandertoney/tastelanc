@@ -334,7 +334,7 @@ export default function InstagramPostsPage() {
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
               🎉 Party Teasers — April 20 Launch Party
             </h3>
-            <p className="text-xs text-gray-500 mt-0.5">Generate FOMO posts for the Hemp Field Apothecary industry party. Pick a date below.</p>
+            <p className="text-xs text-gray-500 mt-0.5">Generate FOMO posts for the Hempfield Apothetique industry party. Pick a date below.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {[

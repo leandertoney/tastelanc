@@ -88,8 +88,8 @@ INSERT INTO public.party_events (name, date, venue, address, capacity, is_active
 VALUES (
   'TasteLanc Launch Party',
   '2026-04-20',
-  'Hemp Field Apothecary Lounge',
-  '342 N Queen St, Lancaster, PA 17603',
+  'Hempfield Apothetique',
+  '100 West Walnut Street, Lancaster, PA 17603',
   200,
   true
 );
