@@ -233,10 +233,7 @@ function OrangeRule() {
 function RestaurantCard({ group, appName, onPress }: { group: RestaurantGroup; appName: string; onPress: () => void }) {
   const styles = useCardStyles();
 
-  const uniqueDates = Array.from(new Set(group.specials.map(s => s.event_date))).sort();
-  const dateLabel = uniqueDates.length === 1
-    ? formatEventDate(uniqueDates[0])
-    : `${formatEventDate(uniqueDates[0])}–${formatEventDate(uniqueDates[uniqueDates.length - 1]).replace(/^[A-Za-z]+ /, '')}`;
+  const dateLabel = 'April 13–19';
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={styles.cardOuter}>

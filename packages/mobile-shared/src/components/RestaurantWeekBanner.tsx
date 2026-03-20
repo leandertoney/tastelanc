@@ -126,21 +126,7 @@ function CutleryLogo({ size = 48 }: { size?: number }) {
 
 function buildDateLabel(dates: string[]): string {
   if (!dates.length) return 'April 13–19 · Lancaster Dining Deals';
-  const days = dates
-    .map(d => parseInt(d.split('-')[2], 10))
-    .filter(n => !isNaN(n))
-    .sort((a, b) => a - b);
-  if (!days.length) return 'April 13–19 · Lancaster Dining Deals';
-  const first = days[0];
-  const last = days[days.length - 1];
-  const suffix = (n: number) => {
-    if (n === 1 || n === 21 || n === 31) return 'st';
-    if (n === 2 || n === 22) return 'nd';
-    if (n === 3 || n === 23) return 'rd';
-    return 'th';
-  };
-  if (first === last) return `April ${first}${suffix(first)} · Lancaster Dining Deals`;
-  return `April ${first}${suffix(first)}–${last}${suffix(last)} · Lancaster Dining Deals`;
+  return 'April 13–19 · Lancaster Dining Deals';
 }
 
 export default function RestaurantWeekBanner() {
