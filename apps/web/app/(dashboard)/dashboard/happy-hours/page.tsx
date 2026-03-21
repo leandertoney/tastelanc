@@ -359,90 +359,81 @@ export default function HappyHoursPage() {
       )}
 
       {/* List */}
-      <div className="space-y-4">
-        {happyHours.map((hh) => (
-          <Card key={hh.id} className="p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-lg font-semibold text-tastelanc-text-primary">{hh.name}</h3>
-                  <Badge variant={hh.is_active ? 'accent' : 'default'}>
-                    {hh.is_active ? 'Active' : 'Inactive'}
-                  </Badge>
-                </div>
-                {hh.description && <p className="text-tastelanc-text-muted text-sm">{hh.description}</p>}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => toggleActive(hh.id, hh.is_active)}
-                  className="text-tastelanc-text-muted hover:text-tastelanc-text-primary text-sm"
-                >
-                  {hh.is_active ? 'Deactivate' : 'Activate'}
-                </button>
-                <button
-                  onClick={() => setEditingHappyHour(hh)}
-                  className="text-tastelanc-text-muted hover:text-tastelanc-text-primary"
-                  title="Edit"
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => duplicateHappyHour(hh)}
-                  className="text-tastelanc-text-muted hover:text-tastelanc-text-primary"
-                  title="Duplicate with different times"
-                >
-                  <Copy className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => deleteHappyHour(hh.id)}
-                  className="text-tastelanc-text-muted hover:text-red-400"
-                  title="Delete"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+      {happyHours.length > 0 && (
+        <Card className="p-0 overflow-hidden">
+          <div className="divide-y divide-tastelanc-surface-light">
+            {happyHours.map((hh) => (
+              <div key={hh.id} className="px-4 py-3 hover:bg-tastelanc-surface/50">
+                <div className="flex items-center gap-3">
+                  {/* Icon */}
+                  <div className="w-10 h-10 rounded bg-tastelanc-surface-light flex-shrink-0 flex items-center justify-center">
+                    <Beer className="w-4 h-4 text-lancaster-gold" />
+                  </div>
 
-            <div className="flex flex-wrap gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-lancaster-gold" />
-                <span className="text-tastelanc-text-secondary">
-                  {formatTime(hh.start_time)} - {formatTime(hh.end_time)}
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {hh.days_of_week?.map((day) => (
-                  <Badge key={day} variant="gold" className="capitalize">
-                    {day.slice(0, 3)}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            {hh.happy_hour_items && hh.happy_hour_items.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-tastelanc-surface-light">
-                <p className="text-sm text-tastelanc-text-muted mb-2">Specials:</p>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {hh.happy_hour_items.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between p-2 bg-tastelanc-surface rounded"
-                    >
-                      <span className="text-tastelanc-text-primary text-sm">{item.name}</span>
-                      <span className="text-lancaster-gold text-sm">
-                        <span className="line-through text-tastelanc-text-faint mr-1">
-                          ${item.original_price}
-                        </span>
-                        ${item.discounted_price}
-                      </span>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-sm text-tastelanc-text-primary">{hh.name}</span>
+                      <Badge variant={hh.is_active ? 'accent' : 'default'} className="text-xs py-0">
+                        {hh.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
                     </div>
-                  ))}
+                    <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                      <span className="text-xs text-tastelanc-text-faint flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {formatTime(hh.start_time)} – {formatTime(hh.end_time)}
+                      </span>
+                      <span className="text-xs text-tastelanc-text-muted capitalize">
+                        {hh.days_of_week?.map(d => d.slice(0, 3)).join(', ')}
+                      </span>
+                      {hh.happy_hour_items?.length > 0 && (
+                        <span className="text-xs text-tastelanc-text-faint">
+                          {hh.happy_hour_items.length} item{hh.happy_hour_items.length !== 1 ? 's' : ''}
+                        </span>
+                      )}
+                      {hh.description && (
+                        <span className="text-xs text-tastelanc-text-faint truncate max-w-xs hidden sm:block">{hh.description}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      onClick={() => toggleActive(hh.id, hh.is_active)}
+                      className="text-xs text-tastelanc-text-faint hover:text-tastelanc-text-primary px-2 py-1 rounded hover:bg-tastelanc-surface-light"
+                    >
+                      {hh.is_active ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <button onClick={() => setEditingHappyHour(hh)} title="Edit" className="p-1.5 text-tastelanc-text-muted hover:text-tastelanc-text-primary rounded hover:bg-tastelanc-surface-light">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => duplicateHappyHour(hh)} title="Duplicate" className="p-1.5 text-tastelanc-text-muted hover:text-tastelanc-text-primary rounded hover:bg-tastelanc-surface-light">
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => deleteHappyHour(hh.id)} title="Delete" className="p-1.5 text-tastelanc-text-muted hover:text-red-400 rounded hover:bg-tastelanc-surface-light">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
+
+                {/* Items sub-row */}
+                {hh.happy_hour_items && hh.happy_hour_items.length > 0 && (
+                  <div className="ml-13 mt-2 pl-13 flex flex-wrap gap-2" style={{ paddingLeft: '52px' }}>
+                    {hh.happy_hour_items.map((item) => (
+                      <div key={item.id} className="flex items-center gap-1.5 px-2 py-1 bg-tastelanc-surface rounded text-xs">
+                        <span className="text-tastelanc-text-secondary">{item.name}</span>
+                        <span className="line-through text-tastelanc-text-faint">${item.original_price}</span>
+                        <span className="text-lancaster-gold font-medium">${item.discounted_price}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </Card>
-        ))}
-      </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {happyHours.length === 0 && !showWizard && (
         <Card className="p-12 text-center">

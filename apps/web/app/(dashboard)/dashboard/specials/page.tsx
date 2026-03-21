@@ -359,95 +359,77 @@ export default function SpecialsPage() {
       )}
 
       {/* List */}
-      <div className="grid md:grid-cols-2 gap-4">
-        {specials.map((special) => (
-          <Card key={special.id} className="p-0 overflow-hidden">
-            {/* Image */}
-            {special.image_url && (
-              <div className="aspect-video">
-                <img
-                  src={special.image_url}
-                  alt={special.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-lg font-semibold text-tastelanc-text-primary">{special.name}</h3>
-                    <Badge variant={special.is_active ? 'accent' : 'default'}>
+      {specials.length > 0 && (
+        <Card className="p-0 overflow-hidden">
+          <div className="divide-y divide-tastelanc-surface-light">
+            {specials.map((special) => (
+              <div key={special.id} className="flex items-center gap-3 px-4 py-3 hover:bg-tastelanc-surface/50">
+                {/* Thumbnail */}
+                {special.image_url ? (
+                  <img src={special.image_url} alt={special.name} className="w-10 h-10 rounded object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-10 h-10 rounded bg-tastelanc-surface-light flex-shrink-0 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-tastelanc-text-faint" />
+                  </div>
+                )}
+
+                {/* Name + description */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-sm text-tastelanc-text-primary truncate">{special.name}</span>
+                    <Badge variant={special.is_active ? 'accent' : 'default'} className="text-xs py-0">
                       {special.is_active ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
-                  {special.description && (
-                    <p className="text-tastelanc-text-muted text-sm">{special.description}</p>
-                  )}
+                  <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                    {/* Days */}
+                    <span className="text-xs text-tastelanc-text-muted capitalize">
+                      {special.days_of_week?.map(d => d.slice(0, 3)).join(', ')}
+                    </span>
+                    {/* Time */}
+                    <span className="text-xs text-tastelanc-text-faint">
+                      {special.start_time && special.end_time
+                        ? `${formatTime(special.start_time)} – ${formatTime(special.end_time)}`
+                        : special.start_time
+                        ? `From ${formatTime(special.start_time)}`
+                        : 'All Day'}
+                    </span>
+                    {/* Price */}
+                    {special.original_price && special.special_price && (
+                      <span className="text-xs">
+                        <span className="line-through text-tastelanc-text-faint mr-1">${special.original_price.toFixed(2)}</span>
+                        <span className="text-green-400 font-semibold">${special.special_price.toFixed(2)}</span>
+                      </span>
+                    )}
+                    {!special.original_price && special.special_price && (
+                      <span className="text-xs text-tastelanc-accent font-semibold">${special.special_price.toFixed(2)}</span>
+                    )}
+                    {special.description && (
+                      <span className="text-xs text-tastelanc-text-faint truncate max-w-xs hidden sm:block">{special.description}</span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
+
+                {/* Actions */}
+                <div className="flex items-center gap-1 flex-shrink-0">
                   <button
-                    onClick={() => setEditingSpecial(special)}
-                    className="text-tastelanc-text-muted hover:text-tastelanc-text-primary"
+                    onClick={() => toggleActive(special.id, special.is_active)}
+                    className="text-xs text-tastelanc-text-faint hover:text-tastelanc-text-primary px-2 py-1 rounded hover:bg-tastelanc-surface-light"
                   >
-                    <Pencil className="w-4 h-4" />
+                    {special.is_active ? 'Deactivate' : 'Activate'}
                   </button>
-                  <button
-                    onClick={() => deleteSpecial(special.id)}
-                    className="text-tastelanc-text-muted hover:text-red-400"
-                  >
-                    <Trash2 className="w-4 h-4" />
+                  <button onClick={() => setEditingSpecial(special)} className="p-1.5 text-tastelanc-text-muted hover:text-tastelanc-text-primary rounded hover:bg-tastelanc-surface-light">
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => deleteSpecial(special.id)} className="p-1.5 text-tastelanc-text-muted hover:text-red-400 rounded hover:bg-tastelanc-surface-light">
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                {/* Time */}
-                {special.start_time && special.end_time && (
-                  <Badge variant="default">
-                    {formatTime(special.start_time)} - {formatTime(special.end_time)}
-                  </Badge>
-                )}
-                {special.start_time && !special.end_time && (
-                  <Badge variant="default">
-                    From {formatTime(special.start_time)}
-                  </Badge>
-                )}
-                {!special.start_time && !special.end_time && (
-                  <Badge variant="default">All Day</Badge>
-                )}
-                {special.days_of_week?.map((day) => (
-                  <Badge key={day} className="capitalize">
-                    {day}
-                  </Badge>
-                ))}
-                {special.original_price && special.special_price && (
-                  <span className="text-sm">
-                    <span className="line-through text-tastelanc-text-faint mr-1">
-                      ${special.original_price.toFixed(2)}
-                    </span>
-                    <span className="text-green-400 font-semibold">
-                      ${special.special_price.toFixed(2)}
-                    </span>
-                  </span>
-                )}
-                {!special.original_price && special.special_price && (
-                  <span className="text-tastelanc-accent font-semibold">
-                    ${special.special_price.toFixed(2)}
-                  </span>
-                )}
-              </div>
-
-              <button
-                onClick={() => toggleActive(special.id, special.is_active)}
-                className="mt-4 text-sm text-tastelanc-text-muted hover:text-tastelanc-text-primary"
-              >
-                {special.is_active ? 'Deactivate' : 'Activate'}
-              </button>
-            </div>
-          </Card>
-        ))}
-      </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {specials.length === 0 && !showWizard && (
         <Card className="p-12 text-center">
