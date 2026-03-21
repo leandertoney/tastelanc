@@ -461,7 +461,7 @@ export async function POST(request: Request) {
         const pdfBase64 = Buffer.from(buffer).toString('base64');
 
         const message = await anthropic.messages.create({
-          model: 'claude-opus-4-5-20251101',
+          model: 'claude-sonnet-4-6',
           max_tokens: 4096,
           messages: [{
             role: 'user',

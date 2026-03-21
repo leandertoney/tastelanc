@@ -90,7 +90,7 @@ export async function POST(request: Request) {
     let parsedMenu: ParsedMenu;
     try {
       const message = await anthropic.messages.create({
-        model: 'claude-opus-4-5-20251101',
+        model: 'claude-sonnet-4-6',
         max_tokens: 4096,
         messages: [
           {
