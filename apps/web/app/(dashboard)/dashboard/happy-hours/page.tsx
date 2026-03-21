@@ -358,82 +358,68 @@ export default function HappyHoursPage() {
         </div>
       )}
 
-      {/* List */}
-      {happyHours.length > 0 && (
-        <Card className="p-0 overflow-hidden">
-          <div className="divide-y divide-tastelanc-surface-light">
-            {happyHours.map((hh) => (
-              <div key={hh.id} className="px-4 py-3 hover:bg-tastelanc-surface/50">
-                <div className="flex items-center gap-3">
-                  {/* Icon */}
-                  <div className="w-10 h-10 rounded bg-tastelanc-surface-light flex-shrink-0 flex items-center justify-center">
-                    <Beer className="w-4 h-4 text-lancaster-gold" />
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-sm text-tastelanc-text-primary">{hh.name}</span>
-                      <Badge variant={hh.is_active ? 'accent' : 'default'} className="text-xs py-0">
-                        {hh.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap mt-0.5">
-                      <span className="text-xs text-tastelanc-text-faint flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {formatTime(hh.start_time)} – {formatTime(hh.end_time)}
-                      </span>
-                      <span className="text-xs text-tastelanc-text-muted capitalize">
-                        {hh.days_of_week?.map(d => d.slice(0, 3)).join(', ')}
-                      </span>
-                      {hh.happy_hour_items?.length > 0 && (
-                        <span className="text-xs text-tastelanc-text-faint">
-                          {hh.happy_hour_items.length} item{hh.happy_hour_items.length !== 1 ? 's' : ''}
-                        </span>
-                      )}
-                      {hh.description && (
-                        <span className="text-xs text-tastelanc-text-faint truncate max-w-xs hidden sm:block">{hh.description}</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <button
-                      onClick={() => toggleActive(hh.id, hh.is_active)}
-                      className="text-xs text-tastelanc-text-faint hover:text-tastelanc-text-primary px-2 py-1 rounded hover:bg-tastelanc-surface-light"
-                    >
-                      {hh.is_active ? 'Deactivate' : 'Activate'}
-                    </button>
-                    <button onClick={() => setEditingHappyHour(hh)} title="Edit" className="p-1.5 text-tastelanc-text-muted hover:text-tastelanc-text-primary rounded hover:bg-tastelanc-surface-light">
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
-                    <button onClick={() => duplicateHappyHour(hh)} title="Duplicate" className="p-1.5 text-tastelanc-text-muted hover:text-tastelanc-text-primary rounded hover:bg-tastelanc-surface-light">
-                      <Copy className="w-3.5 h-3.5" />
-                    </button>
-                    <button onClick={() => deleteHappyHour(hh.id)} title="Delete" className="p-1.5 text-tastelanc-text-muted hover:text-red-400 rounded hover:bg-tastelanc-surface-light">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+      {/* Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+        {happyHours.map((hh) => (
+          <div key={hh.id} className="group bg-tastelanc-surface rounded-lg overflow-hidden hover:bg-tastelanc-surface-light transition-colors">
+            {/* Square artwork — image or styled time block */}
+            <div className="aspect-square w-full relative">
+              {hh.image_url ? (
+                <img src={hh.image_url} alt={hh.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-lancaster-gold/20 to-tastelanc-surface-light flex flex-col items-center justify-center gap-1">
+                  <Beer className="w-7 h-7 text-lancaster-gold" />
+                  <span className="text-xs text-lancaster-gold font-semibold text-center px-2 leading-tight">
+                    {formatTime(hh.start_time)} – {formatTime(hh.end_time)}
+                  </span>
                 </div>
-
-                {/* Items sub-row */}
-                {hh.happy_hour_items && hh.happy_hour_items.length > 0 && (
-                  <div className="ml-13 mt-2 pl-13 flex flex-wrap gap-2" style={{ paddingLeft: '52px' }}>
-                    {hh.happy_hour_items.map((item) => (
-                      <div key={item.id} className="flex items-center gap-1.5 px-2 py-1 bg-tastelanc-surface rounded text-xs">
-                        <span className="text-tastelanc-text-secondary">{item.name}</span>
-                        <span className="line-through text-tastelanc-text-faint">${item.original_price}</span>
-                        <span className="text-lancaster-gold font-medium">${item.discounted_price}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              )}
+              {/* Active badge */}
+              <div className="absolute top-2 left-2">
+                <Badge variant={hh.is_active ? 'accent' : 'default'} className="text-xs py-0">
+                  {hh.is_active ? 'Active' : 'Off'}
+                </Badge>
               </div>
-            ))}
+              {/* Actions on hover */}
+              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => setEditingHappyHour(hh)} title="Edit" className="p-1 bg-black/60 rounded text-white hover:bg-black/80">
+                  <Pencil className="w-3 h-3" />
+                </button>
+                <button onClick={() => duplicateHappyHour(hh)} title="Duplicate" className="p-1 bg-black/60 rounded text-white hover:bg-black/80">
+                  <Copy className="w-3 h-3" />
+                </button>
+                <button onClick={() => deleteHappyHour(hh.id)} title="Delete" className="p-1 bg-black/60 rounded text-white hover:text-red-400 hover:bg-black/80">
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+
+            {/* Info */}
+            <div className="p-2.5">
+              <p className="text-sm font-medium text-tastelanc-text-primary truncate leading-tight">{hh.name}</p>
+              <p className="text-xs text-tastelanc-text-muted mt-0.5 truncate">
+                {hh.days_of_week?.map(d => d.slice(0, 3)).join(', ')}
+              </p>
+              {hh.image_url && (
+                <p className="text-xs text-tastelanc-text-faint flex items-center gap-1">
+                  <Clock className="w-3 h-3" />{formatTime(hh.start_time)} – {formatTime(hh.end_time)}
+                </p>
+              )}
+              {hh.happy_hour_items?.length > 0 && (
+                <p className="text-xs text-tastelanc-text-faint mt-0.5">
+                  {hh.happy_hour_items.length} deal{hh.happy_hour_items.length !== 1 ? 's' : ''}
+                </p>
+              )}
+              <button
+                onClick={() => toggleActive(hh.id, hh.is_active)}
+                className="mt-2 text-xs text-tastelanc-text-faint hover:text-tastelanc-text-primary"
+              >
+                {hh.is_active ? 'Deactivate' : 'Activate'}
+              </button>
+            </div>
           </div>
-        </Card>
-      )}
+        ))}
+      </div>
 
       {happyHours.length === 0 && !showWizard && (
         <Card className="p-12 text-center">

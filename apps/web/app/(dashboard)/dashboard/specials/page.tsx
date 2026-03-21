@@ -358,78 +358,65 @@ export default function SpecialsPage() {
         </Card>
       )}
 
-      {/* List */}
-      {specials.length > 0 && (
-        <Card className="p-0 overflow-hidden">
-          <div className="divide-y divide-tastelanc-surface-light">
-            {specials.map((special) => (
-              <div key={special.id} className="flex items-center gap-3 px-4 py-3 hover:bg-tastelanc-surface/50">
-                {/* Thumbnail */}
-                {special.image_url ? (
-                  <img src={special.image_url} alt={special.name} className="w-10 h-10 rounded object-cover flex-shrink-0" />
-                ) : (
-                  <div className="w-10 h-10 rounded bg-tastelanc-surface-light flex-shrink-0 flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-tastelanc-text-faint" />
-                  </div>
-                )}
-
-                {/* Name + description */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-sm text-tastelanc-text-primary truncate">{special.name}</span>
-                    <Badge variant={special.is_active ? 'accent' : 'default'} className="text-xs py-0">
-                      {special.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap mt-0.5">
-                    {/* Days */}
-                    <span className="text-xs text-tastelanc-text-muted capitalize">
-                      {special.days_of_week?.map(d => d.slice(0, 3)).join(', ')}
-                    </span>
-                    {/* Time */}
-                    <span className="text-xs text-tastelanc-text-faint">
-                      {special.start_time && special.end_time
-                        ? `${formatTime(special.start_time)} – ${formatTime(special.end_time)}`
-                        : special.start_time
-                        ? `From ${formatTime(special.start_time)}`
-                        : 'All Day'}
-                    </span>
-                    {/* Price */}
-                    {special.original_price && special.special_price && (
-                      <span className="text-xs">
-                        <span className="line-through text-tastelanc-text-faint mr-1">${special.original_price.toFixed(2)}</span>
-                        <span className="text-green-400 font-semibold">${special.special_price.toFixed(2)}</span>
-                      </span>
-                    )}
-                    {!special.original_price && special.special_price && (
-                      <span className="text-xs text-tastelanc-accent font-semibold">${special.special_price.toFixed(2)}</span>
-                    )}
-                    {special.description && (
-                      <span className="text-xs text-tastelanc-text-faint truncate max-w-xs hidden sm:block">{special.description}</span>
-                    )}
-                  </div>
+      {/* Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+        {specials.map((special) => (
+          <div key={special.id} className="group bg-tastelanc-surface rounded-lg overflow-hidden hover:bg-tastelanc-surface-light transition-colors">
+            {/* Square image / placeholder */}
+            <div className="aspect-square w-full bg-tastelanc-surface-light relative">
+              {special.image_url ? (
+                <img src={special.image_url} alt={special.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Sparkles className="w-8 h-8 text-tastelanc-text-faint" />
                 </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <button
-                    onClick={() => toggleActive(special.id, special.is_active)}
-                    className="text-xs text-tastelanc-text-faint hover:text-tastelanc-text-primary px-2 py-1 rounded hover:bg-tastelanc-surface-light"
-                  >
-                    {special.is_active ? 'Deactivate' : 'Activate'}
-                  </button>
-                  <button onClick={() => setEditingSpecial(special)} className="p-1.5 text-tastelanc-text-muted hover:text-tastelanc-text-primary rounded hover:bg-tastelanc-surface-light">
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => deleteSpecial(special.id)} className="p-1.5 text-tastelanc-text-muted hover:text-red-400 rounded hover:bg-tastelanc-surface-light">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+              )}
+              {/* Active badge overlay */}
+              <div className="absolute top-2 left-2">
+                <Badge variant={special.is_active ? 'accent' : 'default'} className="text-xs py-0">
+                  {special.is_active ? 'Active' : 'Off'}
+                </Badge>
               </div>
-            ))}
+              {/* Action buttons — visible on hover */}
+              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => setEditingSpecial(special)} className="p-1 bg-black/60 rounded text-white hover:bg-black/80">
+                  <Pencil className="w-3 h-3" />
+                </button>
+                <button onClick={() => deleteSpecial(special.id)} className="p-1 bg-black/60 rounded text-white hover:text-red-400 hover:bg-black/80">
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+
+            {/* Info */}
+            <div className="p-2.5">
+              <p className="text-sm font-medium text-tastelanc-text-primary truncate leading-tight">{special.name}</p>
+              <p className="text-xs text-tastelanc-text-muted mt-0.5 truncate">
+                {special.days_of_week?.map(d => d.slice(0, 3)).join(', ')}
+              </p>
+              <p className="text-xs text-tastelanc-text-faint truncate">
+                {special.start_time && special.end_time
+                  ? `${formatTime(special.start_time)} – ${formatTime(special.end_time)}`
+                  : 'All Day'}
+              </p>
+              {special.special_price && (
+                <p className="text-xs mt-1">
+                  {special.original_price && (
+                    <span className="line-through text-tastelanc-text-faint mr-1">${special.original_price.toFixed(2)}</span>
+                  )}
+                  <span className="text-green-400 font-semibold">${special.special_price.toFixed(2)}</span>
+                </p>
+              )}
+              <button
+                onClick={() => toggleActive(special.id, special.is_active)}
+                className="mt-2 text-xs text-tastelanc-text-faint hover:text-tastelanc-text-primary"
+              >
+                {special.is_active ? 'Deactivate' : 'Activate'}
+              </button>
+            </div>
           </div>
-        </Card>
-      )}
+        ))}
+      </div>
 
       {specials.length === 0 && !showWizard && (
         <Card className="p-12 text-center">
