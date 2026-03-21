@@ -2,11 +2,13 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { verifyRestaurantAccess } from '@/lib/auth/restaurant-access';
 import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_MENU || process.env.OPENAI_API_KEY });
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 const AI_MODEL = 'gpt-4o-mini';
 
 // Allow up to 60s for this route
@@ -433,6 +435,69 @@ export async function POST(request: Request) {
         { error: 'Invalid URL format' },
         { status: 400 }
       );
+    }
+
+    // ---- SHORTCUT: Direct PDF URL — send straight to Claude as a native document ----
+    const isDirectPdf = parsedUrl.pathname.toLowerCase().endsWith('.pdf');
+    if (isDirectPdf) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const pdfResponse = await fetch(parsedUrl.toString(), {
+          signal: controller.signal,
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36' },
+        });
+        clearTimeout(timeoutId);
+
+        if (!pdfResponse.ok) {
+          return NextResponse.json({ error: 'Could not download the PDF. The file may be private or unavailable.' }, { status: 400 });
+        }
+
+        const buffer = await pdfResponse.arrayBuffer();
+        if (buffer.byteLength > 20_000_000) {
+          return NextResponse.json({ error: 'PDF too large. Maximum size is 20MB.' }, { status: 400 });
+        }
+
+        const pdfBase64 = Buffer.from(buffer).toString('base64');
+
+        const message = await anthropic.messages.create({
+          model: 'claude-opus-4-5-20251101',
+          max_tokens: 4096,
+          messages: [{
+            role: 'user',
+            content: [
+              {
+                type: 'document',
+                source: { type: 'base64', media_type: 'application/pdf', data: pdfBase64 },
+              } as any,
+              { type: 'text', text: MENU_PARSE_PROMPT },
+            ],
+          }],
+        });
+
+        const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+        let jsonStr = responseText.trim();
+        const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (jsonMatch) jsonStr = jsonMatch[1].trim();
+        const parsedMenu: ParsedMenu = JSON.parse(jsonStr);
+
+        if (!isValidMenu(parsedMenu)) {
+          return NextResponse.json({ error: 'No menu items found in this PDF.' }, { status: 422 });
+        }
+
+        return NextResponse.json({
+          success: true,
+          source_url: url,
+          sections: parsedMenu.sections,
+          stats: {
+            sections_count: parsedMenu.sections.length,
+            items_count: countItems(parsedMenu),
+          },
+        });
+      } catch (err) {
+        console.error('Direct PDF import failed:', err);
+        return NextResponse.json({ error: 'Failed to read the PDF menu. Please try the PDF upload option instead.' }, { status: 422 });
+      }
     }
 
     // ---- STEP 1: Fetch the page ----
