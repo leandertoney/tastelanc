@@ -138,6 +138,27 @@ export interface MarketStripeClient {
   stripe: Stripe;
 }
 
+/** Returns the Stripe client for a specific market slug. Falls back to primary (lancaster-pa) if unconfigured. */
+export function getStripeForMarket(marketSlug: string): Stripe {
+  if (!marketSlug || marketSlug === 'lancaster-pa') {
+    return getStripe();
+  }
+  const envKey = MARKET_STRIPE_ENV_KEYS[marketSlug];
+  if (!envKey) {
+    console.warn(`No Stripe env key mapping for market "${marketSlug}", falling back to primary`);
+    return getStripe();
+  }
+  const key = process.env[envKey];
+  if (!key) {
+    console.warn(`Env var ${envKey} not set for market "${marketSlug}", falling back to primary`);
+    return getStripe();
+  }
+  return new Stripe(key, {
+    apiVersion: '2026-02-25.clover' as Stripe.LatestApiVersion,
+    typescript: true,
+  });
+}
+
 /** Returns Stripe clients for all markets that have a configured secret key. */
 export function getAllStripeClients(): MarketStripeClient[] {
   const clients: MarketStripeClient[] = [];

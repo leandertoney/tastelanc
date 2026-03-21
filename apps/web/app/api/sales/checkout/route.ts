@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
 import {
-  getStripe,
+  getStripeForMarket,
   RESTAURANT_PRICES,
   getDiscountPercent,
   DURATION_LABELS,
@@ -82,8 +82,25 @@ export async function POST(request: Request) {
     const discountAmountCents = Math.round(subtotalCents * discountPercent / 100);
     const totalCents = subtotalCents - discountAmountCents;
 
-    const stripe = getStripe();
     const supabaseAdmin = getSupabaseAdmin();
+
+    // Determine the correct Stripe account by looking up the market of the restaurants
+    const existingRestaurantIds = items.map(i => i.restaurantId).filter(Boolean) as string[];
+    let marketSlug = 'lancaster-pa';
+    if (existingRestaurantIds.length > 0) {
+      const { data: restaurantMarkets } = await supabaseAdmin
+        .from('restaurants')
+        .select('id, markets!inner(slug)')
+        .in('id', existingRestaurantIds);
+      if (restaurantMarkets && restaurantMarkets.length > 0) {
+        const slugs = [...new Set(restaurantMarkets.map((r: any) => r.markets?.slug).filter(Boolean))];
+        if (slugs.length > 1) {
+          return NextResponse.json({ error: 'All restaurants in an order must belong to the same market' }, { status: 400 });
+        }
+        if (slugs.length === 1) marketSlug = slugs[0] as string;
+      }
+    }
+    const stripe = getStripeForMarket(marketSlug);
 
     // Create or retrieve Stripe customer
     const existingCustomers = await stripe.customers.list({ email, limit: 1 });
@@ -171,8 +188,8 @@ export async function POST(request: Request) {
           product_data: {
             name: `${item.restaurantName} - ${planName} (${durationLabel})`,
             description: discountPercent > 0
-              ? `TasteLanc ${planName} subscription (${discountPercent}% multi-location discount applied)`
-              : `TasteLanc ${planName} subscription`,
+              ? `${marketSlug === 'cumberland-pa' ? 'TasteCumberland' : marketSlug === 'fayetteville-nc' ? 'TasteFayetteville' : 'TasteLanc'} ${planName} subscription (${discountPercent}% multi-location discount applied)`
+              : `${marketSlug === 'cumberland-pa' ? 'TasteCumberland' : marketSlug === 'fayetteville-nc' ? 'TasteFayetteville' : 'TasteLanc'} ${planName} subscription`,
           },
         },
         quantity: 1,
@@ -200,6 +217,7 @@ export async function POST(request: Request) {
         created_by: access.userId!,
         restaurant_count: String(items.length),
         discount_percent: String(discountPercent),
+        market_slug: marketSlug,
       },
     });
 
