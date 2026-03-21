@@ -7,6 +7,7 @@ import {
   Image,
   FlatList,
   Dimensions,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -1309,10 +1310,9 @@ function CouponClaimCard({ item, onPress }: { item: CouponClaimItem; onPress: ()
 
 // ─── Social proof header ──────────────────────────────────────────────────────
 
-function SceneStatsHeader() {
+function SceneStatsHeader({ onFilterSelect }: { onFilterSelect: (f: FilterType) => void }) {
   const styles = useStyles();
   const colors = getColors();
-  const brand = getBrand();
   const { userId, isAnonymous } = useAuth();
   const { data: platformData } = usePlatformSocialProof();
   const { data: personal } = usePersonalStats();
@@ -1322,35 +1322,58 @@ function SceneStatsHeader() {
     personal?.lastVisitedName != null
   );
 
-  // Build stat pills from live data
-  const stats: string[] = [];
+  type Pill = { label: string; icon: string; filter: FilterType | null };
+  const pills: Pill[] = [];
 
-  if (hasPersonalHistory && personal) {
-    if (personal.checkinsThisMonth > 0) {
-      stats.push(`${personal.checkinsThisMonth} visited this month`);
-    }
+  if (hasPersonalHistory && personal && personal.checkinsThisMonth > 0) {
+    pills.push({ label: `${personal.checkinsThisMonth} visited this month`, icon: 'checkmark-circle', filter: null });
   }
-
   if (platformData) {
     if (platformData.checkinsToday > 0) {
-      stats.push(`${platformData.checkinsToday} check-ins today`);
+      pills.push({ label: `${platformData.checkinsToday} check-ins today`, icon: 'location', filter: null });
     }
     if (hasFeature('happyHours') && platformData.upcomingHappyHoursCount > 0) {
-      stats.push(`${platformData.upcomingHappyHoursCount} happy hours live`);
+      pills.push({ label: `${platformData.upcomingHappyHoursCount} happy hours live`, icon: 'beer', filter: 'deals' });
     }
     if (platformData.newSpecialsCount > 0) {
-      stats.push(`${platformData.newSpecialsCount} new specials`);
+      pills.push({ label: `${platformData.newSpecialsCount} new specials`, icon: 'pricetag', filter: 'deals' });
     }
   }
 
-  if (stats.length === 0) return null;
+  if (pills.length === 0) return null;
 
   return (
-    <View style={styles.statsHeader}>
-      <Text style={styles.statsText} numberOfLines={1}>
-        {stats.join('  ·  ')}
-      </Text>
-    </View>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.statsPillRow}
+      style={styles.statsPillContainer}
+    >
+      {pills.map((pill) => {
+        const tappable = pill.filter !== null;
+        return (
+          <TouchableOpacity
+            key={pill.label}
+            style={[styles.statsPill, tappable && styles.statsPillTappable]}
+            onPress={tappable ? () => onFilterSelect(pill.filter!) : undefined}
+            activeOpacity={tappable ? 0.7 : 1}
+          >
+            <Ionicons
+              name={pill.icon as any}
+              size={13}
+              color={tappable ? colors.accent : colors.textMuted}
+              style={{ marginRight: 5 }}
+            />
+            <Text style={[styles.statsPillText, tappable && { color: colors.accent }]}>
+              {pill.label}
+            </Text>
+            {tappable && (
+              <Ionicons name="chevron-forward" size={11} color={colors.accent} style={{ marginLeft: 2 }} />
+            )}
+          </TouchableOpacity>
+        );
+      })}
+    </ScrollView>
   );
 }
 
@@ -1485,7 +1508,7 @@ export default function SceneScreen() {
           data={filteredItems}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          ListHeaderComponent={<SceneStatsHeader />}
+          ListHeaderComponent={<SceneStatsHeader onFilterSelect={setActiveFilter} />}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -1521,18 +1544,35 @@ const useStyles = createLazyStyles((colors) => ({
   filterChipTextActive: { color: colors.textOnAccent },
 
   // Stats header
-  statsHeader: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 10,
+  statsPillContainer: {
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     backgroundColor: colors.cardBg,
   },
-  statsText: {
+  statsPillRow: {
+    flexDirection: 'row' as const,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  statsPill: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  statsPillTappable: {
+    borderColor: withAlpha(colors.accent, 0.35),
+    backgroundColor: withAlpha(colors.accent, 0.08),
+  },
+  statsPillText: {
     fontSize: 12,
     color: colors.textMuted,
     fontWeight: '500' as const,
-    textAlign: 'center' as const,
   },
 
   // Feed
