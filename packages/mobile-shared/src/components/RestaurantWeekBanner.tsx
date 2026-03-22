@@ -1,5 +1,5 @@
 import { TouchableOpacity, View, Text, Animated, Dimensions } from 'react-native';
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
@@ -33,28 +33,31 @@ const PARTICLES = Array.from({ length: PARTICLE_COUNT }).map((_, i) => ({
 
 function ForkBurst() {
   const anims = useRef(PARTICLES.map(() => new Animated.Value(0))).current;
-  const hasPlayed = useRef(false);
 
   useEffect(() => {
-    if (hasPlayed.current) return;
-    hasPlayed.current = true;
+    const runBurst = () => {
+      anims.forEach(a => a.setValue(0));
+      const animations = anims.map((anim, i) =>
+        Animated.sequence([
+          Animated.timing(anim, {
+            toValue: 0.35,
+            duration: PARTICLES[i].burstDuration,
+            delay: PARTICLES[i].delay,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: PARTICLES[i].fallDuration,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      Animated.parallel(animations).start();
+    };
 
-    const animations = anims.map((anim, i) =>
-      Animated.sequence([
-        Animated.timing(anim, {
-          toValue: 0.35,
-          duration: PARTICLES[i].burstDuration,
-          delay: PARTICLES[i].delay,
-          useNativeDriver: true,
-        }),
-        Animated.timing(anim, {
-          toValue: 1,
-          duration: PARTICLES[i].fallDuration,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    Animated.parallel(animations).start();
+    runBurst();
+    const interval = setInterval(runBurst, 30000);
+    return () => clearInterval(interval);
   }, [anims]);
 
   return (
@@ -116,9 +119,39 @@ function CutleryLogo({ size = 48 }: { size?: number }) {
   );
 }
 
-function buildDateLabel(dates: string[]): string {
-  if (!dates.length) return 'April 13–19 · Lancaster Dining Deals';
-  return 'April 13–19 · Lancaster Dining Deals';
+const TICKER_MESSAGES = [
+  'April 13–19 · Lancaster City',
+  '20+ Participating Restaurants',
+  'Prix Fixe Menus · Exclusive Deals',
+  'Lunch & Dinner Specials All Week',
+];
+
+function SponsorTicker() {
+  const [index, setIndex] = useState(0);
+  const fade = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      Animated.timing(fade, { toValue: 0, duration: 400, useNativeDriver: true }).start(() => {
+        setIndex(i => (i + 1) % TICKER_MESSAGES.length);
+        Animated.timing(fade, { toValue: 1, duration: 400, useNativeDriver: true }).start();
+      });
+    }, 2800);
+    return () => clearInterval(interval);
+  }, [fade]);
+
+  return (
+    <Animated.Text style={[{
+      fontSize: 8,
+      fontWeight: '700',
+      color: RW_YELLOW_DIM,
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+      textAlign: 'center',
+    }, { opacity: fade }]}>
+      {TICKER_MESSAGES[index]}
+    </Animated.Text>
+  );
 }
 
 export default function RestaurantWeekBanner() {
@@ -171,8 +204,6 @@ export default function RestaurantWeekBanner() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const dateLabel = useMemo(() => buildDateLabel(eventDates), [eventDates]);
-
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -188,14 +219,21 @@ export default function RestaurantWeekBanner() {
   return (
     <View style={styles.showerContainer}>
       <ForkBurst />
+      <Animated.View style={[styles.bannerBorder, {
+        borderColor: shimmer.interpolate({ inputRange: [0, 1], outputRange: ['rgba(240,208,96,0.2)', 'rgba(240,208,96,0.75)'] }),
+      }]}>
       <TouchableOpacity
         style={styles.banner}
         onPress={() => navigation.navigate('RestaurantWeek')}
         activeOpacity={0.85}
       >
         {/* Watermark utensils in background */}
-        <Text style={styles.bgUtensil1}>🥄</Text>
-        <Text style={styles.bgUtensil2}>🔪</Text>
+        <View style={styles.bgUtensil1} pointerEvents="none">
+          <MaterialCommunityIcons name="silverware-spoon" size={72} color={RW_YELLOW} />
+        </View>
+        <View style={styles.bgUtensil2} pointerEvents="none">
+          <MaterialCommunityIcons name="silverware-fork-knife" size={56} color={RW_YELLOW} />
+        </View>
 
         <View style={styles.content}>
           {/* Crossed utensils logo */}
@@ -203,10 +241,10 @@ export default function RestaurantWeekBanner() {
 
           <View style={styles.textGroup}>
             <View style={styles.sponsorPill}>
-              <Text style={styles.sponsorPillText}>Official Digital Sponsor</Text>
+              <Text style={styles.sponsorPillText}>Official Digital Sponsor · 2026</Text>
             </View>
             <Text style={styles.title}>Restaurant Week</Text>
-            <Text style={styles.subtitle}>{dateLabel}</Text>
+            <SponsorTicker />
           </View>
 
           <Animated.View style={[styles.arrow, {
@@ -227,6 +265,7 @@ export default function RestaurantWeekBanner() {
           </TouchableOpacity>
         )}
       </TouchableOpacity>
+      </Animated.View>
     </View>
   );
 }
@@ -237,27 +276,29 @@ const useStyles = createLazyStyles(() => ({
     overflow: 'visible',
     zIndex: 10,
   },
-  banner: {
+  bannerBorder: {
     marginHorizontal: spacing.md,
-    backgroundColor: RW_TERRACOTTA,       // terracotta background — matches the logo
     borderRadius: radius.lg,
-    borderWidth: 0,
-    padding: spacing.md,
-    paddingHorizontal: spacing.md + 4,
-    overflow: 'hidden',
-    position: 'relative',
+    borderWidth: 1.5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 5,
   },
+  banner: {
+    backgroundColor: RW_TERRACOTTA,
+    borderRadius: radius.lg,
+    paddingVertical: 9,
+    paddingHorizontal: spacing.md + 4,
+    overflow: 'hidden',
+    position: 'relative',
+  },
   // Watermark utensils at low opacity
   bgUtensil1: {
     position: 'absolute',
     right: -8,
     top: -8,
-    fontSize: 72,
     opacity: 0.12,
     transform: [{ rotate: '-30deg' }],
   },
@@ -265,7 +306,6 @@ const useStyles = createLazyStyles(() => ({
     position: 'absolute',
     left: -6,
     bottom: -8,
-    fontSize: 56,
     opacity: 0.1,
     transform: [{ rotate: '40deg' }],
   },
@@ -276,11 +316,11 @@ const useStyles = createLazyStyles(() => ({
   },
   textGroup: {
     flex: 1,
-    gap: 3,
+    gap: 2,
     alignItems: 'center',
   },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '900',
     color: RW_YELLOW,
     letterSpacing: -0.3,
@@ -297,6 +337,7 @@ const useStyles = createLazyStyles(() => ({
     paddingHorizontal: 14,
     paddingVertical: 3,
     marginBottom: 2,
+    alignSelf: 'stretch',
   },
   sponsorPillText: {
     fontSize: 8,
@@ -304,6 +345,7 @@ const useStyles = createLazyStyles(() => ({
     color: RW_YELLOW_DIM,
     letterSpacing: 1,
     textTransform: 'uppercase',
+    textAlign: 'center',
   },
   arrow: {
     width: 34,
