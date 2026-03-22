@@ -1606,7 +1606,7 @@ function CrossMarketPromoCard({ cities }: { cities: OtherCity[] }) {
   if (cities.length === 0) return null;
 
   return (
-    <View style={styles.crossPromoCard}>
+    <View style={styles.crossPromoWrap}>
       <View style={styles.crossPromoHeader}>
         <Ionicons name="map-outline" size={15} color={colors.accent} />
         <Text style={styles.crossPromoTitle}>Taste in Other Cities</Text>
@@ -1987,19 +1987,15 @@ const useStyles = createLazyStyles((colors) => ({
   listContent: { paddingTop: spacing.sm, paddingBottom: 40 },
   separator: { height: 8 },
 
-  // Cross-market promo card
-  crossPromoCard: {
-    marginHorizontal: spacing.md,
-    marginVertical: spacing.sm,
-    backgroundColor: colors.cardBg,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
+  // Cross-market promo — no outer container, title/subtitle sit on background
+  crossPromoWrap: {
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
   },
   crossPromoHeader: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
+    paddingHorizontal: spacing.md,
     gap: 6,
     marginBottom: 2,
   },
@@ -2011,9 +2007,11 @@ const useStyles = createLazyStyles((colors) => ({
   crossPromoSubtitle: {
     fontSize: 12,
     color: colors.textMuted,
+    paddingHorizontal: spacing.md,
     marginBottom: spacing.sm,
   },
   crossPromoCities: {
+    paddingHorizontal: spacing.md,
     gap: 10,
   },
   crossPromoCity: {
