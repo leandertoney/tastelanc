@@ -34,6 +34,9 @@ const AREA_TAG = 'area'; // Different from 'restaurant' tag
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 1000;
 
+// Market scope — TasteFayetteville only syncs Fayetteville areas
+const MARKET_ID = 'c7b79d18-0bb6-434d-926a-0f8cdf420acb'; // fayetteville-nc
+
 // Stats tracking
 const stats = {
   total: 0,
@@ -105,6 +108,7 @@ async function fetchAreas(supabaseUrl, anonKey) {
   const url = new URL(`${supabaseUrl}/rest/v1/areas`);
   url.searchParams.set('select', 'id,name,slug,latitude,longitude,radius');
   url.searchParams.set('is_active', 'eq.true');
+  url.searchParams.set('market_id', `eq.${MARKET_ID}`);
 
   const response = await makeRequest(url.toString(), {
     method: 'GET',

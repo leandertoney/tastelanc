@@ -34,6 +34,9 @@ const GEOFENCE_RADIUS = 75; // meters
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 1000; // 1 second
 
+// Market scope — TasteLanc only syncs Lancaster restaurants
+const MARKET_ID = 'f7e72800-3d4c-4f68-af22-40b1d52dc2e5'; // lancaster-pa
+
 // Stats tracking
 const stats = {
   total: 0,
@@ -105,6 +108,7 @@ async function fetchRestaurants(supabaseUrl, anonKey) {
   const url = new URL(`${supabaseUrl}/rest/v1/restaurants`);
   url.searchParams.set('select', 'id,name,latitude,longitude');
   url.searchParams.set('is_active', 'eq.true');
+  url.searchParams.set('market_id', `eq.${MARKET_ID}`);
 
   const response = await makeRequest(url.toString(), {
     method: 'GET',
@@ -162,6 +166,7 @@ async function createGeofence(radarSecretKey, restaurant) {
     radius: GEOFENCE_RADIUS,
     coordinates: [restaurant.latitude, restaurant.longitude],
     enabled: true,
+    metadata: { market_id: MARKET_ID, market: 'lancaster-pa' },
   };
 
   const response = await makeRequest(

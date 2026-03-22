@@ -34,6 +34,9 @@ const AREA_TAG = 'area'; // Different from 'restaurant' tag
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 1000;
 
+// Market scope — TasteLanc only syncs Lancaster areas
+const MARKET_ID = 'f7e72800-3d4c-4f68-af22-40b1d52dc2e5'; // lancaster-pa
+
 // Stats tracking
 const stats = {
   total: 0,
@@ -105,6 +108,7 @@ async function fetchAreas(supabaseUrl, anonKey) {
   const url = new URL(`${supabaseUrl}/rest/v1/areas`);
   url.searchParams.set('select', 'id,name,slug,latitude,longitude,radius');
   url.searchParams.set('is_active', 'eq.true');
+  url.searchParams.set('market_id', `eq.${MARKET_ID}`);
 
   const response = await makeRequest(url.toString(), {
     method: 'GET',

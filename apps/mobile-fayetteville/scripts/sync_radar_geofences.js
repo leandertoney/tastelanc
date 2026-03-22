@@ -34,6 +34,9 @@ const GEOFENCE_RADIUS = 75; // meters
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 1000; // 1 second
 
+// Market scope — TasteFayetteville only syncs Fayetteville restaurants
+const MARKET_ID = 'c7b79d18-0bb6-434d-926a-0f8cdf420acb'; // fayetteville-nc
+
 // Stats tracking
 const stats = {
   total: 0,
@@ -105,6 +108,7 @@ async function fetchRestaurants(supabaseUrl, anonKey) {
   const url = new URL(`${supabaseUrl}/rest/v1/restaurants`);
   url.searchParams.set('select', 'id,name,latitude,longitude');
   url.searchParams.set('is_active', 'eq.true');
+  url.searchParams.set('market_id', `eq.${MARKET_ID}`);
 
   const response = await makeRequest(url.toString(), {
     method: 'GET',
@@ -162,6 +166,7 @@ async function createGeofence(radarSecretKey, restaurant) {
     radius: GEOFENCE_RADIUS,
     coordinates: [restaurant.latitude, restaurant.longitude],
     enabled: true,
+    metadata: { market_id: MARKET_ID, market: 'fayetteville-nc' },
   };
 
   const response = await makeRequest(
