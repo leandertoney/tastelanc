@@ -66,7 +66,7 @@ export default function OtherCitiesSection() {
               {city.logo_url ? (
                 <Image source={{ uri: city.logo_url }} style={styles.logo} />
               ) : null}
-              <Text style={styles.cityName} numberOfLines={2}>{MARKET_DISPLAY_NAMES[city.slug] ?? city.name}</Text>
+              <Text style={styles.cityName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{MARKET_DISPLAY_NAMES[city.slug] ?? city.name}</Text>
             </View>
 
             {/* Instagram row */}

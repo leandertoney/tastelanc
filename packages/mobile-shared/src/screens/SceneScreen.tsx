@@ -1632,7 +1632,7 @@ function CrossMarketPromoCard({ cities }: { cities: OtherCity[] }) {
                 {city.logo_url ? (
                   <Image source={{ uri: city.logo_url }} style={styles.crossPromoCityLogo} />
                 ) : null}
-                <Text style={styles.crossPromoCityName} numberOfLines={2}>{displayName}</Text>
+                <Text style={styles.crossPromoCityName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{displayName}</Text>
               </View>
               {instagramUrl ? (
                 <TouchableOpacity
