@@ -12,7 +12,6 @@ import { spacing, radius } from '../constants/spacing';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const RW_TERRACOTTA = '#C8532A';
-const RW_TERRACOTTA_DARK = '#A84020';
 const RW_YELLOW = '#F0D060';
 const RW_YELLOW_DIM = 'rgba(240,208,96,0.75)';
 
@@ -109,49 +108,10 @@ function ForkBurst() {
   );
 }
 
-// Cutlery fan logo: fork center, spoon left, knife right — fan from handle base
 function CutleryLogo({ size = 48 }: { size?: number }) {
-  const iconSize = Math.round(size * 0.9);
-  const pivot = iconSize / 2;
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      {/* Spoon — fanned left, rotate around handle (bottom) */}
-      <MaterialCommunityIcons
-        name="silverware-spoon"
-        size={iconSize}
-        color={RW_YELLOW}
-        style={{
-          position: 'absolute',
-          opacity: 0.95,
-          transform: [
-            { translateY: pivot },
-            { rotate: '-42deg' },
-            { translateY: -pivot },
-          ],
-        }}
-      />
-      {/* Knife — fanned right, rotate around handle (bottom) */}
-      <MaterialCommunityIcons
-        name="silverware-variant"
-        size={iconSize}
-        color={RW_YELLOW}
-        style={{
-          position: 'absolute',
-          opacity: 0.95,
-          transform: [
-            { translateY: pivot },
-            { rotate: '42deg' },
-            { translateY: -pivot },
-          ],
-        }}
-      />
-      {/* Fork — straight up, center, on top */}
-      <MaterialCommunityIcons
-        name="silverware-fork"
-        size={iconSize}
-        color={RW_YELLOW}
-        style={{ position: 'absolute', zIndex: 2 }}
-      />
+      <MaterialCommunityIcons name="silverware" size={Math.round(size * 0.9)} color={RW_YELLOW} />
     </View>
   );
 }
@@ -242,11 +202,11 @@ export default function RestaurantWeekBanner() {
           <CutleryLogo size={36} />
 
           <View style={styles.textGroup}>
-            <Text style={styles.title}>Restaurant Week</Text>
-            <Text style={styles.subtitle}>{dateLabel}</Text>
             <View style={styles.sponsorPill}>
               <Text style={styles.sponsorPillText}>Official Digital Sponsor</Text>
             </View>
+            <Text style={styles.title}>Restaurant Week</Text>
+            <Text style={styles.subtitle}>{dateLabel}</Text>
           </View>
 
           <Animated.View style={[styles.arrow, {
@@ -317,6 +277,7 @@ const useStyles = createLazyStyles(() => ({
   textGroup: {
     flex: 1,
     gap: 3,
+    alignItems: 'center',
   },
   title: {
     fontSize: 18,
@@ -331,12 +292,11 @@ const useStyles = createLazyStyles(() => ({
     fontWeight: '500',
   },
   sponsorPill: {
-    alignSelf: 'flex-start',
     backgroundColor: 'rgba(0,0,0,0.2)',
     borderRadius: 8,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    marginTop: 2,
+    paddingHorizontal: 14,
+    paddingVertical: 3,
+    marginBottom: 2,
   },
   sponsorPillText: {
     fontSize: 8,

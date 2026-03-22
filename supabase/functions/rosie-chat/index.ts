@@ -7,9 +7,14 @@ import OpenAI from 'https://esm.sh/openai@4';
 
 // OpenAI client created per-request with market-specific key
 function getOpenAIClient(marketSlug: string): OpenAI {
-  const apiKey = marketSlug === 'cumberland-pa'
-    ? (Deno.env.get('OPENAI_API_KEY_CUMBERLAND') || Deno.env.get('OPENAI_API_KEY'))
-    : (Deno.env.get('OPENAI_API_KEY_LANCASTER') || Deno.env.get('OPENAI_API_KEY'));
+  let apiKey: string | undefined;
+  if (marketSlug === 'cumberland-pa') {
+    apiKey = Deno.env.get('OPENAI_API_KEY_CUMBERLAND') || Deno.env.get('OPENAI_API_KEY');
+  } else if (marketSlug === 'fayetteville-nc') {
+    apiKey = Deno.env.get('OPENAI_API_KEY_FAYETTEVILLE') || Deno.env.get('OPENAI_API_KEY');
+  } else {
+    apiKey = Deno.env.get('OPENAI_API_KEY_LANCASTER') || Deno.env.get('OPENAI_API_KEY');
+  }
   return new OpenAI({ apiKey });
 }
 
@@ -33,6 +38,13 @@ const MARKET_CONFIG: Record<string, { aiName: string; appName: string; area: str
     area: 'Cumberland County, PA',
     areaShort: 'Cumberland County',
     localKnowledge: `You have deep knowledge of Cumberland County, PA - from Carlisle's charming downtown to Mechanicsburg's local favorites, Camp Hill's dining scene, and the history that makes this area special.`,
+  },
+  'fayetteville-nc': {
+    aiName: 'Libertie',
+    appName: 'TasteFayetteville',
+    area: 'Fayetteville, NC',
+    areaShort: 'Fayetteville',
+    localKnowledge: `You have deep knowledge of Fayetteville, NC - its military heritage (Fort Liberty, formerly Fort Bragg), the vibrant Hay Street corridor, the Airborne & Special Operations Museum, and the diverse dining scene shaped by the military community and local culture.`,
   },
 };
 

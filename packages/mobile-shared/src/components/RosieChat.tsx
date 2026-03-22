@@ -150,13 +150,15 @@ export default function RosieChat({ visible, onClose, onNavigateToRestaurant }: 
   const QUICK_ACTIONS: QuickActionConfig[][] = useMemo(() => [
     [
       { icon: 'restaurant', label: 'Best dinner spots', prompt: brand.mollieSamplePrompt },
-      { icon: 'beer', label: 'Happy hour deals', prompt: 'Where can I find happy hour deals?' },
+      brand.features?.happyHours === false
+        ? { icon: 'pricetag', label: 'Daily specials', prompt: 'What daily specials are available today?' }
+        : { icon: 'beer', label: 'Happy hour deals', prompt: 'Where can I find happy hour deals?' },
     ],
     [
       { icon: 'sparkles', label: 'Personalized picks', prompt: 'Based on my preferences, what restaurants would you recommend?' },
       { icon: 'compass', label: 'Hidden gems', prompt: 'What are some hidden gem restaurants locals love?' },
     ],
-  ], [brand.mollieSamplePrompt]);
+  ], [brand.mollieSamplePrompt, brand.features?.happyHours]);
 
   const [messages, setMessages] = useState<Message[]>([
     { id: '1', text: brand.mollieGreeting, isUser: false, timestamp: new Date() },

@@ -11,7 +11,7 @@ import {
   ViewToken,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -70,17 +70,10 @@ interface RestaurantGroup {
   specials: HolidaySpecial[];
 }
 
-// --- Crossed utensils logo: spoon (bowl upper-left) × fork (center) × knife (blade upper-right) ---
 function CutleryLogo({ size = 48 }: { size?: number }) {
-  const es = Math.round(size * 0.54);
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      {/* Spoon — rotated -45° so bowl faces upper-left */}
-      <Text style={{ position: 'absolute', fontSize: es, transform: [{ rotate: '-45deg' }], opacity: 0.9 }}>🥄</Text>
-      {/* Fork — vertical center, on top */}
-      <Text style={{ position: 'absolute', fontSize: es, zIndex: 2 }}>🍴</Text>
-      {/* Knife — rotated +90° so blade faces upper-right */}
-      <Text style={{ position: 'absolute', fontSize: es, transform: [{ rotate: '90deg' }], opacity: 0.9 }}>🔪</Text>
+      <MaterialCommunityIcons name="silverware" size={Math.round(size * 0.9)} color="#F0D060" />
     </View>
   );
 }
