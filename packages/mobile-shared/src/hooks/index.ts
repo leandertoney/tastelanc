@@ -130,6 +130,10 @@ export { useRestaurantWeekIds } from './useRestaurantWeekIds';
 // Coffee & Chocolate Trail hooks
 export { useCoffeeChocolateTrailIds } from './useCoffeeChocolateTrailIds';
 
+// Other cities / cross-market promotion hooks
+export { useOtherCities } from './useOtherCities';
+export type { OtherCity } from './useOtherCities';
+
 // Sales hooks
 export { useSalesRole } from './useSalesRole';
 export { useSalesInbox } from './useSalesInbox';

@@ -27,6 +27,7 @@ import { useUserRecommendations } from '../hooks/useVideoRecommendations';
 import type { RootStackParamList } from '../navigation/types';
 import ProfileStatsRow from '../components/ProfileStatsRow';
 import HowToEarnSection from '../components/rewards/HowToEarnSection';
+import OtherCitiesSection from '../components/OtherCitiesSection';
 import { CAPTION_TAG_LABELS } from '../types/database';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -443,6 +444,9 @@ export default function ProfileScreen() {
         <View style={styles.earnSection}>
           <HowToEarnSection />
         </View>
+
+        {/* Explore sister apps in other markets */}
+        <OtherCitiesSection />
       </ScrollView>
     </SafeAreaView>
   );
