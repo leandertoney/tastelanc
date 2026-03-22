@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,11 @@ import {
   FlatList,
   Dimensions,
   ScrollView,
+  ViewToken,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,6 +27,7 @@ import { useAuth } from '../hooks/useAuth';
 import type { RootStackParamList } from '../navigation/types';
 import { trackClick } from '../lib/analytics';
 import { applyContextBoosts, isHappyHourActiveNow } from '../lib/recommendations';
+import { flushUserEvents, trackDetailView, trackDwell, trackQuickSkip, type BehavioralFeedItemKind } from '../lib/userEvents';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type FilterType = 'all' | 'photos' | 'itineraries' | 'trending' | 'deals' | 'events';
@@ -272,6 +274,24 @@ type PulseItem =
   | VideoItem | PhotoItem | ItineraryItem | BuzzItem | AdItem | ReelsShelfItem
   | SpecialItem | HappyHourItem | EventItem | NewRestaurantItem | BlogItem
   | HolidayTeaserItem | CouponClaimItem;
+
+function getBehavioralEventMeta(
+  item: PulseItem
+): { restaurantId: string; feedItemKind: BehavioralFeedItemKind } | null {
+  switch (item.kind) {
+    case 'video':
+    case 'photo':
+    case 'buzz':
+    case 'special':
+    case 'happy_hour':
+    case 'event':
+    case 'new_restaurant':
+    case 'coupon_claim':
+      return { restaurantId: item.restaurantId, feedItemKind: item.kind };
+    default:
+      return null;
+  }
+}
 
 // ─── Data fetching ─────────────────────────────────────────────────────────────
 
@@ -1395,6 +1415,8 @@ const FILTERS: { key: FilterType; label: string }[] = [
   { key: 'itineraries', label: 'Plans' },
 ];
 
+const FAMILIAR_RATIO = 0.7;
+
 // ─── Move Algorithm: Personalization Pass ─────────────────────────────────────
 
 /**
@@ -1412,11 +1434,18 @@ function applyPersonalizationToFeed(
   items: PulseItem[],
   signals: PersonalizedFeedSignals
 ): PulseItem[] {
-  const { context } = signals;
+  const { context, favorites } = signals;
   const now = context.currentTime;
   const todayStr = now.toISOString().split('T')[0];
   const sevenDaysAgoMs = now.getTime() - 7 * 86400000;
   const thirtyDaysAgoMs = now.getTime() - 30 * 86400000;
+  const familiarRestaurantIds = new Set<string>([
+    ...favorites,
+    ...context.visitedIds30d,
+    ...context.checkinRestaurantIds,
+    ...context.dwelledRestaurantIds,
+    ...context.detailViewedRestaurantIds,
+  ]);
 
   // Separate only truly fixed items and ads — everything else gets scored
   const fixedItems = items.filter((i) => i.kind === 'holiday_teaser' || i.kind === 'reels_shelf');
@@ -1464,11 +1493,21 @@ function applyPersonalizationToFeed(
     }
     // itinerary and blog: restaurantId stays '' → score 0, mixes in naturally
 
+    const eventMeta = getBehavioralEventMeta(item);
     const boost = restaurantId
-      ? applyContextBoosts(restaurantId, [], context, itemSignals)
+      ? applyContextBoosts(restaurantId, [], context, {
+          ...itemSignals,
+          feedItemKind: eventMeta?.feedItemKind,
+        })
       : 0;
 
-    return { item, score: boost, isActiveNow: itemSignals.isHappyHourNow || itemSignals.isEventToday };
+    return {
+      item,
+      score: boost,
+      isActiveNow: itemSignals.isHappyHourNow || itemSignals.isEventToday,
+      restaurantId,
+      isFamiliar: restaurantId ? familiarRestaurantIds.has(restaurantId) && !context.quickSkippedRestaurantIds.has(restaurantId) : false,
+    };
   });
 
   // Sort: active-now first, then by score descending
@@ -1478,10 +1517,56 @@ function applyPersonalizationToFeed(
     return b.score - a.score;
   });
 
+  const familiar = scored.filter((entry) => entry.isFamiliar);
+  const discovery = scored.filter((entry) => !entry.isFamiliar);
+  const blended: typeof scored = [];
+  let familiarUsed = 0;
+  let discoveryUsed = 0;
+
+  const pickNextCandidate = (pool: typeof scored, recentKinds: string[], recentRestaurantIds: string[]) => {
+    const preferredIndex = pool.findIndex((candidate, index) => {
+      if (index > 4) return false;
+      const sameKindStreak = recentKinds.length >= 2
+        && recentKinds[recentKinds.length - 1] === candidate.item.kind
+        && recentKinds[recentKinds.length - 2] === candidate.item.kind;
+      const candidateRestaurantId = candidate.restaurantId;
+      const repeatedRestaurant = !!candidateRestaurantId
+        && recentRestaurantIds[recentRestaurantIds.length - 1] === candidateRestaurantId;
+      return !sameKindStreak && !repeatedRestaurant;
+    });
+
+    if (preferredIndex >= 0) {
+      return pool.splice(preferredIndex, 1)[0];
+    }
+
+    return pool.shift() ?? null;
+  };
+
+  while (familiar.length > 0 || discovery.length > 0) {
+    const totalPicked = familiarUsed + discoveryUsed;
+    const currentFamiliarRatio = totalPicked === 0 ? 0 : familiarUsed / totalPicked;
+    const preferFamiliar = currentFamiliarRatio < FAMILIAR_RATIO;
+    const primaryPool = preferFamiliar ? familiar : discovery;
+    const fallbackPool = preferFamiliar ? discovery : familiar;
+    const recentKinds = blended.slice(-2).map((entry) => entry.item.kind);
+    const recentRestaurantIds = blended
+      .slice(-2)
+      .map((entry) => entry.restaurantId)
+      .filter((restaurantId): restaurantId is string => !!restaurantId);
+    const next = pickNextCandidate(primaryPool, recentKinds, recentRestaurantIds)
+      ?? pickNextCandidate(fallbackPool, recentKinds, recentRestaurantIds);
+
+    if (!next) break;
+
+    blended.push(next);
+    if (next.isFamiliar) familiarUsed += 1;
+    else discoveryUsed += 1;
+  }
+
   // Reconstruct: fixed-position → unified scored feed
   const reordered: PulseItem[] = [
     ...fixedItems,
-    ...scored.map((s) => s.item),
+    ...blended.map((s) => s.item),
   ];
 
   // Re-weave ads every 8 items
@@ -1505,9 +1590,14 @@ export default function SceneScreen() {
   const brand = getBrand();
   const navigation = useNavigation<NavigationProp>();
   const queryClient = useQueryClient();
+  const { marketId } = useMarket();
 
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const marketIdRef = useRef<string | null>(marketId);
+  const visibleStartTimesRef = useRef(new Map<string, number>());
+  const visibleItemsRef = useRef(new Map<string, PulseItem>());
+  const interactedItemIdsRef = useRef(new Set<string>());
 
   const { userId } = useAuth();
   const { data: rawFeed = [], isLoading, refetch } = usePulseFeed();
@@ -1517,6 +1607,10 @@ export default function SceneScreen() {
     if (!signals || rawFeed.length === 0) return rawFeed;
     return applyPersonalizationToFeed(rawFeed, signals);
   }, [rawFeed, signals]);
+
+  useEffect(() => {
+    marketIdRef.current = marketId;
+  }, [marketId]);
 
   const filteredItems = allItems.filter((item) => {
     if (item.kind === 'ad') return true; // Ads always show
@@ -1537,32 +1631,130 @@ export default function SceneScreen() {
     setIsRefreshing(false);
   }, [refetch, queryClient]);
 
+  const flushDwellForItem = useCallback((
+    itemId: string,
+    endedAt: number = Date.now(),
+    allowQuickSkip: boolean = false,
+  ) => {
+    const startedAt = visibleStartTimesRef.current.get(itemId);
+    const item = visibleItemsRef.current.get(itemId);
+    const wasInteracted = interactedItemIdsRef.current.has(itemId);
+
+    visibleStartTimesRef.current.delete(itemId);
+    visibleItemsRef.current.delete(itemId);
+    interactedItemIdsRef.current.delete(itemId);
+
+    if (!item || startedAt === undefined) return;
+
+    const eventMeta = getBehavioralEventMeta(item);
+    if (!eventMeta) return;
+    const durationMs = endedAt - startedAt;
+
+    if (!wasInteracted && allowQuickSkip && durationMs <= 1200) {
+      trackQuickSkip(
+        eventMeta.restaurantId,
+        eventMeta.feedItemKind,
+        durationMs,
+        marketIdRef.current,
+      );
+      return;
+    }
+
+    trackDwell(
+      eventMeta.restaurantId,
+      eventMeta.feedItemKind,
+      durationMs,
+      marketIdRef.current,
+    );
+  }, []);
+
+  useEffect(() => {
+    const now = Date.now();
+    const filteredIds = new Set(filteredItems.map((item) => item.id));
+
+    Array.from(visibleStartTimesRef.current.keys()).forEach((itemId) => {
+      if (!filteredIds.has(itemId)) {
+        flushDwellForItem(itemId, now);
+      }
+    });
+  }, [filteredItems, flushDwellForItem]);
+
+  useEffect(() => () => {
+    const now = Date.now();
+    Array.from(visibleStartTimesRef.current.keys()).forEach((itemId) => {
+      flushDwellForItem(itemId, now);
+    });
+  }, [flushDwellForItem]);
+
+  useFocusEffect(
+    useCallback(() => () => {
+      const now = Date.now();
+      Array.from(visibleStartTimesRef.current.keys()).forEach((itemId) => {
+        flushDwellForItem(itemId, now);
+      });
+      void flushUserEvents();
+    }, [flushDwellForItem])
+  );
+
+  const onViewableItemsChanged = useRef(({ changed }: { changed: ViewToken[] }) => {
+    const now = Date.now();
+
+    changed.forEach((token) => {
+      const item = token.item as PulseItem | undefined;
+      if (!item) return;
+
+      if (token.isViewable) {
+        if (!visibleStartTimesRef.current.has(item.id)) {
+          visibleStartTimesRef.current.set(item.id, now);
+          visibleItemsRef.current.set(item.id, item);
+        }
+        return;
+      }
+
+      flushDwellForItem(item.id, now, true);
+    });
+  }).current;
+
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60 }).current;
+
   const handleItemPress = (restaurantId: string) => {
     navigation.navigate('RestaurantDetail', { id: restaurantId });
   };
 
+  const handleBehavioralRestaurantPress = useCallback((item: PulseItem) => {
+    const eventMeta = getBehavioralEventMeta(item);
+    if (!eventMeta) return;
+
+    interactedItemIdsRef.current.add(item.id);
+    trackDetailView(eventMeta.restaurantId, eventMeta.feedItemKind, marketId);
+    navigation.navigate('RestaurantDetail', { id: eventMeta.restaurantId });
+  }, [marketId, navigation]);
+
   const renderItem = ({ item }: { item: PulseItem }) => {
     switch (item.kind) {
       case 'reels_shelf':
-        return <ReelsShelf item={item} onPress={handleItemPress} />;
+        return <ReelsShelf item={item} onPress={(restaurantId) => {
+          trackDetailView(restaurantId, 'video', marketId);
+          navigation.navigate('RestaurantDetail', { id: restaurantId });
+        }} />;
       case 'video':
-        return <VideoCard item={item} onPress={() => handleItemPress(item.restaurantId)} />;
+        return <VideoCard item={item} onPress={() => handleBehavioralRestaurantPress(item)} />;
       case 'photo':
-        return <PhotoCard item={item} onPress={() => handleItemPress(item.restaurantId)} />;
+        return <PhotoCard item={item} onPress={() => handleBehavioralRestaurantPress(item)} />;
       case 'itinerary':
         return <ItineraryCard item={item} onCopy={() => navigation.navigate('ItineraryBuilder', { date: item.date })} />;
       case 'buzz':
-        return <BuzzRow item={item} onPress={() => handleItemPress(item.restaurantId)} />;
+        return <BuzzRow item={item} onPress={() => handleBehavioralRestaurantPress(item)} />;
       case 'ad':
         return <AdCard item={item} onPress={() => handleItemPress(item.restaurantId)} />;
       case 'special':
-        return <SpecialCard item={item} onPress={() => handleItemPress(item.restaurantId)} />;
+        return <SpecialCard item={item} onPress={() => handleBehavioralRestaurantPress(item)} />;
       case 'happy_hour':
-        return <HappyHourCard item={item} onPress={() => handleItemPress(item.restaurantId)} />;
+        return <HappyHourCard item={item} onPress={() => handleBehavioralRestaurantPress(item)} />;
       case 'event':
-        return <EventCard item={item} onPress={() => handleItemPress(item.restaurantId)} />;
+        return <EventCard item={item} onPress={() => handleBehavioralRestaurantPress(item)} />;
       case 'new_restaurant':
-        return <NewRestaurantRow item={item} onPress={() => handleItemPress(item.restaurantId)} />;
+        return <NewRestaurantRow item={item} onPress={() => handleBehavioralRestaurantPress(item)} />;
       case 'blog':
         return <BlogCard item={item} onPress={() => navigation.navigate('BlogDetail', { slug: item.slug })} />;
       case 'holiday_teaser': {
@@ -1571,7 +1763,7 @@ export default function SceneScreen() {
         return <HolidayTeaserCard item={item} onPress={() => navigation.navigate(holidayDest)} />;
       }
       case 'coupon_claim':
-        return <CouponClaimCard item={item} onPress={() => handleItemPress(item.restaurantId)} />;
+        return <CouponClaimCard item={item} onPress={() => handleBehavioralRestaurantPress(item)} />;
     }
   };
 
@@ -1624,6 +1816,8 @@ export default function SceneScreen() {
           data={filteredItems}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
           ListHeaderComponent={<SceneStatsHeader onFilterSelect={setActiveFilter} />}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}

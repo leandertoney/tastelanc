@@ -3,6 +3,7 @@ import { getSupabase, getBrand } from '../config/theme';
 import { getFavorites } from './favorites';
 import { getRecentVisitCounts } from './visits';
 import { getEpochSeed, seededShuffle, basicFairRotate, getTierWeight } from './fairRotation';
+import type { BehavioralFeedItemKind } from './userEvents';
 import type { Restaurant, RestaurantCategory, CuisineType, PremiumTier } from '../types/database';
 import { ONBOARDING_DATA_KEY, FOOD_PREFERENCE_TO_CUISINE, type OnboardingData } from '../types/onboarding';
 
@@ -20,6 +21,14 @@ export interface MoveContext {
   visitedIds30d: Set<string>;
   /** Restaurant IDs the user has ever checked into — used for reward-loop nudge */
   checkinRestaurantIds: Set<string>;
+  /** Restaurants where the user lingered on Move cards recently */
+  dwelledRestaurantIds: Set<string>;
+  /** Restaurants where the user tapped into detail from Move cards recently */
+  detailViewedRestaurantIds: Set<string>;
+  /** Restaurants the user has rapidly skipped multiple times */
+  quickSkippedRestaurantIds: Set<string>;
+  /** Per-card-type preference multipliers derived from recent behavior */
+  kindAffinity: Partial<Record<BehavioralFeedItemKind, number>>;
 }
 
 const MOVE_SCORING = {
@@ -37,6 +46,9 @@ const MOVE_SCORING = {
   RECENT_VISIT_30D: -15,        // Visited in last 30 days — soft suppress
   NEVER_VISITED_BONUS: 15,      // Discovery premium — never been here
   CHECKIN_ACTIVE_NEVER_HERE: 10, // Reward-loop nudge for checkin users
+  DWELL_INTEREST: 18,           // User lingered on this restaurant in Move feed
+  DETAIL_VIEW_INTEREST: 12,     // User tapped into this restaurant from Move feed
+  QUICK_SKIP_DISINTEREST: -18,  // User repeatedly flicked past this restaurant
 };
 
 /**
@@ -81,11 +93,21 @@ export function applyContextBoosts(
     checkinCount7d?: number;    // from buzz data
     tastelancRating?: number;
     distanceMiles?: number;
+    feedItemKind?: BehavioralFeedItemKind;
   } = {}
 ): number {
   let boost = 0;
 
-  const { currentTime, visitedIds7d, visitedIds30d, checkinRestaurantIds } = context;
+  const {
+    currentTime,
+    visitedIds7d,
+    visitedIds30d,
+    checkinRestaurantIds,
+    dwelledRestaurantIds,
+    detailViewedRestaurantIds,
+    quickSkippedRestaurantIds,
+    kindAffinity,
+  } = context;
   const hour = currentTime.getHours();
   const dow = currentTime.getDay(); // 0=Sun, 6=Sat
   const isWeekendEvening = (dow === 5 || dow === 6) && hour >= 17 && hour < 23;
@@ -125,6 +147,21 @@ export function applyContextBoosts(
   // Reward-loop nudge: checkin-active user who hasn't been here
   if (checkinRestaurantIds.size > 0 && !checkinRestaurantIds.has(restaurantId)) {
     boost += MOVE_SCORING.CHECKIN_ACTIVE_NEVER_HERE;
+  }
+
+  // Strongest explicit signals: user lingered on or tapped into this restaurant.
+  if (dwelledRestaurantIds.has(restaurantId)) {
+    boost += MOVE_SCORING.DWELL_INTEREST;
+  }
+  if (detailViewedRestaurantIds.has(restaurantId)) {
+    boost += MOVE_SCORING.DETAIL_VIEW_INTEREST;
+  }
+  if (quickSkippedRestaurantIds.has(restaurantId)) {
+    boost += MOVE_SCORING.QUICK_SKIP_DISINTEREST;
+  }
+
+  if (boost > 0 && signals.feedItemKind) {
+    boost = Math.round(boost * (kindAffinity[signals.feedItemKind] ?? 1));
   }
 
   return boost;
