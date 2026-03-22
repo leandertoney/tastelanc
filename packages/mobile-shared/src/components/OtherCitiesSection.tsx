@@ -47,10 +47,10 @@ export default function OtherCitiesSection() {
       {/* Section header */}
       <View style={styles.sectionHeader}>
         <Ionicons name="map-outline" size={18} color={colors.accent} style={styles.headerIcon} />
-        <Text style={styles.sectionTitle}>Taste in Other Cities</Text>
+        <Text style={styles.sectionTitle}>Traveling soon?</Text>
       </View>
       <Text style={styles.sectionSubtitle}>
-        Traveling? Discover the local scene wherever you go.
+        Find your move in other cities with our sister apps.
       </Text>
 
       {/* Horizontal scroll of city cards */}

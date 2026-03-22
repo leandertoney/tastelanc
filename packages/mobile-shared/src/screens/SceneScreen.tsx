@@ -1609,9 +1609,9 @@ function CrossMarketPromoCard({ cities }: { cities: OtherCity[] }) {
     <View style={styles.crossPromoWrap}>
       <View style={styles.crossPromoHeader}>
         <Ionicons name="map-outline" size={15} color={colors.accent} />
-        <Text style={styles.crossPromoTitle}>Taste in Other Cities</Text>
+        <Text style={styles.crossPromoTitle}>Traveling soon?</Text>
       </View>
-      <Text style={styles.crossPromoSubtitle}>Traveling? Find your move wherever you go.</Text>
+      <Text style={styles.crossPromoSubtitle}>Find your move in other cities with our sister apps.</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
