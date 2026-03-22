@@ -1636,26 +1636,28 @@ function CrossMarketPromoCard({ cities }: { cities: OtherCity[] }) {
               </View>
               {instagramUrl ? (
                 <TouchableOpacity
-                  style={styles.crossPromoIgRow}
+                  style={styles.crossPromoIgBtn}
                   onPress={() => Linking.openURL(instagramUrl).catch(() => {})}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="logo-instagram" size={13} color={colors.accent} />
+                  <Ionicons name="logo-instagram" size={16} color={colors.accent} />
                   <Text style={styles.crossPromoIgHandle}>{city.instagram_handle}</Text>
                 </TouchableOpacity>
               ) : null}
               {storeUrl ? (
                 <TouchableOpacity
-                  style={styles.crossPromoDownload}
+                  style={styles.crossPromoDownloadBtn}
                   onPress={() => Linking.openURL(storeUrl).catch(() => {})}
                   activeOpacity={0.8}
                 >
                   <Ionicons
                     name={Platform.OS === 'android' ? 'logo-google-playstore' : 'logo-apple'}
-                    size={12}
+                    size={15}
                     color={colors.primary}
                   />
-                  <Text style={styles.crossPromoDownloadText}>Download</Text>
+                  <Text style={styles.crossPromoDownloadText}>
+                    {Platform.OS === 'android' ? 'Get on Google Play' : 'Download on App Store'}
+                  </Text>
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -2015,7 +2017,7 @@ const useStyles = createLazyStyles((colors) => ({
     gap: 10,
   },
   crossPromoCity: {
-    width: 180,
+    width: 210,
     backgroundColor: colors.cardBgElevated,
     borderRadius: radius.sm,
     padding: 10,
@@ -2039,28 +2041,35 @@ const useStyles = createLazyStyles((colors) => ({
     fontWeight: '700' as const,
     color: colors.text,
   },
-  crossPromoIgRow: {
+  crossPromoIgBtn: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: 5,
-    marginBottom: 6,
+    gap: 8,
+    backgroundColor: colors.cardBg,
+    borderWidth: 1,
+    borderColor: colors.borderAccent,
+    borderRadius: radius.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 8,
   },
   crossPromoIgHandle: {
-    fontSize: 12,
+    flex: 1,
+    fontSize: 13,
     color: colors.accent,
-    fontWeight: '500' as const,
+    fontWeight: '600' as const,
   },
-  crossPromoDownload: {
+  crossPromoDownloadBtn: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
+    gap: 8,
     backgroundColor: colors.accent,
     borderRadius: radius.sm,
-    paddingVertical: 6,
-    gap: 5,
+    paddingVertical: 11,
   },
   crossPromoDownloadText: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '700' as const,
     color: colors.primary,
   },
