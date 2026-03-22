@@ -21,7 +21,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
-import MapView, { Marker, Polygon, Region, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Polygon, Circle, Region, PROVIDER_GOOGLE } from 'react-native-maps';
 import ClusteredMapView from 'react-native-map-clustering';
 import { getColors, getSupabase, getAssets, getNeighborhoodBoundaries, getMarketCenter } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
@@ -40,6 +40,8 @@ import { SearchBar, CategoryChip, CompactRestaurantCard, MapRestaurantCard } fro
 import FeatureFilterModal from '../components/FeatureFilterModal';
 import { trackImpression } from '../lib/impressions';
 import { pointInPolygon } from '../utils/pointInPolygon';
+import { useAreas } from '../hooks/useAreas';
+import type { Area } from '../lib/areaVisits';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -117,9 +119,16 @@ export default function SearchScreen() {
     (RestaurantWithTier & { distance: number }) | null
   >(null);
 
-  // Neighborhood state
+  // Areas data (fetched per market from Supabase)
+  const { data: areas = [] } = useAreas();
+
+  // Neighborhood state — selectedAreaId is the UUID from the areas table
   const [showNeighborhoods, setShowNeighborhoods] = useState(true);
-  const [selectedNeighborhood, setSelectedNeighborhood] = useState<string | null>(null);
+  const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
+
+  // Derive selected area object and legacy slug for polygon matching
+  const selectedArea = areas.find((a) => a.id === selectedAreaId) ?? null;
+  const selectedNeighborhood = selectedArea?.slug ?? null; // kept for polygon tap compat
   const controlsOpacity = useSharedValue(1);
 
   const mapControlsStyle = useAnimatedStyle(() => ({
@@ -268,23 +277,29 @@ export default function SearchScreen() {
     );
   }, [filteredRestaurants]);
 
-  // Filter by selected neighborhood
+  // Filter by selected area — polygon containment if available, radius fallback otherwise
   const neighborhoodFilteredRestaurants = useMemo(() => {
-    if (!selectedNeighborhood) return filteredRestaurants;
-    const boundary = NEIGHBORHOOD_BOUNDARIES.find((n) => n.slug === selectedNeighborhood);
-    if (!boundary) return filteredRestaurants;
-    return filteredRestaurants.filter(
-      (r) =>
-        r.latitude != null &&
-        r.longitude != null &&
-        pointInPolygon({ latitude: r.latitude, longitude: r.longitude }, boundary.coordinates)
-    );
-  }, [filteredRestaurants, selectedNeighborhood]);
+    if (!selectedArea) return filteredRestaurants;
 
-  const selectedNeighborhoodName = useMemo(
-    () => NEIGHBORHOOD_BOUNDARIES.find((n) => n.slug === selectedNeighborhood)?.name ?? null,
-    [selectedNeighborhood]
-  );
+    // Try to find a matching polygon boundary by proximity to area center
+    const boundary = NEIGHBORHOOD_BOUNDARIES.find(
+      (b) =>
+        Math.abs(b.labelCoordinate.latitude - selectedArea.latitude) < 0.05 &&
+        Math.abs(b.labelCoordinate.longitude - selectedArea.longitude) < 0.05
+    );
+
+    return filteredRestaurants.filter((r) => {
+      if (r.latitude == null || r.longitude == null) return false;
+      if (boundary && boundary.coordinates.length >= 3) {
+        return pointInPolygon({ latitude: r.latitude, longitude: r.longitude }, boundary.coordinates);
+      }
+      // Radius fallback: distance (miles) <= area radius converted from meters
+      const radiusMiles = selectedArea.radius / 1609.34;
+      return calculateDistance(r.latitude, r.longitude, selectedArea.latitude, selectedArea.longitude) <= radiusMiles;
+    });
+  }, [filteredRestaurants, selectedArea, NEIGHBORHOOD_BOUNDARIES]);
+
+  const selectedNeighborhoodName = selectedArea?.name ?? null;
 
   const handleFavoritePress = useCallback(
     (restaurantId: string) => {
@@ -339,9 +354,19 @@ export default function SearchScreen() {
     setSelectedRestaurant(null);
   }, []);
 
-  const handleNeighborhoodPress = useCallback((slug: string) => {
-    setSelectedNeighborhood((prev) => (prev === slug ? null : slug));
+  const handleAreaPress = useCallback((area: Area) => {
+    setSelectedAreaId((prev) => (prev === area.id ? null : area.id));
     setSelectedRestaurant(null);
+
+    // Pan + zoom the map to the selected area
+    if (mapRef.current) {
+      const latDelta = (area.radius * 3) / 111000;
+      const lngDelta = latDelta / Math.cos((area.latitude * Math.PI) / 180);
+      mapRef.current.animateToRegion(
+        { latitude: area.latitude, longitude: area.longitude, latitudeDelta: latDelta, longitudeDelta: lngDelta },
+        400
+      );
+    }
   }, []);
 
   const handleMapPress = useCallback(
@@ -354,13 +379,17 @@ export default function SearchScreen() {
       // Detect neighborhood polygon taps
       if (showNeighborhoods && e?.nativeEvent?.coordinate) {
         const coord = e.nativeEvent.coordinate;
-        const tappedHood = NEIGHBORHOOD_BOUNDARIES.find((hood) =>
+        const tappedBoundary = NEIGHBORHOOD_BOUNDARIES.find((hood) =>
           pointInPolygon(coord, hood.coordinates)
         );
-        if (tappedHood) {
-          setSelectedNeighborhood((prev) =>
-            prev === tappedHood.slug ? null : tappedHood.slug
+        if (tappedBoundary) {
+          // Find the matching area by proximity to the boundary's label coordinate
+          const matchingArea = areas.find(
+            (a) =>
+              Math.abs(a.latitude - tappedBoundary.labelCoordinate.latitude) < 0.05 &&
+              Math.abs(a.longitude - tappedBoundary.labelCoordinate.longitude) < 0.05
           );
+          if (matchingArea) handleAreaPress(matchingArea);
         }
       }
     },
@@ -414,6 +443,8 @@ export default function SearchScreen() {
     )
       return null;
 
+    const count = cluster.properties?.point_count ?? 0;
+
     return (
       <Marker
         key={`cluster-${id}`}
@@ -421,10 +452,12 @@ export default function SearchScreen() {
         onPress={onPress}
         tracksViewChanges={false}
       >
-        <View style={styles.clusterMarker} />
+        <View style={styles.clusterMarker}>
+          <Text style={styles.clusterText}>{count}</Text>
+        </View>
       </Marker>
     );
-  }, []);
+  }, [styles]);
 
   return (
     <>
@@ -449,7 +482,6 @@ export default function SearchScreen() {
           radius={50}
           minZoom={1}
           maxZoom={20}
-          minZoomLevel={10}
           customMapStyle={darkMapStyle}
         >
           {validRestaurants.map((restaurant) => (
@@ -470,11 +502,11 @@ export default function SearchScreen() {
               </Marker>
           ))}
 
-          {/* Neighborhood boundary polygons */}
+          {/* Neighborhood boundary polygons (markets with polygon data) */}
           {showNeighborhoods &&
             NEIGHBORHOOD_BOUNDARIES.map((hood) => {
               const isSelected = selectedNeighborhood === hood.slug;
-              const isDimmed = selectedNeighborhood != null && !isSelected;
+              const isDimmed = selectedAreaId != null && !isSelected;
               return (
                 <Polygon
                   key={hood.slug}
@@ -495,6 +527,32 @@ export default function SearchScreen() {
                 />
               );
             })}
+
+          {/* Circle overlays for areas without polygon data (e.g. Fayetteville) */}
+          {showNeighborhoods &&
+            areas
+              .filter(
+                (area) =>
+                  !NEIGHBORHOOD_BOUNDARIES.some(
+                    (b) =>
+                      Math.abs(b.labelCoordinate.latitude - area.latitude) < 0.05 &&
+                      Math.abs(b.labelCoordinate.longitude - area.longitude) < 0.05
+                  )
+              )
+              .map((area) => {
+                const isSelected = selectedAreaId === area.id;
+                const isDimmed = selectedAreaId != null && !isSelected;
+                return (
+                  <Circle
+                    key={`circle-${area.id}`}
+                    center={{ latitude: area.latitude, longitude: area.longitude }}
+                    radius={area.radius}
+                    fillColor={isSelected ? 'rgba(107,168,240,0.20)' : isDimmed ? 'rgba(107,168,240,0.04)' : 'rgba(107,168,240,0.10)'}
+                    strokeColor={isDimmed ? 'rgba(107,168,240,0.15)' : 'rgba(107,168,240,0.55)'}
+                    strokeWidth={isSelected ? 3 : 1.5}
+                  />
+                );
+              })}
         </ClusteredMapView>
 
         {/* Floating search bar + filter chips */}
@@ -568,22 +626,31 @@ export default function SearchScreen() {
           />
         )}
 
-        {/* Neighborhood legend */}
-        {showNeighborhoods && (
+        {/* Neighborhood legend — driven by areas table, works for all markets */}
+        {showNeighborhoods && areas.length > 0 && (
           <Animated.View style={[styles.neighborhoodLegend, mapControlsStyle]} pointerEvents="box-none">
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.legendContent}>
-              {NEIGHBORHOOD_BOUNDARIES.map((hood) => {
-                const isSelected = selectedNeighborhood === hood.slug;
-                const isDimmed = selectedNeighborhood != null && !isSelected;
+              {areas.map((area) => {
+                const isSelected = selectedAreaId === area.id;
+                const isDimmed = selectedAreaId != null && !isSelected;
+                // Match accent color to existing polygon if available
+                const boundary = NEIGHBORHOOD_BOUNDARIES.find(
+                  (b) =>
+                    Math.abs(b.labelCoordinate.latitude - area.latitude) < 0.05 &&
+                    Math.abs(b.labelCoordinate.longitude - area.longitude) < 0.05
+                );
+                const dotColor = boundary
+                  ? boundary.strokeColor.replace('0.6)', '1)')
+                  : 'rgba(107,168,240,1)';
                 return (
                   <TouchableOpacity
-                    key={hood.slug}
+                    key={area.id}
                     style={[styles.legendItem, isSelected && styles.legendItemSelected, isDimmed && styles.legendItemDimmed]}
-                    onPress={() => handleNeighborhoodPress(hood.slug)}
+                    onPress={() => handleAreaPress(area)}
                     activeOpacity={0.7}
                   >
-                    <View style={[styles.legendDot, { backgroundColor: hood.strokeColor.replace('0.6)', '1)') }]} />
-                    <Text style={[styles.legendText, isDimmed && styles.legendTextDimmed]}>{hood.name}</Text>
+                    <View style={[styles.legendDot, { backgroundColor: dotColor }]} />
+                    <Text style={[styles.legendText, isDimmed && styles.legendTextDimmed]}>{area.name}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -610,10 +677,10 @@ export default function SearchScreen() {
                 {selectedNeighborhoodName ? ` in ${selectedNeighborhoodName}` : ''}
                 {searchQuery.trim() ? ` for "${searchQuery.trim()}"` : ''}
               </Text>
-              {selectedNeighborhood && (
+              {selectedAreaId && (
                 <TouchableOpacity
                   style={styles.clearNeighborhoodButton}
-                  onPress={() => setSelectedNeighborhood(null)}
+                  onPress={() => setSelectedAreaId(null)}
                 >
                   <Ionicons name="close-circle" size={16} color={colors.textMuted} />
                   <Text style={styles.clearNeighborhoodText}>Clear</Text>
@@ -698,7 +765,8 @@ const useStyles = createLazyStyles((colors) => ({
   markerWrapper: { alignItems: 'center' as const, justifyContent: 'center' as const },
   logoMarkerContainer: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.cardBg, justifyContent: 'center' as const, alignItems: 'center' as const, borderWidth: 3, borderColor: colors.accent, overflow: 'hidden' as const, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 5 },
   logoMarker: { width: 36, height: 36, borderRadius: 18 },
-  clusterMarker: { width: 16, height: 16, borderRadius: 8, backgroundColor: colors.accent },
+  clusterMarker: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.accent, justifyContent: 'center' as const, alignItems: 'center' as const, borderWidth: 2, borderColor: `${colors.accent}80` },
+  clusterText: { color: colors.textOnAccent, fontSize: 13, fontWeight: '700' as const },
   neighborhoodLegend: { position: 'absolute' as const, bottom: 100, left: 0, right: 60, zIndex: 5 },
   legendContent: { paddingHorizontal: 12, gap: 6 },
   legendItem: { flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: colors.cardBg, paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.full, gap: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 3 },
