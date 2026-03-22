@@ -142,6 +142,7 @@ const useStyles = createLazyStyles((colors) => ({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 12,
+    paddingHorizontal: 16,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -175,7 +176,9 @@ const useStyles = createLazyStyles((colors) => ({
     color: colors.textMuted,
   },
   hoursContainer: {
-    paddingTop: 12,
+    paddingTop: 8,
+    paddingBottom: 4,
+    paddingHorizontal: 16,
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },

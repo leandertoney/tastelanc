@@ -513,7 +513,7 @@ function usePulseFeed() {
           imageUrl: e.image_url || null,
           startTime: e.start_time,
           endTime: e.end_time || null,
-          date: e.event_date || e.created_at,
+          date: e.created_at,
         });
       });
 
@@ -1059,6 +1059,7 @@ function HappyHourCard({ item, onPress }: { item: HappyHourItem; onPress: () => 
         avatarBg={!item.restaurantImage ? withAlpha(colors.accent, 0.15) : undefined}
         title={item.restaurantName}
         subtitle={`Happy Hour · ${timeRange}`}
+        time={formatTimeAgo(item.date)}
       />
       {item.dealPreview.length > 0 && (
         <View style={styles.dealChipsRow}>

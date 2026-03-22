@@ -10,6 +10,8 @@ import {
   TouchableOpacity,
   Alert,
   Linking,
+  Platform,
+  Share,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,7 +31,7 @@ import { getColors, getBrand, getSupabase, hasFeature } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius } from '../constants/spacing';
 import { fetchEvents } from '../lib/events';
-import { trackScreenView } from '../lib/analytics';
+import { trackScreenView, trackClick } from '../lib/analytics';
 import { useAuth } from '../hooks/useAuth';
 import { useEmailGate } from '../hooks/useEmailGate';
 import { useMarket } from '../context/MarketContext';
@@ -126,6 +128,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [checkInModalVisible, setCheckInModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('recommendations');
+  const [activeInfoTab, setActiveInfoTab] = useState<'hours' | 'contact' | 'rate'>('hours');
   const [isRecordingVisit, setIsRecordingVisit] = useState(false);
   const [visitRecorded, setVisitRecorded] = useState(false);
 
@@ -851,39 +854,127 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
           )}
         </View>
 
-        {/* Hours */}
-        {sortedHours.length > 0 && (
-          <View style={styles.hoursSection}>
-            <HoursAccordion hours={sortedHours} />
+        {/* Unified Info Panel */}
+        <View style={styles.infoTabPanel}>
+          {/* Tab strip */}
+          <View style={styles.infoTabStrip}>
+            {(['hours', 'contact', 'rate'] as const).map((tab) => (
+              <TouchableOpacity
+                key={tab}
+                style={[styles.infoTab, activeInfoTab === tab && styles.infoTabActive]}
+                onPress={() => setActiveInfoTab(tab)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.infoTabText, activeInfoTab === tab && styles.infoTabTextActive]}>
+                  {tab === 'hours' ? 'Hours' : tab === 'contact' ? 'Contact' : 'Rate'}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
-        )}
 
-        {/* Rating */}
-        {userId && (
-          <View style={styles.ratingRow}>
-            <RatingSubmit
-              restaurantId={restaurant.id}
-              onRatingSubmitted={() => {
-                fetchRestaurantData();
-              }}
-            />
-          </View>
-        )}
+          {/* Hours tab */}
+          {activeInfoTab === 'hours' && (
+            <View style={styles.infoTabContent}>
+              {sortedHours.length > 0 ? sortedHours.map(({ day_of_week, open_time, close_time, is_closed }) => {
+                const isToday = day_of_week === today;
+                const dayLabel = day_of_week.charAt(0).toUpperCase() + day_of_week.slice(1);
+                const timeStr = is_closed
+                  ? 'Closed'
+                  : open_time && close_time
+                  ? `${formatTime(open_time)} – ${formatTime(close_time)}`
+                  : 'Hours N/A';
+                return (
+                  <View key={day_of_week} style={[styles.hoursRow, isToday && styles.hoursTodayRow]}>
+                    <Text style={[styles.hoursDayText, isToday && styles.hoursTodayText]}>{dayLabel}</Text>
+                    <Text style={[styles.hoursTimeText, isToday && styles.hoursTodayText, is_closed && styles.hoursClosedText]}>{timeStr}</Text>
+                  </View>
+                );
+              }) : (
+                <Text style={styles.infoEmptyText}>Hours not available</Text>
+              )}
+            </View>
+          )}
 
-        {/* Quick Actions */}
-        <View style={styles.actionsSection}>
-          <QuickActionsBar
-            restaurantId={restaurant.id}
-            restaurantName={restaurant.name}
-            phone={restaurant.phone}
-            website={restaurant.website}
-            latitude={restaurant.latitude}
-            longitude={restaurant.longitude}
-            address={fullAddress}
-            onFavoritePress={handleFavoritePress}
-            isFavorite={isFavorite}
-            onWebsitePress={(url) => navigation.navigate('InAppBrowser', { url, title: restaurant.name })}
-          />
+          {/* Contact tab */}
+          {activeInfoTab === 'contact' && (
+            <View style={styles.infoTabContent}>
+              {restaurant.phone ? (
+                <TouchableOpacity style={styles.contactRow} onPress={() => { trackClick('phone', restaurant.id); Linking.openURL(`tel:${restaurant.phone!.replace(/[^0-9+]/g, '')}`); }}>
+                  <View style={styles.contactIcon}><Ionicons name="call-outline" size={20} color={colors.text} /></View>
+                  <View style={styles.contactRowBody}>
+                    <Text style={styles.contactRowLabel}>Call</Text>
+                    <Text style={styles.contactRowValue}>{restaurant.phone}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                </TouchableOpacity>
+              ) : null}
+              {restaurant.website ? (
+                <TouchableOpacity style={styles.contactRow} onPress={() => {
+                  trackClick('website', restaurant.id);
+                  let url = restaurant.website!;
+                  if (!url.startsWith('http')) url = `https://${url}`;
+                  navigation.navigate('InAppBrowser', { url, title: restaurant.name });
+                }}>
+                  <View style={styles.contactIcon}><Ionicons name="globe-outline" size={20} color={colors.text} /></View>
+                  <View style={styles.contactRowBody}>
+                    <Text style={styles.contactRowLabel}>Website</Text>
+                    <Text style={styles.contactRowValue} numberOfLines={1}>{restaurant.website}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                </TouchableOpacity>
+              ) : null}
+              <TouchableOpacity style={styles.contactRow} onPress={() => {
+                trackClick('directions', restaurant.id);
+                const dest = restaurant.latitude && restaurant.longitude
+                  ? `${restaurant.latitude},${restaurant.longitude}`
+                  : encodeURIComponent(fullAddress);
+                const url = Platform.select({
+                  ios: `maps:?daddr=${dest}`,
+                  android: `google.navigation:q=${dest}`,
+                  default: `https://maps.google.com/maps?daddr=${dest}`,
+                });
+                Linking.openURL(url!);
+              }}>
+                <View style={styles.contactIcon}><Ionicons name="navigate-outline" size={20} color={colors.text} /></View>
+                <View style={styles.contactRowBody}>
+                  <Text style={styles.contactRowLabel}>Directions</Text>
+                  <Text style={styles.contactRowValue} numberOfLines={1}>{fullAddress}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.contactRow} onPress={handleFavoritePress}>
+                <View style={styles.contactIcon}><Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={20} color={isFavorite ? colors.accent : colors.text} /></View>
+                <View style={styles.contactRowBody}>
+                  <Text style={styles.contactRowLabel}>{isFavorite ? 'Saved' : 'Save'}</Text>
+                  <Text style={styles.contactRowValue}>{isFavorite ? 'In your favorites' : 'Add to favorites'}</Text>
+                </View>
+                {isFavorite && <Ionicons name="checkmark" size={16} color={colors.accent} />}
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.contactRow, styles.contactRowLast]} onPress={async () => {
+                trackClick('share', restaurant.id);
+                const appUrl = brand.appStoreUrl || brand.playStoreUrl || '';
+                await Share.share({ message: `Check out ${restaurant.name} on ${brand.appName}! ${appUrl}` });
+              }}>
+                <View style={styles.contactIcon}><Ionicons name="share-outline" size={20} color={colors.text} /></View>
+                <View style={styles.contactRowBody}>
+                  <Text style={styles.contactRowLabel}>Share</Text>
+                  <Text style={styles.contactRowValue}>Tell a friend</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Rate tab */}
+          {activeInfoTab === 'rate' && (
+            <View style={styles.infoTabContent}>
+              {userId ? (
+                <RatingSubmit restaurantId={restaurant.id} onRatingSubmitted={() => fetchRestaurantData()} />
+              ) : (
+                <Text style={styles.infoEmptyText}>Sign in to rate this restaurant</Text>
+              )}
+            </View>
+          )}
         </View>
 
         {/* Bottom spacing */}
@@ -1007,9 +1098,27 @@ const useStyles = createLazyStyles((colors) => ({
   featureChip: { flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: colors.cardBg, paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.full, gap: 5, borderWidth: 1, borderColor: colors.border },
   featureChipText: { fontSize: 12, fontWeight: '500' as const, color: colors.textMuted },
   photosSection: { marginBottom: 24 },
-  hoursSection: { marginBottom: 16, paddingHorizontal: 16 },
-  actionsSection: { marginTop: 8, borderTopWidth: 1, borderTopColor: colors.border },
-  bottomSpacer: { height: 100 },
+  infoTabPanel: { marginHorizontal: 16, marginBottom: 16, backgroundColor: colors.cardBg, borderRadius: radius.md, overflow: 'hidden' as const },
+  infoTabStrip: { flexDirection: 'row' as const, borderBottomWidth: 1, borderBottomColor: colors.border },
+  infoTab: { flex: 1, paddingVertical: 12, alignItems: 'center' as const },
+  infoTabActive: { borderBottomWidth: 2, borderBottomColor: colors.accent },
+  infoTabText: { fontSize: 13, fontWeight: '500' as const, color: colors.textMuted },
+  infoTabTextActive: { color: colors.accent, fontWeight: '600' as const },
+  infoTabContent: { padding: 16 },
+  infoEmptyText: { fontSize: 14, color: colors.textMuted, textAlign: 'center' as const, paddingVertical: 12 },
+  hoursRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, paddingVertical: 7, marginHorizontal: -16, paddingHorizontal: 16 },
+  hoursTodayRow: { backgroundColor: colors.cardBgElevated },
+  hoursDayText: { fontSize: 14, color: colors.text },
+  hoursTimeText: { fontSize: 14, color: colors.textMuted },
+  hoursTodayText: { fontWeight: '600' as const, color: colors.text },
+  hoursClosedText: { color: colors.error },
+  contactRow: { flexDirection: 'row' as const, alignItems: 'center' as const, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 12 },
+  contactRowLast: { borderBottomWidth: 0 },
+  contactIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.cardBgElevated, justifyContent: 'center' as const, alignItems: 'center' as const },
+  contactRowBody: { flex: 1 },
+  contactRowLabel: { fontSize: 14, fontWeight: '600' as const, color: colors.text },
+  contactRowValue: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
+  bottomSpacer: { height: 120 },
   recommendFab: { position: 'absolute' as const, bottom: 80, right: 16, flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: colors.cardBgElevated, paddingVertical: 12, paddingHorizontal: 16, borderRadius: radius.full, borderWidth: 1, borderColor: colors.accent, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6, gap: 6 },
   recommendFabText: { color: colors.text, fontSize: 14, fontWeight: '600' as const },
   checkInFab: { position: 'absolute' as const, bottom: 24, right: 16, flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: colors.accent, paddingVertical: 14, paddingHorizontal: 20, borderRadius: radius.full, shadowColor: colors.accent, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8, gap: 8 },

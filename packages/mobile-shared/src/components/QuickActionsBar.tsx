@@ -146,7 +146,7 @@ export default function QuickActionsBar({
           <View style={styles.iconContainer}>
             <Ionicons
               name={action.icon as any}
-              size={24}
+              size={22}
               color={action.disabled ? colors.textSecondary : action.iconColor || colors.text}
             />
           </View>
@@ -162,30 +162,31 @@ export default function QuickActionsBar({
 const useStyles = createLazyStyles((colors) => ({
   container: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 16,
-    paddingHorizontal: 8,
+    justifyContent: 'space-evenly',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
     backgroundColor: colors.cardBg,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   actionButton: {
     alignItems: 'center',
-    flex: 1,
+    minWidth: 52,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     borderRadius: radius.full,
     backgroundColor: colors.cardBgElevated,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 5,
   },
   label: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.text,
     fontWeight: '500',
+    textAlign: 'center',
   },
   disabled: {
     opacity: 0.5,
