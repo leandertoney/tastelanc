@@ -87,6 +87,10 @@ export { usePromoCard } from './usePromoCard';
 // Ad hooks
 export { useActiveAds } from './useAds';
 
+// Move tab personalization algorithm signals
+export { usePersonalizedFeed } from './usePersonalizedFeed';
+export type { PersonalizedFeedSignals } from './usePersonalizedFeed';
+
 // Blog hooks
 export { useBlogPosts, useLatestBlogPosts } from './useBlogPosts';
 

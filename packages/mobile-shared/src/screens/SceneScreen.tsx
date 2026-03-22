@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,10 +20,12 @@ import { createLazyStyles } from '../utils/lazyStyles';
 import { withAlpha } from '../utils/colorUtils';
 import { radius, spacing } from '../constants/spacing';
 import { useMarket } from '../context/MarketContext';
-import { usePlatformSocialProof, usePersonalStats } from '../hooks';
+import { usePlatformSocialProof, usePersonalStats, usePersonalizedFeed } from '../hooks';
+import type { PersonalizedFeedSignals } from '../hooks';
 import { useAuth } from '../hooks/useAuth';
 import type { RootStackParamList } from '../navigation/types';
 import { trackClick } from '../lib/analytics';
+import { applyContextBoosts, isHappyHourActiveNow } from '../lib/recommendations';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type FilterType = 'all' | 'photos' | 'itineraries' | 'trending' | 'deals' | 'events';
@@ -199,6 +201,7 @@ interface HappyHourItem {
   happyHourName: string;
   startTime: string;
   endTime: string;
+  daysOfWeek: string[];
   dealPreview: string[];
   date: string;
 }
@@ -214,6 +217,7 @@ interface EventItem {
   imageUrl: string | null;
   startTime: string;
   endTime: string | null;
+  eventDate: string;
   date: string;
 }
 
@@ -495,6 +499,7 @@ function usePulseFeed() {
           happyHourName: h.name || 'Happy Hour',
           startTime: h.start_time,
           endTime: h.end_time,
+          daysOfWeek: h.days_of_week || [],
           dealPreview: dealNames,
           date: h.created_at,
         });
@@ -513,6 +518,7 @@ function usePulseFeed() {
           imageUrl: e.image_url || null,
           startTime: e.start_time,
           endTime: e.end_time || null,
+          eventDate: e.event_date || '',
           date: e.created_at,
         });
       });
@@ -1389,6 +1395,109 @@ const FILTERS: { key: FilterType; label: string }[] = [
   { key: 'itineraries', label: 'Plans' },
 ];
 
+// ─── Move Algorithm: Personalization Pass ─────────────────────────────────────
+
+/**
+ * Applies the Move tab personalization algorithm to the editorial feed.
+ *
+ * Strategy:
+ * 1. Fixed-position items (holiday_teaser, reels_shelf) stay anchored.
+ * 2. Ads are stripped, then re-woven every 8 items after sorting.
+ * 3. Restaurant-linked items (happy_hours, specials, events, buzz, new_restaurant)
+ *    are scored with applyContextBoosts() and re-sorted.
+ * 4. "Active right now" happy hours are promoted to the front.
+ * 5. Editorial items (video, photo, itinerary, blog) keep their relative order.
+ */
+function applyPersonalizationToFeed(
+  items: PulseItem[],
+  signals: PersonalizedFeedSignals
+): PulseItem[] {
+  const { context } = signals;
+  const now = context.currentTime;
+  const todayStr = now.toISOString().split('T')[0];
+  const sevenDaysAgoMs = now.getTime() - 7 * 86400000;
+  const thirtyDaysAgoMs = now.getTime() - 30 * 86400000;
+
+  // Separate by role
+  const fixedItems = items.filter((i) => i.kind === 'holiday_teaser' || i.kind === 'reels_shelf');
+  const ads = items.filter((i) => i.kind === 'ad');
+  const editorialItems = items.filter((i) =>
+    i.kind === 'video' || i.kind === 'photo' || i.kind === 'itinerary' || i.kind === 'blog'
+  );
+  const restaurantItems = items.filter((i) =>
+    i.kind === 'happy_hour' || i.kind === 'special' || i.kind === 'event' ||
+    i.kind === 'buzz' || i.kind === 'new_restaurant' || i.kind === 'coupon_claim'
+  );
+
+  // Score each restaurant-linked item
+  const scored = restaurantItems.map((item) => {
+    let restaurantId = '';
+    const itemSignals: {
+      isHappyHourNow?: boolean;
+      isEventToday?: boolean;
+      isNewSpecial?: boolean;
+      isNewRestaurant?: boolean;
+      checkinCount7d?: number;
+    } = {};
+
+    if (item.kind === 'happy_hour') {
+      restaurantId = item.restaurantId;
+      itemSignals.isHappyHourNow = isHappyHourActiveNow(
+        item.startTime,
+        item.endTime,
+        item.daysOfWeek,
+        now
+      );
+    } else if (item.kind === 'event') {
+      restaurantId = item.restaurantId;
+      itemSignals.isEventToday = item.eventDate === todayStr;
+    } else if (item.kind === 'special') {
+      restaurantId = item.restaurantId;
+      itemSignals.isNewSpecial = new Date(item.date).getTime() >= sevenDaysAgoMs;
+    } else if (item.kind === 'new_restaurant') {
+      restaurantId = item.restaurantId;
+      itemSignals.isNewRestaurant = new Date(item.date).getTime() >= thirtyDaysAgoMs;
+    } else if (item.kind === 'buzz') {
+      restaurantId = item.restaurantId;
+      itemSignals.checkinCount7d = item.checkinCount7d;
+    } else if (item.kind === 'coupon_claim') {
+      restaurantId = item.restaurantId;
+    }
+
+    const boost = restaurantId
+      ? applyContextBoosts(restaurantId, [], context, itemSignals)
+      : 0;
+
+    return { item, score: boost, isActiveNow: itemSignals.isHappyHourNow || itemSignals.isEventToday };
+  });
+
+  // Sort: active-now first, then by score descending
+  scored.sort((a, b) => {
+    if (a.isActiveNow && !b.isActiveNow) return -1;
+    if (!a.isActiveNow && b.isActiveNow) return 1;
+    return b.score - a.score;
+  });
+
+  // Reconstruct: fixed-position → personalized restaurant items → editorial
+  const reordered: PulseItem[] = [
+    ...fixedItems,
+    ...scored.map((s) => s.item),
+    ...editorialItems,
+  ];
+
+  // Re-weave ads every 8 items
+  const result: PulseItem[] = [];
+  let adIdx = 0;
+  reordered.forEach((item, i) => {
+    if (i > 0 && i % 8 === 0 && adIdx < ads.length) {
+      result.push(ads[adIdx++]);
+    }
+    result.push(item);
+  });
+
+  return result;
+}
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function SceneScreen() {
@@ -1401,7 +1510,14 @@ export default function SceneScreen() {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { data: allItems = [], isLoading, refetch } = usePulseFeed();
+  const { userId } = useAuth();
+  const { data: rawFeed = [], isLoading, refetch } = usePulseFeed();
+  const { signals } = usePersonalizedFeed(userId ?? undefined);
+
+  const allItems = useMemo(() => {
+    if (!signals || rawFeed.length === 0) return rawFeed;
+    return applyPersonalizationToFeed(rawFeed, signals);
+  }, [rawFeed, signals]);
 
   const filteredItems = allItems.filter((item) => {
     if (item.kind === 'ad') return true; // Ads always show

@@ -6,6 +6,132 @@ import { getEpochSeed, seededShuffle, basicFairRotate, getTierWeight } from './f
 import type { Restaurant, RestaurantCategory, CuisineType, PremiumTier } from '../types/database';
 import { ONBOARDING_DATA_KEY, FOOD_PREFERENCE_TO_CUISINE, type OnboardingData } from '../types/onboarding';
 
+// ─── Move Tab Algorithm ────────────────────────────────────────────────────────
+
+/**
+ * Context signals for the Move tab personalization algorithm.
+ * Populated by usePersonalizedFeed hook and passed to applyContextBoosts().
+ */
+export interface MoveContext {
+  currentTime: Date;
+  /** Restaurant IDs visited in the last 7 days — suppress from top positions */
+  visitedIds7d: Set<string>;
+  /** Restaurant IDs visited in the last 30 days — soft suppress */
+  visitedIds30d: Set<string>;
+  /** Restaurant IDs the user has ever checked into — used for reward-loop nudge */
+  checkinRestaurantIds: Set<string>;
+}
+
+const MOVE_SCORING = {
+  HAPPY_HOUR_ACTIVE_NOW: 30,   // Happy hour is live right now
+  EVENT_TODAY: 25,              // Event is happening today
+  SPECIAL_RECENT: 20,           // Special created in last 7 days
+  NEW_RESTAURANT: 15,           // Restaurant added in last 30 days
+  TRENDING: 25,                 // 5+ checkins this week
+  HIGH_COMMUNITY_RATING: 15,    // TasteLanc rating >= 4.5
+  PROXIMITY_REWARD: 20,         // Within 0.5 miles
+  BRUNCH_BONUS: 15,             // Sunday 10am–2pm + brunch category
+  LUNCH_BONUS: 15,              // Weekday 11am–2pm + lunch/cafe category
+  WEEKEND_EVENING_MULT: 1.2,    // Fri/Sat 5pm–11pm multiplier
+  RECENT_VISIT_7D: -40,         // Visited in last 7 days — suppress
+  RECENT_VISIT_30D: -15,        // Visited in last 30 days — soft suppress
+  NEVER_VISITED_BONUS: 15,      // Discovery premium — never been here
+  CHECKIN_ACTIVE_NEVER_HERE: 10, // Reward-loop nudge for checkin users
+};
+
+/**
+ * Check if a happy hour is active at the given time.
+ * daysOfWeek should be lowercase day names like ['monday', 'friday'].
+ */
+export function isHappyHourActiveNow(
+  startTime: string,
+  endTime: string,
+  daysOfWeek: string[],
+  now: Date = new Date()
+): boolean {
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const todayName = dayNames[now.getDay()];
+  if (!daysOfWeek.some((d) => d.toLowerCase() === todayName)) return false;
+
+  const [startH, startM] = startTime.split(':').map(Number);
+  const [endH, endM] = endTime.split(':').map(Number);
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const startMinutes = startH * 60 + (startM || 0);
+  const endMinutes = endH * 60 + (endM || 0);
+
+  return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+}
+
+/**
+ * Apply Move tab context boosts to a restaurant-linked feed item.
+ * Returns a score delta (positive = boost, negative = suppress).
+ *
+ * Call this on top of the base scoreRestaurant() score for restaurant-linked
+ * items in the Move feed (happy_hours, specials, events, buzz, new_restaurants).
+ */
+export function applyContextBoosts(
+  restaurantId: string,
+  restaurantCategories: string[],
+  context: MoveContext,
+  signals: {
+    isHappyHourNow?: boolean;
+    isEventToday?: boolean;
+    isNewSpecial?: boolean;     // special created < 7 days ago
+    isNewRestaurant?: boolean;  // restaurant added < 30 days ago
+    checkinCount7d?: number;    // from buzz data
+    tastelancRating?: number;
+    distanceMiles?: number;
+  } = {}
+): number {
+  let boost = 0;
+
+  const { currentTime, visitedIds7d, visitedIds30d, checkinRestaurantIds } = context;
+  const hour = currentTime.getHours();
+  const dow = currentTime.getDay(); // 0=Sun, 6=Sat
+  const isWeekendEvening = (dow === 5 || dow === 6) && hour >= 17 && hour < 23;
+  const isBrunchTime = dow === 0 && hour >= 10 && hour < 14;
+  const isLunchTime = dow >= 1 && dow <= 5 && hour >= 11 && hour < 14;
+
+  // Content signals
+  if (signals.isHappyHourNow) boost += MOVE_SCORING.HAPPY_HOUR_ACTIVE_NOW;
+  if (signals.isEventToday) boost += MOVE_SCORING.EVENT_TODAY;
+  if (signals.isNewSpecial) boost += MOVE_SCORING.SPECIAL_RECENT;
+  if (signals.isNewRestaurant) boost += MOVE_SCORING.NEW_RESTAURANT;
+  if ((signals.checkinCount7d ?? 0) >= 5) boost += MOVE_SCORING.TRENDING;
+  if ((signals.tastelancRating ?? 0) >= 4.5) boost += MOVE_SCORING.HIGH_COMMUNITY_RATING;
+  if (signals.distanceMiles !== undefined && signals.distanceMiles <= 0.5) {
+    boost += MOVE_SCORING.PROXIMITY_REWARD;
+  }
+
+  // Occasion bonuses (time-of-day context)
+  const cats = restaurantCategories.map((c) => c.toLowerCase());
+  if (isBrunchTime && cats.includes('brunch')) boost += MOVE_SCORING.BRUNCH_BONUS;
+  if (isLunchTime && (cats.includes('lunch') || cats.includes('cafe'))) boost += MOVE_SCORING.LUNCH_BONUS;
+
+  // Apply weekend evening multiplier to positive boosts
+  if (isWeekendEvening && boost > 0) {
+    boost = Math.round(boost * MOVE_SCORING.WEEKEND_EVENING_MULT);
+  }
+
+  // Recency/novelty signals
+  if (visitedIds7d.has(restaurantId)) {
+    boost += MOVE_SCORING.RECENT_VISIT_7D;
+  } else if (visitedIds30d.has(restaurantId)) {
+    boost += MOVE_SCORING.RECENT_VISIT_30D;
+  } else {
+    boost += MOVE_SCORING.NEVER_VISITED_BONUS;
+  }
+
+  // Reward-loop nudge: checkin-active user who hasn't been here
+  if (checkinRestaurantIds.size > 0 && !checkinRestaurantIds.has(restaurantId)) {
+    boost += MOVE_SCORING.CHECKIN_ACTIVE_NEVER_HERE;
+  }
+
+  return boost;
+}
+
+// ─── Base Scoring ──────────────────────────────────────────────────────────────
+
 // Scoring configuration
 const SCORING = {
   // Cuisine match (onboarding food pref → restaurant.cuisine)
