@@ -1,4 +1,167 @@
 import type { NeighborhoodBoundary } from '@tastelanc/mobile-shared/src/data/neighborhoodBoundaries';
 
-// TODO: Populate with Fayetteville, NC neighborhood boundaries
-export const NEIGHBORHOOD_BOUNDARIES: NeighborhoodBoundary[] = [];
+// Fayetteville, NC neighborhood polygon boundaries.
+// Slugs match the areas.slug values in Supabase for this market.
+// Colors use Fayetteville's brand palette: navy bg, light-blue accent, red CTA.
+export const NEIGHBORHOOD_BOUNDARIES: NeighborhoodBoundary[] = [
+  {
+    // Historic downtown core — Market House at Hay St & Person St intersection
+    slug: 'fay-downtown',
+    name: 'Downtown Fayetteville',
+    labelCoordinate: { latitude: 35.0527, longitude: -78.8784 },
+    fillColor: 'rgba(147, 181, 207, 0.14)',
+    strokeColor: 'rgba(147, 181, 207, 0.65)',
+    coordinates: [
+      { latitude: 35.0580, longitude: -78.8840 },
+      { latitude: 35.0582, longitude: -78.8790 },
+      { latitude: 35.0575, longitude: -78.8740 },
+      { latitude: 35.0555, longitude: -78.8720 },
+      { latitude: 35.0490, longitude: -78.8730 },
+      { latitude: 35.0478, longitude: -78.8760 },
+      { latitude: 35.0475, longitude: -78.8820 },
+      { latitude: 35.0490, longitude: -78.8855 },
+      { latitude: 35.0530, longitude: -78.8860 },
+    ],
+  },
+  {
+    // Haymount — historic residential/commercial district west of downtown
+    // Bounded by Fort Bragg Rd (north), Morganton Rd (south), Bragg Blvd (east)
+    slug: 'fay-haymount',
+    name: 'Haymount',
+    labelCoordinate: { latitude: 35.0600, longitude: -78.9050 },
+    fillColor: 'rgba(200, 16, 46, 0.10)',
+    strokeColor: 'rgba(200, 16, 46, 0.55)',
+    coordinates: [
+      { latitude: 35.0680, longitude: -78.9200 },
+      { latitude: 35.0685, longitude: -78.9050 },
+      { latitude: 35.0675, longitude: -78.8900 },
+      { latitude: 35.0640, longitude: -78.8840 },
+      { latitude: 35.0580, longitude: -78.8840 },
+      { latitude: 35.0530, longitude: -78.8860 },
+      { latitude: 35.0510, longitude: -78.8950 },
+      { latitude: 35.0515, longitude: -78.9130 },
+      { latitude: 35.0550, longitude: -78.9220 },
+      { latitude: 35.0620, longitude: -78.9230 },
+    ],
+  },
+  {
+    // Cross Creek Mall corridor — Skibo Rd / Bragg Blvd commercial zone
+    slug: 'fay-cross-creek',
+    name: 'Cross Creek',
+    labelCoordinate: { latitude: 35.0450, longitude: -78.9350 },
+    fillColor: 'rgba(74, 144, 217, 0.12)',
+    strokeColor: 'rgba(107, 168, 240, 0.60)',
+    coordinates: [
+      { latitude: 35.0570, longitude: -78.9550 },
+      { latitude: 35.0575, longitude: -78.9380 },
+      { latitude: 35.0555, longitude: -78.9200 },
+      { latitude: 35.0510, longitude: -78.9130 },
+      { latitude: 35.0390, longitude: -78.9130 },
+      { latitude: 35.0335, longitude: -78.9200 },
+      { latitude: 35.0320, longitude: -78.9380 },
+      { latitude: 35.0340, longitude: -78.9560 },
+      { latitude: 35.0410, longitude: -78.9620 },
+      { latitude: 35.0510, longitude: -78.9600 },
+    ],
+  },
+  {
+    // Yadkin Road commercial corridor — Morganton Rd to Cliffdale Rd
+    slug: 'fay-yadkin',
+    name: 'Yadkin Road Corridor',
+    labelCoordinate: { latitude: 35.0950, longitude: -78.9250 },
+    fillColor: 'rgba(139, 92, 246, 0.12)',
+    strokeColor: 'rgba(167, 139, 250, 0.60)',
+    coordinates: [
+      { latitude: 35.1070, longitude: -78.9380 },
+      { latitude: 35.1080, longitude: -78.9230 },
+      { latitude: 35.1065, longitude: -78.9100 },
+      { latitude: 35.1000, longitude: -78.9060 },
+      { latitude: 35.0880, longitude: -78.9070 },
+      { latitude: 35.0820, longitude: -78.9120 },
+      { latitude: 35.0810, longitude: -78.9260 },
+      { latitude: 35.0830, longitude: -78.9390 },
+      { latitude: 35.0910, longitude: -78.9440 },
+      { latitude: 35.1010, longitude: -78.9430 },
+    ],
+  },
+  {
+    // Fort Liberty area — near main gate / All American Freeway / Reilly Rd
+    slug: 'fay-fort-liberty',
+    name: 'Fort Liberty Area',
+    labelCoordinate: { latitude: 35.1450, longitude: -79.0050 },
+    fillColor: 'rgba(16, 185, 129, 0.12)',
+    strokeColor: 'rgba(52, 211, 153, 0.60)',
+    coordinates: [
+      { latitude: 35.1630, longitude: -79.0250 },
+      { latitude: 35.1640, longitude: -79.0050 },
+      { latitude: 35.1620, longitude: -78.9850 },
+      { latitude: 35.1540, longitude: -78.9760 },
+      { latitude: 35.1400, longitude: -78.9760 },
+      { latitude: 35.1280, longitude: -78.9830 },
+      { latitude: 35.1260, longitude: -79.0050 },
+      { latitude: 35.1280, longitude: -79.0260 },
+      { latitude: 35.1390, longitude: -79.0360 },
+      { latitude: 35.1540, longitude: -79.0370 },
+    ],
+  },
+  {
+    // Hope Mills — incorporated town south of Fayetteville along NC-59
+    slug: 'fay-hope-mills',
+    name: 'Hope Mills',
+    labelCoordinate: { latitude: 34.9687, longitude: -78.9450 },
+    fillColor: 'rgba(245, 158, 11, 0.12)',
+    strokeColor: 'rgba(251, 191, 36, 0.60)',
+    coordinates: [
+      { latitude: 34.9820, longitude: -78.9620 },
+      { latitude: 34.9830, longitude: -78.9470 },
+      { latitude: 34.9810, longitude: -78.9300 },
+      { latitude: 34.9740, longitude: -78.9220 },
+      { latitude: 34.9620, longitude: -78.9220 },
+      { latitude: 34.9550, longitude: -78.9290 },
+      { latitude: 34.9545, longitude: -78.9460 },
+      { latitude: 34.9565, longitude: -78.9640 },
+      { latitude: 34.9660, longitude: -78.9700 },
+      { latitude: 34.9770, longitude: -78.9680 },
+    ],
+  },
+  {
+    // Spring Lake — town northwest of Fayetteville adjacent to Fort Liberty gate
+    slug: 'fay-spring-lake',
+    name: 'Spring Lake',
+    labelCoordinate: { latitude: 35.1878, longitude: -78.9726 },
+    fillColor: 'rgba(217, 123, 74, 0.12)',
+    strokeColor: 'rgba(240, 155, 107, 0.60)',
+    coordinates: [
+      { latitude: 35.2010, longitude: -78.9880 },
+      { latitude: 35.2020, longitude: -78.9726 },
+      { latitude: 35.2005, longitude: -78.9570 },
+      { latitude: 35.1930, longitude: -78.9490 },
+      { latitude: 35.1800, longitude: -78.9490 },
+      { latitude: 35.1730, longitude: -78.9570 },
+      { latitude: 35.1720, longitude: -78.9726 },
+      { latitude: 35.1740, longitude: -78.9890 },
+      { latitude: 35.1830, longitude: -78.9960 },
+      { latitude: 35.1950, longitude: -78.9950 },
+    ],
+  },
+  {
+    // Raeford — county seat of Hoke County, roughly 20 miles southwest of Fayetteville
+    slug: 'fay-raeford',
+    name: 'Raeford',
+    labelCoordinate: { latitude: 34.9776, longitude: -79.2244 },
+    fillColor: 'rgba(239, 68, 68, 0.12)',
+    strokeColor: 'rgba(248, 113, 113, 0.60)',
+    coordinates: [
+      { latitude: 34.9900, longitude: -79.2420 },
+      { latitude: 34.9910, longitude: -79.2244 },
+      { latitude: 34.9895, longitude: -79.2070 },
+      { latitude: 34.9820, longitude: -79.2000 },
+      { latitude: 34.9680, longitude: -79.2005 },
+      { latitude: 34.9620, longitude: -79.2080 },
+      { latitude: 34.9615, longitude: -79.2244 },
+      { latitude: 34.9635, longitude: -79.2420 },
+      { latitude: 34.9730, longitude: -79.2490 },
+      { latitude: 34.9840, longitude: -79.2480 },
+    ],
+  },
+];
