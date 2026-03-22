@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Image,
+  ImageBackground,
   FlatList,
   Dimensions,
   ScrollView,
@@ -1627,40 +1628,44 @@ function CrossMarketPromoCard({ cities }: { cities: OtherCity[] }) {
             : city.app_store_url;
 
           return (
-            <View key={city.id} style={styles.crossPromoCity}>
-              <View style={styles.crossPromoCityHeader}>
-                {city.logo_url ? (
-                  <Image source={{ uri: city.logo_url }} style={styles.crossPromoCityLogo} />
-                ) : null}
+            <ImageBackground
+              key={city.id}
+              source={city.logo_url ? { uri: city.logo_url } : undefined}
+              style={styles.crossPromoCity}
+              imageStyle={styles.crossPromoCityImage}
+            >
+              {/* Dark gradient overlay at the bottom */}
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.82)']}
+                style={styles.crossPromoCityOverlay}
+              >
                 <Text style={styles.crossPromoCityName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{displayName}</Text>
-              </View>
-              {instagramUrl ? (
-                <TouchableOpacity
-                  style={styles.crossPromoIgBtn}
-                  onPress={() => Linking.openURL(instagramUrl).catch(() => {})}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="logo-instagram" size={16} color={colors.accent} />
-                  <Text style={styles.crossPromoIgHandle}>{city.instagram_handle}</Text>
-                </TouchableOpacity>
-              ) : null}
-              {storeUrl ? (
-                <TouchableOpacity
-                  style={styles.crossPromoDownloadBtn}
-                  onPress={() => Linking.openURL(storeUrl).catch(() => {})}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons
-                    name={Platform.OS === 'android' ? 'logo-google-playstore' : 'logo-apple'}
-                    size={15}
-                    color={colors.primary}
-                  />
-                  <Text style={styles.crossPromoDownloadText}>
-                    {Platform.OS === 'android' ? 'Get on Google Play' : 'Download on App Store'}
-                  </Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
+                {instagramUrl ? (
+                  <TouchableOpacity
+                    style={styles.crossPromoIgBtn}
+                    onPress={() => Linking.openURL(instagramUrl).catch(() => {})}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="logo-instagram" size={14} color="#fff" />
+                    <Text style={styles.crossPromoIgText}>Instagram</Text>
+                  </TouchableOpacity>
+                ) : null}
+                {storeUrl ? (
+                  <TouchableOpacity
+                    style={styles.crossPromoDownloadBtn}
+                    onPress={() => Linking.openURL(storeUrl).catch(() => {})}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons
+                      name={Platform.OS === 'android' ? 'logo-google-playstore' : 'logo-apple'}
+                      size={14}
+                      color={colors.primary}
+                    />
+                    <Text style={styles.crossPromoDownloadText}>Download</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </LinearGradient>
+            </ImageBackground>
           );
         })}
       </ScrollView>
@@ -1987,7 +1992,7 @@ const useStyles = createLazyStyles((colors) => ({
   listContent: { paddingTop: spacing.sm, paddingBottom: 40 },
   separator: { height: 8 },
 
-  // Cross-market promo — no outer container, title/subtitle sit on background
+  // Cross-market promo — full-bleed image cards with gradient overlay
   crossPromoWrap: {
     marginTop: spacing.sm,
     marginBottom: spacing.sm,
@@ -2015,59 +2020,57 @@ const useStyles = createLazyStyles((colors) => ({
     gap: 10,
   },
   crossPromoCity: {
-    width: 210,
+    width: 155,
+    height: 220,
+    borderRadius: radius.md,
+    overflow: 'hidden' as const,
     backgroundColor: colors.cardBgElevated,
-    borderRadius: radius.sm,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
   },
-  crossPromoCityHeader: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 8,
-    marginBottom: 8,
+  crossPromoCityImage: {
+    borderRadius: radius.md,
   },
-  crossPromoCityLogo: {
-    width: 40,
-    height: 40,
-    borderRadius: 9,
+  crossPromoCityOverlay: {
+    position: 'absolute' as const,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingTop: 32,
+    paddingBottom: 10,
+    paddingHorizontal: 10,
+    gap: 7,
   },
   crossPromoCityName: {
-    flex: 1,
     fontSize: 12,
     fontWeight: '700' as const,
-    color: colors.text,
+    color: '#fff',
+    marginBottom: 2,
   },
   crossPromoIgBtn: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: 8,
-    backgroundColor: colors.cardBg,
+    justifyContent: 'center' as const,
+    gap: 6,
     borderWidth: 1,
-    borderColor: colors.borderAccent,
-    borderRadius: radius.sm,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 8,
+    borderColor: 'rgba(255,255,255,0.55)',
+    borderRadius: radius.xs,
+    paddingVertical: 9,
   },
-  crossPromoIgHandle: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.accent,
+  crossPromoIgText: {
+    fontSize: 12,
+    color: '#fff',
     fontWeight: '600' as const,
   },
   crossPromoDownloadBtn: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    gap: 8,
+    gap: 6,
     backgroundColor: colors.accent,
-    borderRadius: radius.sm,
-    paddingVertical: 11,
+    borderRadius: radius.xs,
+    paddingVertical: 9,
   },
   crossPromoDownloadText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700' as const,
     color: colors.primary,
   },
