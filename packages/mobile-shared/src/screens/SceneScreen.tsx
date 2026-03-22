@@ -9,6 +9,8 @@ import {
   Dimensions,
   ScrollView,
   ViewToken,
+  Platform,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,6 +30,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { trackClick } from '../lib/analytics';
 import { applyContextBoosts, isHappyHourActiveNow } from '../lib/recommendations';
 import { flushUserEvents, trackDetailView, trackDwell, trackQuickSkip, type BehavioralFeedItemKind } from '../lib/userEvents';
+import { useOtherCities, type OtherCity } from '../hooks/useOtherCities';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type FilterType = 'all' | 'photos' | 'itineraries' | 'trending' | 'deals' | 'events';
@@ -270,10 +273,15 @@ interface CouponClaimItem {
   date: string;
 }
 
+interface CrossMarketPromoItem {
+  kind: 'cross_market_promo';
+  id: string;
+}
+
 type PulseItem =
   | VideoItem | PhotoItem | ItineraryItem | BuzzItem | AdItem | ReelsShelfItem
   | SpecialItem | HappyHourItem | EventItem | NewRestaurantItem | BlogItem
-  | HolidayTeaserItem | CouponClaimItem;
+  | HolidayTeaserItem | CouponClaimItem | CrossMarketPromoItem;
 
 function getBehavioralEventMeta(
   item: PulseItem
@@ -1582,6 +1590,77 @@ function applyPersonalizationToFeed(
   return result;
 }
 
+// ─── Cross-Market Promo Card ──────────────────────────────────────────────────
+
+/** Friendly display names for each market slug (shown in the promo card). */
+const MARKET_DISPLAY_NAMES: Record<string, string> = {
+  'lancaster-pa':   'Lancaster, PA',
+  'cumberland-pa':  'Cumberland County, PA',
+  'fayetteville-nc': 'Fayetteville, NC',
+};
+
+function CrossMarketPromoCard({ cities }: { cities: OtherCity[] }) {
+  const styles = useStyles();
+  const colors = getColors();
+
+  if (cities.length === 0) return null;
+
+  return (
+    <View style={styles.crossPromoCard}>
+      <View style={styles.crossPromoHeader}>
+        <Ionicons name="map-outline" size={15} color={colors.accent} />
+        <Text style={styles.crossPromoTitle}>Taste in Other Cities</Text>
+      </View>
+      <Text style={styles.crossPromoSubtitle}>Traveling? Find your move wherever you go.</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.crossPromoCities}
+      >
+        {cities.map((city) => {
+          const displayName = MARKET_DISPLAY_NAMES[city.slug] ?? city.name;
+          const instagramUrl = city.instagram_handle
+            ? `https://www.instagram.com/${city.instagram_handle.replace('@', '')}/`
+            : null;
+          const storeUrl = Platform.OS === 'android' && city.play_store_url
+            ? city.play_store_url
+            : city.app_store_url;
+
+          return (
+            <View key={city.id} style={styles.crossPromoCity}>
+              <Text style={styles.crossPromoCityName}>{displayName}</Text>
+              {instagramUrl ? (
+                <TouchableOpacity
+                  style={styles.crossPromoIgRow}
+                  onPress={() => Linking.openURL(instagramUrl).catch(() => {})}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="logo-instagram" size={13} color={colors.accent} />
+                  <Text style={styles.crossPromoIgHandle}>{city.instagram_handle}</Text>
+                </TouchableOpacity>
+              ) : null}
+              {storeUrl ? (
+                <TouchableOpacity
+                  style={styles.crossPromoDownload}
+                  onPress={() => Linking.openURL(storeUrl).catch(() => {})}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name={Platform.OS === 'android' ? 'logo-google-playstore' : 'logo-apple'}
+                    size={12}
+                    color={colors.primary}
+                  />
+                  <Text style={styles.crossPromoDownloadText}>Download</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function SceneScreen() {
@@ -1602,11 +1681,20 @@ export default function SceneScreen() {
   const { userId } = useAuth();
   const { data: rawFeed = [], isLoading, refetch } = usePulseFeed();
   const { signals } = usePersonalizedFeed(userId ?? undefined);
+  const { cities: otherCities } = useOtherCities(marketId);
 
   const allItems = useMemo(() => {
-    if (!signals || rawFeed.length === 0) return rawFeed;
-    return applyPersonalizationToFeed(rawFeed, signals);
-  }, [rawFeed, signals]);
+    const base = (!signals || rawFeed.length === 0)
+      ? rawFeed
+      : applyPersonalizationToFeed(rawFeed, signals);
+
+    // Inject cross-market promo card at position 6 (after first few scored items)
+    if (otherCities.length === 0 || base.length === 0) return base;
+    const promo: CrossMarketPromoItem = { kind: 'cross_market_promo', id: 'cross-market-promo' };
+    const result = [...base];
+    result.splice(Math.min(6, result.length), 0, promo);
+    return result;
+  }, [rawFeed, signals, otherCities]);
 
   useEffect(() => {
     marketIdRef.current = marketId;
@@ -1614,6 +1702,7 @@ export default function SceneScreen() {
 
   const filteredItems = allItems.filter((item) => {
     if (item.kind === 'ad') return true; // Ads always show
+    if (item.kind === 'cross_market_promo') return activeFilter === 'all'; // Only in "All" view
     if (item.kind === 'reels_shelf') return activeFilter === 'all' || activeFilter === 'photos';
     if (activeFilter === 'all') return true;
     if (activeFilter === 'trending') return item.kind === 'buzz' || item.kind === 'new_restaurant';
@@ -1764,6 +1853,8 @@ export default function SceneScreen() {
       }
       case 'coupon_claim':
         return <CouponClaimCard item={item} onPress={() => handleBehavioralRestaurantPress(item)} />;
+      case 'cross_market_promo':
+        return <CrossMarketPromoCard cities={otherCities} />;
     }
   };
 
@@ -1888,6 +1979,75 @@ const useStyles = createLazyStyles((colors) => ({
   // Feed
   listContent: { paddingTop: spacing.sm, paddingBottom: 40 },
   separator: { height: 8 },
+
+  // Cross-market promo card
+  crossPromoCard: {
+    marginHorizontal: spacing.md,
+    marginVertical: spacing.sm,
+    backgroundColor: colors.cardBg,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  crossPromoHeader: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 6,
+    marginBottom: 2,
+  },
+  crossPromoTitle: {
+    fontSize: 14,
+    fontWeight: '700' as const,
+    color: colors.text,
+  },
+  crossPromoSubtitle: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
+  },
+  crossPromoCities: {
+    gap: 10,
+  },
+  crossPromoCity: {
+    width: 168,
+    backgroundColor: colors.cardBgElevated,
+    borderRadius: radius.sm,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  crossPromoCityName: {
+    fontSize: 13,
+    fontWeight: '700' as const,
+    color: colors.text,
+    marginBottom: 6,
+  },
+  crossPromoIgRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 5,
+    marginBottom: 6,
+  },
+  crossPromoIgHandle: {
+    fontSize: 12,
+    color: colors.accent,
+    fontWeight: '500' as const,
+  },
+  crossPromoDownload: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    backgroundColor: colors.accent,
+    borderRadius: radius.sm,
+    paddingVertical: 6,
+    gap: 5,
+  },
+  crossPromoDownloadText: {
+    fontSize: 11,
+    fontWeight: '700' as const,
+    color: colors.primary,
+  },
 
   // ── Full post card
   card: {
