@@ -9,6 +9,13 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/types';
+import { useRestaurantWeekIds } from '../hooks/useRestaurantWeekIds';
+import { useCoffeeChocolateTrailIds } from '../hooks/useCoffeeChocolateTrailIds';
+import RestaurantWeekBadge from './RestaurantWeekBadge';
+import CoffeeChocolateTrailBadge from './CoffeeChocolateTrailBadge';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -25,6 +32,8 @@ import { formatDistance } from '../hooks/useUserLocation';
 import RatingStars from './RatingStars';
 import type { RestaurantWithTier } from '../types/database';
 import { useState } from 'react';
+
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 32;
@@ -47,8 +56,13 @@ export default function MapRestaurantCard({
 }: MapRestaurantCardProps) {
   const styles = useStyles();
   const colors = getColors();
+  const navigation = useNavigation<NavProp>();
   const translateY = useSharedValue(300);
   const [photoIndex, setPhotoIndex] = useState(0);
+  const restaurantWeekIds = useRestaurantWeekIds();
+  const isRestaurantWeek = restaurantWeekIds.has(restaurant.id);
+  const coffeeTrailIds = useCoffeeChocolateTrailIds();
+  const isCoffeeTrail = coffeeTrailIds.has(restaurant.id);
 
   const photos = restaurant.photos?.length
     ? restaurant.photos
@@ -125,6 +139,19 @@ export default function MapRestaurantCard({
                   style={[styles.dot, i === photoIndex ? styles.dotActive : styles.dotInactive]}
                 />
               ))}
+            </View>
+          )}
+
+          {/* Restaurant Week burst badge */}
+          {isRestaurantWeek && (
+            <View style={styles.rwBadge}>
+              <RestaurantWeekBadge size={64} onPress={() => navigation.navigate('RestaurantWeek')} />
+            </View>
+          )}
+          {/* Coffee & Chocolate Trail burst badge */}
+          {isCoffeeTrail && !isRestaurantWeek && (
+            <View style={styles.rwBadge}>
+              <CoffeeChocolateTrailBadge size={64} onPress={() => navigation.navigate('CoffeeChocolateTrail')} />
             </View>
           )}
 
@@ -227,6 +254,11 @@ const useStyles = createLazyStyles((colors) => ({
   },
   dotInactive: {
     backgroundColor: 'rgba(255,255,255,0.5)',
+  },
+  rwBadge: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
   },
   closeButton: {
     position: 'absolute',

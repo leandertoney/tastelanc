@@ -50,6 +50,10 @@ import {
   TabBar,
   OpenStatusBadge,
 } from '../components';
+import { useRestaurantWeekIds } from '../hooks/useRestaurantWeekIds';
+import { useCoffeeChocolateTrailIds } from '../hooks/useCoffeeChocolateTrailIds';
+import RestaurantWeekBadge from '../components/RestaurantWeekBadge';
+import CoffeeChocolateTrailBadge from '../components/CoffeeChocolateTrailBadge';
 import HoursAccordion from '../components/HoursAccordion';
 import TierLockedEmptyState from '../components/TierLockedEmptyState';
 import VideoRecommendationFeed from '../components/VideoRecommendationFeed';
@@ -350,6 +354,10 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
     }
   }, [tabs, activeTab]);
 
+  // Must be called before any early returns (Rules of Hooks)
+  const restaurantWeekIds = useRestaurantWeekIds();
+  const coffeeTrailIds = useCoffeeChocolateTrailIds();
+
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -382,6 +390,8 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
 
   const isElite = tierName === 'elite';
   const heroHeight = isElite ? ELITE_HERO_HEIGHT : HERO_HEIGHT;
+  const isRestaurantWeek = restaurantWeekIds.has(restaurant?.id ?? '');
+  const isCoffeeTrail = coffeeTrailIds.has(restaurant?.id ?? '');
 
   // Check if we have featured content
   const hasHappyHours = happyHours.length > 0;
@@ -445,7 +455,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
             colors={['transparent', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.85)']}
             style={[styles.heroGradient, { height: heroHeight * 0.7 }]}
           >
-            <View style={styles.heroContent}>
+            <View style={[styles.heroContent, isRestaurantWeek && { paddingRight: 84 }]}>
               {isElite && (
                 <View style={styles.pickBadge}>
                   <Ionicons name="star" size={10} color="#FFF" />
@@ -489,6 +499,19 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
               color="#FFFFFF"
             />
           </TouchableOpacity>
+
+          {/* Restaurant Week badge */}
+          {isRestaurantWeek && (
+            <View style={styles.rwBadge}>
+              <RestaurantWeekBadge size={72} onPress={() => navigation.navigate('RestaurantWeek')} />
+            </View>
+          )}
+          {/* Coffee & Chocolate Trail badge */}
+          {isCoffeeTrail && !isRestaurantWeek && (
+            <View style={styles.rwBadge}>
+              <CoffeeChocolateTrailBadge size={72} onPress={() => navigation.navigate('CoffeeChocolateTrail')} />
+            </View>
+          )}
         </View>
 
         {/* Subtle gold divider for elite restaurants */}
@@ -1057,6 +1080,7 @@ const useStyles = createLazyStyles((colors) => ({
   heroImage: { width: '100%' as const, height: '100%' as const },
   backButton: { position: 'absolute' as const, top: 50, left: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center' as const, alignItems: 'center' as const, zIndex: 10 },
   bookmarkButton: { position: 'absolute' as const, top: 50, right: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center' as const, alignItems: 'center' as const, zIndex: 10 },
+  rwBadge: { position: 'absolute' as const, bottom: 16, right: 16, zIndex: 10 },
   heroGradient: { position: 'absolute' as const, bottom: 0, left: 0, right: 0, justifyContent: 'flex-end' as const, paddingHorizontal: 16, paddingBottom: 16 },
   heroContent: { alignItems: 'flex-start' as const },
   tagsContainer: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 6, marginTop: 8 },

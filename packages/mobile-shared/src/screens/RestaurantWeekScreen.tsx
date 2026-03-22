@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useEffect } from 'react';
+import { useCallback, useMemo, useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -60,12 +60,13 @@ interface HolidaySpecial {
   special_price: number | null;
   discount_description: string | null;
   image_url: string | null;
-  restaurant: { id: string; name: string; cover_image_url: string | null; market_id: string };
+  restaurant: { id: string; name: string; cover_image_url: string | null; market_id: string; rw_description: string | null; description: string | null; custom_description: string | null };
 }
 
 interface RestaurantGroup {
   restaurantId: string;
   restaurantName: string;
+  restaurantDescription: string | null;
   specials: HolidaySpecial[];
 }
 
@@ -161,7 +162,7 @@ async function fetchRestaurantWeekSpecials(marketSlug: string | null): Promise<H
   }
   let query = supabase
     .from('holiday_specials')
-    .select('id,name,description,category,event_date,start_time,end_time,original_price,special_price,discount_description,image_url,restaurant:restaurants!inner(id,name,cover_image_url,market_id)')
+    .select('id,name,description,category,event_date,start_time,end_time,original_price,special_price,discount_description,image_url,restaurant:restaurants!inner(id,name,cover_image_url,market_id,rw_description,description,custom_description)')
     .eq('holiday_tag', 'restaurant-week-2026')
     .eq('is_active', true)
     .order('name');
@@ -229,65 +230,129 @@ function OrangeRule() {
   );
 }
 
-// --- Restaurant Card ---
+// --- Restaurant Card (flippable) ---
 function RestaurantCard({ group, appName, onPress }: { group: RestaurantGroup; appName: string; onPress: () => void }) {
   const styles = useCardStyles();
+  const [isFlipped, setIsFlipped] = useState(false);
+  const flipAnim = useRef(new Animated.Value(1)).current;
 
   const dateLabel = 'April 13–19';
 
-  return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={styles.cardOuter}>
-      <View style={styles.cardFrame}>
-        {/* Corner decorations */}
-        <Text style={styles.cornerTL}>╔</Text>
-        <Text style={styles.cornerTR}>╗</Text>
-        <Text style={styles.cornerBL}>╚</Text>
-        <Text style={styles.cornerBR}>╝</Text>
+  const handleTap = useCallback(() => {
+    // Squish to 0 (edge-on), swap face, expand back
+    Animated.timing(flipAnim, { toValue: 0, duration: 160, useNativeDriver: true }).start(() => {
+      setIsFlipped(v => !v);
+      Animated.timing(flipAnim, { toValue: 1, duration: 160, useNativeDriver: true }).start();
+    });
+  }, [flipAnim]);
 
-        {/* Background forks */}
-        <Text style={styles.bgFork1}>🍽️</Text>
-        <Text style={styles.bgFork2}>🍴</Text>
+  const FrontFace = (
+    <View style={styles.cardFrame}>
+      {/* Corner decorations */}
+      <Text style={styles.cornerTL}>╔</Text>
+      <Text style={styles.cornerTR}>╗</Text>
+      <Text style={styles.cornerBL}>╚</Text>
+      <Text style={styles.cornerBR}>╝</Text>
 
-        {/* Header: event label */}
-        <View style={styles.eventRow}>
-          <View style={styles.orangeLine} />
-          <Text style={styles.eventLabel}>RESTAURANT WEEK 2026</Text>
-          <View style={styles.orangeLine} />
-        </View>
+      {/* Background forks */}
+      <Text style={styles.bgFork1}>🍽️</Text>
+      <Text style={styles.bgFork2}>🍴</Text>
 
-        {/* Restaurant name — hero text */}
-        <Text style={styles.restaurantName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>
-          {group.restaurantName}
-        </Text>
-
-        <OrangeRule />
-
-        {/* Specials */}
-        {group.specials.map((special, idx) => (
-          <View key={special.id}>
-            {idx > 0 && <View style={styles.specialDivider} />}
-            <SpecialDisplay
-              name={special.name}
-              description={special.description}
-              styles={styles}
-            />
-          </View>
-        ))}
-
-        <OrangeRule />
-
-        {/* Bottom branding */}
-        <View style={styles.brandRow}>
-          <Text style={styles.brandText}>{appName}</Text>
-          <Text style={styles.brandDot}>&middot;</Text>
-          <Text style={styles.brandText}>{dateLabel}</Text>
-        </View>
-
-        {/* Official Digital Sponsor badge */}
-        <View style={styles.sponsorBadge}>
-          <Text style={styles.sponsorText}>OFFICIAL DIGITAL SPONSOR</Text>
-        </View>
+      {/* Header: event label */}
+      <View style={styles.eventRow}>
+        <View style={styles.orangeLine} />
+        <Text style={styles.eventLabel}>RESTAURANT WEEK 2026</Text>
+        <View style={styles.orangeLine} />
       </View>
+
+      {/* Restaurant name — hero text */}
+      <Text style={styles.restaurantName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>
+        {group.restaurantName}
+      </Text>
+
+      <OrangeRule />
+
+      {/* Specials */}
+      {group.specials.map((special, idx) => (
+        <View key={special.id}>
+          {idx > 0 && <View style={styles.specialDivider} />}
+          <SpecialDisplay
+            name={special.name}
+            description={special.description}
+            styles={styles}
+          />
+        </View>
+      ))}
+
+      <OrangeRule />
+
+      {/* Bottom branding */}
+      <View style={styles.brandRow}>
+        <Text style={styles.brandText}>{appName}</Text>
+        <Text style={styles.brandDot}>&middot;</Text>
+        <Text style={styles.brandText}>{dateLabel}</Text>
+      </View>
+
+      {/* Official Digital Sponsor badge */}
+      <View style={styles.sponsorBadge}>
+        <Text style={styles.sponsorText}>OFFICIAL DIGITAL SPONSOR</Text>
+      </View>
+
+      {/* Flip hint */}
+      <Text style={styles.flipHint}>TAP TO LEARN MORE ›</Text>
+    </View>
+  );
+
+  const BackFace = (
+    <View style={[styles.cardFrame, styles.cardBack]}>
+      {/* Corner decorations */}
+      <Text style={styles.cornerTL}>╔</Text>
+      <Text style={styles.cornerTR}>╗</Text>
+      <Text style={styles.cornerBL}>╚</Text>
+      <Text style={styles.cornerBR}>╝</Text>
+
+      {/* Background watermark */}
+      <Text style={styles.bgFork1}>🍽️</Text>
+      <Text style={styles.bgFork2}>🍴</Text>
+
+      {/* Header */}
+      <View style={styles.eventRow}>
+        <View style={styles.orangeLine} />
+        <Text style={styles.eventLabel}>ABOUT</Text>
+        <View style={styles.orangeLine} />
+      </View>
+
+      {/* Restaurant name */}
+      <Text style={styles.restaurantName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>
+        {group.restaurantName}
+      </Text>
+
+      <OrangeRule />
+
+      {/* Description */}
+      <Text style={styles.backDescription}>
+        {group.restaurantDescription || `${group.restaurantName} is proud to participate in Restaurant Week 2026. Tap "Explore" to view their full menu, hours, and more.`}
+      </Text>
+
+      <OrangeRule />
+
+      {/* Actions */}
+      <View style={styles.backActions}>
+        <TouchableOpacity style={styles.backBtn} onPress={onPress}>
+          <Text style={styles.backBtnText}>EXPLORE RESTAURANT ›</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Flip back hint */}
+      <Text style={styles.flipHint}>TAP CARD TO FLIP BACK ‹</Text>
+    </View>
+  );
+
+  return (
+    <TouchableOpacity onPress={handleTap} activeOpacity={0.88} style={styles.cardOuter}>
+      <Animated.View style={{ transform: [{ scaleX: flipAnim }] }}>
+        {isFlipped ? BackFace : FrontFace}
+      </Animated.View>
     </TouchableOpacity>
   );
 }
@@ -314,7 +379,7 @@ export default function RestaurantWeekScreen() {
     for (const s of specials) {
       const existing = map.get(s.restaurant.id);
       if (existing) { existing.specials.push(s); }
-      else { map.set(s.restaurant.id, { restaurantId: s.restaurant.id, restaurantName: s.restaurant.name, specials: [s] }); }
+      else { map.set(s.restaurant.id, { restaurantId: s.restaurant.id, restaurantName: s.restaurant.name, restaurantDescription: s.restaurant.rw_description || s.restaurant.custom_description || s.restaurant.description || null, specials: [s] }); }
     }
     return Array.from(map.values()).sort((a, b) =>
       a.restaurantName.localeCompare(b.restaurantName)
@@ -553,6 +618,54 @@ const useCardStyles = createLazyStyles(() => ({
   sponsorText: {
     fontSize: 9,
     fontWeight: '700',
+    color: RW.yellow,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+
+  flipHint: {
+    marginTop: 10,
+    fontSize: 9,
+    fontWeight: '600',
+    color: RW.yellowMuted,
+    letterSpacing: 1.5,
+    textAlign: 'center',
+    textTransform: 'uppercase',
+  },
+
+  // --- Back face ---
+  cardBack: {
+    backgroundColor: '#1A0C08',
+    borderColor: RW.cardBorder,
+  },
+
+  backDescription: {
+    fontSize: 14,
+    color: RW.textSecondary,
+    lineHeight: 22,
+    textAlign: 'center',
+    paddingHorizontal: 4,
+    paddingVertical: 8,
+    fontStyle: 'italic',
+  },
+
+  backActions: {
+    marginTop: 4,
+    alignItems: 'center',
+  },
+
+  backBtn: {
+    backgroundColor: RW.terracotta,
+    borderRadius: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: RW.yellow,
+  },
+
+  backBtnText: {
+    fontSize: 11,
+    fontWeight: '800',
     color: RW.yellow,
     letterSpacing: 2,
     textTransform: 'uppercase',

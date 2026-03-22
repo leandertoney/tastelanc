@@ -1,11 +1,20 @@
 import { View, Text, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Restaurant } from '../types/database';
+import type { RootStackParamList } from '../navigation/types';
 import { formatCategoryName } from '../lib/formatters';
 import { getColors, getBrand } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
 import OpenStatusBadge from './OpenStatusBadge';
+import { useRestaurantWeekIds } from '../hooks/useRestaurantWeekIds';
+import { useCoffeeChocolateTrailIds } from '../hooks/useCoffeeChocolateTrailIds';
+import RestaurantWeekBadge from './RestaurantWeekBadge';
+import CoffeeChocolateTrailBadge from './CoffeeChocolateTrailBadge';
+
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.7;
@@ -31,7 +40,12 @@ export default function FeaturedCard({
   const styles = useStyles();
   const colors = getColors();
   const brand = getBrand();
+  const navigation = useNavigation<NavProp>();
   const displayCategories = restaurant.categories?.slice(0, 2) || [];
+  const restaurantWeekIds = useRestaurantWeekIds();
+  const isRestaurantWeek = restaurantWeekIds.has(restaurant.id);
+  const coffeeTrailIds = useCoffeeChocolateTrailIds();
+  const isCoffeeTrail = coffeeTrailIds.has(restaurant.id);
 
   return (
     <TouchableOpacity
@@ -80,7 +94,19 @@ export default function FeaturedCard({
         )}
 
         {/* Content overlay at bottom */}
-        <View style={[styles.contentOverlay, isElite && styles.contentOverlayElite]}>
+        <View style={[styles.contentOverlay, isElite && styles.contentOverlayElite, (isRestaurantWeek || isCoffeeTrail) && { paddingRight: 80 }]}>
+          {/* Restaurant Week burst badge — top-right of overlay */}
+          {isRestaurantWeek && (
+            <View style={styles.rwBadge}>
+              <RestaurantWeekBadge size={68} onPress={() => navigation.navigate('RestaurantWeek')} />
+            </View>
+          )}
+          {/* Coffee & Chocolate Trail burst badge — top-right of overlay */}
+          {isCoffeeTrail && !isRestaurantWeek && (
+            <View style={styles.rwBadge}>
+              <CoffeeChocolateTrailBadge size={68} onPress={() => navigation.navigate('CoffeeChocolateTrail')} />
+            </View>
+          )}
           <View style={styles.header}>
             <Text style={[styles.name, isElite && styles.nameElite]} numberOfLines={2}>
               {restaurant.name}
@@ -263,5 +289,10 @@ const useStyles = createLazyStyles((colors) => ({
   },
   nameElite: {
     fontWeight: '800',
+  },
+  rwBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
   },
 }));

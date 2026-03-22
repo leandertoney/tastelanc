@@ -120,6 +120,12 @@ export {
   useReviewerStats,
 } from './useVideoRecommendations';
 
+// Restaurant Week hooks
+export { useRestaurantWeekIds } from './useRestaurantWeekIds';
+
+// Coffee & Chocolate Trail hooks
+export { useCoffeeChocolateTrailIds } from './useCoffeeChocolateTrailIds';
+
 // Sales hooks
 export { useSalesRole } from './useSalesRole';
 export { useSalesInbox } from './useSalesInbox';

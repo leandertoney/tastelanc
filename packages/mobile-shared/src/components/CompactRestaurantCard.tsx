@@ -1,12 +1,19 @@
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Restaurant } from '../types/database';
+import type { RootStackParamList } from '../navigation/types';
 import { formatCategoryName } from '../lib/formatters';
 import { getColors, getBrand } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
 import TrendingBadge, { type BadgeType } from './TrendingBadge';
 import OpenStatusBadge from './OpenStatusBadge';
+import { useRestaurantWeekIds } from '../hooks/useRestaurantWeekIds';
+import { useCoffeeChocolateTrailIds } from '../hooks/useCoffeeChocolateTrailIds';
+
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface CompactRestaurantCardProps {
   restaurant: Restaurant;
@@ -28,10 +35,15 @@ export default function CompactRestaurantCard({
   const styles = useStyles();
   const colors = getColors();
   const brand = getBrand();
+  const navigation = useNavigation<NavProp>();
   const primaryCategory = restaurant.categories?.[0];
+  const restaurantWeekIds = useRestaurantWeekIds();
+  const isRestaurantWeek = restaurantWeekIds.has(restaurant.id);
+  const coffeeTrailIds = useCoffeeChocolateTrailIds();
+  const isCoffeeTrail = coffeeTrailIds.has(restaurant.id);
 
   return (
-    <TouchableOpacity style={[styles.card, isElite && styles.cardElite]} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity style={[styles.card, isElite && styles.cardElite, isRestaurantWeek && styles.cardRW, isCoffeeTrail && !isRestaurantWeek && styles.cardCCT]} onPress={onPress} activeOpacity={0.8}>
       {/* Thumbnail image */}
       <View style={styles.imageContainer}>
         {restaurant.cover_image_url ? (
@@ -57,6 +69,24 @@ export default function CompactRestaurantCard({
           </Text>
           {restaurant.is_verified && (
             <Ionicons name="checkmark-circle" size={14} color={colors.accent} />
+          )}
+          {isRestaurantWeek && (
+            <TouchableOpacity
+              style={styles.rwPill}
+              onPress={(e) => { e.stopPropagation(); navigation.navigate('RestaurantWeek'); }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={styles.rwPillText}>RW</Text>
+            </TouchableOpacity>
+          )}
+          {isCoffeeTrail && (
+            <TouchableOpacity
+              style={styles.cctPill}
+              onPress={(e) => { e.stopPropagation(); navigation.navigate('CoffeeChocolateTrail'); }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={styles.cctPillText}>☕🍫</Text>
+            </TouchableOpacity>
           )}
         </View>
 
@@ -189,6 +219,38 @@ const useStyles = createLazyStyles((colors) => ({
     borderLeftColor: colors.goldBorder,
     shadowOpacity: 0.25,
     shadowRadius: 6,
+  },
+  cardRW: {
+    borderLeftWidth: 2,
+    borderLeftColor: '#C8532A',
+  },
+  cardCCT: {
+    borderLeftWidth: 2,
+    borderLeftColor: '#5E2077',
+  },
+  rwPill: {
+    backgroundColor: '#C8532A',
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  rwPillText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#F0D060',
+    letterSpacing: 0.5,
+  },
+  cctPill: {
+    backgroundColor: '#5E2077',
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderWidth: 1,
+    borderColor: '#D4AF37',
+  },
+  cctPillText: {
+    fontSize: 10,
+    lineHeight: 13,
   },
   nameElite: {
     fontWeight: '700',

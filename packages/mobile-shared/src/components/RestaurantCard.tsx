@@ -1,11 +1,20 @@
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Restaurant } from '../types/database';
+import type { RootStackParamList } from '../navigation/types';
 import { formatCategoryName } from '../lib/formatters';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius } from '../constants/spacing';
 import OpenStatusBadge from './OpenStatusBadge';
+import { useRestaurantWeekIds } from '../hooks/useRestaurantWeekIds';
+import { useCoffeeChocolateTrailIds } from '../hooks/useCoffeeChocolateTrailIds';
+import RestaurantWeekBadge from './RestaurantWeekBadge';
+import CoffeeChocolateTrailBadge from './CoffeeChocolateTrailBadge';
+
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -22,7 +31,12 @@ export default function RestaurantCard({
 }: RestaurantCardProps) {
   const styles = useStyles();
   const colors = getColors();
+  const navigation = useNavigation<NavProp>();
   const displayCategories = restaurant.categories?.slice(0, 2) || [];
+  const restaurantWeekIds = useRestaurantWeekIds();
+  const isRestaurantWeek = restaurantWeekIds.has(restaurant.id);
+  const coffeeTrailIds = useCoffeeChocolateTrailIds();
+  const isCoffeeTrail = coffeeTrailIds.has(restaurant.id);
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
@@ -69,6 +83,13 @@ export default function RestaurantCard({
             </View>
           ))}
         </View>
+
+        {isRestaurantWeek && (
+          <RestaurantWeekBadge size={60} onPress={() => navigation.navigate('RestaurantWeek')} />
+        )}
+        {isCoffeeTrail && !isRestaurantWeek && (
+          <CoffeeChocolateTrailBadge size={60} onPress={() => navigation.navigate('CoffeeChocolateTrail')} />
+        )}
 
         <OpenStatusBadge restaurantId={restaurant.id} size="small" style={{ marginBottom: 8 }} />
 
