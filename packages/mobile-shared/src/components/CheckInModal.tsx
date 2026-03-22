@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useRecordCheckinForSocialProof } from '../hooks/useSocialProof';
 import { rewardsQueryKeys } from '../hooks/useRewards';
 import { requestReviewIfEligible } from '../lib/reviewPrompts';
+import { LocationUpgradePrompt } from './LocationUpgradePrompt';
 
 interface CheckInModalProps {
   visible: boolean;
@@ -50,6 +51,7 @@ export default function CheckInModal({
   const [state, setState] = useState<CheckInState>('input');
   const [message, setMessage] = useState('');
   const [pointsEarned, setPointsEarned] = useState(0);
+  const [showLocationUpgrade, setShowLocationUpgrade] = useState(false);
 
   const inputRefs = useRef<(TextInput | null)[]>([]);
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -155,6 +157,8 @@ export default function CheckInModal({
 
         setTimeout(() => {
           onClose();
+          // Show location upgrade prompt after modal closes — only if not already on background
+          setShowLocationUpgrade(true);
         }, 2000);
       } else {
         setState('error');
@@ -277,6 +281,8 @@ export default function CheckInModal({
   };
 
   return (
+    <>
+    {showLocationUpgrade && <LocationUpgradePrompt />}
     <Modal
       visible={visible}
       transparent
@@ -304,6 +310,7 @@ export default function CheckInModal({
         </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
+    </>
   );
 }
 

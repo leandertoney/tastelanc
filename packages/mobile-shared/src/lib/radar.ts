@@ -6,6 +6,13 @@
  *
  * The Radar SDK requires a dev build (EAS Build or expo prebuild) to work.
  * When running in Expo Go, all functions will safely no-op.
+ *
+ * Tracking modes:
+ *  - Background ("Always Allow"): startTrackingEfficient() — geofences fire even when app is closed
+ *  - Foreground fallback ("While Using"): startTrackingResponsive() — only fires while app is open
+ *
+ * The app always starts with whatever permission the user has granted and upgrades
+ * automatically if they later grant "Always Allow" via the LocationUpgradePrompt.
  */
 
 // Types
@@ -90,17 +97,66 @@ export function initRadar(publishableKey: string): void {
 }
 
 /**
- * Start foreground tracking (responsive mode)
- * Note: Only foreground tracking for policy compliance - no background tracking
+ * Get the current location permission status.
+ * Returns 'always' | 'whenInUse' | 'denied' | 'unknown'
  */
-export function startTracking(): void {
+export async function getLocationPermissionStatus(): Promise<'always' | 'whenInUse' | 'denied' | 'unknown'> {
+  if (!isRadarAvailable) return 'unknown';
+
+  try {
+    const status = await Radar.getPermissionsStatus();
+    // Radar returns: GRANTED_BACKGROUND, GRANTED_FOREGROUND, DENIED, NOT_DETERMINED
+    if (status === 'GRANTED_BACKGROUND') return 'always';
+    if (status === 'GRANTED_FOREGROUND') return 'whenInUse';
+    if (status === 'DENIED') return 'denied';
+    return 'unknown';
+  } catch (error) {
+    console.error('[Radar] Failed to get permission status:', error);
+    return 'unknown';
+  }
+}
+
+/**
+ * Request "Always Allow" (background) location permission.
+ * On iOS this shows the OS upgrade dialog if the user previously granted "While Using".
+ * Returns true if background permission was granted.
+ */
+export async function requestBackgroundPermission(): Promise<boolean> {
+  if (!isRadarAvailable) return false;
+
+  try {
+    await Radar.requestPermissions(true); // true = request always/background
+    const status = await getLocationPermissionStatus();
+    return status === 'always';
+  } catch (error) {
+    console.error('[Radar] Failed to request background permission:', error);
+    return false;
+  }
+}
+
+/**
+ * Start tracking with the best mode available for the current permission level.
+ *  - "Always Allow" → startTrackingEfficient (background, geofences fire when app is closed)
+ *  - "While Using"  → startTrackingResponsive (foreground fallback)
+ *  - Denied / unknown → no-op
+ */
+export async function startTracking(): Promise<void> {
   if (!isRadarAvailable || !isInitialized) {
     return;
   }
 
   try {
-    Radar.startTrackingResponsive();
-    console.log('[Radar] Tracking started (responsive mode)');
+    const permission = await getLocationPermissionStatus();
+
+    if (permission === 'always') {
+      Radar.startTrackingEfficient();
+      console.log('[Radar] Tracking started (efficient/background mode)');
+    } else if (permission === 'whenInUse') {
+      Radar.startTrackingResponsive();
+      console.log('[Radar] Tracking started (responsive/foreground mode — upgrade available)');
+    } else {
+      console.log('[Radar] Tracking skipped — location permission not granted');
+    }
   } catch (error) {
     console.error('[Radar] Failed to start tracking:', error);
   }

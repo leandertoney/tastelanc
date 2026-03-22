@@ -81,7 +81,7 @@ export default function Navigation() {
     try {
       if (env.RADAR_PUBLISHABLE_KEY) {
         initRadar(env.RADAR_PUBLISHABLE_KEY);
-        startTracking();
+        startTracking(); // async — checks permission level and picks efficient vs responsive
       }
     } catch (e) {
       console.warn('[Navigation] Radar initialization failed:', e);
