@@ -37,6 +37,7 @@ export { default as TrendingRecommendationsSection } from './TrendingRecommendat
 export { default as TierLockedEmptyState } from './TierLockedEmptyState';
 export { default as StPatricksDayBanner } from './StPatricksDayBanner';
 export { default as RestaurantWeekBanner } from './RestaurantWeekBanner';
+export { default as CoffeeChocolateTrailBanner } from './CoffeeChocolateTrailBanner';
 export { default as PartyBanner } from './PartyBanner';
 export { default as CouponsSection } from './CouponsSection';
 export { default as BasicTierAlternativesSection } from './BasicTierAlternativesSection';

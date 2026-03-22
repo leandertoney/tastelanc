@@ -472,41 +472,42 @@ export async function getFeaturedRestaurants(limit: number = 24, marketId: strin
     const elite = paid.filter((r: any) => r.tiers?.name === 'elite');
     const premium = paid.filter((r: any) => r.tiers?.name === 'premium');
 
-    const result = [
+    const result: any[] = [
       ...seededShuffle(elite, seed),
       ...seededShuffle(premium, seed + 1),
-    ].slice(0, limit);
+    ];
 
-    // If no paid restaurants found for this market, fall back to basic restaurants
-    // so the Featured section still shows content for markets without paying partners
-    if (result.length === 0 && marketId) {
-      let fallbackQuery = supabase
-        .from('restaurants')
-        .select('*, tiers(name)')
+    // After paid tiers, fill remaining slots with event participants (e.g. Coffee & Chocolate Trail).
+    // Event participants get NO fake tier badges — their event starburst badge is their indicator.
+    // No basic/free restaurants are promoted in the featured section.
+    if (result.length < limit && marketId) {
+      const paidIds = new Set(result.map((r: any) => r.id));
+
+      const { data: trailRows } = await supabase
+        .from('holiday_specials')
+        .select('restaurant:restaurants!inner(*, tiers(name))')
+        .eq('holiday_tag', 'coffee-chocolate-trail-2026')
         .eq('is_active', true)
-        .not('cover_image_url', 'is', null)
-        .eq('market_id', marketId)
-        .limit(limit * 2); // fetch extra for shuffle
+        .eq('restaurant.market_id', marketId)
+        .eq('restaurant.is_active', true);
 
-      const { data: fallbackData, error: fallbackError } = await fallbackQuery;
+      const trailRestaurants = ((trailRows || []) as any[])
+        .map((row: any) => row.restaurant)
+        .filter(Boolean);
 
-      if (fallbackError || !fallbackData || fallbackData.length === 0) {
-        return [];
-      }
+      // Deduplicate by restaurant id and exclude already-included paid restaurants
+      const seen = new Set<string>();
+      const uniqueTrail = trailRestaurants.filter((r: any) => {
+        if (paidIds.has(r.id) || seen.has(r.id)) return false;
+        seen.add(r.id);
+        return true;
+      });
 
-      const shuffled = seededShuffle(fallbackData, seed).slice(0, limit);
-
-      // Inject demo tier data so the carousel shows what paying tiers look like:
-      // First 2 get elite spotlight (gold badge), rest show as premium featured cards
-      const withDemoTiers = shuffled.map((r: any, i: number) => ({
-        ...r,
-        tiers: { name: i < 2 ? 'elite' : 'premium' },
-      }));
-
-      return withDemoTiers as Restaurant[];
+      const shuffledTrail = seededShuffle(uniqueTrail, seed + 2).slice(0, limit - result.length);
+      result.push(...shuffledTrail);
     }
 
-    return result;
+    return result.slice(0, limit) as Restaurant[];
   } catch (error) {
     console.error('Error getting featured restaurants:', error);
     return [];

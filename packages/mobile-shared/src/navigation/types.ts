@@ -86,6 +86,7 @@ export type RootStackParamList = {
   // Holiday / Seasonal
   StPatricksDay: undefined;
   RestaurantWeek: undefined;
+  CoffeeChocolateTrail: undefined;
   // Party RSVP
   PartyRSVP: undefined;
   PartyTicket: { qr_token: string; name?: string };

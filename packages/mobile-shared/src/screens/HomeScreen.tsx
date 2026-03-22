@@ -38,6 +38,7 @@ import {
   ErrorBoundary,
   StPatricksDayBanner,
   RestaurantWeekBanner,
+  CoffeeChocolateTrailBanner,
 } from '../components';
 import CuisinesSection from '../components/CuisinesSection';
 import { getColors, getBrand, getAssets, hasFeature } from '../config/theme';
@@ -171,6 +172,11 @@ export default function HomeScreen() {
       {/* Restaurant Week Banner — includes party teaser strip when event is active */}
       <ErrorBoundary level="section">
         <RestaurantWeekBanner />
+      </ErrorBoundary>
+
+      {/* Coffee & Chocolate Trail Banner — Cumberland only, self-hides on other markets */}
+      <ErrorBoundary level="section">
+        <CoffeeChocolateTrailBanner />
       </ErrorBoundary>
 
       <Spacer size="lg" />

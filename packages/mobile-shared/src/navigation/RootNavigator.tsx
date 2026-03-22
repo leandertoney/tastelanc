@@ -37,6 +37,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import InAppBrowserScreen from '../screens/InAppBrowserScreen';
 import StPatricksDayScreen from '../screens/StPatricksDayScreen';
 import RestaurantWeekScreen from '../screens/RestaurantWeekScreen';
+import CoffeeChocolateTrailScreen from '../screens/CoffeeChocolateTrailScreen';
 import PartyRSVPScreen from '../screens/PartyRSVPScreen';
 import PartyTicketScreen from '../screens/PartyTicketScreen';
 import CouponsViewAllScreen from '../screens/CouponsViewAllScreen';
@@ -77,6 +78,7 @@ const SafeSettings = withScreenErrorBoundary(SettingsScreen, 'Settings');
 const SafeInAppBrowser = withScreenErrorBoundary(InAppBrowserScreen, 'InAppBrowser');
 const SafeStPatricksDay = withScreenErrorBoundary(StPatricksDayScreen, 'StPatricksDay');
 const SafeRestaurantWeek = withScreenErrorBoundary(RestaurantWeekScreen, 'RestaurantWeek');
+const SafeCoffeeChocolateTrail = withScreenErrorBoundary(CoffeeChocolateTrailScreen, 'CoffeeChocolateTrail');
 const SafePartyRSVP = withScreenErrorBoundary(PartyRSVPScreen, 'PartyRSVP');
 const SafePartyTicket = withScreenErrorBoundary(PartyTicketScreen, 'PartyTicket');
 const SafeCouponsViewAll = withScreenErrorBoundary(CouponsViewAllScreen, 'CouponsViewAll');
@@ -263,6 +265,11 @@ export default function RootNavigator() {
       <Stack.Screen
         name="RestaurantWeek"
         component={SafeRestaurantWeek}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="CoffeeChocolateTrail"
+        component={SafeCoffeeChocolateTrail}
         options={{ headerShown: false }}
       />
       {/* Party RSVP */}
