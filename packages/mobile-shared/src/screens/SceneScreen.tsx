@@ -1401,12 +1401,12 @@ const FILTERS: { key: FilterType; label: string }[] = [
  * Applies the Move tab personalization algorithm to the editorial feed.
  *
  * Strategy:
- * 1. Fixed-position items (holiday_teaser, reels_shelf) stay anchored.
+ * 1. Fixed-position items (holiday_teaser, reels_shelf) stay anchored at the top.
  * 2. Ads are stripped, then re-woven every 8 items after sorting.
- * 3. Restaurant-linked items (happy_hours, specials, events, buzz, new_restaurant)
- *    are scored with applyContextBoosts() and re-sorted.
- * 4. "Active right now" happy hours are promoted to the front.
- * 5. Editorial items (video, photo, itinerary, blog) keep their relative order.
+ * 3. ALL remaining items are scored — restaurant-linked items via applyContextBoosts(),
+ *    video/photo scored by their restaurant, itinerary/blog scored neutral (0).
+ * 4. "Active right now" happy hours are promoted to the front of the scored list.
+ * 5. Everything mixes together — no content type sinks to the bottom.
  */
 function applyPersonalizationToFeed(
   items: PulseItem[],
@@ -1418,19 +1418,15 @@ function applyPersonalizationToFeed(
   const sevenDaysAgoMs = now.getTime() - 7 * 86400000;
   const thirtyDaysAgoMs = now.getTime() - 30 * 86400000;
 
-  // Separate by role
+  // Separate only truly fixed items and ads — everything else gets scored
   const fixedItems = items.filter((i) => i.kind === 'holiday_teaser' || i.kind === 'reels_shelf');
   const ads = items.filter((i) => i.kind === 'ad');
-  const editorialItems = items.filter((i) =>
-    i.kind === 'video' || i.kind === 'photo' || i.kind === 'itinerary' || i.kind === 'blog'
-  );
-  const restaurantItems = items.filter((i) =>
-    i.kind === 'happy_hour' || i.kind === 'special' || i.kind === 'event' ||
-    i.kind === 'buzz' || i.kind === 'new_restaurant' || i.kind === 'coupon_claim'
+  const scorableItems = items.filter((i) =>
+    i.kind !== 'holiday_teaser' && i.kind !== 'reels_shelf' && i.kind !== 'ad'
   );
 
-  // Score each restaurant-linked item
-  const scored = restaurantItems.map((item) => {
+  // Score every item — restaurant-linked gets context boosts, neutral content scores 0
+  const scored = scorableItems.map((item) => {
     let restaurantId = '';
     const itemSignals: {
       isHappyHourNow?: boolean;
@@ -1462,7 +1458,11 @@ function applyPersonalizationToFeed(
       itemSignals.checkinCount7d = item.checkinCount7d;
     } else if (item.kind === 'coupon_claim') {
       restaurantId = item.restaurantId;
+    } else if (item.kind === 'video' || item.kind === 'photo') {
+      // Score by the restaurant the content is from
+      restaurantId = item.restaurantId;
     }
+    // itinerary and blog: restaurantId stays '' → score 0, mixes in naturally
 
     const boost = restaurantId
       ? applyContextBoosts(restaurantId, [], context, itemSignals)
@@ -1478,11 +1478,10 @@ function applyPersonalizationToFeed(
     return b.score - a.score;
   });
 
-  // Reconstruct: fixed-position → personalized restaurant items → editorial
+  // Reconstruct: fixed-position → unified scored feed
   const reordered: PulseItem[] = [
     ...fixedItems,
     ...scored.map((s) => s.item),
-    ...editorialItems,
   ];
 
   // Re-weave ads every 8 items
