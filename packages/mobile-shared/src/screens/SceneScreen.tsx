@@ -1628,7 +1628,12 @@ function CrossMarketPromoCard({ cities }: { cities: OtherCity[] }) {
 
           return (
             <View key={city.id} style={styles.crossPromoCity}>
-              <Text style={styles.crossPromoCityName}>{displayName}</Text>
+              <View style={styles.crossPromoCityHeader}>
+                {city.logo_url ? (
+                  <Image source={{ uri: city.logo_url }} style={styles.crossPromoCityLogo} />
+                ) : null}
+                <Text style={styles.crossPromoCityName} numberOfLines={2}>{displayName}</Text>
+              </View>
               {instagramUrl ? (
                 <TouchableOpacity
                   style={styles.crossPromoIgRow}
@@ -1688,11 +1693,11 @@ export default function SceneScreen() {
       ? rawFeed
       : applyPersonalizationToFeed(rawFeed, signals);
 
-    // Inject cross-market promo card at position 6 (after first few scored items)
+    // Inject cross-market promo card at position 12 (after a full scroll of content)
     if (otherCities.length === 0 || base.length === 0) return base;
     const promo: CrossMarketPromoItem = { kind: 'cross_market_promo', id: 'cross-market-promo' };
     const result = [...base];
-    result.splice(Math.min(6, result.length), 0, promo);
+    result.splice(Math.min(12, result.length), 0, promo);
     return result;
   }, [rawFeed, signals, otherCities]);
 
@@ -2010,18 +2015,29 @@ const useStyles = createLazyStyles((colors) => ({
     gap: 10,
   },
   crossPromoCity: {
-    width: 168,
+    width: 180,
     backgroundColor: colors.cardBgElevated,
     borderRadius: radius.sm,
     padding: 10,
     borderWidth: 1,
     borderColor: colors.borderLight,
   },
+  crossPromoCityHeader: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+    marginBottom: 8,
+  },
+  crossPromoCityLogo: {
+    width: 40,
+    height: 40,
+    borderRadius: 9,
+  },
   crossPromoCityName: {
-    fontSize: 13,
+    flex: 1,
+    fontSize: 12,
     fontWeight: '700' as const,
     color: colors.text,
-    marginBottom: 6,
   },
   crossPromoIgRow: {
     flexDirection: 'row' as const,

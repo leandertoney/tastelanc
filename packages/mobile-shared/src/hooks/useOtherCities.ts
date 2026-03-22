@@ -8,6 +8,7 @@ export interface OtherCity {
   instagram_handle: string;
   app_store_url: string;
   play_store_url: string;
+  logo_url: string | null;
 }
 
 /**

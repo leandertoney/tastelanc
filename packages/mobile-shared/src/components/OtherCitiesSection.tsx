@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Linking, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Linking, Platform, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
@@ -7,6 +7,12 @@ import { useMarket } from '../context/MarketContext';
 import { useOtherCities } from '../hooks/useOtherCities';
 
 const ACCENT_OPACITY = 'rgba(255, 255, 255, 0.08)';
+
+const MARKET_DISPLAY_NAMES: Record<string, string> = {
+  'lancaster-pa':    'Lancaster, PA',
+  'cumberland-pa':   'Cumberland County, PA',
+  'fayetteville-nc': 'Fayetteville, NC',
+};
 
 function openUrl(url: string) {
   if (!url) return;
@@ -55,8 +61,13 @@ export default function OtherCitiesSection() {
       >
         {cities.map((city) => (
           <View key={city.id} style={styles.card}>
-            {/* City name */}
-            <Text style={styles.cityName}>{city.name}</Text>
+            {/* App logo + city name */}
+            <View style={styles.cardHeader}>
+              {city.logo_url ? (
+                <Image source={{ uri: city.logo_url }} style={styles.logo} />
+              ) : null}
+              <Text style={styles.cityName} numberOfLines={2}>{MARKET_DISPLAY_NAMES[city.slug] ?? city.name}</Text>
+            </View>
 
             {/* Instagram row */}
             {city.instagram_handle ? (
@@ -125,18 +136,29 @@ const useStyles = createLazyStyles((colors) => ({
     gap: 12,
   },
   card: {
-    width: 190,
+    width: 200,
     backgroundColor: colors.cardBg,
     borderRadius: radius.md,
     padding: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
   },
+  cardHeader: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 10,
+    marginBottom: 8,
+  },
+  logo: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+  },
   cityName: {
-    fontSize: 15,
+    flex: 1,
+    fontSize: 14,
     fontWeight: '700' as const,
     color: colors.text,
-    marginBottom: 8,
   },
   socialRow: {
     flexDirection: 'row' as const,
