@@ -104,6 +104,7 @@ export default function MapPreview({
           showsBuildings={false}
           showsTraffic={false}
           showsIndoors={false}
+          showsPointsOfInterest={false}
           customMapStyle={darkMapStyle}
           pointerEvents="none"
         >

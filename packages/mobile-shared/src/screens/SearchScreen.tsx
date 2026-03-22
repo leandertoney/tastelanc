@@ -61,7 +61,7 @@ const darkMapStyle = [
   { elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
   { elementType: 'labels.text.stroke', stylers: [{ color: '#212121' }] },
   { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#757575' }] },
-  { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
   { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#181818' }] },
   { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
   { featureType: 'road', elementType: 'geometry.fill', stylers: [{ color: '#2c2c2c' }] },
@@ -441,6 +441,7 @@ export default function SearchScreen() {
           showsUserLocation={permissionStatus === 'granted'}
           showsMyLocationButton={false}
           showsCompass={false}
+          showsPointsOfInterest={false}
           clusterColor={colors.accent}
           clusterTextColor={colors.text}
           renderCluster={renderCluster}
