@@ -161,15 +161,11 @@ export function usePlatformSocialProof() {
       const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
       const currentTime = now.toTimeString().slice(0, 5); // HH:MM
 
-      // Calculate time 2 hours from now
-      const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-      const twoHoursTime = twoHoursLater.toTimeString().slice(0, 5);
-
       // Calculate one week ago and today start
       const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
 
-      // Query upcoming happy hours (starting within 2 hours) — filtered by market
+      // Query happy hours that are live RIGHT NOW — started before now, end after now
       let upcomingHappyHoursCount = 0;
       try {
         const { count } = await supabase
@@ -178,8 +174,8 @@ export function usePlatformSocialProof() {
           .eq('is_active', true)
           .eq('restaurant.market_id', marketId)
           .contains('days_of_week', [dayOfWeek])
-          .gt('start_time', currentTime)
-          .lte('start_time', twoHoursTime);
+          .lte('start_time', currentTime)
+          .gte('end_time', currentTime);
         upcomingHappyHoursCount = count || 0;
       } catch {
         // Ignore - will show 0
@@ -223,7 +219,7 @@ export function usePlatformSocialProof() {
 
       // Format banner text for happy hours and specials
       const happyHoursBannerText = upcomingHappyHoursCount > 0
-        ? `\u{1F379} ${upcomingHappyHoursCount} happy hour${upcomingHappyHoursCount > 1 ? 's' : ''} starting soon`
+        ? `\u{1F379} ${upcomingHappyHoursCount} happy hour${upcomingHappyHoursCount > 1 ? 's' : ''} live now`
         : null;
       const specialsBannerText = newSpecialsCount > 0
         ? `\u2728 ${newSpecialsCount} new special${newSpecialsCount > 1 ? 's' : ''} added this week`

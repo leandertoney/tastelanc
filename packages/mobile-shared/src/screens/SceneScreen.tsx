@@ -24,7 +24,7 @@ import { createLazyStyles } from '../utils/lazyStyles';
 import { withAlpha } from '../utils/colorUtils';
 import { radius, spacing } from '../constants/spacing';
 import { useMarket } from '../context/MarketContext';
-import { usePlatformSocialProof, usePersonalStats, usePersonalizedFeed } from '../hooks';
+import { usePersonalizedFeed } from '../hooks';
 import type { PersonalizedFeedSignals } from '../hooks';
 import { useAuth } from '../hooks/useAuth';
 import type { RootStackParamList } from '../navigation/types';
@@ -32,8 +32,6 @@ import { trackClick } from '../lib/analytics';
 import { applyContextBoosts, isHappyHourActiveNow } from '../lib/recommendations';
 import { flushUserEvents, trackDetailView, trackDwell, trackQuickSkip, type BehavioralFeedItemKind } from '../lib/userEvents';
 import { useOtherCities, type OtherCity } from '../hooks/useOtherCities';
-import { useAreas } from '../hooks/useAreas';
-import { calculateDistance } from '../hooks/useUserLocation';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type FilterType = 'all' | 'photos' | 'itineraries' | 'trending' | 'deals' | 'events';
@@ -1346,75 +1344,6 @@ function CouponClaimCard({ item, onPress }: { item: CouponClaimItem; onPress: ()
   );
 }
 
-// ─── Social proof header ──────────────────────────────────────────────────────
-
-function SceneStatsHeader({ onFilterSelect }: { onFilterSelect: (f: FilterType) => void }) {
-  const styles = useStyles();
-  const colors = getColors();
-  const { userId, isAnonymous } = useAuth();
-  const { data: platformData } = usePlatformSocialProof();
-  const { data: personal } = usePersonalStats();
-
-  const hasPersonalHistory = !isAnonymous && userId && (
-    (personal?.checkinsThisMonth ?? 0) > 0 ||
-    personal?.lastVisitedName != null
-  );
-
-  type Pill = { label: string; icon: string; filter: FilterType | null };
-  const pills: Pill[] = [];
-
-  if (hasPersonalHistory && personal && personal.checkinsThisMonth > 0) {
-    pills.push({ label: `${personal.checkinsThisMonth} visited this month`, icon: 'checkmark-circle', filter: null });
-  }
-  if (platformData) {
-    if (platformData.checkinsToday > 0) {
-      pills.push({ label: `${platformData.checkinsToday} check-ins today`, icon: 'location', filter: null });
-    }
-    if (hasFeature('happyHours') && platformData.upcomingHappyHoursCount > 0) {
-      pills.push({ label: `${platformData.upcomingHappyHoursCount} happy hours live`, icon: 'beer', filter: 'deals' });
-    }
-    if (platformData.newSpecialsCount > 0) {
-      pills.push({ label: `${platformData.newSpecialsCount} new specials`, icon: 'pricetag', filter: 'deals' });
-    }
-  }
-
-  if (pills.length === 0) return null;
-
-  return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.statsPillRow}
-      style={styles.statsPillContainer}
-    >
-      {pills.map((pill) => {
-        const tappable = pill.filter !== null;
-        return (
-          <TouchableOpacity
-            key={pill.label}
-            style={[styles.statsPill, tappable && styles.statsPillTappable]}
-            onPress={tappable ? () => onFilterSelect(pill.filter!) : undefined}
-            activeOpacity={tappable ? 0.7 : 1}
-          >
-            <Ionicons
-              name={pill.icon as any}
-              size={13}
-              color={tappable ? colors.accent : colors.textMuted}
-              style={{ marginRight: 5 }}
-            />
-            <Text style={[styles.statsPillText, tappable && { color: colors.accent }]}>
-              {pill.label}
-            </Text>
-            {tappable && (
-              <Ionicons name="chevron-forward" size={11} color={colors.accent} style={{ marginLeft: 2 }} />
-            )}
-          </TouchableOpacity>
-        );
-      })}
-    </ScrollView>
-  );
-}
-
 // ─── Filter bar ───────────────────────────────────────────────────────────────
 
 const FILTERS: { key: FilterType; label: string }[] = [
@@ -1686,41 +1615,7 @@ export default function SceneScreen() {
   const { marketId } = useMarket();
 
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
-  const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // Areas for neighborhood filter chips
-  const { data: areas = [] } = useAreas();
-
-  // Lightweight restaurant coordinates map for neighborhood filtering
-  const { data: restaurantCoords = [] } = useQuery<{ id: string; latitude: number | null; longitude: number | null }[]>({
-    queryKey: ['restaurantCoords', marketId],
-    queryFn: async () => {
-      const supabase = getSupabase();
-      let query = supabase.from('restaurants').select('id, latitude, longitude').eq('is_active', true);
-      if (marketId) query = query.eq('market_id', marketId) as typeof query;
-      const { data } = await query;
-      return data || [];
-    },
-    staleTime: 10 * 60 * 1000,
-  });
-
-  // Build set of restaurant IDs within the selected area (radius-based)
-  const areaRestaurantIds = useMemo<Set<string>>(() => {
-    if (!selectedAreaId) return new Set();
-    const area = areas.find((a) => a.id === selectedAreaId);
-    if (!area) return new Set();
-    const radiusMiles = area.radius / 1609.34;
-    const set = new Set<string>();
-    for (const r of restaurantCoords) {
-      if (r.latitude != null && r.longitude != null) {
-        if (calculateDistance(r.latitude, r.longitude, area.latitude, area.longitude) <= radiusMiles) {
-          set.add(r.id);
-        }
-      }
-    }
-    return set;
-  }, [selectedAreaId, areas, restaurantCoords]);
   const marketIdRef = useRef<string | null>(marketId);
   const visibleStartTimesRef = useRef(new Map<string, number>());
   const visibleItemsRef = useRef(new Map<string, PulseItem>());
@@ -1752,12 +1647,6 @@ export default function SceneScreen() {
     if (item.kind === 'ad') return true; // Ads always show
     if (item.kind === 'cross_market_promo') return activeFilter === 'all'; // Only in "All" view
     if (item.kind === 'reels_shelf') return activeFilter === 'all' || activeFilter === 'photos';
-
-    // Neighborhood filter — skip for non-restaurant items
-    if (selectedAreaId && areaRestaurantIds.size > 0) {
-      const rid = (item as any).restaurantId as string | undefined;
-      if (rid && !areaRestaurantIds.has(rid)) return false;
-    }
 
     if (activeFilter === 'all') return true;
     if (activeFilter === 'trending') return item.kind === 'buzz' || item.kind === 'new_restaurant';
@@ -1947,46 +1836,6 @@ export default function SceneScreen() {
         )}
       />
 
-      {/* Neighborhood filter chips — only shown when areas are available */}
-      {areas.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.neighborhoodBar}
-          contentContainerStyle={styles.neighborhoodBarContent}
-        >
-          {selectedAreaId && (
-            <TouchableOpacity
-              style={styles.neighborhoodClearChip}
-              onPress={() => setSelectedAreaId(null)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="close-circle" size={14} color={colors.textSecondary} />
-              <Text style={styles.neighborhoodClearText}>All Areas</Text>
-            </TouchableOpacity>
-          )}
-          {areas.map((area) => {
-            const isSelected = selectedAreaId === area.id;
-            return (
-              <TouchableOpacity
-                key={area.id}
-                style={[styles.neighborhoodChip, isSelected && styles.neighborhoodChipActive]}
-                onPress={() => setSelectedAreaId((prev) => (prev === area.id ? null : area.id))}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name="location-outline"
-                  size={12}
-                  color={isSelected ? colors.textOnAccent : colors.textSecondary}
-                />
-                <Text style={[styles.neighborhoodChipText, isSelected && styles.neighborhoodChipTextActive]}>
-                  {area.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      )}
 
       {isLoading && allItems.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -2005,7 +1854,6 @@ export default function SceneScreen() {
           renderItem={renderItem}
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={viewabilityConfig}
-          ListHeaderComponent={<SceneStatsHeader onFilterSelect={setActiveFilter} />}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -2028,8 +1876,8 @@ const useStyles = createLazyStyles((colors) => ({
   container: { flex: 1, backgroundColor: colors.primary },
 
   // Filter bar
-  filterBar: { borderBottomWidth: 1, borderBottomColor: colors.border, flexGrow: 0 },
-  filterBarContent: { paddingHorizontal: spacing.md, paddingVertical: 10, gap: 8 },
+  filterBar: { borderBottomWidth: 1, borderBottomColor: colors.border, flexGrow: 0, flexShrink: 0 },
+  filterBarContent: { paddingHorizontal: spacing.md, paddingVertical: 10, gap: 8, alignItems: 'center' as const },
   filterChip: {
     paddingHorizontal: 14, paddingVertical: 7,
     borderRadius: radius.full,
@@ -2040,59 +1888,7 @@ const useStyles = createLazyStyles((colors) => ({
   filterChipText: { fontSize: 13, fontWeight: '600' as const, color: colors.textMuted },
   filterChipTextActive: { color: colors.textOnAccent },
 
-  // Neighborhood filter row
-  neighborhoodBar: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: colors.border },
-  neighborhoodBarContent: { paddingHorizontal: spacing.md, paddingVertical: 8, gap: 6, flexDirection: 'row' as const, alignItems: 'center' as const },
-  neighborhoodChip: {
-    flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4,
-    paddingHorizontal: 10, paddingVertical: 5,
-    borderRadius: radius.full,
-    backgroundColor: colors.cardBg,
-    borderWidth: 1, borderColor: colors.border,
-  },
-  neighborhoodChipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
-  neighborhoodChipText: { fontSize: 12, fontWeight: '500' as const, color: colors.textMuted },
-  neighborhoodChipTextActive: { color: colors.textOnAccent },
-  neighborhoodClearChip: {
-    flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4,
-    paddingHorizontal: 10, paddingVertical: 5,
-    borderRadius: radius.full,
-    backgroundColor: `${colors.accent}20`,
-    borderWidth: 1, borderColor: `${colors.accent}40`,
-  },
-  neighborhoodClearText: { fontSize: 12, fontWeight: '500' as const, color: colors.textSecondary },
-
   // Stats header
-  statsPillContainer: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.cardBg,
-  },
-  statsPillRow: {
-    flexDirection: 'row' as const,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 10,
-    gap: 8,
-  },
-  statsPill: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  statsPillTappable: {
-    borderColor: withAlpha(colors.accent, 0.35),
-    backgroundColor: withAlpha(colors.accent, 0.08),
-  },
-  statsPillText: {
-    fontSize: 12,
-    color: colors.textMuted,
-    fontWeight: '500' as const,
-  },
 
   // Feed
   listContent: { paddingTop: spacing.sm, paddingBottom: 40 },

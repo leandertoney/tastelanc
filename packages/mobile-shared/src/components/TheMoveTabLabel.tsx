@@ -17,7 +17,6 @@ export default function TheMoveTabLabel({ focused, color }: { focused: boolean; 
           color: colors.accent,
           lineHeight: 8,
           letterSpacing: 0.3,
-          opacity: 0.7,
           position: 'absolute',
           top: -4,
           left: -4,
@@ -52,7 +51,7 @@ export function TheMoveHeaderTitle() {
         style={{
           fontSize: 11,
           fontStyle: 'italic',
-          color: colors.textMuted,
+          color: colors.accent,
           lineHeight: 12,
           letterSpacing: 0.3,
           position: 'absolute',
