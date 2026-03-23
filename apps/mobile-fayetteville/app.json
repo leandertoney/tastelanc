@@ -38,7 +38,8 @@
         "NSMicrophoneUsageDescription": "Taste Fayetteville uses the microphone to record audio for video recommendations.",
         "NSMotionUsageDescription": "Taste Fayetteville uses motion data to improve location accuracy for check-ins and visit insights.",
         "UIBackgroundModes": [
-          "remote-notification"
+          "remote-notification",
+          "location"
         ]
       },
       "config": {
@@ -55,8 +56,10 @@
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION"
       ],
       "config": {
         "googleMaps": {
