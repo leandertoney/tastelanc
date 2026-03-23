@@ -27,6 +27,7 @@ interface ParsedSection {
 }
 
 interface ParsedMenuData {
+  menu_name?: string;
   sections: ParsedSection[];
   source_url?: string;
   source_type?: string;
@@ -131,11 +132,11 @@ export default function MenuPage() {
   const [importMenuName, setImportMenuName] = useState('Imported Menu');
 
   const importSteps = [
-    { label: 'Connecting to website', icon: '🌐' },
-    { label: 'Downloading page content', icon: '📄' },
-    { label: 'Extracting text & images', icon: '🔍' },
-    { label: 'AI reading your menu', icon: '🤖' },
-    { label: 'Organizing items & prices', icon: '✨' },
+    { label: 'Connecting to your menu', icon: '🌐' },
+    { label: 'Reading menu content', icon: '📄' },
+    { label: 'Scanning items & prices', icon: '🔍' },
+    { label: 'Building your menu', icon: '📋' },
+    { label: 'Almost done...', icon: '✨' },
   ];
 
   // Animated step progression while importing
@@ -538,6 +539,7 @@ export default function MenuPage() {
       }
 
       setParsedMenu(data);
+      if (data.menu_name) setImportMenuName(data.menu_name);
     } catch (err) {
       console.error('Error importing menu:', err);
       setError(err instanceof Error ? err.message : 'Failed to import menu');
@@ -655,6 +657,7 @@ export default function MenuPage() {
       }
 
       setParsedMenu(data);
+      if (data.menu_name) setImportMenuName(data.menu_name);
     } catch (err) {
       console.error('Error importing menu from image:', err);
       setError(err instanceof Error ? err.message : 'Failed to import menu from image');
@@ -723,6 +726,7 @@ export default function MenuPage() {
       }
 
       setParsedMenu(data);
+      if (data.menu_name) setImportMenuName(data.menu_name);
     } catch (err) {
       console.error('Error importing menu from PDF:', err);
       setError(err instanceof Error ? err.message : 'Failed to import menu from PDF');
@@ -1083,239 +1087,6 @@ export default function MenuPage() {
           </Card>
         )}
 
-        {/* Menu List */}
-        {menus.map((menu) => (
-          <Card key={menu.id} className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-xl font-semibold text-tastelanc-text-primary">{menu.name}</h3>
-                {menu.description && <p className="text-tastelanc-text-muted text-sm">{menu.description}</p>}
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="secondary" size="sm" onClick={() => setEditingMenu(menu)}>
-                  <Pencil className="w-4 h-4 mr-1" />
-                  Edit
-                </Button>
-                <Button variant="secondary" size="sm" onClick={() => setShowAddSection(menu.id)}>
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add Section
-                </Button>
-                <button onClick={() => handleDeleteMenu(menu.id)} className="text-tastelanc-text-muted hover:text-red-400 p-2">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Add Section Form */}
-            {showAddSection === menu.id && (
-              <div className="mb-6 p-4 bg-tastelanc-surface/50 rounded-lg">
-                <h4 className="text-tastelanc-text-primary font-medium mb-3">Add New Section</h4>
-                <div className="space-y-3">
-                  <input
-                    type="text"
-                    placeholder="Section name (e.g., Appetizers, Entrees)"
-                    value={newSection.name}
-                    onChange={(e) => setNewSection({ ...newSection, name: e.target.value })}
-                    className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Description (optional)"
-                    value={newSection.description}
-                    onChange={(e) => setNewSection({ ...newSection, description: e.target.value })}
-                    className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
-                  />
-                  <div className="flex gap-2">
-                    <Button size="sm" onClick={() => handleCreateSection(menu.id)} disabled={saving || !newSection.name.trim()}>
-                      {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-                      Add Section
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => {
-                        setShowAddSection(null);
-                        setNewSection({ name: '', description: '' });
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Section Tabs */}
-            {menu.menu_sections.length > 0 && (
-              <div
-                className="border-b border-tastelanc-surface-light mb-6 overflow-x-auto"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-              >
-                <div className="flex items-center min-w-max">
-                  {[...menu.menu_sections]
-                    .sort((a, b) => a.display_order - b.display_order)
-                    .map((section) => {
-                      const isActive = getActiveSection(menu.id, menu.menu_sections) === section.id;
-                      return (
-                        <button
-                          key={section.id}
-                          onClick={() => setActiveTab(menu.id, section.id)}
-                          className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors ${
-                            isActive
-                              ? 'text-tastelanc-text-primary border-tastelanc-accent'
-                              : 'text-tastelanc-text-muted border-transparent hover:text-tastelanc-text-primary hover:border-tastelanc-surface-light'
-                          }`}
-                        >
-                          {section.name}
-                          <span className={`ml-2 text-xs ${isActive ? 'text-tastelanc-accent' : 'opacity-60'}`}>
-                            ({section.menu_items.length})
-                          </span>
-                        </button>
-                      );
-                    })}
-                  <button
-                    onClick={() => setShowAddSection(menu.id)}
-                    className="px-3 py-3 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
-                    title="Add Section"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Active Section Content */}
-            <div className="space-y-6">
-              {menu.menu_sections
-                .filter((section) => section.id === getActiveSection(menu.id, menu.menu_sections))
-                .map((section) => (
-                <div key={section.id} className="border border-tastelanc-surface-light rounded-lg">
-                  <div className="flex items-center justify-between p-4 bg-tastelanc-surface rounded-t-lg">
-                    <div className="flex items-center gap-2">
-                      <GripVertical className="w-4 h-4 text-tastelanc-text-faint cursor-grab" />
-                      <h4 className="font-medium text-tastelanc-text-primary">{section.name}</h4>
-                      <Badge>{section.menu_items.length} items</Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => setEditingSection(section)} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary">
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleDeleteSection(section.id, menu.id)} className="text-tastelanc-text-muted hover:text-red-400">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="divide-y divide-tastelanc-surface-light">
-                    <DndContext
-                      sensors={sensors}
-                      collisionDetection={closestCenter}
-                      onDragEnd={(event) => handleItemDragEnd(event, section)}
-                    >
-                      <SortableContext
-                        items={section.menu_items.map((i) => i.id)}
-                        strategy={verticalListSortingStrategy}
-                      >
-                        {section.menu_items.map((item) => (
-                          <SortableMenuItem
-                            key={item.id}
-                            item={item}
-                            onEdit={setEditingItem}
-                            onDelete={handleDeleteItem}
-                          />
-                        ))}
-                      </SortableContext>
-                    </DndContext>
-
-                    {/* Add Item Form */}
-                    {showAddItem === section.id ? (
-                      <div className="p-4 bg-tastelanc-surface/30">
-                        <div className="grid gap-4 mb-4">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <input
-                              type="text"
-                              placeholder="Item name *"
-                              value={newItem.name}
-                              onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                              className="px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
-                            />
-                            <input
-                              type="number"
-                              placeholder="Price"
-                              value={newItem.price}
-                              onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
-                              step="0.01"
-                              min="0"
-                              className="px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
-                            />
-                          </div>
-                          <input
-                            type="text"
-                            placeholder="Description (optional)"
-                            value={newItem.description}
-                            onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
-                            className="px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
-                          />
-                          <div className="flex flex-wrap gap-3">
-                            {DIETARY_FLAGS.map((flag) => (
-                              <label key={flag.value} className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={newItem.dietary_flags.includes(flag.value)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setNewItem({ ...newItem, dietary_flags: [...newItem.dietary_flags, flag.value] });
-                                    } else {
-                                      setNewItem({ ...newItem, dietary_flags: newItem.dietary_flags.filter((f) => f !== flag.value) });
-                                    }
-                                  }}
-                                  className="rounded border-tastelanc-border bg-tastelanc-surface text-tastelanc-accent focus:ring-tastelanc-accent"
-                                />
-                                <span className="text-sm text-tastelanc-text-secondary">{flag.label}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={() => handleCreateItem(section.id)} disabled={saving || !newItem.name.trim()}>
-                            {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-                            Add Item
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => {
-                              setShowAddItem(null);
-                              setNewItem({ name: '', description: '', price: '', price_description: '', dietary_flags: [], is_featured: false });
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setShowAddItem(section.id)}
-                        className="w-full p-4 text-left text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface/50 transition-colors flex items-center gap-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add Item
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {menu.menu_sections.length === 0 && (
-                <div className="text-center py-8 text-tastelanc-text-muted">
-                  <p>No sections yet. Add a section to start adding menu items.</p>
-                </div>
-              )}
-            </div>
-          </Card>
-        ))}
-
-        {/* URL Import Modal */}
         {showUrlImport && (
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
@@ -1822,6 +1593,238 @@ export default function MenuPage() {
             )}
           </Card>
         )}
+
+        {/* Menu List */}
+        {menus.map((menu) => (
+          <Card key={menu.id} className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-semibold text-tastelanc-text-primary">{menu.name}</h3>
+                {menu.description && <p className="text-tastelanc-text-muted text-sm">{menu.description}</p>}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="secondary" size="sm" onClick={() => setEditingMenu(menu)}>
+                  <Pencil className="w-4 h-4 mr-1" />
+                  Edit
+                </Button>
+                <Button variant="secondary" size="sm" onClick={() => setShowAddSection(menu.id)}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Section
+                </Button>
+                <button onClick={() => handleDeleteMenu(menu.id)} className="text-tastelanc-text-muted hover:text-red-400 p-2">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Add Section Form */}
+            {showAddSection === menu.id && (
+              <div className="mb-6 p-4 bg-tastelanc-surface/50 rounded-lg">
+                <h4 className="text-tastelanc-text-primary font-medium mb-3">Add New Section</h4>
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    placeholder="Section name (e.g., Appetizers, Entrees)"
+                    value={newSection.name}
+                    onChange={(e) => setNewSection({ ...newSection, name: e.target.value })}
+                    className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Description (optional)"
+                    value={newSection.description}
+                    onChange={(e) => setNewSection({ ...newSection, description: e.target.value })}
+                    className="w-full px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => handleCreateSection(menu.id)} disabled={saving || !newSection.name.trim()}>
+                      {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+                      Add Section
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        setShowAddSection(null);
+                        setNewSection({ name: '', description: '' });
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Section Tabs */}
+            {menu.menu_sections.length > 0 && (
+              <div
+                className="border-b border-tastelanc-surface-light mb-6 overflow-x-auto"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                <div className="flex items-center min-w-max">
+                  {[...menu.menu_sections]
+                    .sort((a, b) => a.display_order - b.display_order)
+                    .map((section) => {
+                      const isActive = getActiveSection(menu.id, menu.menu_sections) === section.id;
+                      return (
+                        <button
+                          key={section.id}
+                          onClick={() => setActiveTab(menu.id, section.id)}
+                          className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors ${
+                            isActive
+                              ? 'text-tastelanc-text-primary border-tastelanc-accent'
+                              : 'text-tastelanc-text-muted border-transparent hover:text-tastelanc-text-primary hover:border-tastelanc-surface-light'
+                          }`}
+                        >
+                          {section.name}
+                          <span className={`ml-2 text-xs ${isActive ? 'text-tastelanc-accent' : 'opacity-60'}`}>
+                            ({section.menu_items.length})
+                          </span>
+                        </button>
+                      );
+                    })}
+                  <button
+                    onClick={() => setShowAddSection(menu.id)}
+                    className="px-3 py-3 text-tastelanc-text-muted hover:text-tastelanc-text-primary transition-colors"
+                    title="Add Section"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Active Section Content */}
+            <div className="space-y-6">
+              {menu.menu_sections
+                .filter((section) => section.id === getActiveSection(menu.id, menu.menu_sections))
+                .map((section) => (
+                <div key={section.id} className="border border-tastelanc-surface-light rounded-lg">
+                  <div className="flex items-center justify-between p-4 bg-tastelanc-surface rounded-t-lg">
+                    <div className="flex items-center gap-2">
+                      <GripVertical className="w-4 h-4 text-tastelanc-text-faint cursor-grab" />
+                      <h4 className="font-medium text-tastelanc-text-primary">{section.name}</h4>
+                      <Badge>{section.menu_items.length} items</Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setEditingSection(section)} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary">
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => handleDeleteSection(section.id, menu.id)} className="text-tastelanc-text-muted hover:text-red-400">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="divide-y divide-tastelanc-surface-light">
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={(event) => handleItemDragEnd(event, section)}
+                    >
+                      <SortableContext
+                        items={section.menu_items.map((i) => i.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        {section.menu_items.map((item) => (
+                          <SortableMenuItem
+                            key={item.id}
+                            item={item}
+                            onEdit={setEditingItem}
+                            onDelete={handleDeleteItem}
+                          />
+                        ))}
+                      </SortableContext>
+                    </DndContext>
+
+                    {/* Add Item Form */}
+                    {showAddItem === section.id ? (
+                      <div className="p-4 bg-tastelanc-surface/30">
+                        <div className="grid gap-4 mb-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <input
+                              type="text"
+                              placeholder="Item name *"
+                              value={newItem.name}
+                              onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+                              className="px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                            />
+                            <input
+                              type="number"
+                              placeholder="Price"
+                              value={newItem.price}
+                              onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
+                              step="0.01"
+                              min="0"
+                              className="px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                            />
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="Description (optional)"
+                            value={newItem.description}
+                            onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
+                            className="px-3 py-2 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-tastelanc-accent"
+                          />
+                          <div className="flex flex-wrap gap-3">
+                            {DIETARY_FLAGS.map((flag) => (
+                              <label key={flag.value} className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={newItem.dietary_flags.includes(flag.value)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setNewItem({ ...newItem, dietary_flags: [...newItem.dietary_flags, flag.value] });
+                                    } else {
+                                      setNewItem({ ...newItem, dietary_flags: newItem.dietary_flags.filter((f) => f !== flag.value) });
+                                    }
+                                  }}
+                                  className="rounded border-tastelanc-border bg-tastelanc-surface text-tastelanc-accent focus:ring-tastelanc-accent"
+                                />
+                                <span className="text-sm text-tastelanc-text-secondary">{flag.label}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => handleCreateItem(section.id)} disabled={saving || !newItem.name.trim()}>
+                            {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+                            Add Item
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => {
+                              setShowAddItem(null);
+                              setNewItem({ name: '', description: '', price: '', price_description: '', dietary_flags: [], is_featured: false });
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setShowAddItem(section.id)}
+                        className="w-full p-4 text-left text-tastelanc-text-muted hover:text-tastelanc-text-primary hover:bg-tastelanc-surface/50 transition-colors flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Item
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {menu.menu_sections.length === 0 && (
+                <div className="text-center py-8 text-tastelanc-text-muted">
+                  <p>No sections yet. Add a section to start adding menu items.</p>
+                </div>
+              )}
+            </div>
+          </Card>
+        ))}
 
         {menus.length === 0 && !showAddMenu && !showUrlImport && !showImageImport && !showPdfImport && (
           <Card className="p-12 text-center">

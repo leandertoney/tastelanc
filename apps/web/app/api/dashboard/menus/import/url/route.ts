@@ -2,13 +2,11 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { verifyRestaurantAccess } from '@/lib/auth/restaurant-access';
 import OpenAI from 'openai';
-import Anthropic from '@anthropic-ai/sdk';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_MENU || process.env.OPENAI_API_KEY });
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 const AI_MODEL = 'gpt-4o-mini';
 
 // Allow up to 60s for this route
@@ -45,10 +43,53 @@ Rules:
 - If multiple images are provided, combine all menu items into a unified structure
 - If you cannot find any menu items, return {"sections": [], "error": "No menu items found"}`;
 
+const MENU_PARSE_PROMPT_PDF = `You are a menu parser. Extract menu data from this PDF menu text.
+
+The text may have unusual spacing (e.g. "B u r g e r s" instead of "Burgers") due to PDF encoding — read through it carefully.
+
+Return ONLY valid JSON in this exact format (no markdown, no explanation):
+{
+  "menu_name": "Banquet Menu",
+  "sections": [
+    {
+      "name": "Section Name (e.g., Appetizers, Entrees, Drinks)",
+      "description": "Optional section description",
+      "items": [
+        {
+          "name": "Item Name",
+          "description": "Item description or ingredients",
+          "price": 12.99,
+          "dietary_flags": ["vegetarian", "gluten-free"]
+        }
+      ]
+    }
+  ]
+}
+
+Rules:
+- Extract ONLY menu items (food/drinks with names and typically prices)
+- Group items into logical sections if the menu has categories
+- If no clear sections exist, use a single section like "Menu Items"
+- Price should be a number (12.99) or null if unavailable
+- Use null for price if you see "Market Price" or similar, and put that text in price_description
+- dietary_flags should only include: vegetarian, vegan, gluten-free, dairy-free, nut-free, spicy
+- Skip navigation, headers, footers, contact info, hours, etc.
+- For menu_name: use the actual menu title from the document (e.g. "2026 Banquet Menu", "Dinner Menu", "Happy Hour Menu"). Reconstruct any spaced-out characters (e.g. "2 0 2 6" → "2026", "B a n q u e t" → "Banquet"). If unclear, use a short descriptive name.
+- If you cannot find any menu items, return {"sections": [], "error": "No menu items found"}
+
+PDF text:`;
+
+async function extractTextFromPdfBuffer(buffer: Buffer): Promise<string> {
+  const pdfParse = (await import('pdf-parse/lib/pdf-parse.js')).default;
+  const result = await pdfParse(buffer);
+  return result.text || '';
+}
+
 const MENU_PARSE_PROMPT = `You are a menu parser. Extract menu data from the following webpage content.
 
 Return ONLY valid JSON in this exact format (no markdown, no explanation):
 {
+  "menu_name": "Dinner Menu",
   "sections": [
     {
       "name": "Section Name (e.g., Appetizers, Entrees, Drinks)",
@@ -73,6 +114,7 @@ Rules:
 - Use null for price if you see "Market Price" or similar text, and put that text in price_description
 - dietary_flags should only include: vegetarian, vegan, gluten-free, dairy-free, nut-free, spicy
 - Skip navigation, headers, footers, contact info, hours, etc.
+- For menu_name: use the actual menu title found on the page (e.g. "Dinner Menu", "Lunch Menu", "Drinks"). If unclear, use a short descriptive name.
 - If you cannot find any menu items, return {"sections": [], "error": "No menu items found"}
 
 Webpage content:`;
@@ -90,6 +132,7 @@ interface ParsedSection {
 }
 
 interface ParsedMenu {
+  menu_name?: string;
   sections: ParsedSection[];
   error?: string;
 }
@@ -437,12 +480,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // ---- SHORTCUT: Direct PDF URL — send straight to Claude as a native document ----
+    // ---- SHORTCUT: Direct PDF URL — download, extract text, parse with OpenAI ----
     const isDirectPdf = parsedUrl.pathname.toLowerCase().endsWith('.pdf');
     if (isDirectPdf) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
         const pdfResponse = await fetch(parsedUrl.toString(), {
           signal: controller.signal,
           headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36' },
@@ -453,29 +496,26 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: 'Could not download the PDF. The file may be private or unavailable.' }, { status: 400 });
         }
 
-        const buffer = await pdfResponse.arrayBuffer();
-        if (buffer.byteLength > 20_000_000) {
+        const arrayBuf = await pdfResponse.arrayBuffer();
+        if (arrayBuf.byteLength > 20_000_000) {
           return NextResponse.json({ error: 'PDF too large. Maximum size is 20MB.' }, { status: 400 });
         }
 
-        const pdfBase64 = Buffer.from(buffer).toString('base64');
+        const pdfText = await extractTextFromPdfBuffer(Buffer.from(arrayBuf));
 
-        const message = await anthropic.messages.create({
-          model: 'claude-sonnet-4-6',
+        if (!pdfText || pdfText.trim().length < 50) {
+          return NextResponse.json(
+            { error: 'This PDF appears to be image-only and cannot be read as text. Try downloading the PDF and using the PDF upload button instead.' },
+            { status: 422 }
+          );
+        }
+
+        const completion = await openai.chat.completions.create({
+          model: AI_MODEL,
           max_tokens: 4096,
-          messages: [{
-            role: 'user',
-            content: [
-              {
-                type: 'document',
-                source: { type: 'base64', media_type: 'application/pdf', data: pdfBase64 },
-              } as any,
-              { type: 'text', text: MENU_PARSE_PROMPT },
-            ],
-          }],
+          messages: [{ role: 'user', content: `${MENU_PARSE_PROMPT_PDF}\n\n${pdfText.slice(0, 50000)}` }],
         });
-
-        const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+        const responseText = completion.choices[0]?.message?.content || '';
         let jsonStr = responseText.trim();
         const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
         if (jsonMatch) jsonStr = jsonMatch[1].trim();
@@ -488,6 +528,7 @@ export async function POST(request: Request) {
         return NextResponse.json({
           success: true,
           source_url: url,
+          menu_name: parsedMenu.menu_name,
           sections: parsedMenu.sections,
           stats: {
             sections_count: parsedMenu.sections.length,
@@ -495,8 +536,9 @@ export async function POST(request: Request) {
           },
         });
       } catch (err) {
-        console.error('Direct PDF import failed:', err);
-        return NextResponse.json({ error: 'Failed to read the PDF menu. Please try the PDF upload option instead.' }, { status: 422 });
+        const errMsg = err instanceof Error ? err.message : String(err);
+        console.error('Direct PDF import failed:', errMsg, err);
+        return NextResponse.json({ error: `PDF import failed: ${errMsg}` }, { status: 422 });
       }
     }
 
@@ -613,19 +655,17 @@ export async function POST(request: Request) {
       }
     })();
 
-    // Strategy D: Fetch linked PDF menus
+    // Strategy D: Download linked PDF menus, extract text, parse with OpenAI
     const pdfStrategy = (async (): Promise<ParsedMenu> => {
       if (pdfUrls.length === 0) return { sections: [] };
 
       try {
         const pdfUrl = pdfUrls[0];
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
         const pdfResponse = await fetch(pdfUrl, {
           signal: controller.signal,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
-          },
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36' },
         });
         clearTimeout(timeoutId);
 
@@ -644,37 +684,21 @@ export async function POST(request: Request) {
           return await parseMenuFromImages([{ data: base64, mimeType }]);
         }
 
-        // Actual PDF — extract text and parse
         if (contentType.includes('pdf') || pdfUrl.toLowerCase().endsWith('.pdf')) {
           const buffer = await pdfResponse.arrayBuffer();
           if (buffer.byteLength > 10_000_000) return { sections: [] };
-
-          try {
-            const { PDFParse } = await import('pdf-parse');
-            const parser = new PDFParse({ data: new Uint8Array(buffer) });
-            const textResult = await parser.getText();
-            const pdfText = textResult.text;
-            await parser.destroy();
-
-            if (!pdfText || pdfText.trim().length < 50) return { sections: [] };
-
-            const completion = await openai.chat.completions.create({
-              model: AI_MODEL,
-              max_tokens: 4096,
-              messages: [{
-                role: 'user',
-                content: `${MENU_PARSE_PROMPT}\n\n${pdfText.slice(0, 50000)}`,
-              }],
-            });
-            const responseText = completion.choices[0]?.message?.content || '';
-            let jsonStr = responseText.trim();
-            const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-            if (jsonMatch) jsonStr = jsonMatch[1].trim();
-            return JSON.parse(jsonStr);
-          } catch {
-            console.error('PDF parsing failed for linked PDF');
-            return { sections: [] };
-          }
+          const pdfText = await extractTextFromPdfBuffer(Buffer.from(buffer));
+          if (!pdfText || pdfText.trim().length < 50) return { sections: [] };
+          const completion = await openai.chat.completions.create({
+            model: AI_MODEL,
+            max_tokens: 4096,
+            messages: [{ role: 'user', content: `${MENU_PARSE_PROMPT_PDF}\n\n${pdfText.slice(0, 50000)}` }],
+          });
+          const responseText = completion.choices[0]?.message?.content || '';
+          let jsonStr = responseText.trim();
+          const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+          if (jsonMatch) jsonStr = jsonMatch[1].trim();
+          return JSON.parse(jsonStr);
         }
 
         return { sections: [] };
@@ -743,6 +767,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       source_url: url,
+      menu_name: finalMenu.menu_name,
       sections: finalMenu.sections,
       stats: {
         sections_count: finalMenu.sections.length,

@@ -12,6 +12,13 @@
 [functions."*"]
   timeout = 26
 
+# Menu import routes call Claude API and need more time
+[functions."api-dashboard-menus-import-url"]
+  timeout = 60
+
+[functions."api-dashboard-menus-import-pdf"]
+  timeout = 60
+
 [build.environment]
   NODE_VERSION = "20"
   NEXT_TELEMETRY_DISABLED = "1"

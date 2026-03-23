@@ -1,15 +1,18 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { verifyRestaurantAccess } from '@/lib/auth/restaurant-access';
-import { anthropic } from '@/lib/anthropic';
+import OpenAI from 'openai';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_MENU || process.env.OPENAI_API_KEY });
 
 const MENU_VISION_PROMPT = `You are a menu parser. Extract menu data from this menu image.
 
 Return ONLY valid JSON in this exact format (no markdown, no explanation):
 {
+  "menu_name": "Dinner Menu",
   "sections": [
     {
       "name": "Section Name (e.g., Appetizers, Entrees, Drinks)",
@@ -34,6 +37,7 @@ Rules:
 - Use null for price if you see "Market Price" or similar text, and put that text in price_description
 - dietary_flags should only include: vegetarian, vegan, gluten-free, dairy-free, nut-free, spicy
 - Skip any non-menu content like logos, addresses, or decorative elements
+- For menu_name: use the actual menu title visible in the image (e.g. "Dinner Menu", "Drinks Menu"). If unclear, use a short descriptive name.
 - If you cannot find any menu items, return {"sections": [], "error": "No menu items found"}`;
 
 interface ParsedSection {
@@ -49,6 +53,7 @@ interface ParsedSection {
 }
 
 interface ParsedMenu {
+  menu_name?: string;
   sections: ParsedSection[];
   error?: string;
 }
@@ -59,10 +64,7 @@ export async function POST(request: Request) {
     const restaurantId = searchParams.get('restaurant_id');
 
     if (!restaurantId) {
-      return NextResponse.json(
-        { error: 'restaurant_id is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'restaurant_id is required' }, { status: 400 });
     }
 
     const supabase = await createClient();
@@ -79,13 +81,9 @@ export async function POST(request: Request) {
     const { image, mimeType } = body;
 
     if (!image) {
-      return NextResponse.json(
-        { error: 'Image data is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Image data is required' }, { status: 400 });
     }
 
-    // Validate mime type
     const validMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     const actualMimeType = mimeType || 'image/jpeg';
 
@@ -96,87 +94,57 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate base64 data (rough size check - max ~10MB base64)
     if (image.length > 14_000_000) {
-      return NextResponse.json(
-        { error: 'Image too large. Maximum size is 10MB.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Image too large. Maximum size is 10MB.' }, { status: 400 });
     }
 
-    // Use Claude Vision to parse the menu image
     let parsedMenu: ParsedMenu;
     try {
-      const message = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
         max_tokens: 4096,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'image',
-                source: {
-                  type: 'base64',
-                  media_type: actualMimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-                  data: image,
-                },
-              },
-              {
-                type: 'text',
-                text: MENU_VISION_PROMPT,
-              },
-            ],
-          },
-        ],
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image_url',
+              image_url: { url: `data:${actualMimeType};base64,${image}` },
+            },
+            { type: 'text', text: MENU_VISION_PROMPT },
+          ],
+        }],
       });
 
-      const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
-
-      // Try to extract JSON from the response
+      const responseText = completion.choices[0]?.message?.content || '';
       let jsonStr = responseText.trim();
-
-      // Handle case where Claude might wrap in markdown code block
       const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (jsonMatch) {
-        jsonStr = jsonMatch[1].trim();
-      }
-
+      if (jsonMatch) jsonStr = jsonMatch[1].trim();
       parsedMenu = JSON.parse(jsonStr);
     } catch (error) {
-      console.error('Error processing menu with Claude Vision:', error);
+      console.error('Error processing menu with OpenAI Vision:', error);
       return NextResponse.json(
         { error: 'Failed to read the menu image. Please try a clearer image or different format.' },
         { status: 422 }
       );
     }
 
-    // Validate parsed data
     if (!parsedMenu.sections || !Array.isArray(parsedMenu.sections)) {
-      return NextResponse.json(
-        { error: 'Failed to extract menu structure from the image.' },
-        { status: 422 }
-      );
+      return NextResponse.json({ error: 'Failed to extract menu structure from the image.' }, { status: 422 });
     }
 
     if (parsedMenu.error || parsedMenu.sections.length === 0) {
       return NextResponse.json(
-        {
-          error: 'No menu items found in this image. Make sure the image clearly shows the menu with item names and prices. If the image is blurry or the text is too small, try a higher quality image or a closer crop of the menu section.'
-        },
+        { error: 'No menu items found in this image. Make sure the image clearly shows the menu with item names and prices.' },
         { status: 422 }
       );
     }
 
-    // Count total items
-    const totalItems = parsedMenu.sections.reduce(
-      (sum, section) => sum + (section.items?.length || 0),
-      0
-    );
+    const totalItems = parsedMenu.sections.reduce((sum, s) => sum + (s.items?.length || 0), 0);
 
     return NextResponse.json({
       success: true,
       source_type: 'image',
+      menu_name: parsedMenu.menu_name,
       sections: parsedMenu.sections,
       stats: {
         sections_count: parsedMenu.sections.length,
@@ -185,9 +153,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('Error in menu image import API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
