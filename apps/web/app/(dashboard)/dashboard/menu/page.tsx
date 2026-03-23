@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, GripVertical, UtensilsCrossed, Loader2, X, Link2, Image, FileText, Check, AlertCircle, HelpCircle } from 'lucide-react';
+import { Plus, Pencil, Trash2, GripVertical, UtensilsCrossed, Loader2, X, Link2, Image, FileText, Check, AlertCircle, HelpCircle, Eye, EyeOff, Save } from 'lucide-react';
 import { Button, Card, Badge, Tooltip } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import { useModal } from '@/components/dashboard/ModalProvider';
 import TierGate from '@/components/TierGate';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import SortableMenuItem from '@/components/dashboard/SortableMenuItem';
 import { toast } from 'sonner';
 
@@ -66,7 +67,15 @@ interface Menu {
   description: string | null;
   is_active: boolean;
   display_order: number;
+  is_hidden_from_tab: boolean;
   menu_sections: MenuSection[];
+}
+
+interface MenuTabConfig {
+  id: string;
+  name: string;
+  is_hidden_from_tab: boolean;
+  display_order: number;
 }
 
 const DIETARY_FLAGS = [
@@ -78,6 +87,55 @@ const DIETARY_FLAGS = [
   { value: 'spicy', label: 'Spicy' },
 ];
 
+function SortableMenuTabRow({
+  menu,
+  onToggleVisibility,
+}: {
+  menu: MenuTabConfig;
+  onToggleVisibility: (id: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: menu.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-3 p-3 hover:bg-tastelanc-surface/50 ${isDragging ? 'bg-tastelanc-surface shadow-lg rounded-lg' : ''}`}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="touch-none text-tastelanc-text-faint hover:text-tastelanc-text-secondary cursor-grab active:cursor-grabbing flex-shrink-0"
+        aria-label="Drag to reorder"
+      >
+        <GripVertical className="w-4 h-4" />
+      </button>
+      <button
+        onClick={() => onToggleVisibility(menu.id)}
+        className={`flex-shrink-0 transition-colors ${
+          menu.is_hidden_from_tab
+            ? 'text-tastelanc-text-faint hover:text-tastelanc-text-muted'
+            : 'text-tastelanc-accent hover:text-tastelanc-accent/80'
+        }`}
+        aria-label={menu.is_hidden_from_tab ? `Show ${menu.name}` : `Hide ${menu.name}`}
+      >
+        {menu.is_hidden_from_tab ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+      </button>
+      <span className={`flex-1 text-sm font-medium ${menu.is_hidden_from_tab ? 'opacity-40 text-tastelanc-text-muted' : 'text-tastelanc-text-primary'}`}>
+        {menu.name}
+      </span>
+      {menu.is_hidden_from_tab && (
+        <span className="text-xs text-tastelanc-text-faint bg-tastelanc-surface-light px-2 py-0.5 rounded flex-shrink-0">Hidden</span>
+      )}
+    </div>
+  );
+}
+
 export default function MenuPage() {
   const { restaurant, buildApiUrl } = useRestaurant();
   const modal = useModal();
@@ -85,6 +143,11 @@ export default function MenuPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Menu tab order/visibility state (only relevant when menus.length > 1)
+  const [menuTabOrder, setMenuTabOrder] = useState<MenuTabConfig[]>([]);
+  const [menuTabsDirty, setMenuTabsDirty] = useState(false);
+  const [savingMenuTabs, setSavingMenuTabs] = useState(false);
 
   // Tab state - tracks active section per menu
   const [activeTabByMenu, setActiveTabByMenu] = useState<Record<string, string>>({});
@@ -206,6 +269,63 @@ export default function MenuPage() {
     } catch {
       toast.error('Failed to save item order');
       fetchMenus();
+    }
+  };
+
+  // Keep menuTabOrder in sync when menus load/change
+  useEffect(() => {
+    const sorted = [...menus].sort((a, b) => a.display_order - b.display_order);
+    setMenuTabOrder(sorted.map(m => ({
+      id: m.id,
+      name: m.name,
+      is_hidden_from_tab: m.is_hidden_from_tab ?? false,
+      display_order: m.display_order,
+    })));
+    setMenuTabsDirty(false);
+  }, [menus]);
+
+  const handleMenuTabDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setMenuTabOrder(prev => {
+      const oldIndex = prev.findIndex(m => m.id === active.id);
+      const newIndex = prev.findIndex(m => m.id === over.id);
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+    setMenuTabsDirty(true);
+  };
+
+  const handleToggleMenuTabVisibility = (id: string) => {
+    setMenuTabOrder(prev => prev.map(m => m.id === id ? { ...m, is_hidden_from_tab: !m.is_hidden_from_tab } : m));
+    setMenuTabsDirty(true);
+  };
+
+  const handleSaveMenuTabs = async () => {
+    if (!restaurant?.id) return;
+    setSavingMenuTabs(true);
+    try {
+      const res = await fetch(buildApiUrl('/api/dashboard/menus/reorder'), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'menus',
+          restaurant_id: restaurant.id,
+          items: menuTabOrder.map((m, i) => ({
+            id: m.id,
+            display_order: i,
+            is_hidden_from_tab: m.is_hidden_from_tab,
+          })),
+        }),
+      });
+      if (!res.ok) throw new Error('Save failed');
+      setMenuTabsDirty(false);
+      toast.success('Menu order saved — changes reflect instantly in the app');
+      fetchMenus();
+    } catch {
+      toast.error('Failed to save menu order');
+    } finally {
+      setSavingMenuTabs(false);
     }
   };
 
@@ -857,6 +977,37 @@ export default function MenuPage() {
               Dismiss
             </button>
           </div>
+        )}
+
+        {/* Menu Tab Order & Visibility — only shown when restaurant has multiple menus */}
+        {menuTabOrder.length > 1 && (
+          <Card className="overflow-hidden">
+            <div className="px-4 py-3 border-b border-tastelanc-surface-light flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-tastelanc-text-primary">Menu Tab Order &amp; Visibility</h3>
+                <p className="text-xs text-tastelanc-text-muted mt-0.5">
+                  Drag to reorder · Click the eye to show or hide a menu in the app
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {menuTabsDirty && (
+                  <Button size="sm" onClick={handleSaveMenuTabs} disabled={savingMenuTabs} className="flex items-center gap-1.5">
+                    {savingMenuTabs ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                    Save Order
+                  </Button>
+                )}
+              </div>
+            </div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleMenuTabDragEnd}>
+              <SortableContext items={menuTabOrder.map(m => m.id)} strategy={verticalListSortingStrategy}>
+                <div className="divide-y divide-tastelanc-surface-light">
+                  {menuTabOrder.map(menu => (
+                    <SortableMenuTabRow key={menu.id} menu={menu} onToggleVisibility={handleToggleMenuTabVisibility} />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </Card>
         )}
 
         {/* Add Menu Modal */}

@@ -73,6 +73,7 @@ export interface BaseRestaurant {
   categories: RestaurantCategory[];
   features: RestaurantFeature[];
   is_active: boolean;
+  display_preferences: { tabs: Array<{ key: string; hidden: boolean }> } | null;
   created_at: string;
   updated_at: string;
 }

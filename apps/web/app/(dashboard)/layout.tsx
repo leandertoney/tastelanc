@@ -28,6 +28,7 @@ import {
   ListChecks,
   Megaphone,
   Ticket,
+  Sliders,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -85,6 +86,7 @@ const navSections: NavSection[] = [
     label: 'Settings',
     items: [
       { href: '/dashboard/features', label: 'Features', icon: ListChecks, hint: 'Toggle amenities like private dining, live piano, and more — helps diners find you' },
+      { href: '/dashboard/customize', label: 'Customize', icon: Sliders, hint: 'Control which tabs appear in your app profile and in what order' },
       { href: '/dashboard/team', label: 'Team', icon: Users, hint: 'Invite and manage team members who can edit your content' },
       { href: '/dashboard/subscription', label: 'Subscription', icon: CreditCard, hint: 'View your plan details, billing, and upgrade options' },
     ],

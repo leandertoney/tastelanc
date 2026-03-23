@@ -196,7 +196,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
       if (hoursRes.data) setHours(hoursRes.data);
       if (happyHoursRes.data) setHappyHours(happyHoursRes.data);
       if (specialsRes.data) setSpecials(specialsRes.data);
-      if (menusRes.data) setMenus(menusRes.data as Menu[]);
+      if (menusRes.data) setMenus((menusRes.data as Menu[]).filter(m => !m.is_hidden_from_tab));
       setCoupons(couponsData);
       // Map API events to Event type
       setEvents(eventsData.map(e => ({
@@ -338,6 +338,23 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
 
   const tabs: Tab[] = useMemo(() => {
     let baseTabs = getBaseTabs();
+
+    // Apply owner display preferences (tab order + visibility)
+    const prefs = restaurant?.display_preferences;
+    if (prefs?.tabs && prefs.tabs.length > 0) {
+      const prefMap = new Map(prefs.tabs.map((p: { key: string; hidden: boolean }) => [p.key, p]));
+
+      // Filter hidden tabs — owner preference wins even if content exists
+      baseTabs = baseTabs.filter(t => !prefMap.get(t.key)?.hidden);
+
+      // Reorder per owner's saved order
+      baseTabs = baseTabs.sort((a, b) => {
+        const aIdx = prefs.tabs!.findIndex((p: { key: string }) => p.key === a.key);
+        const bIdx = prefs.tabs!.findIndex((p: { key: string }) => p.key === b.key);
+        return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+      });
+    }
+
     if (recsGated) {
       baseTabs = baseTabs.filter(t => t.key !== 'recommendations');
     }
@@ -349,7 +366,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
       return [...baseTabs, { key: 'features', label: 'Features' }];
     }
     return baseTabs;
-  }, [hasFeatures, recsGated, menus.length]);
+  }, [hasFeatures, recsGated, menus.length, restaurant?.display_preferences]);
 
   // If the active tab was removed (e.g. recs gated), switch to first available tab
   useEffect(() => {

@@ -25,9 +25,9 @@ export async function PUT(request: Request) {
       );
     }
 
-    if (!['menu_items', 'menu_sections'].includes(type)) {
+    if (!['menu_items', 'menu_sections', 'menus'].includes(type)) {
       return NextResponse.json(
-        { error: 'Type must be "menu_items" or "menu_sections"' },
+        { error: 'Type must be "menu_items", "menu_sections", or "menus"' },
         { status: 400 }
       );
     }
@@ -44,11 +44,20 @@ export async function PUT(request: Request) {
     const serviceClient = createServiceRoleClient();
 
     const updates = items.map(
-      (item: { id: string; display_order: number }) =>
-        serviceClient
+      (item: { id: string; display_order: number; is_hidden_from_tab?: boolean }) => {
+        const updatePayload: Record<string, unknown> = {
+          display_order: item.display_order,
+          updated_at: new Date().toISOString(),
+        };
+        // is_hidden_from_tab only applies to top-level menus
+        if (type === 'menus' && item.is_hidden_from_tab !== undefined) {
+          updatePayload.is_hidden_from_tab = item.is_hidden_from_tab;
+        }
+        return serviceClient
           .from(type)
-          .update({ display_order: item.display_order, updated_at: new Date().toISOString() })
-          .eq('id', item.id)
+          .update(updatePayload)
+          .eq('id', item.id);
+      }
     );
 
     const results = await Promise.all(updates);
