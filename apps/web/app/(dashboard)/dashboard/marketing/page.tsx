@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Users, Mail, Bell, Loader2 } from 'lucide-react';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import TierGate from '@/components/TierGate';
 import ContactsTab from './components/ContactsTab';
 import EmailCampaignsTab from './components/EmailCampaignsTab';
 import PushNotificationsTab from './components/PushNotificationsTab';
+import DeliverabilityBanner from './components/DeliverabilityBanner';
 
 const TABS = [
   { id: 'contacts', label: 'Contacts', icon: Users },
@@ -15,10 +16,21 @@ const TABS = [
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
+type DeliverabilityStatus = null | 'pending' | 'confirmed' | 'dismissed';
 
 export default function MarketingPage() {
   const { restaurant, tierName, isLoading } = useRestaurant();
   const [activeTab, setActiveTab] = useState<TabId>('contacts');
+  const [deliverabilityStatus, setDeliverabilityStatus] = useState<DeliverabilityStatus>(null);
+  const [deliverabilityLoaded, setDeliverabilityLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!restaurant?.id) return;
+    // Use the status from the restaurant object if available (after context fetch includes new column)
+    const status = (restaurant as any).deliverability_check_status as DeliverabilityStatus;
+    setDeliverabilityStatus(status ?? null);
+    setDeliverabilityLoaded(true);
+  }, [restaurant?.id, (restaurant as any)?.deliverability_check_status]);
 
   if (isLoading) {
     return (
@@ -43,6 +55,14 @@ export default function MarketingPage() {
       description="Import email contacts, send email campaigns, and push notifications to your audience."
     >
       <div className="max-w-5xl">
+        {/* Deliverability Banner */}
+        {deliverabilityLoaded && deliverabilityStatus !== 'confirmed' && deliverabilityStatus !== 'dismissed' && (
+          <DeliverabilityBanner
+            restaurantId={restaurant.id}
+            initialStatus={deliverabilityStatus}
+          />
+        )}
+
         {/* Tab Navigation */}
         <div className="flex border-b border-tastelanc-border mb-6">
           {TABS.map((tab) => {

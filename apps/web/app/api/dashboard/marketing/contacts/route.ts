@@ -11,6 +11,11 @@ const TIER_CONTACT_LIMITS: Record<string, number> = {
   elite: 2000,
 };
 
+// Per-restaurant overrides (takes precedence over tier limit)
+const RESTAURANT_CONTACT_OVERRIDES: Record<string, number> = {
+  '9d64d846-931a-4e1c-8d35-296b008f728e': 5000, // Caddy Shack
+};
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -108,7 +113,7 @@ export async function POST(request: Request) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tiersData = (restaurant as any)?.tiers;
     const tierName: string = Array.isArray(tiersData) ? tiersData[0]?.name || 'basic' : tiersData?.name || 'basic';
-    const contactLimit = TIER_CONTACT_LIMITS[tierName] || 0;
+    const contactLimit = RESTAURANT_CONTACT_OVERRIDES[restaurantId] ?? TIER_CONTACT_LIMITS[tierName] ?? 0;
 
     if (contactLimit > 0) {
       const { count: currentCount } = await serviceClient

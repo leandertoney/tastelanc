@@ -97,6 +97,8 @@ export interface Restaurant {
   stripe_subscription_id: string | null;
   checkin_pin: string | null;
   market_id: string;
+  deliverability_check_status: 'pending' | 'confirmed' | 'dismissed' | null;
+  deliverability_check_sent_at: string | null;
 }
 
 export interface RestaurantHours {

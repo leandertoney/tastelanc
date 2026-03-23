@@ -165,6 +165,14 @@ export default function ContactsTab({ restaurantId }: ContactsTabProps) {
           </div>
         ))}
       </div>
+      {restaurantId === '9d64d846-931a-4e1c-8d35-296b008f728e' && (
+        <div className="bg-tastelanc-surface-light border border-yellow-500/30 rounded-lg px-4 py-3 flex items-center gap-3">
+          <span className="text-lg">🎉</span>
+          <p className="text-sm text-tastelanc-text-muted">
+            <span className="font-medium text-yellow-400">Elite promotion active</span> — you&apos;ve been upgraded to a 5,000 contact limit. Enjoy!
+          </p>
+        </div>
+      )}
       {stats.contactLimit > 0 && stats.total >= stats.contactLimit && (
         <p className="text-xs text-yellow-400">
           Contact limit reached ({stats.contactLimit} for {stats.tierName} tier). Remove contacts or upgrade to add more.
