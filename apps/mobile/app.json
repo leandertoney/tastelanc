@@ -27,7 +27,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tastelanc.app",
-      "buildNumber": "7",
+      "buildNumber": "8",
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": []
       },
