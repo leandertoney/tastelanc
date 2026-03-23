@@ -124,7 +124,7 @@ export async function POST(request: Request) {
     try {
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
-        max_tokens: 4096,
+        max_tokens: 8192,
         messages: [{ role: 'user', content: `${MENU_PARSE_PROMPT}\n\n${pdfText.slice(0, 50000)}` }],
       });
       const responseText = completion.choices[0]?.message?.content || '';

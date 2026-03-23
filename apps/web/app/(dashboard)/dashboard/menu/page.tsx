@@ -822,7 +822,9 @@ export default function MenuPage() {
               Menu Management
             </h2>
             <div className="flex items-center gap-2 mt-1">
-              <p className="text-tastelanc-text-muted">Manage your restaurant&apos;s menus and items</p>
+              <p className="text-tastelanc-text-muted">
+                {menus.length === 0 ? "Manage your restaurant's menus and items" : `${menus.length} ${menus.length === 1 ? 'menu' : 'menus'}`}
+              </p>
               <Tooltip content="Create multiple menus (Lunch, Dinner, Drinks, etc.) with sections and items. You can import menus from a URL, image, or PDF — or build them manually. Drag items to reorder." position="bottom">
                 <HelpCircle className="w-4 h-4 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
               </Tooltip>
@@ -1183,7 +1185,7 @@ export default function MenuPage() {
                     <span className="font-medium">Menu imported!</span>
                   </div>
                   <p className="text-tastelanc-text-muted text-sm">
-                    We found {parsedMenu.stats.sections_count} sections with {parsedMenu.stats.items_count} items
+                    We found {parsedMenu.stats.sections_count} {parsedMenu.stats.sections_count === 1 ? 'section' : 'sections'} with {parsedMenu.stats.items_count} {parsedMenu.stats.items_count === 1 ? 'item' : 'items'}
                   </p>
                 </div>
 
@@ -1348,7 +1350,7 @@ export default function MenuPage() {
                     <span className="font-medium">Menu imported!</span>
                   </div>
                   <p className="text-tastelanc-text-muted text-sm">
-                    We found {parsedMenu.stats.sections_count} sections with {parsedMenu.stats.items_count} items
+                    We found {parsedMenu.stats.sections_count} {parsedMenu.stats.sections_count === 1 ? 'section' : 'sections'} with {parsedMenu.stats.items_count} {parsedMenu.stats.items_count === 1 ? 'item' : 'items'}
                   </p>
                 </div>
 
@@ -1509,7 +1511,7 @@ export default function MenuPage() {
                     <span className="font-medium">Menu imported!</span>
                   </div>
                   <p className="text-tastelanc-text-muted text-sm">
-                    We found {parsedMenu.stats.sections_count} sections with {parsedMenu.stats.items_count} items
+                    We found {parsedMenu.stats.sections_count} {parsedMenu.stats.sections_count === 1 ? 'section' : 'sections'} with {parsedMenu.stats.items_count} {parsedMenu.stats.items_count === 1 ? 'item' : 'items'}
                   </p>
                 </div>
 

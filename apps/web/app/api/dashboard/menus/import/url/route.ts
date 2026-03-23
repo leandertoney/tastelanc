@@ -356,7 +356,7 @@ async function parseMenuFromImages(
 
   const completion = await openai.chat.completions.create({
     model: AI_MODEL,
-    max_tokens: 4096,
+    max_tokens: 8192,
     messages: [{ role: 'user', content }],
   });
 
@@ -512,7 +512,7 @@ export async function POST(request: Request) {
 
         const completion = await openai.chat.completions.create({
           model: AI_MODEL,
-          max_tokens: 4096,
+          max_tokens: 8192,
           messages: [{ role: 'user', content: `${MENU_PARSE_PROMPT_PDF}\n\n${pdfText.slice(0, 50000)}` }],
         });
         const responseText = completion.choices[0]?.message?.content || '';
@@ -576,7 +576,7 @@ export async function POST(request: Request) {
       try {
         const completion = await openai.chat.completions.create({
           model: AI_MODEL,
-          max_tokens: 4096,
+          max_tokens: 8192,
           messages: [{
             role: 'user',
             content: `${MENU_PARSE_PROMPT}\n\n${textContent}`,
@@ -638,7 +638,7 @@ export async function POST(request: Request) {
 
         const completion = await openai.chat.completions.create({
           model: AI_MODEL,
-          max_tokens: 4096,
+          max_tokens: 8192,
           messages: [{
             role: 'user',
             content: `${MENU_PARSE_PROMPT}\n\n${embedText}`,
@@ -691,7 +691,7 @@ export async function POST(request: Request) {
           if (!pdfText || pdfText.trim().length < 50) return { sections: [] };
           const completion = await openai.chat.completions.create({
             model: AI_MODEL,
-            max_tokens: 4096,
+            max_tokens: 8192,
             messages: [{ role: 'user', content: `${MENU_PARSE_PROMPT_PDF}\n\n${pdfText.slice(0, 50000)}` }],
           });
           const responseText = completion.choices[0]?.message?.content || '';

@@ -341,11 +341,15 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
     if (recsGated) {
       baseTabs = baseTabs.filter(t => t.key !== 'recommendations');
     }
+    // Pluralize "Menu" tab if restaurant has more than one menu
+    baseTabs = baseTabs.map(t =>
+      t.key === 'menu' ? { ...t, label: menus.length > 1 ? 'Menus' : 'Menu' } : t
+    );
     if (hasFeatures) {
       return [...baseTabs, { key: 'features', label: 'Features' }];
     }
     return baseTabs;
-  }, [hasFeatures, recsGated]);
+  }, [hasFeatures, recsGated, menus.length]);
 
   // If the active tab was removed (e.g. recs gated), switch to first available tab
   useEffect(() => {
