@@ -138,8 +138,8 @@ async function getStripeSubscriptions(
   const results = await Promise.allSettled(
     stripeClients.map(async ({ marketSlug, stripe }) => {
       const [activeSubs, trialingSubs] = await Promise.all([
-        stripe.subscriptions.list({ status: 'active', limit: 100, expand: ['data.customer'] }),
-        stripe.subscriptions.list({ status: 'trialing', limit: 100, expand: ['data.customer'] }),
+        stripe.subscriptions.list({ status: 'active', limit: 100, expand: ['data.customer', 'data.latest_invoice'] }),
+        stripe.subscriptions.list({ status: 'trialing', limit: 100, expand: ['data.customer', 'data.latest_invoice'] }),
       ]);
       return { marketSlug, subscriptions: [...activeSubs.data, ...trialingSubs.data] };
     })
@@ -162,7 +162,13 @@ async function getStripeSubscriptions(
       const email = customer.email || 'unknown';
       const name = customer.name || customer.metadata?.business_name || sub.metadata?.restaurant_name || email;
       const priceId = sub.items.data[0]?.price?.id || '';
-      const amount = (sub.items.data[0]?.price?.unit_amount || 0) / 100;
+      const listAmount = (sub.items.data[0]?.price?.unit_amount || 0) / 100;
+      // Use actual invoice amount_paid (reflects discounts) if available; fall back to list price
+      const latestInvoice = sub.latest_invoice;
+      const invoiceAmountPaid = (typeof latestInvoice === 'object' && latestInvoice && !('deleted' in latestInvoice))
+        ? (latestInvoice.amount_paid || 0) / 100
+        : null;
+      const amount = (invoiceAmountPaid !== null && invoiceAmountPaid > 0) ? invoiceAmountPaid : listAmount;
       const interval = sub.items.data[0]?.price?.recurring?.interval || 'month';
       const intervalCount = sub.items.data[0]?.price?.recurring?.interval_count || 1;
 
