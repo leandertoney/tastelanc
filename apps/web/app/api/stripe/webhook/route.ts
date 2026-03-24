@@ -418,6 +418,180 @@ async function sendBrandedWelcomeEmailWithToken(
   console.log(`Branded welcome email sent to ${email} (market: ${marketBrand.name})`);
 }
 
+// Send unmatched subscription admin alert email
+async function sendUnmatchedAlert(
+  customerId: string,
+  customerEmail: string | null,
+  customerName: string | null,
+  customerInfo: StripeCustomerInfo,
+  subscriptionId: string,
+  amountCents: number,
+  billingInterval: string,
+  tier: string,
+  attempts: { method: string; searched: string | null; found: boolean; restaurantName?: string }[]
+): Promise<void> {
+  try {
+    const attemptsHtml = attempts.map(a =>
+      `<li style="margin: 5px 0; color: ${a.found ? '#22c55e' : '#dc2626'};">
+        <strong>${a.method}</strong>: searched "${a.searched || 'N/A'}" → ${a.found ? `FOUND ${a.restaurantName}` : 'not found'}
+      </li>`
+    ).join('');
+
+    await resend.emails.send({
+      from: `${BRAND.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
+      to: 'admin@tastelanc.com',
+      subject: `🚨 UNMATCHED Subscription: $${(amountCents / 100).toFixed(2)}/${billingInterval} - Needs Manual Review`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #dc2626; border-bottom: 2px solid #dc2626; padding-bottom: 10px;">⚠️ Unmatched Subscription</h2>
+          <p style="background: #fef2f2; border: 1px solid #fecaca; padding: 12px; border-radius: 8px; color: #991b1b;">
+            A new subscription could not be automatically matched to any restaurant. Please review and manually link.
+          </p>
+
+          <h3 style="margin-top: 20px;">Customer Information</h3>
+          <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280; width: 140px;">Email:</td>
+              <td style="padding: 8px 0; color: #1a1a1a; font-weight: 600;">${customerEmail || 'N/A'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Name:</td>
+              <td style="padding: 8px 0; color: #1a1a1a;">${customerName || 'N/A'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Phone:</td>
+              <td style="padding: 8px 0; color: #1a1a1a;">${customerInfo.phone || 'N/A'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Business Name:</td>
+              <td style="padding: 8px 0; color: #1a1a1a;">${customerInfo.business_name || customerInfo.metadata?.business_name || 'N/A'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Amount:</td>
+              <td style="padding: 8px 0; color: #22c55e; font-weight: 600;">$${(amountCents / 100).toFixed(2)}/${billingInterval}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Tier:</td>
+              <td style="padding: 8px 0; color: #1a1a1a;">${tier}</td>
+            </tr>
+          </table>
+
+          <h3 style="margin-top: 20px;">Match Attempts (${attempts.length} methods tried)</h3>
+          <ul style="background: #f9fafb; padding: 15px 15px 15px 35px; border-radius: 8px; margin: 10px 0;">
+            ${attemptsHtml}
+          </ul>
+
+          <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <a href="https://dashboard.stripe.com/customers/${customerId}" style="background: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; display: inline-block;">View Customer in Stripe</a>
+            <a href="https://${BRAND.domain}/admin/restaurants" style="background: #6b7280; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; display: inline-block;">View Restaurants</a>
+          </div>
+
+          <p style="margin-top: 20px; color: #6b7280; font-size: 14px;">
+            Subscription ID: <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">${subscriptionId}</code>
+          </p>
+        </div>
+      `,
+    });
+    console.log('Unmatched subscription alert sent to admin');
+  } catch (notifyError) {
+    console.error('Failed to send unmatched subscription alert:', notifyError);
+  }
+}
+
+// Perform restaurant onboarding after a successful subscription match:
+// updates restaurant tier, creates owner account if needed, sends welcome email.
+async function handleRestaurantSubscriptionMatch(
+  restaurantId: string,
+  customerInfo: StripeCustomerInfo,
+  subscriptionId: string,
+  tierId: string,
+  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>
+): Promise<void> {
+  const customerEmail = customerInfo.email;
+  const customerName = customerInfo.name;
+
+  // Update restaurant tier + Stripe IDs
+  await supabaseAdmin
+    .from('restaurants')
+    .update({
+      tier_id: tierId,
+      stripe_subscription_id: subscriptionId,
+      stripe_customer_id: customerInfo.customerId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', restaurantId);
+
+  if (!customerEmail) return;
+
+  try {
+    const { data: restaurantRow } = await supabaseAdmin
+      .from('restaurants')
+      .select('owner_id, name, cover_image_url')
+      .eq('id', restaurantId)
+      .single();
+
+    const marketBrand = await getMarketBrandForRestaurant(supabaseAdmin, restaurantId);
+    let welcomeUserId: string | null = restaurantRow?.owner_id || null;
+
+    if (!welcomeUserId) {
+      const { data: profileByEmail } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .eq('email', customerEmail.toLowerCase())
+        .single();
+
+      if (profileByEmail) {
+        welcomeUserId = profileByEmail.id;
+        await supabaseAdmin
+          .from('restaurants')
+          .update({ owner_id: welcomeUserId })
+          .eq('id', restaurantId);
+      } else {
+        const tempPassword = crypto.randomUUID().slice(0, 12);
+        const { data: newUser } = await supabaseAdmin.auth.admin.createUser({
+          email: customerEmail,
+          password: tempPassword,
+          email_confirm: true,
+          user_metadata: {
+            full_name: customerName || restaurantRow?.name || 'Restaurant Owner',
+            role: 'restaurant_owner',
+          },
+        });
+
+        if (newUser?.user) {
+          welcomeUserId = newUser.user.id;
+          await supabaseAdmin.from('profiles').upsert({
+            id: welcomeUserId,
+            email: customerEmail,
+            display_name: customerName || restaurantRow?.name || 'Restaurant Owner',
+            role: 'restaurant_owner',
+          }, { onConflict: 'id' });
+
+          await supabaseAdmin
+            .from('restaurants')
+            .update({ owner_id: welcomeUserId })
+            .eq('id', restaurantId);
+          console.log(`Created user ${welcomeUserId} and linked to restaurant ${restaurantId}`);
+        }
+      }
+    }
+
+    if (welcomeUserId) {
+      await sendBrandedWelcomeEmailWithToken(
+        supabaseAdmin,
+        customerEmail,
+        customerName || '',
+        restaurantRow?.name || '',
+        restaurantRow?.cover_image_url || undefined,
+        welcomeUserId,
+        marketBrand
+      );
+    }
+  } catch (err) {
+    console.error('Error in handleRestaurantSubscriptionMatch account/email step:', err);
+  }
+}
+
 // Handle multi-restaurant checkout completion
 async function handleEventPromotionPayment(
   session: Stripe.Checkout.Session,
@@ -1626,6 +1800,7 @@ export async function POST(request: Request) {
               customerId,
               email: customerEmail,
               name: customerName,
+              business_name: !('deleted' in customer) ? (customer.business_name ?? null) : null,
               phone: !('deleted' in customer) ? (customer.phone ?? null) : null,
               metadata: customerMetadata,
             };
@@ -1646,105 +1821,23 @@ export async function POST(request: Request) {
             });
 
             if (matchResult.matched && matchResult.restaurantId) {
-              // Update the restaurant with subscription info
-              await supabaseAdmin
-                .from('restaurants')
-                .update({
-                  tier_id: tierData.id,
-                  stripe_subscription_id: subscriptionId,
-                  stripe_customer_id: customerId,
-                })
-                .eq('id', matchResult.restaurantId);
+              await handleRestaurantSubscriptionMatch(
+                matchResult.restaurantId,
+                customerInfo,
+                subscriptionId,
+                tierData.id,
+                supabaseAdmin
+              );
 
               // Mark as matched if it was previously in unmatched queue
               await markSubscriptionMatched(supabaseAdmin, subscriptionId, matchResult.restaurantId, 'auto');
 
               console.log(`Restaurant ${matchResult.restaurantName} updated: tier=${tier}, subscription=${subscriptionId}, method=${matchResult.matchMethod}, confidence=${matchResult.confidence}%`);
 
-              // Send admin notification + welcome email for new subscriptions (but NOT for admin-created ones - they already notified)
+              // Send admin sync notification for new non-admin subscriptions
               const isAdminCreated = subscription.metadata?.admin_sale === 'true';
               if (event.type === 'customer.subscription.created' && !isAdminCreated) {
-                // Look up market brand for correct email branding
                 const matchMarketBrand = await getMarketBrandForRestaurant(supabaseAdmin, matchResult.restaurantId);
-
-                // Send welcome email to restaurant owner if they need account setup
-                if (customerEmail) {
-                  try {
-                    // Check if user exists and if they need a setup email
-                    const { data: ownerProfile } = await supabaseAdmin
-                      .from('restaurants')
-                      .select('owner_id, name, cover_image_url')
-                      .eq('id', matchResult.restaurantId)
-                      .single();
-
-                    let welcomeUserId: string | null = ownerProfile?.owner_id || null;
-
-                    // If restaurant has no owner, find or create user by email
-                    if (!welcomeUserId) {
-                      const { data: profileByEmail } = await supabaseAdmin
-                        .from('profiles')
-                        .select('id')
-                        .eq('email', customerEmail.toLowerCase())
-                        .single();
-
-                      if (profileByEmail) {
-                        welcomeUserId = profileByEmail.id;
-                        // Link restaurant to this user
-                        await supabaseAdmin
-                          .from('restaurants')
-                          .update({ owner_id: welcomeUserId })
-                          .eq('id', matchResult.restaurantId);
-                        console.log(`Linked restaurant ${matchResult.restaurantName} to existing user ${welcomeUserId}`);
-                      } else {
-                        // Create new user account
-                        const tempPassword = crypto.randomUUID().slice(0, 12);
-                        const { data: newUser } = await supabaseAdmin.auth.admin.createUser({
-                          email: customerEmail,
-                          password: tempPassword,
-                          email_confirm: true,
-                          user_metadata: {
-                            full_name: customerName || matchResult.restaurantName || 'Restaurant Owner',
-                            role: 'restaurant_owner',
-                          },
-                        });
-
-                        if (newUser?.user) {
-                          welcomeUserId = newUser.user.id;
-                          await supabaseAdmin.from('profiles').upsert({
-                            id: welcomeUserId,
-                            email: customerEmail,
-                            display_name: customerName || matchResult.restaurantName || 'Restaurant Owner',
-                            role: 'restaurant_owner',
-                          }, { onConflict: 'id' });
-
-                          // Link restaurant to new user
-                          await supabaseAdmin
-                            .from('restaurants')
-                            .update({ owner_id: welcomeUserId })
-                            .eq('id', matchResult.restaurantId);
-                          console.log(`Created user ${welcomeUserId} and linked to ${matchResult.restaurantName}`);
-                        }
-                      }
-                    }
-
-                    // Send welcome email
-                    if (welcomeUserId) {
-                      await sendBrandedWelcomeEmailWithToken(
-                        supabaseAdmin,
-                        customerEmail,
-                        customerName || '',
-                        ownerProfile?.name || matchResult.restaurantName || '',
-                        ownerProfile?.cover_image_url || undefined,
-                        welcomeUserId,
-                        matchMarketBrand
-                      );
-                    }
-                  } catch (welcomeError) {
-                    console.error('Failed to send welcome email for auto-matched subscription:', welcomeError);
-                  }
-                }
-
-                // Send admin sync notification
                 try {
                   await resend.emails.send({
                     from: `${matchMarketBrand.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
@@ -1791,10 +1884,6 @@ export async function POST(request: Request) {
               }
 
               console.log('No matching restaurant found for subscription - logging for admin review');
-              console.log('Customer info:', { email: customerEmail, name: customerName, phone: customerInfo.phone, id: customerId });
-              console.log('Match attempts:', matchResult.attempts);
-
-              // Log to unmatched_subscriptions table
               await logUnmatchedSubscription(
                 supabaseAdmin,
                 subscriptionId,
@@ -1804,73 +1893,17 @@ export async function POST(request: Request) {
                 matchResult.attempts
               );
 
-              // Send URGENT admin alert for unmatched subscription
-              try {
-                const attemptsHtml = matchResult.attempts.map(a =>
-                  `<li style="margin: 5px 0; color: ${a.found ? '#22c55e' : '#dc2626'};">
-                    <strong>${a.method}</strong>: searched "${a.searched || 'N/A'}" → ${a.found ? `FOUND ${a.restaurantName}` : 'not found'}
-                  </li>`
-                ).join('');
-
-                await resend.emails.send({
-                  from: `${BRAND.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
-                  to: 'admin@tastelanc.com',
-                  subject: `🚨 UNMATCHED Subscription: $${(amountCents / 100).toFixed(2)}/${billingInterval} - Needs Manual Review`,
-                  html: `
-                    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                      <h2 style="color: #dc2626; border-bottom: 2px solid #dc2626; padding-bottom: 10px;">⚠️ Unmatched Subscription</h2>
-                      <p style="background: #fef2f2; border: 1px solid #fecaca; padding: 12px; border-radius: 8px; color: #991b1b;">
-                        A new subscription could not be automatically matched to any restaurant. Please review and manually link.
-                      </p>
-
-                      <h3 style="margin-top: 20px;">Customer Information</h3>
-                      <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
-                        <tr>
-                          <td style="padding: 8px 0; color: #6b7280; width: 140px;">Email:</td>
-                          <td style="padding: 8px 0; color: #1a1a1a; font-weight: 600;">${customerEmail || 'N/A'}</td>
-                        </tr>
-                        <tr>
-                          <td style="padding: 8px 0; color: #6b7280;">Name:</td>
-                          <td style="padding: 8px 0; color: #1a1a1a;">${customerName || 'N/A'}</td>
-                        </tr>
-                        <tr>
-                          <td style="padding: 8px 0; color: #6b7280;">Phone:</td>
-                          <td style="padding: 8px 0; color: #1a1a1a;">${customerInfo.phone || 'N/A'}</td>
-                        </tr>
-                        <tr>
-                          <td style="padding: 8px 0; color: #6b7280;">Business Name:</td>
-                          <td style="padding: 8px 0; color: #1a1a1a;">${customerMetadata?.business_name || 'N/A'}</td>
-                        </tr>
-                        <tr>
-                          <td style="padding: 8px 0; color: #6b7280;">Amount:</td>
-                          <td style="padding: 8px 0; color: #22c55e; font-weight: 600;">$${(amountCents / 100).toFixed(2)}/${billingInterval}</td>
-                        </tr>
-                        <tr>
-                          <td style="padding: 8px 0; color: #6b7280;">Tier:</td>
-                          <td style="padding: 8px 0; color: #1a1a1a;">${tier}</td>
-                        </tr>
-                      </table>
-
-                      <h3 style="margin-top: 20px;">Match Attempts (${matchResult.attempts.length} methods tried)</h3>
-                      <ul style="background: #f9fafb; padding: 15px 15px 15px 35px; border-radius: 8px; margin: 10px 0;">
-                        ${attemptsHtml}
-                      </ul>
-
-                      <div style="margin-top: 20px; display: flex; gap: 10px;">
-                        <a href="https://dashboard.stripe.com/customers/${customerId}" style="background: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; display: inline-block;">View Customer in Stripe</a>
-                        <a href="https://${BRAND.domain}/admin/restaurants" style="background: #6b7280; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; display: inline-block;">View Restaurants</a>
-                      </div>
-
-                      <p style="margin-top: 20px; color: #6b7280; font-size: 14px;">
-                        Subscription ID: <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">${subscriptionId}</code>
-                      </p>
-                    </div>
-                  `,
-                });
-                console.log('Unmatched subscription alert sent to admin');
-              } catch (notifyError) {
-                console.error('Failed to send unmatched subscription alert:', notifyError);
-              }
+              await sendUnmatchedAlert(
+                customerId,
+                customerEmail,
+                customerName,
+                customerInfo,
+                subscriptionId,
+                amountCents,
+                billingInterval,
+                tier,
+                matchResult.attempts
+              );
             }
           }
         }
@@ -1972,18 +2005,121 @@ export async function POST(request: Request) {
         const subscriptionId = typeof subscriptionData === 'string'
           ? subscriptionData
           : subscriptionData?.id;
+        const invoiceCustomerId = invoice.customer as string;
 
+        // 1. Consumer subscription: update status to active
         if (subscriptionId) {
-          // Update consumer subscription status to active
           await supabaseAdmin
             .from('consumer_subscriptions')
             .update({ status: 'active' })
             .eq('stripe_subscription_id', subscriptionId);
+        }
 
-          // Restaurant subscriptions: tier is updated via subscription.updated event
-          // No separate status tracking needed
+        // 2. Restaurant invoice fallback: runs for all paid invoices (subscription or one-time).
+        //    If subscription.created already matched the restaurant, this is a no-op.
+        //    If it didn't (e.g., timeout, name mismatch, manual invoice), this catches it.
+        if (invoiceCustomerId) {
+          const lineItem = invoice.lines?.data?.[0];
+          const pricingRef = lineItem?.pricing?.price_details?.price;
+          const invoicePriceId = typeof pricingRef === 'string' ? pricingRef : pricingRef?.id;
 
-          console.log(`Payment succeeded for subscription ${subscriptionId}`);
+          // Skip consumers and self-promoters
+          if (invoicePriceId && (isConsumerSubscription(invoicePriceId) || isSelfPromoterSubscription(invoicePriceId))) {
+            console.log(`invoice.payment_succeeded: skipping non-restaurant price ${invoicePriceId}`);
+            break;
+          }
+
+          // Idempotency: if restaurant already linked via subscription ID, nothing to do
+          if (subscriptionId) {
+            const { data: alreadyLinked } = await supabaseAdmin
+              .from('restaurants')
+              .select('id')
+              .eq('stripe_subscription_id', subscriptionId)
+              .maybeSingle();
+
+            if (alreadyLinked) {
+              console.log(`invoice.payment_succeeded: restaurant already linked for subscription ${subscriptionId}`);
+              break;
+            }
+          }
+
+          // Not yet linked — attempt full matching + onboarding
+          const invoiceCustomer = await getStripe().customers.retrieve(invoiceCustomerId);
+          if ('deleted' in invoiceCustomer) {
+            console.log(`invoice.payment_succeeded: customer ${invoiceCustomerId} is deleted, skipping`);
+            break;
+          }
+
+          const invoiceTier = getRestaurantTier(invoicePriceId || '');
+          const { data: invoiceTierData } = await supabaseAdmin
+            .from('tiers')
+            .select('id')
+            .eq('name', invoiceTier)
+            .single();
+
+          if (!invoiceTierData) {
+            console.log(`invoice.payment_succeeded: no tier found for ${invoiceTier}`);
+            break;
+          }
+
+          const invoiceAmountCents = invoice.amount_paid || 0;
+          const invoiceInterval = subscriptionId ? 'year' : 'one_time';
+
+          const invoiceCustomerInfo: StripeCustomerInfo = {
+            customerId: invoiceCustomerId,
+            email: invoiceCustomer.email ?? null,
+            name: invoiceCustomer.name ?? null,
+            business_name: invoiceCustomer.business_name ?? null,
+            phone: invoiceCustomer.phone ?? null,
+            metadata: (invoiceCustomer.metadata || {}) as Record<string, string>,
+          };
+
+          const invoiceMatchResult = await findMatchingRestaurant(
+            supabaseAdmin,
+            invoiceCustomerInfo,
+            subscriptionId
+          );
+
+          console.log('invoice.payment_succeeded match result:', {
+            matched: invoiceMatchResult.matched,
+            method: invoiceMatchResult.matchMethod,
+            confidence: invoiceMatchResult.confidence,
+            restaurant: invoiceMatchResult.restaurantName,
+          });
+
+          if (invoiceMatchResult.matched && invoiceMatchResult.restaurantId) {
+            await handleRestaurantSubscriptionMatch(
+              invoiceMatchResult.restaurantId,
+              invoiceCustomerInfo,
+              subscriptionId || `invoice_${invoice.id}`,
+              invoiceTierData.id,
+              supabaseAdmin
+            );
+            if (subscriptionId) {
+              await markSubscriptionMatched(supabaseAdmin, subscriptionId, invoiceMatchResult.restaurantId, 'invoice_fallback');
+            }
+            console.log(`invoice.payment_succeeded: matched and onboarded ${invoiceMatchResult.restaurantName}`);
+          } else {
+            await logUnmatchedSubscription(
+              supabaseAdmin,
+              subscriptionId || `invoice_${invoice.id}`,
+              invoiceCustomerInfo,
+              invoiceAmountCents,
+              invoiceInterval,
+              invoiceMatchResult.attempts
+            );
+            await sendUnmatchedAlert(
+              invoiceCustomerId,
+              invoiceCustomer.email ?? null,
+              invoiceCustomer.name ?? null,
+              invoiceCustomerInfo,
+              subscriptionId || `invoice_${invoice.id}`,
+              invoiceAmountCents,
+              invoiceInterval,
+              invoiceTier,
+              invoiceMatchResult.attempts
+            );
+          }
         }
         break;
       }

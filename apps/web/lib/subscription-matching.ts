@@ -14,6 +14,7 @@ export interface StripeCustomerInfo {
   customerId: string;
   email: string | null;
   name: string | null;
+  business_name: string | null;
   phone: string | null;
   metadata: Record<string, string>;
 }
@@ -502,7 +503,7 @@ export async function findMatchingRestaurant(
 
   // ===== LAYER 4: Name matching (fuzzy) =====
 
-  const businessName = customer.metadata?.business_name || customer.name;
+  const businessName = customer.business_name || customer.metadata?.business_name || customer.name;
   if (businessName) {
     const { data: restaurants } = await supabase
       .from('restaurants')

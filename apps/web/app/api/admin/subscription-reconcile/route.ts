@@ -110,6 +110,7 @@ export async function POST(request: Request) {
           customerId: customer.id,
           email: customer.email ?? null,
           name: customer.name ?? null,
+          business_name: customer.business_name ?? null,
           phone: customer.phone ?? null,
           metadata: customer.metadata || {},
         };
