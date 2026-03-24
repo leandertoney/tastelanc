@@ -91,6 +91,13 @@ const navSections: NavSection[] = [
       { href: '/dashboard/subscription', label: 'Subscription', icon: CreditCard, hint: 'View your plan details, billing, and upgrade options' },
     ],
   },
+  {
+    key: 'support',
+    label: 'Support',
+    items: [
+      { href: '/dashboard/support', label: 'Help & Support', icon: HelpCircle, hint: 'Chat with Rose or send us a message — we typically respond within 1 business day' },
+    ],
+  },
 ];
 
 // Nav items hidden from sales reps (non-content management)
