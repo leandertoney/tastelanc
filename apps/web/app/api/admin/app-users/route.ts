@@ -17,13 +17,17 @@ interface AppUser {
   last_seen_at: string | null;
   created_at: string;
   platform: string | null;
+  app_slug: string | null;
   favorites_count: number;
+  checkins_count: number;
   has_push_token: boolean;
 }
 
 export async function GET(request: NextRequest) {
   try {
     const format = request.nextUrl.searchParams.get('format');
+    const market = request.nextUrl.searchParams.get('market') || ''; // e.g. 'tastelanc', 'taste-cumberland', 'taste-fayetteville'
+    const search = request.nextUrl.searchParams.get('search') || '';
 
     // Fetch all auth users (paginated — Supabase returns max 1000 per page)
     const allAuthUsers: Array<{
@@ -56,31 +60,52 @@ export async function GET(request: NextRequest) {
       .from('profiles')
       .select('id, display_name, last_seen_at, role');
 
-    // Fetch push tokens (user_id, platform)
+    // Fetch push tokens (user_id, platform, app_slug)
     const { data: pushTokens } = await supabaseAdmin
       .from('push_tokens')
-      .select('user_id, platform');
+      .select('user_id, platform, app_slug');
 
     // Fetch favorite counts per user
     const { data: favorites } = await supabaseAdmin
       .from('favorites')
       .select('user_id');
 
+    // Fetch checkin counts per user
+    const { data: checkins } = await supabaseAdmin
+      .from('checkins')
+      .select('user_id');
+
     // Build lookup maps
     const profileMap = new Map(
       (profiles || []).map((p) => [p.id, p])
     );
-    const tokenMap = new Map<string, { platform: string; count: number }>();
+
+    // tokenMap: user_id → { platform, app_slug }
+    // If market filter is active, only include tokens matching that app_slug
+    const tokenMap = new Map<string, { platform: string; app_slug: string | null }>();
     for (const t of pushTokens || []) {
       if (!tokenMap.has(t.user_id)) {
-        tokenMap.set(t.user_id, { platform: t.platform, count: 1 });
-      } else {
-        tokenMap.get(t.user_id)!.count++;
+        tokenMap.set(t.user_id, { platform: t.platform, app_slug: t.app_slug || null });
       }
     }
+
+    // If market filter set, build a set of user_ids that have a token for that market
+    const marketUserIds = market
+      ? new Set(
+          (pushTokens || [])
+            .filter((t) => t.app_slug === market)
+            .map((t) => t.user_id)
+        )
+      : null;
+
     const favCountMap = new Map<string, number>();
     for (const f of favorites || []) {
       favCountMap.set(f.user_id, (favCountMap.get(f.user_id) || 0) + 1);
+    }
+
+    const checkinCountMap = new Map<string, number>();
+    for (const c of checkins || []) {
+      checkinCountMap.set(c.user_id, (checkinCountMap.get(c.user_id) || 0) + 1);
     }
 
     // Build user list (exclude admin roles)
@@ -103,6 +128,19 @@ export async function GET(request: NextRequest) {
       // Skip admin users
       if (profile?.role && ['super_admin', 'co_founder', 'market_admin'].includes(profile.role)) {
         continue;
+      }
+
+      // Apply market filter — skip users without a token for this market
+      if (marketUserIds && !marketUserIds.has(authUser.id)) {
+        continue;
+      }
+
+      // Apply search filter
+      if (search) {
+        const q = search.toLowerCase();
+        const matchesEmail = authUser.email?.toLowerCase().includes(q);
+        const matchesName = profile?.display_name?.toLowerCase().includes(q);
+        if (!matchesEmail && !matchesName) continue;
       }
 
       const isAnon = authUser.is_anonymous ?? true;
@@ -137,7 +175,9 @@ export async function GET(request: NextRequest) {
         last_seen_at: lastSeenRaw,
         created_at: authUser.created_at,
         platform: token?.platform || null,
+        app_slug: token?.app_slug || null,
         favorites_count: favCountMap.get(authUser.id) || 0,
+        checkins_count: checkinCountMap.get(authUser.id) || 0,
         has_push_token: !!token,
       });
     }
@@ -165,7 +205,7 @@ export async function GET(request: NextRequest) {
     // CSV export
     if (format === 'csv') {
       const signedInUsers = users.filter((u) => !u.is_anonymous && u.email);
-      const header = 'Email,Name,Last Seen,Platform,Favorites,Joined';
+      const header = 'Email,Name,Last Seen,Platform,App,Favorites,Check-ins,Joined';
       const rows = signedInUsers.map((u) => {
         const lastSeen = u.last_seen_at
           ? new Date(u.last_seen_at).toISOString().split('T')[0]
@@ -173,7 +213,7 @@ export async function GET(request: NextRequest) {
         const joined = new Date(u.created_at).toISOString().split('T')[0];
         const name = (u.display_name || '').replace(/,/g, ' ');
         const email = (u.email || '').replace(/,/g, ' ');
-        return `${email},${name},${lastSeen},${u.platform || 'Unknown'},${u.favorites_count},${joined}`;
+        return `${email},${name},${lastSeen},${u.platform || 'Unknown'},${u.app_slug || 'Unknown'},${u.favorites_count},${u.checkins_count},${joined}`;
       });
       const csv = [header, ...rows].join('\n');
 
