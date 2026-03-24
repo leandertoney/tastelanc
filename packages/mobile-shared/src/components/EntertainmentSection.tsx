@@ -14,7 +14,6 @@ import { createLazyStyles } from '../utils/lazyStyles';
 import { spacing } from '../constants/spacing';
 
 import type { DayOfWeek, EventType } from '../types/database';
-import { useEmailGate } from '../hooks';
 import { useMarket } from '../context/MarketContext';
 import { trackClick } from '../lib/analytics';
 import { trackImpression } from '../lib/impressions';
@@ -127,19 +126,17 @@ export default function EntertainmentSection() {
 
   const displayData = mappedEvents;
 
-  const { requireEmailGate } = useEmailGate();
-
   const handleEventPress = useCallback(
     (event: ApiEvent) => {
       trackClick('event', event.restaurant?.id);
-      requireEmailGate(() => navigation.navigate('EventDetail', { event }));
+      navigation.navigate('EventDetail', { event });
     },
-    [navigation, requireEmailGate]
+    [navigation]
   );
 
   const handleViewAll = useCallback(() => {
-    requireEmailGate(() => navigation.navigate('EntertainmentViewAll'));
-  }, [navigation, requireEmailGate]);
+    navigation.navigate('EntertainmentViewAll');
+  }, [navigation]);
 
   // Track impressions when items become visible
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;

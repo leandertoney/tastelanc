@@ -9,7 +9,6 @@ import { spacing } from '../constants/spacing';
 import { CUISINE_IMAGES, CUISINE_COLORS, CUISINE_EMOJIS } from '../constants/cuisines';
 import SectionHeader from './SectionHeader';
 import Spacer from './Spacer';
-import { useEmailGate } from '../hooks';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -49,7 +48,6 @@ function CuisineItem({ cuisine, onPress }: CuisineItemProps) {
 
 export default function CuisinesSection() {
   const navigation = useNavigation<NavigationProp>();
-  const { requireEmailGate } = useEmailGate();
   const styles = useStyles();
 
   const handleCuisinePress = (cuisine: CuisineType) => {
@@ -57,7 +55,7 @@ export default function CuisinesSection() {
   };
 
   const handleViewAll = () => {
-    requireEmailGate(() => navigation.navigate('CuisinesViewAll'));
+    navigation.navigate('CuisinesViewAll');
   };
 
   return (

@@ -13,7 +13,7 @@ import { getActiveDailySpecials, SpecialWithRestaurant } from '../lib/specials';
 import type { RootStackParamList } from '../navigation/types';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
-import { usePlatformSocialProof, useEmailGate } from '../hooks';
+import { usePlatformSocialProof } from '../hooks';
 import { useMarket } from '../context/MarketContext';
 import { trackClick } from '../lib/analytics';
 import { trackImpression } from '../lib/impressions';
@@ -85,10 +85,8 @@ export default function DailySpecialsSection() {
     navigation.navigate('RestaurantDetail', { id: restaurantId });
   };
 
-  const { requireEmailGate } = useEmailGate();
-
   const handleViewAll = () => {
-    requireEmailGate(() => navigation.navigate('SpecialsViewAll'));
+    navigation.navigate('SpecialsViewAll');
   };
 
   const handlePartnerCTA = () => {

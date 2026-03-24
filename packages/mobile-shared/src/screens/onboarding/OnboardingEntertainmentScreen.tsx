@@ -70,9 +70,14 @@ export default function OnboardingEntertainmentScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={24} color={colors.text} />
-      </TouchableOpacity>
+      <View style={styles.topBar}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.skipButton} onPress={() => navigation.navigate('OnboardingPremium')}>
+          <Text style={styles.skipText}>Skip</Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.content}>
         <Animated.View style={[styles.headerSection, titleAnimatedStyle]}>
           <Text style={styles.headline}>What brings you out?</Text>
@@ -93,7 +98,10 @@ export default function OnboardingEntertainmentScreen({ navigation }: Props) {
 
 const useStyles = createLazyStyles((colors) => ({
   container: { flex: 1, backgroundColor: colors.primary },
+  topBar: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const },
   backButton: { padding: 16 },
+  skipButton: { padding: 16 },
+  skipText: { fontSize: 15, color: colors.textMuted, fontWeight: '500' as const },
   content: { flex: 1, paddingHorizontal: 24 },
   headerSection: { marginBottom: 32 },
   headline: { fontSize: 28, fontWeight: '700' as const, color: colors.text, marginBottom: 8 },

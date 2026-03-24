@@ -21,7 +21,7 @@ import SectionHeader from './SectionHeader';
 import Spacer from './Spacer';
 import { getFeaturedRestaurants, getUserPreferences, getRecommendationReason } from '../lib/recommendations';
 import type { OnboardingData } from '../types/onboarding';
-import { useFavorites, useToggleFavorite, useEmailGate, useActiveAds } from '../hooks';
+import { useFavorites, useToggleFavorite, useActiveAds } from '../hooks';
 import { useMarket } from '../context/MarketContext';
 import type { Restaurant, FeaturedAd } from '../types/database';
 import { getColors } from '../config/theme';
@@ -60,7 +60,6 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function FeaturedSection({ onRestaurantPress }: FeaturedSectionProps) {
   const navigation = useNavigation<NavigationProp>();
-  const { requireEmailGate } = useEmailGate();
   const { marketId } = useMarket();
   const flatListRef = useRef<FlatList<CarouselItem>>(null);
   const [extendedData, setExtendedData] = useState<CarouselItem[]>([]);
@@ -273,7 +272,7 @@ export default function FeaturedSection({ onRestaurantPress }: FeaturedSectionPr
       <SectionHeader
         title="Featured for You"
         actionText="View All"
-        onActionPress={() => requireEmailGate(() => navigation.navigate('FeaturedViewAll'))}
+        onActionPress={() => navigation.navigate('FeaturedViewAll')}
       />
       <Spacer size="sm" />
 

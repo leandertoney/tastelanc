@@ -108,7 +108,7 @@ export default function OnboardingRosieAskScreen({ navigation }: Props) {
         </View>
       </View>
       <Animated.View style={[styles.footer, buttonAnimatedStyle]}>
-        <TouchableOpacity style={styles.continueButton} onPress={() => navigation.navigate('OnboardingReviewAsk')}>
+        <TouchableOpacity style={styles.continueButton} onPress={() => navigation.navigate('OnboardingPremiumIntro')}>
           <Text style={styles.continueText}>Continue</Text>
           <Ionicons name="arrow-forward" size={20} color={colors.text} />
         </TouchableOpacity>

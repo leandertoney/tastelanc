@@ -14,7 +14,6 @@ import { createLazyStyles } from '../utils/lazyStyles';
 import { spacing } from '../constants/spacing';
 
 import type { DayOfWeek } from '../types/database';
-import { useEmailGate } from '../hooks';
 import { useMarket } from '../context/MarketContext';
 import { trackClick } from '../lib/analytics';
 import { trackImpression } from '../lib/impressions';
@@ -140,14 +139,12 @@ export default function EventsSection() {
   const events = data?.events || [];
   const hasTodayEvents = data?.hasTodayEvents ?? false;
 
-  const { requireEmailGate } = useEmailGate();
-
   const handleEventPress = useCallback(
     (event: ApiEvent) => {
       trackClick('event', event.restaurant?.id);
-      requireEmailGate(() => navigation.navigate('EventDetail', { event }));
+      navigation.navigate('EventDetail', { event });
     },
-    [navigation, requireEmailGate]
+    [navigation]
   );
 
   // Map API events to display format
@@ -194,7 +191,7 @@ export default function EventsSection() {
   }
 
   const handleViewAll = () => {
-    requireEmailGate(() => navigation.navigate('EventsViewAll'));
+    navigation.navigate('EventsViewAll');
   };
 
   return (

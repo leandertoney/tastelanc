@@ -13,6 +13,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
 import { useMarket } from '../context/MarketContext';
+import { useEmailGate } from '../hooks';
 import { trackClick } from '../lib/analytics';
 import { trackImpression } from '../lib/impressions';
 import { queryKeys } from '../lib/queryKeys';
@@ -50,6 +51,7 @@ export default function CouponsSection() {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const bannerTimerRef = useRef<NodeJS.Timeout | null>(null);
   const { marketId } = useMarket();
+  const { requireEmailGate } = useEmailGate();
   const colors = getColors();
 
   const { data: coupons = [], isLoading, isFetching } = useQuery({
@@ -64,7 +66,7 @@ export default function CouponsSection() {
   };
 
   const handleViewAll = () => {
-    navigation.navigate('CouponsViewAll');
+    requireEmailGate(() => navigation.navigate('CouponsViewAll'));
   };
 
   const mappedCoupons: DisplayCoupon[] = coupons
