@@ -640,6 +640,25 @@ export async function getFeaturedRestaurants(limit: number = 24, marketId: strin
       ...seededShuffle(premium, seed + 1),
     ];
 
+    // If no paid-tier restaurants exist in this market (e.g. new market launch),
+    // fall back to a shuffled selection of all active restaurants with cover images.
+    // This ensures "For You" is never empty just because no paid tiers are set up yet.
+    if (result.length === 0) {
+      let basicQuery = supabase
+        .from('restaurants')
+        .select('*, tiers(name)')
+        .eq('is_active', true)
+        .not('cover_image_url', 'is', null);
+
+      if (marketId) {
+        basicQuery = basicQuery.eq('market_id', marketId);
+      }
+
+      const { data: basicData } = await basicQuery;
+      const shuffled = seededShuffle(basicData || [], seed);
+      return shuffled.slice(0, limit) as Restaurant[];
+    }
+
     // After paid tiers, fill remaining slots with event participants (e.g. Coffee & Chocolate Trail).
     // Event participants get NO fake tier badges — their event starburst badge is their indicator.
     // No basic/free restaurants are promoted in the featured section.

@@ -66,7 +66,14 @@ function App() {
     (async () => {
       try {
         console.log('[Updates] Checking for update...');
-        const { isAvailable } = await Updates.checkForUpdateAsync();
+        // 5-second timeout prevents hanging on slow/restricted networks (e.g. Apple review)
+        const checkWithTimeout = Promise.race([
+          Updates.checkForUpdateAsync(),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('OTA check timeout')), 5000)
+          ),
+        ]);
+        const { isAvailable } = await checkWithTimeout;
         if (isAvailable) {
           console.log('[Updates] Update available, downloading...');
           await Updates.fetchUpdateAsync();
