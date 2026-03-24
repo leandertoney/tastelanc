@@ -57,6 +57,7 @@
   "optionalDependencies": {
     "@img/sharp-linux-x64": "^0.34.5",
     "@napi-rs/canvas-linux-x64-gnu": "^0.1.80",
-    "@rollup/rollup-linux-x64-gnu": "^4.59.0"
+    "@rollup/rollup-linux-x64-gnu": "^4.61.0",
+    "@rollup/rollup-linux-x64-musl": "^4.61.0"
   }
 }
