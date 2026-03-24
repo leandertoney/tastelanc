@@ -163,12 +163,13 @@ async function getStripeSubscriptions(
       const name = customer.name || customer.metadata?.business_name || sub.metadata?.restaurant_name || email;
       const priceId = sub.items.data[0]?.price?.id || '';
       const listAmount = (sub.items.data[0]?.price?.unit_amount || 0) / 100;
-      // Use actual invoice amount_paid (reflects discounts) if available; fall back to list price
+      // Use total_excluding_tax from latest invoice: reflects discounts and strips tax (tax is pass-through, not revenue).
+      // Falls back to list price if no invoice yet.
       const latestInvoice = sub.latest_invoice;
-      const invoiceAmountPaid = (typeof latestInvoice === 'object' && latestInvoice && !('deleted' in latestInvoice))
-        ? (latestInvoice.amount_paid || 0) / 100
+      const invoiceNetAmount = (typeof latestInvoice === 'object' && latestInvoice && !('deleted' in latestInvoice))
+        ? ((latestInvoice.total_excluding_tax ?? latestInvoice.amount_paid) || 0) / 100
         : null;
-      const amount = (invoiceAmountPaid !== null && invoiceAmountPaid > 0) ? invoiceAmountPaid : listAmount;
+      const amount = (invoiceNetAmount !== null && invoiceNetAmount > 0) ? invoiceNetAmount : listAmount;
       const interval = sub.items.data[0]?.price?.recurring?.interval || 'month';
       const intervalCount = sub.items.data[0]?.price?.recurring?.interval_count || 1;
 
