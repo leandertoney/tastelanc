@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     const skipClaimed = searchParams.get('skip_claimed') === '1';
     const marketFilterParam = searchParams.get('market');
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '10', 10)));
+    const limit = Math.min(10000, Math.max(1, parseInt(searchParams.get('limit') || '10', 10)));
     const sortBy = searchParams.get('sort_by') || 'name';
     const sortDir = searchParams.get('sort_dir') === 'desc' ? 'desc' : 'asc';
 

@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-access';
 
 export async function GET() {
@@ -14,11 +14,15 @@ export async function GET() {
     try { admin = await verifyAdminAccess(supabase); }
     catch (err: any) { return NextResponse.json({ error: err.message }, { status: err.status || 500 }); }
 
-    // Fetch restaurants — super_admin sees all, market_admin sees only their market
-    let query = supabase
+    const serviceClient = createServiceRoleClient();
+
+    // Fetch ALL restaurants — service role bypasses 1000-row default limit
+    // super_admin sees all markets, market_admin sees only their market(s)
+    let query = serviceClient
       .from('restaurants')
       .select('id, name, city, state, owner_id')
-      .order('name', { ascending: true });
+      .order('name', { ascending: true })
+      .limit(10000);
 
     if (admin.scopedMarketIds) {
       query = query.in('market_id', admin.scopedMarketIds);

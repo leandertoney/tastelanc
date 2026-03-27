@@ -176,7 +176,7 @@ function SalesCheckoutContent() {
   useEffect(() => {
     const fetchRestaurants = async () => {
       try {
-        const res = await fetch('/api/sales/restaurants', { credentials: 'include' });
+        const res = await fetch('/api/sales/restaurants?limit=1000&page=1', { credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
           setRestaurants((data.restaurants || []).map((r: any) => ({
