@@ -213,6 +213,7 @@ export async function POST(request: Request) {
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/admin/sales?canceled=true`,
       automatic_tax: { enabled: true },
       invoice_creation: { enabled: true },
+      allow_promotion_codes: true,
       metadata: {
         multi_restaurant: 'true',
         admin_sale: 'true',
