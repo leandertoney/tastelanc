@@ -16,26 +16,36 @@ export async function GET() {
 
     const serviceClient = createServiceRoleClient();
 
-    // Fetch ALL restaurants — service role bypasses 1000-row default limit
-    // super_admin sees all markets, market_admin sees only their market(s)
-    let query = serviceClient
-      .from('restaurants')
-      .select('id, name, city, state, owner_id')
-      .order('name', { ascending: true })
-      .limit(10000);
+    // Fetch ALL restaurants using pagination to bypass Supabase's 1000-row hard cap
+    const PAGE_SIZE = 1000;
+    let allRestaurants: { id: string; name: string; city: string; state: string; owner_id: string }[] = [];
+    let from = 0;
+    let hasMore = true;
 
-    if (admin.scopedMarketIds) {
-      query = query.in('market_id', admin.scopedMarketIds);
+    while (hasMore) {
+      let query = serviceClient
+        .from('restaurants')
+        .select('id, name, city, state, owner_id')
+        .order('name', { ascending: true })
+        .range(from, from + PAGE_SIZE - 1);
+
+      if (admin.scopedMarketIds) {
+        query = query.in('market_id', admin.scopedMarketIds);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching restaurants:', error);
+        return NextResponse.json({ error: 'Failed to fetch restaurants' }, { status: 500 });
+      }
+
+      allRestaurants = allRestaurants.concat(data || []);
+      hasMore = (data?.length ?? 0) === PAGE_SIZE;
+      from += PAGE_SIZE;
     }
 
-    const { data: restaurants, error } = await query;
-
-    if (error) {
-      console.error('Error fetching restaurants:', error);
-      return NextResponse.json({ error: 'Failed to fetch restaurants' }, { status: 500 });
-    }
-
-    return NextResponse.json({ restaurants: restaurants || [] });
+    return NextResponse.json({ restaurants: allRestaurants });
   } catch (error) {
     console.error('Error in restaurants API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

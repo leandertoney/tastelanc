@@ -176,16 +176,28 @@ function SalesCheckoutContent() {
   useEffect(() => {
     const fetchRestaurants = async () => {
       try {
-        const res = await fetch('/api/sales/restaurants?limit=1000&page=1', { credentials: 'include' });
-        if (res.ok) {
+        // Paginate through all restaurants — Supabase has a hard 1000-row cap per request
+        const PAGE_SIZE = 1000;
+        let page = 1;
+        let allRestaurants: { id: string; name: string; city: string; state: string }[] = [];
+        let hasMore = true;
+
+        while (hasMore) {
+          const res = await fetch(`/api/sales/restaurants?limit=${PAGE_SIZE}&page=${page}`, { credentials: 'include' });
+          if (!res.ok) break;
           const data = await res.json();
-          setRestaurants((data.restaurants || []).map((r: any) => ({
+          const batch = (data.restaurants || []).map((r: any) => ({
             id: r.id,
             name: r.name,
             city: r.city || '',
             state: r.state || '',
-          })));
+          }));
+          allRestaurants = allRestaurants.concat(batch);
+          hasMore = batch.length === PAGE_SIZE;
+          page++;
         }
+
+        setRestaurants(allRestaurants);
       } catch (err) {
         console.error('Error fetching restaurants:', err);
       } finally {
