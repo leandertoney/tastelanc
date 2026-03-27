@@ -78,8 +78,10 @@ export default async function handler(req: Request, context: Context) {
       throw hhError;
     }
 
-    // Filter to only paid tier restaurants
-    const paidHappyHours = (happyHours || []).filter((hh: any) =>
+    const allHappyHours = happyHours || [];
+
+    // Filter to only paid tier restaurants — used to decide whether to send
+    const paidHappyHours = allHappyHours.filter((hh: any) =>
       PAID_TIER_IDS.includes(hh.restaurant?.tier_id)
     );
 
@@ -91,8 +93,8 @@ export default async function handler(req: Request, context: Context) {
       );
     }
 
-    // Find the earliest happy hour start time
-    const earliestStartTime = paidHappyHours
+    // Find the earliest happy hour start time (across all, for trigger window)
+    const earliestStartTime = allHappyHours
       .map((hh: any) => hh.start_time as string)
       .sort()[0]; // HH:MM:SS format sorts lexically
 
@@ -158,9 +160,10 @@ export default async function handler(req: Request, context: Context) {
       );
     }
 
-    // Deduplicate restaurant names (a restaurant may have multiple happy hours)
+    // Deduplicate restaurant names across ALL happy hours (not just paid)
+    // so the notification count matches what users see in the app
     const restaurantNames = Array.from(
-      new Set(paidHappyHours.map((hh: any) => hh.restaurant.name as string))
+      new Set(allHappyHours.map((hh: any) => hh.restaurant.name as string))
     );
     const count = restaurantNames.length;
 
@@ -198,7 +201,8 @@ export default async function handler(req: Request, context: Context) {
         market_slug: marketSlug,
         app_slug: targetAppSlug,
         restaurants: restaurantNames,
-        happy_hour_count: paidHappyHours.length,
+        happy_hour_count: allHappyHours.length,
+        paid_happy_hour_count: paidHappyHours.length,
         earliest_start: earliestStartTime,
         day: dayOfWeek,
       },

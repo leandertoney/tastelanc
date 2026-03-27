@@ -383,8 +383,8 @@ async function sendHappyHourAlertsForMarket(
   const currentTimeStr = fmt(Math.max(0, lookBackMin));
   const alertTimeStr = fmt(lookAheadMin);
 
-  // Find happy hours starting soon for paid tier restaurants IN THIS MARKET
-  const { data: happyHours, error } = await supabase
+  // Find ALL happy hours starting soon IN THIS MARKET (for accurate count)
+  const { data: allHappyHours, error: allError } = await supabase
     .from('happy_hours')
     .select(`
       id,
@@ -398,16 +398,24 @@ async function sendHappyHourAlertsForMarket(
     .eq('is_active', true)
     .contains('days_of_week', [dayOfWeek])
     .gte('start_time', currentTimeStr)
-    .lte('start_time', alertTimeStr)
-    .in('restaurants.tier_id', PAID_TIER_IDS);
+    .lte('start_time', alertTimeStr);
 
-  if (error || !happyHours || happyHours.length === 0) {
+  if (allError || !allHappyHours || allHappyHours.length === 0) {
+    console.log(`No upcoming happy hours in ${marketInfo.label}`);
+    return { sent: 0, restaurants: [] };
+  }
+
+  // Filter to paid tier — only send notification if at least one paid restaurant has a happy hour
+  // @ts-ignore - Supabase join typing
+  const paidHappyHours = allHappyHours.filter((hh: any) => PAID_TIER_IDS.includes(hh.restaurant?.tier_id));
+  if (paidHappyHours.length === 0) {
     console.log(`No upcoming happy hours for paid restaurants in ${marketInfo.label}`);
     return { sent: 0, restaurants: [] };
   }
 
+  // Use ALL restaurant names for the count so it matches what users see in the app
   const restaurantNames: string[] = [];
-  for (const h of happyHours) {
+  for (const h of allHappyHours) {
     // @ts-ignore - Supabase join typing
     restaurantNames.push(h.restaurant.name);
   }
@@ -417,7 +425,7 @@ async function sendHappyHourAlertsForMarket(
   let body: string;
 
   if (count === 1) {
-    const h = happyHours[0];
+    const h = allHappyHours[0];
     // @ts-ignore - Supabase join typing
     const restaurant = h.restaurant;
     const [hours] = h.start_time.split(':');
@@ -453,7 +461,7 @@ async function sendHappyHourAlertsForMarket(
     data: {
       screen: count === 1 ? 'RestaurantDetail' : 'HappyHours',
       // @ts-ignore - Supabase join typing
-      restaurantId: count === 1 ? happyHours[0].restaurant.id : undefined,
+      restaurantId: count === 1 ? allHappyHours[0].restaurant.id : undefined,
     },
   }));
 
