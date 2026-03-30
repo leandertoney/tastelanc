@@ -532,7 +532,6 @@ const useStyles = createLazyStyles((colors) => ({
     color: colors.text,
   },
   quickLinks: {
-    flexDirection: 'row' as const,
     marginHorizontal: spacing.md,
     marginTop: spacing.sm,
     backgroundColor: colors.cardBg,
@@ -542,20 +541,19 @@ const useStyles = createLazyStyles((colors) => ({
     overflow: 'hidden' as const,
   },
   quickLink: {
-    flex: 1,
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    paddingVertical: spacing.sm + 4,
-    paddingHorizontal: spacing.sm + 4,
-    gap: 6,
+    paddingVertical: 14,
+    paddingHorizontal: spacing.md,
+    gap: 12,
   },
   quickLinkText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: '600' as const,
     color: colors.text,
   },
-  quickLinkDivider: { width: 1, backgroundColor: colors.border },
+  quickLinkDivider: { height: 1, backgroundColor: colors.border },
   recsRow: { paddingHorizontal: spacing.md, gap: 12 },
   recsEmpty: {
     alignItems: 'center' as const,

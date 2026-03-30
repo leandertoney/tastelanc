@@ -169,7 +169,7 @@ export default function PartyTicketScreen({ navigation, route }: Props) {
           <View style={styles.noteCard}>
             <Ionicons name="information-circle-outline" size={16} color={RW_TERRACOTTA} />
             <Text style={styles.noteText}>
-              This ticket is saved to your profile. Come back here on the night of the event to show your QR code.
+              This ticket is saved to your profile. To find it again, go to Profile → My Party Ticket. Show your QR code at the door on the night of the event.
             </Text>
           </View>
         </ScrollView>
