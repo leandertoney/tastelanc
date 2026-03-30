@@ -438,21 +438,6 @@ export default function RestaurantWeekScreen() {
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={RW.yellow} />}
-        ListHeaderComponent={
-          <TouchableOpacity
-            style={styles.partyBanner}
-            onPress={() => navigation.navigate('PartyRSVP')}
-            activeOpacity={0.8}
-          >
-            <View style={styles.partyBannerContent}>
-              <Text style={styles.partyBannerEmoji}>🎉</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.partyBannerTitle}>After Party · April 20</Text>
-                <Text style={styles.partyBannerSubtitle}>Got an invite from your restaurant? RSVP here →</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyEmoji}>🍽️</Text>
@@ -699,24 +684,6 @@ const useStyles = createLazyStyles(() => ({
   },
 
   listContent: { padding: spacing.md, paddingTop: spacing.sm },
-
-  partyBanner: {
-    backgroundColor: '#1A0800',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#C84B31',
-    marginBottom: 16,
-    overflow: 'hidden',
-  },
-  partyBannerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-    gap: 12,
-  },
-  partyBannerEmoji: { fontSize: 24 },
-  partyBannerTitle: { fontSize: 14, fontWeight: '700', color: '#fff' },
-  partyBannerSubtitle: { fontSize: 12, color: '#C84B31', marginTop: 2 },
 
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60, gap: 8 },
   emptyEmoji: { fontSize: 48, marginBottom: 8 },

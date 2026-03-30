@@ -160,21 +160,6 @@ export default function RestaurantWeekBanner() {
   const brand = getBrand();
   const shimmer = useRef(new Animated.Value(0)).current;
 
-  const { data: partyEvent } = useQuery({
-    queryKey: ['partyActiveEvent'],
-    queryFn: async () => {
-      const supabase = getSupabase();
-      const { data } = await supabase
-        .from('party_events')
-        .select('id, name, date, venue')
-        .eq('is_active', true)
-        .order('date', { ascending: true })
-        .limit(1)
-        .single();
-      return data ?? null;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
 
   const { data: eventDates = [] } = useQuery({
     queryKey: ['restaurantWeekDates', brand.marketSlug],
@@ -254,16 +239,6 @@ export default function RestaurantWeekBanner() {
           </Animated.View>
         </View>
 
-        {/* Party teaser strip — shown when a party event is active */}
-        {partyEvent && (
-          <TouchableOpacity
-            style={styles.partyStrip}
-            onPress={(e) => { e.stopPropagation?.(); navigation.navigate('PartyRSVP'); }}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.partyStripText}>🎉 Industry after-party · Apr 20 · Tap to RSVP →</Text>
-          </TouchableOpacity>
-        )}
       </TouchableOpacity>
       </Animated.View>
     </View>
