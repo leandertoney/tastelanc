@@ -3,7 +3,7 @@ DO $$
 DECLARE
   lancaster_market_id UUID;
   basic_tier_id       UUID := '00000000-0000-0000-0000-000000000001';
-  gloomy_rooster_id   UUID := 'a1b2c3d4-gr00-4000-8000-000000000001';
+  gloomy_rooster_id   UUID := 'a1b2c3d4-0000-4000-8000-000000000001';
 BEGIN
   SELECT id INTO lancaster_market_id
     FROM public.markets
@@ -37,7 +37,7 @@ BEGIN
     40.0368, -76.3061,
     ARRAY['sandwiches', 'american', 'fried_chicken'],
     'Crave-worthy fried chicken sandwiches and house-made fries with bold, unexpected flavors. Located inside Southern Market, chef Chris Grove brings experience from Hawaii, NYC, and Nashville to Lancaster. Vegan-friendly options available.',
-    '$$',
+    '$' || '$',
     ARRAY['casual', 'food-hall', 'trendy'],
     ARRAY['lunch', 'dinner', 'quick-bite'],
     ARRAY['Fried Chicken Sandwich', 'House-Made Fries', 'Fried Mushroom Sandwich'],

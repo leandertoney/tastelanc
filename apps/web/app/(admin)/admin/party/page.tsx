@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { QrCode, Users, CheckCircle, Clock, Download, Plus, Copy, Check, RefreshCw } from 'lucide-react';
+import { QrCode, Users, CheckCircle, Clock, Download, Plus, Copy, Check, RefreshCw, ThumbsUp, ThumbsDown, X } from 'lucide-react';
 
 interface PartyEvent {
   id: string;
@@ -62,6 +62,15 @@ export default function PartyAdminPage() {
   const [notes, setNotes] = useState('');
   const [generating, setGenerating] = useState(false);
 
+  // Per-row approval state: { [pendingCodeId]: approvedSpots }
+  const [approvalSpots, setApprovalSpots] = useState<Record<string, number>>({});
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+
+  // Per-row decline state
+  const [decliningId, setDecliningId] = useState<string | null>(null);
+  const [declineReasons, setDeclineReasons] = useState<Record<string, string>>({});
+  const [submittingDeclineId, setSubmittingDeclineId] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -100,6 +109,53 @@ export default function PartyAdminPage() {
       }
     } finally {
       setGenerating(false);
+    }
+  }
+
+  async function handleApprove(pendingCodeId: string, defaultSpots: number) {
+    const spots = approvalSpots[pendingCodeId] ?? defaultSpots;
+    if (!spots || spots < 1) return;
+    setApprovingId(pendingCodeId);
+    try {
+      const res = await fetch('/api/party/admin/approve-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pending_code_id: pendingCodeId, use_limit: spots }),
+      });
+      if (res.ok) {
+        setApprovalSpots(prev => {
+          const next = { ...prev };
+          delete next[pendingCodeId];
+          return next;
+        });
+        await load();
+      }
+    } finally {
+      setApprovingId(null);
+    }
+  }
+
+  async function handleDecline(pendingCodeId: string) {
+    const reason = declineReasons[pendingCodeId]?.trim();
+    if (!reason) return;
+    setSubmittingDeclineId(pendingCodeId);
+    try {
+      const res = await fetch('/api/party/admin/decline-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pending_code_id: pendingCodeId, reason }),
+      });
+      if (res.ok) {
+        setDecliningId(null);
+        setDeclineReasons(prev => {
+          const next = { ...prev };
+          delete next[pendingCodeId];
+          return next;
+        });
+        await load();
+      }
+    } finally {
+      setSubmittingDeclineId(null);
     }
   }
 
@@ -155,8 +211,9 @@ export default function PartyAdminPage() {
   }
 
   const checkedInRSVPs = rsvps.filter(r => r.checked_in);
-  const pendingCodes = codes.filter(c => c.use_limit === 0);
-  const activeCodes = codes.filter(c => c.use_limit > 0);
+  const pendingCodes = codes.filter(c => (c as any).status === 'pending' || (c.use_limit === 0 && !(c as any).status));
+  const declinedCodes = codes.filter(c => (c as any).status === 'declined');
+  const activeCodes = codes.filter(c => c.use_limit > 0 && (c as any).status !== 'declined');
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
@@ -230,18 +287,92 @@ export default function PartyAdminPage() {
           {pendingCodes.length > 0 && (
             <div className="bg-yellow-900/20 border border-yellow-700/40 rounded-xl p-4">
               <h3 className="text-yellow-400 font-medium mb-3">Pending Headcount Requests ({pendingCodes.length})</h3>
-              <div className="space-y-2">
-                {pendingCodes.map(c => (
-                  <div key={c.id} className="flex items-center justify-between text-sm">
-                    <div>
-                      <span className="text-white font-medium">{c.restaurants?.name ?? 'Unknown restaurant'}</span>
-                      <span className="text-gray-400 ml-2">— requested {c.requested_headcount} spots</span>
+              <div className="space-y-3">
+                {pendingCodes.map(c => {
+                  const defaultSpots = c.requested_headcount ?? 5;
+                  const spots = approvalSpots[c.id] ?? defaultSpots;
+                  const isApproving = approvingId === c.id;
+                  const isShowingDecline = decliningId === c.id;
+                  const isSubmittingDecline = submittingDeclineId === c.id;
+                  return (
+                    <div key={c.id} className="space-y-2">
+                      <div className="flex items-center justify-between gap-4 text-sm">
+                        <div className="flex-1 min-w-0">
+                          <span className="text-white font-medium">{c.restaurants?.name ?? 'Unknown restaurant'}</span>
+                          <span className="text-gray-400 ml-2">— requested {c.requested_headcount ?? '?'} spots</span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <label className="text-gray-400 text-xs">Approve</label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={50}
+                            value={spots}
+                            onChange={e => setApprovalSpots(prev => ({ ...prev, [c.id]: parseInt(e.target.value) || 1 }))}
+                            className="w-16 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-green-500"
+                          />
+                          <span className="text-gray-400 text-xs">spots</span>
+                          <button
+                            onClick={() => handleApprove(c.id, defaultSpots)}
+                            disabled={isApproving || spots < 1}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-green-700 text-white rounded-lg text-xs font-medium hover:bg-green-600 disabled:opacity-50"
+                          >
+                            <ThumbsUp size={12} />
+                            {isApproving ? 'Approving...' : 'Approve'}
+                          </button>
+                          <button
+                            onClick={() => setDecliningId(isShowingDecline ? null : c.id)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-700 text-gray-300 rounded-lg text-xs font-medium hover:bg-red-900/50 hover:text-red-400"
+                          >
+                            <ThumbsDown size={12} />
+                            Decline
+                          </button>
+                        </div>
+                      </div>
+                      {isShowingDecline && (
+                        <div className="flex items-center gap-2 pl-2 border-l-2 border-red-800">
+                          <input
+                            type="text"
+                            value={declineReasons[c.id] ?? ''}
+                            onChange={e => setDeclineReasons(prev => ({ ...prev, [c.id]: e.target.value }))}
+                            placeholder="Reason for declining (sent to restaurant owner)..."
+                            className="flex-1 bg-gray-800 border border-red-900/50 rounded px-3 py-1.5 text-white text-xs placeholder-gray-600 focus:outline-none focus:border-red-700"
+                          />
+                          <button
+                            onClick={() => handleDecline(c.id)}
+                            disabled={isSubmittingDecline || !declineReasons[c.id]?.trim()}
+                            className="px-3 py-1.5 bg-red-800 text-white rounded-lg text-xs font-medium hover:bg-red-700 disabled:opacity-50 whitespace-nowrap"
+                          >
+                            {isSubmittingDecline ? 'Declining...' : 'Confirm Decline'}
+                          </button>
+                          <button onClick={() => setDecliningId(null)} className="text-gray-500 hover:text-gray-300">
+                            <X size={14} />
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <span className="text-yellow-400 text-xs">Pending approval</span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Declined requests */}
+          {declinedCodes.length > 0 && (
+            <div className="bg-red-900/10 border border-red-800/30 rounded-xl p-4">
+              <h3 className="text-red-400 font-medium mb-3">Declined Requests ({declinedCodes.length})</h3>
+              <div className="space-y-2">
+                {declinedCodes.map(c => (
+                  <div key={c.id} className="text-sm">
+                    <span className="text-white font-medium">{c.restaurants?.name ?? 'Unknown restaurant'}</span>
+                    <span className="text-gray-400 ml-2">— requested {c.requested_headcount ?? '?'} spots</span>
+                    {(c as any).decline_reason && (
+                      <p className="text-red-400/70 text-xs mt-0.5 ml-0">Reason: {(c as any).decline_reason}</p>
+                    )}
                   </div>
                 ))}
               </div>
-              <p className="text-yellow-500 text-xs mt-3">Generate a code for each request below to approve them.</p>
+              <p className="text-gray-600 text-xs mt-3">Restaurant owners can revise and resubmit from their dashboard.</p>
             </div>
           )}
 

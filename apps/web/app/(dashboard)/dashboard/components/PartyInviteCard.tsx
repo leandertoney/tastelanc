@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Copy, Check, Clock, Users, MapPin, Calendar } from 'lucide-react';
+import { Copy, Check, Clock, Users, MapPin, Calendar, XCircle } from 'lucide-react';
 
 interface PartyEvent {
   id: string;
@@ -16,6 +16,8 @@ interface StatusData {
   event: PartyEvent | null;
   code: { code: string; use_limit: number; use_count: number } | null;
   request_pending: boolean;
+  request_declined: boolean;
+  decline_reason: string | null;
   requested_headcount: number | null;
 }
 
@@ -30,11 +32,22 @@ export function PartyInviteCard({ restaurantId, buildApiUrl }: {
   const [submitted, setSubmitted] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  async function refreshStatus() {
+    const statusRes = await fetch(buildApiUrl(`/api/party/restaurant-status?restaurant_id=${restaurantId}`));
+    const newStatus = await statusRes.json();
+    setStatus(newStatus);
+    // Pre-fill headcount with last requested value if available
+    if (newStatus.requested_headcount) setHeadcount(newStatus.requested_headcount);
+  }
+
   useEffect(() => {
     if (!restaurantId) return;
-    fetch(buildApiUrl('/api/party/restaurant-status'))
+    fetch(buildApiUrl(`/api/party/restaurant-status?restaurant_id=${restaurantId}`))
       .then(r => r.json())
-      .then(data => setStatus(data))
+      .then(data => {
+        setStatus(data);
+        if (data.requested_headcount) setHeadcount(data.requested_headcount);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [restaurantId, buildApiUrl]);
@@ -50,10 +63,7 @@ export function PartyInviteCard({ restaurantId, buildApiUrl }: {
       });
       if (res.ok) {
         setSubmitted(true);
-        // Refresh status
-        const statusRes = await fetch(buildApiUrl(`/api/party/restaurant-status?restaurant_id=${restaurantId}`));
-        const newStatus = await statusRes.json();
-        setStatus(newStatus);
+        await refreshStatus();
       }
     } finally {
       setSubmitting(false);
@@ -76,6 +86,9 @@ export function PartyInviteCard({ restaurantId, buildApiUrl }: {
     month: 'long',
     day: 'numeric',
   });
+
+  const showRequestForm = !status.code && !status.request_pending && !status.request_declined && !submitted;
+  const showResubmitForm = status.request_declined && !submitted;
 
   return (
     <div className="rounded-xl overflow-hidden border border-[#C84B31]/40 bg-gradient-to-br from-gray-900 via-gray-900 to-[#C84B31]/5">
@@ -149,8 +162,47 @@ export function PartyInviteCard({ restaurantId, buildApiUrl }: {
           </div>
         )}
 
+        {/* State: request declined — show reason + resubmit form */}
+        {status.request_declined && !submitted && (
+          <div className="space-y-3">
+            <div className="bg-red-900/20 border border-red-700/30 rounded-xl p-4 flex items-start gap-3">
+              <XCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-red-400 text-sm font-medium">Request not approved</p>
+                {status.decline_reason && (
+                  <p className="text-red-300/70 text-xs mt-1">{status.decline_reason}</p>
+                )}
+                <p className="text-gray-500 text-xs mt-1.5">
+                  Update your headcount below and resubmit.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 bg-gray-800 rounded-xl px-3 py-2 flex-1">
+                <Users size={14} className="text-gray-500" />
+                <input
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={headcount}
+                  onChange={e => setHeadcount(Math.max(1, Math.min(50, parseInt(e.target.value) || 1)))}
+                  className="bg-transparent text-white text-sm font-medium w-full focus:outline-none"
+                />
+                <span className="text-gray-500 text-xs">staff</span>
+              </div>
+              <button
+                onClick={submitHeadcount}
+                disabled={submitting}
+                className="px-4 py-2 bg-[#C84B31] text-white rounded-xl text-sm font-medium hover:bg-[#b03e27] disabled:opacity-50 whitespace-nowrap"
+              >
+                {submitting ? 'Submitting...' : 'Resubmit Request'}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* State: eligible but no request yet */}
-        {!status.code && !status.request_pending && !submitted && (
+        {showRequestForm && (
           <div className="space-y-3">
             <p className="text-gray-400 text-sm font-medium">How many staff are you bringing?</p>
             <div className="flex items-center gap-3">
@@ -181,7 +233,7 @@ export function PartyInviteCard({ restaurantId, buildApiUrl }: {
         )}
 
         {/* State: just submitted */}
-        {submitted && !status.request_pending && !status.code && (
+        {submitted && !status.code && (
           <div className="bg-green-900/20 border border-green-700/30 rounded-xl p-4 flex items-center gap-3">
             <Check size={18} className="text-green-400 shrink-0" />
             <p className="text-green-400 text-sm">Request submitted! Your invite code will appear here once approved.</p>

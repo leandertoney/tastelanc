@@ -52,17 +52,31 @@ export async function POST(request: Request) {
       .single();
 
     if (existing) {
-      // Already has a code — update the requested headcount in notes
+      // If declined, allow resubmission — reset to pending with new headcount
+      // If already approved, do not allow changes
+      if (existing.use_limit > 0) {
+        return NextResponse.json({
+          success: true,
+          status: 'already_approved',
+          message: 'Your invite code has already been approved.',
+          code: existing.code,
+        });
+      }
+
       await serviceClient
         .from('party_invite_codes')
-        .update({ requested_headcount: headcount, notes: `Updated headcount request: ${headcount}` })
+        .update({
+          requested_headcount: headcount,
+          status: 'pending',
+          decline_reason: null,
+          notes: `Resubmitted headcount request: ${headcount}`,
+        })
         .eq('id', existing.id);
 
       return NextResponse.json({
         success: true,
-        status: 'updated',
-        message: 'Headcount request updated. Your code will be updated if not yet distributed.',
-        code: existing.code,
+        status: 'resubmitted',
+        message: `Your updated request for ${headcount} spots has been submitted for review.`,
       });
     }
 

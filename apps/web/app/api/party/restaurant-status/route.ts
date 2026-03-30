@@ -73,13 +73,14 @@ export async function GET(request: Request) {
     // Check if a code has been assigned
     const { data: inviteCode } = await serviceClient
       .from('party_invite_codes')
-      .select('id, code, use_limit, use_count, requested_headcount, channel')
+      .select('id, code, use_limit, use_count, requested_headcount, channel, status, decline_reason')
       .eq('party_event_id', event.id)
       .eq('restaurant_id', restaurant_id)
       .single();
 
-    const codeAssigned = inviteCode && inviteCode.use_limit > 0;
-    const requestPending = inviteCode && inviteCode.use_limit === 0;
+    const codeAssigned = inviteCode?.status === 'approved';
+    const requestPending = inviteCode?.status === 'pending';
+    const requestDeclined = inviteCode?.status === 'declined';
 
     return NextResponse.json({
       eligible: true,
@@ -96,6 +97,8 @@ export async function GET(request: Request) {
         use_count: inviteCode.use_count,
       } : null,
       request_pending: requestPending,
+      request_declined: requestDeclined,
+      decline_reason: requestDeclined ? (inviteCode.decline_reason ?? null) : null,
       requested_headcount: inviteCode?.requested_headcount ?? null,
     });
   } catch (err) {
