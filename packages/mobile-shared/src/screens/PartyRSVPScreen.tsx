@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   Text,
@@ -97,6 +98,7 @@ export default function PartyRSVPScreen({ navigation }: Props) {
         setStep('enter-name');
         return;
       }
+      await AsyncStorage.setItem('party_rsvp_token', data.qr_token);
       navigation.replace('PartyTicket', { qr_token: data.qr_token, name: data.name });
     } catch {
       Alert.alert('Error', 'Could not connect. Please try again.');

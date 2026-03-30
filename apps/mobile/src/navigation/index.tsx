@@ -47,6 +47,15 @@ function NotificationHandler({ children }: { children: React.ReactNode }) {
 }
 
 // Inner component that uses hooks requiring AuthProvider
+const linking = {
+  prefixes: ['tastelanc://'],
+  config: {
+    screens: {
+      PartyRSVP: 'party-rsvp',
+    },
+  },
+};
+
 function NavigationInner({
   hasCompletedOnboarding,
   onReady,
@@ -59,7 +68,7 @@ function NavigationInner({
   const navTheme = useNavigationTheme();
 
   return (
-    <NavigationContainer theme={navTheme} onReady={onReady}>
+    <NavigationContainer theme={navTheme} onReady={onReady} linking={linking}>
       <NotificationHandler>
         {hasCompletedOnboarding ? (
           <>

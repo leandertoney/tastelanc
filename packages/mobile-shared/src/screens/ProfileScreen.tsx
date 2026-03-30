@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   Text,
@@ -196,6 +197,13 @@ export default function ProfileScreen() {
   const { data: myRecs = [], refetch: refetchRecs } = useUserRecommendations(userId ?? null);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [partyRsvpToken, setPartyRsvpToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem('party_rsvp_token').then(token => {
+      if (token) setPartyRsvpToken(token);
+    }).catch(() => {});
+  }, []);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -347,6 +355,19 @@ export default function ProfileScreen() {
             <Text style={styles.quickLinkText}>My Coupons</Text>
             <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
           </TouchableOpacity>
+          {partyRsvpToken && (
+            <>
+              <View style={styles.quickLinkDivider} />
+              <TouchableOpacity
+                style={styles.quickLink}
+                onPress={() => navigation.navigate('PartyTicket', { qr_token: partyRsvpToken })}
+              >
+                <Text style={{ fontSize: 16 }}>🎉</Text>
+                <Text style={styles.quickLinkText}>My Party Ticket</Text>
+                <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </>
+          )}
         </View>
 
         {/* Your Recs */}
