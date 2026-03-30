@@ -1154,8 +1154,8 @@ function NewRestaurantRow({ item, onPress }: { item: NewRestaurantItem; onPress:
   const colors = getColors();
 
   const subtitle = item.category
-    ? `Just added · ${item.category}`
-    : 'Just added';
+    ? `New to TasteLanc · ${item.category}`
+    : 'New to TasteLanc';
 
   return (
     <TouchableOpacity style={styles.compactRow} onPress={onPress} activeOpacity={0.85}>

@@ -3,7 +3,7 @@ DO $$
 DECLARE
   lancaster_market_id UUID;
   basic_tier_id       UUID := '00000000-0000-0000-0000-000000000001';
-  gloomy_rooster_id   UUID := 'a1b2c3d4-0000-4000-8000-000000000001';
+  gloomy_rooster_id   UUID := 'a0bcf79a-0ee7-438e-a056-d2f51b973d40';
 BEGIN
   SELECT id INTO lancaster_market_id
     FROM public.markets
