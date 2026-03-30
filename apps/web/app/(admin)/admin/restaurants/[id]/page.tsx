@@ -15,6 +15,7 @@ import {
   Edit,
   ExternalLink,
   ShoppingCart,
+  PartyPopper,
 } from 'lucide-react';
 
 interface PageProps {
@@ -78,6 +79,24 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
     supabase.from('specials').select('id', { count: 'exact' }).eq('restaurant_id', id).eq('is_active', true),
     supabase.from('happy_hours').select('id', { count: 'exact' }).eq('restaurant_id', id).eq('is_active', true),
   ]);
+
+  // Fetch party invite status for this restaurant
+  const { data: partyEvent } = await supabase
+    .from('party_events')
+    .select('id')
+    .eq('is_active', true)
+    .order('date', { ascending: true })
+    .limit(1)
+    .single();
+
+  const { data: partyInvite } = partyEvent
+    ? await supabase
+        .from('party_invite_codes')
+        .select('code, use_limit, use_count, requested_headcount, status, decline_reason')
+        .eq('party_event_id', partyEvent.id)
+        .eq('restaurant_id', id)
+        .single()
+    : { data: null };
 
   return (
     <div className="space-y-8">
@@ -227,6 +246,57 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
 
       {/* Community Videos */}
       <AdminRestaurantVideos restaurantId={restaurant.id} />
+
+      {/* Party Invite Status */}
+      {partyEvent && (
+        <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-tastelanc-text-primary mb-4 flex items-center gap-2">
+            <PartyPopper className="w-5 h-5 text-[#C84B31]" />
+            Launch Party Invite
+          </h2>
+          {!partyInvite && (
+            <p className="text-tastelanc-text-muted text-sm">No request submitted yet.</p>
+          )}
+          {partyInvite?.status === 'pending' && (
+            <div className="flex items-center gap-3 bg-yellow-900/20 border border-yellow-700/30 rounded-lg p-4">
+              <div>
+                <p className="text-yellow-400 text-sm font-medium">Pending approval</p>
+                <p className="text-yellow-600 text-xs mt-0.5">Requested {partyInvite.requested_headcount} spots — awaiting admin review.</p>
+              </div>
+            </div>
+          )}
+          {partyInvite?.status === 'declined' && (
+            <div className="space-y-3">
+              <div className="bg-red-900/20 border border-red-700/30 rounded-lg p-4">
+                <p className="text-red-400 text-sm font-medium">Request declined</p>
+                <p className="text-red-300/70 text-xs mt-1">Requested {partyInvite.requested_headcount} spots</p>
+                {partyInvite.decline_reason && (
+                  <p className="text-gray-400 text-xs mt-1">Reason: {partyInvite.decline_reason}</p>
+                )}
+                <p className="text-gray-500 text-xs mt-2">Owner can revise and resubmit from their dashboard.</p>
+              </div>
+            </div>
+          )}
+          {partyInvite?.status === 'approved' && (
+            <div className="bg-green-900/20 border border-green-700/30 rounded-lg p-4 space-y-3">
+              <p className="text-green-400 text-sm font-medium">Approved — invite code issued</p>
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-[#C84B31] font-bold text-lg tracking-widest bg-gray-900 rounded-lg px-4 py-2">
+                  {partyInvite.code}
+                </span>
+              </div>
+              <div className="text-xs text-gray-500 flex gap-4">
+                <span>Limit: {partyInvite.use_limit} spots</span>
+                <span>·</span>
+                <span>{partyInvite.use_count} of {partyInvite.use_limit} claimed</span>
+              </div>
+              <p className="text-gray-500 text-xs">
+                Share with owner: code <strong className="text-gray-400">{partyInvite.code}</strong> + link <strong className="text-gray-400">tastelanc://party-rsvp</strong>
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Metadata */}
       <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-6">
