@@ -31,6 +31,8 @@ export function PartyInviteCard({ restaurantId, buildApiUrl }: {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedBoth, setCopiedBoth] = useState(false);
 
   async function refreshStatus() {
     const statusRes = await fetch(buildApiUrl(`/api/party/restaurant-status?restaurant_id=${restaurantId}`));
@@ -77,6 +79,19 @@ export function PartyInviteCard({ restaurantId, buildApiUrl }: {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  function copyLink() {
+    navigator.clipboard.writeText('tastelanc://party-rsvp');
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  }
+
+  function copyBoth() {
+    if (!status?.code) return;
+    navigator.clipboard.writeText(`Your invite code: ${status.code.code}\nTap to RSVP: tastelanc://party-rsvp`);
+    setCopiedBoth(true);
+    setTimeout(() => setCopiedBoth(false), 2000);
+  }
+
   // Don't render if loading, not eligible, or no active event
   if (loading || !status?.eligible || !status.event) return null;
 
@@ -118,23 +133,54 @@ export function PartyInviteCard({ restaurantId, buildApiUrl }: {
 
         {/* State: code assigned */}
         {status.code && (
-          <div className="bg-gray-800 rounded-xl p-4 space-y-3">
+          <div className="bg-gray-800 rounded-xl p-4 space-y-4">
             <div className="flex items-center gap-2 text-green-400 text-sm font-medium">
               <Check size={14} />
               Your invite code is ready
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex-1 font-mono text-[#C84B31] font-bold text-lg tracking-widest bg-gray-900 rounded-lg px-4 py-2 text-center">
-                {status.code.code}
+
+            {/* Invite code row */}
+            <div>
+              <p className="text-gray-500 text-xs mb-1.5">Invite Code</p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 font-mono text-[#C84B31] font-bold text-lg tracking-widest bg-gray-900 rounded-lg px-4 py-2 text-center">
+                  {status.code.code}
+                </div>
+                <button
+                  onClick={copyCode}
+                  className="p-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors"
+                  title="Copy code"
+                >
+                  {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} />}
+                </button>
               </div>
-              <button
-                onClick={copyCode}
-                className="p-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors"
-                title="Copy code"
-              >
-                {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} />}
-              </button>
             </div>
+
+            {/* Deep link row */}
+            <div>
+              <p className="text-gray-500 text-xs mb-1.5">RSVP Link — staff tap this to open the app</p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 font-mono text-blue-400 text-sm bg-gray-900 rounded-lg px-4 py-2 text-center">
+                  tastelanc://party-rsvp
+                </div>
+                <button
+                  onClick={copyLink}
+                  className="p-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors"
+                  title="Copy link"
+                >
+                  {copiedLink ? <Check size={16} className="text-green-400" /> : <Copy size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Copy both button */}
+            <button
+              onClick={copyBoth}
+              className="w-full py-2 bg-[#C84B31]/20 border border-[#C84B31]/30 text-[#C84B31] rounded-lg text-sm font-medium hover:bg-[#C84B31]/30 transition-colors"
+            >
+              {copiedBoth ? '✓ Copied to clipboard!' : 'Copy code + link together'}
+            </button>
+
             <div className="flex items-center gap-4 text-xs text-gray-500">
               <span className="flex items-center gap-1">
                 <Users size={11} />
@@ -144,7 +190,7 @@ export function PartyInviteCard({ restaurantId, buildApiUrl }: {
               <span>{status.code.use_count} of {status.code.use_limit} claimed</span>
             </div>
             <p className="text-gray-500 text-xs">
-              Share this code with your staff. Each person enters it in the TasteLanc app to get their personal QR ticket. They'll show the ticket at the door.
+              Send your staff the code and link. They tap the link to open the TasteLanc app, enter the code, and get their personal QR ticket to show at the door.
             </p>
           </div>
         )}
