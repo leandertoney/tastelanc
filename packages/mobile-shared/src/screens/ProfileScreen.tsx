@@ -199,9 +199,17 @@ export default function ProfileScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [partyRsvpToken, setPartyRsvpToken] = useState<string | null>(null);
 
+  // Party event ends midnight April 21 2026 — auto-clear token after that
+  const PARTY_EVENT_END = new Date('2026-04-21T00:00:00');
+
   useEffect(() => {
     AsyncStorage.getItem('party_rsvp_token').then(token => {
-      if (token) setPartyRsvpToken(token);
+      if (!token) return;
+      if (new Date() >= PARTY_EVENT_END) {
+        AsyncStorage.removeItem('party_rsvp_token').catch(() => {});
+        return;
+      }
+      setPartyRsvpToken(token);
     }).catch(() => {});
   }, []);
 
@@ -359,12 +367,18 @@ export default function ProfileScreen() {
             <>
               <View style={styles.quickLinkDivider} />
               <TouchableOpacity
-                style={styles.quickLink}
+                style={styles.partyTicketLink}
                 onPress={() => navigation.navigate('PartyTicket', { qr_token: partyRsvpToken })}
+                activeOpacity={0.8}
               >
-                <Text style={{ fontSize: 16 }}>🎉</Text>
-                <Text style={styles.quickLinkText}>My Party Ticket</Text>
-                <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
+                <View style={styles.partyTicketIconWrap}>
+                  <Text style={{ fontSize: 16 }}>🎟️</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.partyTicketText}>My Party Ticket</Text>
+                  <Text style={styles.partyTicketSub}>TasteLanc Launch Party · Apr 20</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={14} color="#F0D060" />
               </TouchableOpacity>
             </>
           )}
@@ -554,6 +568,32 @@ const useStyles = createLazyStyles((colors) => ({
     color: colors.text,
   },
   quickLinkDivider: { height: 1, backgroundColor: colors.border },
+  partyTicketLink: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    paddingVertical: 14,
+    paddingHorizontal: spacing.md,
+    gap: 12,
+    backgroundColor: '#1C0800',
+  },
+  partyTicketIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(200,75,49,0.25)',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+  },
+  partyTicketText: {
+    fontSize: 15,
+    fontWeight: '700' as const,
+    color: '#F0D060',
+  },
+  partyTicketSub: {
+    fontSize: 12,
+    color: 'rgba(240,208,96,0.55)',
+    marginTop: 1,
+  },
   recsRow: { paddingHorizontal: spacing.md, gap: 12 },
   recsEmpty: {
     alignItems: 'center' as const,
