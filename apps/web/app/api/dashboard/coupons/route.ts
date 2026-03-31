@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifyRestaurantAccess } from '@/lib/auth/restaurant-access';
+import { notifyCouponCreated } from '@/lib/notifications/auto-notify';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -129,6 +130,18 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Failed to create coupon' },
         { status: 500 }
+      );
+    }
+
+    // Fire-and-forget: notify all users in this market about the new coupon
+    if (coupon && accessResult.restaurant) {
+      notifyCouponCreated(
+        {
+          restaurantId,
+          restaurantName: accessResult.restaurant.name,
+          marketId: accessResult.restaurant.market_id,
+        },
+        coupon,
       );
     }
 

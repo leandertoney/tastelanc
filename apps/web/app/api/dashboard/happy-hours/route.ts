@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifyRestaurantAccess } from '@/lib/auth/restaurant-access';
+import { notifyHappyHourCreated } from '@/lib/notifications/auto-notify';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -153,6 +154,18 @@ export async function POST(request: Request) {
       `)
       .eq('id', happyHour.id)
       .single();
+
+    // Fire-and-forget: notify all users in this market about the new happy hour
+    if (happyHour && accessResult.restaurant) {
+      notifyHappyHourCreated(
+        {
+          restaurantId,
+          restaurantName: accessResult.restaurant.name,
+          marketId: accessResult.restaurant.market_id,
+        },
+        happyHour,
+      );
+    }
 
     return NextResponse.json({ happyHour: completeHappyHour }, { status: 201 });
   } catch (error) {

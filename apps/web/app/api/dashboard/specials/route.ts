@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { verifyRestaurantAccess } from '@/lib/auth/restaurant-access';
+import { notifySpecialCreated } from '@/lib/notifications/auto-notify';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -122,6 +123,18 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Failed to create special' },
         { status: 500 }
+      );
+    }
+
+    // Fire-and-forget: notify all users in this market about the new special
+    if (special && accessResult.restaurant) {
+      notifySpecialCreated(
+        {
+          restaurantId,
+          restaurantName: accessResult.restaurant.name,
+          marketId: accessResult.restaurant.market_id,
+        },
+        special,
       );
     }
 
