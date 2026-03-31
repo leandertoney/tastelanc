@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   View,
   Text,
@@ -43,7 +44,6 @@ import {
   QuickActionsBar,
   SectionCard,
   MenuViewer,
-  CheckInModal,
   PhotosCarousel,
   RatingSubmit,
   PersonalityDescription,
@@ -59,10 +59,14 @@ import TierLockedEmptyState from '../components/TierLockedEmptyState';
 import VideoRecommendationFeed from '../components/VideoRecommendationFeed';
 import type { Tab } from '../components';
 import { formatCategoryName, formatTime, formatFeatureName, getFeatureIconName } from '../lib/formatters';
-import { isTierGatingEnabled } from '../lib/feature-flags';
 import { getRestaurantCoupons, formatDiscount, claimCoupon, type Coupon } from '../lib/coupons';
 import { useRecordVisit } from '../hooks/useRadarVisits';
 import { useUserLocation, calculateDistance } from '../hooks/useUserLocation';
+import { useRecordCheckinForSocialProof } from '../hooks/useSocialProof';
+import { earnPoints, POINT_VALUES } from '../lib/rewards';
+import { rewardsQueryKeys } from '../hooks/useRewards';
+import { requestReviewIfEligible } from '../lib/reviewPrompts';
+import { LocationUpgradePrompt } from '../components/LocationUpgradePrompt';
 import {
   hasMenuAccess,
   hasSpecialsAccess,
@@ -130,18 +134,20 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [checkInModalVisible, setCheckInModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('recommendations');
   const [activeInfoTab, setActiveInfoTab] = useState<'hours' | 'contact' | 'rate'>('hours');
   const [isRecordingVisit, setIsRecordingVisit] = useState(false);
   const [visitRecorded, setVisitRecorded] = useState(false);
+  const [imHerePointsEarned, setImHerePointsEarned] = useState(0);
+  const [showLocationUpgrade, setShowLocationUpgrade] = useState(false);
 
-  // "I'm Here" proximity-gated visit recording
+  const queryClient = useQueryClient();
+
+  // "I'm Here" proximity-gated visit recording + rewards
   const { recordVisit } = useRecordVisit();
   const { location: userLocation, refreshLocation } = useUserLocation();
+  const recordCheckinForSocialProof = useRecordCheckinForSocialProof();
 
-  // Feature flag for tier gating
-  const tierGatingEnabled = isTierGatingEnabled();
 
   const fetchRestaurantData = useCallback(async () => {
     try {
@@ -297,44 +303,81 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
     if (distanceMiles > PROXIMITY_THRESHOLD_MILES) {
       Alert.alert(
         'Too Far Away',
-        `You need to be at or near ${restaurant.name} to record your visit.`,
+        `You need to be at or near ${restaurant.name} to confirm your visit.`,
         [{ text: 'OK' }]
       );
       return;
     }
 
-    // Within proximity — record the visit
+    // Within proximity — record visit, award points, record social proof
     setIsRecordingVisit(true);
     try {
       const result = await recordVisit(id);
-      if (!result.error) {
+
+      if (result.alreadyRecorded) {
         setVisitRecorded(true);
         Alert.alert(
-          'Visit Recorded!',
-          `You can now vote for ${restaurant.name} in the Vote Center.`,
+          'Already Checked In',
+          "You've already checked in here today. Come back tomorrow!",
           [{ text: 'OK' }]
         );
-      } else if (result.alreadyRecorded) {
-        setVisitRecorded(true);
-        Alert.alert(
-          'Already Recorded',
-          "You've already recorded a visit here today.",
-          [{ text: 'OK' }]
-        );
-      } else {
-        Alert.alert('Error', 'Failed to record visit. Please try again.', [{ text: 'OK' }]);
+        return;
       }
+
+      if (result.error) {
+        Alert.alert('Error', 'Failed to record visit. Please try again.', [{ text: 'OK' }]);
+        return;
+      }
+
+      setVisitRecorded(true);
+
+      // Award points (same as PIN check-in did)
+      let pointsEarned = POINT_VALUES.checkin;
+      try {
+        const rewardsResult = await earnPoints({
+          action_type: 'checkin',
+          restaurant_id: id,
+          radar_verified: true,
+        });
+        pointsEarned = rewardsResult.points_earned;
+      } catch (rewardsErr) {
+        console.warn('[ImHere] Rewards API failed:', rewardsErr);
+      }
+
+      // Record to checkins table for social proof aggregation
+      recordCheckinForSocialProof(id, restaurant.name, pointsEarned);
+
+      setImHerePointsEarned(pointsEarned);
+
+      queryClient.invalidateQueries({ queryKey: rewardsQueryKeys.balance });
+      queryClient.invalidateQueries({ queryKey: rewardsQueryKeys.history });
+      queryClient.invalidateQueries({ queryKey: ['profileStats'] });
+      queryClient.invalidateQueries({ queryKey: ['checkinCount'] });
+      queryClient.invalidateQueries({ queryKey: ['recentActivity'] });
+      queryClient.invalidateQueries({ queryKey: ['voting', 'eligibility'] });
+      queryClient.invalidateQueries({ queryKey: ['visits', userId] });
+
+      requestReviewIfEligible('check_in');
+
+      Alert.alert(
+        `+${pointsEarned} Points Earned!`,
+        `Welcome to ${restaurant.name}! You can now vote for them in the Vote Center.`,
+        [{
+          text: 'Sweet!',
+          onPress: () => setShowLocationUpgrade(true),
+        }]
+      );
     } catch (err) {
-      console.error('[RestaurantDetail] Error recording visit:', err);
+      console.error('[RestaurantDetail] Error in handleImHere:', err);
       Alert.alert('Error', 'Something went wrong. Please try again.', [{ text: 'OK' }]);
     } finally {
       setIsRecordingVisit(false);
     }
-  }, [userId, id, restaurant, userLocation, recordVisit, isRecordingVisit, visitRecorded, refreshLocation]);
+  }, [userId, id, restaurant, userLocation, recordVisit, isRecordingVisit, visitRecorded, refreshLocation, recordCheckinForSocialProof, queryClient]);
 
   // Build tabs dynamically — must be before early returns to respect hooks rules
   const hasFeatures = restaurant?.features && restaurant.features.length > 0;
-  const recsGated = tierGatingEnabled && !hasRecommendationsAccess(tierName);
+  const recsGated = !hasRecommendationsAccess(tierName);
 
   const tabs: Tab[] = useMemo(() => {
     let baseTabs = getBaseTabs();
@@ -591,7 +634,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
           {/* Happy Hours Tab */}
           {activeTab === 'happy_hours' && (
             <View style={styles.tabSection}>
-              {tierGatingEnabled && !hasHappyHourAccess(tierName) ? (
+              {!hasHappyHourAccess(tierName) ? (
                 <TierLockedEmptyState
                   featureName="Happy Hours"
                   restaurantName={restaurant.name}
@@ -655,7 +698,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
           {/* Specials Tab */}
           {activeTab === 'specials' && (
             <View style={styles.tabSection}>
-              {tierGatingEnabled && !hasSpecialsAccess(tierName) ? (
+              {!hasSpecialsAccess(tierName) ? (
                 <TierLockedEmptyState
                   featureName="Specials"
                   restaurantName={restaurant.name}
@@ -792,7 +835,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
           {/* Events Tab */}
           {activeTab === 'events' && (
             <View style={styles.tabSection}>
-              {tierGatingEnabled && !hasEventsAccess(tierName) ? (
+              {!hasEventsAccess(tierName) ? (
                 <TierLockedEmptyState
                   featureName="Events"
                   restaurantName={restaurant.name}
@@ -853,7 +896,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
           {/* Menu Tab */}
           {activeTab === 'menu' && (
             <View style={styles.tabSection}>
-              {tierGatingEnabled && !hasMenuAccess(tierName) ? (
+              {!hasMenuAccess(tierName) ? (
                 <TierLockedEmptyState
                   featureName="Menu"
                   restaurantName={restaurant.name}
@@ -1037,16 +1080,16 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
           disabled={isRecordingVisit || visitRecorded}
         >
           {isRecordingVisit ? (
-            <ActivityIndicator size="small" color={colors.text} />
+            <ActivityIndicator size="small" color={colors.textOnAccent} />
           ) : (
             <>
               <Ionicons
-                name={visitRecorded ? 'checkmark-circle' : 'location'}
-                size={20}
-                color={colors.text}
+                name={visitRecorded ? 'checkmark-circle' : 'gift'}
+                size={22}
+                color={visitRecorded ? colors.success : colors.textOnAccent}
               />
               <Text style={styles.imHereFabText}>
-                {visitRecorded ? 'Visited' : "I'm Here"}
+                {visitRecorded ? `+${imHerePointsEarned} pts` : "I'm Here"}
               </Text>
             </>
           )}
@@ -1068,24 +1111,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
         </TouchableOpacity>
       )}
 
-      {/* Floating Check-In Button */}
-      <TouchableOpacity
-        style={styles.checkInFab}
-        onPress={() => setCheckInModalVisible(true)}
-        activeOpacity={0.9}
-      >
-        <Ionicons name="gift" size={24} color={colors.textOnAccent} />
-        <Text style={styles.checkInFabText}>Check In</Text>
-      </TouchableOpacity>
-
-      {/* Check-In Modal */}
-      <CheckInModal
-        visible={checkInModalVisible}
-        onClose={() => setCheckInModalVisible(false)}
-        restaurantId={id}
-        restaurantName={restaurant.name}
-        restaurantPin={restaurant.checkin_pin ?? undefined}
-      />
+      {showLocationUpgrade && <LocationUpgradePrompt />}
     </View>
   );
 }
@@ -1166,9 +1192,7 @@ const useStyles = createLazyStyles((colors) => ({
   bottomSpacer: { height: 120 },
   recommendFab: { position: 'absolute' as const, bottom: 80, right: 16, flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: colors.cardBgElevated, paddingVertical: 12, paddingHorizontal: 16, borderRadius: radius.full, borderWidth: 1, borderColor: colors.accent, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6, gap: 6 },
   recommendFabText: { color: colors.text, fontSize: 14, fontWeight: '600' as const },
-  checkInFab: { position: 'absolute' as const, bottom: 24, right: 16, flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: colors.accent, paddingVertical: 14, paddingHorizontal: 20, borderRadius: radius.full, shadowColor: colors.accent, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8, gap: 8 },
-  checkInFabText: { color: colors.textOnAccent, fontSize: 16, fontWeight: '600' as const },
-  imHereFab: { position: 'absolute' as const, bottom: 24, left: 16, flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: colors.cardBgElevated, paddingVertical: 12, paddingHorizontal: 16, borderRadius: radius.full, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6, gap: 6 },
-  imHereFabRecorded: { backgroundColor: `${colors.success}30`, borderColor: colors.success },
-  imHereFabText: { color: colors.text, fontSize: 14, fontWeight: '600' as const },
+  imHereFab: { position: 'absolute' as const, bottom: 24, right: 16, flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: colors.accent, paddingVertical: 14, paddingHorizontal: 20, borderRadius: radius.full, shadowColor: colors.accent, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8, gap: 8 },
+  imHereFabRecorded: { backgroundColor: `${colors.success}30`, shadowColor: colors.success },
+  imHereFabText: { color: colors.textOnAccent, fontSize: 16, fontWeight: '600' as const },
 }));

@@ -11,7 +11,6 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SubscriptionTier } from '../lib/tier-access';
 import { trackLockedContentView } from '../lib/tier-analytics';
-import { isTierGatingEnabled } from '../lib/feature-flags';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
@@ -97,14 +96,12 @@ export default function TierLockedEmptyState({
 }: TierLockedEmptyStateProps) {
   const styles = useStyles();
   const colors = getColors();
-  const tierGatingEnabled = isTierGatingEnabled();
-
   const config = FEATURE_CONFIG[featureName] || FEATURE_CONFIG['Menu'];
   const displayIcon = icon || config.icon;
 
   // Track when this locked state is viewed
   useEffect(() => {
-    if (tierGatingEnabled && tier) {
+    if (tier) {
       trackLockedContentView(
         restaurantId,
         restaurantName,
@@ -113,7 +110,7 @@ export default function TierLockedEmptyState({
         userId
       );
     }
-  }, [tierGatingEnabled, restaurantId, restaurantName, tier, featureName, userId]);
+  }, [restaurantId, restaurantName, tier, featureName, userId]);
 
   // Get messaging based on content state
   const getMessage = () => {
