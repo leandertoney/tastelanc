@@ -75,7 +75,7 @@ function useRecentActivity(limit = 10) {
         items.push({
           id: `checkin-${c.id}`,
           type: 'checkin',
-          label: 'Check-in',
+          label: "I'm Here",
           sublabel: c.restaurant_name || 'Restaurant',
           icon: 'location',
           points: c.points_earned || 5,

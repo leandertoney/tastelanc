@@ -73,7 +73,7 @@ function useRecentActivity() {
           id: `visit-${c.id}`,
           type: 'visit',
           label: `Visited ${c.restaurant_name}`,
-          sublabel: `Check-in · +${c.points_earned || 5} pts`,
+          sublabel: `I'm Here · +${c.points_earned || 5} pts`,
           timestamp: c.created_at,
         });
       });

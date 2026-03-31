@@ -74,7 +74,6 @@ export async function PUT(request: Request) {
       categories,
       primary_color,
       secondary_color,
-      checkin_pin,
       features,
       // Enrichment fields
       price_range,
@@ -85,16 +84,6 @@ export async function PUT(request: Request) {
       parking_info,
       noise_level,
     } = body;
-
-    // Validate checkin_pin if provided
-    if (checkin_pin !== undefined && checkin_pin !== null) {
-      if (!/^\d{4}$/.test(checkin_pin)) {
-        return NextResponse.json(
-          { error: 'Check-in PIN must be exactly 4 digits' },
-          { status: 400 }
-        );
-      }
-    }
 
     // Build update object (only include fields that were provided)
     const updateData: Record<string, unknown> = {};
@@ -112,7 +101,6 @@ export async function PUT(request: Request) {
     if (features !== undefined) updateData.features = features;
     if (primary_color !== undefined) updateData.primary_color = primary_color;
     if (secondary_color !== undefined) updateData.secondary_color = secondary_color;
-    if (checkin_pin !== undefined) updateData.checkin_pin = checkin_pin;
     // Enrichment fields
     if (price_range !== undefined) updateData.price_range = price_range;
     if (signature_dishes !== undefined) updateData.signature_dishes = signature_dishes;

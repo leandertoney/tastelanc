@@ -23,7 +23,6 @@ export { default as QuickActionsBar } from './QuickActionsBar';
 export { default as SectionCard } from './SectionCard';
 export { default as MenuViewer } from './MenuViewer';
 export { default as MapPreview } from './MapPreview';
-export { default as CheckInModal } from './CheckInModal';
 export { default as PhotosCarousel } from './PhotosCarousel';
 export { default as RatingSubmit } from './RatingSubmit';
 export { default as PersonalityDescription } from './PersonalityDescription';

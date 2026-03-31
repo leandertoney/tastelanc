@@ -234,7 +234,7 @@ export function usePlatformSocialProof() {
         newSpecialsCount,
         checkinBannerText: checkinText
           ? `\u{1F4CD} ${checkinText}`
-          : '\u{1F4CD} Check in to earn points',
+          : '\u{1F4CD} Tap "I\'m Here" to earn points',
         communityText: 'Join the local dining community',
         happyHoursBannerText,
         specialsBannerText,

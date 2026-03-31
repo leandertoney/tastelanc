@@ -98,7 +98,6 @@ export interface Restaurant {
   neighborhood: string | null;
   parking_info: string | null;
   noise_level: string | null;
-  checkin_pin: string | null;
   display_preferences: { tabs: Array<{ key: string; hidden: boolean }> } | null;
 }
 

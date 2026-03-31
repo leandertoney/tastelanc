@@ -14,7 +14,6 @@ export { default as TabBar } from './TabBar';
 export type { Tab } from './TabBar';
 export { default as MenuViewer } from './MenuViewer';
 export { default as MapPreview } from './MapPreview';
-export { default as CheckInModal } from './CheckInModal';
 export { default as SignUpModal } from './SignUpModal';
 export { default as EmailGateModal } from './EmailGateModal';
 export { default as MollieChat } from './MollieChat';

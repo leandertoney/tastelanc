@@ -204,7 +204,6 @@ export type { FeatureType } from './components/TierLockedEmptyState';
 export { default as SignUpModal } from './components/SignUpModal';
 export { default as EmailGateModal, EMAIL_GATE_STORAGE_KEY } from './components/EmailGateModal';
 export { default as PremiumUpgradeModal } from './components/PremiumUpgradeModal';
-export { default as CheckInModal } from './components/CheckInModal';
 export { default as RatingSubmit } from './components/RatingSubmit';
 export { default as SantaStumbleModal } from './components/SantaStumbleModal';
 export type { SantaStumbleData, SantaStumbleTheme, SantaBar, SantaPickup } from './components/SantaStumbleModal';
