@@ -92,10 +92,21 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Stats
-    const withApp = enriched.filter((c) => c.has_app).length;
-    const signedIn = enriched.filter((c) => c.is_signed_in).length;
-    const subscribed = enriched.filter((c) => !c.is_unsubscribed).length;
+    // Stats — compute from full dataset using the app email set, not just current page
+    const { data: allContacts } = await supabaseAdmin
+      .from('platform_contacts')
+      .select('email, is_unsubscribed')
+      .throwOnError();
+
+    let withApp = 0;
+    let signedIn = 0;
+    let subscribed = 0;
+    for (const c of allContacts || []) {
+      const emailLower = c.email?.toLowerCase();
+      if (emailLower && anyAppEmailSet.has(emailLower)) withApp++;
+      if (emailLower && appEmailSet.has(emailLower)) signedIn++;
+      if (!c.is_unsubscribed) subscribed++;
+    }
 
     // Unique source labels for filter dropdown
     const { data: sources } = await supabaseAdmin
@@ -104,14 +115,16 @@ export async function GET(request: NextRequest) {
       .order('source_label');
     const uniqueSources = [...new Set((sources || []).map((s) => s.source_label))];
 
+    const trueTotal = allContacts?.length ?? count ?? 0;
+
     return NextResponse.json({
       contacts: enriched,
-      total: count || 0,
+      total: trueTotal,
       page,
       limit,
-      totalPages: Math.ceil((count || 0) / limit),
+      totalPages: Math.ceil(trueTotal / limit),
       stats: {
-        total: count || 0,
+        total: trueTotal,
         withApp,
         signedIn,
         subscribed,
