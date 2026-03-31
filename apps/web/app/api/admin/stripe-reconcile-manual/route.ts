@@ -11,6 +11,7 @@ import {
   type StripeCustomerInfo,
 } from '@/lib/subscription-matching';
 import { BRAND } from '@/config/market';
+import { sendBrandedWelcomeEmailWithToken, getMarketBrandForRestaurant } from '@/lib/welcome-email';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -248,6 +249,24 @@ export async function POST(request: Request) {
                       .update({ owner_id: userId })
                       .eq('id', matchResult.restaurantId);
                   }
+                }
+              }
+
+              // Always send welcome email after account is linked (new or existing user)
+              if (userId) {
+                try {
+                  const marketBrand = await getMarketBrandForRestaurant(supabaseAdmin, matchResult.restaurantId);
+                  await sendBrandedWelcomeEmailWithToken(
+                    supabaseAdmin,
+                    customer.email,
+                    customer.name || '',
+                    restaurant?.name || '',
+                    restaurant?.cover_image_url || undefined,
+                    userId,
+                    marketBrand
+                  );
+                } catch (emailErr) {
+                  console.error(`[reconcile] Failed to send welcome email to ${customer.email}:`, emailErr);
                 }
               }
             }

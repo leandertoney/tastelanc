@@ -24,244 +24,22 @@ import {
   type StripeCustomerInfo,
 } from '@/lib/subscription-matching';
 import { BRAND, MARKET_SLUG, MARKET_CONFIG, type MarketBrand } from '@/config/market';
+import {
+  sendBrandedWelcomeEmailWithToken,
+  getMarketBrandForRestaurant as getMarketBrand,
+  generateSetupToken as generateSetupTokenShared,
+} from '@/lib/welcome-email';
 
 // All emails send from the parent domain (tastelanc.com) regardless of market.
 // The display name can be market-specific (e.g., "TasteCumberland") but the domain is always tastelanc.com.
 const EMAIL_SENDER_DOMAIN = 'tastelanc.com';
 
-// Generate a secure setup token for password setup with personalization
-interface SetupTokenOptions {
-  name?: string;
-  restaurantName?: string;
-  coverImageUrl?: string;
-}
-
-async function generateSetupToken(
-  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>,
-  userId: string,
-  email: string,
-  options?: SetupTokenOptions
-): Promise<string> {
-  const token = crypto.randomBytes(32).toString('hex');
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-
-  await supabaseAdmin.from('password_setup_tokens').insert({
-    user_id: userId,
-    email,
-    token,
-    expires_at: expiresAt.toISOString(),
-    name: options?.name || null,
-    restaurant_name: options?.restaurantName || null,
-    cover_image_url: options?.coverImageUrl || null,
-  });
-
-  return token;
-}
-
-// Look up the correct market brand for a restaurant
-async function getMarketBrandForRestaurant(
-  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>,
-  restaurantId: string
-): Promise<MarketBrand> {
-  try {
-    const { data } = await supabaseAdmin
-      .from('restaurants')
-      .select('market_id, markets!inner(slug)')
-      .eq('id', restaurantId)
-      .single();
-
-    if (data) {
-      const market = data.markets as unknown as { slug: string };
-      const marketSlug = market?.slug;
-      if (marketSlug && MARKET_CONFIG[marketSlug]) {
-        return MARKET_CONFIG[marketSlug];
-      }
-    }
-  } catch (err) {
-    console.error('Failed to look up market brand for restaurant:', err);
-  }
-  return BRAND; // fallback to current deployment's brand
-}
-
-// Generate branded welcome email HTML with restaurant cover image
-function generateBrandedWelcomeEmail(
-  setupLink: string,
-  contactName: string,
-  restaurantName: string,
-  coverImageUrl?: string,
-  marketBrand: MarketBrand = BRAND
-): string {
-  const firstName = contactName?.split(' ')[0] || '';
-
-  // If we have a cover image, use the branded split-screen style
-  if (coverImageUrl) {
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      </head>
-      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0a0a0a;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a;">
-          <tr>
-            <td align="center" style="padding: 20px;">
-              <table width="600" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border-radius: 16px; overflow: hidden;">
-                <!-- Restaurant Cover Image -->
-                <tr>
-                  <td style="position: relative;">
-                    <img src="${coverImageUrl}" alt="${restaurantName}" width="600" style="display: block; width: 100%; height: 280px; object-fit: cover;" />
-                    <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 30px; background: linear-gradient(transparent, rgba(0,0,0,0.8));">
-                    </div>
-                  </td>
-                </tr>
-
-                <!-- Content -->
-                <tr>
-                  <td style="padding: 40px;">
-                    <!-- Logo -->
-                    <img src="https://${marketBrand.domain}${marketBrand.logoPath}" alt="${marketBrand.name}" height="36" style="margin-bottom: 24px;" />
-
-                    <!-- Restaurant Name Badge -->
-                    <div style="background-color: #2563eb; color: white; display: inline-block; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-bottom: 20px;">
-                      ${restaurantName}
-                    </div>
-
-                    <h1 style="color: #ffffff; font-size: 28px; margin: 0 0 16px 0; font-weight: 700;">
-                      Hey ${firstName}! 👋
-                    </h1>
-
-                    <p style="color: #a3a3a3; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
-                      Welcome to ${marketBrand.name}! Your <strong style="color: #ffffff;">${restaurantName}</strong> dashboard is ready and waiting for you.
-                    </p>
-
-                    <p style="color: #a3a3a3; font-size: 16px; line-height: 1.6; margin: 0 0 32px 0;">
-                      Just one quick step — set your password and you're in. Takes less than a minute.
-                    </p>
-
-                    <!-- CTA Button -->
-                    <table cellpadding="0" cellspacing="0" style="margin-bottom: 32px;">
-                      <tr>
-                        <td style="background-color: #3b82f6; border-radius: 10px;">
-                          <a href="${setupLink}" style="display: inline-block; padding: 16px 40px; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px;">
-                            Set Up Your Account →
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
-
-                    <p style="color: #737373; font-size: 14px; line-height: 1.6; margin: 0 0 8px 0;">
-                      Once you're in, you can:
-                    </p>
-                    <ul style="color: #a3a3a3; font-size: 14px; line-height: 1.8; margin: 0 0 24px 0; padding-left: 20px;">
-                      <li>Update your restaurant profile & photos</li>
-                      <li>Post specials and happy hours</li>
-                      <li>See your analytics and engagement</li>
-                      <li>Connect with ${marketBrand.countyShort} foodies</li>
-                    </ul>
-
-                    <p style="color: #737373; font-size: 14px; margin: 0;">
-                      Questions? Just reply to this email — we're here to help!
-                    </p>
-
-                    <!-- Divider -->
-                    <hr style="border: none; border-top: 1px solid #333; margin: 32px 0;" />
-
-                    <p style="color: #525252; font-size: 12px; text-align: center; margin: 0;">
-                      ${marketBrand.name} — ${marketBrand.countyShort}'s Local Food Guide<br/>
-                      <a href="https://${marketBrand.domain}" style="color: #6b7280;">${marketBrand.domain}</a>
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      </body>
-      </html>
-    `;
-  }
-
-  // Fallback to simpler branded email without image
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0a0a0a;">
-      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a;">
-        <tr>
-          <td align="center" style="padding: 40px 20px;">
-            <table width="600" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border-radius: 16px; overflow: hidden;">
-              <tr>
-                <td style="padding: 40px;">
-                  <!-- Logo -->
-                  <img src="https://${marketBrand.domain}${marketBrand.logoPath}" alt="${marketBrand.name}" height="36" style="margin-bottom: 24px;" />
-
-                  <!-- Restaurant Name Badge -->
-                  <div style="background-color: #2563eb; color: white; display: inline-block; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-bottom: 20px;">
-                    ${restaurantName}
-                  </div>
-
-                  <h1 style="color: #ffffff; font-size: 28px; margin: 0 0 16px 0; font-weight: 700;">
-                    Hey ${firstName}! 👋
-                  </h1>
-
-                  <p style="color: #a3a3a3; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
-                    Welcome to ${marketBrand.name}! Your <strong style="color: #ffffff;">${restaurantName}</strong> dashboard is ready and waiting for you.
-                  </p>
-
-                  <p style="color: #a3a3a3; font-size: 16px; line-height: 1.6; margin: 0 0 32px 0;">
-                    Just one quick step — set your password and you're in. Takes less than a minute.
-                  </p>
-
-                  <!-- CTA Button -->
-                  <table cellpadding="0" cellspacing="0" style="margin-bottom: 32px;">
-                    <tr>
-                      <td style="background-color: #3b82f6; border-radius: 10px;">
-                        <a href="${setupLink}" style="display: inline-block; padding: 16px 40px; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px;">
-                          Set Up Your Account →
-                        </a>
-                      </td>
-                    </tr>
-                  </table>
-
-                  <p style="color: #737373; font-size: 14px; line-height: 1.6; margin: 0 0 8px 0;">
-                    Once you're in, you can:
-                  </p>
-                  <ul style="color: #a3a3a3; font-size: 14px; line-height: 1.8; margin: 0 0 24px 0; padding-left: 20px;">
-                    <li>Update your restaurant profile & photos</li>
-                    <li>Post specials and happy hours</li>
-                    <li>See your analytics and engagement</li>
-                    <li>Connect with ${marketBrand.countyShort} foodies</li>
-                  </ul>
-
-                  <p style="color: #737373; font-size: 14px; margin: 0;">
-                    Questions? Just reply to this email — we're here to help!
-                  </p>
-
-                  <!-- Divider -->
-                  <hr style="border: none; border-top: 1px solid #333; margin: 32px 0;" />
-
-                  <p style="color: #525252; font-size: 12px; text-align: center; margin: 0;">
-                    ${marketBrand.name} — ${marketBrand.countyShort}'s Local Food Guide<br/>
-                    <a href="https://${marketBrand.domain}" style="color: #6b7280;">${marketBrand.domain}</a>
-                  </p>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
-    </body>
-    </html>
-  `;
-}
-
 // Initialize Resend for sending emails
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+// Aliases pointing to the shared welcome-email lib
+const generateSetupToken = generateSetupTokenShared;
+const getMarketBrandForRestaurant = getMarketBrand;
 
 // Use service role key for webhook to bypass RLS
 function getSupabaseAdmin() {
@@ -388,34 +166,6 @@ async function findOrCreateUser(
   });
 
   return { userId, isNewUser: true };
-}
-
-// Send branded welcome email with setup token - call AFTER restaurant linking is confirmed
-async function sendBrandedWelcomeEmailWithToken(
-  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>,
-  email: string,
-  contactName: string,
-  restaurantName: string,
-  coverImageUrl?: string,
-  userId?: string,
-  marketBrand: MarketBrand = BRAND,
-): Promise<void> {
-  if (!userId) return;
-
-  const setupToken = await generateSetupToken(supabaseAdmin, userId, email, {
-    name: contactName,
-    restaurantName,
-    coverImageUrl,
-  });
-  const setupLink = `https://${marketBrand.domain}/setup-account?token=${setupToken}`;
-
-  await resend.emails.send({
-    from: `${marketBrand.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
-    to: email,
-    subject: `Welcome to ${marketBrand.name}! Set Up Your ${restaurantName} Account`,
-    html: generateBrandedWelcomeEmail(setupLink, contactName, restaurantName, coverImageUrl, marketBrand),
-  });
-  console.log(`Branded welcome email sent to ${email} (market: ${marketBrand.name})`);
 }
 
 // Send unmatched subscription admin alert email
@@ -895,8 +645,8 @@ async function handleMultiRestaurantCheckout(
     })
     .eq('id', salesOrderId);
 
-  // Send welcome email AFTER all restaurants are linked (only for new users)
-  if (isNewUser && allSucceeded) {
+  // Send welcome email AFTER all restaurants are linked (always — new OR existing user)
+  if (allSucceeded) {
     // Determine email branding from primary restaurant's market
     const businessNamesList = businessNames.length > 1
       ? businessNames.slice(0, -1).join(', ') + ' and ' + businessNames[businessNames.length - 1]
@@ -918,8 +668,8 @@ async function handleMultiRestaurantCheckout(
       console.error('Failed to send welcome email (restaurants are linked, email failed):', emailError);
       // Don't fail the order - restaurants are linked, email can be resent manually
     }
-  } else if (isNewUser && !allSucceeded) {
-    console.error('CRITICAL: New user created but restaurant linking partially failed - welcome email NOT sent to prevent broken setup');
+  } else {
+    console.error('CRITICAL: Restaurant linking partially failed - welcome email NOT sent to prevent broken setup');
     console.error(`User ${userId} (${email}) needs manual intervention`);
   }
 
@@ -1214,8 +964,8 @@ export async function POST(request: Request) {
             console.log(`Restaurant ${linkedRestaurantId} upgraded to ${tier} tier (subscription: ${subscriptionId})`);
           }
 
-          // Step 3.5: Send welcome email AFTER restaurant is linked (only for new users)
-          if (isNewSingleUser && restaurantLinkSucceeded) {
+          // Step 3.5: Send welcome email AFTER restaurant is linked (always — new OR existing user)
+          if (restaurantLinkSucceeded) {
             try {
               await sendBrandedWelcomeEmailWithToken(
                 supabaseAdmin, email, contactName, restaurantDisplayName,
@@ -1225,8 +975,8 @@ export async function POST(request: Request) {
               console.error('Failed to send welcome email (restaurant is linked, email failed):', emailError);
               // Don't fail the sale - restaurant is linked, email can be resent manually
             }
-          } else if (isNewSingleUser && !restaurantLinkSucceeded) {
-            console.error('CRITICAL: New user created but restaurant linking failed - welcome email NOT sent');
+          } else {
+            console.error('CRITICAL: Restaurant linking failed - welcome email NOT sent');
             console.error(`User ${userId} (${email}) needs manual intervention`);
           }
 
