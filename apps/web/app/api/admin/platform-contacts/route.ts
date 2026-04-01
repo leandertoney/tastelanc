@@ -34,11 +34,8 @@ export async function GET(request: NextRequest) {
       query = query.eq('source_label', source);
     }
 
-    // For CSV, fetch all without pagination
-    if (format !== 'csv') {
-      const offset = (page - 1) * limit;
-      query = query.range(offset, offset + limit - 1);
-    }
+    const offset = (page - 1) * limit;
+    query = query.range(offset, offset + limit - 1);
 
     const { data: contacts, error, count } = await query;
 
@@ -72,10 +69,31 @@ export async function GET(request: NextRequest) {
       market_name: (c as any).market?.name || null,
     }));
 
-    // CSV export
+    // CSV export — paginate all records
     if (format === 'csv') {
+      const allForCsv: typeof enriched = [];
+      for (let off = 0; ; off += 1000) {
+        let csvQuery = supabaseAdmin
+          .from('platform_contacts')
+          .select('*, market:markets(name)')
+          .order('created_at', { ascending: false })
+          .range(off, off + 999);
+        if (search) csvQuery = csvQuery.or(`email.ilike.%${search}%,name.ilike.%${search}%`);
+        if (market) csvQuery = csvQuery.eq('market_id', market);
+        if (source) csvQuery = csvQuery.eq('source_label', source);
+        const { data: page } = await csvQuery;
+        if (!page || page.length === 0) break;
+        allForCsv.push(...page.map((c) => ({
+          ...c,
+          has_app: anyAppEmailSet.has(c.email.toLowerCase()),
+          is_signed_in: appEmailSet.has(c.email.toLowerCase()),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          market_name: (c as any).market?.name || null,
+        })));
+        if (page.length < 1000) break;
+      }
       const header = 'Email,Name,Source,Market,Has App,Subscribed,Added';
-      const rows = enriched.map((c) => {
+      const rows = allForCsv.map((c) => {
         const email = (c.email || '').replace(/,/g, ' ');
         const name = (c.name || '').replace(/,/g, ' ');
         const src = (c.source_label || '').replace(/,/g, ' ');
@@ -92,11 +110,17 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Stats — compute from full dataset using the app email set, not just current page
-    const { data: allContacts } = await supabaseAdmin
-      .from('platform_contacts')
-      .select('email, is_unsubscribed')
-      .throwOnError();
+    // Stats — compute from full dataset using the app email set, not just current page (paginated)
+    const allContacts: Array<{ email: string; is_unsubscribed: boolean }> = [];
+    for (let off = 0; ; off += 1000) {
+      const { data: page } = await supabaseAdmin
+        .from('platform_contacts')
+        .select('email, is_unsubscribed')
+        .range(off, off + 999);
+      if (!page || page.length === 0) break;
+      allContacts.push(...page);
+      if (page.length < 1000) break;
+    }
 
     let withApp = 0;
     let signedIn = 0;
