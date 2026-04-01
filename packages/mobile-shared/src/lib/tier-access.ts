@@ -32,7 +32,8 @@ export function hasTierAccess(
   currentTier: SubscriptionTier | null,
   requiredTier: 'premium' | 'elite'
 ): boolean {
-  if (!currentTier) return false;
+  // null tier = no subscription set — show all content (tiers affect sort priority only)
+  if (!currentTier) return true;
 
   return TIER_LEVELS[currentTier] >= TIER_LEVELS[requiredTier];
 }

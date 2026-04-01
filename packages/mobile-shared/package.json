@@ -10,6 +10,7 @@
     "@supabase/supabase-js": ">=2.0.0",
     "@react-native-async-storage/async-storage": "*",
     "@tanstack/react-query": ">=5.0.0",
+    "expo-linear-gradient": "*",
     "expo-store-review": "*",
     "react": ">=18.0.0",
     "react-native": ">=0.72.0"

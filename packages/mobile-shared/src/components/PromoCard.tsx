@@ -123,7 +123,7 @@ export default function PromoCard({ variant, onDismiss }: PromoCardProps) {
           {/* CTA Button */}
           <View style={styles.fullCtaButton}>
             <Text style={styles.fullCtaText}>Let's Talk</Text>
-            <Ionicons name="arrow-forward" size={16} color={colors.primary} />
+            <Ionicons name="arrow-forward" size={16} color={colors.text} />
           </View>
         </View>
       </TouchableOpacity>
@@ -197,7 +197,7 @@ const useStyles = createLazyStyles((colors) => ({
     marginRight: 20,
   },
   compactCtaText: {
-    color: colors.primary,
+    color: colors.text,
     fontSize: 12,
     fontWeight: '700' as const,
   },
@@ -274,7 +274,7 @@ const useStyles = createLazyStyles((colors) => ({
     gap: 8,
   },
   fullCtaText: {
-    color: colors.primary,
+    color: colors.text,
     fontSize: 14,
     fontWeight: '700' as const,
   },

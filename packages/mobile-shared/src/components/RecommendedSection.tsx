@@ -84,12 +84,12 @@ export default function RecommendedSection({
       <View style={styles.container}>
         <View style={styles.header}>
           <View style={styles.titleRow}>
-            <Ionicons name="sparkles" size={20} color={colors.accent} />
+            <Ionicons name="sparkles" size={20} color={colors.gold} />
             <Text style={styles.title}>Recommended for You</Text>
           </View>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color={colors.accent} />
+          <ActivityIndicator size="small" color={colors.gold} />
         </View>
       </View>
     );
@@ -104,7 +104,7 @@ export default function RecommendedSection({
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          <Ionicons name="sparkles" size={20} color={colors.accent} />
+          <Ionicons name="sparkles" size={20} color={colors.gold} />
           <Text style={styles.title}>Recommended for You</Text>
         </View>
         {onSeeAllPress && (
@@ -205,7 +205,7 @@ const useStyles = createLazyStyles((colors) => ({
   },
   seeAll: {
     fontSize: 14,
-    color: colors.accent,
+    color: colors.gold,
     fontWeight: '600',
   },
   greeting: {
@@ -265,13 +265,13 @@ const useStyles = createLazyStyles((colors) => ({
     position: 'absolute',
     bottom: 6,
     left: 6,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.gold,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 10,
   },
   reasonText: {
-    color: colors.textOnAccent,
+    color: colors.text,
     fontSize: 10,
     fontWeight: '600',
   },

@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, TouchableOpacity, Linking, Platform, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Linking, Platform, ImageBackground } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
@@ -6,22 +7,16 @@ import { radius, spacing } from '../constants/spacing';
 import { useMarket } from '../context/MarketContext';
 import { useOtherCities } from '../hooks/useOtherCities';
 
-const ACCENT_OPACITY = 'rgba(255, 255, 255, 0.08)';
-
 const MARKET_DISPLAY_NAMES: Record<string, string> = {
   'lancaster-pa':    'Lancaster, PA',
   'cumberland-pa':   'Cumberland County, PA',
   'fayetteville-nc': 'Fayetteville, NC',
+  'ocean-city-md':   'Ocean City, MD',
 };
 
 function openUrl(url: string) {
   if (!url) return;
   Linking.openURL(url).catch(() => {});
-}
-
-function getInstagramUrl(handle: string): string {
-  const username = handle.startsWith('@') ? handle.slice(1) : handle;
-  return `https://www.instagram.com/${username}/`;
 }
 
 function getStoreUrl(city: { app_store_url: string; play_store_url: string }): string {
@@ -46,7 +41,7 @@ export default function OtherCitiesSection() {
     <View style={styles.container}>
       {/* Section header */}
       <View style={styles.sectionHeader}>
-        <Ionicons name="map-outline" size={18} color={colors.accent} style={styles.headerIcon} />
+        <Ionicons name="map-outline" size={15} color={colors.accent} />
         <Text style={styles.sectionTitle}>Traveling soon?</Text>
       </View>
       <Text style={styles.sectionSubtitle}>
@@ -59,48 +54,53 @@ export default function OtherCitiesSection() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {cities.map((city) => (
-          <View key={city.id} style={styles.card}>
-            {/* App logo + city name */}
-            <View style={styles.cardHeader}>
-              {city.logo_url ? (
-                <Image source={{ uri: city.logo_url }} style={styles.logo} />
-              ) : null}
-              <Text style={styles.cityName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{MARKET_DISPLAY_NAMES[city.slug] ?? city.name}</Text>
-            </View>
+        {cities.map((city) => {
+          const displayName = MARKET_DISPLAY_NAMES[city.slug] ?? city.name;
+          const instagramUrl = city.instagram_handle
+            ? `https://www.instagram.com/${city.instagram_handle.replace('@', '')}/`
+            : null;
+          const storeUrl = getStoreUrl(city);
 
-            {/* Instagram row */}
-            {city.instagram_handle ? (
-              <TouchableOpacity
-                style={styles.socialRow}
-                onPress={() => openUrl(getInstagramUrl(city.instagram_handle))}
-                activeOpacity={0.7}
+          return (
+            <ImageBackground
+              key={city.id}
+              source={city.logo_url ? { uri: city.logo_url } : undefined}
+              style={styles.card}
+              imageStyle={styles.cardImage}
+            >
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.82)']}
+                style={styles.cardOverlay}
               >
-                <Ionicons name="logo-instagram" size={15} color={colors.accent} />
-                <Text style={styles.socialHandle}>{city.instagram_handle}</Text>
-                <Ionicons name="open-outline" size={12} color={colors.textMuted} style={styles.externalIcon} />
-              </TouchableOpacity>
-            ) : null}
-
-            {/* Download button */}
-            {getStoreUrl(city) ? (
-              <TouchableOpacity
-                style={styles.downloadBtn}
-                onPress={() => openUrl(getStoreUrl(city))}
-                activeOpacity={0.8}
-              >
-                <Ionicons
-                  name={Platform.OS === 'android' ? 'logo-google-playstore' : 'logo-apple'}
-                  size={14}
-                  color={colors.primary}
-                />
-                <Text style={styles.downloadBtnText}>
-                  {Platform.OS === 'android' ? 'Get on Google Play' : 'Download on App Store'}
-                </Text>
-              </TouchableOpacity>
-            ) : null}
-          </View>
-        ))}
+                <Text style={styles.cityName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{displayName}</Text>
+                {instagramUrl ? (
+                  <TouchableOpacity
+                    style={styles.igBtn}
+                    onPress={() => openUrl(instagramUrl)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="logo-instagram" size={14} color="#fff" />
+                    <Text style={styles.igText}>Instagram</Text>
+                  </TouchableOpacity>
+                ) : null}
+                {storeUrl ? (
+                  <TouchableOpacity
+                    style={styles.downloadBtn}
+                    onPress={() => openUrl(storeUrl)}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons
+                      name={Platform.OS === 'android' ? 'logo-google-playstore' : 'logo-apple'}
+                      size={14}
+                      color={colors.primary}
+                    />
+                    <Text style={styles.downloadBtnText}>Download</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </LinearGradient>
+            </ImageBackground>
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -115,82 +115,76 @@ const useStyles = createLazyStyles((colors) => ({
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     paddingHorizontal: spacing.md,
-    marginBottom: 4,
-  },
-  headerIcon: {
-    marginRight: 6,
+    gap: 6,
+    marginBottom: 2,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600' as const,
+    fontSize: 14,
+    fontWeight: '700' as const,
     color: colors.text,
   },
   sectionSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textMuted,
     paddingHorizontal: spacing.md,
     marginBottom: spacing.sm,
   },
   scrollContent: {
     paddingHorizontal: spacing.md,
-    gap: 12,
+    gap: 10,
   },
   card: {
-    width: 220,
-    backgroundColor: colors.cardBg,
+    width: 155,
+    height: 220,
     borderRadius: radius.md,
-    padding: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
+    overflow: 'hidden' as const,
+    backgroundColor: colors.cardBgElevated,
   },
-  cardHeader: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 10,
-    marginBottom: 8,
+  cardImage: {
+    borderRadius: radius.md,
   },
-  logo: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
+  cardOverlay: {
+    position: 'absolute' as const,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingTop: 32,
+    paddingBottom: 10,
+    paddingHorizontal: 10,
+    gap: 7,
   },
   cityName: {
-    flex: 1,
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700' as const,
-    color: colors.text,
+    color: '#fff',
+    marginBottom: 2,
   },
-  socialRow: {
+  igBtn: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: 6,
     borderWidth: 1,
-    borderColor: colors.borderAccent,
-    borderRadius: radius.sm,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-    marginBottom: 8,
-    gap: 8,
+    borderColor: 'rgba(255,255,255,0.55)',
+    borderRadius: radius.xs,
+    paddingVertical: 9,
   },
-  socialHandle: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.accent,
+  igText: {
+    fontSize: 12,
+    color: '#fff',
     fontWeight: '600' as const,
-  },
-  externalIcon: {
-    opacity: 0.6,
   },
   downloadBtn: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
+    gap: 6,
     backgroundColor: colors.accent,
-    borderRadius: radius.sm,
-    paddingVertical: 11,
-    gap: 8,
+    borderRadius: radius.xs,
+    paddingVertical: 9,
   },
   downloadBtnText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700' as const,
     color: colors.primary,
   },

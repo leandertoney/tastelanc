@@ -71,9 +71,11 @@ export default function BottomTabNavigator() {
           const iconName = getTabIcon(route.name, focused);
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: colors.accent,
+        tabBarActiveTintColor: colors.tabActive,
         tabBarInactiveTintColor: colors.tabInactive,
         tabBarStyle: {
+          backgroundColor: colors.tabBarBg,
+          borderTopColor: colors.tabBarBorder,
           borderTopWidth: 1,
         },
         headerShown: true,
