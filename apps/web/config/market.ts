@@ -280,7 +280,7 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
     logoPath: '/images/tastefayetteville_logo.png',
 
     appStoreUrls: {
-      ios: '',
+      ios: 'https://apps.apple.com/us/app/tastefayetteville/id6760276128',
       android: '',
     },
 
@@ -334,6 +334,84 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
         'Fayetteville NC events',
         'Fayetteville nightlife',
         'dining Fayetteville NC',
+      ],
+    },
+  },
+
+  'ocean-city-md': {
+    name: 'TasteOceanCity',
+    tagline: "Discover Ocean City's Best Dining & Nightlife",
+    county: 'Worcester County',
+    countyShort: 'Ocean City',
+    state: 'MD',
+    premiumName: 'TasteOceanCity+',
+
+    aiName: 'Sandie',
+    aiAvatarVideo: '/images/sandie_animated.mp4',
+    aiAvatarImage: '/images/sandie_avatar.png',
+
+    domain: 'oceancity.tastelanc.com',
+    replyDomain: 'in.tastelanc.com',
+    socialHandle: '@tasteoceancity',
+    instagramUrl: 'https://www.instagram.com/tasteoceancity/',
+
+    logoPath: '/images/tasteoceancity_logo.png',
+
+    appStoreUrls: {
+      ios: '',
+      android: '',
+    },
+
+    iosAppId: '',
+
+    colors: {
+      accent: '#E8693A',
+      accentHover: '#C8552A',
+      dark: {
+        bg: '#0D2B6E',
+        card: '#0F3280',
+        surface: '#0A2460',
+        surfaceLight: '#163894',
+        headerBg: '#0D2B6E',
+        headerText: '#FFFFFF',
+        textPrimary: '#FFFFFF',
+        textSecondary: '#D1D5DB',
+        textMuted: '#9CA3AF',
+        textFaint: '#6B7280',
+        border: '#1C41A8',
+        borderLight: '#2450C0',
+        inputBg: '#0A2460',
+        gold: '#F5A020',
+      },
+      light: {
+        bg: '#F4F6FB',
+        card: '#FFFFFF',
+        surface: '#FFFFFF',
+        surfaceLight: '#EBF0FA',
+        headerBg: '#FFFFFF',
+        headerText: '#0D2B6E',
+        textPrimary: '#0D2B6E',
+        textSecondary: '#374151',
+        textMuted: '#6B7280',
+        textFaint: '#9CA3AF',
+        border: '#D1D5DB',
+        borderLight: '#E5E7EB',
+        inputBg: '#FFFFFF',
+        gold: '#C07A0A',
+      },
+    },
+
+    seo: {
+      title: "TasteOceanCity - Discover Ocean City's Best Dining & Nightlife",
+      description:
+        'Find the best restaurants, happy hours, events, and nightlife in Ocean City, MD. TasteOceanCity is your guide to local dining and entertainment.',
+      keywords: [
+        'Ocean City MD restaurants',
+        'Ocean City boardwalk dining',
+        'Ocean City happy hours',
+        'Ocean City MD events',
+        'Ocean City seafood',
+        'dining Ocean City Maryland',
       ],
     },
   },
