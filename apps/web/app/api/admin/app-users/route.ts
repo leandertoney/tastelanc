@@ -55,25 +55,47 @@ export async function GET(request: NextRequest) {
       page++;
     }
 
-    // Fetch profiles (last_seen_at, display_name, role)
-    const { data: profiles } = await supabaseAdmin
-      .from('profiles')
-      .select('id, display_name, last_seen_at, role');
+    const PAGE_SIZE = 1000;
 
-    // Fetch push tokens (user_id, platform, app_slug)
-    const { data: pushTokens } = await supabaseAdmin
-      .from('push_tokens')
-      .select('user_id, platform, app_slug');
+    // Fetch profiles (paginated)
+    const allProfiles: Array<{ id: string; display_name: string | null; last_seen_at: string | null; role: string | null }> = [];
+    for (let off = 0; ; off += PAGE_SIZE) {
+      const { data: page } = await supabaseAdmin.from('profiles').select('id, display_name, last_seen_at, role').range(off, off + PAGE_SIZE - 1);
+      if (!page || page.length === 0) break;
+      allProfiles.push(...page);
+      if (page.length < PAGE_SIZE) break;
+    }
+    const profiles = allProfiles;
 
-    // Fetch favorite counts per user
-    const { data: favorites } = await supabaseAdmin
-      .from('favorites')
-      .select('user_id');
+    // Fetch push tokens (paginated)
+    const allPushTokens: Array<{ user_id: string; platform: string; app_slug: string | null }> = [];
+    for (let off = 0; ; off += PAGE_SIZE) {
+      const { data: page } = await supabaseAdmin.from('push_tokens').select('user_id, platform, app_slug').range(off, off + PAGE_SIZE - 1);
+      if (!page || page.length === 0) break;
+      allPushTokens.push(...page);
+      if (page.length < PAGE_SIZE) break;
+    }
+    const pushTokens = allPushTokens;
 
-    // Fetch checkin counts per user
-    const { data: checkins } = await supabaseAdmin
-      .from('checkins')
-      .select('user_id');
+    // Fetch favorites (paginated)
+    const allFavorites: Array<{ user_id: string }> = [];
+    for (let off = 0; ; off += PAGE_SIZE) {
+      const { data: page } = await supabaseAdmin.from('favorites').select('user_id').range(off, off + PAGE_SIZE - 1);
+      if (!page || page.length === 0) break;
+      allFavorites.push(...page);
+      if (page.length < PAGE_SIZE) break;
+    }
+    const favorites = allFavorites;
+
+    // Fetch checkins (paginated)
+    const allCheckins: Array<{ user_id: string }> = [];
+    for (let off = 0; ; off += PAGE_SIZE) {
+      const { data: page } = await supabaseAdmin.from('checkins').select('user_id').range(off, off + PAGE_SIZE - 1);
+      if (!page || page.length === 0) break;
+      allCheckins.push(...page);
+      if (page.length < PAGE_SIZE) break;
+    }
+    const checkins = allCheckins;
 
     // Build lookup maps
     const profileMap = new Map(

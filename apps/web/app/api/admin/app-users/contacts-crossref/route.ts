@@ -37,16 +37,28 @@ export interface RestaurantContactSummary {
 
 export async function GET() {
   try {
-    // 1. Fetch all restaurant contacts with restaurant info
-    const { data: contacts, error: contactsError } = await supabaseAdmin
-      .from('restaurant_contacts')
-      .select('id, restaurant_id, email, name, source, is_unsubscribed, created_at, restaurant:restaurants(name, market_id)')
-      .order('created_at', { ascending: false })
-      .range(0, 49999);
-
-    if (contactsError) {
-      console.error('Error fetching restaurant contacts:', contactsError);
-      return NextResponse.json({ error: 'Failed to fetch contacts' }, { status: 500 });
+    // 1. Fetch all restaurant contacts with restaurant info (paginated — Supabase JS caps at 1000/page)
+    const contacts: Array<{
+      id: string; restaurant_id: string; email: string; name: string | null;
+      source: string; is_unsubscribed: boolean; created_at: string;
+      restaurant: { name: string; market_id: string | null } | Array<{ name: string; market_id: string | null }>;
+    }> = [];
+    const PAGE_SIZE = 1000;
+    let offset = 0;
+    while (true) {
+      const { data: page, error: contactsError } = await supabaseAdmin
+        .from('restaurant_contacts')
+        .select('id, restaurant_id, email, name, source, is_unsubscribed, created_at, restaurant:restaurants(name, market_id)')
+        .order('created_at', { ascending: false })
+        .range(offset, offset + PAGE_SIZE - 1);
+      if (contactsError) {
+        console.error('Error fetching restaurant contacts:', contactsError);
+        return NextResponse.json({ error: 'Failed to fetch contacts' }, { status: 500 });
+      }
+      if (!page || page.length === 0) break;
+      contacts.push(...(page as typeof contacts));
+      if (page.length < PAGE_SIZE) break;
+      offset += PAGE_SIZE;
     }
 
     // 2. Fetch all auth users (paginated)
@@ -74,9 +86,19 @@ export async function GET() {
     }
 
     // 4. Fetch push token user emails (for "has push token" check)
-    const { data: pushTokenRows } = await supabaseAdmin
-      .from('push_tokens')
-      .select('user_id');
+    const allPushTokenRows: Array<{ user_id: string }> = [];
+    offset = 0;
+    while (true) {
+      const { data: ptPage } = await supabaseAdmin
+        .from('push_tokens')
+        .select('user_id')
+        .range(offset, offset + PAGE_SIZE - 1);
+      if (!ptPage || ptPage.length === 0) break;
+      allPushTokenRows.push(...ptPage);
+      if (ptPage.length < PAGE_SIZE) break;
+      offset += PAGE_SIZE;
+    }
+    const pushTokenRows = allPushTokenRows;
 
     const usersWithPushTokens = new Set((pushTokenRows || []).map((r) => r.user_id));
 
