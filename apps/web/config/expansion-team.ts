@@ -23,6 +23,9 @@ export const EXPANSION_TEAM: TeamMember[] = [
   },
 ];
 
+/** All team member inboxes — use for admin/operational alert emails */
+export const ADMIN_NOTIFICATION_EMAILS = EXPANSION_TEAM.map(m => m.email);
+
 export type ReviewVote = 'interested' | 'not_now' | 'reject';
 export type ReviewStatus =
   | 'pending_review'

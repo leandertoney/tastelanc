@@ -12,6 +12,7 @@ import {
 } from '@/lib/subscription-matching';
 import { BRAND } from '@/config/market';
 import { sendBrandedWelcomeEmailWithToken, getMarketBrandForRestaurant } from '@/lib/welcome-email';
+import { ADMIN_NOTIFICATION_EMAILS } from '@/config/expansion-team';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -305,7 +306,7 @@ export async function POST(request: Request) {
 
       await resend.emails.send({
         from: `${BRAND.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
-        to: 'admin@tastelanc.com',
+        to: ADMIN_NOTIFICATION_EMAILS,
         subject: `📊 Daily Stripe Reconcile: ${stats.newlyOnboarded} onboarded, ${stats.unmatched} unmatched`,
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">

@@ -24,6 +24,7 @@ import {
   type StripeCustomerInfo,
 } from '@/lib/subscription-matching';
 import { BRAND, MARKET_SLUG, MARKET_CONFIG, type MarketBrand } from '@/config/market';
+import { ADMIN_NOTIFICATION_EMAILS } from '@/config/expansion-team';
 import {
   sendBrandedWelcomeEmailWithToken,
   getMarketBrandForRestaurant as getMarketBrand,
@@ -189,7 +190,7 @@ async function sendUnmatchedAlert(
 
     await resend.emails.send({
       from: `${BRAND.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
-      to: 'admin@tastelanc.com',
+      to: ADMIN_NOTIFICATION_EMAILS,
       subject: `🚨 UNMATCHED Subscription: $${(amountCents / 100).toFixed(2)}/${billingInterval} - Needs Manual Review`,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -683,7 +684,7 @@ async function handleMultiRestaurantCheckout(
   try {
     await resend.emails.send({
       from: `${BRAND.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
-      to: 'admin@tastelanc.com',
+      to: ADMIN_NOTIFICATION_EMAILS,
       subject: `Multi-Restaurant Payment: ${orderItems.length} restaurants - $${amountPaid}`,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -985,7 +986,7 @@ export async function POST(request: Request) {
           try {
             await resend.emails.send({
               from: `${saleMarketBrand.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
-              to: 'admin@tastelanc.com',
+              to: ADMIN_NOTIFICATION_EMAILS,
               subject: `New Restaurant Payment (${saleMarketBrand.name}): ${businessName} - $${amountPaid}`,
               html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -1203,7 +1204,7 @@ export async function POST(request: Request) {
           try {
             await resend.emails.send({
               from: `${BRAND.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
-              to: 'admin@tastelanc.com',
+              to: ADMIN_NOTIFICATION_EMAILS,
               subject: `New Self-Promoter: ${artistName} - $${amountPaid}/month`,
               html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -1591,7 +1592,7 @@ export async function POST(request: Request) {
                 try {
                   await resend.emails.send({
                     from: `${matchMarketBrand.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
-                    to: 'admin@tastelanc.com',
+                    to: ADMIN_NOTIFICATION_EMAILS,
                     subject: `✅ Subscription Synced (${matchMarketBrand.name}): ${matchResult.restaurantName}`,
                     html: `
                       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -1722,7 +1723,7 @@ export async function POST(request: Request) {
               try {
                 await resend.emails.send({
                   from: `${BRAND.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
-                  to: 'admin@tastelanc.com',
+                  to: ADMIN_NOTIFICATION_EMAILS,
                   subject: `Subscription Canceled: ${restaurant.name}`,
                   html: `
                     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -1899,7 +1900,7 @@ export async function POST(request: Request) {
             try {
               await resend.emails.send({
                 from: `${BRAND.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
-                to: 'admin@tastelanc.com',
+                to: ADMIN_NOTIFICATION_EMAILS,
                 subject: `Payment Failed: ${restaurant.name}`,
                 html: `
                   <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">

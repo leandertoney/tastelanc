@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-access';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { getStripe, ALL_CONSUMER_PRICE_IDS, SELF_PROMOTER_PRICE_IDS } from '@/lib/stripe';
+import { ADMIN_NOTIFICATION_EMAILS } from '@/config/expansion-team';
 import { Resend } from 'resend';
 import {
   findMatchingRestaurant,
@@ -188,7 +189,7 @@ export async function POST(request: Request) {
       try {
         await resend.emails.send({
           from: 'TasteLanc <hello@tastelanc.com>',
-          to: 'admin@tastelanc.com',
+          to: ADMIN_NOTIFICATION_EMAILS,
           subject: `🔄 Reconciliation Report: ${results.unmatched.length} Unmatched, ${results.newlyMatched.length} Newly Matched`,
           html: `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 700px; margin: 0 auto; padding: 20px;">

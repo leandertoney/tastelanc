@@ -3,6 +3,7 @@ import { createClient as createSupabaseAdmin } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import { Resend } from 'resend';
 import { MARKET_SLUG, BRAND, getMarketConfig, type MarketBrand } from '@/config/market';
+import { ADMIN_NOTIFICATION_EMAILS } from '@/config/expansion-team';
 import { getMarketKnowledge } from '@/config/market-knowledge';
 import {
   buildBlogSystemPrompt,
@@ -543,11 +544,10 @@ async function reviewBlogPost(
 // ─────────────────────────────────────────────────────────
 
 async function sendFailureNotification(error: string, scheduledFor: Date, brand: MarketBrand): Promise<void> {
-  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'admin@tastelanc.com';
   try {
     await resend.emails.send({
       from: `${brand.name} <alerts@${brand.domain}>`,
-      to: adminEmail,
+      to: ADMIN_NOTIFICATION_EMAILS,
       subject: `[${brand.name}] Blog Pre-Generation Failed - Action Required`,
       html: `<h2>${brand.name} Blog Pre-Generation Failed</h2>
         <p><strong>Market:</strong> ${brand.county}</p>
