@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { MapPin } from 'lucide-react';
+import { MapPin, Database, RefreshCw } from 'lucide-react';
 import { BRAND } from '@/config/market';
 import { buildMeta } from '@/lib/seo/meta';
 import { getLandingPage, getAllLandingPageSlugs, type LandingPageConfig } from '@/lib/seo/landing-pages';
@@ -83,13 +83,30 @@ export default async function BestOfPage({ params }: PageProps) {
     : visibleRestaurants.map((r) => `${siteUrl}/restaurants/${r.slug}`);
   const listJsonLd = itemListJsonLd(urls);
 
-  const faqs = config.faqs.map((f) => ({ question: f.q(BRAND), answer: f.a(BRAND) }));
-  const faqLd = faqJsonLd(faqs);
+  // Merge base faqs + extra faqs for JSON-LD (so schema includes all questions)
+  const allFaqItems = [
+    ...config.faqs,
+    ...(config.extraFaqs ?? []),
+  ].map((f) => ({ question: f.q(BRAND), answer: f.a(BRAND) }));
+  const faqLd = faqJsonLd(allFaqItems);
+
+  // Base faqs (shown in the original section, unchanged)
+  const baseFaqs = config.faqs.map((f) => ({ question: f.q(BRAND), answer: f.a(BRAND) }));
+
+  // Extra faqs (shown in the editorial expanded section)
+  const extraFaqs = (config.extraFaqs ?? []).map((f) => ({ question: f.q(BRAND), answer: f.a(BRAND) }));
+
+  // Editorial editorial content
+  const editorialIntro = config.editorialIntro?.(BRAND);
+  const subcategories = config.subcategories ?? [];
 
   // Related pages
   const relatedPages = config.relatedSlugs
     .map((s) => getLandingPage(s))
     .filter(Boolean) as LandingPageConfig[];
+
+  // Last-updated: use current revalidation window as the signal
+  const lastUpdated = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   return (
     <>
@@ -99,14 +116,28 @@ export default async function BestOfPage({ params }: PageProps) {
       <main className="max-w-5xl mx-auto px-4 py-10 text-tastelanc-text-primary">
         {/* H1 with target keyword */}
         <h1 className="text-4xl font-bold mb-3">{config.h1(BRAND)}</h1>
-        <p className="text-tastelanc-text-muted text-lg mb-8 max-w-3xl">{config.intro(BRAND)}</p>
+        <p className="text-tastelanc-text-muted text-lg mb-6 max-w-3xl">{config.intro(BRAND)}</p>
 
-        {/* Item count */}
-        <p className="text-sm text-tastelanc-text-faint mb-6">
-          {totalCount} {isHappyHours ? 'happy hours' : 'restaurants'} in {BRAND.county}
-        </p>
+        {/* A. Editorial Intro — long-form paragraph with location + category keywords */}
+        {editorialIntro && (
+          <p className="text-tastelanc-text-secondary leading-relaxed mb-8 max-w-3xl text-base border-l-2 border-tastelanc-surface-light pl-4">
+            {editorialIntro}
+          </p>
+        )}
 
-        {/* Visible items */}
+        {/* D. Data Credibility Strip */}
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-tastelanc-text-faint mb-8 py-3 border-y border-tastelanc-surface-light">
+          <span className="flex items-center gap-1.5">
+            <Database className="w-3.5 h-3.5" />
+            {totalCount} {isHappyHours ? 'happy hours' : 'restaurants'} in {BRAND.county}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <RefreshCw className="w-3.5 h-3.5" />
+            Updated {lastUpdated} · based on real restaurant data
+          </span>
+        </div>
+
+        {/* Visible items (UNCHANGED) */}
         {isHappyHours ? (
           <>
             <div className="space-y-4">
@@ -143,12 +174,82 @@ export default async function BestOfPage({ params }: PageProps) {
           </>
         )}
 
-        {/* FAQ Section */}
-        {faqs.length > 0 && (
-          <section className="mt-16">
-            <h2 className="text-2xl font-bold mb-6">Frequently Asked Questions</h2>
+        {/* B. Subcategory Sections — H2 keyword variations with subset listings */}
+        {subcategories.length > 0 && (
+          <div className="mt-16 space-y-12">
+            {subcategories.map((sub, i) => {
+              // Subset the data: for restaurant pages, show up to 3 cards filtered by subcategory
+              // if a filterCategory is specified, otherwise show first 3 from the main pool
+              const subRestaurants = isHappyHours
+                ? []
+                : sub.filterCategory
+                  ? restaurants.filter((r) => r.categories?.includes(sub.filterCategory!)).slice(0, 3)
+                  : restaurants.slice(i * 2, i * 2 + 3);
+              const subHH = isHappyHours ? happyHours.slice(i * 2, i * 2 + 3) : [];
+
+              return (
+                <section key={i} aria-labelledby={`subcategory-${i}`}>
+                  <h2 id={`subcategory-${i}`} className="text-2xl font-bold mb-2">
+                    {sub.heading(BRAND)}
+                  </h2>
+                  <p className="text-tastelanc-text-muted text-sm mb-5 max-w-2xl">{sub.body(BRAND)}</p>
+                  {isHappyHours && subHH.length > 0 && (
+                    <div className="space-y-4">
+                      {subHH.map((hh, j) => (
+                        <HappyHourCard key={hh.id} hh={hh} rank={j + 1} />
+                      ))}
+                    </div>
+                  )}
+                  {!isHappyHours && subRestaurants.length > 0 && (
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {subRestaurants.map((r, j) => (
+                        <RestaurantCard key={r.id} restaurant={r} rank={j + 1} />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              );
+            })}
+          </div>
+        )}
+
+        {/* C. Internal Linking Block */}
+        <section className="mt-16 bg-tastelanc-surface rounded-xl p-6" aria-labelledby="explore-more-heading">
+          <h2 id="explore-more-heading" className="text-lg font-semibold text-tastelanc-text-primary mb-4">
+            Explore More in {BRAND.countyShort}
+          </h2>
+          <div className="flex flex-wrap gap-3">
+            {relatedPages.map((page) => (
+              <Link
+                key={page.slug}
+                href={`/best/${page.slug}`}
+                className="px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-card rounded-full text-sm text-tastelanc-text-secondary hover:text-tastelanc-text-primary transition-colors border border-tastelanc-surface-light hover:border-tastelanc-text-faint"
+              >
+                {page.h1(BRAND).replace(` in ${BRAND.countyShort}, ${BRAND.state}`, '')}
+              </Link>
+            ))}
+            {/* Always include the hub links for breadth */}
+            <Link
+              href="/best/happy-hours"
+              className="px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-card rounded-full text-sm text-tastelanc-text-secondary hover:text-tastelanc-text-primary transition-colors border border-tastelanc-surface-light hover:border-tastelanc-text-faint"
+            >
+              All Happy Hours
+            </Link>
+            <Link
+              href="/restaurants"
+              className="px-4 py-2 bg-tastelanc-surface-light hover:bg-tastelanc-card rounded-full text-sm text-tastelanc-text-secondary hover:text-tastelanc-text-primary transition-colors border border-tastelanc-surface-light hover:border-tastelanc-text-faint"
+            >
+              Browse All Restaurants
+            </Link>
+          </div>
+        </section>
+
+        {/* Original FAQ Section (UNCHANGED — base faqs only) */}
+        {baseFaqs.length > 0 && (
+          <section className="mt-16" aria-labelledby="faq-heading">
+            <h2 id="faq-heading" className="text-2xl font-bold mb-6">Frequently Asked Questions</h2>
             <div className="space-y-6">
-              {faqs.map((faq, i) => (
+              {baseFaqs.map((faq, i) => (
                 <div key={i} className="bg-tastelanc-surface rounded-lg p-6">
                   <h3 className="font-semibold text-tastelanc-text-primary text-lg mb-2">{faq.question}</h3>
                   <p className="text-tastelanc-text-muted">{faq.answer}</p>
@@ -158,7 +259,30 @@ export default async function BestOfPage({ params }: PageProps) {
           </section>
         )}
 
-        {/* Related Pages (Internal Links) */}
+        {/* E. Expanded FAQ Section — extra keyword-targeted questions */}
+        {extraFaqs.length > 0 && (
+          <section className="mt-8" aria-labelledby="faq-more-heading">
+            <h2 id="faq-more-heading" className="text-xl font-semibold text-tastelanc-text-secondary mb-5">
+              More Questions About {config.h1(BRAND).replace(` in ${BRAND.countyShort}, ${BRAND.state}`, '')} in {BRAND.countyShort}
+            </h2>
+            <div className="space-y-4">
+              {extraFaqs.map((faq, i) => (
+                <details
+                  key={i}
+                  className="bg-tastelanc-surface rounded-lg group"
+                >
+                  <summary className="flex items-center justify-between cursor-pointer px-6 py-4 font-medium text-tastelanc-text-primary list-none select-none">
+                    {faq.question}
+                    <span className="text-tastelanc-text-faint text-lg leading-none group-open:rotate-45 transition-transform">+</span>
+                  </summary>
+                  <p className="px-6 pb-5 text-tastelanc-text-muted text-sm">{faq.answer}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Original Related Pages (UNCHANGED) */}
         {relatedPages.length > 0 && (
           <section className="mt-12 pt-8 border-t border-tastelanc-surface-light">
             <h2 className="text-lg font-semibold text-tastelanc-text-secondary mb-4">You might also like</h2>
