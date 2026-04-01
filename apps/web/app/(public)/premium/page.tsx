@@ -4,6 +4,8 @@ import { Crown, Sparkles, Zap, MapPin, Bell, Star, Check, ArrowRight } from 'luc
 import Link from 'next/link';
 import { BRAND } from '@/config/market';
 
+const APP_URL = BRAND.appStoreUrls.ios || `https://${BRAND.domain}`;
+
 const PERKS = [
   {
     icon: Sparkles,
@@ -77,7 +79,7 @@ export default function PremiumPage() {
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/signup"
+              href={APP_URL}
               className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white font-semibold rounded-xl transition-colors text-lg"
             >
               Start Free Trial
@@ -150,7 +152,7 @@ export default function PremiumPage() {
                 ))}
               </ul>
               <Link
-                href="/signup"
+                href={APP_URL}
                 className="mt-8 block text-center py-3 px-6 rounded-xl border border-tastelanc-surface-light hover:bg-tastelanc-surface text-tastelanc-text-primary font-medium transition-colors"
               >
                 Get Started Free
@@ -178,7 +180,7 @@ export default function PremiumPage() {
                 ))}
               </ul>
               <Link
-                href="/signup"
+                href={APP_URL}
                 className="mt-8 block text-center py-3 px-6 rounded-xl bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white font-semibold transition-colors"
               >
                 Start Free Trial
@@ -203,7 +205,7 @@ export default function PremiumPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/signup"
+              href={APP_URL}
               className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white font-semibold rounded-xl transition-colors"
             >
               Get the App

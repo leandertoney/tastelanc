@@ -193,13 +193,6 @@ function LoginPageContent() {
             </button>
           </form>
 
-          {/* Sign Up Link */}
-          <p className="text-center text-tastelanc-header-text/60 mt-8">
-            Don&apos;t have an account?{' '}
-            <Link href="/register" className="text-tastelanc-accent hover:underline">
-              Sign up
-            </Link>
-          </p>
 
           {/* Back to Home */}
           <p className="text-center mt-4">
