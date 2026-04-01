@@ -41,7 +41,8 @@ export async function GET() {
     const { data: contacts, error: contactsError } = await supabaseAdmin
       .from('restaurant_contacts')
       .select('id, restaurant_id, email, name, source, is_unsubscribed, created_at, restaurant:restaurants(name, market_id)')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(0, 49999);
 
     if (contactsError) {
       console.error('Error fetching restaurant contacts:', contactsError);

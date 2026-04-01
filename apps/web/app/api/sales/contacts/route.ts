@@ -22,7 +22,8 @@ export async function GET() {
     let query = serviceClient
       .from('contact_submissions')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(0, 9999);
 
     // Market scoping — each user only sees contacts from their market(s)
     if (access.marketIds !== null && access.marketIds.length > 0) {

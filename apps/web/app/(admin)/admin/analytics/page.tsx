@@ -1,6 +1,6 @@
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { Card } from '@/components/ui';
-import { Eye, MousePointer, TrendingUp, Layers, AlertTriangle, Users } from 'lucide-react';
+import { Eye, MousePointer, TrendingUp, Layers, AlertTriangle, Users, Globe } from 'lucide-react';
 import { MARKET_SLUG } from '@/config/market';
 
 async function getAnalytics() {
@@ -32,6 +32,7 @@ async function getAnalytics() {
     clicksByTypeResult,
     impressions7dResult,
     visibilityDataResult,
+    externalClicksResult,
   ] = await Promise.all([
     supabase.from('analytics_page_views').select('*', { count: 'exact', head: true }).gte('viewed_at', thirtyDaysAgo.toISOString()),
     supabase.from('analytics_page_views').select('*', { count: 'exact', head: true }).gte('viewed_at', sevenDaysAgo.toISOString()),
@@ -42,6 +43,7 @@ async function getAnalytics() {
     supabase.from('analytics_clicks').select('click_type').gte('clicked_at', thirtyDaysAgo.toISOString()),
     supabase.from('section_impressions').select('*', { count: 'exact', head: true }).gte('impressed_at', sevenDaysAgo.toISOString()),
     supabase.from('restaurant_visibility_7d').select('*'),
+    supabase.from('analytics_clicks').select('click_type, source, clicked_at').neq('source', 'tastelanc').gte('clicked_at', thirtyDaysAgo.toISOString()),
   ]);
 
   const pageViews30d = pageViews30dResult.count || 0;
@@ -135,6 +137,18 @@ async function getAnalytics() {
     .sort((a, b) => b.impressions - a.impressions)
     .slice(0, 10);
 
+  // External clicks (from outside TasteLanc — e.g. Caddy Shack)
+  const externalClicksBySource: Record<string, { total: number; byType: Record<string, number> }> = {};
+  (externalClicksResult.data || []).forEach((row: { click_type: string; source: string }) => {
+    const src = row.source || 'unknown';
+    if (!externalClicksBySource[src]) {
+      externalClicksBySource[src] = { total: 0, byType: {} };
+    }
+    externalClicksBySource[src].total++;
+    externalClicksBySource[src].byType[row.click_type] = (externalClicksBySource[src].byType[row.click_type] || 0) + 1;
+  });
+  const externalTotal = externalClicksResult.data?.length || 0;
+
   return {
     pageViews30d,
     pageViews7d,
@@ -148,6 +162,8 @@ async function getAnalytics() {
     tierAverages,
     outliers,
     topByImpressions,
+    externalClicksBySource,
+    externalTotal,
   };
 }
 
@@ -439,6 +455,46 @@ export default async function AdminAnalyticsPage() {
             )}
           </Card>
         </div>
+      </div>
+
+      {/* External Sources — clicks from outside TasteLanc (e.g. Caddy Shack) */}
+      <div className="mt-8 md:mt-12">
+        <div className="mb-4 md:mb-6">
+          <h2 className="text-xl md:text-2xl font-bold text-tastelanc-text-primary flex items-center gap-2">
+            <Globe className="w-5 h-5 md:w-6 md:h-6" />
+            External Sources (30d)
+          </h2>
+          <p className="text-tastelanc-text-muted mt-1 text-sm">Click events tracked from external websites and apps</p>
+        </div>
+
+        {analytics.externalTotal === 0 ? (
+          <Card className="p-6">
+            <p className="text-tastelanc-text-faint text-center py-8 text-sm">No external click data yet. Events will appear here once external sources start sending clicks.</p>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {Object.entries(analytics.externalClicksBySource).map(([source, data]) => (
+              <Card key={source} className="p-4 md:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-tastelanc-text-primary capitalize">
+                    {source.replace(/_/g, ' ')}
+                  </h3>
+                  <span className="text-tastelanc-text-muted text-sm">{data.total.toLocaleString()} total clicks</span>
+                </div>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {Object.entries(data.byType)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([type, count]) => (
+                      <div key={type} className="p-3 rounded-lg bg-tastelanc-surface-light/50">
+                        <p className="text-xl font-bold text-tastelanc-text-primary">{count.toLocaleString()}</p>
+                        <p className="text-tastelanc-text-muted text-xs capitalize">{type.replace(/_/g, ' ')}</p>
+                      </div>
+                    ))}
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

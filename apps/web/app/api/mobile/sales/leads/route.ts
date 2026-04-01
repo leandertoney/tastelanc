@@ -65,22 +65,27 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch leads' }, { status: 500 });
     }
 
-    // Stats
-    let statsQuery = serviceClient.from('business_leads').select('status');
-    if (access.marketIds !== null && access.marketIds.length > 0) {
-      statsQuery = access.marketIds.length === 1
-        ? statsQuery.eq('market_id', access.marketIds[0])
-        : statsQuery.in('market_id', access.marketIds);
-    }
-    const { data: allLeads } = await statsQuery;
-
+    // Stats — use count queries to avoid the 1000-row default limit
+    const applyMarket = (q: any) => {
+      if (access.marketIds !== null && access.marketIds.length > 0) {
+        return access.marketIds.length === 1
+          ? q.eq('market_id', access.marketIds[0])
+          : q.in('market_id', access.marketIds);
+      }
+      return q;
+    };
+    const statusList = ['new', 'contacted', 'interested', 'not_interested', 'converted'] as const;
+    const countResults = await Promise.all(
+      statusList.map(s => applyMarket(serviceClient.from('business_leads').select('id', { count: 'exact', head: true }).eq('status', s)))
+    );
+    const statusCounts = Object.fromEntries(statusList.map((s, i) => [s, countResults[i].count ?? 0]));
     const stats = {
-      total: allLeads?.length || 0,
-      new: allLeads?.filter(l => l.status === 'new').length || 0,
-      contacted: allLeads?.filter(l => l.status === 'contacted').length || 0,
-      interested: allLeads?.filter(l => l.status === 'interested').length || 0,
-      notInterested: allLeads?.filter(l => l.status === 'not_interested').length || 0,
-      converted: allLeads?.filter(l => l.status === 'converted').length || 0,
+      total: Object.values(statusCounts).reduce((a, b) => a + b, 0),
+      new: statusCounts['new'],
+      contacted: statusCounts['contacted'],
+      interested: statusCounts['interested'],
+      notInterested: statusCounts['not_interested'],
+      converted: statusCounts['converted'],
     };
 
     // Rep names
