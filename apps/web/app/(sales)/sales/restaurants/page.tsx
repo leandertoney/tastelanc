@@ -344,7 +344,7 @@ export default function SalesRestaurantsPage() {
                               </a>
                             )}
                             {r.business_email && (
-                              <Link href={`/sales/inbox?compose=true&to=${encodeURIComponent(r.business_email)}&business=${encodeURIComponent(r.name || '')}`} className="text-blue-400 hover:text-blue-300 transition-colors" title={r.business_email}>
+                              <Link href={`/sales/inbox?compose=true&to=${encodeURIComponent(r.business_email)}&business=${encodeURIComponent(r.name || '')}&market=${encodeURIComponent(markets.find(m => m.id === r.market_id)?.slug || '')}`} className="text-blue-400 hover:text-blue-300 transition-colors" title={r.business_email}>
                                 <Mail className="w-3.5 h-3.5" />
                               </Link>
                             )}

@@ -34,6 +34,7 @@ export async function POST(request: Request) {
       ctaUrl,
       senderName,
       senderEmail,
+      marketSlug,
       inReplyToMessageId,
       threadId,
       attachments,
@@ -111,6 +112,7 @@ export async function POST(request: Request) {
       businessName: recipientName || undefined,
       senderName: senderName || BRAND.name,
       senderTitle: validSender?.title || undefined,
+      marketSlug: marketSlug || undefined,
     };
     const html = renderProfessionalEmail(emailProps);
     const text = renderProfessionalEmailPlainText(emailProps);

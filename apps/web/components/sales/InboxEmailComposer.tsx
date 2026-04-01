@@ -288,6 +288,7 @@ export default function InboxEmailComposer({ onClose, onSent, isAdmin, defaultSe
           emailBody: body,
           senderName: selectedSender.name,
           senderEmail: selectedSender.email,
+          ...(marketSlug && { marketSlug }),
           ...(replyTo?.inReplyToMessageId && {
             inReplyToMessageId: replyTo.inReplyToMessageId,
           }),

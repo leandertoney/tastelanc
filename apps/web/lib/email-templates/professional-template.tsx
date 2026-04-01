@@ -67,7 +67,7 @@ export function renderProfessionalEmail({
 
   const brand = resolveBrand(marketSlug);
   const signatureName = senderName || 'The Team';
-  const titleLine = senderTitle ? `${senderTitle}, TasteLanc | TasteCumberland` : 'TasteLanc | TasteCumberland';
+  const titleLine = senderTitle ? `${senderTitle}, ${brand.name}` : brand.name;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -111,7 +111,7 @@ export function renderProfessionalEmailPlainText({
   const brand = resolveBrand(marketSlug);
   const greeting = contactName ? `Hi ${contactName},` : 'Hello,';
   const signatureName = senderName || 'The Team';
-  const titleLine = senderTitle ? `${senderTitle}, TasteLanc | TasteCumberland` : 'TasteLanc | TasteCumberland';
+  const titleLine = senderTitle ? `${senderTitle}, ${brand.name}` : brand.name;
 
   let text = `${greeting}\n\n${personalizedBody}`;
 
