@@ -1486,9 +1486,11 @@ function applyPersonalizationToFeed(
 
   // Separate only truly fixed items and ads — everything else gets scored
   const fixedItems = items.filter((i) => i.kind === 'holiday_teaser' || i.kind === 'reels_shelf');
+  // New coupons are pinned near top — always visible regardless of personalization score
+  const pinnedCoupons = items.filter((i) => i.kind === 'new_coupon');
   const ads = items.filter((i) => i.kind === 'ad');
   const scorableItems = items.filter((i) =>
-    i.kind !== 'holiday_teaser' && i.kind !== 'reels_shelf' && i.kind !== 'ad'
+    i.kind !== 'holiday_teaser' && i.kind !== 'reels_shelf' && i.kind !== 'ad' && i.kind !== 'new_coupon'
   );
 
   // Score every item — restaurant-linked gets context boosts, neutral content scores 0
@@ -1600,9 +1602,10 @@ function applyPersonalizationToFeed(
     else discoveryUsed += 1;
   }
 
-  // Reconstruct: fixed-position → unified scored feed
+  // Reconstruct: fixed-position → pinned coupons → unified scored feed
   const reordered: PulseItem[] = [
     ...fixedItems,
+    ...pinnedCoupons,
     ...blended.map((s) => s.item),
   ];
 
