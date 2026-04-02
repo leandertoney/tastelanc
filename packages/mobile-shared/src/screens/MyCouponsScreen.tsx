@@ -181,6 +181,9 @@ export default function MyCouponsScreen() {
     );
   };
 
+  // Don't show cancelled coupons — they've been released and can be reclaimed
+  const visibleClaims = claims.filter(c => c.status !== 'cancelled');
+
   const renderItem = ({ item }: { item: CouponClaim }) => {
     const coupon = item.coupon;
     const isActive = item.status === 'claimed';
@@ -250,7 +253,7 @@ export default function MyCouponsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <FlatList
-        data={claims}
+        data={visibleClaims}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}

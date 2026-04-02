@@ -73,39 +73,54 @@ export async function POST(
       .eq('coupon_id', couponId)
       .eq('user_id', user.id);
 
-    const activeClaims = (existingClaims || []).filter(c => c.status === 'claimed' || c.status === 'redeemed');
-    if (activeClaims.length >= (coupon.max_claims_per_user || 1)) {
+    // Block only if user has an active claim or has already redeemed it.
+    // Cancelled claims are released and do NOT block re-claiming.
+    const blockingClaims = (existingClaims || []).filter(c => c.status === 'claimed' || c.status === 'redeemed');
+    if (blockingClaims.length >= (coupon.max_claims_per_user || 1)) {
+      const hasRedeemed = (existingClaims || []).some(c => c.status === 'redeemed');
       return NextResponse.json(
-        { error: 'You have already claimed this coupon' },
+        { error: hasRedeemed ? 'You have already redeemed this coupon' : 'You have already claimed this coupon' },
         { status: 400 }
       );
     }
 
-    // Create the claim — email captured for platform use only
-    const { data: claim, error: claimError } = await serviceClient
-      .from('coupon_claims')
-      .insert({
-        coupon_id: couponId,
-        user_id: user.id,
-        user_email: user.email || '',
-        status: 'claimed',
-      })
-      .select()
-      .single();
+    // Check if a cancelled row exists for this user — if so, reactivate it (unique constraint
+    // on coupon_id+user_id means we can't INSERT a second row, so UPDATE instead).
+    const cancelledClaim = (existingClaims || []).find(c => c.status === 'cancelled');
 
-    if (claimError) {
-      // Handle unique constraint violation
-      if (claimError.code === '23505') {
-        return NextResponse.json(
-          { error: 'You have already claimed this coupon' },
-          { status: 400 }
-        );
+    let claim: { id: string; coupon_id: string; status: string; claimed_at: string };
+
+    if (cancelledClaim) {
+      const { data: updated, error: updateError } = await serviceClient
+        .from('coupon_claims')
+        .update({ status: 'claimed', claimed_at: new Date().toISOString() })
+        .eq('id', cancelledClaim.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Error reactivating claim:', updateError);
+        return NextResponse.json({ error: 'Failed to claim coupon' }, { status: 500 });
       }
-      console.error('Error creating claim:', claimError);
-      return NextResponse.json(
-        { error: 'Failed to claim coupon' },
-        { status: 500 }
-      );
+      claim = updated;
+    } else {
+      // Fresh claim — insert a new row
+      const { data: inserted, error: claimError } = await serviceClient
+        .from('coupon_claims')
+        .insert({
+          coupon_id: couponId,
+          user_id: user.id,
+          user_email: user.email || '',
+          status: 'claimed',
+        })
+        .select()
+        .single();
+
+      if (claimError) {
+        console.error('Error creating claim:', claimError);
+        return NextResponse.json({ error: 'Failed to claim coupon' }, { status: 500 });
+      }
+      claim = inserted;
     }
 
     // Increment claims_count

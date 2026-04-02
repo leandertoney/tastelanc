@@ -61,6 +61,7 @@ import type { Tab } from '../components';
 import { formatCategoryName, formatTime, formatFeatureName, getFeatureIconName } from '../lib/formatters';
 import { getRestaurantCoupons, formatDiscount, claimCoupon, type Coupon } from '../lib/coupons';
 import { useRecordVisit } from '../hooks/useRadarVisits';
+import { useClaimedCouponIds } from '../hooks/useClaimedCouponIds';
 import { useUserLocation, calculateDistance } from '../hooks/useUserLocation';
 import { useRecordCheckinForSocialProof } from '../hooks/useSocialProof';
 import { earnPoints, POINT_VALUES } from '../lib/rewards';
@@ -127,7 +128,13 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const [specials, setSpecials] = useState<Special[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [claimingCouponId, setClaimingCouponId] = useState<string | null>(null);
-  const [claimedCouponIds, setClaimedCouponIds] = useState<Set<string>>(new Set());
+  const [localClaimedIds, setLocalClaimedIds] = useState<Set<string>>(new Set());
+  const serverClaimedIds = useClaimedCouponIds();
+  // Merge server state + any claims made in this session (for instant UI feedback)
+  const claimedCouponIds = useMemo(
+    () => new Set([...serverClaimedIds, ...localClaimedIds]),
+    [serverClaimedIds, localClaimedIds]
+  );
   const [events, setEvents] = useState<Event[]>([]);
   // Partner events bypass the tier gate — always visible regardless of restaurant tier
   const partnerEvents = useMemo(
@@ -486,7 +493,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
     claimCoupon(couponId)
       .then(() => {
         // Mark as claimed locally and increment count — keeps the coupon visible
-        setClaimedCouponIds(prev => new Set([...prev, couponId]));
+        setLocalClaimedIds(prev => new Set([...prev, couponId]));
         setCoupons(prev => prev.map(c =>
           c.id === couponId ? { ...c, claims_count: c.claims_count + 1 } : c
         ));
@@ -1257,7 +1264,7 @@ const useStyles = createLazyStyles((colors) => ({
   contactRowLabel: { fontSize: 14, fontWeight: '600' as const, color: colors.text },
   contactRowValue: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
   bottomSpacer: { height: 120 },
-  recommendFab: { position: 'absolute' as const, bottom: 80, right: 16, flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: colors.cardBgElevated, paddingVertical: 12, paddingHorizontal: 16, borderRadius: radius.full, borderWidth: 1, borderColor: colors.accent, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6, gap: 6 },
+  recommendFab: { position: 'absolute' as const, bottom: 24, left: 16, flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: colors.cardBgElevated, paddingVertical: 12, paddingHorizontal: 16, borderRadius: radius.full, borderWidth: 1, borderColor: colors.accent, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6, gap: 6 },
   recommendFabText: { color: colors.text, fontSize: 14, fontWeight: '600' as const },
   imHereFab: { position: 'absolute' as const, bottom: 24, right: 16, flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: colors.accent, paddingVertical: 14, paddingHorizontal: 20, borderRadius: radius.full, shadowColor: colors.accent, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8, gap: 8 },
   imHereFabRecorded: { backgroundColor: `${colors.success}30`, shadowColor: colors.success },

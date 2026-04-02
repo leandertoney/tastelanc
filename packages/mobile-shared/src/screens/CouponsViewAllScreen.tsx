@@ -22,6 +22,7 @@ import SpotifyStyleListItem from '../components/SpotifyStyleListItem';
 import SearchBar from '../components/SearchBar';
 import { trackImpression } from '../lib/impressions';
 import { useMarket } from '../context/MarketContext';
+import { useClaimedCouponIds } from '../hooks/useClaimedCouponIds';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -51,6 +52,7 @@ export default function CouponsViewAllScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { marketId } = useMarket();
   const [searchQuery, setSearchQuery] = useState('');
+  const claimedCouponIds = useClaimedCouponIds();
 
   const { data: coupons = [], isLoading, refetch, isRefetching } = useQuery({
     queryKey: queryKeys.coupons.list(marketId),
@@ -88,6 +90,7 @@ export default function CouponsViewAllScreen() {
 
   const renderItem = ({ item }: { item: CouponWithRestaurant }) => {
     const discountText = formatDiscount(item);
+    const isClaimed = claimedCouponIds.has(item.id);
 
     return (
       <SpotifyStyleListItem
@@ -97,6 +100,7 @@ export default function CouponsViewAllScreen() {
         subtitle={`${item.title} · ${formatTimeWindow(item.start_time, item.end_time)} · ${formatDays(item.days_of_week)}`}
         onPress={() => handlePress(item.restaurant.id)}
         fallbackIcon="ticket"
+        timeBadge={isClaimed ? 'Claimed ✓' : undefined}
       />
     );
   };
