@@ -30,7 +30,7 @@ import type {
 } from '../types/database';
 import { getColors, getBrand, getSupabase, hasFeature } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
-import { radius } from '../constants/spacing';
+import { radius, spacing } from '../constants/spacing';
 import { fetchEvents } from '../lib/events';
 import { trackScreenView, trackClick } from '../lib/analytics';
 import { useAuth } from '../hooks/useAuth';
@@ -698,23 +698,25 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
               ) : happyHours.length > 0 ? (
                 sortByDayProximity(happyHours).map((hh) => (
                   <View key={hh.id} style={styles.compactCard}>
-                    {hh.image_url && (
-                      <Image
-                        source={{ uri: hh.image_url }}
-                        style={styles.compactThumb}
-                        resizeMode="cover"
-                      />
+                    {hh.image_url ? (
+                      <View style={styles.compactThumb}>
+                        <Image source={{ uri: hh.image_url }} style={styles.compactThumbImg} resizeMode="cover" />
+                      </View>
+                    ) : (
+                      <View style={styles.compactThumbFallback}>
+                        <Ionicons name="beer-outline" size={28} color={colors.textMuted} />
+                      </View>
                     )}
                     <View style={styles.compactBody}>
-                      <Text style={styles.contentTitle}>{hh.name}</Text>
+                      <Text style={styles.contentTitle} numberOfLines={1}>{hh.name}</Text>
                       <Text style={styles.contentTime}>
-                        {formatTime(hh.start_time)} - {formatTime(hh.end_time)}
+                        {formatTime(hh.start_time)} – {formatTime(hh.end_time)}
                       </Text>
                       <Text style={styles.contentDays}>
                         {hh.days_of_week.length === 7 ? 'Every Day' : hh.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
                       </Text>
                       {hh.description && (
-                        <Text style={styles.contentDescription}>{hh.description}</Text>
+                        <Text style={styles.contentDescription} numberOfLines={2}>{hh.description}</Text>
                       )}
                       {hh.items && hh.items.length > 0 && (
                         <View style={styles.itemsList}>
@@ -762,12 +764,14 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
               ) : specials.length > 0 ? (
                 sortByDayProximity(specials).map((special) => (
                   <View key={special.id} style={styles.compactCard}>
-                    {special.image_url && (
-                      <Image
-                        source={{ uri: special.image_url }}
-                        style={styles.compactThumb}
-                        resizeMode="cover"
-                      />
+                    {special.image_url ? (
+                      <View style={styles.compactThumb}>
+                        <Image source={{ uri: special.image_url }} style={styles.compactThumbImg} resizeMode="cover" />
+                      </View>
+                    ) : (
+                      <View style={styles.compactThumbFallback}>
+                        <Ionicons name="pricetag-outline" size={28} color={colors.textMuted} />
+                      </View>
                     )}
                     <View style={styles.compactBody}>
                       <Text style={styles.contentTitle}>{special.name}</Text>
@@ -1242,9 +1246,11 @@ const useStyles = createLazyStyles((colors) => ({
   contentCard: { backgroundColor: colors.cardBg, borderRadius: radius.md, overflow: 'hidden' as const, marginBottom: 12 },
   contentCardBody: { padding: 16 },
   contentImage: { width: '100%' as const, height: 160 },
-  compactCard: { backgroundColor: colors.cardBg, borderRadius: radius.md, overflow: 'hidden' as const, marginBottom: 10, flexDirection: 'row' as const, alignItems: 'stretch' as const },
-  compactThumb: { width: 90, height: 90 },
-  compactBody: { flex: 1, padding: 12, justifyContent: 'center' as const },
+  compactCard: { backgroundColor: colors.cardBg, borderRadius: radius.md, marginBottom: 10, flexDirection: 'row' as const, alignItems: 'center' as const, padding: spacing.md, gap: spacing.md },
+  compactThumb: { width: 72, height: 72, borderRadius: radius.sm, overflow: 'hidden' as const, backgroundColor: colors.cardBgElevated },
+  compactThumbImg: { width: '100%' as const, height: '100%' as const },
+  compactThumbFallback: { width: 72, height: 72, borderRadius: radius.sm, backgroundColor: colors.cardBgElevated, justifyContent: 'center' as const, alignItems: 'center' as const },
+  compactBody: { flex: 1, gap: 2 },
   contentHeader: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const, marginBottom: 8 },
   contentTitle: { fontSize: 16, fontWeight: '600' as const, color: colors.text, marginBottom: 4, flex: 1 },
   contentTime: { fontSize: 14, color: colors.gold, marginBottom: 4 },
