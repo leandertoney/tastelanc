@@ -226,7 +226,7 @@ export default function RestaurantWeekBanner() {
 
           <View style={styles.textGroup}>
             <View style={styles.sponsorPill}>
-              <Text style={styles.sponsorPillText}>Official Digital Sponsor · 2026</Text>
+              <Text style={styles.sponsorPillText}>In Partnership with LCRW · 2026</Text>
             </View>
             <Text style={styles.title}>Restaurant Week</Text>
             <SponsorTicker />

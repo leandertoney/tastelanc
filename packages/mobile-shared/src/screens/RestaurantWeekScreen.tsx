@@ -286,9 +286,9 @@ function RestaurantCard({ group, appName, onPress }: { group: RestaurantGroup; a
         <Text style={styles.brandText}>{dateLabel}</Text>
       </View>
 
-      {/* Official Digital Sponsor badge */}
+      {/* Partnership badge */}
       <View style={styles.sponsorBadge}>
-        <Text style={styles.sponsorText}>OFFICIAL DIGITAL SPONSOR</Text>
+        <Text style={styles.sponsorText}>IN PARTNERSHIP WITH LCRW</Text>
       </View>
 
       {/* Flip hint */}
@@ -423,7 +423,7 @@ export default function RestaurantWeekScreen() {
       <Text style={styles.headerSubtitle}>{dateSubtitle}</Text>
 
       <View style={styles.sponsorRow}>
-        <Text style={styles.sponsorLabel}>OFFICIAL DIGITAL SPONSOR</Text>
+        <Text style={styles.sponsorLabel}>IN PARTNERSHIP WITH LCRW</Text>
       </View>
 
       {/* Restaurant List */}

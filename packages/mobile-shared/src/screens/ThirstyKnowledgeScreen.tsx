@@ -203,7 +203,7 @@ function CampaignBanner() {
     <View style={styles.campaignBanner}>
       <View style={styles.campaignRow}>
         <Ionicons name="trophy-outline" size={20} color={TFK.goldLight} />
-        <Text style={styles.campaignTitle}>We're Sponsoring Restaurant Week!</Text>
+        <Text style={styles.campaignTitle}>We're Partnering with Restaurant Week!</Text>
       </View>
       <Text style={styles.campaignBody}>
         Top scorer across all 7 nights wins "The Full Taste of Lancaster" — dinner for two at
