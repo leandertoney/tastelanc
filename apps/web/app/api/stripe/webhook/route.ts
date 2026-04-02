@@ -57,6 +57,10 @@ const relevantEvents = new Set([
   'customer.subscription.deleted',
   'invoice.payment_succeeded',
   'invoice.payment_failed',
+  'invoice.finalized',
+  'invoice.paid',
+  'invoice.marked_uncollectible',
+  'invoice.voided',
 ]);
 
 // Helper to check if price ID is a consumer subscription (includes early access)
@@ -1881,6 +1885,7 @@ export async function POST(request: Request) {
         const subscriptionId = typeof subscriptionData === 'string'
           ? subscriptionData
           : subscriptionData?.id;
+        const customerId = invoice.customer as string;
 
         if (subscriptionId) {
           // Mark consumer subscription as past due
@@ -1888,15 +1893,32 @@ export async function POST(request: Request) {
             .from('consumer_subscriptions')
             .update({ status: 'past_due' })
             .eq('stripe_subscription_id', subscriptionId);
+        }
 
-          // For restaurant subscriptions, send admin notification about failed payment
+        // Track invoice in restaurant_invoices and send admin notification
+        if (customerId) {
           const { data: restaurant } = await supabaseAdmin
             .from('restaurants')
-            .select('id, name, owner_id')
-            .eq('stripe_subscription_id', subscriptionId)
-            .single();
+            .select('id, name, tier_id, tiers(name)')
+            .eq('stripe_customer_id', customerId)
+            .maybeSingle();
 
           if (restaurant) {
+            // Upsert the invoice record
+            await supabaseAdmin
+              .from('restaurant_invoices')
+              .upsert({
+                restaurant_id: restaurant.id,
+                stripe_invoice_id: invoice.id,
+                stripe_customer_id: customerId,
+                amount_cents: invoice.amount_due || 0,
+                currency: invoice.currency || 'usd',
+                status: 'past_due',
+                due_date: invoice.due_date ? new Date(invoice.due_date * 1000).toISOString() : null,
+                invoice_url: invoice.hosted_invoice_url || null,
+              }, { onConflict: 'stripe_invoice_id' });
+
+            // Admin notification
             try {
               await resend.emails.send({
                 from: `${BRAND.name} <hello@${EMAIL_SENDER_DOMAIN}>`,
@@ -1904,20 +1926,134 @@ export async function POST(request: Request) {
                 subject: `Payment Failed: ${restaurant.name}`,
                 html: `
                   <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <h2 style="color: #f59e0b; border-bottom: 2px solid #f59e0b; padding-bottom: 10px;">Payment Failed</h2>
+                    <h2 style="color: #f59e0b; border-bottom: 2px solid #f59e0b; padding-bottom: 10px;">⚠️ Payment Failed</h2>
                     <p>A payment failed for <strong>${restaurant.name}</strong>.</p>
-                    <p>The subscription is now past due. Stripe will retry the payment automatically.</p>
-                    <p><a href="https://dashboard.stripe.com/subscriptions/${subscriptionId}">View in Stripe</a></p>
+                    <p>Amount: <strong>$${((invoice.amount_due || 0) / 100).toFixed(2)}</strong></p>
+                    <p>Invoice: <a href="${invoice.hosted_invoice_url || '#'}">${invoice.id}</a></p>
+                    <p>Current tier: <strong>${(restaurant.tiers as any)?.name || 'unknown'}</strong></p>
+                    <p>Stripe will retry automatically. If it remains unpaid, visit the <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com'}/admin/invoices">invoices dashboard</a> to downgrade or send a reminder.</p>
                   </div>
                 `,
               });
             } catch (notifyError) {
               console.error('Failed to send payment failure notification:', notifyError);
             }
+            console.log(`Payment failed for restaurant ${restaurant.name}, invoice ${invoice.id}`);
           }
-
-          console.log(`Payment failed for subscription ${subscriptionId}`);
         }
+        break;
+      }
+
+      // Record new finalized invoices for restaurants
+      case 'invoice.finalized': {
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId = invoice.customer as string;
+        if (!customerId || invoice.status === 'paid') break;
+
+        const { data: restaurant } = await supabaseAdmin
+          .from('restaurants')
+          .select('id, name')
+          .eq('stripe_customer_id', customerId)
+          .maybeSingle();
+
+        if (restaurant) {
+          await supabaseAdmin
+            .from('restaurant_invoices')
+            .upsert({
+              restaurant_id: restaurant.id,
+              stripe_invoice_id: invoice.id,
+              stripe_customer_id: customerId,
+              amount_cents: invoice.amount_due || 0,
+              currency: invoice.currency || 'usd',
+              status: 'open',
+              due_date: invoice.due_date ? new Date(invoice.due_date * 1000).toISOString() : null,
+              invoice_url: invoice.hosted_invoice_url || null,
+            }, { onConflict: 'stripe_invoice_id' });
+          console.log(`Recorded finalized invoice ${invoice.id} for ${restaurant.name}`);
+        }
+        break;
+      }
+
+      // Auto-restore tier when invoice is paid
+      case 'invoice.paid': {
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId = invoice.customer as string;
+        if (!customerId) break;
+
+        // Mark invoice as paid
+        const { data: invoiceRecord } = await supabaseAdmin
+          .from('restaurant_invoices')
+          .update({ status: 'paid', paid_at: new Date().toISOString() })
+          .eq('stripe_invoice_id', invoice.id)
+          .select('restaurant_id, tier_before_downgrade_id')
+          .maybeSingle();
+
+        // If we downgraded this restaurant, restore their tier
+        if (invoiceRecord?.tier_before_downgrade_id) {
+          const { data: restaurant } = await supabaseAdmin
+            .from('restaurants')
+            .update({ tier_id: invoiceRecord.tier_before_downgrade_id })
+            .eq('id', invoiceRecord.restaurant_id)
+            .select('name, tiers(name)')
+            .maybeSingle();
+
+          if (restaurant) {
+            // Clear the downgrade marker
+            await supabaseAdmin
+              .from('restaurant_invoices')
+              .update({ tier_before_downgrade_id: null, downgraded_at: null })
+              .eq('stripe_invoice_id', invoice.id);
+
+            // Notify admin + send confirmation to restaurant
+            const { data: stripeCustomer } = await supabaseAdmin
+              .from('restaurants')
+              .select('contact_email, contact_name, name')
+              .eq('id', invoiceRecord.restaurant_id)
+              .maybeSingle();
+
+            const contactEmail = stripeCustomer?.contact_email;
+            const contactName = stripeCustomer?.contact_name || 'there';
+            const restaurantName = stripeCustomer?.name || restaurant.name;
+            const restoredTierName = (restaurant.tiers as any)?.name || 'premium';
+
+            if (contactEmail) {
+              try {
+                await resend.emails.send({
+                  from: 'TasteLanc Partners <partners@tastelanc.com>',
+                  to: [contactEmail],
+                  cc: ADMIN_NOTIFICATION_EMAILS,
+                  subject: `You're back! ${restaurantName} restored to ${restoredTierName.charAt(0).toUpperCase() + restoredTierName.slice(1)}`,
+                  html: `
+                    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                      <h2 style="color: #22c55e; border-bottom: 2px solid #22c55e; padding-bottom: 10px;">✅ Payment Received — Account Restored!</h2>
+                      <p>Hi ${contactName},</p>
+                      <p>Great news! We received your payment and <strong>${restaurantName}</strong> has been restored to <strong>${restoredTierName.charAt(0).toUpperCase() + restoredTierName.slice(1)}</strong> immediately.</p>
+                      <p>All your premium features are back live on the app. Thank you for your continued partnership — we truly appreciate it!</p>
+                      <p>If you have any questions, just reply to this email.</p>
+                      <p>Talk soon,<br/>The TasteLanc Partners Team<br/><a href="mailto:partners@tastelanc.com">partners@tastelanc.com</a></p>
+                    </div>
+                  `,
+                });
+              } catch (emailErr) {
+                console.error('Failed to send restoration email:', emailErr);
+              }
+            }
+
+            console.log(`Auto-restored ${restaurantName} to tier ${restoredTierName} after invoice payment`);
+          }
+        }
+        break;
+      }
+
+      case 'invoice.marked_uncollectible':
+      case 'invoice.voided': {
+        const invoice = event.data.object as Stripe.Invoice;
+        const newStatus = event.type === 'invoice.voided' ? 'void' : 'uncollectible';
+        await supabaseAdmin
+          .from('restaurant_invoices')
+          .update({ status: newStatus })
+          .eq('stripe_invoice_id', invoice.id);
+        console.log(`Invoice ${invoice.id} marked as ${newStatus}`);
         break;
       }
     }

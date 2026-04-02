@@ -27,6 +27,7 @@ import {
   Clover,
   PartyPopper,
   UtensilsCrossed,
+  Receipt,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -50,6 +51,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/sales', icon: HeadphonesIcon, label: 'Sales CRM', highlight: true },
   // REVENUE - Money-generating products
   { href: '/admin/paid-members', icon: CreditCard, label: 'Restaurants', highlight: true, section: 'Revenue' },
+  { href: '/admin/invoices', icon: Receipt, label: 'Invoice Tracker', highlight: true },
   { href: '/admin/self-promoters', icon: Music, label: 'Self-Promoters', highlight: true },
   { href: '/admin/sponsored-ads', icon: Megaphone, label: 'Sponsored Ads', highlight: true },
   // TEAM - People management
