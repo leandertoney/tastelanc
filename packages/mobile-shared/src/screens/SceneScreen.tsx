@@ -274,6 +274,18 @@ interface CouponClaimItem {
   date: string;
 }
 
+interface NewCouponItem {
+  kind: 'new_coupon';
+  id: string;
+  restaurantId: string;
+  restaurantName: string;
+  couponTitle: string;
+  discountLabel: string;
+  remaining: number | null;
+  maxTotal: number | null;
+  date: string;
+}
+
 interface CrossMarketPromoItem {
   kind: 'cross_market_promo';
   id: string;
@@ -282,7 +294,7 @@ interface CrossMarketPromoItem {
 type PulseItem =
   | VideoItem | PhotoItem | ItineraryItem | BuzzItem | AdItem | ReelsShelfItem
   | SpecialItem | HappyHourItem | EventItem | NewRestaurantItem | BlogItem
-  | HolidayTeaserItem | CouponClaimItem | CrossMarketPromoItem;
+  | HolidayTeaserItem | CouponClaimItem | NewCouponItem | CrossMarketPromoItem;
 
 function getBehavioralEventMeta(
   item: PulseItem
@@ -296,6 +308,7 @@ function getBehavioralEventMeta(
     case 'event':
     case 'new_restaurant':
     case 'coupon_claim':
+    case 'new_coupon':
       return { restaurantId: item.restaurantId, feedItemKind: item.kind };
     default:
       return null;
@@ -419,10 +432,20 @@ function usePulseFeed() {
         .order('claimed_at', { ascending: false })
         .limit(8);
 
-      const [videosRes, adsRes, buzzRes, itinerariesRes, specialsRes, eventsRes, newRestaurantsRes, blogRes, happyHoursRes, holidayRes, couponClaimsRes] = await Promise.all([
+      // Active coupons — surface directly regardless of claim count
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      let activeCouponsQuery = supabase
+        .from('coupons')
+        .select('id, title, discount_type, discount_value, max_claims_total, claims_count, created_at, restaurant:restaurants!inner(id, name, market_id)')
+        .eq('is_active', true)
+        .gte('created_at', thirtyDaysAgo)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      const [videosRes, adsRes, buzzRes, itinerariesRes, specialsRes, eventsRes, newRestaurantsRes, blogRes, happyHoursRes, holidayRes, couponClaimsRes, activeCouponsRes] = await Promise.all([
         videosQuery, adsQuery, buzzPromise, itinerariesQuery,
         specialsQuery, eventsQuery, newRestaurantsQuery, blogQuery, happyHoursPromise, holidayQuery,
-        couponClaimsQuery,
+        couponClaimsQuery, activeCouponsQuery,
       ]);
 
       const items: PulseItem[] = [];
@@ -636,6 +659,35 @@ function usePulseFeed() {
           remaining,
           maxTotal: coupon.max_claims_total,
           date: claim.claimed_at,
+        });
+      });
+
+      // ── Active coupons ("New deal available")
+      // Track coupon IDs already shown as social proof so we don't double-show
+      const activeCoupons = activeCouponsRes.data || [];
+      activeCoupons.forEach((coupon: any) => {
+        if (!coupon?.restaurant?.id) return;
+        if (marketId && coupon.restaurant.market_id !== marketId) return;
+        // Skip if already shown as a recent claim
+        if (seenCouponIds.has(coupon.id)) return;
+        const remaining = coupon.max_claims_total ? coupon.max_claims_total - coupon.claims_count : null;
+        const discountLabel = coupon.discount_type === 'percent_off' && coupon.discount_value
+          ? `${coupon.discount_value}% Off`
+          : coupon.discount_type === 'dollar_off' && coupon.discount_value
+            ? `$${coupon.discount_value} Off`
+            : coupon.discount_type === 'bogo' ? 'BOGO'
+            : coupon.discount_type === 'free_item' ? 'Free Item'
+            : coupon.title;
+        items.push({
+          kind: 'new_coupon',
+          id: `new-coupon-${coupon.id}`,
+          restaurantId: coupon.restaurant.id,
+          restaurantName: coupon.restaurant.name,
+          couponTitle: coupon.title,
+          discountLabel,
+          remaining,
+          maxTotal: coupon.max_claims_total,
+          date: coupon.created_at,
         });
       });
 
@@ -1344,6 +1396,51 @@ function CouponClaimCard({ item, onPress }: { item: CouponClaimItem; onPress: ()
   );
 }
 
+// ─── New Coupon card ("New deal available") ───────────────────────────────────
+
+function NewCouponCard({ item, onPress }: { item: NewCouponItem; onPress: () => void }) {
+  const styles = useStyles();
+  const colors = getColors();
+
+  const urgencyText = item.remaining != null && item.maxTotal != null
+    ? `Only ${item.remaining} of ${item.maxTotal} left!`
+    : null;
+
+  return (
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
+      <PostHeader
+        avatarIcon="pricetag"
+        avatarBg={withAlpha(colors.accent, 0.15)}
+        title={item.restaurantName}
+        subtitle="New deal available"
+      />
+      <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.md }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          <View style={{ backgroundColor: colors.accent, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+            <Text style={{ color: colors.textOnAccent, fontSize: 13, fontWeight: '700' }}>
+              {item.discountLabel}
+            </Text>
+          </View>
+          <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600', flex: 1 }} numberOfLines={1}>
+            {item.couponTitle}
+          </Text>
+        </View>
+        {urgencyText && (
+          <Text style={{ color: '#ef4444', fontSize: 13, fontWeight: '600' }}>
+            {urgencyText}
+          </Text>
+        )}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 6 }}>
+          <Ionicons name="arrow-forward-circle" size={18} color={colors.accent} />
+          <Text style={{ color: colors.accent, fontSize: 14, fontWeight: '600' }}>
+            Claim this deal
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
 // ─── Filter bar ───────────────────────────────────────────────────────────────
 
 const FILTERS: { key: FilterType; label: string }[] = [
@@ -1425,7 +1522,7 @@ function applyPersonalizationToFeed(
     } else if (item.kind === 'buzz') {
       restaurantId = item.restaurantId;
       itemSignals.checkinCount7d = item.checkinCount7d;
-    } else if (item.kind === 'coupon_claim') {
+    } else if (item.kind === 'coupon_claim' || item.kind === 'new_coupon') {
       restaurantId = item.restaurantId;
     } else if (item.kind === 'video' || item.kind === 'photo') {
       // Score by the restaurant the content is from
@@ -1650,7 +1747,7 @@ export default function SceneScreen() {
 
     if (activeFilter === 'all') return true;
     if (activeFilter === 'trending') return item.kind === 'buzz' || item.kind === 'new_restaurant';
-    if (activeFilter === 'deals') return item.kind === 'special' || item.kind === 'happy_hour' || item.kind === 'holiday_teaser' || item.kind === 'coupon_claim';
+    if (activeFilter === 'deals') return item.kind === 'special' || item.kind === 'happy_hour' || item.kind === 'holiday_teaser' || item.kind === 'coupon_claim' || item.kind === 'new_coupon';
     if (activeFilter === 'events') return item.kind === 'event';
     if (activeFilter === 'photos') return item.kind === 'video' || item.kind === 'photo';
     if (activeFilter === 'itineraries') return item.kind === 'itinerary';
@@ -1797,6 +1894,8 @@ export default function SceneScreen() {
       }
       case 'coupon_claim':
         return <CouponClaimCard item={item} onPress={() => handleBehavioralRestaurantPress(item)} />;
+      case 'new_coupon':
+        return <NewCouponCard item={item} onPress={() => handleBehavioralRestaurantPress(item)} />;
       case 'cross_market_promo':
         return <CrossMarketPromoCard cities={otherCities} />;
     }

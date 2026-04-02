@@ -1,0 +1,190 @@
+import 'react-native-gesture-handler';
+import { useEffect, useState } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Updates from 'expo-updates';
+import { initTheme } from '@tastelanc/mobile-shared/src/config/theme';
+import { ThemeProvider } from '@tastelanc/mobile-shared/src/context/ThemeContext';
+import Navigation from './src/navigation';
+import { ErrorBoundary } from './src/components';
+import { queryClient } from './src/lib/queryClient';
+import { initSentry, Sentry } from './src/lib/sentry';
+import { saveCrash, getAndClearLastCrash } from './src/lib/crashLog';
+import { colors, colorSchemes } from './src/constants/colors';
+import { BRAND } from './src/config/brand';
+import { supabase } from './src/lib/supabase';
+import { env } from './src/lib/env';
+import { NEIGHBORHOOD_BOUNDARIES } from './src/data/neighborhoodBoundaries';
+import { MARKET_CENTER } from './src/config/market';
+
+// Initialize Sentry as early as possible (before React renders)
+initSentry();
+
+// Initialize shared theme singleton so shared components can access brand/colors/assets
+initTheme(BRAND, colors, {
+  aiAvatar: require('./assets/images/sandie_avatar.png'),
+  aiAnimated: require('./assets/animations/sandie_animated.mp4'),
+  appIcon: require('./assets/icon.png'),
+  splashVideo: require('./assets/animation/tasteoceancity_splash.mp4'),
+  onboardingHero: require('./assets/images/onboarding/soundfamiliar.png'),
+}, supabase, env.SUPABASE_ANON_KEY, NEIGHBORHOOD_BOUNDARIES, MARKET_CENTER);
+
+// Global JS error handler — catches errors that escape React tree
+const originalHandler = ErrorUtils.getGlobalHandler();
+ErrorUtils.setGlobalHandler((error, isFatal) => {
+  saveCrash(error, isFatal ? 'GlobalHandler:fatal' : 'GlobalHandler:non-fatal');
+  originalHandler?.(error, isFatal);
+});
+
+function App() {
+  useEffect(() => {
+    // Clear old corrupted React Query cache keys from AsyncStorage
+    (async () => {
+      try {
+        await AsyncStorage.multiRemove([
+          'TASTELANC_QUERY_CACHE',
+          'TASTELANC_QUERY_CACHE_V2',
+          '@theme_preference', // always boot with colorSchemes.default ('light')
+        ]);
+      } catch {
+        // Non-critical — continue even if cleanup fails
+      }
+    })();
+
+    // Log any crash from a previous session
+    getAndClearLastCrash().then((crash) => {
+      if (crash) {
+        console.warn('[CrashLog] Previous crash recovered:', JSON.stringify(crash, null, 2));
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (__DEV__) return;
+    (async () => {
+      try {
+        console.log('[Updates] Checking for update...');
+        // 5-second timeout prevents hanging on slow/restricted networks (e.g. Apple review)
+        const checkWithTimeout = Promise.race([
+          Updates.checkForUpdateAsync(),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('OTA check timeout')), 5000)
+          ),
+        ]);
+        const { isAvailable } = await checkWithTimeout;
+        if (isAvailable) {
+          console.log('[Updates] Update available, downloading...');
+          await Updates.fetchUpdateAsync();
+          console.log('[Updates] Downloaded, reloading app...');
+          await Updates.reloadAsync();
+        } else {
+          console.log('[Updates] App is up to date');
+        }
+      } catch (e) {
+        console.warn('[Updates] Check failed:', e);
+      }
+    })();
+  }, []);
+
+  return (
+    <ThemeProvider colorSchemes={colorSchemes}>
+      <QueryClientProvider client={queryClient}>
+        <GestureHandlerRootView style={styles.container}>
+          <SafeAreaProvider>
+            <ErrorBoundary level="screen" fallback={<RootErrorFallback />}>
+              <Navigation />
+            </ErrorBoundary>
+          </SafeAreaProvider>
+        </GestureHandlerRootView>
+      </QueryClientProvider>
+    </ThemeProvider>
+  );
+}
+
+// Wrap with Sentry for unhandled JS error capture (event handlers, async, etc.)
+export default Sentry.wrap(App);
+
+// Last-resort fallback when the root ErrorBoundary exhausts all auto-retries.
+// Auto-restarts the app via Updates.reloadAsync() after 5 seconds.
+function RootErrorFallback() {
+  const [restarting, setRestarting] = useState(false);
+
+  const handleRestart = async () => {
+    setRestarting(true);
+    try {
+      if (!__DEV__) {
+        await Updates.reloadAsync();
+      }
+    } catch {
+      // If reload fails, user can still tap the button again
+      setRestarting(false);
+    }
+  };
+
+  // Auto-attempt restart after 5 seconds
+  useEffect(() => {
+    const t = setTimeout(handleRestart, 5000);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <View style={styles.errorContainer}>
+      <Text style={styles.errorTitle}>Something Went Wrong</Text>
+      <Text style={styles.errorMessage}>
+        {restarting ? 'Restarting...' : 'We hit an unexpected error. Tap below to restart.'}
+      </Text>
+      <TouchableOpacity
+        onPress={handleRestart}
+        disabled={restarting}
+        style={[styles.restartButton, restarting && styles.restartButtonDisabled]}
+      >
+        <Text style={styles.restartButtonText}>
+          {restarting ? 'Restarting...' : 'Restart App'}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    padding: 24,
+  },
+  errorTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: 8,
+  },
+  errorMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 24,
+  },
+  restartButton: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 28,
+  },
+  restartButtonDisabled: {
+    opacity: 0.6,
+  },
+  restartButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

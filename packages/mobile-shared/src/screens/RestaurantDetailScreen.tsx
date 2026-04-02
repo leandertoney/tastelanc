@@ -35,9 +35,9 @@ import { fetchEvents } from '../lib/events';
 import { trackScreenView, trackClick } from '../lib/analytics';
 import { useAuth } from '../hooks/useAuth';
 import { useEmailGate } from '../hooks/useEmailGate';
+import { useSignUpModal } from '../context/SignUpModalContext';
 import { useMarket } from '../context/MarketContext';
 import { useFavorites, useToggleFavorite } from '../hooks';
-import { useIsWishlisted, useToggleWishlist } from '../hooks/useWishlist';
 import {
   TagChip,
   RatingStars,
@@ -109,16 +109,16 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const brand = getBrand();
   const supabase = getSupabase();
   const { id } = route.params;
-  const { userId } = useAuth();
+  const { userId, isAnonymous } = useAuth();
   const { requireEmailGate } = useEmailGate();
+  const { showSignUpModal } = useSignUpModal();
   const { marketId } = useMarket();
 
   // Use hooks for favorites - handles signup modal automatically
   const { data: favorites = [] } = useFavorites();
   const toggleFavoriteMutation = useToggleFavorite();
   const isFavorite = favorites.includes(id);
-  const isWishlisted = useIsWishlisted(id);
-  const { mutate: toggleWishlist } = useToggleWishlist();
+
 
   const [restaurant, setRestaurant] = useState<RestaurantWithTier | null>(null);
   const [tierName, setTierName] = useState<SubscriptionTier | null>(null);
@@ -474,22 +474,30 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const hasFeaturedContent = hasHappyHours || hasSpecials || hasEvents || hasCoupons;
 
   const handleClaimCoupon = (couponId: string) => {
-    requireEmailGate(async () => {
-      setClaimingCouponId(couponId);
-      try {
-        await claimCoupon(couponId);
+    // Coupons require a real signed-in account — anonymous/unauthenticated users must sign up
+    if (!userId || isAnonymous) {
+      showSignUpModal({
+        action: 'claim coupons and save your favorites',
+        onSuccess: () => handleClaimCoupon(couponId),
+      });
+      return;
+    }
+    setClaimingCouponId(couponId);
+    claimCoupon(couponId)
+      .then(() => {
         // Mark as claimed locally and increment count — keeps the coupon visible
         setClaimedCouponIds(prev => new Set([...prev, couponId]));
         setCoupons(prev => prev.map(c =>
           c.id === couponId ? { ...c, claims_count: c.claims_count + 1 } : c
         ));
         Alert.alert('Coupon Claimed!', 'Go to My Coupons in your profile to use it at the restaurant.');
-      } catch (err: any) {
+      })
+      .catch((err: any) => {
         Alert.alert('Could not claim', err.message || 'Please try again.');
-      } finally {
+      })
+      .finally(() => {
         setClaimingCouponId(null);
-      }
-    });
+      });
   };
 
   // Get today's hours
@@ -561,15 +569,15 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
 
-          {/* Bookmark / Bucket List Button */}
+          {/* Favorite Button */}
           <TouchableOpacity
             style={styles.bookmarkButton}
-            onPress={() => toggleWishlist(id)}
+            onPress={handleFavoritePress}
           >
             <Ionicons
-              name={isWishlisted ? 'bookmark' : 'bookmark-outline'}
+              name={isFavorite ? 'heart' : 'heart-outline'}
               size={22}
-              color="#FFFFFF"
+              color={isFavorite ? colors.accent : '#FFFFFF'}
             />
           </TouchableOpacity>
 
