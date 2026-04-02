@@ -10,8 +10,10 @@ import {
   Loader2,
   Trash2,
   Music,
+  Music2,
   Mic2,
   Laugh,
+  HelpCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import PromoterEventWizard from '@/components/promoter/PromoterEventWizard';
@@ -35,6 +37,8 @@ const EVENT_TYPE_ICONS: Record<string, React.ElementType> = {
   dj: Music,
   karaoke: Mic2,
   comedy: Laugh,
+  trivia: HelpCircle,
+  music_bingo: Music2,
 };
 
 export default function PromoterEventsPage() {

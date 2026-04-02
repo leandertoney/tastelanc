@@ -1,10 +1,12 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { View, FlatList, ViewToken } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import EntertainmentCard, { ENTERTAINMENT_CARD_SIZE } from './EntertainmentCard';
+import TFKEntertainmentCard from './TFKEntertainmentCard';
 import PartnerCTACard from './PartnerCTACard';
+import PartnerContactModal from './PartnerContactModal';
 import SectionHeader from './SectionHeader';
 import Spacer from './Spacer';
 import { fetchEntertainmentEvents, ApiEvent, ENTERTAINMENT_TYPES, getEventVenueName } from '../lib/events';
@@ -15,10 +17,12 @@ import { spacing } from '../constants/spacing';
 
 import type { DayOfWeek, EventType } from '../types/database';
 import { useMarket } from '../context/MarketContext';
+import { getBrand } from '../config/theme';
 import { trackClick } from '../lib/analytics';
 import { trackImpression } from '../lib/impressions';
 
 const CTA_ITEM_ID = '__partner_cta__';
+const TFK_ITEM_ID = '__tfk_card__';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -30,6 +34,7 @@ interface EntertainmentDisplayItem {
   venue?: string;
   imageUrl?: string;
   restaurantId?: string;
+  isTFK?: boolean;
   originalEvent?: ApiEvent;
 }
 
@@ -102,6 +107,9 @@ function formatEventTime(startTime: string, endTime: string | null): string {
 export default function EntertainmentSection() {
   const navigation = useNavigation<NavigationProp>();
   const { marketId } = useMarket();
+  const brand = getBrand();
+  const isLancaster = brand.marketSlug === 'lancaster-pa';
+  const [tipModalVisible, setTipModalVisible] = useState(false);
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['entertainmentEvents', marketId],
@@ -121,6 +129,7 @@ export default function EntertainmentSection() {
     venue: getEventVenueName(event),
     imageUrl: event.image_url ?? undefined,
     restaurantId: event.restaurant?.id,
+    isTFK: event.partner_slug === 'thirsty-for-knowledge',
     originalEvent: event,
   }));
 
@@ -151,15 +160,19 @@ export default function EntertainmentSection() {
 
   const finalDisplayData = displayData;
 
-  // Add CTA item at the end
-  const dataWithCTA = [...finalDisplayData, { id: CTA_ITEM_ID } as EntertainmentDisplayItem];
+  // Add TFK card at position 0 (Lancaster-only), CTA at the end
+  const tfkItem = isLancaster ? [{ id: TFK_ITEM_ID } as EntertainmentDisplayItem] : [];
+  const dataWithCTA = [...tfkItem, ...finalDisplayData, { id: CTA_ITEM_ID } as EntertainmentDisplayItem];
 
   const styles = useStyles();
 
-  // Hide only when query has settled and there's genuinely no data
-  if (finalDisplayData.length === 0) {
+  // Hide only when query has settled and there's genuinely no data (TFK card keeps Lancaster visible)
+  if (finalDisplayData.length === 0 && !isLancaster) {
     if (isLoading || isFetching) return <View />;
     return null;
+  }
+  if (finalDisplayData.length === 0 && isLancaster && (isLoading || isFetching)) {
+    return <View />;
   }
 
   return (
@@ -175,15 +188,19 @@ export default function EntertainmentSection() {
       <FlatList
         data={dataWithCTA}
         renderItem={({ item }) => {
+          if (item.id === TFK_ITEM_ID) {
+            return <TFKEntertainmentCard />;
+          }
           if (item.id === CTA_ITEM_ID) {
             return (
               <PartnerCTACard
-                icon="calendar"
-                headline="Hosting events?"
-                subtext="Get your events featured here"
-                category="entertainment"
+                icon="musical-notes"
+                headline="Hosting something?"
+                subtext="Let us know and we'll get you listed"
+                category="entertainmentTip"
                 width={ENTERTAINMENT_CARD_SIZE}
                 height={ENTERTAINMENT_CARD_SIZE}
+                onContactPress={() => setTipModalVisible(true)}
               />
             );
           }
@@ -194,6 +211,7 @@ export default function EntertainmentSection() {
               time={item.time}
               venue={item.venue}
               imageUrl={item.imageUrl}
+              isTFK={item.isTFK}
               onPress={item.originalEvent ? () => handleEventPress(item.originalEvent!) : undefined}
             />
           );
@@ -206,6 +224,11 @@ export default function EntertainmentSection() {
         decelerationRate="fast"
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
+      />
+      <PartnerContactModal
+        visible={tipModalVisible}
+        onClose={() => setTipModalVisible(false)}
+        category="entertainmentTip"
       />
     </View>
   );

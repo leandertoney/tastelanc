@@ -106,11 +106,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate event type - performance-based only
-    const allowedTypes = ['live_music', 'dj', 'karaoke', 'comedy'];
+    // Validate event type
+    const allowedTypes = ['live_music', 'dj', 'karaoke', 'comedy', 'trivia', 'music_bingo'];
     if (!allowedTypes.includes(event_type)) {
       return NextResponse.json(
-        { error: 'Invalid event type. Allowed: live_music, dj, karaoke, comedy' },
+        { error: 'Invalid event type. Allowed: live_music, dj, karaoke, comedy, trivia, music_bingo' },
         { status: 400 }
       );
     }

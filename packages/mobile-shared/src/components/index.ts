@@ -37,6 +37,8 @@ export { default as TierLockedEmptyState } from './TierLockedEmptyState';
 export { default as StPatricksDayBanner } from './StPatricksDayBanner';
 export { default as RestaurantWeekBanner } from './RestaurantWeekBanner';
 export { default as CoffeeChocolateTrailBanner } from './CoffeeChocolateTrailBanner';
+export { default as ThirstyKnowledgeCard } from './ThirstyKnowledgeCard';
+export { default as TFKEntertainmentCard } from './TFKEntertainmentCard';
 export { default as PartyBanner } from './PartyBanner';
 export { default as CouponsSection } from './CouponsSection';
 export { default as BasicTierAlternativesSection } from './BasicTierAlternativesSection';

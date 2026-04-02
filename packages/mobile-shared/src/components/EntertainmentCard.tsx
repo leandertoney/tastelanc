@@ -1,5 +1,8 @@
 import { View, Text, TouchableOpacity, ImageBackground } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+
+const TFK_NAVY = '#0D1B2A';
+const TFK_GOLD = '#FCD34D';
 import type { EventType } from '../types/database';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
@@ -41,6 +44,7 @@ interface EntertainmentCardProps {
   time: string;
   venue?: string;
   imageUrl?: string;
+  isTFK?: boolean;
   onPress?: () => void;
 }
 
@@ -48,6 +52,7 @@ export default function EntertainmentCard({
   name,
   eventType,
   imageUrl,
+  isTFK,
   onPress,
 }: EntertainmentCardProps) {
   const styles = useStyles();
@@ -55,12 +60,21 @@ export default function EntertainmentCard({
   const icon = EVENT_TYPE_ICONS[eventType] || 'calendar';
   const typeLabel = EVENT_TYPE_LABELS[eventType] || 'Event';
 
+  const tfkBadge = isTFK ? (
+    <View style={styles.tfkBadge}>
+      <Ionicons name="bulb" size={10} color={TFK_GOLD} />
+      <Text style={styles.tfkBadgeText}>TFK</Text>
+    </View>
+  ) : null;
+
   const cardContent = (
     <View style={styles.overlay}>
       {/* Event type badge - top left */}
       <View style={styles.badge}>
         <Text style={styles.badgeText}>{typeLabel}</Text>
       </View>
+      {/* TFK partner badge - bottom right */}
+      {tfkBadge}
     </View>
   );
 
@@ -99,6 +113,7 @@ export default function EntertainmentCard({
         <View style={styles.iconContainer}>
           <Ionicons name={icon} size={48} color={colors.accent} />
         </View>
+        {tfkBadge}
       </View>
     </TouchableOpacity>
   );
@@ -154,5 +169,25 @@ const useStyles = createLazyStyles((colors) => ({
     fontSize: 10,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  tfkBadge: {
+    position: 'absolute' as const,
+    bottom: spacing.xs,
+    right: spacing.xs,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 3,
+    backgroundColor: TFK_NAVY,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: TFK_GOLD,
+    paddingHorizontal: 5,
+    paddingVertical: 3,
+  },
+  tfkBadgeText: {
+    fontSize: 9,
+    fontWeight: '800' as const,
+    color: TFK_GOLD,
+    letterSpacing: 0.5,
   },
 }));

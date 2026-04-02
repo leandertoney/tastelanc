@@ -144,6 +144,7 @@ export interface Event {
   cover_charge: number | null;
   image_url: string | null;
   is_active: boolean;
+  partner_slug?: string | null;
 }
 
 export interface HappyHour {

@@ -129,6 +129,15 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const [claimingCouponId, setClaimingCouponId] = useState<string | null>(null);
   const [claimedCouponIds, setClaimedCouponIds] = useState<Set<string>>(new Set());
   const [events, setEvents] = useState<Event[]>([]);
+  // Partner events bypass the tier gate — always visible regardless of restaurant tier
+  const partnerEvents = useMemo(
+    () => events.filter((e) => e.partner_slug === 'thirsty-for-knowledge'),
+    [events]
+  );
+  const regularEvents = useMemo(
+    () => events.filter((e) => !e.partner_slug),
+    [events]
+  );
   const [menus, setMenus] = useState<Menu[]>([]);
   const [menusLoading, setMenusLoading] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -835,23 +844,70 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
           {/* Events Tab */}
           {activeTab === 'events' && (
             <View style={styles.tabSection}>
+              {/* Partner trivia events — always visible, no tier gate */}
+              {partnerEvents.length > 0 && (
+                <View style={styles.partnerEventsBlock}>
+                  <View style={styles.partnerEventsBadge}>
+                    <Ionicons name="bulb" size={13} color="#FCD34D" />
+                    <Text style={styles.partnerEventsBadgeText}>Thirsty for Knowledge</Text>
+                  </View>
+                  {partnerEvents.map((event) => (
+                    <TouchableOpacity
+                      key={event.id}
+                      style={styles.contentCard}
+                      activeOpacity={0.8}
+                      onPress={() => navigation.navigate('EventDetail', { event: event as any })}
+                    >
+                      {event.image_url && (
+                        <Image
+                          source={{ uri: event.image_url }}
+                          style={styles.contentImage}
+                          resizeMode="cover"
+                        />
+                      )}
+                      <View style={styles.contentCardBody}>
+                        <View style={styles.contentHeader}>
+                          <Text style={styles.contentTitle}>{event.name}</Text>
+                          <TagChip label="Trivia" variant="info" />
+                        </View>
+                        {event.performer_name && (
+                          <Text style={styles.contentPerformer}>{event.performer_name}</Text>
+                        )}
+                        <Text style={styles.contentTime}>
+                          {formatTime(event.start_time)}
+                          {event.end_time && ` - ${formatTime(event.end_time)}`}
+                        </Text>
+                        {event.is_recurring && (
+                          <Text style={styles.contentDays}>
+                            {event.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
+                          </Text>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              {/* Regular events — tier-gated as before */}
               {!hasEventsAccess(tierName) ? (
-                <TierLockedEmptyState
-                  featureName="Events"
-                  restaurantName={restaurant.name}
-                  restaurantId={restaurant.id}
-                  tier={tierName}
-                  icon="calendar-outline"
-                  itemCount={events.length}
-                  previewText={events.length > 0 ? 'Live music, trivia, and more' : undefined}
-                  userId={userId}
-                  categories={restaurant.categories}
-                  cuisine={restaurant.cuisine}
-                  marketId={marketId}
-                  onAlternativePress={(altId) => navigation.navigate('RestaurantDetail', { id: altId })}
-                />
-              ) : events.length > 0 ? (
-                events.map((event) => (
+                regularEvents.length > 0 || partnerEvents.length === 0 ? (
+                  <TierLockedEmptyState
+                    featureName="Events"
+                    restaurantName={restaurant.name}
+                    restaurantId={restaurant.id}
+                    tier={tierName}
+                    icon="calendar-outline"
+                    itemCount={regularEvents.length}
+                    previewText={regularEvents.length > 0 ? 'Live music, trivia, and more' : undefined}
+                    userId={userId}
+                    categories={restaurant.categories}
+                    cuisine={restaurant.cuisine}
+                    marketId={marketId}
+                    onAlternativePress={(altId) => navigation.navigate('RestaurantDetail', { id: altId })}
+                  />
+                ) : null
+              ) : regularEvents.length > 0 ? (
+                regularEvents.map((event) => (
                   <View key={event.id} style={styles.contentCard}>
                     {event.image_url && (
                       <Image
@@ -883,13 +939,13 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                     </View>
                   </View>
                 ))
-              ) : (
+              ) : partnerEvents.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Ionicons name="calendar-outline" size={48} color={colors.textSecondary} />
                   <Text style={styles.emptyText}>No Events</Text>
                   <Text style={styles.emptySubtext}>This restaurant hasn't added events yet</Text>
                 </View>
-              )}
+              ) : null}
             </View>
           )}
 
@@ -1146,6 +1202,9 @@ const useStyles = createLazyStyles((colors) => ({
   sectionContent: { paddingHorizontal: 16 },
   tabContent: { minHeight: 200 },
   tabSection: { padding: 16 },
+  partnerEventsBlock: { marginBottom: 16 },
+  partnerEventsBadge: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 5, marginBottom: 10, alignSelf: 'flex-start' as const, backgroundColor: '#0D1B2A', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(252,211,77,0.5)', paddingHorizontal: 8, paddingVertical: 4 },
+  partnerEventsBadgeText: { fontSize: 12, fontWeight: '800' as const, color: '#FCD34D', letterSpacing: 0.3 },
   contentCard: { backgroundColor: colors.cardBg, borderRadius: radius.md, overflow: 'hidden' as const, marginBottom: 12 },
   contentCardBody: { padding: 16 },
   contentImage: { width: '100%' as const, height: 160 },

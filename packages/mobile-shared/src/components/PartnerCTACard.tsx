@@ -6,7 +6,7 @@ import { createLazyStyles } from '../utils/lazyStyles';
 import { withAlpha } from '../utils/colorUtils';
 import { radius, spacing } from '../constants/spacing';
 
-type ContactCategory = 'restaurant' | 'happy_hour' | 'entertainment' | 'event';
+type ContactCategory = 'restaurant' | 'happy_hour' | 'entertainment' | 'event' | 'eventTip' | 'entertainmentTip';
 
 interface PartnerCTACardProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -55,7 +55,9 @@ export default function PartnerCTACard({
           <Text style={styles.subtext}>{subtext}</Text>
 
           <View style={styles.ctaButton}>
-            <Text style={styles.ctaText}>Contact Us</Text>
+            <Text style={styles.ctaText}>
+              {category === 'eventTip' || category === 'entertainmentTip' ? 'Let Us Know' : 'Contact Us'}
+            </Text>
             <Ionicons name="arrow-forward" size={16} color={colors.text} />
           </View>
         </View>

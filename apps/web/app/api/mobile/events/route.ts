@@ -26,6 +26,7 @@ export async function GET(request: Request) {
     const restaurantId = searchParams.get('restaurant_id');
     const selfPromoterId = searchParams.get('self_promoter_id');
     const marketId = searchParams.get('market_id');
+    const partnerSlug = searchParams.get('partner_slug');
     const limit = parseInt(searchParams.get('limit') || '50', 10);
 
     // Use authenticated client if token provided, otherwise anon client
@@ -64,6 +65,10 @@ export async function GET(request: Request) {
         restaurantQuery = restaurantQuery.eq('restaurant.market_id', marketId);
       }
 
+      if (partnerSlug) {
+        restaurantQuery = restaurantQuery.eq('partner_slug', partnerSlug);
+      }
+
       const { data: restaurantEvents, error: restaurantError } = await restaurantQuery;
 
       if (restaurantError) {
@@ -76,9 +81,9 @@ export async function GET(request: Request) {
       }
     }
 
-    // Query 2: Self-promoter events (unless filtering by restaurant_id or market_id)
-    // Self-promoters don't have market_id, so skip when market filtering is active
-    if (!restaurantId && !marketId) {
+    // Query 2: Self-promoter events (unless filtering by restaurant_id, market_id, or partner_slug)
+    // Self-promoters don't have market_id or partner_slug, so skip when those filters are active
+    if (!restaurantId && !marketId && !partnerSlug) {
       let selfPromoterQuery = supabase
         .from('events')
         .select('*, self_promoter:self_promoters!inner(id, name, slug, profile_image_url)')

@@ -46,6 +46,7 @@ export interface ApiEvent {
   source_type?: EventSourceType;
   restaurant?: EventRestaurant;
   self_promoter?: EventSelfPromoter;
+  partner_slug?: string | null;
 }
 
 // Helper to get the venue/artist name for an event
@@ -73,6 +74,7 @@ export interface FetchEventsParams {
   paid_only?: boolean;
   limit?: number;
   market_id?: string | null;
+  partner_slug?: string;
 }
 
 /**
@@ -95,6 +97,9 @@ export async function fetchEvents(params?: FetchEventsParams): Promise<ApiEvent[
   }
   if (params?.market_id) {
     url.searchParams.set('market_id', params.market_id);
+  }
+  if (params?.partner_slug) {
+    url.searchParams.set('partner_slug', params.partner_slug);
   }
 
   const response = await fetch(url.toString());

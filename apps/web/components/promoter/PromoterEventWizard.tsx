@@ -6,8 +6,10 @@ import {
   Calendar,
   Clock,
   Music,
+  Music2,
   Mic2,
   Laugh,
+  HelpCircle,
   Upload,
   Loader2,
   Check,
@@ -29,6 +31,8 @@ const EVENT_TYPES = [
   { id: 'dj', label: 'DJ Night', icon: Music, description: 'DJ set, dance night' },
   { id: 'karaoke', label: 'Karaoke', icon: Mic2, description: 'Karaoke night' },
   { id: 'comedy', label: 'Comedy', icon: Laugh, description: 'Stand-up, comedy show' },
+  { id: 'trivia', label: 'Trivia', icon: HelpCircle, description: 'Bar trivia night' },
+  { id: 'music_bingo', label: 'Music Bingo', icon: Music2, description: 'Music bingo night' },
 ];
 
 export default function PromoterEventWizard({

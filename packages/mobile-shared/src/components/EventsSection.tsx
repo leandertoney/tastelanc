@@ -1,10 +1,11 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { View, FlatList, ViewToken } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import EventCard, { EVENT_CARD_HEIGHT, EVENT_CARD_WIDTH } from './EventCard';
 import PartnerCTACard from './PartnerCTACard';
+import PartnerContactModal from './PartnerContactModal';
 import SectionHeader from './SectionHeader';
 import Spacer from './Spacer';
 import { fetchEvents, ENTERTAINMENT_TYPES, ApiEvent, getEventVenueName, isSelfPromoterEvent } from '../lib/events';
@@ -129,6 +130,7 @@ function formatEventTime(startTime: string, endTime: string | null): string {
 export default function EventsSection() {
   const navigation = useNavigation<NavigationProp>();
   const { marketId } = useMarket();
+  const [tipModalVisible, setTipModalVisible] = useState(false);
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['upcomingEvents', marketId],
@@ -211,11 +213,12 @@ export default function EventsSection() {
             return (
               <PartnerCTACard
                 icon="calendar"
-                headline="Promote your event"
-                subtext="Reach thousands of local diners"
-                category="event"
+                headline="Know of an event?"
+                subtext="Drop us a tip and we'll spread the word"
+                category="eventTip"
                 width={EVENT_CARD_WIDTH}
                 height={EVENT_CARD_HEIGHT}
+                onContactPress={() => setTipModalVisible(true)}
               />
             );
           }
@@ -240,6 +243,11 @@ export default function EventsSection() {
         decelerationRate="fast"
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
+      />
+      <PartnerContactModal
+        visible={tipModalVisible}
+        onClose={() => setTipModalVisible(false)}
+        category="eventTip"
       />
     </View>
   );

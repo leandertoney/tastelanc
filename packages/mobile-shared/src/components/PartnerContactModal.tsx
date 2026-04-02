@@ -16,7 +16,7 @@ import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
 import { useMarket } from '../context/MarketContext';
 
-export type ContactCategory = 'restaurant' | 'happy_hour' | 'entertainment' | 'event';
+export type ContactCategory = 'restaurant' | 'happy_hour' | 'entertainment' | 'event' | 'eventTip' | 'entertainmentTip';
 
 interface PartnerContactModalProps {
   visible: boolean;
@@ -39,6 +39,8 @@ export default function PartnerContactModal({
     happy_hour: `I'd like to list my happy hour specials on ${brand.appName}.`,
     entertainment: `I'd like to promote my entertainment/live music on ${brand.appName}.`,
     event: `I'd like to promote my event on ${brand.appName}.`,
+    eventTip: '',
+    entertainmentTip: '',
   };
 
   const CATEGORY_TITLES: Record<ContactCategory, string> = {
@@ -46,7 +48,11 @@ export default function PartnerContactModal({
     happy_hour: 'List Your Happy Hour',
     entertainment: 'Promote Your Entertainment',
     event: 'Promote Your Event',
+    eventTip: 'Know of an Event?',
+    entertainmentTip: 'Hosting Something?',
   };
+
+  const isTip = category === 'eventTip' || category === 'entertainmentTip';
 
   const [formData, setFormData] = useState({
     name: '',
@@ -77,22 +83,26 @@ export default function PartnerContactModal({
   };
 
   const isFormValid = formData.name.trim() && formData.email.trim() && validateEmail(formData.email);
+  const isTipFormValid = isTip ? formData.businessName.trim().length > 0 : Boolean(isFormValid);
 
   const handleSubmit = async () => {
-    if (!isFormValid) return;
+    if (!isTipFormValid) return;
 
     setIsSubmitting(true);
     setError('');
 
     try {
       const supabase = getSupabase();
+      const tipPrefix = isTip
+        ? `[Community Tip — ${category === 'eventTip' ? 'Event' : 'Entertainment'}]\n`
+        : '';
       const { error: insertError } = await supabase
         .from('contact_submissions')
         .insert({
-          name: formData.name.trim(),
-          email: formData.email.trim(),
+          name: formData.name.trim() || 'Anonymous',
+          email: formData.email.trim() || null,
           business_name: formData.businessName.trim() || null,
-          message: formData.message.trim(),
+          message: `${tipPrefix}${formData.message.trim()}`,
           interested_plan: null,
           market_id: marketId || null,
         });
@@ -128,9 +138,11 @@ export default function PartnerContactModal({
               <View style={styles.successIcon}>
                 <Ionicons name="checkmark-circle" size={64} color={colors.accent} />
               </View>
-              <Text style={styles.successTitle}>Thank You!</Text>
+              <Text style={styles.successTitle}>Got it!</Text>
               <Text style={styles.successText}>
-                We've received your message and will get back to you within 24-48 hours.
+                {isTip
+                  ? `Thanks for the tip! We'll look into it and get it listed as soon as we can.`
+                  : `We've received your message and will get back to you within 24-48 hours.`}
               </Text>
               <TouchableOpacity style={styles.doneButton} onPress={handleClose}>
                 <Text style={styles.doneButtonText}>Done</Text>
@@ -175,70 +187,129 @@ export default function PartnerContactModal({
               </View>
             ) : null}
 
-            <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Your Name *</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.name}
-                onChangeText={(text) => setFormData((prev) => ({ ...prev, name: text }))}
-                placeholder="John Smith"
-                placeholderTextColor={colors.textMuted}
-                autoCapitalize="words"
-                autoCorrect={false}
-              />
-            </View>
+            {isTip ? (
+              <>
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.label}>Event / Show Name *</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.businessName}
+                    onChangeText={(text) => setFormData((prev) => ({ ...prev, businessName: text }))}
+                    placeholder="e.g. Jazz Night at The Exchange"
+                    placeholderTextColor={colors.textMuted}
+                    autoCapitalize="words"
+                  />
+                </View>
 
-            <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Email Address *</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.email}
-                onChangeText={(text) => setFormData((prev) => ({ ...prev, email: text }))}
-                placeholder="john@restaurant.com"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.label}>When & Where</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    value={formData.message}
+                    onChangeText={(text) => setFormData((prev) => ({ ...prev, message: text }))}
+                    placeholder="Date, time, venue — whatever you know"
+                    placeholderTextColor={colors.textMuted}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                  />
+                </View>
 
-            <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Business Name</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.businessName}
-                onChangeText={(text) => setFormData((prev) => ({ ...prev, businessName: text }))}
-                placeholder="Your Restaurant Name"
-                placeholderTextColor={colors.textMuted}
-                autoCapitalize="words"
-              />
-            </View>
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.label}>Your Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.name}
+                    onChangeText={(text) => setFormData((prev) => ({ ...prev, name: text }))}
+                    placeholder="Optional — we won't spam you"
+                    placeholderTextColor={colors.textMuted}
+                    autoCapitalize="words"
+                    autoCorrect={false}
+                  />
+                </View>
 
-            <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Message</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={formData.message}
-                onChangeText={(text) => setFormData((prev) => ({ ...prev, message: text }))}
-                placeholder="Tell us more..."
-                placeholderTextColor={colors.textMuted}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-              />
-            </View>
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.label}>Your Email</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.email}
+                    onChangeText={(text) => setFormData((prev) => ({ ...prev, email: text }))}
+                    placeholder="Optional — only if you want a follow-up"
+                    placeholderTextColor={colors.textMuted}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </View>
+              </>
+            ) : (
+              <>
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.label}>Your Name *</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.name}
+                    onChangeText={(text) => setFormData((prev) => ({ ...prev, name: text }))}
+                    placeholder="John Smith"
+                    placeholderTextColor={colors.textMuted}
+                    autoCapitalize="words"
+                    autoCorrect={false}
+                  />
+                </View>
+
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.label}>Email Address *</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.email}
+                    onChangeText={(text) => setFormData((prev) => ({ ...prev, email: text }))}
+                    placeholder="john@restaurant.com"
+                    placeholderTextColor={colors.textMuted}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </View>
+
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.label}>Business Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.businessName}
+                    onChangeText={(text) => setFormData((prev) => ({ ...prev, businessName: text }))}
+                    placeholder="Your Restaurant Name"
+                    placeholderTextColor={colors.textMuted}
+                    autoCapitalize="words"
+                  />
+                </View>
+
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.label}>Message</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    value={formData.message}
+                    onChangeText={(text) => setFormData((prev) => ({ ...prev, message: text }))}
+                    placeholder="Tell us more..."
+                    placeholderTextColor={colors.textMuted}
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                  />
+                </View>
+              </>
+            )}
 
             <TouchableOpacity
-              style={[styles.submitButton, !isFormValid && styles.submitButtonDisabled]}
+              style={[styles.submitButton, !isTipFormValid && styles.submitButtonDisabled]}
               onPress={handleSubmit}
-              disabled={!isFormValid || isSubmitting}
+              disabled={!isTipFormValid || isSubmitting}
             >
               {isSubmitting ? (
                 <ActivityIndicator color={colors.textOnAccent} />
               ) : (
                 <>
                   <Ionicons name="send" size={18} color={colors.textOnAccent} />
-                  <Text style={styles.submitButtonText}>Send Message</Text>
+                  <Text style={styles.submitButtonText}>{isTip ? 'Let Us Know' : 'Send Message'}</Text>
                 </>
               )}
             </TouchableOpacity>
