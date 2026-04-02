@@ -84,7 +84,6 @@ export type RootStackParamList = {
   ArtistDetail: { artistId: string; artistName: string };
   // Personal history
   MyRestaurants: undefined;
-  Wishlist: undefined;
   // Flyer scanner
   FlyerCapture: undefined;
   FlyerProcessing: { imageUri: string };

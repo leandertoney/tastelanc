@@ -59,7 +59,6 @@ export type RootStackParamList = {
   FeatureRequest: undefined;
   // Personal history
   MyRestaurants: undefined;
-  Wishlist: undefined;
   // Sales CRM
   SalesDashboard: undefined;
   EmailThread: { counterpartyEmail: string; counterpartyName?: string };

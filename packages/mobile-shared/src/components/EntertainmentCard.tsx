@@ -60,7 +60,8 @@ export default function EntertainmentCard({
   const icon = EVENT_TYPE_ICONS[eventType] || 'calendar';
   const typeLabel = EVENT_TYPE_LABELS[eventType] || 'Event';
 
-  const tfkBadge = isTFK ? (
+  const TFK_LIVE = false; // flip to true when real TFK logos are ready
+  const tfkBadge = isTFK && TFK_LIVE ? (
     <View style={styles.tfkBadge}>
       <Ionicons name="bulb" size={10} color={TFK_GOLD} />
       <Text style={styles.tfkBadgeText}>TFK</Text>

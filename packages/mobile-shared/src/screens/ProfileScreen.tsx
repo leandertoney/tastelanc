@@ -332,7 +332,6 @@ export default function ProfileScreen() {
         {/* Stats Row */}
         <ProfileStatsRow
           onVisitsPress={() => navigation.navigate('MyRestaurants')}
-          onWishlistPress={() => navigation.navigate('Wishlist')}
         />
 
         {/* Quick Links */}
@@ -343,15 +342,6 @@ export default function ProfileScreen() {
           >
             <Ionicons name="location" size={18} color={colors.accent} />
             <Text style={styles.quickLinkText}>My Restaurants</Text>
-            <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
-          </TouchableOpacity>
-          <View style={styles.quickLinkDivider} />
-          <TouchableOpacity
-            style={styles.quickLink}
-            onPress={() => navigation.navigate('Wishlist')}
-          >
-            <Ionicons name="bookmark" size={18} color={colors.accent} />
-            <Text style={styles.quickLinkText}>Bucket List</Text>
             <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
           </TouchableOpacity>
           <View style={styles.quickLinkDivider} />

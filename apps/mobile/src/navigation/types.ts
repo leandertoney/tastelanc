@@ -85,7 +85,6 @@ export type RootStackParamList = {
   };
   // Personal history
   MyRestaurants: undefined;
-  Wishlist: undefined;
   // Flyer scanner
   FlyerCapture: undefined;
   FlyerProcessing: { imageUri: string };

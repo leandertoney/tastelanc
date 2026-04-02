@@ -1,6 +1,6 @@
 /**
  * ProfileStatsRow — Shows user's key stats on the profile page
- * Queries checkins, votes, favorites, and points in real time
+ * Queries checkins, favorites, and points in real time
  */
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,7 +21,6 @@ interface Stat {
 
 interface Props {
   onVisitsPress?: () => void;
-  onWishlistPress?: () => void;
 }
 
 function useProfileStats() {
@@ -32,33 +31,20 @@ function useProfileStats() {
   const { data } = useQuery({
     queryKey: ['profileStats', userId, marketId],
     queryFn: async () => {
-      if (!userId) return { checkinCount: 0, voteCount: 0, points: 0 };
+      if (!userId) return { checkinCount: 0, points: 0 };
 
       const supabase = getSupabase();
-      const now = new Date();
-      const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
       let checkinQuery = supabase
         .from('checkins')
         .select('id, restaurant_id, points_earned, restaurants!inner(market_id)')
         .eq('user_id', userId);
 
-      let voteQuery = supabase
-        .from('votes')
-        .select('id, restaurants!inner(market_id)', { count: 'exact' })
-        .eq('user_id', userId)
-        .eq('month', month);
-
       if (marketId) {
         checkinQuery = checkinQuery.eq('restaurants.market_id', marketId);
-        voteQuery = voteQuery.eq('restaurants.market_id', marketId);
       }
 
-      const [checkinRes, voteRes] = await Promise.all([
-        checkinQuery,
-        voteQuery,
-      ]);
-
+      const checkinRes = await checkinQuery;
       const checkinRows = checkinRes.data || [];
       const uniqueRestaurants = new Set(checkinRows.map((r: any) => r.restaurant_id)).size;
       const points = checkinRows.reduce(
@@ -66,11 +52,7 @@ function useProfileStats() {
         0
       );
 
-      return {
-        checkinCount: uniqueRestaurants,
-        voteCount: voteRes.count || 0,
-        points,
-      };
+      return { checkinCount: uniqueRestaurants, points };
     },
     enabled: !!userId,
     staleTime: 60 * 1000,
@@ -78,7 +60,6 @@ function useProfileStats() {
 
   return {
     checkinCount: data?.checkinCount ?? 0,
-    voteCount: data?.voteCount ?? 0,
     favoritesCount: favorites.length,
     points: data?.points ?? 0,
   };
