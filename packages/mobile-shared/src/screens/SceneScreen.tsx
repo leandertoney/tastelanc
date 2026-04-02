@@ -31,6 +31,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { trackClick } from '../lib/analytics';
 import { applyContextBoosts, isHappyHourActiveNow } from '../lib/recommendations';
 import { flushUserEvents, trackDetailView, trackDwell, trackQuickSkip, type BehavioralFeedItemKind } from '../lib/userEvents';
+import { formatCategoryName } from '../lib/formatters';
 import { useOtherCities, type OtherCity } from '../hooks/useOtherCities';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -1206,8 +1207,8 @@ function NewRestaurantRow({ item, onPress }: { item: NewRestaurantItem; onPress:
   const colors = getColors();
 
   const subtitle = item.category
-    ? `New to TasteLanc · ${item.category}`
-    : 'New to TasteLanc';
+    ? `New to ${getBrand().appName} · ${formatCategoryName(item.category)}`
+    : `New to ${getBrand().appName}`;
 
   return (
     <TouchableOpacity style={styles.compactRow} onPress={onPress} activeOpacity={0.85}>
