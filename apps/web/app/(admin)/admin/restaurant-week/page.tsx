@@ -289,7 +289,7 @@ export default function RestaurantWeekPage() {
             <p className="text-[#C8532A] mt-1">
               {dateSubtitle} &middot; {specials.length} deals from {uniqueRestaurantCount} restaurants
             </p>
-            <p className="text-zinc-500 text-sm mt-0.5">Official Digital Sponsor</p>
+            <p className="text-zinc-500 text-sm mt-0.5">Collaborating with Lancaster Restaurant Week 2026</p>
           </div>
           {activeTab === 'specials' && (
             <button
@@ -507,10 +507,10 @@ export default function RestaurantWeekPage() {
                   <span className="text-[10px] font-semibold text-[#C8532A]/40 uppercase tracking-[2px]">Apr 13–19</span>
                 </div>
 
-                {/* Sponsor badge */}
+                {/* Collaboration badge */}
                 <div className="flex justify-center mt-2.5">
                   <span className="text-[9px] font-bold text-[#C8532A] tracking-[2px] uppercase bg-[#C8532A]/15 border border-[#C8532A]/40 rounded-full px-3 py-1">
-                    OFFICIAL DIGITAL SPONSOR
+                    IN PARTNERSHIP WITH LCRW
                   </span>
                 </div>
               </div>
@@ -601,7 +601,21 @@ export default function RestaurantWeekPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm text-zinc-400 mb-1">Price (optional)</label>
+                    <label className="block text-sm text-zinc-400 mb-1">Event Date</label>
+                    <select
+                      value={formData.event_date}
+                      onChange={e => setFormData(f => ({ ...f, event_date: e.target.value }))}
+                      className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-zinc-400 focus:outline-none"
+                    >
+                      {RW_DATES.map(d => (
+                        <option key={d.value} value={d.value}>{d.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm text-zinc-400 mb-1">Special Price (optional)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -611,16 +625,59 @@ export default function RestaurantWeekPage() {
                       className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm text-zinc-400 mb-1">Original Price (optional)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.original_price}
+                      onChange={e => setFormData(f => ({ ...f, original_price: e.target.value }))}
+                      placeholder="$0.00"
+                      className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none"
+                    />
+                  </div>
                 </div>
-                <div className="mb-4">
-                  <label className="block text-sm text-zinc-400 mb-1">Description (optional)</label>
-                  <input
-                    type="text"
-                    value={formData.description}
-                    onChange={e => setFormData(f => ({ ...f, description: e.target.value }))}
-                    placeholder="e.g. 3-course dinner — appetizer, entrée, dessert"
-                    className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm text-zinc-400 mb-1">Start Time (optional)</label>
+                    <input
+                      type="time"
+                      value={formData.start_time}
+                      onChange={e => setFormData(f => ({ ...f, start_time: e.target.value }))}
+                      className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-zinc-400 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-zinc-400 mb-1">End Time (optional)</label>
+                    <input
+                      type="time"
+                      value={formData.end_time}
+                      onChange={e => setFormData(f => ({ ...f, end_time: e.target.value }))}
+                      className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-zinc-400 focus:outline-none"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm text-zinc-400 mb-1">Description (optional)</label>
+                    <input
+                      type="text"
+                      value={formData.description}
+                      onChange={e => setFormData(f => ({ ...f, description: e.target.value }))}
+                      placeholder="e.g. 3-course dinner — appetizer, entrée, dessert"
+                      className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-zinc-400 mb-1">Discount Description (optional)</label>
+                    <input
+                      type="text"
+                      value={formData.discount_description}
+                      onChange={e => setFormData(f => ({ ...f, discount_description: e.target.value }))}
+                      placeholder="e.g. 50% off, BOGO"
+                      className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none"
+                    />
+                  </div>
                 </div>
               </>
             ) : (
@@ -693,8 +750,8 @@ export default function RestaurantWeekPage() {
               </>
             )}
 
-            {/* Shared: Event Date + Times */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 mt-4">
+            {/* Add-only: Event Date + Times (edit form has its own inline) */}
+            {!editingId && <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 mt-4">
               <div>
                 <label className="block text-sm text-zinc-400 mb-1">Event Date</label>
                 <select
@@ -725,7 +782,7 @@ export default function RestaurantWeekPage() {
                   className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-zinc-400 focus:outline-none"
                 />
               </div>
-            </div>
+            </div>}
 
             <div className="flex gap-3">
               <button
