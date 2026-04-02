@@ -92,6 +92,28 @@ const getCurrentDay = () => {
   return days[new Date().getDay()];
 };
 
+/**
+ * Sort specials/happy hours so items valid today appear first,
+ * then the rest of the week in sequential order.
+ * Items with no days_of_week (every day) always sort first.
+ */
+function sortByDayProximity<T extends { days_of_week: string[] }>(items: T[]): T[] {
+  const today = getCurrentDay();
+  const todayIdx = DAY_ORDER.indexOf(today);
+  const score = (item: T) => {
+    if (!item.days_of_week || item.days_of_week.length === 0) return -1; // every day → top
+    const earliest = item.days_of_week
+      .map((d) => {
+        const i = DAY_ORDER.indexOf(d);
+        // Rotate so today = 0, tomorrow = 1, ... 6 days later = 6
+        return i >= 0 ? (i - todayIdx + 7) % 7 : 7;
+      })
+      .sort((a, b) => a - b)[0];
+    return earliest;
+  };
+  return [...items].sort((a, b) => score(a) - score(b));
+}
+
 // Tab configuration (function to avoid module-level theme access)
 function getBaseTabs(): Tab[] {
   return [
@@ -674,22 +696,22 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                   onAlternativePress={(altId) => navigation.navigate('RestaurantDetail', { id: altId })}
                 />
               ) : happyHours.length > 0 ? (
-                happyHours.map((hh) => (
-                  <View key={hh.id} style={styles.contentCard}>
+                sortByDayProximity(happyHours).map((hh) => (
+                  <View key={hh.id} style={styles.compactCard}>
                     {hh.image_url && (
                       <Image
                         source={{ uri: hh.image_url }}
-                        style={styles.contentImage}
+                        style={styles.compactThumb}
                         resizeMode="cover"
                       />
                     )}
-                    <View style={styles.contentCardBody}>
+                    <View style={styles.compactBody}>
                       <Text style={styles.contentTitle}>{hh.name}</Text>
                       <Text style={styles.contentTime}>
                         {formatTime(hh.start_time)} - {formatTime(hh.end_time)}
                       </Text>
                       <Text style={styles.contentDays}>
-                        {hh.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
+                        {hh.days_of_week.length === 7 ? 'Every Day' : hh.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
                       </Text>
                       {hh.description && (
                         <Text style={styles.contentDescription}>{hh.description}</Text>
@@ -738,25 +760,25 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                   onAlternativePress={(altId) => navigation.navigate('RestaurantDetail', { id: altId })}
                 />
               ) : specials.length > 0 ? (
-                specials.map((special) => (
-                  <View key={special.id} style={styles.contentCard}>
+                sortByDayProximity(specials).map((special) => (
+                  <View key={special.id} style={styles.compactCard}>
                     {special.image_url && (
                       <Image
                         source={{ uri: special.image_url }}
-                        style={styles.contentImage}
+                        style={styles.compactThumb}
                         resizeMode="cover"
                       />
                     )}
-                    <View style={styles.contentCardBody}>
+                    <View style={styles.compactBody}>
                       <Text style={styles.contentTitle}>{special.name}</Text>
-                      {special.start_time && special.end_time && (
-                        <Text style={styles.contentTime}>
-                          {formatTime(special.start_time)} - {formatTime(special.end_time)}
-                        </Text>
-                      )}
-                      {!special.start_time && !special.end_time && (
-                        <Text style={styles.contentTime}>All Day</Text>
-                      )}
+                      <Text style={styles.contentTime}>
+                        {special.start_time && special.end_time
+                          ? `${formatTime(special.start_time)} - ${formatTime(special.end_time)}`
+                          : 'All Day'}
+                      </Text>
+                      <Text style={styles.contentDays}>
+                        {special.days_of_week.length === 7 ? 'Every Day' : special.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
+                      </Text>
                       {special.description && (
                         <Text style={styles.contentDescription}>{special.description}</Text>
                       )}
@@ -769,9 +791,6 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                       {!special.original_price && special.special_price && (
                         <Text style={styles.contentPrice}>${special.special_price.toFixed(2)}</Text>
                       )}
-                      <Text style={styles.contentDays}>
-                        {special.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
-                      </Text>
                     </View>
                   </View>
                 ))
@@ -1223,6 +1242,9 @@ const useStyles = createLazyStyles((colors) => ({
   contentCard: { backgroundColor: colors.cardBg, borderRadius: radius.md, overflow: 'hidden' as const, marginBottom: 12 },
   contentCardBody: { padding: 16 },
   contentImage: { width: '100%' as const, height: 160 },
+  compactCard: { backgroundColor: colors.cardBg, borderRadius: radius.md, overflow: 'hidden' as const, marginBottom: 10, flexDirection: 'row' as const, alignItems: 'stretch' as const },
+  compactThumb: { width: 90, height: 90 },
+  compactBody: { flex: 1, padding: 12, justifyContent: 'center' as const },
   contentHeader: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const, marginBottom: 8 },
   contentTitle: { fontSize: 16, fontWeight: '600' as const, color: colors.text, marginBottom: 4, flex: 1 },
   contentTime: { fontSize: 14, color: colors.gold, marginBottom: 4 },
