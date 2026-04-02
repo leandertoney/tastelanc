@@ -108,7 +108,7 @@ export default function EntertainmentSection() {
   const navigation = useNavigation<NavigationProp>();
   const { marketId } = useMarket();
   const brand = getBrand();
-  const TFK_LIVE = false; // flip to true when real TFK logos are ready
+  const TFK_LIVE = true;
   const isLancaster = TFK_LIVE && brand.marketSlug === 'lancaster-pa';
   const [tipModalVisible, setTipModalVisible] = useState(false);
 
