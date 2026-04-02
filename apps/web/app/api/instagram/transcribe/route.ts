@@ -39,12 +39,19 @@ export async function POST(request: Request) {
     // Download the video from Supabase Storage (or any public URL)
     const videoRes = await fetch(video_url);
     if (!videoRes.ok) {
-      return NextResponse.json({ error: 'Failed to fetch video' }, { status: 400 });
+      const detail = `HTTP ${videoRes.status} fetching video from storage`;
+      console.error('[transcribe] Fetch failed:', detail, video_url);
+      return NextResponse.json({ error: detail }, { status: 400 });
     }
 
+    const contentType = videoRes.headers.get('content-type') || 'video/mp4';
     const videoBuffer = await videoRes.arrayBuffer();
+
+    // Force video/mp4 content type so Whisper parses audio correctly
     const videoBlob = new Blob([videoBuffer], { type: 'video/mp4' });
     const videoFile = new File([videoBlob], 'video.mp4', { type: 'video/mp4' });
+
+    console.log(`[transcribe] Fetched ${videoBuffer.byteLength} bytes, original content-type: ${contentType}`);
 
     const openai = new OpenAI({ apiKey: openaiKey });
 
@@ -59,9 +66,12 @@ export async function POST(request: Request) {
     // verbose_json response has .words array with { word, start, end }
     const words = (transcription as any).words ?? [];
 
+    console.log(`[transcribe] Success: ${words.length} words, text length: ${transcription.text?.length}`);
     return NextResponse.json({ words, text: transcription.text });
   } catch (err: any) {
-    console.error('[transcribe] Error:', err.message);
-    return NextResponse.json({ error: err.message || 'Transcription failed' }, { status: 500 });
+    console.error('[transcribe] Error:', err.message, err.status);
+    // Surface OpenAI error details (e.g. "audio file is too short", "no audio track")
+    const message = err.message || 'Transcription failed';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

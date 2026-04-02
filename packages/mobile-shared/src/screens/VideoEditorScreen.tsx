@@ -353,7 +353,13 @@ export default function VideoEditorScreen({ route, navigation }: Props) {
     setCaptionsLoading(true);
     try {
       // Upload the first clip to get a public URL for Whisper
-      const videoUrl = await uploadRecommendationVideo(userId, clips[0].uri);
+      let videoUrl: string;
+      try {
+        videoUrl = await uploadRecommendationVideo(userId, clips[0].uri);
+      } catch (uploadErr: any) {
+        Alert.alert('Upload failed', `Could not upload video for captions: ${uploadErr.message}`);
+        return;
+      }
 
       // Call the transcribe endpoint
       const anonKey = getAnonKey();
@@ -367,8 +373,11 @@ export default function VideoEditorScreen({ route, navigation }: Props) {
         body: JSON.stringify({ video_url: videoUrl }),
       });
 
-      if (!res.ok) throw new Error(`Transcription failed: ${res.status}`);
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || `Transcription failed (${res.status})`);
+      }
+
       const words: CaptionWord[] = data.words || [];
 
       if (words.length === 0) {
@@ -380,7 +389,7 @@ export default function VideoEditorScreen({ route, navigation }: Props) {
       setCaptionsEnabled(true);
     } catch (err: any) {
       console.error('[VideoEditor] Caption generation failed:', err);
-      Alert.alert('Caption error', 'Failed to generate captions. Please try again.');
+      Alert.alert('Caption error', err.message || 'Failed to generate captions. Please try again.');
     } finally {
       setCaptionsLoading(false);
     }

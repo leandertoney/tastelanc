@@ -61,8 +61,9 @@ const TAG_LABELS: Record<string, string> = {
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   pending: { label: 'Pending Review', color: 'bg-yellow-500/20 text-yellow-400', icon: Clock },
   ai_approved: { label: 'AI Approved', color: 'bg-blue-500/20 text-blue-400', icon: Shield },
-  admin_approved: { label: 'Admin Approved', color: 'bg-green-500/20 text-green-400', icon: CheckCircle },
-  posted: { label: 'Posted', color: 'bg-purple-500/20 text-purple-400', icon: Instagram },
+  app_approved: { label: 'Live in App', color: 'bg-green-500/20 text-green-400', icon: CheckCircle },
+  admin_approved: { label: 'Queued for IG', color: 'bg-pink-500/20 text-pink-400', icon: Instagram },
+  posted: { label: 'Posted to IG', color: 'bg-purple-500/20 text-purple-400', icon: Instagram },
   rejected: { label: 'Rejected', color: 'bg-red-500/20 text-red-400', icon: XCircle },
 };
 
@@ -94,7 +95,7 @@ export default function RecommendationQueuePage() {
     fetchQueue();
   }, [fetchQueue]);
 
-  const handleAction = async (recId: string, action: 'approve' | 'reject' | 'reset' | 'hide' | 'unhide' | 'delete', captionOverride?: string) => {
+  const handleAction = async (recId: string, action: 'approve' | 'reject' | 'reset' | 'hide' | 'unhide' | 'delete' | 'post_to_instagram', captionOverride?: string) => {
     setActionLoading(recId);
     const body: Record<string, string> = { recommendation_id: recId, action };
     if (captionOverride) body.ig_caption_override = captionOverride;
@@ -121,7 +122,8 @@ export default function RecommendationQueuePage() {
   const filterTabs = [
     { key: 'ai_approved', label: 'AI Approved' },
     { key: 'pending', label: 'Pending' },
-    { key: 'admin_approved', label: 'Approved' },
+    { key: 'app_approved', label: 'Live in App' },
+    { key: 'admin_approved', label: 'Queued for IG' },
     { key: 'posted', label: 'Posted' },
     { key: 'rejected', label: 'Rejected' },
     { key: '', label: 'All' },
@@ -311,14 +313,25 @@ export default function RecommendationQueuePage() {
                           placeholder="Override the Instagram caption..."
                         />
                         <div className="flex gap-2">
-                          <button
-                            onClick={() => handleAction(rec.id, 'approve', captionDraft)}
-                            disabled={actionLoading === rec.id}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-500 transition-colors"
-                          >
-                            <Send className="w-3.5 h-3.5" />
-                            Approve with edited caption
-                          </button>
+                          {rec.ig_status === 'app_approved' ? (
+                            <button
+                              onClick={() => handleAction(rec.id, 'post_to_instagram', captionDraft)}
+                              disabled={actionLoading === rec.id}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-pink-600 to-purple-600 text-white text-xs font-medium rounded-lg hover:from-pink-500 hover:to-purple-500 transition-colors"
+                            >
+                              <Instagram className="w-3.5 h-3.5" />
+                              Post to Instagram with this caption
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleAction(rec.id, 'approve', captionDraft)}
+                              disabled={actionLoading === rec.id}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-500 transition-colors"
+                            >
+                              <Send className="w-3.5 h-3.5" />
+                              Approve with edited caption
+                            </button>
+                          )}
                           <button
                             onClick={() => setEditingCaption(null)}
                             className="px-3 py-1.5 text-tastelanc-text-muted text-xs hover:text-tastelanc-text-primary transition-colors"
@@ -329,7 +342,7 @@ export default function RecommendationQueuePage() {
                       </div>
                     )}
 
-                    {/* Action buttons */}
+                    {/* Action buttons — pending/ai_approved: approve for app or reject */}
                     {!isEditing && ['pending', 'ai_approved'].includes(rec.ig_status) && (
                       <div className="flex items-center gap-2 pt-1">
                         <button
@@ -338,7 +351,7 @@ export default function RecommendationQueuePage() {
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-500 transition-colors disabled:opacity-50"
                         >
                           {actionLoading === rec.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                          Approve Now
+                          Approve for App
                         </button>
                         <button
                           onClick={() => handleAction(rec.id, 'reject')}
@@ -357,6 +370,38 @@ export default function RecommendationQueuePage() {
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                           Edit Caption
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Action buttons — app_approved: post to Instagram */}
+                    {!isEditing && rec.ig_status === 'app_approved' && (
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          onClick={() => handleAction(rec.id, 'post_to_instagram')}
+                          disabled={actionLoading === rec.id}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-pink-600 to-purple-600 text-white text-xs font-medium rounded-lg hover:from-pink-500 hover:to-purple-500 transition-colors disabled:opacity-50"
+                        >
+                          {actionLoading === rec.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Instagram className="w-3.5 h-3.5" />}
+                          Post to Instagram
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingCaption(rec.id);
+                            setCaptionDraft(rec.ig_caption_override || rec.caption || '');
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-tastelanc-surface text-tastelanc-text-secondary text-xs font-medium rounded-lg hover:text-tastelanc-text-primary transition-colors"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          Edit IG Caption
+                        </button>
+                        <button
+                          onClick={() => handleAction(rec.id, 'reject')}
+                          disabled={actionLoading === rec.id}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/20 text-red-400 text-xs font-medium rounded-lg hover:bg-red-600/30 transition-colors disabled:opacity-50"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                          Remove from App
                         </button>
                       </div>
                     )}

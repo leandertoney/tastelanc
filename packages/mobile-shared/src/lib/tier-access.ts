@@ -81,11 +81,10 @@ export function hasEventsAccess(tier: SubscriptionTier | null): boolean {
 /**
  * Check if restaurant has access to video recommendations / reels
  *
- * @param tier - Current subscription tier
- * @returns true if Premium or Elite tier
+ * Videos are visible for ALL tiers — tiers affect sort priority only, not content visibility.
  */
-export function hasRecommendationsAccess(tier: SubscriptionTier | null): boolean {
-  return hasTierAccess(tier, 'premium');
+export function hasRecommendationsAccess(_tier: SubscriptionTier | null): boolean {
+  return true;
 }
 
 /**

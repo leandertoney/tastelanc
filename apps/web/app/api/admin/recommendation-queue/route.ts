@@ -80,8 +80,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'recommendation_id and action required' }, { status: 400 });
   }
 
-  if (!['approve', 'reject', 'reset', 'hide', 'unhide', 'delete'].includes(action)) {
-    return NextResponse.json({ error: 'Invalid action. Must be: approve, reject, reset, hide, unhide, delete' }, { status: 400 });
+  if (!['approve', 'reject', 'reset', 'hide', 'unhide', 'delete', 'post_to_instagram'].includes(action)) {
+    return NextResponse.json({ error: 'Invalid action. Must be: approve, reject, reset, hide, unhide, delete, post_to_instagram' }, { status: 400 });
   }
 
   // Handle delete separately — hard delete from DB + storage
@@ -132,7 +132,15 @@ export async function POST(request: Request) {
   };
 
   if (action === 'approve') {
+    // Approve for app visibility only — does NOT queue Instagram posting
     updates.is_visible = true;
+    updates.ig_status = 'app_approved';
+    updates.ig_scheduled_at = null;
+    if (ig_caption_override) {
+      updates.ig_caption_override = ig_caption_override;
+    }
+  } else if (action === 'post_to_instagram') {
+    // Explicitly queue this video for Instagram posting (separate from app approval)
     updates.ig_status = 'admin_approved';
     updates.ig_scheduled_at = new Date().toISOString();
     if (ig_caption_override) {
