@@ -4,6 +4,7 @@
 
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { sendNotification } from '@/lib/notifications/gateway';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -170,6 +171,45 @@ export async function POST(request: Request) {
   if (error) {
     console.error('Error updating recommendation:', error);
     return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
+  }
+
+  // Send approval push to the poster
+  if (action === 'approve') {
+    try {
+      const { data: rec } = await serviceClient
+        .from('restaurant_recommendations')
+        .select('user_id, restaurant:restaurants!inner(name, slug, market:markets!inner(slug))')
+        .eq('id', recommendation_id)
+        .single();
+
+      if (rec) {
+        const restaurant = rec.restaurant as any;
+        const marketSlug = restaurant?.market?.slug ?? null;
+
+        const { data: tokens } = await serviceClient
+          .from('push_tokens')
+          .select('token')
+          .eq('user_id', rec.user_id);
+
+        if (tokens && tokens.length > 0) {
+          await sendNotification({
+            notificationType: 'rec_approved',
+            marketSlug,
+            messages: tokens.map((t: { token: string }) => ({
+              to: t.token,
+              title: 'Your rec is live! 🎉',
+              body: `Your video recommendation for ${restaurant?.name ?? 'the restaurant'} is now visible to everyone.`,
+              data: { screen: 'RestaurantDetail', restaurantSlug: restaurant?.slug },
+            })),
+            dedupKey: `rec_approved:${recommendation_id}`,
+            skipThrottle: true,
+          });
+        }
+      }
+    } catch (notifErr) {
+      // Non-fatal — log but don't fail the approval
+      console.error('[rec-queue] Failed to send approval notification:', notifErr);
+    }
   }
 
   return NextResponse.json({ success: true, action, recommendation_id });

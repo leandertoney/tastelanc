@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   View,
@@ -178,6 +178,8 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const [visitRecorded, setVisitRecorded] = useState(false);
   const [imHerePointsEarned, setImHerePointsEarned] = useState(0);
   const [showLocationUpgrade, setShowLocationUpgrade] = useState(false);
+  const [showRecNudge, setShowRecNudge] = useState(false);
+  const recNudgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -399,10 +401,13 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
 
       Alert.alert(
         `+${pointsEarned} Points Earned!`,
-        `Welcome to ${restaurant.name}! You can now vote for them in the Vote Center.`,
+        `Welcome to ${restaurant.name}!`,
         [{
           text: 'Sweet!',
-          onPress: () => setShowLocationUpgrade(true),
+          onPress: () => {
+            setShowRecNudge(true);
+            recNudgeTimer.current = setTimeout(() => setShowRecNudge(false), 8000);
+          },
         }]
       );
     } catch (err) {
@@ -1178,7 +1183,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
           ) : (
             <>
               <Ionicons
-                name={visitRecorded ? 'checkmark-circle' : 'gift'}
+                name={visitRecorded ? 'checkmark-circle' : 'location-sharp'}
                 size={22}
                 color={visitRecorded ? colors.success : colors.textOnAccent}
               />
@@ -1203,6 +1208,36 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
           <Ionicons name="videocam" size={22} color={colors.text} />
           <Text style={styles.recommendFabText}>Recommend</Text>
         </TouchableOpacity>
+      )}
+
+      {/* Post-checkin rec nudge */}
+      {showRecNudge && (
+        <View style={styles.recNudge}>
+          <View style={styles.recNudgeContent}>
+            <Ionicons name="videocam" size={18} color={colors.accent} />
+            <Text style={styles.recNudgeText}>Leave a 30-sec video rec while you're here?</Text>
+          </View>
+          <View style={styles.recNudgeActions}>
+            <TouchableOpacity
+              onPress={() => {
+                if (recNudgeTimer.current) clearTimeout(recNudgeTimer.current);
+                setShowRecNudge(false);
+                navigation.navigate('VideoRecommendCapture', { restaurantId: id, restaurantName: restaurant!.name });
+              }}
+              style={styles.recNudgeYes}
+            >
+              <Text style={styles.recNudgeYesText}>Sure!</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                if (recNudgeTimer.current) clearTimeout(recNudgeTimer.current);
+                setShowRecNudge(false);
+              }}
+            >
+              <Text style={styles.recNudgeDismiss}>Not now</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       )}
 
       {showLocationUpgrade && <LocationUpgradePrompt />}
@@ -1297,4 +1332,11 @@ const useStyles = createLazyStyles((colors) => ({
   imHereFab: { position: 'absolute' as const, bottom: 24, right: 16, flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: colors.accent, paddingVertical: 14, paddingHorizontal: 20, borderRadius: radius.full, shadowColor: colors.accent, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8, gap: 8 },
   imHereFabRecorded: { backgroundColor: `${colors.success}30`, shadowColor: colors.success },
   imHereFabText: { color: colors.textOnAccent, fontSize: 16, fontWeight: '600' as const },
+  recNudge: { position: 'absolute' as const, bottom: 96, left: 16, right: 16, backgroundColor: colors.cardBgElevated, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.accent, padding: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 },
+  recNudgeContent: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10, marginBottom: 10 },
+  recNudgeText: { flex: 1, fontSize: 14, color: colors.text, fontWeight: '500' as const },
+  recNudgeActions: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 16 },
+  recNudgeYes: { backgroundColor: colors.accent, paddingVertical: 8, paddingHorizontal: 20, borderRadius: radius.full },
+  recNudgeYesText: { color: colors.textOnAccent, fontSize: 14, fontWeight: '700' as const },
+  recNudgeDismiss: { fontSize: 14, color: colors.textMuted },
 }));

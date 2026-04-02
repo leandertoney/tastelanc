@@ -188,13 +188,15 @@ export default function VideoRecommendationCard({
                 {Math.floor(duration / 60)}:{String(duration % 60).padStart(2, '0')}
               </Text>
             </View>
-            {/* View count */}
-            <View style={styles.viewBadge}>
-              <Ionicons name="eye-outline" size={12} color="#FFF" />
-              <Text style={styles.viewBadgeText}>
-                {recommendation.view_count > 0 ? formatViewCount(recommendation.view_count) : '0'}
-              </Text>
-            </View>
+            {/* View count — hidden until 10 views to avoid ghost-town signal */}
+            {recommendation.view_count >= 10 && (
+              <View style={styles.viewBadge}>
+                <Ionicons name="eye-outline" size={12} color="#FFF" />
+                <Text style={styles.viewBadgeText}>
+                  {formatViewCount(recommendation.view_count)}
+                </Text>
+              </View>
+            )}
           </View>
         </TouchableOpacity>
       </View>

@@ -65,10 +65,10 @@ function useProfileStats() {
   };
 }
 
-export default function ProfileStatsRow({ onVisitsPress, onWishlistPress }: Props) {
+export default function ProfileStatsRow({ onVisitsPress }: Props) {
   const styles = useStyles();
   const colors = getColors();
-  const { checkinCount, voteCount, favoritesCount, points } = useProfileStats();
+  const { checkinCount, favoritesCount, points } = useProfileStats();
 
   const stats: Stat[] = [
     {
@@ -83,15 +83,9 @@ export default function ProfileStatsRow({ onVisitsPress, onWishlistPress }: Prop
       icon: 'heart',
     },
     {
-      label: 'Votes',
-      value: voteCount,
-      icon: 'trophy',
-    },
-    {
       label: 'Points',
       value: points,
       icon: 'star',
-      onPress: onWishlistPress,
     },
   ];
 
