@@ -26,7 +26,7 @@ const DISMISS_DURATION_DAYS = 30; // re-prompt after 30 days if still foreground
  * Never shown to users who already have "Always Allow" or who have denied location.
  */
 export function LocationUpgradePrompt(): React.ReactElement | null {
-  const [visible, setVisible] = useState(false);
+  const [step, setStep] = useState<'disclosure' | 'upgrade' | null>(null);
   const colors = getColors();
   const brand = getBrand();
 
@@ -47,7 +47,7 @@ export function LocationUpgradePrompt(): React.ReactElement | null {
           if (daysSince < DISMISS_DURATION_DAYS) return;
         }
 
-        if (!cancelled) setVisible(true);
+        if (!cancelled) setStep('disclosure');
       } catch {
         // Silent — never block the user on this
       }
@@ -62,7 +62,7 @@ export function LocationUpgradePrompt(): React.ReactElement | null {
   }, []);
 
   async function handleEnable() {
-    setVisible(false);
+    setStep(null);
     const granted = await requestBackgroundPermission();
 
     if (!granted) {
@@ -72,7 +72,7 @@ export function LocationUpgradePrompt(): React.ReactElement | null {
   }
 
   async function handleDismiss() {
-    setVisible(false);
+    setStep(null);
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ dismissedAt: Date.now() }));
     } catch {
@@ -80,13 +80,67 @@ export function LocationUpgradePrompt(): React.ReactElement | null {
     }
   }
 
-  if (!visible) return null;
+  if (step === null) return null;
 
   const styles = makeStyles(colors);
 
+  // Step 1: Prominent disclosure (required by Google Play policy before requesting
+  // ACCESS_BACKGROUND_LOCATION). Must appear before the OS permission prompt and
+  // must use plain language describing data collection purpose.
+  if (step === 'disclosure') {
+    return (
+      <Modal
+        visible
+        transparent
+        animationType="fade"
+        onRequestClose={handleDismiss}
+      >
+        <View style={styles.disclosureOverlay}>
+          <View style={styles.disclosureBox}>
+            <View style={styles.iconRow}>
+              <View style={styles.iconBg}>
+                <Ionicons name="location" size={28} color={colors.accent} />
+              </View>
+            </View>
+
+            <Text style={styles.title}>Background Location Access</Text>
+
+            <Text style={styles.disclosureBody}>
+              {brand.appName} collects your location data in the background to detect when
+              you are at or near a restaurant, even when the app is closed or not in use.
+            </Text>
+
+            <Text style={styles.disclosureSubhead}>This data is used to:</Text>
+
+            <View style={styles.bulletList}>
+              <BulletRow text="Automatically record check-ins at restaurants you visit" colors={colors} />
+              <BulletRow text={`Detect nearby restaurant activity ("buzz")`} colors={colors} />
+              <BulletRow text="Send relevant alerts when you are near participating locations" colors={colors} />
+            </View>
+
+            <Text style={styles.disclosureBody}>
+              Your location data is processed by Radar (radar.com), our geofencing provider.
+              It is not sold to third parties.{'\n\n'}
+              You can change this permission at any time in your device Settings.
+            </Text>
+
+            <TouchableOpacity style={styles.enableBtn} onPress={() => setStep('upgrade')}>
+              <Text style={styles.enableBtnText}>I understand, continue</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.dismissBtn} onPress={handleDismiss}>
+              <Text style={styles.dismissBtnText}>No thanks</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    );
+  }
+
+  // Step 2: Feature marketing sheet (shown after disclosure is accepted)
   return (
     <Modal
-      visible={visible}
+      visible
       transparent
       animationType="slide"
       onRequestClose={handleDismiss}
@@ -132,6 +186,21 @@ export function LocationUpgradePrompt(): React.ReactElement | null {
   );
 }
 
+function BulletRow({
+  text,
+  colors,
+}: {
+  text: string;
+  colors: ReturnType<typeof getColors>;
+}) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
+      <Text style={{ color: colors.accent, fontSize: 14, lineHeight: 20 }}>•</Text>
+      <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, flex: 1 }}>{text}</Text>
+    </View>
+  );
+}
+
 function BenefitRow({
   icon,
   text,
@@ -151,6 +220,36 @@ function BenefitRow({
 
 function makeStyles(colors: ReturnType<typeof getColors>) {
   return StyleSheet.create({
+    disclosureOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 24,
+    },
+    disclosureBox: {
+      backgroundColor: colors.cardBg,
+      borderRadius: 16,
+      paddingHorizontal: 24,
+      paddingVertical: 28,
+      width: '100%',
+    },
+    disclosureBody: {
+      color: colors.textSecondary,
+      fontSize: 14,
+      lineHeight: 21,
+      marginBottom: 14,
+    },
+    disclosureSubhead: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: '600',
+      marginBottom: 8,
+    },
+    bulletList: {
+      marginBottom: 14,
+      paddingLeft: 4,
+    },
     backdrop: {
       flex: 1,
       backgroundColor: 'rgba(0,0,0,0.5)',
