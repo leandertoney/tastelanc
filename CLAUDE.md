@@ -163,7 +163,7 @@ Note: The `!` in the password must be URL-encoded as `%21`.
 
 ### Testing Requirements
 
-**CRITICAL: Before presenting any feature as complete, you MUST test it end-to-end yourself.**
+**CRITICAL: Before presenting any feature as complete, you MUST test it end-to-end yourself. Do not wait for the user to ask.**
 
 Test-Driven Development Standards:
 - Test ALL CRUD operations (Create, Read, Update, Delete), not just one
@@ -173,6 +173,18 @@ Test-Driven Development Standards:
 - Never present a feature as complete until YOU have verified it works
 
 **Do not rely on the user for QA testing of basic functionality.**
+
+#### API & Backend Features — Mandatory Verification Steps
+
+For any feature that involves an API route, database write, or external service (email, push notification, etc.):
+
+1. **Start the dev server** (`next dev`) and hit the route directly with `curl` or `node`
+2. **Verify the DB write** — query Supabase REST API to confirm the row was inserted with the correct data
+3. **Verify external delivery** — for emails, send a real test via Resend to `info@tastelanc.com` and confirm receipt. For push notifications, use `apps/web/scripts/send-test-notification.mjs`
+4. **Test validation** — send a bad/missing payload and confirm the correct error response
+5. **Clean up test data** — delete any test rows inserted during verification
+
+This is non-negotiable. "TypeScript compiles" is not the same as "it works."
 
 ### Row Level Security (RLS) Requirements
 

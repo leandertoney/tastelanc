@@ -16,7 +16,30 @@ import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
 import { useMarket } from '../context/MarketContext';
 
-export type ContactCategory = 'restaurant' | 'happy_hour' | 'entertainment' | 'event' | 'eventTip' | 'entertainmentTip';
+export type ContactCategory =
+  | 'restaurant'
+  | 'happy_hour'
+  | 'entertainment'
+  | 'event'
+  | 'eventTip'
+  | 'entertainmentTip';
+
+// Whether the category is a tip/nomination flow (vs. owner/business flow)
+function isTipCategory(category: ContactCategory) {
+  return category === 'eventTip' || category === 'entertainmentTip';
+}
+
+// The type of thing being nominated, for the API
+function nominationType(category: ContactCategory, isOwner: boolean) {
+  if (isOwner) return 'owner';
+  if (category === 'eventTip') return 'event';
+  if (category === 'entertainmentTip') return 'entertainment';
+  return 'restaurant';
+}
+
+const NOMINATIONS_API = __DEV__
+  ? 'http://192.168.1.243:3000/api/mobile/nominations'
+  : 'https://tastelanc.com/api/mobile/nominations';
 
 interface PartnerContactModalProps {
   visible: boolean;
@@ -34,16 +57,34 @@ export default function PartnerContactModal({
   const brand = getBrand();
   const { marketId } = useMarket();
 
-  const CATEGORY_MESSAGES: Record<ContactCategory, string> = {
-    restaurant: `I'd like to get my restaurant featured on ${brand.appName}.`,
-    happy_hour: `I'd like to list my happy hour specials on ${brand.appName}.`,
-    entertainment: `I'd like to promote my entertainment/live music on ${brand.appName}.`,
-    event: `I'd like to promote my event on ${brand.appName}.`,
-    eventTip: '',
-    entertainmentTip: '',
-  };
+  const isTip = isTipCategory(category);
 
-  const CATEGORY_TITLES: Record<ContactCategory, string> = {
+  // For tip categories: show a picker first — are you the owner or a user nominating?
+  const [isOwner, setIsOwner] = useState<boolean | null>(isTip ? null : true);
+
+  const [formData, setFormData] = useState({
+    spotName: '',   // restaurant / event / act name
+    details: '',    // when & where, notes
+    name: '',       // submitter name (optional for nominations)
+    email: '',      // submitter email (optional for nominations)
+    message: '',    // used for non-tip owner flows
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState('');
+
+  // Reset on open
+  useEffect(() => {
+    if (visible) {
+      setIsOwner(isTip ? null : true);
+      setFormData({ spotName: '', details: '', name: '', email: '', message: '' });
+      setIsSubmitted(false);
+      setError('');
+    }
+  }, [visible, category]);
+
+  // ─── Titles ───────────────────────────────────────────────
+  const TITLES: Record<ContactCategory, string> = {
     restaurant: 'Feature Your Restaurant',
     happy_hour: 'List Your Happy Hour',
     entertainment: 'Promote Your Entertainment',
@@ -52,100 +93,111 @@ export default function PartnerContactModal({
     entertainmentTip: 'Hosting Something?',
   };
 
-  const isTip = category === 'eventTip' || category === 'entertainmentTip';
+  const ownerTitle = category === 'entertainmentTip'
+    ? 'Get Listed on ' + brand.appName
+    : 'Submit Your Event';
 
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    businessName: '',
-    message: '',
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [error, setError] = useState('');
+  const nominationTitle = category === 'entertainmentTip'
+    ? 'Nominate a Venue or Act'
+    : 'Nominate an Event';
 
-  useEffect(() => {
-    if (visible) {
-      setFormData({
-        name: '',
-        email: '',
-        businessName: '',
-        message: CATEGORY_MESSAGES[category],
-      });
-      setIsSubmitted(false);
-      setError('');
-    }
-  }, [visible, category]);
+  // ─── Validation ───────────────────────────────────────────
+  const validateEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
-  const validateEmail = (value: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(value);
-  };
+  // Owner flow for non-tip categories — name + email required
+  const ownerFormValid =
+    formData.name.trim().length > 0 &&
+    formData.email.trim().length > 0 &&
+    validateEmail(formData.email);
 
-  const isFormValid = formData.name.trim() && formData.email.trim() && validateEmail(formData.email);
-  const isTipFormValid = isTip ? formData.businessName.trim().length > 0 : Boolean(isFormValid);
+  // Tip owner flow — spot name + name + email required
+  const tipOwnerFormValid =
+    formData.spotName.trim().length > 0 &&
+    formData.name.trim().length > 0 &&
+    formData.email.trim().length > 0 &&
+    validateEmail(formData.email);
 
+  // Nomination flow — only the spot name is required
+  const nominationFormValid = formData.spotName.trim().length > 0;
+
+  const isFormValid =
+    isOwner === null ? false
+    : isTip && isOwner ? tipOwnerFormValid
+    : isTip && !isOwner ? nominationFormValid
+    : ownerFormValid;
+
+  // ─── Submit ───────────────────────────────────────────────
   const handleSubmit = async () => {
-    if (!isTipFormValid) return;
-
+    if (!isFormValid) return;
     setIsSubmitting(true);
     setError('');
 
     try {
-      const supabase = getSupabase();
-      const tipPrefix = isTip
-        ? `[Community Tip — ${category === 'eventTip' ? 'Event' : 'Entertainment'}]\n`
-        : '';
-      const { error: insertError } = await supabase
-        .from('contact_submissions')
-        .insert({
-          name: formData.name.trim() || 'Anonymous',
-          email: formData.email.trim() || null,
-          business_name: formData.businessName.trim() || null,
-          message: `${tipPrefix}${formData.message.trim()}`,
-          interested_plan: null,
-          market_id: marketId || null,
+      if (isTip) {
+        // Nominations + owner inquiries go through the nominations API
+        const res = await fetch(NOMINATIONS_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: nominationType(category, !!isOwner),
+            spot_name: formData.spotName.trim(),
+            details: formData.details.trim() || null,
+            submitter_name: formData.name.trim() || null,
+            submitter_email: formData.email.trim() || null,
+            market_id: marketId || null,
+          }),
         });
-
-      if (insertError) {
-        throw insertError;
+        if (!res.ok) throw new Error('Request failed');
+      } else {
+        // Original business owner flow — save directly to Supabase
+        const supabase = getSupabase();
+        const CATEGORY_MESSAGES: Record<ContactCategory, string> = {
+          restaurant: `I'd like to get my restaurant featured on ${brand.appName}.`,
+          happy_hour: `I'd like to list my happy hour specials on ${brand.appName}.`,
+          entertainment: `I'd like to promote my entertainment/live music on ${brand.appName}.`,
+          event: `I'd like to promote my event on ${brand.appName}.`,
+          eventTip: '',
+          entertainmentTip: '',
+        };
+        const { error: insertError } = await supabase
+          .from('contact_submissions')
+          .insert({
+            name: formData.name.trim(),
+            email: formData.email.trim(),
+            business_name: formData.spotName.trim() || null,
+            message: formData.message.trim() || CATEGORY_MESSAGES[category],
+            interested_plan: null,
+            market_id: marketId || null,
+          });
+        if (insertError) throw insertError;
       }
 
       setIsSubmitted(true);
     } catch (err) {
-      console.error('Error submitting contact form:', err);
+      console.error('Submission error:', err);
       setError('Failed to submit. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleClose = () => {
-    onClose();
-  };
-
+  // ─── Success screen ───────────────────────────────────────
   if (isSubmitted) {
+    const successMsg =
+      isTip && !isOwner
+        ? `Thanks for the tip! We'll look into it and get it listed as soon as we can.`
+        : `We've received your message and will get back to you within 24–48 hours.`;
+
     return (
-      <Modal
-        visible={visible}
-        animationType="slide"
-        transparent
-        onRequestClose={handleClose}
-      >
+      <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
         <View style={styles.overlay}>
           <View style={styles.modalContent}>
             <View style={styles.successContainer}>
-              <View style={styles.successIcon}>
-                <Ionicons name="checkmark-circle" size={64} color={colors.accent} />
-              </View>
+              <Ionicons name="checkmark-circle" size={64} color={colors.accent} style={{ marginBottom: spacing.lg }} />
               <Text style={styles.successTitle}>Got it!</Text>
-              <Text style={styles.successText}>
-                {isTip
-                  ? `Thanks for the tip! We'll look into it and get it listed as soon as we can.`
-                  : `We've received your message and will get back to you within 24-48 hours.`}
-              </Text>
-              <TouchableOpacity style={styles.doneButton} onPress={handleClose}>
-                <Text style={styles.doneButtonText}>Done</Text>
+              <Text style={styles.successText}>{successMsg}</Text>
+              <TouchableOpacity style={styles.primaryButton} onPress={onClose}>
+                <Text style={styles.primaryButtonText}>Done</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -154,170 +206,305 @@ export default function PartnerContactModal({
     );
   }
 
+  // ─── Role picker (tip categories only) ────────────────────
+  const showPicker = isTip && isOwner === null;
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={handleClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView
         style={styles.overlay}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <TouchableOpacity
-          style={styles.backdrop}
-          activeOpacity={1}
-          onPress={handleClose}
-        />
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
+
         <View style={styles.modalContent}>
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerHandle} />
-            <Text style={styles.title}>{CATEGORY_TITLES[category]}</Text>
-            <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+            <Text style={styles.title}>
+              {showPicker
+                ? TITLES[category]
+                : isTip && isOwner
+                ? ownerTitle
+                : isTip && !isOwner
+                ? nominationTitle
+                : TITLES[category]}
+            </Text>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
               <Ionicons name="close" size={24} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
-            {error ? (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-            ) : null}
+          {showPicker ? (
+            // ── Picker ──────────────────────────────────────
+            <View style={styles.pickerContainer}>
+              <Text style={styles.pickerPrompt}>
+                {category === 'entertainmentTip'
+                  ? 'Are you the venue/organizer, or nominating a favourite spot?'
+                  : 'Are you the organizer, or did you hear about something happening?'}
+              </Text>
 
-            {isTip ? (
-              <>
-                <View style={styles.fieldContainer}>
-                  <Text style={styles.label}>Event / Show Name *</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.businessName}
-                    onChangeText={(text) => setFormData((prev) => ({ ...prev, businessName: text }))}
-                    placeholder="e.g. Jazz Night at The Exchange"
-                    placeholderTextColor={colors.textMuted}
-                    autoCapitalize="words"
-                  />
+              <TouchableOpacity
+                style={styles.pickerOption}
+                onPress={() => setIsOwner(true)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.pickerIconBg}>
+                  <Ionicons name="business" size={24} color={colors.accent} />
                 </View>
+                <View style={styles.pickerTextBlock}>
+                  <Text style={styles.pickerOptionTitle}>
+                    {category === 'entertainmentTip' ? "I'm the venue / organizer" : "I'm the organizer"}
+                  </Text>
+                  <Text style={styles.pickerOptionSub}>Get your listing added to the app</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
 
-                <View style={styles.fieldContainer}>
-                  <Text style={styles.label}>When & Where</Text>
-                  <TextInput
-                    style={[styles.input, styles.textArea]}
-                    value={formData.message}
-                    onChangeText={(text) => setFormData((prev) => ({ ...prev, message: text }))}
-                    placeholder="Date, time, venue — whatever you know"
-                    placeholderTextColor={colors.textMuted}
-                    multiline
-                    numberOfLines={3}
-                    textAlignVertical="top"
-                  />
+              <TouchableOpacity
+                style={styles.pickerOption}
+                onPress={() => setIsOwner(false)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.pickerIconBg}>
+                  <Ionicons name="people" size={24} color={colors.accent} />
                 </View>
+                <View style={styles.pickerTextBlock}>
+                  <Text style={styles.pickerOptionTitle}>
+                    {category === 'entertainmentTip' ? 'I know a great spot / act' : 'I heard about something'}
+                  </Text>
+                  <Text style={styles.pickerOptionSub}>Nominate it and we'll reach out</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            // ── Form ────────────────────────────────────────
+            <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
+              {error ? (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              ) : null}
 
-                <View style={styles.fieldContainer}>
-                  <Text style={styles.label}>Your Name</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.name}
-                    onChangeText={(text) => setFormData((prev) => ({ ...prev, name: text }))}
-                    placeholder="Optional — we won't spam you"
-                    placeholderTextColor={colors.textMuted}
-                    autoCapitalize="words"
-                    autoCorrect={false}
-                  />
-                </View>
+              {/* Back link for tip categories */}
+              {isTip && (
+                <TouchableOpacity style={styles.backLink} onPress={() => setIsOwner(null)}>
+                  <Ionicons name="chevron-back" size={14} color={colors.accent} />
+                  <Text style={styles.backLinkText}>Back</Text>
+                </TouchableOpacity>
+              )}
 
-                <View style={styles.fieldContainer}>
-                  <Text style={styles.label}>Your Email</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.email}
-                    onChangeText={(text) => setFormData((prev) => ({ ...prev, email: text }))}
-                    placeholder="Optional — only if you want a follow-up"
-                    placeholderTextColor={colors.textMuted}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                </View>
-              </>
-            ) : (
-              <>
-                <View style={styles.fieldContainer}>
-                  <Text style={styles.label}>Your Name *</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.name}
-                    onChangeText={(text) => setFormData((prev) => ({ ...prev, name: text }))}
-                    placeholder="John Smith"
-                    placeholderTextColor={colors.textMuted}
-                    autoCapitalize="words"
-                    autoCorrect={false}
-                  />
-                </View>
-
-                <View style={styles.fieldContainer}>
-                  <Text style={styles.label}>Email Address *</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.email}
-                    onChangeText={(text) => setFormData((prev) => ({ ...prev, email: text }))}
-                    placeholder="john@restaurant.com"
-                    placeholderTextColor={colors.textMuted}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                </View>
-
-                <View style={styles.fieldContainer}>
-                  <Text style={styles.label}>Business Name</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.businessName}
-                    onChangeText={(text) => setFormData((prev) => ({ ...prev, businessName: text }))}
-                    placeholder="Your Restaurant Name"
-                    placeholderTextColor={colors.textMuted}
-                    autoCapitalize="words"
-                  />
-                </View>
-
-                <View style={styles.fieldContainer}>
-                  <Text style={styles.label}>Message</Text>
-                  <TextInput
-                    style={[styles.input, styles.textArea]}
-                    value={formData.message}
-                    onChangeText={(text) => setFormData((prev) => ({ ...prev, message: text }))}
-                    placeholder="Tell us more..."
-                    placeholderTextColor={colors.textMuted}
-                    multiline
-                    numberOfLines={4}
-                    textAlignVertical="top"
-                  />
-                </View>
-              </>
-            )}
-
-            <TouchableOpacity
-              style={[styles.submitButton, !isTipFormValid && styles.submitButtonDisabled]}
-              onPress={handleSubmit}
-              disabled={!isTipFormValid || isSubmitting}
-            >
-              {isSubmitting ? (
-                <ActivityIndicator color={colors.textOnAccent} />
-              ) : (
+              {/* Nomination flow */}
+              {isTip && !isOwner && (
                 <>
-                  <Ionicons name="send" size={18} color={colors.textOnAccent} />
-                  <Text style={styles.submitButtonText}>{isTip ? 'Let Us Know' : 'Send Message'}</Text>
+                  <View style={styles.fieldContainer}>
+                    <Text style={styles.label}>
+                      {category === 'entertainmentTip' ? 'Venue or Act Name *' : 'Event Name *'}
+                    </Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.spotName}
+                      onChangeText={(t) => setFormData((p) => ({ ...p, spotName: t }))}
+                      placeholder={
+                        category === 'entertainmentTip'
+                          ? 'e.g. The Steel Petal, DJ Norah'
+                          : 'e.g. Jazz Night at The Exchange'
+                      }
+                      placeholderTextColor={colors.textMuted}
+                      autoCapitalize="words"
+                    />
+                  </View>
+
+                  <View style={styles.fieldContainer}>
+                    <Text style={styles.label}>
+                      {category === 'entertainmentTip' ? 'Where & When' : 'When & Where'}
+                    </Text>
+                    <TextInput
+                      style={[styles.input, styles.textArea]}
+                      value={formData.details}
+                      onChangeText={(t) => setFormData((p) => ({ ...p, details: t }))}
+                      placeholder="Date, time, venue — whatever you know"
+                      placeholderTextColor={colors.textMuted}
+                      multiline
+                      numberOfLines={3}
+                      textAlignVertical="top"
+                    />
+                  </View>
+
+                  <View style={styles.fieldContainer}>
+                    <Text style={styles.label}>Your Name</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.name}
+                      onChangeText={(t) => setFormData((p) => ({ ...p, name: t }))}
+                      placeholder="Optional"
+                      placeholderTextColor={colors.textMuted}
+                      autoCapitalize="words"
+                      autoCorrect={false}
+                    />
+                  </View>
+
+                  <View style={styles.fieldContainer}>
+                    <Text style={styles.label}>Your Email</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.email}
+                      onChangeText={(t) => setFormData((p) => ({ ...p, email: t }))}
+                      placeholder="Optional — only if you want a follow-up"
+                      placeholderTextColor={colors.textMuted}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                  </View>
                 </>
               )}
-            </TouchableOpacity>
 
-            <Text style={styles.disclaimer}>
-              By submitting, you agree to our Privacy Policy and Terms of Service.
-            </Text>
-          </ScrollView>
+              {/* Tip-owner flow */}
+              {isTip && isOwner && (
+                <>
+                  <View style={styles.fieldContainer}>
+                    <Text style={styles.label}>
+                      {category === 'entertainmentTip' ? 'Venue / Act Name *' : 'Event Name *'}
+                    </Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.spotName}
+                      onChangeText={(t) => setFormData((p) => ({ ...p, spotName: t }))}
+                      placeholder={
+                        category === 'entertainmentTip'
+                          ? 'e.g. The Steel Petal'
+                          : 'e.g. Jazz Night at The Exchange'
+                      }
+                      placeholderTextColor={colors.textMuted}
+                      autoCapitalize="words"
+                    />
+                  </View>
+
+                  <View style={styles.fieldContainer}>
+                    <Text style={styles.label}>Details</Text>
+                    <TextInput
+                      style={[styles.input, styles.textArea]}
+                      value={formData.details}
+                      onChangeText={(t) => setFormData((p) => ({ ...p, details: t }))}
+                      placeholder="Dates, venue, website, anything helpful"
+                      placeholderTextColor={colors.textMuted}
+                      multiline
+                      numberOfLines={3}
+                      textAlignVertical="top"
+                    />
+                  </View>
+
+                  <View style={styles.fieldContainer}>
+                    <Text style={styles.label}>Your Name *</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.name}
+                      onChangeText={(t) => setFormData((p) => ({ ...p, name: t }))}
+                      placeholder="Your name"
+                      placeholderTextColor={colors.textMuted}
+                      autoCapitalize="words"
+                      autoCorrect={false}
+                    />
+                  </View>
+
+                  <View style={styles.fieldContainer}>
+                    <Text style={styles.label}>Email Address *</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.email}
+                      onChangeText={(t) => setFormData((p) => ({ ...p, email: t }))}
+                      placeholder="your@email.com"
+                      placeholderTextColor={colors.textMuted}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                  </View>
+                </>
+              )}
+
+              {/* Standard owner flow (non-tip categories) */}
+              {!isTip && (
+                <>
+                  <View style={styles.fieldContainer}>
+                    <Text style={styles.label}>Your Name *</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.name}
+                      onChangeText={(t) => setFormData((p) => ({ ...p, name: t }))}
+                      placeholder="John Smith"
+                      placeholderTextColor={colors.textMuted}
+                      autoCapitalize="words"
+                      autoCorrect={false}
+                    />
+                  </View>
+
+                  <View style={styles.fieldContainer}>
+                    <Text style={styles.label}>Email Address *</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.email}
+                      onChangeText={(t) => setFormData((p) => ({ ...p, email: t }))}
+                      placeholder="john@restaurant.com"
+                      placeholderTextColor={colors.textMuted}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                  </View>
+
+                  <View style={styles.fieldContainer}>
+                    <Text style={styles.label}>Business Name</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.spotName}
+                      onChangeText={(t) => setFormData((p) => ({ ...p, spotName: t }))}
+                      placeholder="Your Restaurant / Venue Name"
+                      placeholderTextColor={colors.textMuted}
+                      autoCapitalize="words"
+                    />
+                  </View>
+
+                  <View style={styles.fieldContainer}>
+                    <Text style={styles.label}>Message</Text>
+                    <TextInput
+                      style={[styles.input, styles.textArea]}
+                      value={formData.message}
+                      onChangeText={(t) => setFormData((p) => ({ ...p, message: t }))}
+                      placeholder="Tell us more..."
+                      placeholderTextColor={colors.textMuted}
+                      multiline
+                      numberOfLines={4}
+                      textAlignVertical="top"
+                    />
+                  </View>
+                </>
+              )}
+
+              <TouchableOpacity
+                style={[styles.primaryButton, !isFormValid && styles.primaryButtonDisabled]}
+                onPress={handleSubmit}
+                disabled={!isFormValid || isSubmitting}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color={colors.textOnAccent} />
+                ) : (
+                  <>
+                    <Ionicons name="send" size={18} color={colors.textOnAccent} />
+                    <Text style={styles.primaryButtonText}>
+                      {isTip && !isOwner ? 'Let Us Know' : 'Send Message'}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              <Text style={styles.disclaimer}>
+                By submitting, you agree to our Privacy Policy and Terms of Service.
+              </Text>
+            </ScrollView>
+          )}
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -365,8 +552,63 @@ const useStyles = createLazyStyles((colors) => ({
     top: spacing.md,
     padding: spacing.xs,
   },
+  // ── Picker ────────────────────────────────────────────────
+  pickerContainer: {
+    padding: spacing.lg,
+  },
+  pickerPrompt: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    textAlign: 'center' as const,
+    marginBottom: spacing.lg,
+    lineHeight: 22,
+  },
+  pickerOption: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    backgroundColor: colors.cardBg,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: spacing.md,
+  },
+  pickerIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: `${colors.accent}20`,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  pickerTextBlock: {
+    flex: 1,
+  },
+  pickerOptionTitle: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: colors.text,
+    marginBottom: 2,
+  },
+  pickerOptionSub: {
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  // ── Form ──────────────────────────────────────────────────
   form: {
     padding: spacing.lg,
+  },
+  backLink: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 4,
+    marginBottom: spacing.md,
+  },
+  backLinkText: {
+    fontSize: 14,
+    color: colors.accent,
+    fontWeight: '500' as const,
   },
   errorContainer: {
     backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -399,23 +641,23 @@ const useStyles = createLazyStyles((colors) => ({
     color: colors.text,
   },
   textArea: {
-    minHeight: 100,
+    minHeight: 90,
     paddingTop: spacing.md,
   },
-  submitButton: {
+  primaryButton: {
     backgroundColor: colors.accent,
     borderRadius: radius.md,
     paddingVertical: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
     gap: 8,
     marginTop: spacing.sm,
   },
-  submitButtonDisabled: {
+  primaryButtonDisabled: {
     opacity: 0.5,
   },
-  submitButtonText: {
+  primaryButtonText: {
     color: colors.textOnAccent,
     fontSize: 16,
     fontWeight: '600' as const,
@@ -427,13 +669,11 @@ const useStyles = createLazyStyles((colors) => ({
     marginTop: spacing.md,
     marginBottom: spacing.lg,
   },
+  // ── Success ───────────────────────────────────────────────
   successContainer: {
-    alignItems: 'center',
+    alignItems: 'center' as const,
     padding: spacing.xl,
     paddingTop: spacing.xl * 2,
-  },
-  successIcon: {
-    marginBottom: spacing.lg,
   },
   successTitle: {
     fontSize: 24,
@@ -447,16 +687,5 @@ const useStyles = createLazyStyles((colors) => ({
     textAlign: 'center' as const,
     marginBottom: spacing.xl,
     lineHeight: 24,
-  },
-  doneButton: {
-    backgroundColor: colors.accent,
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl * 2,
-  },
-  doneButtonText: {
-    color: colors.textOnAccent,
-    fontSize: 16,
-    fontWeight: '600' as const,
   },
 }));
