@@ -749,16 +749,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'No signature' }, { status: 400 });
   }
 
-  let event: Stripe.Event;
+  // Try each market's webhook secret — each Stripe account has its own secret
+  const webhookSecrets = [
+    process.env.STRIPE_WEBHOOK_SECRET,           // Lancaster (primary)
+    process.env.STRIPE_WEBHOOK_SECRET_CUMBERLAND,
+    process.env.STRIPE_WEBHOOK_SECRET_FAYETTEVILLE,
+  ].filter(Boolean) as string[];
 
-  try {
-    event = getStripe().webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err);
+  let event: Stripe.Event | null = null;
+  for (const secret of webhookSecrets) {
+    try {
+      event = getStripe().webhooks.constructEvent(body, signature, secret);
+      break; // verified — stop trying
+    } catch {
+      // wrong secret for this account, try next
+    }
+  }
+
+  if (!event) {
+    console.error('Webhook signature verification failed against all market secrets');
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
