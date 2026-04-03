@@ -12,9 +12,21 @@ import * as crypto from 'crypto';
  * Valid for 72 hours.
  */
 
-function buildAndroidPublisher() {
+async function getServiceAccountJson(): Promise<string> {
   const raw = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON;
-  if (!raw) throw new Error('GOOGLE_PLAY_SERVICE_ACCOUNT_JSON not set');
+  if (raw) return raw;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const res = await fetch(`${url}/rest/v1/app_secrets?key=eq.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON&select=value`, {
+    headers: { apikey: key, Authorization: `Bearer ${key}` },
+  });
+  const rows = await res.json() as Array<{ value: string }>;
+  if (!rows[0]?.value) throw new Error('GOOGLE_PLAY_SERVICE_ACCOUNT_JSON not found in app_secrets');
+  return rows[0].value;
+}
+
+async function buildAndroidPublisher() {
+  const raw = await getServiceAccountJson();
   const credentials = JSON.parse(raw);
   const auth = new google.auth.GoogleAuth({
     credentials,
@@ -81,7 +93,7 @@ export async function GET(request: Request) {
   const { packageName, reviewId, reply } = payload;
 
   try {
-    const androidpublisher = buildAndroidPublisher();
+    const androidpublisher = await buildAndroidPublisher();
     await androidpublisher.reviews.reply({
       packageName,
       reviewId,

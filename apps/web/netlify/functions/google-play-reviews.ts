@@ -21,9 +21,22 @@ const APPS = [
 
 const STAR_EMOJIS: Record<number, string> = { 1: '⭐', 2: '⭐⭐', 3: '⭐⭐⭐', 4: '⭐⭐⭐⭐', 5: '⭐⭐⭐⭐⭐' };
 
-function buildAndroidPublisher() {
+async function getServiceAccountJson(): Promise<string> {
   const raw = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON;
-  if (!raw) throw new Error('GOOGLE_PLAY_SERVICE_ACCOUNT_JSON not set');
+  if (raw) return raw;
+  // Fallback: fetch from Supabase app_secrets (avoids Netlify 4KB Lambda env var limit)
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const res = await fetch(`${url}/rest/v1/app_secrets?key=eq.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON&select=value`, {
+    headers: { apikey: key, Authorization: `Bearer ${key}` },
+  });
+  const rows = await res.json() as Array<{ value: string }>;
+  if (!rows[0]?.value) throw new Error('GOOGLE_PLAY_SERVICE_ACCOUNT_JSON not found in app_secrets');
+  return rows[0].value;
+}
+
+async function buildAndroidPublisher() {
+  const raw = await getServiceAccountJson();
   const credentials = JSON.parse(raw);
   const auth = new google.auth.GoogleAuth({
     credentials,
@@ -116,7 +129,7 @@ function buildApprovalEmail(
 export default async function handler(_req: Request, _context: Context) {
   console.log('[Google Play Reviews] Starting daily review check...');
 
-  const androidpublisher = buildAndroidPublisher();
+  const androidpublisher = await buildAndroidPublisher();
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const alertEmail = process.env.REVIEW_ALERT_EMAIL || 'leandertoney@gmail.com';
 
