@@ -1,6 +1,6 @@
 [build]
   base = "apps/web"
-  command = "NODE_OPTIONS=--max-old-space-size=4096 npm install && NODE_OPTIONS=--max-old-space-size=4096 npm run build"
+  command = "npm install && npm run build"
   publish = ".next"
 
 [[plugins]]
@@ -26,6 +26,8 @@
 [build.environment]
   NODE_VERSION = "20"
   NEXT_TELEMETRY_DISABLED = "1"
+  # Increase heap for Next.js build — inline NODE_OPTIONS doesn't propagate to child processes
+  NODE_OPTIONS = "--max-old-space-size=4096"
   # Exclude mobile app from secrets scanning - Google Maps API keys are meant to be public
   # (restricted by app bundle ID in Google Cloud Console, not by secrecy)
   SECRETS_SCAN_OMIT_PATHS = "apps/mobile"
