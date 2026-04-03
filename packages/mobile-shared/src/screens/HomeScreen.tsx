@@ -125,7 +125,7 @@ export default function HomeScreen() {
 
   const onRefresh = useCallback(async () => {
     queryClient.invalidateQueries({ queryKey: ['featuredRestaurants', marketId] });
-    queryClient.invalidateQueries({ queryKey: hasFeature('happyHours') ? ['activeHappyHours', marketId] : ['activeDailySpecials', marketId] });
+queryClient.invalidateQueries({ queryKey: hasFeature('happyHours') ? ['activeHappyHours', marketId] : ['activeDailySpecials', marketId] });
     queryClient.invalidateQueries({ queryKey: ['entertainmentEvents', marketId] });
     queryClient.invalidateQueries({ queryKey: ['upcomingEvents', marketId] });
     queryClient.invalidateQueries({ queryKey: ['blog'] });
