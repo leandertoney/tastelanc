@@ -43,9 +43,12 @@ export async function GET(request: Request) {
 
     // Query 1: Restaurant events (unless filtering by self_promoter_id)
     if (!selfPromoterId) {
+      // Use left join when filtering by partner_slug so events show even if the restaurant
+      // is inactive (e.g. franchise placeholder, inactive venues in partner schedules)
+      const restaurantJoin = partnerSlug ? 'restaurants(id, name, slug, logo_url, tier_id, tiers(name))' : 'restaurants!inner(id, name, slug, logo_url, tier_id, tiers(name))';
       let restaurantQuery = supabase
         .from('events')
-        .select('*, restaurant:restaurants!inner(id, name, slug, logo_url, tier_id, tiers(name))')
+        .select(`*, restaurant:${restaurantJoin}`)
         .eq('is_active', true)
         .not('restaurant_id', 'is', null)
         .or(`event_date.gte.${today},is_recurring.eq.true`)
