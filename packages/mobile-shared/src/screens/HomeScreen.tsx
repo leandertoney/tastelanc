@@ -213,14 +213,13 @@ queryClient.invalidateQueries({ queryKey: hasFeature('happyHours') ? ['activeHap
 
       <Spacer size="md" />
 
-      {/* Section 6: Recommended for You */}
-      <ErrorBoundary level="section">
+      {/* Section 6: Recommended for You — hidden, redundant with Featured */}
+      {/* <ErrorBoundary level="section">
         <RecommendedSection onRestaurantPress={handleRestaurantPress} />
       </ErrorBoundary>
+      <Spacer size="md" /> */}
 
-      <Spacer size="md" />
-
-      {/* Section 6b: Open on Your Night Off (Mon/Tue confirmed open spots) */}
+      {/* Section 6b: Open Monday & Tuesday */}
       <ErrorBoundary level="section">
         <NightOffSection onRestaurantPress={handleRestaurantPress} />
       </ErrorBoundary>
