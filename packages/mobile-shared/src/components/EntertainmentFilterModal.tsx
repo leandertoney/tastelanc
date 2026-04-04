@@ -12,6 +12,9 @@ import { createLazyStyles } from '../utils/lazyStyles';
 import { radius } from '../constants/spacing';
 import type { EventType } from '../types/database';
 
+const TFK_NAVY = '#0D1B2A';
+const TFK_GOLD = '#FCD34D';
+
 const EVENT_TYPES: { type: EventType; label: string; icon: string; color: string }[] = [
   { type: 'live_music', label: 'Live Music', icon: 'musical-notes', color: '#FF6B6B' },
   { type: 'dj', label: 'DJ', icon: 'disc', color: '#C084FC' },
@@ -31,6 +34,10 @@ interface Props {
   onToggle: (type: EventType) => void;
   onClear: () => void;
   onClose: () => void;
+  // TFK partner filter
+  tfkOnly?: boolean;
+  tfkCount?: number;
+  onToggleTFK?: () => void;
 }
 
 export default function EntertainmentFilterModal({
@@ -40,9 +47,19 @@ export default function EntertainmentFilterModal({
   onToggle,
   onClear,
   onClose,
+  tfkOnly = false,
+  tfkCount = 0,
+  onToggleTFK,
 }: Props) {
   const styles = useStyles();
   const colors = getColors();
+
+  const hasAnyFilter = selectedTypes.length > 0 || tfkOnly;
+
+  function handleClearAll() {
+    onClear();
+    if (tfkOnly && onToggleTFK) onToggleTFK();
+  }
 
   return (
     <Modal
@@ -58,8 +75,8 @@ export default function EntertainmentFilterModal({
             <Ionicons name="close" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.title}>Filter Events</Text>
-          {selectedTypes.length > 0 ? (
-            <TouchableOpacity onPress={onClear} style={styles.clearButton}>
+          {hasAnyFilter ? (
+            <TouchableOpacity onPress={handleClearAll} style={styles.clearButton}>
               <Text style={styles.clearText}>Clear All</Text>
             </TouchableOpacity>
           ) : (
@@ -103,6 +120,36 @@ export default function EntertainmentFilterModal({
                 </TouchableOpacity>
               );
             })}
+
+            {/* TFK partner filter chip — only shown when there are TFK events */}
+            {onToggleTFK && tfkCount > 0 && (
+              <TouchableOpacity
+                onPress={onToggleTFK}
+                style={[
+                  styles.typeCard,
+                  styles.tfkCard,
+                  tfkOnly && styles.tfkCardActive,
+                ]}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.typeIconContainer, tfkOnly ? styles.tfkIconContainerActive : styles.tfkIconContainerInactive]}>
+                  <Ionicons name="bulb" size={22} color={TFK_GOLD} />
+                </View>
+                <Text style={[styles.typeLabel, styles.tfkLabel]}>
+                  Thirsty for{'\n'}Knowledge
+                </Text>
+                {tfkCount > 0 && (
+                  <Text style={[styles.typeCount, tfkOnly ? styles.tfkCountActive : styles.tfkCountInactive]}>
+                    {tfkCount} {tfkCount === 1 ? 'event' : 'events'}
+                  </Text>
+                )}
+                {tfkOnly && (
+                  <View style={styles.checkmark}>
+                    <Ionicons name="checkmark-circle" size={20} color={TFK_GOLD} />
+                  </View>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -110,7 +157,9 @@ export default function EntertainmentFilterModal({
         <View style={styles.footer}>
           <TouchableOpacity style={styles.applyButton} onPress={onClose}>
             <Text style={styles.applyText}>
-              {selectedTypes.length > 0
+              {tfkOnly
+                ? 'Show TFK Events'
+                : selectedTypes.length > 0
                 ? `Show ${selectedTypes.length} Type${selectedTypes.length !== 1 ? 's' : ''}`
                 : 'Show All Events'}
             </Text>
@@ -210,6 +259,29 @@ const useStyles = createLazyStyles((colors) => ({
     position: 'absolute' as const,
     top: 10,
     right: 10,
+  },
+  // TFK card styles
+  tfkCard: {
+    borderColor: TFK_GOLD + '60',
+  },
+  tfkCardActive: {
+    backgroundColor: TFK_NAVY,
+    borderColor: TFK_GOLD,
+  },
+  tfkIconContainerInactive: {
+    backgroundColor: TFK_GOLD + '20',
+  },
+  tfkIconContainerActive: {
+    backgroundColor: TFK_GOLD + '30',
+  },
+  tfkLabel: {
+    color: TFK_GOLD,
+  },
+  tfkCountInactive: {
+    color: TFK_GOLD + 'AA',
+  },
+  tfkCountActive: {
+    color: TFK_GOLD + 'CC',
   },
   footer: {
     padding: 16,

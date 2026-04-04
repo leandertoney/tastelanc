@@ -102,6 +102,7 @@ export default function EntertainmentViewAllScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { marketId } = useMarket();
   const [selectedTypes, setSelectedTypes] = useState<EventType[]>([]);
+  const [tfkOnly, setTfkOnly] = useState(false);
   const [filterVisible, setFilterVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -120,11 +121,24 @@ export default function EntertainmentViewAllScreen() {
     return counts;
   }, [events]);
 
-  // Filter events by selected types and search query, then sort chronologically
+  // Count TFK partner events
+  const tfkCount = useMemo(
+    () => events.filter((e) => e.partner_slug === 'thirsty-for-knowledge').length,
+    [events]
+  );
+
+  // Filter events by selected types, TFK partner flag, and search query, then sort chronologically
   const filteredEvents = useMemo(() => {
-    let filtered = selectedTypes.length > 0
-      ? events.filter((e) => selectedTypes.includes(e.event_type))
-      : events;
+    let filtered: typeof events;
+
+    if (tfkOnly) {
+      // TFK filter overrides event-type filters — show only TFK partner events
+      filtered = events.filter((e) => e.partner_slug === 'thirsty-for-knowledge');
+    } else if (selectedTypes.length > 0) {
+      filtered = events.filter((e) => selectedTypes.includes(e.event_type));
+    } else {
+      filtered = events;
+    }
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -139,7 +153,7 @@ export default function EntertainmentViewAllScreen() {
     filtered.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
 
     return filtered;
-  }, [events, selectedTypes, searchQuery]);
+  }, [events, selectedTypes, tfkOnly, searchQuery]);
 
   const handlePress = useCallback(
     (event: ApiEvent) => {
@@ -152,6 +166,10 @@ export default function EntertainmentViewAllScreen() {
     setSelectedTypes((prev) =>
       prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     );
+  }, []);
+
+  const handleToggleTFK = useCallback(() => {
+    setTfkOnly((prev) => !prev);
   }, []);
 
   const renderItem = ({ item }: { item: ApiEvent }) => {
@@ -193,7 +211,7 @@ export default function EntertainmentViewAllScreen() {
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholder="Search events or performers..."
-            filterCount={selectedTypes.length}
+            filterCount={selectedTypes.length + (tfkOnly ? 1 : 0)}
             onFilterPress={() => setFilterVisible(true)}
           />
         </View>
@@ -202,7 +220,11 @@ export default function EntertainmentViewAllScreen() {
         <View style={styles.resultsContainer}>
           <Text style={styles.resultsText}>
             {filteredEvents.length} {filteredEvents.length === 1 ? 'event' : 'events'}
-            {selectedTypes.length > 0 && ` \u00B7 ${selectedTypes.length} filter${selectedTypes.length !== 1 ? 's' : ''}`}
+            {tfkOnly
+              ? ' \u00B7 Thirsty for Knowledge'
+              : selectedTypes.length > 0
+              ? ` \u00B7 ${selectedTypes.length} filter${selectedTypes.length !== 1 ? 's' : ''}`
+              : null}
           </Text>
         </View>
 
@@ -241,6 +263,9 @@ export default function EntertainmentViewAllScreen() {
         onToggle={handleToggleType}
         onClear={() => setSelectedTypes([])}
         onClose={() => setFilterVisible(false)}
+        tfkOnly={tfkOnly}
+        tfkCount={tfkCount}
+        onToggleTFK={handleToggleTFK}
       />
     </>
   );
