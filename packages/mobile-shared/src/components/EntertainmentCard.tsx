@@ -82,7 +82,7 @@ export default function EntertainmentCard({
   if (imageUrl) {
     return (
       <TouchableOpacity
-        style={styles.card}
+        style={[styles.card, isTFK && styles.tfkCardBorder]}
         onPress={onPress}
         activeOpacity={0.9}
         disabled={!onPress}
@@ -102,7 +102,7 @@ export default function EntertainmentCard({
   // Fallback without image - icon centered, badge at top
   return (
     <TouchableOpacity
-      style={[styles.card, styles.solidCard]}
+      style={[styles.card, styles.solidCard, isTFK && styles.tfkCardBorder]}
       onPress={onPress}
       activeOpacity={0.9}
       disabled={!onPress}
@@ -170,6 +170,10 @@ const useStyles = createLazyStyles((colors) => ({
     fontSize: 10,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  tfkCardBorder: {
+    borderWidth: 1,
+    borderColor: TFK_GOLD,
   },
   tfkBadge: {
     position: 'absolute' as const,
