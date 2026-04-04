@@ -9,6 +9,7 @@
 
 import { useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Animated } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
@@ -61,8 +62,11 @@ export default function TFKEntertainmentCard() {
       onPress={() => navigation.navigate('ThirstyKnowledge')}
       activeOpacity={0.88}
     >
-      {/* Teal circle background */}
-      <View style={styles.circle}>
+      <LinearGradient
+        colors={['#F9A8D4', '#C084FC', '#93C5FD']}
+        locations={[0, 0.5, 1]}
+        style={styles.circle}
+      >
 
         {/* Beer glass — rocks on mount */}
         <Animated.View style={[styles.glassWrap, { transform: [{ rotate: glassRotate }] }]}>
@@ -83,7 +87,7 @@ export default function TFKEntertainmentCard() {
           <Text style={styles.bannerMid}>for</Text>
           <Text style={styles.bannerBot}>Knowledge</Text>
         </View>
-      </View>
+      </LinearGradient>
     </TouchableOpacity>
   );
 }
@@ -95,9 +99,9 @@ const useStyles = createLazyStyles(() => ({
     width: CARD,
     height: CARD,
     marginRight: spacing.md,
-    borderRadius: CARD / 2,
+    borderRadius: radius.lg,
     overflow: 'hidden' as const,
-    shadowColor: TFK_TEAL_DARK,
+    shadowColor: '#C084FC',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.45,
     shadowRadius: 10,
@@ -106,8 +110,7 @@ const useStyles = createLazyStyles(() => ({
   circle: {
     width: CARD,
     height: CARD,
-    borderRadius: CARD / 2,
-    backgroundColor: TFK_TEAL,
+    borderRadius: radius.lg,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
     overflow: 'hidden' as const,
