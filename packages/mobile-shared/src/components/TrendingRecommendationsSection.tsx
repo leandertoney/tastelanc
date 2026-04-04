@@ -27,7 +27,8 @@ export default function TrendingRecommendationsSection() {
   const { marketId } = useMarket();
   const { userId } = useAuth();
 
-  const { data: recommendations = [] } = useTrendingRecommendations(marketId ?? undefined);
+  const { data: recommendations = [], isLoading: trendingLoading, error: trendingError } = useTrendingRecommendations(marketId ?? undefined);
+  console.log('TrendingRecommendationsSection:', { count: recommendations.length, isLoading: trendingLoading, error: trendingError, marketId });
   const { data: likedIds = [] } = useUserLikedRecommendations();
 
   const toggleLike = useToggleRecommendationLike();

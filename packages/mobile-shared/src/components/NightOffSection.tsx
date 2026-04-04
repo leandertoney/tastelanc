@@ -21,8 +21,6 @@ import { useMarket } from '../context/MarketContext';
 import { trackImpression } from '../lib/impressions';
 import type { Restaurant } from '../types/database';
 import type { RootStackParamList } from '../navigation/types';
-import { getCurrentDay } from '../hooks/useOpenStatus';
-
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const CARD_WIDTH = 140;
@@ -30,21 +28,29 @@ const IMAGE_HEIGHT = 96;
 const MAX_ITEMS = 8;
 const MIN_ITEMS = 3;
 
-async function getOpenTonightRestaurants(marketId: string | null): Promise<Restaurant[]> {
+async function getNightOffRestaurants(marketId: string | null): Promise<Restaurant[]> {
   const supabase = getSupabase();
-  const today = getCurrentDay();
 
-  // Get restaurant IDs that are open today (not explicitly closed)
+  // Get restaurant IDs open on Mondays OR Tuesdays
   const { data: hoursData, error: hoursError } = await supabase
     .from('restaurant_hours')
     .select('restaurant_id')
-    .eq('day_of_week', today)
+    .in('day_of_week', ['monday', 'tuesday'])
     .eq('is_closed', false)
     .not('open_time', 'is', null);
 
-  if (hoursError || !hoursData || hoursData.length === 0) return [];
+  if (hoursError) {
+    console.warn('NightOffSection hours query failed:', hoursError.message);
+    return [];
+  }
+  if (!hoursData || hoursData.length === 0) {
+    console.log('NightOffSection: no Mon/Tue hours found');
+    return [];
+  }
 
-  const openIds = hoursData.map((h) => h.restaurant_id);
+  // Deduplicate restaurant IDs
+  const openIds = [...new Set(hoursData.map((h) => h.restaurant_id))];
+  console.log('NightOffSection: found', openIds.length, 'Mon/Tue restaurants');
 
   let query = supabase
     .from('restaurants')
@@ -59,10 +65,11 @@ async function getOpenTonightRestaurants(marketId: string | null): Promise<Resta
 
   const { data, error } = await query;
   if (error) {
-    console.warn('getOpenTonightRestaurants query failed:', error.message);
+    console.warn('NightOffSection restaurants query failed:', error.message);
     return [];
   }
 
+  console.log('NightOffSection: returning', (data || []).length, 'restaurants');
   return (data || []) as Restaurant[];
 }
 
@@ -73,8 +80,8 @@ export default function NightOffSection() {
   const styles = useStyles();
 
   const { data: restaurants = [], isLoading } = useQuery({
-    queryKey: ['openTonight', marketId],
-    queryFn: () => getOpenTonightRestaurants(marketId),
+    queryKey: ['nightOff', marketId],
+    queryFn: () => getNightOffRestaurants(marketId),
     staleTime: 5 * 60 * 1000,
   });
 
