@@ -17,14 +17,26 @@ import { getColors } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { duration, spring, reveal } from '../../constants/animations';
 import { MultiSelectGrid, ContinueButton } from '../../components/Onboarding';
+import OnboardingProgressBar from '../../components/OnboardingProgressBar';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingFood'>;
 
 const MAX_SELECTIONS = 3;
 
+const FOOD_EMOJI: Record<string, string> = {
+  'Modern American': '🍔',
+  'Italian': '🍕',
+  'Mediterranean': '🫒',
+  'Asian': '🍜',
+  'Latin': '🌮',
+  'Seafood': '🦞',
+  'Steakhouse': '🥩',
+  'Pub Food': '🍺',
+};
+
 const FOOD_GRID_OPTIONS = FOOD_OPTIONS.map((option) => ({
   id: option,
-  label: option,
+  label: FOOD_EMOJI[option] ? `${FOOD_EMOJI[option]} ${option}` : option,
   icon: { 'Modern American': 'restaurant', 'Italian': 'pizza', 'Mediterranean': 'sunny', 'Asian': 'nutrition', 'Latin': 'flame', 'Seafood': 'fish', 'Steakhouse': 'bonfire', 'Pub Food': 'beer' }[option] || 'restaurant',
 }));
 
@@ -70,6 +82,7 @@ export default function OnboardingFoodScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <OnboardingProgressBar totalSteps={12} currentStep={10} style={{ paddingHorizontal: 20, paddingTop: 12 }} />
       <View style={styles.topBar}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
@@ -80,7 +93,7 @@ export default function OnboardingFoodScreen({ navigation }: Props) {
       </View>
       <View style={styles.content}>
         <Animated.View style={[styles.headerSection, titleAnimatedStyle]}>
-          <Text style={styles.headline}>What food do you love?</Text>
+          <Text style={styles.headline}>What's your flavor?</Text>
           <Text style={styles.subheadline}>{`Pick up to 3 (${data.foodPreferences.length}/3 selected)`}</Text>
         </Animated.View>
         <Animated.View style={[styles.gridContainer, contentAnimatedStyle]}>

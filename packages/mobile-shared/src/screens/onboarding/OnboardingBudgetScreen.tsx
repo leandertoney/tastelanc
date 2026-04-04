@@ -17,14 +17,15 @@ import { getColors } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { radius } from '../../constants/spacing';
 import { ContinueButton } from '../../components/Onboarding';
+import OnboardingProgressBar from '../../components/OnboardingProgressBar';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingBudget'>;
 
 const BUDGET_DESCRIPTIONS: Record<string, string> = {
-  '$': 'Quick bites & casual spots',
-  '$$': 'Mid-range dining',
-  '$$$': 'Fine dining & upscale',
-  'All of the above': 'Show me everything',
+  '$': '💰 Quick bites & casual spots',
+  '$$': '🍸 Mid-range dining',
+  '$$$': '💎 Fine dining & upscale',
+  'All of the above': '🙌 Show me everything',
 };
 
 export default function OnboardingBudgetScreen({ navigation }: Props) {
@@ -64,6 +65,7 @@ export default function OnboardingBudgetScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <OnboardingProgressBar totalSteps={12} currentStep={8} style={{ paddingHorizontal: 20, paddingTop: 12 }} />
       <View style={styles.topBar}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
@@ -74,7 +76,7 @@ export default function OnboardingBudgetScreen({ navigation }: Props) {
       </View>
       <View style={styles.content}>
         <Animated.View style={[styles.headerSection, titleAnimatedStyle]}>
-          <Text style={styles.headline}>What's your budget?</Text>
+          <Text style={styles.headline}>How do you roll?</Text>
           <Text style={styles.subheadline}>Select all that apply</Text>
         </Animated.View>
         <Animated.View style={[styles.cardsContainer, cardsAnimatedStyle]}>

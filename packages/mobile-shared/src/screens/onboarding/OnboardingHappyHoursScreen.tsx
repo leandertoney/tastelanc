@@ -22,6 +22,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/types';
 import { getColors } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
+import OnboardingProgressBar from '../../components/OnboardingProgressBar';
 import { radius } from '../../constants/spacing';
 import { duration, spring, reveal, pulse } from '../../constants/animations';
 
@@ -84,6 +85,7 @@ export default function OnboardingHappyHoursScreen({ navigation }: Props) {
   return (
     <TouchableOpacity style={styles.container} activeOpacity={1} onPress={handleContinue}>
       <SafeAreaView style={styles.safeArea}>
+        <OnboardingProgressBar totalSteps={12} currentStep={2} style={{ paddingHorizontal: 20, paddingTop: 12 }} />
         <View style={styles.content}>
           <View style={styles.iconSection}>
             <Animated.View style={[styles.glowCircle, glowAnimatedStyle]} />

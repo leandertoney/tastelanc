@@ -21,6 +21,7 @@ import type { OnboardingStackParamList } from '../../navigation/types';
 import { getColors, getAssets } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { duration, spring, reveal } from '../../constants/animations';
+import OnboardingProgressBar from '../../components/OnboardingProgressBar';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingProblems'>;
 
@@ -28,9 +29,9 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const HERO_HEIGHT = SCREEN_HEIGHT * 0.35;
 
 const PAIN_POINTS = [
-  'Happy hours scattered across apps.',
-  'Events you hear about too late.',
-  'Deals buried in your feed.',
+  '🍻 Happy hours scattered across apps.',
+  '📅 Events you hear about too late.',
+  '🏷️ Deals buried in your feed.',
 ];
 
 const STAGGER = 500;
@@ -134,6 +135,7 @@ export default function OnboardingProblemsScreen({ navigation }: Props) {
       activeOpacity={1}
       onPress={handleContinue}
     >
+      <OnboardingProgressBar totalSteps={12} currentStep={0} style={styles.progressBar} />
       {/* Hero image with gradient fade */}
       <Animated.View style={[styles.heroSection, imageAnimatedStyle]}>
         {assets.onboardingHero && (
@@ -150,7 +152,7 @@ export default function OnboardingProblemsScreen({ navigation }: Props) {
       <SafeAreaView style={styles.safeArea} edges={['bottom']}>
         <View style={styles.content}>
           <Animated.View style={headerAnimatedStyle}>
-            <Text style={styles.headline}>Sound familiar?</Text>
+            <Text style={styles.headline}>We get it.</Text>
           </Animated.View>
 
           <View style={styles.painPointsList}>
@@ -183,6 +185,15 @@ const useStyles = createLazyStyles((colors) => ({
   container: {
     flex: 1,
     backgroundColor: colors.primary,
+  },
+  progressBar: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
   },
   heroSection: {
     height: HERO_HEIGHT,

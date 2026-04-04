@@ -15,6 +15,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/types';
 import { getColors, getBrand, getAssets } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
+import OnboardingProgressBar from '../../components/OnboardingProgressBar';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingPremium'>;
 
@@ -53,6 +54,7 @@ export default function OnboardingPremiumScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <OnboardingProgressBar totalSteps={12} currentStep={11} style={{ paddingHorizontal: 20, paddingTop: 12 }} />
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color={colors.text} />
       </TouchableOpacity>

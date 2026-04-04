@@ -17,14 +17,26 @@ import { getColors } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { duration, spring, reveal } from '../../constants/animations';
 import { MultiSelectGrid, ContinueButton } from '../../components/Onboarding';
+import OnboardingProgressBar from '../../components/OnboardingProgressBar';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingEventSeeking'>;
 
 const MAX_SELECTIONS = 3;
 
+const EVENT_EMOJI: Record<string, string> = {
+  'Live Music': '🎵',
+  'Trivia': '🧠',
+  'Comedy': '😂',
+  'Sports': '🏆',
+  'Wine Tastings': '🍷',
+  'Networking': '🤝',
+  'Karaoke': '🎤',
+  'DJ Nights': '🎧',
+};
+
 const EVENT_GRID_OPTIONS = EVENT_OPTIONS.map((option) => ({
   id: option,
-  label: option,
+  label: EVENT_EMOJI[option] ? `${EVENT_EMOJI[option]} ${option}` : option,
   icon: { 'Live Music': 'musical-notes', 'Trivia': 'help-circle', 'Comedy': 'happy', 'Sports': 'football', 'Wine Tastings': 'wine', 'Networking': 'people', 'Karaoke': 'mic', 'DJ Nights': 'disc' }[option] || 'ellipse',
 }));
 
@@ -83,6 +95,7 @@ export default function OnboardingEventSeekingScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <OnboardingProgressBar totalSteps={12} currentStep={7} style={{ paddingHorizontal: 20, paddingTop: 12 }} />
       <View style={styles.topBar}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />

@@ -17,14 +17,24 @@ import { getColors } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { duration, spring, reveal } from '../../constants/animations';
 import { MultiSelectGrid, ContinueButton } from '../../components/Onboarding';
+import OnboardingProgressBar from '../../components/OnboardingProgressBar';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingEntertainment'>;
 
 const MAX_SELECTIONS = 3;
 
+const ENTERTAINMENT_EMOJI: Record<string, string> = {
+  'Date night': '💑',
+  'Casual hangout': '😎',
+  'After work drinks': '🍺',
+  'Weekend brunch': '🥂',
+  'Late night eats': '🌙',
+  'Special occasion': '✨',
+};
+
 const ENTERTAINMENT_GRID_OPTIONS = ENTERTAINMENT_OPTIONS.map((option) => ({
   id: option,
-  label: option,
+  label: ENTERTAINMENT_EMOJI[option] ? `${ENTERTAINMENT_EMOJI[option]} ${option}` : option,
   icon: { 'Date night': 'heart', 'Casual hangout': 'people', 'After work drinks': 'beer', 'Weekend brunch': 'cafe', 'Late night eats': 'moon', 'Special occasion': 'sparkles' }[option] || 'ellipse',
 }));
 
@@ -70,6 +80,7 @@ export default function OnboardingEntertainmentScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <OnboardingProgressBar totalSteps={12} currentStep={9} style={{ paddingHorizontal: 20, paddingTop: 12 }} />
       <View style={styles.topBar}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
@@ -80,7 +91,7 @@ export default function OnboardingEntertainmentScreen({ navigation }: Props) {
       </View>
       <View style={styles.content}>
         <Animated.View style={[styles.headerSection, titleAnimatedStyle]}>
-          <Text style={styles.headline}>What brings you out?</Text>
+          <Text style={styles.headline}>What's your vibe?</Text>
           <Text style={styles.subheadline}>{`Pick up to 3 (${data.entertainmentPreferences.length}/3 selected)`}</Text>
         </Animated.View>
         <Animated.View style={[styles.gridContainer, contentAnimatedStyle]}>

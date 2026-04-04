@@ -16,6 +16,7 @@ import Animated, {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/types';
 import { ContinueButton } from '../../components/Onboarding';
+import OnboardingProgressBar from '../../components/OnboardingProgressBar';
 import { getColors, getBrand, getAssets, hasFeature } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { duration, spring, reveal } from '../../constants/animations';
@@ -79,6 +80,7 @@ export default function OnboardingSolutionScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
+        <OnboardingProgressBar totalSteps={12} currentStep={1} style={{ paddingHorizontal: 20, paddingTop: 12 }} />
         <View style={styles.content}>
           {/* App logo */}
           <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
