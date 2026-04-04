@@ -4,8 +4,10 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  Image,
+  ImageBackground,
+  StyleSheet,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -23,8 +25,8 @@ import type { Restaurant } from '../types/database';
 import type { RootStackParamList } from '../navigation/types';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-const CARD_WIDTH = 140;
-const IMAGE_HEIGHT = 96;
+const CARD_WIDTH = 130;
+const CARD_HEIGHT = 200;
 const MAX_ITEMS = 8;
 const MIN_ITEMS = 3;
 
@@ -102,25 +104,36 @@ export default function NightOffSection() {
         <TouchableOpacity
           style={styles.card}
           onPress={() => handlePress(item.id)}
-          activeOpacity={0.85}
+          activeOpacity={0.88}
         >
-          <View style={styles.imageContainer}>
-            {item.cover_image_url ? (
-              <Image
-                source={{ uri: item.cover_image_url, cache: 'reload' }}
-                style={styles.image}
-              />
-            ) : (
+          <ImageBackground
+            source={item.cover_image_url ? { uri: item.cover_image_url } : undefined}
+            style={styles.imageBackground}
+            imageStyle={styles.imageStyle}
+          >
+            {/* Dark placeholder when no image */}
+            {!item.cover_image_url && (
               <View style={styles.imagePlaceholder}>
-                <Ionicons name="restaurant-outline" size={24} color={colors.textSecondary} />
+                <Ionicons name="restaurant-outline" size={32} color={colors.textSecondary} />
               </View>
             )}
-          </View>
-          <View style={styles.cardContent}>
-            <Text style={styles.cardName} numberOfLines={2}>
-              {item.name}
-            </Text>
-          </View>
+
+            {/* Gradient overlay — fades from transparent to dark at bottom */}
+            <LinearGradient
+              colors={['transparent', 'rgba(0,0,0,0.75)']}
+              style={styles.gradient}
+            />
+
+            {/* Bottom overlay: badge + name */}
+            <View style={styles.overlay}>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>Mon & Tue</Text>
+              </View>
+              <Text style={styles.cardName} numberOfLines={2}>
+                {item.name}
+              </Text>
+            </View>
+          </ImageBackground>
         </TouchableOpacity>
       );
     },
@@ -162,40 +175,55 @@ const useStyles = createLazyStyles((colors) => ({
   },
   card: {
     width: CARD_WIDTH,
-    backgroundColor: colors.cardBg,
-    borderRadius: radius.md,
+    height: CARD_HEIGHT,
+    borderRadius: radius.lg,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  imageContainer: {
+  imageBackground: {
     width: CARD_WIDTH,
-    height: IMAGE_HEIGHT,
-    backgroundColor: colors.cardBgElevated,
+    height: CARD_HEIGHT,
+    justifyContent: 'flex-end',
   },
-  image: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+  imageStyle: {
+    borderRadius: radius.lg,
   },
   imagePlaceholder: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.cardBgElevated,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.cardBgElevated,
   },
-  cardContent: {
-    padding: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    paddingBottom: spacing.sm,
+  gradient: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: radius.lg,
+  },
+  overlay: {
+    padding: spacing.sm,
+    gap: 4,
+  },
+  badge: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.accent,
+    borderRadius: radius.full,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  badgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
   cardName: {
     fontSize: 13,
-    fontWeight: '600',
-    color: colors.text,
+    fontWeight: '700',
+    color: '#fff',
     lineHeight: 17,
   },
 }));
