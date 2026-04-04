@@ -130,6 +130,9 @@ export { useRestaurantWeekIds } from './useRestaurantWeekIds';
 // Coffee & Chocolate Trail hooks
 export { useCoffeeChocolateTrailIds } from './useCoffeeChocolateTrailIds';
 
+// Night off restaurants hooks (Mon/Tue open spots)
+export { useNightOffRestaurants } from './useNightOffRestaurants';
+
 // Other cities / cross-market promotion hooks
 export { useOtherCities } from './useOtherCities';
 export type { OtherCity } from './useOtherCities';

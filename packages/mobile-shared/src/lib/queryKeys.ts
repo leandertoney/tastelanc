@@ -27,6 +27,9 @@ export const queryKeys = {
   openStatus: {
     today: (dayOfWeek: string) => ['openStatus', dayOfWeek] as const,
   },
+  nightOff: {
+    restaurants: (marketId?: string | null) => ['nightOff', 'restaurants', marketId] as const,
+  },
   favorites: ['favorites'] as const,
   user: {
     preferences: ['user', 'preferences'] as const,

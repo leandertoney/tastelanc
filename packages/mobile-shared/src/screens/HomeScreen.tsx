@@ -39,6 +39,7 @@ import {
   StPatricksDayBanner,
   RestaurantWeekBanner,
   CoffeeChocolateTrailBanner,
+  NightOffSection,
 } from '../components';
 import CuisinesSection from '../components/CuisinesSection';
 import { getColors, getBrand, getAssets, hasFeature } from '../config/theme';
@@ -218,6 +219,11 @@ queryClient.invalidateQueries({ queryKey: hasFeature('happyHours') ? ['activeHap
       </ErrorBoundary>
 
       <Spacer size="md" />
+
+      {/* Section 6b: Open on Your Night Off (Mon/Tue confirmed open spots) */}
+      <ErrorBoundary level="section">
+        <NightOffSection onRestaurantPress={handleRestaurantPress} />
+      </ErrorBoundary>
 
       {/* Plan Your Day CTA */}
       <ErrorBoundary level="section">
