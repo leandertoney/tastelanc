@@ -166,9 +166,13 @@ export default function VideoRecommendPreviewScreen({ route, navigation }: Props
         `Your recommendation for ${restaurantName} is being reviewed and will be live shortly.${pointsMsg}`,
         [{ text: 'OK', onPress: () => navigation.goBack() }],
       );
-    } catch (err) {
-      console.error('[VideoPreview] Post error:', err);
-      Alert.alert('Error', 'Failed to post your recommendation. Please try again.');
+    } catch (err: any) {
+      const msg = err?.message ?? String(err);
+      console.error('[VideoPreview] Post error:', msg, err);
+      Alert.alert(
+        'Error',
+        `Failed to post your recommendation.\n\n${msg}\n\nPlease try again.`,
+      );
     } finally {
       setIsPosting(false);
     }
