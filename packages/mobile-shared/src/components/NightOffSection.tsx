@@ -134,7 +134,7 @@ export default function NightOffSection() {
 
   return (
     <View style={styles.container}>
-      <SectionHeader title="Open on Your Night Off" />
+      <SectionHeader title="Open Monday & Tuesday" />
       <Spacer size="sm" />
 
       <FlatList
