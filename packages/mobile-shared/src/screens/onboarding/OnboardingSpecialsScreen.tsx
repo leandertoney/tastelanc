@@ -25,6 +25,7 @@ import { createLazyStyles } from '../../utils/lazyStyles';
 import OnboardingProgressBar from '../../components/OnboardingProgressBar';
 import { radius } from '../../constants/spacing';
 import { duration, spring, reveal, pulse } from '../../constants/animations';
+import { trackScreenView } from '../../lib/analytics';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingSpecials'>;
 
@@ -40,6 +41,10 @@ export default function OnboardingSpecialsScreen({ navigation }: Props) {
   const glowOpacity = useSharedValue(0.3);
   const sparkleRotate = useSharedValue(0);
   const tagBounce = useSharedValue(0);
+
+  useEffect(() => {
+    trackScreenView('OnboardingStep_Specials');
+  }, []);
 
   useEffect(() => {
     iconScale.value = withDelay(reveal.content, withSpring(1, spring.default));

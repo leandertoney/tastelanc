@@ -18,6 +18,7 @@ import { createLazyStyles } from '../../utils/lazyStyles';
 import { duration, spring, reveal } from '../../constants/animations';
 import { MultiSelectGrid, ContinueButton } from '../../components/Onboarding';
 import OnboardingProgressBar from '../../components/OnboardingProgressBar';
+import { trackScreenView, trackClick } from '../../lib/analytics';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingEntertainment'>;
 
@@ -53,6 +54,10 @@ export default function OnboardingEntertainmentScreen({ navigation }: Props) {
   }, [navigation]);
 
   useEffect(() => {
+    trackScreenView('OnboardingStep_Entertainment');
+  }, []);
+
+  useEffect(() => {
     titleOpacity.value = withDelay(reveal.header, withTiming(1, { duration: duration.normal }));
     titleTranslate.value = withDelay(reveal.header, withSpring(0, spring.default));
     contentOpacity.value = withDelay(reveal.content, withTiming(1, { duration: duration.normal }));
@@ -85,7 +90,7 @@ export default function OnboardingEntertainmentScreen({ navigation }: Props) {
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.skipButton} onPress={() => navigation.navigate('OnboardingPremium')}>
+        <TouchableOpacity style={styles.skipButton} onPress={() => { trackClick('onboarding_skip', undefined); navigation.navigate('OnboardingPremium'); }}>
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
       </View>

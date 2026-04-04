@@ -18,6 +18,7 @@ import { getColors, getAssets } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { radius } from '../../constants/spacing';
 import OnboardingProgressBar from '../../components/OnboardingProgressBar';
+import { trackScreenView } from '../../lib/analytics';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingPremiumIntro'>;
 
@@ -39,6 +40,10 @@ export default function OnboardingPremiumIntroScreen({ navigation }: Props) {
   const titleOpacity = useSharedValue(0);
   const titleTranslate = useSharedValue(-20);
   const buttonOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    trackScreenView('OnboardingStep_PremiumIntro');
+  }, []);
 
   useEffect(() => {
     titleOpacity.value = withTiming(1, { duration: 400 });

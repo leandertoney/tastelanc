@@ -17,6 +17,7 @@ import { getColors, getBrand } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { radius } from '../../constants/spacing';
 import OnboardingProgressBar from '../../components/OnboardingProgressBar';
+import { trackScreenView, trackClick } from '../../lib/analytics';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingReviewAsk'>;
 
@@ -35,6 +36,10 @@ export default function OnboardingReviewAskScreen({ navigation }: Props) {
   const card2Scale = useSharedValue(0.8);
   const card2Opacity = useSharedValue(0);
   const skipOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    trackScreenView('OnboardingStep_ReviewAsk');
+  }, []);
 
   useEffect(() => {
     titleOpacity.value = withTiming(1, { duration: 400 });
@@ -83,7 +88,7 @@ export default function OnboardingReviewAskScreen({ navigation }: Props) {
           </AnimatedTouchable>
         </View>
         <Animated.View style={[styles.skipContainer, skipAnimatedStyle]}>
-          <TouchableOpacity onPress={() => navigation.navigate('OnboardingPremiumIntro')}>
+          <TouchableOpacity onPress={() => { trackClick('onboarding_skip', undefined); navigation.navigate('OnboardingPremiumIntro'); }}>
             <Text style={styles.skipText}>Skip</Text>
           </TouchableOpacity>
         </Animated.View>

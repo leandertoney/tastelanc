@@ -22,6 +22,7 @@ import { getColors, getAssets } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { duration, spring, reveal } from '../../constants/animations';
 import OnboardingProgressBar from '../../components/OnboardingProgressBar';
+import { trackScreenView } from '../../lib/analytics';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingProblems'>;
 
@@ -83,6 +84,10 @@ export default function OnboardingProblemsScreen({ navigation }: Props) {
   const hintOpacity = useSharedValue(0);
 
   const closingDelay = reveal.items + PAIN_POINTS.length * STAGGER + 400;
+
+  useEffect(() => {
+    trackScreenView('OnboardingStep_Interests');
+  }, []);
 
   useEffect(() => {
     // Image fades in first

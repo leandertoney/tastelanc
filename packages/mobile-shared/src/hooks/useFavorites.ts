@@ -78,6 +78,7 @@ export function useToggleFavorite() {
           .eq('user_id', userId)
           .eq('restaurant_id', restaurantId);
         if (error) throw error;
+        trackClick('favorite_removed', restaurantId);
         return { added: false };
       } else {
         // Add
@@ -85,7 +86,7 @@ export function useToggleFavorite() {
           .from('favorites')
           .insert({ user_id: userId, restaurant_id: restaurantId });
         if (error) throw error;
-        trackClick('favorite', restaurantId);
+        trackClick('favorite_added', restaurantId);
         requestReviewIfEligible('first_save');
         // Power user trigger: 3rd+ favorite saved
         const { count } = await supabase

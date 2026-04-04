@@ -16,6 +16,7 @@ import type { OnboardingStackParamList } from '../../navigation/types';
 import { getColors, getBrand, getAssets } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import OnboardingProgressBar from '../../components/OnboardingProgressBar';
+import { trackScreenView } from '../../lib/analytics';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingPremium'>;
 
@@ -38,6 +39,10 @@ export default function OnboardingPremiumScreen({ navigation }: Props) {
   const headlineTranslate = useSharedValue(-20);
   const buttonOpacity = useSharedValue(0);
   const buttonTranslate = useSharedValue(20);
+
+  useEffect(() => {
+    trackScreenView('OnboardingStep_Premium');
+  }, []);
 
   useEffect(() => {
     videoOpacity.value = withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) });
