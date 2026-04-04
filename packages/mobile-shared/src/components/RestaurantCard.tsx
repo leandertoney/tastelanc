@@ -71,9 +71,6 @@ export default function RestaurantCard({
           <Text style={styles.name} numberOfLines={1}>
             {restaurant.name}
           </Text>
-          {restaurant.is_verified && (
-            <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
-          )}
         </View>
 
         <View style={styles.categoriesRow}>

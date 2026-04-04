@@ -111,9 +111,6 @@ export default function FeaturedCard({
             <Text style={[styles.name, isElite && styles.nameElite]} numberOfLines={2}>
               {restaurant.name}
             </Text>
-            {restaurant.is_verified && (
-              <Ionicons name="checkmark-circle" size={18} color={colors.accent} />
-            )}
           </View>
 
           <View style={styles.categoriesRow}>

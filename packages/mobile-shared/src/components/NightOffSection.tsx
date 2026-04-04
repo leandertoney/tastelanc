@@ -1,100 +1,194 @@
-import { useRef, useCallback } from 'react';
-import { View, FlatList, ViewToken } from 'react-native';
+import { useCallback } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { Restaurant } from '../types/database';
-import type { RootStackParamList } from '../navigation/types';
-import { useNightOffRestaurants } from '../hooks/useNightOffRestaurants';
-import { useFavorites, useToggleFavorite } from '../hooks';
-import { trackImpression } from '../lib/impressions';
-import { createLazyStyles } from '../utils/lazyStyles';
-import { spacing } from '../constants/spacing';
+import { Ionicons } from '@expo/vector-icons';
+
 import SectionHeader from './SectionHeader';
 import Spacer from './Spacer';
-import CompactRestaurantCard from './CompactRestaurantCard';
+import { getSupabase } from '../config/theme';
+import { getColors } from '../config/theme';
+import { createLazyStyles } from '../utils/lazyStyles';
+import { radius, spacing } from '../constants/spacing';
+import { useMarket } from '../context/MarketContext';
+import { trackImpression } from '../lib/impressions';
+import type { Restaurant } from '../types/database';
+import type { RootStackParamList } from '../navigation/types';
+import { getCurrentDay } from '../hooks/useOpenStatus';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-interface NightOffSectionProps {
-  onRestaurantPress?: (restaurant: Restaurant) => void;
-}
+const CARD_WIDTH = 140;
+const IMAGE_HEIGHT = 96;
+const MAX_ITEMS = 8;
+const MIN_ITEMS = 3;
 
-export default function NightOffSection({ onRestaurantPress }: NightOffSectionProps) {
-  const navigation = useNavigation<NavigationProp>();
-  const { data: restaurants = [], isLoading } = useNightOffRestaurants();
-  const { data: favorites = [] } = useFavorites();
-  const toggleFavoriteMutation = useToggleFavorite();
+async function getOpenTonightRestaurants(marketId: string | null): Promise<Restaurant[]> {
+  const supabase = getSupabase();
+  const today = getCurrentDay();
 
-  const handleRestaurantPress = useCallback(
-    (restaurant: Restaurant) => {
-      if (onRestaurantPress) {
-        onRestaurantPress(restaurant);
-      } else {
-        navigation.navigate('RestaurantDetail', { restaurantId: restaurant.id });
-      }
-    },
-    [onRestaurantPress, navigation]
-  );
+  // Get restaurant IDs that are open today (not explicitly closed)
+  const { data: hoursData, error: hoursError } = await supabase
+    .from('restaurant_hours')
+    .select('restaurant_id')
+    .eq('day_of_week', today)
+    .eq('is_closed', false)
+    .not('open_time', 'is', null);
 
-  const handleFavoritePress = useCallback(
-    (restaurantId: string) => {
-      toggleFavoriteMutation.mutate(restaurantId);
-    },
-    [toggleFavoriteMutation]
-  );
+  if (hoursError || !hoursData || hoursData.length === 0) return [];
 
-  // Track impressions when items scroll into view
-  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
-  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
-    for (const token of viewableItems) {
-      const restaurant = token.item as Restaurant;
-      if (restaurant?.id) {
-        trackImpression(restaurant.id, 'night_off', token.index ?? 0);
-      }
-    }
-  }).current;
+  const openIds = hoursData.map((h) => h.restaurant_id);
 
-  const renderItem = useCallback(
-    ({ item }: { item: Restaurant }) => (
-      <CompactRestaurantCard
-        restaurant={item}
-        onPress={() => handleRestaurantPress(item)}
-        isFavorite={favorites.includes(item.id)}
-        onFavoritePress={() => handleFavoritePress(item.id)}
-      />
-    ),
-    [favorites, handleRestaurantPress, handleFavoritePress]
-  );
+  let query = supabase
+    .from('restaurants')
+    .select('*')
+    .eq('is_active', true)
+    .in('id', openIds)
+    .limit(MAX_ITEMS);
 
-  // Don't show section while loading or if no results
-  if (isLoading || restaurants.length === 0) {
-    return null;
+  if (marketId) {
+    query = query.eq('market_id', marketId);
   }
 
+  const { data, error } = await query;
+  if (error) {
+    console.warn('getOpenTonightRestaurants query failed:', error.message);
+    return [];
+  }
+
+  return (data || []) as Restaurant[];
+}
+
+export default function NightOffSection() {
+  const navigation = useNavigation<NavigationProp>();
+  const { marketId } = useMarket();
+  const colors = getColors();
   const styles = useStyles();
+
+  const { data: restaurants = [], isLoading } = useQuery({
+    queryKey: ['openTonight', marketId],
+    queryFn: () => getOpenTonightRestaurants(marketId),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const capped = restaurants.slice(0, MAX_ITEMS);
+
+  const handlePress = useCallback(
+    (id: string) => {
+      navigation.navigate('RestaurantDetail', { id });
+    },
+    [navigation]
+  );
+
+  const renderItem = useCallback(
+    ({ item, index }: { item: Restaurant; index: number }) => {
+      trackImpression(item.id, 'night_off', index);
+
+      return (
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() => handlePress(item.id)}
+          activeOpacity={0.85}
+        >
+          <View style={styles.imageContainer}>
+            {item.cover_image_url ? (
+              <Image
+                source={{ uri: item.cover_image_url, cache: 'reload' }}
+                style={styles.image}
+              />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <Ionicons name="restaurant-outline" size={24} color={colors.textSecondary} />
+              </View>
+            )}
+          </View>
+          <View style={styles.cardContent}>
+            <Text style={styles.cardName} numberOfLines={2}>
+              {item.name}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      );
+    },
+    [styles, colors, handlePress]
+  );
+
+  const keyExtractor = useCallback((item: Restaurant) => item.id, []);
+
+  if (isLoading) return null;
+  if (capped.length < MIN_ITEMS) return null;
 
   return (
     <View style={styles.container}>
-      <SectionHeader
-        title="Open on Your Night Off"
-        subtitle="Great spots open Mondays & Tuesdays"
-      />
+      <SectionHeader title="Open on Your Night Off" />
       <Spacer size="sm" />
+
       <FlatList
-        data={restaurants}
-        keyExtractor={(item) => item.id}
+        data={capped}
         renderItem={renderItem}
-        scrollEnabled={false}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        initialNumToRender={15}
+        keyExtractor={keyExtractor}
+        horizontal={true}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+        initialNumToRender={4}
+        maxToRenderPerBatch={4}
+        windowSize={3}
       />
     </View>
   );
 }
 
-const useStyles = createLazyStyles(() => ({
+const useStyles = createLazyStyles((colors) => ({
   container: {
     marginBottom: spacing.md,
+  },
+  listContent: {
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
+  },
+  card: {
+    width: CARD_WIDTH,
+    backgroundColor: colors.cardBg,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  imageContainer: {
+    width: CARD_WIDTH,
+    height: IMAGE_HEIGHT,
+    backgroundColor: colors.cardBgElevated,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  imagePlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.cardBgElevated,
+  },
+  cardContent: {
+    padding: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingBottom: spacing.sm,
+  },
+  cardName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.text,
+    lineHeight: 17,
   },
 }));
