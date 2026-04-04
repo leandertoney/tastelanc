@@ -19,6 +19,7 @@ import type { OnboardingStackParamList } from '../../navigation/types';
 import { useOnboarding } from '../../context/OnboardingContext';
 import { FREQUENCY_OPTIONS } from '../../types/onboarding';
 import { getColors, getBrand } from '../../config/theme';
+import OnboardingProgressBar from '../../components/OnboardingProgressBar';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { radius } from '../../constants/spacing';
 import { duration, spring, reveal } from '../../constants/animations';
@@ -31,6 +32,14 @@ const OPTION_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   'Once a week': 'restaurant',
   'Once a month': 'time',
   'Just exploring': 'compass',
+};
+
+const OPTION_EMOJI: Record<string, string> = {
+  'Every day': '🔥',
+  'A few times a week': '😋',
+  'Once a week': '🍽️',
+  'Once a month': '📅',
+  'Just exploring': '🧭',
 };
 
 export default function OnboardingDiningHabitsScreen({ navigation }: Props) {
@@ -62,6 +71,7 @@ export default function OnboardingDiningHabitsScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <OnboardingProgressBar totalSteps={12} currentStep={7} style={{ paddingHorizontal: 20, paddingTop: 12 }} />
       <View style={styles.topBar}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
@@ -85,7 +95,7 @@ export default function OnboardingDiningHabitsScreen({ navigation }: Props) {
                   <View style={[styles.iconContainer, isSelected && styles.iconContainerSelected]}>
                     <Ionicons name={OPTION_ICONS[option] || 'restaurant'} size={24} color={isSelected ? colors.textOnAccent : colors.accent} />
                   </View>
-                  <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>{option}</Text>
+                  <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>{OPTION_EMOJI[option] ? `${OPTION_EMOJI[option]} ${option}` : option}</Text>
                   {isSelected && <View style={styles.checkmark}><Ionicons name="checkmark" size={20} color={colors.textOnAccent} /></View>}
                 </TouchableOpacity>
               );

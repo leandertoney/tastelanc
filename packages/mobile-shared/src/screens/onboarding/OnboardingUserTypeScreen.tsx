@@ -21,6 +21,7 @@ import { getColors, getBrand } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { radius } from '../../constants/spacing';
 import type { UserType } from '../../types/onboarding';
+import OnboardingProgressBar from '../../components/OnboardingProgressBar';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingUserType'>;
 
@@ -59,6 +60,7 @@ export default function OnboardingUserTypeScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <OnboardingProgressBar totalSteps={12} currentStep={5} style={{ paddingHorizontal: 20, paddingTop: 12 }} />
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color={colors.text} />
       </TouchableOpacity>
@@ -70,12 +72,12 @@ export default function OnboardingUserTypeScreen({ navigation }: Props) {
         <View style={styles.cardsContainer}>
           <AnimatedTouchable style={[styles.card, card1AnimatedStyle]} onPress={() => handleSelect('local')} activeOpacity={0.8}>
             <View style={styles.iconCircle}><Ionicons name="home" size={40} color={colors.accent} /></View>
-            <Text style={styles.cardTitle}>I'm a Local</Text>
+            <Text style={styles.cardTitle}>I'm a Local 🏡</Text>
             <Text style={styles.cardDescription}>{`I live in or near ${brand.cityName}`}</Text>
           </AnimatedTouchable>
           <AnimatedTouchable style={[styles.card, card2AnimatedStyle]} onPress={() => handleSelect('visitor')} activeOpacity={0.8}>
             <View style={styles.iconCircle}><Ionicons name="airplane" size={40} color={colors.accent} /></View>
-            <Text style={styles.cardTitle}>I'm Visiting</Text>
+            <Text style={styles.cardTitle}>I'm Visiting ✈️</Text>
             <Text style={styles.cardDescription}>{`Exploring ${brand.cityName} for a trip`}</Text>
           </AnimatedTouchable>
         </View>
