@@ -28,6 +28,7 @@ import {
   PartyPopper,
   UtensilsCrossed,
   Receipt,
+  Trophy,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -67,6 +68,7 @@ const NAV_ITEMS: NavItem[] = [
   // INSIGHTS - Analytics and feedback
   { href: '/admin/traffic', icon: Globe, label: 'Web Traffic', highlight: true, section: 'Insights' },
   { href: '/admin/analytics', icon: BarChart3, label: 'Visibility' },
+  { href: '/admin/tfk-analytics', icon: Trophy, label: 'TFK Analytics', highlight: true },
   { href: '/admin/app-users', icon: Users, label: 'Users & Contacts', highlight: true },
   { href: '/admin/feature-requests', icon: Lightbulb, label: 'Feature Requests', highlight: true },
   { href: '/admin/system-health', icon: Activity, label: 'System Health', highlight: true },
