@@ -30,29 +30,31 @@ const CARD_HEIGHT = 200;
 const MAX_ITEMS = 8;
 const MIN_ITEMS = 3;
 
-async function getNightOffRestaurants(marketId: string | null): Promise<Restaurant[]> {
+export interface NightOffRestaurant extends Restaurant {
+  openDays: string; // e.g. "Monday", "Tuesday", or "Mon & Tue"
+}
+
+async function getNightOffRestaurants(marketId: string | null): Promise<NightOffRestaurant[]> {
   const supabase = getSupabase();
 
-  // Get restaurant IDs open on Mondays OR Tuesdays
+  // Fetch all Mon/Tue open hours rows, keeping day_of_week so we know which days each restaurant is open
   const { data: hoursData, error: hoursError } = await supabase
     .from('restaurant_hours')
-    .select('restaurant_id')
+    .select('restaurant_id, day_of_week')
     .in('day_of_week', ['monday', 'tuesday'])
     .eq('is_closed', false)
     .not('open_time', 'is', null);
 
-  if (hoursError) {
-    console.warn('NightOffSection hours query failed:', hoursError.message);
-    return [];
-  }
-  if (!hoursData || hoursData.length === 0) {
-    console.log('NightOffSection: no Mon/Tue hours found');
-    return [];
+  if (hoursError || !hoursData || hoursData.length === 0) return [];
+
+  // Build a map of restaurant_id → which days it's open
+  const daysMap = new Map<string, Set<string>>();
+  for (const row of hoursData) {
+    if (!daysMap.has(row.restaurant_id)) daysMap.set(row.restaurant_id, new Set());
+    daysMap.get(row.restaurant_id)!.add(row.day_of_week);
   }
 
-  // Deduplicate restaurant IDs
-  const openIds = [...new Set(hoursData.map((h) => h.restaurant_id))];
-  console.log('NightOffSection: found', openIds.length, 'Mon/Tue restaurants');
+  const openIds = [...daysMap.keys()];
 
   let query = supabase
     .from('restaurants')
@@ -61,18 +63,18 @@ async function getNightOffRestaurants(marketId: string | null): Promise<Restaura
     .in('id', openIds)
     .limit(MAX_ITEMS);
 
-  if (marketId) {
-    query = query.eq('market_id', marketId);
-  }
+  if (marketId) query = query.eq('market_id', marketId);
 
   const { data, error } = await query;
-  if (error) {
-    console.warn('NightOffSection restaurants query failed:', error.message);
-    return [];
-  }
+  if (error) return [];
 
-  console.log('NightOffSection: returning', (data || []).length, 'restaurants');
-  return (data || []) as Restaurant[];
+  return (data || []).map((r) => {
+    const days = daysMap.get(r.id);
+    const hasMonday = days?.has('monday');
+    const hasTuesday = days?.has('tuesday');
+    const openDays = hasMonday && hasTuesday ? 'Mon & Tue' : hasMonday ? 'Monday' : 'Tuesday';
+    return { ...r, openDays } as NightOffRestaurant;
+  });
 }
 
 export default function NightOffSection() {
@@ -97,7 +99,7 @@ export default function NightOffSection() {
   );
 
   const renderItem = useCallback(
-    ({ item, index }: { item: Restaurant; index: number }) => {
+    ({ item, index }: { item: NightOffRestaurant; index: number }) => {
       trackImpression(item.id, 'night_off', index);
 
       return (
@@ -127,7 +129,7 @@ export default function NightOffSection() {
             {/* Bottom overlay: badge + name */}
             <View style={styles.overlay}>
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>Mon & Tue</Text>
+                <Text style={styles.badgeText}>{item.openDays}</Text>
               </View>
               <Text style={styles.cardName} numberOfLines={2}>
                 {item.name}
@@ -140,7 +142,7 @@ export default function NightOffSection() {
     [styles, colors, handlePress]
   );
 
-  const keyExtractor = useCallback((item: Restaurant) => item.id, []);
+  const keyExtractor = useCallback((item: NightOffRestaurant) => item.id, []);
 
   if (isLoading) return null;
   if (capped.length < MIN_ITEMS) return null;
