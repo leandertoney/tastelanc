@@ -18,7 +18,7 @@ import { getColors, getSupabase } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { queryKeys } from '../lib/queryKeys';
 import { injectPromoIntoList, type ListItem } from '../lib/listUtils';
-import RestaurantCard from '../components/RestaurantCard';
+import CompactRestaurantCard from '../components/CompactRestaurantCard';
 import { PromoCard } from '../components';
 import type { Restaurant } from '../types/database';
 import type { RootStackParamList } from '../navigation/types';
@@ -131,7 +131,7 @@ export default function FavoritesScreen() {
 
       const restaurant = item.data!;
       return (
-        <RestaurantCard
+        <CompactRestaurantCard
           restaurant={restaurant}
           onPress={() => handleRestaurantPress(restaurant)}
           isFavorite={true}
