@@ -43,3 +43,4 @@ export { default as PartyBanner } from './PartyBanner';
 export { default as CouponsSection } from './CouponsSection';
 export { default as BasicTierAlternativesSection } from './BasicTierAlternativesSection';
 export { default as OnboardingProgressBar } from './OnboardingProgressBar';
+export { default as NightOffSection } from './NightOffSection';
