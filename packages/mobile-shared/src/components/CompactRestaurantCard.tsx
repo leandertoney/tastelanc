@@ -67,9 +67,6 @@ export default function CompactRestaurantCard({
           <Text style={[styles.name, isElite && styles.nameElite]} numberOfLines={1}>
             {restaurant.name}
           </Text>
-          {restaurant.is_verified && (
-            <Ionicons name="checkmark-circle" size={14} color={colors.accent} />
-          )}
           {isRestaurantWeek && (
             <TouchableOpacity
               style={styles.rwPill}

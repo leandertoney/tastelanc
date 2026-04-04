@@ -178,9 +178,6 @@ export default function MapRestaurantCard({
         <View style={styles.info}>
           <Text style={styles.name} numberOfLines={1}>
             {restaurant.name}
-            {restaurant.is_verified && (
-              <Text> <Ionicons name="checkmark-circle" size={14} color={colors.accent} /></Text>
-            )}
           </Text>
 
           <View style={styles.metaRow}>
