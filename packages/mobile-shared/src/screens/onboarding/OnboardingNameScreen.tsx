@@ -23,6 +23,7 @@ import { useOnboarding } from '../../context/OnboardingContext';
 import { getColors } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { radius } from '../../constants/spacing';
+import { trackScreenView, trackClick } from '../../lib/analytics';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingName'>;
 
@@ -37,6 +38,10 @@ export default function OnboardingNameScreen({ navigation }: Props) {
   const inputOpacity = useSharedValue(0);
   const buttonOpacity = useSharedValue(0);
   const buttonTranslate = useSharedValue(20);
+
+  useEffect(() => {
+    trackScreenView('OnboardingStep_Name');
+  }, []);
 
   useEffect(() => {
     titleOpacity.value = withTiming(1, { duration: 400 });
@@ -54,7 +59,7 @@ export default function OnboardingNameScreen({ navigation }: Props) {
     if (inputValue.trim()) { setName(inputValue.trim()); }
     navigation.navigate('OnboardingDiningHabits');
   };
-  const handleSkip = () => { navigation.navigate('OnboardingDiningHabits'); };
+  const handleSkip = () => { trackClick('onboarding_skip', undefined); navigation.navigate('OnboardingDiningHabits'); };
   const isValid = inputValue.trim().length > 0;
 
   return (

@@ -21,6 +21,7 @@ import { getColors, getBrand } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { radius } from '../../constants/spacing';
 import type { UserType } from '../../types/onboarding';
+import { trackScreenView } from '../../lib/analytics';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingUserType'>;
 
@@ -38,6 +39,10 @@ export default function OnboardingUserTypeScreen({ navigation }: Props) {
   const card1Opacity = useSharedValue(0);
   const card2Scale = useSharedValue(0.8);
   const card2Opacity = useSharedValue(0);
+
+  useEffect(() => {
+    trackScreenView('OnboardingStep_UserType');
+  }, []);
 
   useEffect(() => {
     titleOpacity.value = withTiming(1, { duration: 400 });

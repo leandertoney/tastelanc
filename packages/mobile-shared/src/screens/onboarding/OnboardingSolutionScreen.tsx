@@ -19,6 +19,7 @@ import { ContinueButton } from '../../components/Onboarding';
 import { getColors, getBrand, getAssets, hasFeature } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { duration, spring, reveal } from '../../constants/animations';
+import { trackScreenView } from '../../lib/analytics';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingSolution'>;
 
@@ -42,6 +43,10 @@ export default function OnboardingSolutionScreen({ navigation }: Props) {
   const textTranslate = useSharedValue(20);
   const buttonOpacity = useSharedValue(0);
   const buttonTranslate = useSharedValue(20);
+
+  useEffect(() => {
+    trackScreenView('OnboardingStep_Solution');
+  }, []);
 
   useEffect(() => {
     // Logo entrance

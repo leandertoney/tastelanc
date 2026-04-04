@@ -24,6 +24,7 @@ import { getColors } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { radius } from '../../constants/spacing';
 import { duration, spring, reveal, pulse } from '../../constants/animations';
+import { trackScreenView } from '../../lib/analytics';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingEvents'>;
 
@@ -38,6 +39,10 @@ export default function OnboardingEventsScreen({ navigation }: Props) {
   const glowOpacity = useSharedValue(0.3);
   const pulseScale = useSharedValue(1);
   const noteFloat = useSharedValue(0);
+
+  useEffect(() => {
+    trackScreenView('OnboardingStep_Events');
+  }, []);
 
   useEffect(() => {
     iconScale.value = withDelay(reveal.content, withSpring(1, spring.default));

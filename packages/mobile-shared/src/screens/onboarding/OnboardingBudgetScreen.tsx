@@ -17,6 +17,7 @@ import { getColors } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { radius } from '../../constants/spacing';
 import { ContinueButton } from '../../components/Onboarding';
+import { trackScreenView, trackClick } from '../../lib/analytics';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingBudget'>;
 
@@ -40,6 +41,10 @@ export default function OnboardingBudgetScreen({ navigation }: Props) {
   const handleContinue = useCallback(() => {
     navigation.navigate('OnboardingEntertainment');
   }, [navigation]);
+
+  useEffect(() => {
+    trackScreenView('OnboardingStep_Budget');
+  }, []);
 
   useEffect(() => {
     titleOpacity.value = withTiming(1, { duration: 400 });
@@ -68,7 +73,7 @@ export default function OnboardingBudgetScreen({ navigation }: Props) {
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.skipButton} onPress={() => navigation.navigate('OnboardingPremium')}>
+        <TouchableOpacity style={styles.skipButton} onPress={() => { trackClick('onboarding_skip', undefined); navigation.navigate('OnboardingPremium'); }}>
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
       </View>

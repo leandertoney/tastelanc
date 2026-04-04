@@ -16,6 +16,7 @@ import type { OnboardingStackParamList } from '../../navigation/types';
 import { getColors, getBrand, getAssets } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { radius } from '../../constants/spacing';
+import { trackScreenView } from '../../lib/analytics';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingRosieAsk'>;
 
@@ -70,6 +71,10 @@ export default function OnboardingRosieAskScreen({ navigation }: Props) {
   const buttonOpacity = useSharedValue(0);
   const buttonTranslate = useSharedValue(20);
   const taglineOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    trackScreenView('OnboardingStep_RosieAsk');
+  }, []);
 
   useEffect(() => {
     rosieOpacity.value = withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) });

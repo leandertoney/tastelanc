@@ -19,6 +19,7 @@ import type { OnboardingStackParamList } from '../../navigation/types';
 import { ContinueButton } from '../../components/Onboarding';
 import { getColors, getBrand, getAssets } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
+import { trackScreenView } from '../../lib/analytics';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingSlides'>;
 
@@ -98,6 +99,10 @@ export default function OnboardingSlidesScreen({ navigation }: Props) {
   const buttonTranslate = useSharedValue(30);
   const subtitleOpacity = useSharedValue(0);
   const subtitleTranslate = useSharedValue(20);
+
+  useEffect(() => {
+    trackScreenView('OnboardingStep_Welcome');
+  }, []);
 
   useEffect(() => {
     // Logo entrance - immediate and dramatic

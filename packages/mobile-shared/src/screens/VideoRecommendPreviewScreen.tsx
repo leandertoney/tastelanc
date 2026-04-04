@@ -35,6 +35,7 @@ import {
 } from '../lib/videoRecommendations';
 import { queryKeys } from '../lib/queryKeys';
 import { earnPoints } from '../lib/rewards';
+import { trackClick } from '../lib/analytics';
 import { useQueryClient } from '@tanstack/react-query';
 import { ALL_CAPTION_TAGS, CAPTION_TAG_LABELS } from '../types/database';
 import type { CaptionTag, TextOverlay, CaptionWord } from '../types/database';
@@ -158,6 +159,7 @@ export default function VideoRecommendPreviewScreen({ route, navigation }: Props
       } catch {}
 
       queryClient.invalidateQueries({ queryKey: queryKeys.recommendations.byRestaurant(restaurantId) });
+      trackClick('video_recommendation_submitted', restaurantId);
 
       hasPosted.current = true;
       const pointsMsg = pointsEarned > 0 ? ` You earned ${pointsEarned} points!` : '';

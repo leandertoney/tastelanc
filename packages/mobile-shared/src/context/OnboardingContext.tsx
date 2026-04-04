@@ -7,6 +7,7 @@ import {
   ONBOARDING_DATA_KEY,
 } from '../types/onboarding';
 import { getSupabase } from '../config/theme';
+import { trackClick } from '../lib/analytics';
 
 interface OnboardingContextType {
   data: OnboardingData;
@@ -91,6 +92,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   };
 
   const completeOnboarding = useCallback(async () => {
+    trackClick('onboarding_complete');
     await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
     await AsyncStorage.setItem(ONBOARDING_DATA_KEY, JSON.stringify(data));
 

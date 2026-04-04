@@ -22,6 +22,7 @@ import { getColors, getBrand } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { radius } from '../../constants/spacing';
 import { duration, spring, reveal } from '../../constants/animations';
+import { trackScreenView, trackClick } from '../../lib/analytics';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingDiningHabits'>;
 
@@ -46,6 +47,10 @@ export default function OnboardingDiningHabitsScreen({ navigation }: Props) {
   const optionsOpacity = useSharedValue(0);
 
   useEffect(() => {
+    trackScreenView('OnboardingStep_DiningHabits');
+  }, []);
+
+  useEffect(() => {
     titleOpacity.value = withDelay(reveal.header, withTiming(1, { duration: duration.normal }));
     titleTranslate.value = withDelay(reveal.header, withSpring(0, spring.default));
     optionsOpacity.value = withDelay(reveal.content, withTiming(1, { duration: duration.normal }));
@@ -66,7 +71,7 @@ export default function OnboardingDiningHabitsScreen({ navigation }: Props) {
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.skipButton} onPress={() => navigation.navigate('OnboardingPremium')}>
+        <TouchableOpacity style={styles.skipButton} onPress={() => { trackClick('onboarding_skip', undefined); navigation.navigate('OnboardingPremium'); }}>
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
       </View>
