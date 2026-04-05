@@ -120,7 +120,7 @@ function getBaseTabs(): Tab[] {
     { key: 'recommendations', label: 'Recs' },
     ...(hasFeature('happyHours') ? [{ key: 'happy_hours' as const, label: 'Happy Hours' }] : []),
     { key: 'specials', label: 'Specials' },
-    { key: 'coupons', label: 'Coupons' },
+    { key: 'coupons', label: 'Deals' },
     { key: 'events', label: 'Events' },
     { key: 'menu', label: 'Menu' },
   ];
@@ -524,7 +524,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
         setCoupons(prev => prev.map(c =>
           c.id === couponId ? { ...c, claims_count: c.claims_count + 1 } : c
         ));
-        Alert.alert('Coupon Claimed!', 'Go to My Coupons in your profile to use it at the restaurant.');
+        Alert.alert('Deal Claimed!', 'Go to My Deals in your profile to use it at the restaurant.');
       })
       .catch((err: any) => {
         Alert.alert('Could not claim', err.message || 'Please try again.');
@@ -877,7 +877,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
               ) : (
                 <View style={styles.emptyState}>
                   <Ionicons name="ticket-outline" size={48} color={colors.textSecondary} />
-                  <Text style={styles.emptyText}>No Coupons Yet</Text>
+                  <Text style={styles.emptyText}>No Deals Yet</Text>
                   <Text style={styles.emptySubtext}>This restaurant hasn't added any deals yet — check back soon!</Text>
                 </View>
               )}

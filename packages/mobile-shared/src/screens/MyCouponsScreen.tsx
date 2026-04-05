@@ -220,7 +220,7 @@ export default function MyCouponsScreen() {
               onPress={() => handleUseCoupon(item)}
             >
               <Ionicons name="ticket-outline" size={16} color={colors.textOnAccent} />
-              <Text style={styles.useButtonText}>Use Coupon</Text>
+              <Text style={styles.useButtonText}>Use Deal</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.cancelButton}
@@ -268,15 +268,15 @@ export default function MyCouponsScreen() {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Ionicons name="ticket-outline" size={48} color={colors.textMuted} />
-            <Text style={styles.emptyTitle}>No Coupons Yet</Text>
+            <Text style={styles.emptyTitle}>No Deals Yet</Text>
             <Text style={styles.emptyText}>
-              Browse restaurants to find and claim coupons
+              Browse restaurants to find and claim deals
             </Text>
             <TouchableOpacity
               style={styles.browseButton}
               onPress={() => navigation.navigate('CouponsViewAll')}
             >
-              <Text style={styles.browseButtonText}>Browse Coupons</Text>
+              <Text style={styles.browseButtonText}>Browse Deals</Text>
             </TouchableOpacity>
           </View>
         }
