@@ -26,7 +26,7 @@ const DEFAULT_TABS: Omit<TabConfig, 'hidden'>[] = [
   { key: 'recommendations', label: 'Recommendations', description: 'Video recommendations from customers' },
   { key: 'happy_hours', label: 'Happy Hours', description: 'Your happy hour deals and specials' },
   { key: 'specials', label: 'Specials', description: 'Daily specials and limited-time offers' },
-  { key: 'coupons', label: 'Coupons', description: 'Digital coupons customers can claim in the app' },
+  { key: 'coupons', label: 'Deals', description: 'Digital deals customers can claim in the app' },
   { key: 'events', label: 'Events', description: 'Live music, trivia, and other events' },
   { key: 'menu', label: 'Menu', description: 'Your full menu with sections and items' },
   { key: 'features', label: 'Features', description: 'Amenities like private dining, outdoor seating, and more' },

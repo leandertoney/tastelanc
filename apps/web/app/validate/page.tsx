@@ -82,7 +82,7 @@ export default function ValidatePage() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-500/10 rounded-full mb-4">
             <Ticket className="w-8 h-8 text-amber-500" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Validate Coupon</h1>
+          <h1 className="text-2xl font-bold text-white">Validate Deal</h1>
           <p className="text-zinc-400 mt-1">Enter the 6-character code shown on the customer&apos;s phone</p>
         </div>
 
@@ -120,7 +120,7 @@ export default function ValidatePage() {
               <CheckCircle2 className="w-12 h-12 text-green-400" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-green-400 mb-1">Coupon Redeemed!</h2>
+              <h2 className="text-2xl font-bold text-green-400 mb-1">Deal Redeemed!</h2>
               <p className="text-zinc-400">{result.coupon.restaurant_name}</p>
             </div>
             <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">

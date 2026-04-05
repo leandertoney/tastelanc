@@ -462,6 +462,8 @@ async function buildContext(message: string, marketId: string | null): Promise<s
     lowerMessage.includes('promotion') ||
     lowerMessage.includes('offer') ||
     lowerMessage.includes('coupon') ||
+    lowerMessage.includes('deal') ||
+    lowerMessage.includes('deals') ||
     lowerMessage.includes('sale') ||
     lowerMessage.includes('cheap');
 

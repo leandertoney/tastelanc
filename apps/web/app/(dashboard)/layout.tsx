@@ -69,7 +69,7 @@ const navSections: NavSection[] = [
       { href: '/dashboard/specials', label: 'Specials', icon: Tag, hint: 'Post daily specials, limited-time offers, and promotions' },
       { href: '/dashboard/events', label: 'Events', icon: Calendar, hint: 'Create and promote special events at your restaurant' },
       { href: '/dashboard/entertainment', label: 'Entertainment', icon: Music, hint: 'Add live music, trivia nights, and other entertainment listings' },
-      { href: '/dashboard/coupons', label: 'Coupons', icon: Ticket, hint: 'Create digital coupons that customers redeem in the app — see anonymized analytics on claims and redemptions' },
+      { href: '/dashboard/coupons', label: 'Deals', icon: Ticket, hint: 'Create digital deals that customers redeem in the app — see anonymized analytics on claims and redemptions' },
     ],
   },
   {

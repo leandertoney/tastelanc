@@ -202,18 +202,18 @@ export default function CouponsPage() {
         <div>
           <h2 className="text-2xl font-bold text-tastelanc-text-primary flex items-center gap-2">
             <Ticket className="w-6 h-6 text-tastelanc-accent" />
-            Coupons
+            Deals
           </h2>
           <div className="flex items-center gap-2 mt-1">
-            <p className="text-tastelanc-text-muted">Create digital coupons for your customers</p>
-            <Tooltip content="Coupons are redeemable in the app. Users must sign in to claim. You see anonymized analytics — total claims and redemptions — but never individual user data." position="bottom">
+            <p className="text-tastelanc-text-muted">Create deals for your customers</p>
+            <Tooltip content="Deals are redeemable in the app. Users must sign in to claim. You see anonymized analytics — total claims and redemptions — but never individual user data." position="bottom">
               <HelpCircle className="w-4 h-4 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
             </Tooltip>
           </div>
         </div>
         <Button onClick={() => setShowWizard(true)}>
           <Plus className="w-4 h-4 mr-2" />
-          Add Coupon
+          Add Deal
         </Button>
       </div>
 
@@ -353,11 +353,11 @@ export default function CouponsPage() {
       {coupons.length === 0 && !showWizard && (
         <Card className="p-12 text-center">
           <Ticket className="w-12 h-12 text-tastelanc-accent mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-2">No coupons yet</h3>
-          <p className="text-tastelanc-text-muted mb-4">Create digital coupons to drive foot traffic and new customers</p>
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-2">No deals yet</h3>
+          <p className="text-tastelanc-text-muted mb-4">Create deals to drive foot traffic and new customers</p>
           <Button onClick={() => setShowWizard(true)}>
             <Plus className="w-4 h-4 mr-2" />
-            Add Coupon
+            Add Deal
           </Button>
         </Card>
       )}
