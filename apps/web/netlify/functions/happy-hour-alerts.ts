@@ -56,6 +56,16 @@ export default async function handler(req: Request, context: Context) {
 
     console.log(`[Happy Hour Alerts] Day: ${dayOfWeek}, Time ET: ${currentTimeET}`);
 
+    // Only send HH alerts on Thu/Fri/Sat — data shows these are the days people act on them
+    const HH_ALERT_DAYS = ['thursday', 'friday', 'saturday'];
+    if (!HH_ALERT_DAYS.includes(dayOfWeek)) {
+      console.log(`[Happy Hour Alerts] Skipping — not a HH alert day (${dayOfWeek})`);
+      return new Response(
+        JSON.stringify({ sent: 0, message: `HH alerts only run Thu/Fri/Sat (today is ${dayOfWeek})` }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Find ALL happy hours for today for paid tier restaurants (scoped to market)
     const { data: happyHours, error: hhError } = await supabase
       .from('happy_hours')
