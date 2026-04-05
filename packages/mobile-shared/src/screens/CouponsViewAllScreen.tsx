@@ -126,9 +126,9 @@ export default function CouponsViewAllScreen() {
       </View>
 
       <View style={styles.headerContainer}>
-        <Text style={styles.headerTitle}>All Coupons</Text>
+        <Text style={styles.headerTitle}>Deals</Text>
         <Text style={styles.resultCount}>
-          {filteredCoupons.length} {filteredCoupons.length === 1 ? 'coupon' : 'coupons'}
+          {filteredCoupons.length} {filteredCoupons.length === 1 ? 'deal' : 'deals'}
         </Text>
       </View>
 
@@ -150,7 +150,7 @@ export default function CouponsViewAllScreen() {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Ionicons name="ticket-outline" size={48} color={colors.textMuted} />
-            <Text style={styles.emptyTitle}>No Coupons Available</Text>
+            <Text style={styles.emptyTitle}>No Deals Available</Text>
             <Text style={styles.emptyText}>
               Check back soon for new deals!
             </Text>

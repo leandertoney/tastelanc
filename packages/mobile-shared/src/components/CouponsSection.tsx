@@ -137,7 +137,7 @@ export default function CouponsSection() {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          <Text style={styles.title}>Coupons</Text>
+          <Text style={styles.title}>Deals</Text>
           <View style={styles.badge}>
             <Ionicons name="ticket-outline" size={14} color={colors.textOnAccent} />
             <Text style={styles.badgeText}>{displayData.length} available</Text>
@@ -162,7 +162,7 @@ export default function CouponsSection() {
 
       <View style={styles.bottomRow}>
         <TouchableOpacity onPress={handleViewAll}>
-          <Text style={styles.viewAll}>View All Coupons</Text>
+          <Text style={styles.viewAll}>View All Deals</Text>
         </TouchableOpacity>
         {displayData.length > 1 && (
           <View style={styles.dotsContainer}>

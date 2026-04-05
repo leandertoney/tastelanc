@@ -350,7 +350,7 @@ export default function ProfileScreen() {
             onPress={() => navigation.navigate('MyCoupons')}
           >
             <Ionicons name="ticket" size={18} color={colors.accent} />
-            <Text style={styles.quickLinkText}>My Coupons</Text>
+            <Text style={styles.quickLinkText}>My Deals</Text>
             <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
           </TouchableOpacity>
           {partyRsvpToken && (

@@ -139,12 +139,12 @@ export default function RootNavigator() {
       <Stack.Screen
         name="CouponsViewAll"
         component={SafeCouponsViewAll}
-        options={{ title: 'Coupons' }}
+        options={{ title: 'Deals' }}
       />
       <Stack.Screen
         name="MyCoupons"
         component={SafeMyCoupons}
-        options={{ title: 'My Coupons' }}
+        options={{ title: 'My Deals' }}
       />
       <Stack.Screen
         name="FeaturedViewAll"
