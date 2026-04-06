@@ -5,7 +5,7 @@
  */
 
 import { useRef, useEffect } from 'react';
-import { TouchableOpacity, View, Text, Animated } from 'react-native';
+import { TouchableOpacity, View, Text, Animated, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -49,9 +49,13 @@ export default function ThirstyKnowledgeCard() {
       <Text style={styles.bgBulb}>💡</Text>
 
       <View style={styles.content}>
-        {/* Logo icon */}
+        {/* Logo */}
         <View style={styles.logoCircle}>
-          <Ionicons name="bulb" size={20} color={TFK_GOLD} />
+          <Image
+            source={{ uri: 'https://kufcxxynjvyharhtfptd.supabase.co/storage/v1/object/public/images/ads/tfk_logo.png' }}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </View>
 
         <View style={styles.textGroup}>
@@ -106,11 +110,14 @@ const useStyles = createLazyStyles(() => ({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(124,58,237,0.3)',
+    overflow: 'hidden' as const,
     borderWidth: 1.5,
     borderColor: TFK_PURPLE,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+  },
+  logoImage: {
+    width: 33,
+    height: 33,
+    borderRadius: 16,
   },
   textGroup: {
     flex: 1,

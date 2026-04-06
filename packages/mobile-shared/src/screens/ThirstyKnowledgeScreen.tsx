@@ -21,6 +21,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Animated,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -458,9 +459,12 @@ export default function ThirstyKnowledgeScreen() {
             <Text style={styles.headerSubtitle}>Bar Trivia · Lancaster, PA</Text>
           </View>
 
-          {/* TFK logo placeholder — replace Image src with Supabase Storage URL once uploaded */}
           <View style={styles.logoCircle}>
-            <Ionicons name="bulb" size={28} color={TFK.goldLight} />
+            <Image
+              source={{ uri: 'https://kufcxxynjvyharhtfptd.supabase.co/storage/v1/object/public/images/ads/tfk_logo.png' }}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
           </View>
         </View>
 
@@ -592,11 +596,14 @@ const useStyles = createLazyStyles(() => ({
     width: 44,
     height: 44,
     borderRadius: radius.full,
-    backgroundColor: TFK.cardBg,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    overflow: 'hidden' as const,
     borderWidth: 2,
     borderColor: TFK.goldLight,
+  },
+  logoImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
 
   // Scroll

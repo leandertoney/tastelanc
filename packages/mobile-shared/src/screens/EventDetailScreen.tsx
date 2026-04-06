@@ -142,7 +142,11 @@ export default function EventDetailScreen({ route, navigation }: Props) {
             />
             <View style={styles.tfkHeroCenter} pointerEvents="none">
               <View style={styles.tfkLogoBadge}>
-                <Ionicons name="bulb" size={40} color={TFK_ED.goldLight} />
+                <Image
+                  source={{ uri: 'https://kufcxxynjvyharhtfptd.supabase.co/storage/v1/object/public/images/ads/tfk_logo.png' }}
+                  style={styles.tfkLogoImage}
+                  resizeMode="contain"
+                />
               </View>
               <Text style={styles.tfkWordmark}>Thirsty for Knowledge</Text>
               <Text style={styles.tfkTagline}>Bar Trivia · Lancaster, PA</Text>
@@ -480,12 +484,13 @@ const useStyles = createLazyStyles((colors) => ({
   },
   tfkLogoBadge: {
     width: 80, height: 80, borderRadius: 40,
-    backgroundColor: 'rgba(26,42,74,0.85)',
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    overflow: 'hidden' as const,
     borderWidth: 2,
     borderColor: TFK_ED.goldLight,
     marginBottom: 4,
+  },
+  tfkLogoImage: {
+    width: 76, height: 76, borderRadius: 38,
   },
   tfkWordmark: {
     fontSize: 26, fontWeight: '800' as const,
