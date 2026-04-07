@@ -4,13 +4,21 @@ import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-function generateCode(restaurantName: string, useLimit: number): string {
-  const slug = restaurantName
+// Safe alphabet — no confusing chars (O/0, I/1, L)
+const SAFE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
+function generateCode(restaurantName: string): string {
+  // 4-letter restaurant prefix (recognizable) + 4 random chars (not guessable)
+  const prefix = restaurantName
     .toUpperCase()
-    .replace(/[^A-Z0-9]/g, '')
-    .slice(0, 8);
-  const suffix = Math.random().toString(36).slice(2, 5).toUpperCase();
-  return `HEMP-${slug}-${useLimit}-${suffix}`;
+    .replace(/[^A-Z]/g, '')
+    .slice(0, 4)
+    .padEnd(4, 'X'); // pad short names like "Zig" → "ZIGX"
+  let suffix = '';
+  for (let i = 0; i < 4; i++) {
+    suffix += SAFE_CHARS[Math.floor(Math.random() * SAFE_CHARS.length)];
+  }
+  return `${prefix}${suffix}`;
 }
 
 // POST /api/party/admin/generate-code — generate an invite code for a restaurant
@@ -75,7 +83,7 @@ export async function POST(request: Request) {
     let code = '';
     let attempts = 0;
     while (attempts < 5) {
-      code = generateCode(name, use_limit);
+      code = generateCode(name);
       const { data: existing } = await serviceClient
         .from('party_invite_codes')
         .select('id')
