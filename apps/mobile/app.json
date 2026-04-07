@@ -44,7 +44,10 @@
       },
       "config": {
         "usesNonExemptEncryption": false
-      }
+      },
+      "associatedDomains": [
+        "applinks:tastelanc.com"
+      ]
     },
     "android": {
       "adaptiveIcon": {
@@ -66,7 +69,21 @@
         "googleMaps": {
           "apiKey": "AIzaSyCs5oTNGnEoBbyvsnOhv86MDwkokILqM2g"
         }
-      }
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "tastelanc.com",
+              "pathPrefix": "/party"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",

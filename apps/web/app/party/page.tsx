@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react';
 
 /**
- * /party — Universal landing page for Restaurant Week party QR codes.
+ * /party — Universal link landing page for Restaurant Week party QR codes.
  *
- * Flow:
- * 1. Immediately attempts to open the TasteLanc app via deep link
- * 2. If app isn't installed (or deep link fails), shows a landing page
- *    with App Store + Play Store download links
- * 3. Works on iOS, Android, and desktop
+ * How it works:
+ * - If TasteLanc app is installed: iOS/Android intercept this URL via universal
+ *   links / app links and open the app directly. This page never renders.
+ * - If app is NOT installed: This page renders as a fallback with download links.
+ * - As a belt-and-suspenders fallback, we also try the custom scheme deep link
+ *   in case universal links aren't configured yet (pre-native-build).
  */
 
 const APP_STORE_URL = 'https://apps.apple.com/app/tastelanc/id6755852717';
@@ -17,14 +18,19 @@ const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.tastel
 const DEEP_LINK = 'tastelanc://party-rsvp';
 
 export default function PartyPage() {
-  const [showFallback, setShowFallback] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Try to open the app via deep link
-    window.location.href = DEEP_LINK;
+    // Try custom scheme as fallback (for users on older builds without universal links)
+    // On iOS this silently fails if app isn't installed; on Android it may show a chooser
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = DEEP_LINK;
+    document.body.appendChild(iframe);
+    setTimeout(() => document.body.removeChild(iframe), 500);
 
-    // If still here after 1.5s, the deep link didn't work — show fallback
-    const timer = setTimeout(() => setShowFallback(true), 1500);
+    // Show the download page after a short delay
+    const timer = setTimeout(() => setReady(true), 800);
     return () => clearTimeout(timer);
   }, []);
 
@@ -37,13 +43,12 @@ export default function PartyPage() {
           April 20, 2026 &bull; Hempfield Apothetique
         </p>
 
-        {!showFallback ? (
+        {!ready ? (
           <p style={styles.loading}>Opening TasteLanc app...</p>
         ) : (
           <>
             <p style={styles.description}>
-              Open the TasteLanc app to RSVP with your invite code.
-              Don&apos;t have the app yet? Download it below!
+              Download the TasteLanc app and use your invite code to RSVP.
             </p>
             <div style={styles.buttons}>
               <a href={APP_STORE_URL} style={styles.button}>

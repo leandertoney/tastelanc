@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react';
 import { View, Animated, StyleSheet } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, getStateFromPath } from '@react-navigation/native';
 import { useNavigationTheme } from '@tastelanc/mobile-shared/src/hooks/useNavigationTheme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationActionsProvider } from '@tastelanc/mobile-shared/src/context/NavigationActionsContext';
@@ -48,11 +48,18 @@ function NotificationHandler({ children }: { children: React.ReactNode }) {
 
 // Inner component that uses hooks requiring AuthProvider
 const linking = {
-  prefixes: ['tastelanc://'],
+  prefixes: ['tastelanc://', 'https://tastelanc.com'],
   config: {
     screens: {
-      PartyRSVP: 'party-rsvp',
+      // https://tastelanc.com/party (universal link — QR codes)
+      PartyRSVP: 'party',
     },
+  },
+  // Also handle legacy custom scheme path: tastelanc://party-rsvp
+  getStateFromPath: (path: string, config: any) => {
+    // Normalize legacy paths to the universal link paths
+    const normalized = path.replace(/^\/party-rsvp(\/|$)/, '/party$1');
+    return getStateFromPath(normalized, config);
   },
 };
 
