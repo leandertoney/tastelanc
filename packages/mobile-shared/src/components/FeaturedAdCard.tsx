@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -16,6 +16,9 @@ import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
 import { trackAdClick } from '../lib/ads';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/types';
 
 interface FeaturedAdCardProps {
   ad: FeaturedAd;
@@ -154,12 +157,11 @@ function SponsoredBadge() {
 
 export default function FeaturedAdCard({ ad, positionIndex }: FeaturedAdCardProps) {
   const styles = useStyles();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handlePress = () => {
     trackAdClick(ad.id, positionIndex);
-    Linking.openURL(ad.click_url).catch((err) => {
-      console.warn('Failed to open ad URL:', err);
-    });
+    navigation.navigate('InAppBrowser', { url: ad.click_url, title: ad.business_name });
   };
 
   const particles = useMemo(() => PARTICLES, []);

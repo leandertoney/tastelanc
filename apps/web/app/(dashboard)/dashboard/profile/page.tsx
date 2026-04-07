@@ -183,7 +183,7 @@ export default function ProfilePage() {
         state: restaurant.state || '',
         zip_code: restaurant.zip_code || '',
         phone: restaurant.phone || '',
-        email: '',
+        email: (restaurant as any).contact_email || '',
         website: restaurant.website || '',
         categories: restaurant.categories || [],
       });
@@ -252,7 +252,7 @@ export default function ProfilePage() {
         body: JSON.stringify({
           name: formData.name, custom_description: formData.description, address: formData.address,
           city: formData.city, state: formData.state, zip_code: formData.zip_code,
-          phone: formData.phone, website: formData.website, categories: formData.categories,
+          phone: formData.phone, email: formData.email, website: formData.website, categories: formData.categories,
         }),
       });
       if (!response.ok) {

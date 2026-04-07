@@ -95,7 +95,7 @@ export async function PUT(request: Request) {
     if (state !== undefined) updateData.state = state;
     if (zip_code !== undefined) updateData.zip_code = zip_code;
     if (phone !== undefined) updateData.phone = phone;
-    if (email !== undefined) updateData.email = email;
+    if (email !== undefined) updateData.contact_email = email;
     if (website !== undefined) updateData.website = website;
     if (categories !== undefined) updateData.categories = categories;
     if (features !== undefined) updateData.features = features;

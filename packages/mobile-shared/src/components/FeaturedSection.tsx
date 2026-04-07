@@ -8,7 +8,6 @@ import {
   Modal,
   TouchableOpacity,
   Image,
-  Linking,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
@@ -210,15 +209,13 @@ export default function FeaturedSection({ onRestaurantPress }: FeaturedSectionPr
     setTimeout(() => setOverlayAd(null), 350);
   }, []);
 
-  // Handle tap on the overlay ad → open URL and dismiss
+  // Handle tap on the overlay ad → open in-app browser and dismiss
   const handleOverlayAdPress = useCallback(() => {
     if (!overlayAd) return;
     trackAdClick(overlayAd.id, 0);
-    Linking.openURL(overlayAd.click_url).catch((err) => {
-      console.warn('Failed to open ad URL:', err);
-    });
     dismissOverlay();
-  }, [overlayAd, dismissOverlay]);
+    navigation.navigate('InAppBrowser', { url: overlayAd.click_url, title: overlayAd.business_name });
+  }, [overlayAd, dismissOverlay, navigation]);
 
   const renderItem = useCallback(
     ({ item, index }: { item: CarouselItem; index: number }) => {

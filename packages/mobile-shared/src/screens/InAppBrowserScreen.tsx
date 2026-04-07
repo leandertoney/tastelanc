@@ -43,6 +43,7 @@ export default function InAppBrowserScreen({ navigation, route }: Props) {
   const [loadProgress, setLoadProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [autoOpened, setAutoOpened] = useState(false);
 
   const handleOpenExternal = useCallback(() => {
     Linking.openURL(normalizedUrl).catch(() => {});
@@ -102,8 +103,12 @@ export default function InAppBrowserScreen({ navigation, route }: Props) {
         onLoadEnd={() => setIsLoading(false)}
         onLoadProgress={({ nativeEvent }) => setLoadProgress(nativeEvent.progress)}
         onError={() => {
-          setHasError(true);
           setIsLoading(false);
+          if (!autoOpened) {
+            setAutoOpened(true);
+            Linking.openURL(normalizedUrl).catch(() => {});
+            navigation.goBack();
+          }
         }}
         onHttpError={({ nativeEvent }) => {
           if (nativeEvent.statusCode >= 400) {
