@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, Beer, UtensilsCrossed, Music, Package, Search, Pencil, X, Eye, Users, MousePointer, BarChart3 } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Plus, Trash2, Beer, UtensilsCrossed, Music, Package, Search, Pencil, X, Eye, Users, MousePointer, BarChart3, FileText, Check, Loader2 } from 'lucide-react';
 
 interface HolidaySpecial {
   id: string;
@@ -24,6 +24,7 @@ interface HolidaySpecial {
     name: string;
     cover_image_url: string | null;
     market_id: string;
+    rw_description: string | null;
   };
 }
 
@@ -109,9 +110,12 @@ export default function RestaurantWeekPage() {
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [multiRows, setMultiRows] = useState<SpecialRow[]>([{ ...EMPTY_ROW }]);
   const [submitting, setSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState<'specials' | 'analytics'>('specials');
+  const [activeTab, setActiveTab] = useState<'specials' | 'descriptions' | 'analytics'>('specials');
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [editingDescId, setEditingDescId] = useState<string | null>(null);
+  const [editingDescValue, setEditingDescValue] = useState('');
+  const [savingDescId, setSavingDescId] = useState<string | null>(null);
 
   const fetchAnalytics = useCallback(async () => {
     setAnalyticsLoading(true);
@@ -159,6 +163,50 @@ export default function RestaurantWeekPage() {
 
   useEffect(() => { fetchSpecials(); }, [fetchSpecials]);
   useEffect(() => { fetchRestaurants(); }, [fetchRestaurants]);
+
+  // Group specials by restaurant for the descriptions tab
+  const restaurantDescriptions = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; rw_description: string | null; dealCount: number }>();
+    for (const s of specials) {
+      const existing = map.get(s.restaurant.id);
+      if (existing) {
+        existing.dealCount++;
+      } else {
+        map.set(s.restaurant.id, {
+          id: s.restaurant.id,
+          name: s.restaurant.name,
+          rw_description: s.restaurant.rw_description,
+          dealCount: 1,
+        });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [specials]);
+
+  const handleSaveDescription = async (restaurantId: string) => {
+    setSavingDescId(restaurantId);
+    try {
+      const res = await fetch('/api/admin/holiday-specials/rw-description', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurant_id: restaurantId, rw_description: editingDescValue.trim() || null }),
+      });
+      if (res.ok) {
+        // Update local state so the change is reflected immediately
+        setSpecials(prev => prev.map(s =>
+          s.restaurant.id === restaurantId
+            ? { ...s, restaurant: { ...s.restaurant, rw_description: editingDescValue.trim() || null } }
+            : s
+        ));
+        setEditingDescId(null);
+        setEditingDescValue('');
+      }
+    } catch (err) {
+      console.error('Failed to save description:', err);
+    } finally {
+      setSavingDescId(null);
+    }
+  };
 
   const filteredRestaurants = restaurants.filter(r =>
     r.name.toLowerCase().includes(restaurantSearch.toLowerCase())
@@ -315,6 +363,17 @@ export default function RestaurantWeekPage() {
             🍽️ Deals
           </button>
           <button
+            onClick={() => setActiveTab('descriptions')}
+            className={`px-5 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+              activeTab === 'descriptions'
+                ? 'bg-[#C8532A] text-white'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            Descriptions
+          </button>
+          <button
             onClick={() => setActiveTab('analytics')}
             className={`px-5 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
               activeTab === 'analytics'
@@ -434,6 +493,89 @@ export default function RestaurantWeekPage() {
                   </div>
                 )}
               </>
+            )}
+          </div>
+        )}
+
+        {/* ═══ DESCRIPTIONS TAB ═══ */}
+        {activeTab === 'descriptions' && (
+          <div>
+            <div className="mb-4">
+              <p className="text-zinc-400 text-sm">
+                These descriptions appear on the <strong className="text-zinc-300">back of the flipped card</strong> in the app. Tap a card to flip it and see the &ldquo;About&rdquo; section — this is where the description shows.
+              </p>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-12 text-zinc-400">Loading...</div>
+            ) : restaurantDescriptions.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="text-5xl mb-4">📝</div>
+                <p className="text-zinc-400">No participating restaurants yet. Add deals first in the Deals tab.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {restaurantDescriptions.map((r) => {
+                  const isEditing = editingDescId === r.id;
+                  const isSaving = savingDescId === r.id;
+                  return (
+                    <div key={r.id} className="bg-zinc-900 border border-zinc-700 rounded-xl p-5">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">{r.name}</h3>
+                          <span className="text-xs text-zinc-500">{r.dealCount} deal{r.dealCount !== 1 ? 's' : ''}</span>
+                        </div>
+                        {!isEditing && (
+                          <button
+                            onClick={() => { setEditingDescId(r.id); setEditingDescValue(r.rw_description || ''); }}
+                            className="flex items-center gap-1.5 text-sm text-[#C8532A] hover:text-[#D96B40] transition-colors"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                            {r.rw_description ? 'Edit' : 'Add Description'}
+                          </button>
+                        )}
+                      </div>
+
+                      {isEditing ? (
+                        <div>
+                          <textarea
+                            value={editingDescValue}
+                            onChange={e => setEditingDescValue(e.target.value)}
+                            rows={4}
+                            placeholder="Write a description for this restaurant's Restaurant Week participation. This shows when users flip the card in the app."
+                            className="w-full px-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-[#C8532A] focus:outline-none resize-y text-sm leading-relaxed"
+                          />
+                          <div className="flex items-center gap-3 mt-3">
+                            <button
+                              onClick={() => handleSaveDescription(r.id)}
+                              disabled={isSaving}
+                              className="flex items-center gap-2 px-4 py-2 bg-[#C8532A] text-white font-semibold rounded-lg hover:bg-[#A84020] disabled:opacity-50 transition-colors text-sm"
+                            >
+                              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                              {isSaving ? 'Saving...' : 'Save'}
+                            </button>
+                            <button
+                              onClick={() => { setEditingDescId(null); setEditingDescValue(''); }}
+                              className="px-4 py-2 bg-zinc-700 text-zinc-300 rounded-lg hover:bg-zinc-600 transition-colors text-sm"
+                            >
+                              Cancel
+                            </button>
+                            <span className="text-xs text-zinc-600 ml-auto">{editingDescValue.length} chars</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          {r.rw_description ? (
+                            <p className="text-sm text-zinc-300 leading-relaxed">{r.rw_description}</p>
+                          ) : (
+                            <p className="text-sm text-zinc-600 italic">No description — a generic fallback will show in the app.</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
         )}

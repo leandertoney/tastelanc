@@ -47,7 +47,7 @@ export async function GET(request: Request) {
       .from('holiday_specials')
       .select(`
         *,
-        restaurant:restaurants!inner(id, name, cover_image_url, market_id)
+        restaurant:restaurants!inner(id, name, cover_image_url, market_id, rw_description)
       `)
       .eq('holiday_tag', holidayTag)
       .order('created_at', { ascending: false });
