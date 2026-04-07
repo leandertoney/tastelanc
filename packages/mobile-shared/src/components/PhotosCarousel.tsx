@@ -80,7 +80,7 @@ export default function PhotosCarousel({ photos, restaurantName }: PhotosCarouse
       onPress={() => openLightbox(index)}
       activeOpacity={0.8}
     >
-      <Image source={{ uri: item, cache: 'reload' }} style={styles.thumbnail} resizeMode="cover" />
+      <Image source={{ uri: item, cache: 'force-cache' }} style={styles.thumbnail} resizeMode="cover" />
       {index === 0 && photos.length > 1 && (
         <View style={styles.countBadge}>
           <Ionicons name="images" size={12} color="#FFF" />
@@ -93,7 +93,7 @@ export default function PhotosCarousel({ photos, restaurantName }: PhotosCarouse
   const renderLightboxImage = ({ item }: { item: string }) => (
     <View style={styles.lightboxImageContainer}>
       <Image
-        source={{ uri: item, cache: 'reload' }}
+        source={{ uri: item, cache: 'force-cache' }}
         style={styles.lightboxImage}
         resizeMode="contain"
       />

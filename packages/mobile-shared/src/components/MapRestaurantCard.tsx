@@ -118,7 +118,7 @@ export default function MapRestaurantCard({
               })}
               renderItem={({ item }) => (
                 <Image
-                  source={{ uri: item, cache: 'reload' }}
+                  source={{ uri: item, cache: 'force-cache' }}
                   style={styles.photo}
                   resizeMode="cover"
                 />

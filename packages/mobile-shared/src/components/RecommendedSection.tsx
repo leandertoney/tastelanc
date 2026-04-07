@@ -133,7 +133,7 @@ export default function RecommendedSection({
               <View style={styles.imageContainer}>
                 {restaurant.cover_image_url ? (
                   <Image
-                    source={{ uri: restaurant.cover_image_url, cache: 'reload' }}
+                    source={{ uri: restaurant.cover_image_url, cache: 'force-cache' }}
                     style={styles.image}
                   />
                 ) : (

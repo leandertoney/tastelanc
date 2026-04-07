@@ -33,7 +33,7 @@ export default function SpotifyStyleListItem({
       {/* Image or Fallback Icon */}
       <View style={styles.imageContainer}>
         {imageUrl ? (
-          <Image source={{ uri: imageUrl, cache: 'reload' }} style={styles.image} />
+          <Image source={{ uri: imageUrl, cache: 'force-cache' }} style={styles.image} />
         ) : (
           <View style={styles.fallbackContainer}>
             <Ionicons name={fallbackIcon} size={24} color={colors.textMuted} />

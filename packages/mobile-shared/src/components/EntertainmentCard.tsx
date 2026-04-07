@@ -88,7 +88,7 @@ export default function EntertainmentCard({
         disabled={!onPress}
       >
         <ImageBackground
-          source={{ uri: imageUrl, cache: 'reload' }}
+          source={{ uri: imageUrl, cache: 'force-cache' }}
           style={styles.imageBackground}
           imageStyle={styles.imageStyle}
           resizeMode="cover"
