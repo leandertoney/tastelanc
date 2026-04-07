@@ -168,8 +168,8 @@ export default function MyCouponsScreen() {
 
   const handleCancelClaim = (claimId: string) => {
     Alert.alert(
-      'Cancel Coupon',
-      'Are you sure you want to release this coupon?',
+      'Cancel Deal',
+      'Are you sure you want to release this deal?',
       [
         { text: 'Keep', style: 'cancel' },
         {

@@ -100,7 +100,7 @@ export default async function handler(req: Request, context: Context) {
             ? 'a free item'
             : 'a new deal';
 
-        const title = `New coupon at ${restaurantName}!`;
+        const title = `New deal at ${restaurantName}!`;
         const body = `Get ${discountLabel} — tap to claim before it's gone.`;
 
         const messages = tokens.map((token) => ({

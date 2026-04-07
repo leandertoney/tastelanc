@@ -121,7 +121,7 @@ export default function CouponsViewAllScreen() {
         <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholder="Search coupons or restaurants..."
+          placeholder="Search deals or restaurants..."
         />
       </View>
 

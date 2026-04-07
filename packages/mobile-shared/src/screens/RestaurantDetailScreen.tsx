@@ -556,7 +556,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
     // Coupons require a real signed-in account — anonymous/unauthenticated users must sign up
     if (!userId || isAnonymous) {
       showSignUpModal({
-        action: 'claim coupons and save your favorites',
+        action: 'claim deals and save your favorites',
         onSuccess: () => handleClaimCoupon(couponId),
       });
       return;
@@ -913,7 +913,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                           fontWeight: '600',
                           fontSize: 15,
                         }}>
-                          {claimingCouponId === coupon.id ? 'Claiming...' : claimedCouponIds.has(coupon.id) ? 'Claimed ✓' : 'Claim Coupon'}
+                          {claimingCouponId === coupon.id ? 'Claiming...' : claimedCouponIds.has(coupon.id) ? 'Claimed ✓' : 'Claim Deal'}
                         </Text>
                       </TouchableOpacity>
                     </View>

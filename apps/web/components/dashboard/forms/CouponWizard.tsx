@@ -146,7 +146,7 @@ export default function CouponWizard({ restaurantId, onClose, onSubmit }: Coupon
       setIsSuccess(true);
     } catch (err) {
       console.error('Failed to create coupon:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create coupon. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to create deal. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -159,11 +159,11 @@ export default function CouponWizard({ restaurantId, onClose, onSubmit }: Coupon
       <StepWizard
         currentStep={totalSteps - 1}
         totalSteps={totalSteps}
-        title="Coupon Created!"
+        title="Deal Created!"
         onClose={onClose}
       >
         <SuccessCelebration
-          title="Coupon Created!"
+          title="Deal Created!"
           subtitle={`${formData.title} is now live`}
           onContinue={onClose}
           onAddAnother={() => {
@@ -182,9 +182,9 @@ export default function CouponWizard({ restaurantId, onClose, onSubmit }: Coupon
       totalSteps={totalSteps}
       title={
         step === 0
-          ? 'What type of coupon?'
+          ? 'What type of deal?'
           : step === 1
-            ? 'Coupon Details'
+            ? 'Deal Details'
             : 'Review'
       }
       subtitle={step === 0 ? 'Pick a template or create your own' : undefined}
@@ -205,7 +205,7 @@ export default function CouponWizard({ restaurantId, onClose, onSubmit }: Coupon
           {/* Title */}
           <div>
             <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
-              Coupon Title *
+              Deal Title *
             </label>
             <input
               type="text"
@@ -361,7 +361,7 @@ export default function CouponWizard({ restaurantId, onClose, onSubmit }: Coupon
           {/* Image Upload */}
           <div>
             <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
-              Coupon Image
+              Deal Image
               <span className="text-tastelanc-text-faint font-normal ml-1">(optional)</span>
             </label>
             <SpecialImageUpload
@@ -472,7 +472,7 @@ export default function CouponWizard({ restaurantId, onClose, onSubmit }: Coupon
               disabled={isSubmitting}
               className="flex-1"
             >
-              {isSubmitting ? 'Creating...' : 'Create Coupon'}
+              {isSubmitting ? 'Creating...' : 'Create Deal'}
             </Button>
           </div>
         </div>

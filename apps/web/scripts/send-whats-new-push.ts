@@ -20,7 +20,7 @@ const supabase = createClient(
 );
 
 const TITLE = "What's new in TasteLanc 🍽️";
-const BODY = "Coupons, push alerts from your favorite spots, video recommendations & more. Check it out.";
+const BODY = "Deals, push alerts from your favorite spots, video recommendations & more. Check it out.";
 const DATA = { screen: 'Home' };
 
 // Expo Push API supports up to 100 per batch, all tokens must share the same experience

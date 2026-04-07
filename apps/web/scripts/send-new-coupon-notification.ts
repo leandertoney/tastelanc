@@ -81,7 +81,7 @@ async function main() {
   const tokens = tokenData.map((t) => t.token);
   console.log(`\nSending to ${tokens.length} devices on ${appSlug}...`);
 
-  const title = `New coupon at ${restaurantName}!`;
+  const title = `New deal at ${restaurantName}!`;
   const body = `Get ${discountLabel} — tap to claim before it's gone.`;
 
   // Send via Expo Push API in batches of 100

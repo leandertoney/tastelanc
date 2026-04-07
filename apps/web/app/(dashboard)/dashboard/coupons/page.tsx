@@ -142,8 +142,8 @@ export default function CouponsPage() {
 
   const deleteCoupon = async (id: string) => {
     const confirmed = await modal.confirm({
-      title: 'Delete Coupon',
-      description: 'Are you sure you want to delete this coupon? Active claims will still be valid.',
+      title: 'Delete Deal',
+      description: 'Are you sure you want to delete this deal? Active claims will still be valid.',
       confirmLabel: 'Delete',
       variant: 'danger',
     });
