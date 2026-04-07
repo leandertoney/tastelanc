@@ -4,7 +4,8 @@
  * Matches EntertainmentCard dimensions (140×140).
  */
 
-import { TouchableOpacity, Image } from 'react-native';
+import { useRef, useEffect } from 'react';
+import { TouchableOpacity, Image, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -22,27 +23,39 @@ export default function TFKEntertainmentCard() {
   const navigation = useNavigation<NavigationProp>();
   const brand = getBrand();
   const styles = useStyles();
+  const pulse = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1.03, duration: 1200, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 1200, useNativeDriver: true }),
+      ])
+    ).start();
+  }, [pulse]);
 
   if (brand.marketSlug !== 'lancaster-pa') return null;
 
   return (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => navigation.navigate('ThirstyKnowledge')}
-      activeOpacity={0.88}
-    >
-      <LinearGradient
-        colors={['#F9A8D4', '#C084FC', '#93C5FD']}
-        locations={[0, 0.5, 1]}
-        style={styles.gradient}
+    <Animated.View style={{ transform: [{ scale: pulse }] }}>
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => navigation.navigate('ThirstyKnowledge')}
+        activeOpacity={0.88}
       >
-        <Image
-          source={{ uri: TFK_LOGO_URL }}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </LinearGradient>
-    </TouchableOpacity>
+        <LinearGradient
+          colors={['#F9A8D4', '#C084FC', '#93C5FD']}
+          locations={[0, 0.5, 1]}
+          style={styles.gradient}
+        >
+          <Image
+            source={{ uri: TFK_LOGO_URL }}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </LinearGradient>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
