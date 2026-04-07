@@ -7,24 +7,22 @@ export const revalidate = 0;
 // Safe alphabet — no confusing chars (O/0, I/1, L)
 const SAFE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
-function generateCode(restaurantName: string): string {
-  // 4-letter restaurant prefix (recognizable) + 4 random chars (not guessable)
-  const prefix = restaurantName
-    .toUpperCase()
-    .replace(/[^A-Z]/g, '')
-    .slice(0, 4)
-    .padEnd(4, 'X'); // pad short names like "Zig" → "ZIGX"
+// Branded prefix: TLRW = TasteLanc Restaurant Week
+// Full code example: TLRW7K4X (8 chars, no hyphens, copy-pasteable)
+const EVENT_PREFIX = 'TLRW';
+
+function generateCode(): string {
   let suffix = '';
   for (let i = 0; i < 4; i++) {
     suffix += SAFE_CHARS[Math.floor(Math.random() * SAFE_CHARS.length)];
   }
-  return `${prefix}${suffix}`;
+  return `${EVENT_PREFIX}${suffix}`;
 }
 
 // POST /api/party/admin/generate-code — generate an invite code for a restaurant
 export async function POST(request: Request) {
   try {
-    const { restaurant_id, restaurant_name, use_limit, channel, notes, party_event_id } = await request.json();
+    const { restaurant_id, use_limit, channel, notes, party_event_id } = await request.json();
 
     if (!use_limit || typeof use_limit !== 'number' || use_limit < 1) {
       return NextResponse.json({ error: 'use_limit must be a positive number' }, { status: 400 });
@@ -67,23 +65,11 @@ export async function POST(request: Request) {
       eventId = event.id;
     }
 
-    // Resolve restaurant name for code generation
-    let name = restaurant_name;
-    if (!name && restaurant_id) {
-      const { data: restaurant } = await serviceClient
-        .from('restaurants')
-        .select('name')
-        .eq('id', restaurant_id)
-        .single();
-      name = restaurant?.name ?? 'GUEST';
-    }
-    name = name ?? 'GUEST';
-
     // Generate a unique code (retry up to 5 times on collision)
     let code = '';
     let attempts = 0;
     while (attempts < 5) {
-      code = generateCode(name);
+      code = generateCode();
       const { data: existing } = await serviceClient
         .from('party_invite_codes')
         .select('id')

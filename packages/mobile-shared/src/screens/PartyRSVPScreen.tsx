@@ -158,7 +158,7 @@ export default function PartyRSVPScreen({ navigation }: Props) {
                 style={styles.input}
                 value={code}
                 onChangeText={text => setCode(text.toUpperCase())}
-                placeholder="e.g. FISH9M2R"
+                placeholder="e.g. TLRW7K4X"
                 placeholderTextColor={RW_YELLOW_DIM}
                 autoCapitalize="characters"
                 autoCorrect={false}
