@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-access';
 import AdminRestaurantActions from '@/components/admin/AdminRestaurantActions';
 import AdminRestaurantVideos from '@/components/admin/AdminRestaurantVideos';
+import AdminSpotlightButton from '@/components/admin/AdminSpotlightButton';
+import AdminProfileScore from '@/components/admin/AdminProfileScore';
 import {
   ArrowLeft,
   Store,
@@ -16,6 +18,7 @@ import {
   ExternalLink,
   ShoppingCart,
   PartyPopper,
+  Sparkles,
 } from 'lucide-react';
 
 interface PageProps {
@@ -39,6 +42,9 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
       tiers (
         name,
         display_name
+      ),
+      market:markets (
+        slug
       )
     `)
     .eq('id', id);
@@ -55,15 +61,15 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  // Fetch owner info if exists
-  let ownerEmail = null;
-  if (restaurant.owner_id) {
+  // Prefer contact_email on the restaurant; fall back to profiles table
+  let ownerEmail = (restaurant as any).contact_email || null;
+  if (!ownerEmail && restaurant.owner_id) {
     const { data: owner } = await supabase
       .from('profiles')
       .select('email')
       .eq('id', restaurant.owner_id)
       .single();
-    ownerEmail = owner?.email;
+    ownerEmail = owner?.email || null;
   }
 
   // Fetch tiers for the tier selector
@@ -152,6 +158,13 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
           name: t.name,
           display_name: t.display_name,
         }))}
+      />
+
+      {/* Profile Score */}
+      <AdminProfileScore
+        restaurantId={restaurant.id}
+        initialScore={restaurant.profile_score || 0}
+        initialUpdatedAt={restaurant.profile_score_updated_at || null}
       />
 
       {/* Details Grid */}
@@ -297,6 +310,24 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
           )}
         </div>
       )}
+
+      {/* Instagram Spotlight */}
+      <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-tastelanc-text-primary mb-2 flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-violet-400" />
+          Instagram Spotlight
+        </h2>
+        <p className="text-sm text-tastelanc-text-muted mb-4">
+          Generate an &ldquo;Inside {restaurant.name}&rdquo; carousel post featuring their happy hours,
+          deals, specials, events, and photos. Post will be created as a draft pending review.
+        </p>
+        <AdminSpotlightButton
+          restaurantId={restaurant.id}
+          marketSlug={(restaurant as any).market?.slug ?? 'lancaster-pa'}
+          restaurantName={restaurant.name}
+          tierName={(restaurant as any).tiers?.name ?? ''}
+        />
+      </div>
 
       {/* Metadata */}
       <div className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-6">

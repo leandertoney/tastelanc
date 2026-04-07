@@ -2,7 +2,7 @@
 // score = (tier_weight * 3) + (freshness * 2) + (photo_quality * 2) + (rating_weight * 1.5) - (recent_post_penalty)
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ScoredCandidate } from './types';
+import { ScoredCandidate, SpotlightScoredCandidate } from './types';
 
 // Stock/default event images we uploaded — NOT custom restaurant photos
 // Any image_url matching these patterns is a stock placeholder, not a real photo
@@ -619,4 +619,90 @@ export async function fetchCategoryRoundupCandidates(
   );
 
   return { candidates: scored, memory };
+}
+
+// ============================================================================
+// Spotlight candidate selection
+// ============================================================================
+// Fetches active premium/elite restaurants for a market and ranks them by
+// content richness + days since last spotlight. Used by generateRestaurantSpotlight().
+
+export async function fetchSpotlightCandidates(
+  supabase: SupabaseClient,
+  marketId: string
+): Promise<SpotlightScoredCandidate[]> {
+  // 1. Fetch all active paid restaurants for this market
+  const { data: restaurants } = await supabase
+    .from('restaurants')
+    .select(`id, name, slug, cover_image_url, tier:tiers!inner(name)`)
+    .eq('market_id', marketId)
+    .eq('is_active', true)
+    .in('tiers.name', ['premium', 'elite']);
+
+  if (!restaurants || restaurants.length === 0) return [];
+
+  // 2. Score each restaurant (parallel content counts + recency check)
+  const scored = await Promise.all(
+    (restaurants as any[]).map(async (r) => {
+      const [photoRes, specialRes, hhRes, eventRes, dealRes, lastSpotlightRes] = await Promise.all([
+        supabase.from('restaurant_photos').select('id', { count: 'exact', head: true }).eq('restaurant_id', r.id),
+        supabase.from('specials').select('id', { count: 'exact', head: true }).eq('restaurant_id', r.id).eq('is_active', true),
+        supabase.from('happy_hours').select('id', { count: 'exact', head: true }).eq('restaurant_id', r.id).eq('is_active', true),
+        supabase.from('events').select('id', { count: 'exact', head: true }).eq('restaurant_id', r.id).eq('is_active', true),
+        supabase.from('coupons').select('id', { count: 'exact', head: true }).eq('restaurant_id', r.id).eq('is_active', true),
+        supabase
+          .from('instagram_posts')
+          .select('post_date')
+          .eq('content_type', 'restaurant_spotlight')
+          .contains('selected_entity_ids', [r.id])
+          .order('post_date', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+
+      const photoCount = photoRes.count ?? 0;
+      const specialCount = specialRes.count ?? 0;
+      const hhCount = hhRes.count ?? 0;
+      const eventCount = eventRes.count ?? 0;
+      const dealCount = dealRes.count ?? 0;
+      const lastSpotlightDate = lastSpotlightRes.data?.post_date ?? null;
+
+      const daysSince = lastSpotlightDate
+        ? (Date.now() - new Date(lastSpotlightDate).getTime()) / 86400000
+        : 999;
+
+      // Skip restaurants with no visual content at all
+      if (photoCount === 0 && !r.cover_image_url) return null;
+
+      const tierName = r.tier?.name as 'premium' | 'elite';
+      const contentScore =
+        Math.min(photoCount, 3) +
+        (specialCount > 0 ? 2 : 0) +
+        (hhCount > 0 ? 2 : 0) +
+        (eventCount > 0 ? 2 : 0) +
+        (dealCount > 0 ? 2 : 0) +
+        (tierName === 'elite' ? 2 : 1);
+      const recencyBonus = Math.min(daysSince / 7, 8);
+      const finalScore = contentScore + recencyBonus;
+
+      return {
+        restaurant_id: r.id,
+        restaurant_name: r.name,
+        restaurant_slug: r.slug,
+        tier_name: tierName,
+        photo_count: photoCount,
+        special_count: specialCount,
+        happy_hour_count: hhCount,
+        event_count: eventCount,
+        deal_count: dealCount,
+        content_score: finalScore,
+        days_since_last_spotlight: daysSince === 999 ? null : daysSince,
+        last_spotlight_date: lastSpotlightDate,
+      } satisfies SpotlightScoredCandidate;
+    })
+  );
+
+  return (scored.filter(Boolean) as SpotlightScoredCandidate[]).sort(
+    (a, b) => b.content_score - a.content_score
+  );
 }

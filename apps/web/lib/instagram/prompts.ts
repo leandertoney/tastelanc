@@ -255,6 +255,10 @@ export function buildCaptionPrompt(ctx: PromptContext): { system: string; user: 
       // This case is handled before buildCaptionPrompt is called — shouldn't reach here
       user = '';
       break;
+    case 'restaurant_spotlight':
+      // Spotlight uses buildSpotlightCaption() directly, not this function — shouldn't reach here
+      user = '';
+      break;
   }
   return { system: SYSTEM_PROMPT, user };
 }
@@ -338,6 +342,93 @@ export function getAppName(slug: string): string {
 }
 
 // Roundup topic rotation — deterministic by day of year
+// ============================================================================
+// Restaurant Spotlight caption
+// ============================================================================
+
+export interface SpotlightCaptionContext {
+  restaurantName: string;
+  marketName: string;
+  appName: string;
+  categories: string[];
+  description: string | null;
+  hasSpecials: boolean;
+  hasHappyHour: boolean;
+  hasEvents: boolean;
+  hasDeals: boolean;
+  specialHighlights: string[];   // up to 2 special names
+  hhHighlight: string | null;    // e.g. "Mon–Fri, 4–7pm"
+  eventHighlight: string | null; // e.g. "Live Music every Friday"
+  dealHighlights: string[];      // up to 2 deal titles
+  correctionHints?: string[];    // specific fixes from quality check retry
+}
+
+const SPOTLIGHT_SYSTEM_PROMPT = `You are a social media writer for a local restaurant discovery app. Your job is to write Instagram captions for "Inside [Restaurant]" spotlight posts — editorial, magazine-style features on one restaurant.
+
+Rules:
+- Tone: "pull back the curtain." Make the reader feel like an insider getting a tip from a local.
+- Write like a knowledgeable local, not a PR account or a brand.
+- 5-9 lines max, excluding hashtags.
+- Lead with something specific about this restaurant — not a generic opener like "Looking for a great meal?"
+- Highlight what makes this place worth visiting RIGHT NOW (deals, specials, events, happy hours).
+- End with a CTA to find the restaurant on the app.
+- No generic food-blog language ("culinary journey", "tantalizing", "foodie paradise").
+- Use • for list items, never dashes.
+- Include 3-5 relevant local hashtags at the end.
+- Output ONLY the caption. No labels, no "Caption:" prefix.`;
+
+export function buildSpotlightCaption(ctx: SpotlightCaptionContext): { system: string; user: string } {
+  const categoryLabels = ctx.categories
+    .slice(0, 3)
+    .map(c => c.replace(/_/g, ' '))
+    .join(', ');
+
+  const highlights: string[] = [];
+  if (ctx.hasDeals && ctx.dealHighlights.length > 0) {
+    highlights.push(...ctx.dealHighlights.slice(0, 2).map(d => `• Deal: ${d}`));
+  }
+  if (ctx.hasHappyHour && ctx.hhHighlight) {
+    highlights.push(`• Happy Hour: ${ctx.hhHighlight}`);
+  }
+  if (ctx.hasSpecials && ctx.specialHighlights.length > 0) {
+    highlights.push(...ctx.specialHighlights.slice(0, 2).map(s => `• ${s}`));
+  }
+  if (ctx.hasEvents && ctx.eventHighlight) {
+    highlights.push(`• ${ctx.eventHighlight}`);
+  }
+
+  const highlightBlock = highlights.length > 0
+    ? `\nWhat's happening now:\n${highlights.join('\n')}`
+    : '';
+
+  const descBlock = ctx.description
+    ? `\nAbout them: ${ctx.description.slice(0, 200)}`
+    : '';
+
+  const user = `Write an Instagram caption for ${ctx.appName}'s "Inside ${ctx.restaurantName}" spotlight post.
+
+Restaurant: ${ctx.restaurantName}
+Type: ${categoryLabels || 'restaurant'}
+Location: ${ctx.marketName}
+${descBlock}
+${highlightBlock}
+
+Structure:
+1. Hook that names ${ctx.restaurantName} and creates curiosity — make it feel exclusive, like an insider tip.
+2. 2-3 lines on what makes this place special RIGHT NOW.
+3. List the highlights with • (deals first, then happy hours, specials, events — only include what they actually have).
+4. CTA: "Find ${ctx.restaurantName} on ${ctx.appName}" or similar.
+
+Tone: editorial, insider, not salesy. Like a food journalist giving a friend a recommendation.
+Hashtags: #${ctx.marketName.replace(/[\s,]/g, '')}PA and 2-4 relevant tags.${
+    ctx.correctionHints && ctx.correctionHints.length > 0
+      ? `\n\n⚠️ PREVIOUS DRAFT WAS REJECTED. You MUST address these specific issues:\n${ctx.correctionHints.map(h => `- ${h}`).join('\n')}`
+      : ''
+  }`;
+
+  return { system: SPOTLIGHT_SYSTEM_PROMPT, user };
+}
+
 export const ROUNDUP_CATEGORIES: { category: string; label: string }[] = [
   { category: 'pizza', label: 'Pizza' },
   { category: 'brunch', label: 'Brunch' },

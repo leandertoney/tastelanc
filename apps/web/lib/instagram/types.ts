@@ -1,6 +1,6 @@
 // Instagram Agent v1 types
 
-export type ContentType = 'tonight_today' | 'weekend_preview' | 'category_roundup' | 'upcoming_events' | 'party_teaser';
+export type ContentType = 'tonight_today' | 'weekend_preview' | 'category_roundup' | 'upcoming_events' | 'party_teaser' | 'restaurant_spotlight';
 export type PostStatus = 'draft' | 'pending_review' | 'approved' | 'rejected' | 'published' | 'failed';
 
 // Weekly content calendar — each weekday has a unique theme
@@ -65,6 +65,7 @@ export interface GenerationMetadata {
   day_of_week: string;
   event_type?: string;
   category?: string;
+  spotlight_restaurant_id?: string;
 }
 
 export interface EngagementMetrics {
@@ -112,6 +113,105 @@ export interface HolidaySpecialSlide {
   restaurant_name: string;
   cover_image_url: string | null;
   specials: { name: string; category: string; price: string | null; description: string | null }[];
+}
+
+// ============================================================================
+// Restaurant Spotlight types
+// ============================================================================
+
+export interface SpotlightSpecial {
+  id: string;
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  special_price: number | null;
+  original_price: number | null;
+  days_of_week: string[];
+  start_time: string | null;
+  end_time: string | null;
+}
+
+export interface SpotlightHappyHour {
+  id: string;
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  days_of_week: string[];
+  items: Array<{
+    name: string;
+    discounted_price: number | null;
+    original_price: number | null;
+  }>;
+}
+
+export interface SpotlightEvent {
+  id: string;
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  event_type: string;
+  start_time: string | null;
+  performer_name: string | null;
+  days_of_week: string[];
+  event_date: string | null;
+  is_recurring: boolean;
+}
+
+export interface SpotlightDeal {
+  id: string;
+  title: string;
+  description: string | null;
+  discount_type: 'percent_off' | 'dollar_off' | 'bogo' | 'free_item' | 'custom';
+  discount_value: number | null;
+  original_price: number | null;
+  image_url: string | null;
+  days_of_week: string[];
+  start_time: string | null;
+  end_time: string | null;
+  end_date: string | null;
+}
+
+export interface SpotlightPhoto {
+  id: string;
+  url: string;
+  caption: string | null;
+  display_order: number;
+  is_cover: boolean;
+}
+
+export interface RestaurantSpotlightCandidate {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  custom_description: string | null;
+  cover_image_url: string | null;
+  logo_url: string | null;
+  categories: string[];
+  tier_name: 'premium' | 'elite';
+  market_id: string;
+  specials: SpotlightSpecial[];
+  happy_hours: SpotlightHappyHour[];
+  events: SpotlightEvent[];
+  deals: SpotlightDeal[];
+  photos: SpotlightPhoto[];
+}
+
+export interface SpotlightScoredCandidate {
+  restaurant_id: string;
+  restaurant_name: string;
+  restaurant_slug: string;
+  tier_name: 'premium' | 'elite';
+  photo_count: number;
+  special_count: number;
+  happy_hour_count: number;
+  event_count: number;
+  deal_count: number;
+  content_score: number;
+  days_since_last_spotlight: number | null;
+  last_spotlight_date: string | null;
 }
 
 export interface MarketConfig {

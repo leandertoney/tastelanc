@@ -6,7 +6,7 @@ import sharp from 'sharp';
 import { readFileSync, existsSync, copyFileSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { SlideCandidate, MarketConfig, HeadlineParts, HolidaySpecialSlide } from './types';
+import { SlideCandidate, MarketConfig, HeadlineParts, HolidaySpecialSlide, RestaurantSpotlightCandidate, SpotlightHappyHour, SpotlightDeal, SpotlightSpecial, SpotlightEvent } from './types';
 import { getMarketDisplayName, getAppName } from './prompts';
 
 const SIZE = 1080;
@@ -1803,6 +1803,485 @@ async function uploadSlide(
 
   const { data } = supabase.storage.from('images').getPublicUrl(path);
   return data.publicUrl;
+}
+
+// ============================================================================
+// Restaurant Spotlight Slides
+// ============================================================================
+// "Inside [Restaurant Name]" — editorial magazine-style carousel.
+// Slide order: Cover → Content slides (HH → Deals → Specials → Events, max 3)
+//              → Photo gallery (if 3+ photos) → CTA
+
+// Format helpers (module-private)
+
+function formatTimeShortSpotlight(t: string | null): string {
+  if (!t) return '';
+  const [hStr, mStr] = t.split(':');
+  const h = parseInt(hStr, 10);
+  const m = parseInt(mStr, 10);
+  const ampm = h >= 12 ? 'pm' : 'am';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return m === 0 ? `${h12}${ampm}` : `${h12}:${mStr}${ampm}`;
+}
+
+function formatDays(days: string[]): string {
+  if (!days || days.length === 0) return 'Daily';
+  const DAY_MAP: Record<string, string> = {
+    monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu',
+    friday: 'Fri', saturday: 'Sat', sunday: 'Sun',
+  };
+  if (days.length === 7) return 'Daily';
+  if (days.length >= 5) {
+    const set = new Set(days.map(d => d.toLowerCase()));
+    if (['saturday', 'sunday'].every(d => !set.has(d))) return 'Mon–Fri';
+  }
+  return days.map(d => DAY_MAP[d.toLowerCase()] ?? d).join('/');
+}
+
+function formatHHTimeRange(hh: SpotlightHappyHour): string {
+  const days = formatDays(hh.days_of_week);
+  const start = formatTimeShortSpotlight(hh.start_time);
+  const end = formatTimeShortSpotlight(hh.end_time);
+  if (start && end) return `${days}, ${start}–${end}`;
+  if (start) return `${days} from ${start}`;
+  return days;
+}
+
+function formatDealDiscount(deal: SpotlightDeal): string {
+  switch (deal.discount_type) {
+    case 'percent_off':
+      return deal.discount_value ? `${deal.discount_value}% off` : 'Special discount';
+    case 'dollar_off':
+      return deal.discount_value ? `$${deal.discount_value} off` : 'Special discount';
+    case 'bogo':
+      return 'Buy 1 Get 1';
+    case 'free_item':
+      return 'Free item included';
+    case 'custom':
+    default:
+      return '';
+  }
+}
+
+function formatEventLine(event: SpotlightEvent): string {
+  const EVENT_LABELS: Record<string, string> = {
+    live_music: 'Live Music', trivia: 'Trivia Night', karaoke: 'Karaoke',
+    dj: 'DJ Night', comedy: 'Comedy Show', sports: 'Sports Night',
+    bingo: 'Bingo', music_bingo: 'Music Bingo', poker: 'Poker Night', other: 'Event',
+  };
+  const label = EVENT_LABELS[event.event_type] ?? 'Event';
+  const days = event.is_recurring && event.days_of_week.length > 0
+    ? formatDays(event.days_of_week)
+    : '';
+  const time = formatTimeShortSpotlight(event.start_time);
+  if (days && time) return `${label} — ${days} at ${time}`;
+  if (days) return `${label} — ${days}`;
+  if (time) return `${label} at ${time}`;
+  return label;
+}
+
+// Cover slide: full-bleed photo + "INSIDE" editorial header + restaurant name
+async function composeSpotlightCover(
+  imageBuffer: Buffer | null,
+  restaurantName: string,
+  logoBuffer: Buffer,
+  appName: string,
+  marketName: string,
+): Promise<Buffer> {
+  let base: sharp.Sharp;
+  if (imageBuffer) {
+    base = sharp(imageBuffer).resize(SIZE, SIZE, { fit: 'cover', position: 'attention' });
+  } else {
+    base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: { r: 14, g: 14, b: 18 } } });
+  }
+
+  const nameLines = wrapText(restaurantName, 18);
+  const nameY = 175;
+  const lineH = 66;
+  const nameSvg = nameLines.map((line, i) =>
+    `<text x="60" y="${nameY + i * lineH}" font-family="Inter" font-size="58" font-weight="700"
+      fill="white" dominant-baseline="hanging">${escapeXml(line)}</text>`
+  ).join('\n');
+
+  const bottomY = SIZE - 60;
+  const svg = `<svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
+    ${svgFontStyles()}
+    <!-- Dark gradient overlay -->
+    <defs>
+      <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgba(0,0,0,0.72)"/>
+        <stop offset="45%" stop-color="rgba(0,0,0,0.35)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0.88)"/>
+      </linearGradient>
+    </defs>
+    <rect width="${SIZE}" height="${SIZE}" fill="url(#cg)"/>
+    <!-- Gold accent rule above INSIDE label -->
+    <rect x="60" y="95" width="44" height="3" fill="${ACCENT}" rx="1"/>
+    <!-- INSIDE label -->
+    <text x="60" y="115" font-family="Inter" font-size="22" font-weight="400"
+      fill="${ACCENT_DIM}" letter-spacing="8" dominant-baseline="hanging">INSIDE</text>
+    <!-- Restaurant name -->
+    ${nameSvg}
+    <!-- Bottom-left: swipe hint -->
+    <rect x="60" y="${bottomY - 14}" width="2" height="30" fill="${ACCENT}" rx="1" opacity="0.6"/>
+    <text x="72" y="${bottomY - 4}" font-family="Inter" font-size="15" fill="rgba(255,255,255,0.55)"
+      dominant-baseline="hanging">Swipe to explore →</text>
+    <!-- Bottom-right: market brand badge -->
+    <rect x="${SIZE - 200}" y="${bottomY - 8}" width="160" height="26" rx="13"
+      fill="rgba(232,197,71,0.15)" stroke="${ACCENT}" stroke-width="1"/>
+    <text x="${SIZE - 120}" y="${bottomY + 5}" font-family="Inter" font-size="13" font-weight="600"
+      fill="${ACCENT}" text-anchor="middle" dominant-baseline="middle">${escapeXml(appName.toUpperCase())}</text>
+  </svg>`;
+
+  const logo = await sharp(logoBuffer)
+    .resize(44, 44, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png()
+    .toBuffer();
+
+  return base
+    .jpeg({ quality: JPEG_QUALITY })
+    .composite([
+      { input: Buffer.from(svg), top: 0, left: 0 },
+      { input: logo, top: 36, left: SIZE - 80 },
+    ])
+    .toBuffer();
+}
+
+// Content slide: upper photo zone + lower dark panel with section label and items
+async function composeSpotlightContentSlide(
+  imageBuffer: Buffer | null,
+  sectionLabel: string,
+  items: string[],
+  logoBuffer: Buffer,
+  slideNum: number,
+  totalSlides: number,
+): Promise<Buffer> {
+  const PANEL_TOP = Math.round(SIZE * 0.52); // panel starts at 52%
+  const PHOTO_H = PANEL_TOP;
+
+  let photoComposite: Buffer;
+  if (imageBuffer) {
+    photoComposite = await sharp(imageBuffer)
+      .resize(SIZE, PHOTO_H, { fit: 'cover', position: 'attention' })
+      .jpeg({ quality: JPEG_QUALITY })
+      .toBuffer();
+  } else {
+    photoComposite = await sharp({
+      create: { width: SIZE, height: PHOTO_H, channels: 3, background: { r: 18, g: 18, b: 22 } },
+    }).jpeg({ quality: JPEG_QUALITY }).toBuffer();
+  }
+
+  // Composite: photo top + dark panel bottom
+  const capped = items.slice(0, 3);
+  const itemsY = PANEL_TOP + 100;
+  const itemH = 38;
+  const itemSvg = capped.map((item, i) =>
+    `<text x="64" y="${itemsY + i * itemH}" font-family="Inter" font-size="24" fill="rgba(255,255,255,0.88)"
+      dominant-baseline="hanging">• ${escapeXml(item)}</text>`
+  ).join('\n');
+
+  const logo = await sharp(logoBuffer)
+    .resize(36, 36, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png()
+    .toBuffer();
+
+  const svg = `<svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
+    ${svgFontStyles()}
+    <!-- Photo zone subtle vignette -->
+    <defs>
+      <linearGradient id="pv" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="70%" stop-color="rgba(0,0,0,0)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0.5)"/>
+      </linearGradient>
+    </defs>
+    <rect y="0" width="${SIZE}" height="${PHOTO_H}" fill="url(#pv)"/>
+    <!-- Dark panel -->
+    <rect y="${PANEL_TOP}" width="${SIZE}" height="${SIZE - PANEL_TOP}" fill="rgba(10,10,14,0.96)"/>
+    <!-- Gold accent rule at top of panel -->
+    <rect y="${PANEL_TOP}" width="${SIZE}" height="3" fill="${ACCENT}" rx="0"/>
+    <!-- Section label -->
+    <text x="60" y="${PANEL_TOP + 22}" font-family="Inter" font-size="20" font-weight="700"
+      fill="${ACCENT}" letter-spacing="6" dominant-baseline="hanging">${escapeXml(sectionLabel)}</text>
+    <!-- Accent hairline under label -->
+    <rect x="60" y="${PANEL_TOP + 56}" width="48" height="2" fill="${ACCENT}" rx="1" opacity="0.5"/>
+    <!-- Items -->
+    ${itemSvg}
+    <!-- Slide counter badge -->
+    <rect x="${SIZE - 90}" y="20" width="68" height="26" rx="13" fill="${ACCENT}"/>
+    <text x="${SIZE - 56}" y="33" font-family="Inter" font-size="13" font-weight="700"
+      fill="#1a1a1a" text-anchor="middle" dominant-baseline="middle">${slideNum}/${totalSlides}</text>
+  </svg>`;
+
+  return sharp({
+    create: { width: SIZE, height: SIZE, channels: 3, background: { r: 10, g: 10, b: 14 } },
+  })
+    .composite([
+      { input: photoComposite, top: 0, left: 0 },
+      { input: Buffer.from(svg), top: 0, left: 0 },
+      { input: logo, top: 20, left: 20 },
+    ])
+    .jpeg({ quality: JPEG_QUALITY })
+    .toBuffer();
+}
+
+// Photo gallery slide: 2x2 grid of restaurant photos
+async function composeSpotlightPhotoGrid(
+  photoBuffers: Buffer[],
+  logoBuffer: Buffer,
+  slideNum: number,
+  totalSlides: number,
+): Promise<Buffer> {
+  const GAP = 8;
+  const CELL = Math.floor((SIZE - GAP) / 2); // ~536px
+
+  const cells = await Promise.all(
+    photoBuffers.slice(0, 4).map(buf =>
+      sharp(buf).resize(CELL, CELL, { fit: 'cover', position: 'attention' }).jpeg({ quality: 88 }).toBuffer()
+    )
+  );
+
+  const composites: sharp.OverlayOptions[] = [];
+  const positions = [
+    { top: 0, left: 0 },
+    { top: 0, left: CELL + GAP },
+    { top: CELL + GAP, left: 0 },
+    { top: CELL + GAP, left: CELL + GAP },
+  ];
+  cells.forEach((cell, i) => {
+    composites.push({ input: cell, top: positions[i].top, left: positions[i].left });
+  });
+
+  const logo = await sharp(logoBuffer)
+    .resize(36, 36, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png()
+    .toBuffer();
+
+  const svg = `<svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
+    ${svgFontStyles()}
+    <!-- Gap fill -->
+    <rect x="${CELL}" y="0" width="${GAP}" height="${SIZE}" fill="rgba(10,10,14,1)"/>
+    <rect x="0" y="${CELL}" width="${SIZE}" height="${GAP}" fill="rgba(10,10,14,1)"/>
+    <!-- Photos label -->
+    <rect x="60" y="18" width="90" height="24" rx="12" fill="rgba(232,197,71,0.18)" stroke="${ACCENT}" stroke-width="1"/>
+    <text x="105" y="30" font-family="Inter" font-size="12" font-weight="600"
+      fill="${ACCENT}" text-anchor="middle" dominant-baseline="middle">PHOTOS</text>
+    <!-- Slide counter badge -->
+    <rect x="${SIZE - 90}" y="18" width="68" height="24" rx="12" fill="${ACCENT}"/>
+    <text x="${SIZE - 56}" y="30" font-family="Inter" font-size="12" font-weight="700"
+      fill="#1a1a1a" text-anchor="middle" dominant-baseline="middle">${slideNum}/${totalSlides}</text>
+  </svg>`;
+
+  return sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: { r: 10, g: 10, b: 14 } } })
+    .composite([
+      ...composites,
+      { input: Buffer.from(svg), top: 0, left: 0 },
+      { input: logo, top: 18, left: 18 },
+    ])
+    .jpeg({ quality: JPEG_QUALITY })
+    .toBuffer();
+}
+
+// CTA slide: blurred/darkened restaurant photo + "Discover [Restaurant] on [App]"
+async function composeSpotlightCTA(
+  restaurantName: string,
+  appName: string,
+  logoBuffer: Buffer,
+  backgroundBuffer: Buffer | null,
+): Promise<Buffer> {
+  let base: sharp.Sharp;
+  if (backgroundBuffer) {
+    const blurred = await sharp(backgroundBuffer)
+      .resize(SIZE, SIZE, { fit: 'cover', position: 'attention' })
+      .blur(18)
+      .jpeg({ quality: 80 })
+      .toBuffer();
+    base = sharp(blurred);
+  } else {
+    base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: { r: 14, g: 14, b: 18 } } });
+  }
+
+  const logo = await sharp(logoBuffer)
+    .resize(160, 160, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png()
+    .toBuffer();
+
+  const nameLines = wrapText(restaurantName, 20);
+  const nameY = SIZE / 2 + 40;
+  const nameSvg = nameLines.map((line, i) =>
+    `<text x="${SIZE / 2}" y="${nameY + i * 42}" font-family="Inter" font-size="36" font-weight="700"
+      fill="white" text-anchor="middle" dominant-baseline="hanging">${escapeXml(line)}</text>`
+  ).join('\n');
+
+  const nameBlockH = nameLines.length * 42;
+  const accentY = nameY + nameBlockH + 16;
+
+  const svg = `<svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
+    ${svgFontStyles()}
+    <!-- Dark scrim -->
+    <rect width="${SIZE}" height="${SIZE}" fill="rgba(0,0,0,0.78)"/>
+    <!-- "Discover [Restaurant] on" -->
+    <text x="${SIZE / 2}" y="${SIZE / 2 - 16}" font-family="Inter" font-size="24" font-style="italic"
+      fill="rgba(255,255,255,0.72)" text-anchor="middle" dominant-baseline="auto">Discover ${escapeXml(restaurantName)} on</text>
+    <!-- App name -->
+    <text x="${SIZE / 2}" y="${SIZE / 2 + 14}" font-family="Inter" font-size="52" font-weight="700"
+      fill="white" text-anchor="middle" dominant-baseline="hanging">${escapeXml(appName)}</text>
+    <!-- Accent rule -->
+    <rect x="${SIZE / 2 - 30}" y="${SIZE / 2 + 80}" width="60" height="3" fill="${ACCENT}" rx="1"/>
+    <!-- "Free on App Store & Google Play" -->
+    <text x="${SIZE / 2}" y="${SIZE / 2 + 100}" font-family="Inter" font-size="17"
+      fill="rgba(255,255,255,0.45)" text-anchor="middle" dominant-baseline="hanging">Free on App Store &amp; Google Play</text>
+    <!-- Gold CTA button -->
+    <rect x="${SIZE / 2 - 160}" y="${SIZE - 160}" width="320" height="52" rx="26" fill="${ACCENT}"/>
+    <text x="${SIZE / 2}" y="${SIZE - 134}" font-family="Inter" font-size="16" font-weight="700"
+      fill="#1a1a1a" text-anchor="middle" dominant-baseline="middle">FIND ON ${escapeXml(appName.toUpperCase())}</text>
+  </svg>`;
+
+  const logoTop = Math.round(SIZE / 2 - 240);
+
+  return base
+    .jpeg({ quality: JPEG_QUALITY })
+    .composite([
+      { input: Buffer.from(svg), top: 0, left: 0 },
+      { input: logo, top: logoTop, left: Math.round(SIZE / 2 - 80) },
+    ])
+    .toBuffer();
+}
+
+export async function composeRestaurantSpotlightSlides(opts: {
+  supabase: SupabaseClient;
+  market: MarketConfig;
+  restaurant: RestaurantSpotlightCandidate;
+  date: string;
+}): Promise<string[]> {
+  const { supabase, market, restaurant, date } = opts;
+  const appName = getAppName(market.market_slug);
+  const marketName = getMarketDisplayName(market.market_slug);
+
+  // 1. Load logo
+  let logoBuffer: Buffer;
+  try {
+    logoBuffer = loadLogoBuffer(market.market_slug);
+  } catch {
+    logoBuffer = Buffer.alloc(0);
+  }
+
+  // 2. Best cover photo
+  const coverPhoto = restaurant.photos.find(p => p.is_cover) ?? restaurant.photos[0] ?? null;
+  const coverUrl = coverPhoto?.url ?? restaurant.cover_image_url ?? null;
+  let coverBuffer: Buffer | null = null;
+  if (coverUrl) {
+    try { coverBuffer = await fetchImageBuffer(coverUrl); } catch { /* no image */ }
+  }
+
+  // 3. Build content sections in priority order: HH → Deals → Specials → Events
+  type ContentSection = { label: string; items: string[]; imageUrl: string | null };
+  const contentSections: ContentSection[] = [];
+
+  if (restaurant.happy_hours.length > 0) {
+    const hh = restaurant.happy_hours[0];
+    const timeRange = formatHHTimeRange(hh);
+    const hhItems = hh.items.slice(0, 2).map(item => {
+      const price = item.discounted_price != null ? `$${item.discounted_price}` : '';
+      return price ? `${item.name} — ${price}` : item.name;
+    });
+    contentSections.push({
+      label: 'HAPPY HOUR',
+      items: [timeRange, ...hhItems].filter(Boolean).slice(0, 3),
+      imageUrl: hh.image_url,
+    });
+  }
+
+  if (restaurant.deals.length > 0) {
+    const dealItems = restaurant.deals.slice(0, 3).map(d => {
+      const discount = formatDealDiscount(d);
+      return discount ? `${d.title} — ${discount}` : d.title;
+    });
+    const dealImageUrl = restaurant.deals.find(d => d.image_url)?.image_url ?? null;
+    contentSections.push({
+      label: 'EXCLUSIVE DEALS',
+      items: dealItems,
+      imageUrl: dealImageUrl,
+    });
+  }
+
+  if (restaurant.specials.length > 0) {
+    const specialItems = restaurant.specials.slice(0, 3).map(s => {
+      const price = s.special_price != null ? ` — $${s.special_price}` : '';
+      return `${s.name}${price}`;
+    });
+    const specialImageUrl = restaurant.specials.find(s => s.image_url)?.image_url ?? null;
+    contentSections.push({
+      label: "TODAY'S SPECIALS",
+      items: specialItems,
+      imageUrl: specialImageUrl,
+    });
+  }
+
+  if (restaurant.events.length > 0) {
+    const eventItems = restaurant.events.slice(0, 3).map(formatEventLine);
+    const eventImageUrl = restaurant.events.find(e => e.image_url)?.image_url ?? null;
+    contentSections.push({
+      label: 'COMING UP',
+      items: eventItems,
+      imageUrl: eventImageUrl,
+    });
+  }
+
+  const capped = contentSections.slice(0, 3);
+  const hasPhotoGallery = restaurant.photos.length >= 3;
+  const totalSlides = 1 + capped.length + (hasPhotoGallery ? 1 : 0) + 1;
+
+  // 4. Generate slides sequentially to avoid memory spikes
+  const slideBuffers: Buffer[] = [];
+
+  // Cover
+  slideBuffers.push(await composeSpotlightCover(coverBuffer, restaurant.name, logoBuffer, appName, marketName));
+
+  // Content slides
+  for (let i = 0; i < capped.length; i++) {
+    const section = capped[i];
+    let imgBuffer: Buffer | null = null;
+    if (section.imageUrl) {
+      try { imgBuffer = await fetchImageBuffer(section.imageUrl); } catch { /* use fallback */ }
+    }
+    const slideImage = imgBuffer ?? coverBuffer;
+    slideBuffers.push(await composeSpotlightContentSlide(
+      slideImage,
+      section.label,
+      section.items,
+      logoBuffer,
+      slideBuffers.length + 1,
+      totalSlides,
+    ));
+  }
+
+  // Photo gallery
+  if (hasPhotoGallery) {
+    const photoBuffers = (await Promise.all(
+      restaurant.photos.slice(0, 4).map(async p => {
+        try { return await fetchImageBuffer(p.url); } catch { return null; }
+      })
+    )).filter((b): b is Buffer => b !== null);
+
+    if (photoBuffers.length >= 2) {
+      slideBuffers.push(await composeSpotlightPhotoGrid(
+        photoBuffers,
+        logoBuffer,
+        slideBuffers.length + 1,
+        totalSlides,
+      ));
+    }
+  }
+
+  // CTA
+  slideBuffers.push(await composeSpotlightCTA(restaurant.name, appName, logoBuffer, coverBuffer));
+
+  // 5. Upload all slides
+  const timestamp = Date.now();
+  const storagePath = `instagram/${market.market_slug}/${date}/spotlight-${timestamp}`;
+  return Promise.all(
+    slideBuffers.map((buf, i) => uploadSlide(supabase, buf, `${storagePath}/slide-${i}.jpg`))
+  );
 }
 
 export async function cleanupOldSlides(

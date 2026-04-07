@@ -17,10 +17,13 @@ import {
   fetchUpcomingEventsCandidates,
   fetchHolidaySpecialsCandidates,
   selectTopCandidates,
+  fetchSpotlightCandidates,
 } from './scoring';
 import {
   buildCaptionPrompt,
   buildPartyTeaserCaption,
+  buildSpotlightCaption,
+  SpotlightCaptionContext,
   getMarketDisplayName,
   getAppName,
   getTodaysRoundupCategory,
@@ -30,9 +33,9 @@ import {
   APPROVAL_TIMEOUT_HOURS,
   EVENT_TYPE_INSTAGRAM_LABELS,
 } from './prompts';
-import { DayTheme } from './types';
+import { DayTheme, RestaurantSpotlightCandidate } from './types';
 import { selectMedia, recordMediaUsage } from './media';
-import { generateCarouselSlides, composeWeeklyRoundupSlides, composeHolidayPosterSlides } from './overlay';
+import { generateCarouselSlides, composeWeeklyRoundupSlides, composeHolidayPosterSlides, composeRestaurantSpotlightSlides } from './overlay';
 import { HolidaySpecialSlide } from './types';
 import { SlideCandidate, HeadlineParts } from './types';
 
@@ -141,6 +144,9 @@ async function generateByType(
       return generateUpcomingEvents(opts, decisionPath);
     case 'party_teaser':
       return generatePartyTeaser(opts, decisionPath);
+    case 'restaurant_spotlight':
+      // Spotlight has its own entry point (generateRestaurantSpotlight), not routed through here
+      return { success: false, error: 'Use generateRestaurantSpotlight() for spotlight posts' };
   }
 }
 
@@ -910,4 +916,258 @@ async function logGeneration(
     success: log.success,
     error_message: log.errorMessage || null,
   });
+}
+
+// ============================================================================
+// Restaurant Spotlight Generator
+// ============================================================================
+// Generates an "Inside [Restaurant Name]" carousel for a single paid partner.
+// Called manually from the admin restaurant detail page, or can be auto-scheduled.
+
+interface SpotlightOptions {
+  supabase: SupabaseClient;
+  market: MarketConfig;
+  date: Date;
+  restaurantId?: string;        // if provided, use this restaurant; otherwise auto-select
+  scheduledPublishAt?: string;  // ISO timestamp for auto-publish
+  // Self-correction hints from quality check pipeline (populated on retry)
+  captionHints?: string[];      // specific copy fixes, e.g. "Lead with the Happy Hour time"
+  excludeEntityIds?: string[];  // expired/inactive entity IDs to skip when building slides
+  skipPhotoIds?: string[];      // photo IDs that failed to load — use a different cover
+}
+
+export async function generateRestaurantSpotlight(opts: SpotlightOptions): Promise<GenerationResult> {
+  const { supabase, market, date } = opts;
+  const today = date.toISOString().split('T')[0];
+  const appName = getAppName(market.market_slug);
+  const marketName = getMarketDisplayName(market.market_slug);
+
+  // 1. Resolve which restaurant to spotlight
+  let targetRestaurantId = opts.restaurantId;
+
+  if (!targetRestaurantId) {
+    const candidates = await fetchSpotlightCandidates(supabase, market.market_id);
+    if (candidates.length === 0) {
+      return { success: false, error: 'No eligible premium/elite restaurants found for spotlight' };
+    }
+    targetRestaurantId = candidates[0].restaurant_id;
+  }
+
+  // 2. Verify eligibility: active, premium or elite tier
+  const { data: restaurant, error: rErr } = await supabase
+    .from('restaurants')
+    .select(`
+      id, name, slug, description, custom_description, cover_image_url, logo_url,
+      categories, market_id,
+      tier:tiers!inner(name)
+    `)
+    .eq('id', targetRestaurantId)
+    .eq('is_active', true)
+    .in('tiers.name', ['premium', 'elite'])
+    .single();
+
+  if (rErr || !restaurant) {
+    return {
+      success: false,
+      error: `Restaurant not found or not eligible for spotlight (must be premium/elite and active): ${rErr?.message ?? 'not found'}`,
+    };
+  }
+
+  // 3. Fetch all content in parallel
+  const [photosRes, specialsRes, hhRes, eventsRes, dealsRes] = await Promise.all([
+    supabase
+      .from('restaurant_photos')
+      .select('id, url, caption, is_cover, display_order')
+      .eq('restaurant_id', targetRestaurantId)
+      .order('is_cover', { ascending: false })
+      .order('display_order', { ascending: true }),
+
+    supabase
+      .from('specials')
+      .select('id, name, description, image_url, special_price, original_price, days_of_week, start_time, end_time')
+      .eq('restaurant_id', targetRestaurantId)
+      .eq('is_active', true)
+      .limit(5),
+
+    supabase
+      .from('happy_hours')
+      .select(`
+        id, name, description, image_url, start_time, end_time, days_of_week,
+        items:happy_hour_items(name, discounted_price, original_price)
+      `)
+      .eq('restaurant_id', targetRestaurantId)
+      .eq('is_active', true)
+      .limit(3),
+
+    supabase
+      .from('events')
+      .select('id, name, description, image_url, event_type, start_time, performer_name, days_of_week, event_date, is_recurring')
+      .eq('restaurant_id', targetRestaurantId)
+      .eq('is_active', true)
+      .order('event_date', { ascending: true, nullsFirst: false })
+      .limit(5),
+
+    supabase
+      .from('coupons')
+      .select('id, title, description, discount_type, discount_value, original_price, image_url, days_of_week, start_time, end_time, end_date')
+      .eq('restaurant_id', targetRestaurantId)
+      .eq('is_active', true)
+      .or(`end_date.is.null,end_date.gte.${today}`)
+      .limit(5),
+  ]);
+
+  // Apply correction hints from quality pipeline (populated on retry)
+  const excludeIds = new Set(opts.excludeEntityIds ?? []);
+  const skipPhotoIdSet = new Set(opts.skipPhotoIds ?? []);
+
+  const photos = (photosRes.data ?? []).filter((p: any) => !skipPhotoIdSet.has(p.id));
+  const specials = (specialsRes.data ?? []).filter((s: any) => !excludeIds.has(s.id));
+  const happyHours = ((hhRes.data ?? []) as any[]).filter((h: any) => !excludeIds.has(h.id));
+  const events = (eventsRes.data ?? []).filter((e: any) => !excludeIds.has(e.id));
+  const deals = (dealsRes.data ?? []).filter((d: any) => !excludeIds.has(d.id));
+
+  const tierName = (restaurant as any).tier?.name as 'premium' | 'elite';
+
+  const candidateData: RestaurantSpotlightCandidate = {
+    id: restaurant.id,
+    name: restaurant.name,
+    slug: restaurant.slug,
+    description: (restaurant as any).description ?? null,
+    custom_description: (restaurant as any).custom_description ?? null,
+    cover_image_url: restaurant.cover_image_url ?? null,
+    logo_url: (restaurant as any).logo_url ?? null,
+    categories: (restaurant as any).categories ?? [],
+    tier_name: tierName,
+    market_id: restaurant.market_id,
+    specials: specials as any[],
+    happy_hours: happyHours,
+    events: events as any[],
+    deals: deals as any[],
+    photos: photos as any[],
+  };
+
+  // 4. Generate caption via OpenAI
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+
+  const hhHighlight = happyHours.length > 0
+    ? (() => {
+        const hh = happyHours[0];
+        const start = hh.start_time?.slice(0, 5) ?? '';
+        const end = hh.end_time?.slice(0, 5) ?? '';
+        return `${hh.days_of_week?.join('/') ?? 'Daily'} ${start}–${end}`.trim();
+      })()
+    : null;
+
+  const eventHighlight = events.length > 0
+    ? (() => {
+        const e = events[0];
+        const label = EVENT_TYPE_INSTAGRAM_LABELS[e.event_type] ?? 'Event';
+        const days = e.days_of_week?.join('/') ?? '';
+        return days ? `${label} every ${days}` : label;
+      })()
+    : null;
+
+  const captionCtx: SpotlightCaptionContext = {
+    restaurantName: restaurant.name,
+    marketName,
+    appName,
+    categories: (restaurant as any).categories ?? [],
+    description: (restaurant as any).custom_description ?? (restaurant as any).description ?? null,
+    hasSpecials: specials.length > 0,
+    hasHappyHour: happyHours.length > 0,
+    hasEvents: events.length > 0,
+    hasDeals: deals.length > 0,
+    specialHighlights: specials.slice(0, 2).map((s: any) => s.name),
+    hhHighlight,
+    eventHighlight,
+    dealHighlights: deals.slice(0, 2).map((d: any) => d.title),
+    correctionHints: opts.captionHints,
+  };
+
+  const { system, user } = buildSpotlightCaption(captionCtx);
+
+  let caption = '';
+  let tokenUsage = { prompt: 0, completion: 0, total: 0 };
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: user },
+      ],
+      max_tokens: 400,
+      temperature: 0.8,
+    });
+    caption = completion.choices[0]?.message?.content?.trim() ?? '';
+    tokenUsage = {
+      prompt: completion.usage?.prompt_tokens ?? 0,
+      completion: completion.usage?.completion_tokens ?? 0,
+      total: completion.usage?.total_tokens ?? 0,
+    };
+  } catch (err) {
+    return { success: false, error: `Caption generation failed: ${(err as Error).message}` };
+  }
+
+  // 5. Generate carousel slides
+  let carouselUrls: string[];
+  try {
+    carouselUrls = await composeRestaurantSpotlightSlides({
+      supabase,
+      market,
+      restaurant: candidateData,
+      date: today,
+    });
+  } catch (err) {
+    return { success: false, error: `Slide generation failed: ${(err as Error).message}` };
+  }
+
+  if (carouselUrls.length === 0) {
+    return { success: false, error: 'No slides generated' };
+  }
+
+  // 6. Save to instagram_posts
+  const metadata: GenerationMetadata = {
+    post_type: 'restaurant_spotlight',
+    total_candidates: 1,
+    total_hidden: 0,
+    visible_names: [restaurant.name],
+    decision_path: opts.restaurantId ? 'manual:admin_selected' : 'auto:spotlight_score',
+    model_used: 'gpt-4o-mini',
+    token_usage: tokenUsage,
+    day_of_week: new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(date),
+    spotlight_restaurant_id: targetRestaurantId,
+  };
+
+  const { data: post, error: insertErr } = await supabase
+    .from('instagram_posts')
+    .upsert(
+      {
+        market_id: market.market_id,
+        post_date: today,
+        content_type: 'restaurant_spotlight',
+        selected_entity_ids: [targetRestaurantId],
+        caption,
+        media_urls: carouselUrls,
+        status: 'pending_review',
+        scheduled_publish_at: opts.scheduledPublishAt ?? null,
+        day_theme: null,
+        generation_metadata: metadata,
+      },
+      { onConflict: 'market_id,post_date,content_type' }
+    )
+    .select('id')
+    .single();
+
+  if (insertErr || !post) {
+    return { success: false, error: `DB save failed: ${insertErr?.message ?? 'unknown'}` };
+  }
+
+  return {
+    success: true,
+    post_id: post.id,
+    content_type: 'restaurant_spotlight',
+    caption,
+    media_urls: carouselUrls,
+  };
 }

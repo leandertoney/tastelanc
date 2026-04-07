@@ -55,6 +55,8 @@ const DAY_THEME_LABELS: Record<string, string> = {
   hidden_gems: 'Hidden Gems',
   weekend_preview: 'Weekend Preview',
   specials_deals: 'Specials & Deals',
+  elite_spotlight: 'Elite Spotlight',
+  premium_spotlight: 'Premium Spotlight',
 };
 
 const DAY_THEME_COLORS: Record<string, string> = {
@@ -63,6 +65,8 @@ const DAY_THEME_COLORS: Record<string, string> = {
   hidden_gems: 'bg-emerald-500/20 text-emerald-400',
   weekend_preview: 'bg-orange-500/20 text-orange-400',
   specials_deals: 'bg-pink-500/20 text-pink-400',
+  elite_spotlight: 'bg-yellow-500/20 text-yellow-400',
+  premium_spotlight: 'bg-violet-500/20 text-violet-400',
 };
 
 const CONTENT_TYPE_LABELS: Record<string, string> = {
@@ -71,15 +75,22 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
   weekend_preview: 'Weekend Preview',
   category_roundup: 'Category Roundup',
   party_teaser: '🎉 Party Teaser (Apr 20)',
+  restaurant_spotlight: 'Restaurant Spotlight',
+};
+
+const CONTENT_TYPE_COLORS: Record<string, string> = {
+  restaurant_spotlight: 'bg-violet-500/20 text-violet-400',
 };
 
 // Day themes by weekday (0=Sun, 1=Mon, ..., 6=Sat)
-const WEEKDAY_THEMES: Record<number, { theme: string; label: string }> = {
+const WEEKDAY_THEMES: Record<number, { theme: string; label: string; isSpotlight?: boolean; spotlightTier?: 'elite' | 'premium' }> = {
+  0: { theme: 'premium_spotlight', label: 'Premium Spotlight', isSpotlight: true, spotlightTier: 'premium' },
   1: { theme: 'weekly_roundup', label: 'Weekly Roundup' },
   2: { theme: 'happy_hour_spotlight', label: 'Happy Hour Spotlight' },
   3: { theme: 'hidden_gems', label: 'Hidden Gems' },
   4: { theme: 'weekend_preview', label: 'Weekend Preview' },
   5: { theme: 'specials_deals', label: 'Specials & Deals' },
+  6: { theme: 'elite_spotlight', label: 'Elite Spotlight', isSpotlight: true, spotlightTier: 'elite' },
 };
 
 function getSunday(d: Date) {
@@ -131,6 +142,7 @@ export default function InstagramPostsPage() {
   const [generatingDay, setGeneratingDay] = useState<string | null>(null);
   const [generatingWeek, setGeneratingWeek] = useState(false);
   const [generatingPartyTeaser, setGeneratingPartyTeaser] = useState(false);
+  const [generatingSpotlight, setGeneratingSpotlight] = useState<string | null>(null);
   const [marketSlug, setMarketSlug] = useState('lancaster-pa');
 
   const periodEnd = addDays(weekStart, 13);
@@ -215,6 +227,30 @@ export default function InstagramPostsPage() {
       alert('Failed to generate post');
     } finally {
       setGeneratingDay(null);
+    }
+  };
+
+  const generateSpotlightForDate = async (dateKey: string, tier: 'elite' | 'premium') => {
+    setGeneratingSpotlight(dateKey);
+    try {
+      const res = await fetch('/api/instagram/spotlight/cron', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ market_slug: marketSlug, tier, date: dateKey }),
+      });
+      const data = await res.json();
+      const slotResult = data.results?.[0];
+      if (slotResult?.outcome === 'abandoned') {
+        alert(`Spotlight abandoned after 3 retries for ${tier} tier. Check Monday digest for details.`);
+      } else if (!data.success && data.outcome !== 'all_slots_filled') {
+        alert(`Error: ${data.error ?? data.message ?? 'Failed to generate spotlight'}`);
+      }
+      fetchPosts();
+    } catch (error) {
+      console.error('Error generating spotlight:', error);
+      alert('Failed to generate spotlight post');
+    } finally {
+      setGeneratingSpotlight(null);
     }
   };
 
@@ -366,8 +402,10 @@ export default function InstagramPostsPage() {
         postsByDate={postsByDate}
         generatingDay={generatingDay}
         generatingWeek={generatingWeek}
+        generatingSpotlight={generatingSpotlight}
         onGenerateDay={generateForDate}
         onGenerateWeek={() => generateWeek(weekStart)}
+        onGenerateSpotlight={generateSpotlightForDate}
         onSelectPost={setSelectedPost}
       />
 
@@ -379,8 +417,10 @@ export default function InstagramPostsPage() {
         postsByDate={postsByDate}
         generatingDay={generatingDay}
         generatingWeek={generatingWeek}
+        generatingSpotlight={generatingSpotlight}
         onGenerateDay={generateForDate}
         onGenerateWeek={() => generateWeek(week2Start)}
+        onGenerateSpotlight={generateSpotlightForDate}
         onSelectPost={setSelectedPost}
       />
 
@@ -434,8 +474,10 @@ function WeekRow({
   postsByDate,
   generatingDay,
   generatingWeek,
+  generatingSpotlight,
   onGenerateDay,
   onGenerateWeek,
+  onGenerateSpotlight,
   onSelectPost,
 }: {
   label: string;
@@ -444,8 +486,10 @@ function WeekRow({
   postsByDate: Record<string, Post>;
   generatingDay: string | null;
   generatingWeek: boolean;
+  generatingSpotlight: string | null;
   onGenerateDay: (dateKey: string) => void;
   onGenerateWeek: () => void;
+  onGenerateSpotlight: (dateKey: string, tier: 'elite' | 'premium') => void;
   onSelectPost: (post: Post) => void;
 }) {
   const weekdayDays = days.filter(isWeekday);
@@ -480,16 +524,19 @@ function WeekRow({
           const post = postsByDate[dateKey];
           const dayOfWeek = day.getDay();
           const themeInfo = WEEKDAY_THEMES[dayOfWeek];
+          const isSpotlightDay = themeInfo?.isSpotlight === true;
 
           return (
             <div
               key={dateKey}
               className={`rounded-lg border flex flex-col ${
-                !weekday
-                  ? 'border-tastelanc-surface-light/50 bg-tastelanc-surface/50 opacity-40'
-                  : isToday
+                isToday
                   ? 'border-tastelanc-accent bg-tastelanc-accent/5'
-                  : 'border-tastelanc-surface-light bg-tastelanc-surface'
+                  : isSpotlightDay
+                  ? 'border-violet-500/25 bg-tastelanc-surface'
+                  : weekday
+                  ? 'border-tastelanc-surface-light bg-tastelanc-surface'
+                  : 'border-tastelanc-surface-light/50 bg-tastelanc-surface/50 opacity-40'
               }`}
             >
               {/* Day header */}
@@ -503,7 +550,7 @@ function WeekRow({
                       {day.toLocaleDateString('en-US', { weekday: 'short' })}
                     </p>
                   </div>
-                  {weekday && themeInfo && (
+                  {themeInfo && (weekday || isSpotlightDay) && (
                     <span className={`text-[8px] font-medium px-1.5 py-0.5 rounded ${DAY_THEME_COLORS[themeInfo.theme] || 'bg-tastelanc-surface-light/50 text-tastelanc-text-faint'}`}>
                       {themeInfo.label}
                     </span>
@@ -520,6 +567,28 @@ function WeekRow({
                     generating={generatingDay === dateKey}
                     onClick={() => post ? onSelectPost(post) : onGenerateDay(dateKey)}
                   />
+                ) : isSpotlightDay ? (
+                  post ? (
+                    <DayPostCard
+                      post={post}
+                      dateKey={dateKey}
+                      generating={generatingSpotlight === dateKey}
+                      onClick={() => onSelectPost(post)}
+                    />
+                  ) : (
+                    <button
+                      onClick={() => onGenerateSpotlight(dateKey, themeInfo.spotlightTier!)}
+                      disabled={generatingSpotlight === dateKey}
+                      className="w-full flex flex-col items-center justify-center gap-1 py-3 rounded border border-dashed border-violet-500/30 text-violet-400 hover:bg-violet-500/5 transition-colors disabled:opacity-50 text-[9px]"
+                    >
+                      {generatingSpotlight === dateKey ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Zap className="w-3 h-3" />
+                      )}
+                      {generatingSpotlight === dateKey ? 'Generating…' : 'Generate'}
+                    </button>
+                  )
                 ) : (
                   <div className="text-[9px] text-tastelanc-text-faint text-center py-3">
                     No posts
@@ -561,7 +630,9 @@ function DayPostCard({ post, dateKey, generating, onClick }: {
 
   const statusConfig = getStatusConfig(post.status);
   const themeLabel = post.day_theme ? DAY_THEME_LABELS[post.day_theme] : CONTENT_TYPE_LABELS[post.content_type] || post.content_type;
-  const themeColor = post.day_theme ? DAY_THEME_COLORS[post.day_theme] : 'bg-tastelanc-surface-light/50 text-tastelanc-text-muted';
+  const themeColor = post.day_theme
+    ? DAY_THEME_COLORS[post.day_theme]
+    : CONTENT_TYPE_COLORS[post.content_type] ?? 'bg-tastelanc-surface-light/50 text-tastelanc-text-muted';
 
   return (
     <button

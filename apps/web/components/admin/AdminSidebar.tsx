@@ -29,6 +29,7 @@ import {
   UtensilsCrossed,
   Receipt,
   Trophy,
+  Bell,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -64,6 +65,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/restaurant-week', icon: UtensilsCrossed, label: 'Restaurant Week', highlight: true },
   { href: '/admin/party', icon: PartyPopper, label: 'Launch Party 🎉', highlight: true },
   { href: '/admin/instagram-posts', icon: Instagram, label: 'Instagram Posts', highlight: true },
+  { href: '/admin/notifications', icon: Bell, label: 'Push Notifications', highlight: true },
   { href: '/admin/recommendation-queue', icon: Film, label: 'Reel Queue', highlight: true },
   // INSIGHTS - Analytics and feedback
   { href: '/admin/traffic', icon: Globe, label: 'Web Traffic', highlight: true, section: 'Insights' },
