@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   XCircle,
   RefreshCw,
+  HardDrive,
 } from 'lucide-react';
 
 // Map service names to icons
@@ -29,6 +30,7 @@ const SERVICE_ICONS: Record<string, typeof Activity> = {
   'Rosie Edge Function': Cpu,
   "Cron: Today's Pick": Clock,
   'Cron: Expansion Agent': Clock,
+  'Supabase Usage': HardDrive,
 };
 
 function StatusDot({ status }: { status: string }) {

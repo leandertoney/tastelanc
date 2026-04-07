@@ -223,6 +223,78 @@ async function checkCronExpansionAgent(supabase: any): Promise<CheckResult> {
   }
 }
 
+// ─── Supabase Usage Monitor ─────────────────────────────────────────
+
+// Free plan limits
+const FREE_PLAN_LIMITS = {
+  db_size_bytes: 500 * 1024 * 1024,        // 500 MB
+  storage_size_bytes: 1 * 1024 * 1024 * 1024, // 1 GB
+  mau: 50_000,
+  edge_function_invocations: 500_000,
+};
+
+// Thresholds (percentage of limit)
+const USAGE_WARN_THRESHOLD = 0.70;  // 70%
+const USAGE_ERROR_THRESHOLD = 0.90; // 90%
+
+async function checkSupabaseUsage(supabase: any): Promise<CheckResult> {
+  const start = Date.now();
+  try {
+    // Get database size
+    const { data: dbSize, error: dbErr } = await supabase.rpc('get_db_size');
+    if (dbErr) {
+      return { name: 'Supabase Usage', status: 'warning', latencyMs: Date.now() - start, message: `DB size check failed: ${dbErr.message}` };
+    }
+
+    // Get storage usage
+    const { data: storageData, error: storageErr } = await supabase.rpc('get_storage_usage');
+    const storageTotalBytes = storageErr ? 0 :
+      (storageData || []).reduce((sum: number, b: any) => sum + (b.total_bytes || 0), 0);
+    const storageObjectCount = storageErr ? 0 :
+      (storageData || []).reduce((sum: number, b: any) => sum + (b.object_count || 0), 0);
+
+    const latency = Date.now() - start;
+
+    // Calculate usage percentages
+    const dbPct = dbSize / FREE_PLAN_LIMITS.db_size_bytes;
+    const storagePct = storageTotalBytes / FREE_PLAN_LIMITS.storage_size_bytes;
+
+    // Store snapshot for trend tracking
+    await supabase.from('supabase_usage_snapshots').insert({
+      db_size_bytes: dbSize,
+      storage_size_bytes: storageTotalBytes,
+      storage_object_count: storageObjectCount,
+      details: {
+        buckets: storageData || [],
+        db_pct: Math.round(dbPct * 100),
+        storage_pct: Math.round(storagePct * 100),
+      },
+    });
+
+    // Cleanup old snapshots periodically
+    await supabase.rpc('cleanup_old_usage_snapshots').catch(() => {});
+
+    // Determine status
+    const maxPct = Math.max(dbPct, storagePct);
+    const formatBytes = (b: number) => {
+      if (b >= 1024 * 1024 * 1024) return `${(b / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+      return `${(b / (1024 * 1024)).toFixed(0)} MB`;
+    };
+
+    const summary = `DB: ${formatBytes(dbSize)} (${Math.round(dbPct * 100)}%) | Storage: ${formatBytes(storageTotalBytes)} (${Math.round(storagePct * 100)}%)`;
+
+    if (maxPct >= USAGE_ERROR_THRESHOLD) {
+      return { name: 'Supabase Usage', status: 'error', latencyMs: latency, message: `CRITICAL — ${summary}` };
+    }
+    if (maxPct >= USAGE_WARN_THRESHOLD) {
+      return { name: 'Supabase Usage', status: 'warning', latencyMs: latency, message: `High usage — ${summary}` };
+    }
+    return { name: 'Supabase Usage', status: 'ok', latencyMs: latency, message: summary };
+  } catch (err) {
+    return { name: 'Supabase Usage', status: 'warning', latencyMs: Date.now() - start, message: String(err) };
+  }
+}
+
 // ─── Alert Logic ─────────────────────────────────────────────────────
 
 async function shouldSendAlert(
@@ -315,6 +387,7 @@ export async function POST(request: Request) {
       checkRosieEdgeFunction(),
       checkCronTodaysPick(supabase),
       checkCronExpansionAgent(supabase),
+      checkSupabaseUsage(supabase),
     ]);
 
     const durationMs = Date.now() - startTime;
