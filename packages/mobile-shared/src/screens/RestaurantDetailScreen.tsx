@@ -93,6 +93,37 @@ const getCurrentDay = () => {
 };
 
 /**
+ * Check if any of the restaurant's happy hours are active right now.
+ * Compares current day + time against each happy hour's schedule.
+ */
+function isCurrentlyHappyHour(happyHours: HappyHour[]): boolean {
+  if (!happyHours || happyHours.length === 0) return false;
+  const now = new Date();
+  const currentDay = getCurrentDay();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  return happyHours.some((hh) => {
+    if (!hh.is_active) return false;
+    const matchesDay =
+      !hh.days_of_week || hh.days_of_week.length === 0 || hh.days_of_week.includes(currentDay as any);
+    if (!matchesDay) return false;
+
+    // Parse HH:MM or HH:MM:SS time strings to minutes
+    const parseTime = (t: string) => {
+      const parts = t.split(':').map(Number);
+      return parts[0] * 60 + (parts[1] || 0);
+    };
+    const start = parseTime(hh.start_time);
+    const end = parseTime(hh.end_time);
+    // Handle overnight ranges (e.g. 22:00 - 02:00)
+    if (end < start) {
+      return currentMinutes >= start || currentMinutes <= end;
+    }
+    return currentMinutes >= start && currentMinutes <= end;
+  });
+}
+
+/**
  * Sort specials/happy hours so items valid today appear first,
  * then the rest of the week in sequential order.
  * Items with no days_of_week (every day) always sort first.
@@ -131,7 +162,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const colors = getColors();
   const brand = getBrand();
   const supabase = getSupabase();
-  const { id } = route.params;
+  const { id, isDailyPick } = route.params;
   const { userId, isAnonymous } = useAuth();
   const { requireEmailGate } = useEmailGate();
   const { showSignUpModal } = useSignUpModal();
@@ -382,6 +413,20 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
         pointsEarned = rewardsResult.points_earned;
       } catch (rewardsErr) {
         console.warn('[ImHere] Rewards API failed:', rewardsErr);
+      }
+
+      // Bonus: happy hour check-in (+8 pts)
+      if (isCurrentlyHappyHour(happyHours)) {
+        earnPoints({ action_type: 'happy_hour_checkin', restaurant_id: id, radar_verified: true })
+          .then((r) => { pointsEarned += r.points_earned; })
+          .catch(() => {});
+      }
+
+      // Bonus: daily pick check-in (+10 pts)
+      if (isDailyPick) {
+        earnPoints({ action_type: 'daily_pick', restaurant_id: id, radar_verified: true })
+          .then((r) => { pointsEarned += r.points_earned; })
+          .catch(() => {});
       }
 
       // Record to checkins table for social proof aggregation

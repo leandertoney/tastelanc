@@ -7,7 +7,7 @@ import { getSupabase } from '../config/theme';
 
 const REWARDS_API_BASE = 'https://tastelanc.com/api/mobile/rewards';
 
-export type RewardActionType = 'checkin' | 'review' | 'event' | 'video_recommendation';
+export type RewardActionType = 'checkin' | 'review' | 'event' | 'video_recommendation' | 'favorite' | 'daily_pick' | 'happy_hour_checkin';
 
 export interface EarnPointsRequest {
   action_type: RewardActionType;
@@ -56,6 +56,9 @@ export const POINT_VALUES: Record<RewardActionType | 'trivia', number> = {
   review: 5,
   event: 5,
   video_recommendation: 15,
+  favorite: 1,
+  daily_pick: 10,
+  happy_hour_checkin: 8,
 };
 
 // Action type labels for UI display
@@ -65,6 +68,9 @@ export const ACTION_LABELS: Record<RewardActionType | 'trivia', string> = {
   review: 'Review',
   event: 'Event',
   video_recommendation: 'Video Rec',
+  favorite: 'Favorite',
+  daily_pick: 'Daily Pick',
+  happy_hour_checkin: 'Happy Hour',
 };
 
 // Action type icons (Ionicons names)
@@ -74,6 +80,9 @@ export const ACTION_ICONS: Record<RewardActionType | 'trivia', string> = {
   review: 'star',
   event: 'calendar',
   video_recommendation: 'videocam',
+  favorite: 'heart',
+  daily_pick: 'trophy',
+  happy_hour_checkin: 'beer',
 };
 
 /**

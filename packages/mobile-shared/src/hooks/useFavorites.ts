@@ -13,6 +13,7 @@ import { useAuth } from './useAuth';
 import { useSignUpModal } from '../context/SignUpModalContext';
 import { trackClick } from '../lib/analytics';
 import { requestReviewIfEligible } from '../lib/reviewPrompts';
+import { earnPoints } from '../lib/rewards';
 
 const FAVORITES_KEY = 'favorites';
 
@@ -88,6 +89,12 @@ export function useToggleFavorite() {
         if (error) throw error;
         trackClick('favorite_added', restaurantId);
         requestReviewIfEligible('first_save');
+        // Award 1 point for favoriting (fire-and-forget, don't block)
+        earnPoints({
+          action_type: 'favorite',
+          restaurant_id: restaurantId,
+          radar_verified: false,
+        }).catch(() => {}); // silently ignore if already earned or API fails
         // Power user trigger: 3rd+ favorite saved
         const { count } = await supabase
           .from('favorites')

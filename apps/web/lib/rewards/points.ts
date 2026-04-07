@@ -7,10 +7,13 @@ export const BASE_POINTS: Record<RewardActionType, number> = {
   review: 5,
   event: 5,
   video_recommendation: 15,
+  favorite: 1,
+  daily_pick: 10,
+  happy_hour_checkin: 8,
 };
 
 // Actions that are currently active (excludes deferred features)
-export const ACTIVE_ACTIONS: RewardActionType[] = ['checkin', 'review', 'event', 'video_recommendation'];
+export const ACTIVE_ACTIONS: RewardActionType[] = ['checkin', 'review', 'event', 'video_recommendation', 'favorite', 'daily_pick', 'happy_hour_checkin'];
 
 // Premium multiplier (2.5x for premium users)
 export const PREMIUM_MULTIPLIER = 2.5;
@@ -22,6 +25,9 @@ export const ACTION_DISPLAY_NAMES: Record<RewardActionType, string> = {
   review: 'Leave a Review',
   event: 'Attend Event/Special',
   video_recommendation: 'Video Recommendation',
+  favorite: 'Save a Restaurant',
+  daily_pick: 'Daily Pick Check-in',
+  happy_hour_checkin: 'Happy Hour Check-in',
 };
 
 /**

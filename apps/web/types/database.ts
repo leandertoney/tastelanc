@@ -98,6 +98,8 @@ export interface Restaurant {
   market_id: string;
   deliverability_check_status: 'pending' | 'confirmed' | 'dismissed' | null;
   deliverability_check_sent_at: string | null;
+  profile_score: number;
+  profile_score_updated_at: string | null;
 }
 
 export interface RestaurantHours {
@@ -350,7 +352,7 @@ export interface ConsumerSubscription {
 }
 
 // Rewards System Types
-export type RewardActionType = 'trivia' | 'checkin' | 'review' | 'event' | 'video_recommendation';
+export type RewardActionType = 'trivia' | 'checkin' | 'review' | 'event' | 'video_recommendation' | 'favorite' | 'daily_pick' | 'happy_hour_checkin';
 
 export interface UserPoints {
   id: string;

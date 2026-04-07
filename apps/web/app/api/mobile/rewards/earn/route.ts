@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     }
 
     // For location-based actions, require Radar verification
-    const locationBasedActions: RewardActionType[] = ['checkin', 'event'];
+    const locationBasedActions: RewardActionType[] = ['checkin', 'event', 'daily_pick', 'happy_hour_checkin'];
     if (locationBasedActions.includes(action_type) && !radar_verified) {
       return NextResponse.json(
         { error: 'Location verification required for this action' },

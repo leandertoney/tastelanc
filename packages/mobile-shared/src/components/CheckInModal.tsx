@@ -17,7 +17,7 @@ import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius } from '../constants/spacing';
 import { recordCheckIn, canCheckIn } from '../lib/checkins';
-import { POINT_VALUES } from '../lib/rewards';
+import { POINT_VALUES, earnPoints } from '../lib/rewards';
 import { recordPassiveVisit } from '../lib/visits';
 import { useAuth } from '../hooks/useAuth';
 import { useRecordCheckinForSocialProof } from '../hooks/useSocialProof';
@@ -31,6 +31,8 @@ interface CheckInModalProps {
   restaurantId: string;
   restaurantName: string;
   restaurantPin?: string;
+  isDailyPick?: boolean;
+  isHappyHour?: boolean;
 }
 
 type CheckInState = 'input' | 'verifying' | 'success' | 'error' | 'already_checked';
@@ -41,6 +43,8 @@ export default function CheckInModal({
   restaurantId,
   restaurantName,
   restaurantPin = '1987',
+  isDailyPick,
+  isHappyHour,
 }: CheckInModalProps) {
   const styles = useStyles();
   const colors = getColors();
@@ -128,7 +132,21 @@ export default function CheckInModal({
       const result = await recordCheckIn(userId, restaurantId, restaurantName);
 
       if (result.success) {
-        const earned = result.pointsEarned ?? POINT_VALUES.checkin;
+        let earned = result.pointsEarned ?? POINT_VALUES.checkin;
+
+        // Bonus: happy hour check-in (+8 pts)
+        if (isHappyHour) {
+          earnPoints({ action_type: 'happy_hour_checkin', restaurant_id: restaurantId, radar_verified: true })
+            .then((r) => { earned += r.points_earned; })
+            .catch(() => {});
+        }
+
+        // Bonus: daily pick check-in (+10 pts)
+        if (isDailyPick) {
+          earnPoints({ action_type: 'daily_pick', restaurant_id: restaurantId, radar_verified: true })
+            .then((r) => { earned += r.points_earned; })
+            .catch(() => {});
+        }
 
         recordCheckinForSocialProof(restaurantId, restaurantName, earned);
 

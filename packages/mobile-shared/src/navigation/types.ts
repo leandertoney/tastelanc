@@ -26,7 +26,7 @@ export type BottomTabParamList = {
  */
 export type RootStackParamList = {
   MainTabs: NavigatorScreenParams<BottomTabParamList>;
-  RestaurantDetail: { id: string };
+  RestaurantDetail: { id: string; isDailyPick?: boolean };
   Category: { category: RestaurantCategory };
   // View All screens
   HappyHoursViewAll: undefined;
@@ -90,6 +90,15 @@ export type RootStackParamList = {
   // Party RSVP
   PartyRSVP: undefined;
   PartyTicket: { qr_token: string; name?: string };
+  // Retention screens
+  Leaderboard: undefined;
+  Labs: undefined;
+  RewardClaim: {
+    claim_token: string;
+    restaurant_name: string;
+    reward_description: string;
+    expires_at: string;
+  };
   // Itinerary
   ItineraryBuilder: { date?: string };
   ItineraryCard: {
