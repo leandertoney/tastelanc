@@ -43,7 +43,7 @@ export async function GET(request: Request) {
       id, video_url, thumbnail_url, caption, caption_tag, duration_seconds,
       view_count, like_count, is_visible, ig_status, ig_scheduled_at, ig_post_id,
       ai_review_notes, ig_caption_override, ig_reviewed_by, created_at,
-      profiles:user_id(display_name, avatar_url),
+      profiles:user_id(display_name, avatar_url, email),
       restaurant:restaurants!inner(name, slug, market:markets!inner(slug, name))
     `)
     .order('created_at', { ascending: false })

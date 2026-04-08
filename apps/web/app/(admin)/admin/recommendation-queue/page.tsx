@@ -21,6 +21,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
+import { toast } from 'sonner';
 
 interface Recommendation {
   id: string;
@@ -39,7 +40,7 @@ interface Recommendation {
   ig_caption_override: string | null;
   ig_reviewed_by: string | null;
   created_at: string;
-  profiles: { display_name: string; avatar_url: string | null } | null;
+  profiles: { display_name: string; avatar_url: string | null; email?: string } | null;
   restaurant: {
     name: string;
     slug: string;
@@ -76,6 +77,7 @@ export default function RecommendationQueuePage() {
   const [editingCaption, setEditingCaption] = useState<string | null>(null);
   const [captionDraft, setCaptionDraft] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [playingVideo, setPlayingVideo] = useState<string | null>(null);
 
   const fetchQueue = useCallback(async () => {
     setLoading(true);
@@ -100,11 +102,22 @@ export default function RecommendationQueuePage() {
     const body: Record<string, string> = { recommendation_id: recId, action };
     if (captionOverride) body.ig_caption_override = captionOverride;
 
-    await fetch('/api/admin/recommendation-queue', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    try {
+      const res = await fetch('/api/admin/recommendation-queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: 'Unknown error' }));
+        toast.error(data.error || `Action failed (${res.status})`);
+      } else {
+        toast.success(action === 'approve' ? 'Approved for app' : action === 'reject' ? 'Rejected' : action === 'delete' ? 'Deleted' : action === 'post_to_instagram' ? 'Queued for Instagram' : 'Updated');
+      }
+    } catch (err) {
+      toast.error('Network error — please try again');
+    }
 
     setActionLoading(null);
     setEditingCaption(null);
@@ -220,24 +233,45 @@ export default function RecommendationQueuePage() {
             return (
               <Card key={rec.id} className="p-5">
                 <div className="flex gap-5">
-                  {/* Video Thumbnail */}
+                  {/* Video Player / Thumbnail */}
                   <div className="relative w-28 shrink-0">
                     <div className="aspect-[9/16] bg-black rounded-lg overflow-hidden">
-                      {rec.thumbnail_url ? (
-                        <img
-                          src={rec.thumbnail_url}
-                          alt=""
+                      {playingVideo === rec.id ? (
+                        <video
+                          src={rec.video_url}
+                          controls
+                          autoPlay
                           className="w-full h-full object-cover"
+                          onEnded={() => setPlayingVideo(null)}
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-tastelanc-surface">
-                          <Play className="w-6 h-6 text-tastelanc-text-faint" />
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setPlayingVideo(rec.id)}
+                          className="relative w-full h-full group"
+                        >
+                          {rec.thumbnail_url ? (
+                            <img
+                              src={rec.thumbnail_url}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-tastelanc-surface">
+                              <Play className="w-6 h-6 text-tastelanc-text-faint" />
+                            </div>
+                          )}
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Play className="w-8 h-8 text-white fill-white" />
+                          </div>
+                        </button>
                       )}
                     </div>
-                    <div className="absolute bottom-1 right-1 bg-black/70 px-1 py-0.5 rounded text-[9px] font-semibold text-white">
-                      {Math.floor(rec.duration_seconds / 60)}:{String(rec.duration_seconds % 60).padStart(2, '0')}
-                    </div>
+                    {playingVideo !== rec.id && (
+                      <div className="absolute bottom-1 right-1 bg-black/70 px-1 py-0.5 rounded text-[9px] font-semibold text-white">
+                        {Math.floor(rec.duration_seconds / 60)}:{String(rec.duration_seconds % 60).padStart(2, '0')}
+                      </div>
+                    )}
                   </div>
 
                   {/* Details */}
@@ -247,7 +281,7 @@ export default function RecommendationQueuePage() {
                       <div>
                         <h3 className="text-tastelanc-text-primary font-semibold">{rec.restaurant.name}</h3>
                         <p className="text-xs text-tastelanc-text-faint">
-                          {rec.profiles?.display_name || 'Anonymous'} &middot;{' '}
+                          {rec.profiles?.display_name || rec.profiles?.email || 'Anonymous'} &middot;{' '}
                           {rec.restaurant.market.name} &middot;{' '}
                           {new Date(rec.created_at).toLocaleDateString()}
                         </p>
