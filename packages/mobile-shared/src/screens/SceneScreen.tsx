@@ -1989,17 +1989,22 @@ export default function SceneScreen() {
         return <HolidayTeaserCard item={item} onPress={() => navigation.navigate(holidayDest)} />;
       }
       case 'coupon_claim':
-        return <CouponClaimCard item={item} onPress={() => handleBehavioralRestaurantPress(item)} />;
+        return <CouponClaimCard item={item} onPress={() => {
+          const meta = getBehavioralEventMeta(item);
+          if (meta) {
+            interactedItemIdsRef.current.add(item.id);
+            trackDetailView(meta.restaurantId, meta.feedItemKind, marketId);
+          }
+          navigation.navigate('RestaurantDetail', { id: item.restaurantId, initialTab: 'coupons' });
+        }} />;
       case 'new_coupon':
         return <NewCouponCard item={item} onPress={() => {
-          if (item.ctaType === 'leave_recommendation') {
-            navigation.navigate('VideoRecommendCapture', {
-              restaurantId: item.restaurantId,
-              restaurantName: item.restaurantName,
-            });
-          } else {
-            handleBehavioralRestaurantPress(item);
+          const meta = getBehavioralEventMeta(item);
+          if (meta) {
+            interactedItemIdsRef.current.add(item.id);
+            trackDetailView(meta.restaurantId, meta.feedItemKind, marketId);
           }
+          navigation.navigate('RestaurantDetail', { id: item.restaurantId, initialTab: 'coupons' });
         }} />;
       case 'cross_market_promo':
         return <CrossMarketPromoCard cities={otherCities} />;

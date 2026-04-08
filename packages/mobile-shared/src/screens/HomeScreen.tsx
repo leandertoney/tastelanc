@@ -190,27 +190,27 @@ queryClient.invalidateQueries({ queryKey: hasFeature('happyHours') ? ['activeHap
 
       <Spacer size="md" />
 
-      {/* Section 1b: Deals (PAID — ticket cards) */}
-      <ErrorBoundary level="section">
-        <DealsSection />
-      </ErrorBoundary>
-
       {/* Section 2: Entertainment Tonight */}
       <ErrorBoundary level="section">
         <EntertainmentSection />
       </ErrorBoundary>
 
-      {/* Section 3: Upcoming Events */}
-      <ErrorBoundary level="section">
-        <EventsSection />
-      </ErrorBoundary>
-
-      {/* Section 4: Featured for You (PAID) */}
+      {/* Section 3: Featured for You (PAID) */}
       <ErrorBoundary level="section">
         <FeaturedSection onRestaurantPress={handleRestaurantPress} />
       </ErrorBoundary>
 
       <Spacer size="md" />
+
+      {/* Section 4: Upcoming Events */}
+      <ErrorBoundary level="section">
+        <EventsSection />
+      </ErrorBoundary>
+
+      {/* Section 5: Deals (PAID — ticket cards) */}
+      <ErrorBoundary level="section">
+        <DealsSection />
+      </ErrorBoundary>
 
       {/* Section 5: Trending Recommendations */}
       <ErrorBoundary level="section">
