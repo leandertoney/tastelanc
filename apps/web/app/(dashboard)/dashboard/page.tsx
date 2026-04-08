@@ -48,7 +48,9 @@ interface DashboardStats {
 
 interface ProfileCompletion {
   percentage: number;
-  items: { label: string; completed: boolean }[];
+  band: string;
+  updatedAt: string | null;
+  items: { label: string; completed: boolean; action?: string; maxPoints: number }[];
 }
 
 interface AnalyticsData {
@@ -490,16 +492,29 @@ export default function DashboardPage() {
 
       {/* Two Column Layout */}
       <div className="grid lg:grid-cols-2 gap-8">
-        {/* Profile Completion */}
+        {/* Visibility Score */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-tastelanc-text-primary flex items-center gap-2">
-              Profile Completion
-              <Tooltip content="Complete every item to maximize your visibility in the app. Restaurants with full profiles get more views and favorites from users." position="top">
+              Visibility Score
+              <Tooltip content="Your Visibility Score determines how prominently your restaurant appears in the app. Add deals, videos, menus, and more to boost your score." position="top">
                 <HelpCircle className="w-3.5 h-3.5 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
               </Tooltip>
             </h3>
-            <Badge variant="accent">{profileCompletion?.percentage || 0}%</Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="accent">{profileCompletion?.percentage || 0}/100</Badge>
+              {profileCompletion?.band && (
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                  profileCompletion.band === 'Optimized' ? 'bg-green-500/20 text-green-400' :
+                  profileCompletion.band === 'Great' ? 'bg-blue-500/20 text-blue-400' :
+                  profileCompletion.band === 'Good' ? 'bg-yellow-500/20 text-yellow-400' :
+                  profileCompletion.band === 'Getting Started' ? 'bg-orange-500/20 text-orange-400' :
+                  'bg-red-500/20 text-red-400'
+                }`}>
+                  {profileCompletion.band}
+                </span>
+              )}
+            </div>
           </div>
           <div className="w-full bg-tastelanc-surface rounded-full h-2 mb-4">
             <div
@@ -518,6 +533,9 @@ export default function DashboardPage() {
                 <span className={item.completed ? 'text-tastelanc-text-secondary' : 'text-tastelanc-text-faint'}>
                   {item.label}
                 </span>
+                {!item.completed && item.action && (
+                  <span className="text-tastelanc-accent text-xs ml-auto">{item.action}</span>
+                )}
               </li>
             ))}
           </ul>
@@ -525,7 +543,7 @@ export default function DashboardPage() {
             href={buildNavHref('/dashboard/profile')}
             className="inline-flex items-center gap-1 text-tastelanc-accent hover:underline mt-4 text-sm"
           >
-            Complete your profile <ArrowRight className="w-4 h-4" />
+            Boost your visibility <ArrowRight className="w-4 h-4" />
           </Link>
         </Card>
 

@@ -52,6 +52,13 @@ export async function GET(request: Request) {
       impressions30dResult,
       profileViews30dResult,
       profileViewsPrev30dResult,
+      activeCouponsResult,
+      videoRecsResult,
+      menuItemsResult,
+      activeHappyHoursResult,
+      activeSpecialsResult,
+      upcomingEventsResult,
+      photosResult,
     ] = await Promise.all([
       // Total profile views (all time)
       serviceClient
@@ -171,6 +178,57 @@ export async function GET(request: Request) {
         .eq('restaurant_id', restaurantId)
         .gte('viewed_at', sixtyDaysAgo.toISOString())
         .lt('viewed_at', thirtyDaysAgo.toISOString()),
+
+      // Active coupons
+      serviceClient
+        .from('coupons')
+        .select('*', { count: 'exact', head: true })
+        .eq('restaurant_id', restaurantId)
+        .eq('is_active', true)
+        .or(`end_date.is.null,end_date.gte.${now.toISOString().split('T')[0]}`),
+
+      // Visible video recommendations
+      serviceClient
+        .from('restaurant_recommendations')
+        .select('*', { count: 'exact', head: true })
+        .eq('restaurant_id', restaurantId)
+        .eq('is_visible', true)
+        .eq('is_flagged', false),
+
+      // Menu items (through menus → menu_sections → menu_items)
+      serviceClient
+        .from('menus')
+        .select('menu_sections(menu_items(id))')
+        .eq('restaurant_id', restaurantId)
+        .eq('is_active', true),
+
+      // Active happy hours
+      serviceClient
+        .from('happy_hours')
+        .select('*, happy_hour_items(id)')
+        .eq('restaurant_id', restaurantId)
+        .eq('is_active', true),
+
+      // Active specials
+      serviceClient
+        .from('specials')
+        .select('*', { count: 'exact', head: true })
+        .eq('restaurant_id', restaurantId)
+        .eq('is_active', true),
+
+      // Upcoming events
+      serviceClient
+        .from('events')
+        .select('*', { count: 'exact', head: true })
+        .eq('restaurant_id', restaurantId)
+        .eq('is_active', true)
+        .or(`is_recurring.eq.true,event_date.gte.${now.toISOString().split('T')[0]}`),
+
+      // Photos
+      serviceClient
+        .from('restaurant_photos')
+        .select('*', { count: 'exact', head: true })
+        .eq('restaurant_id', restaurantId),
     ]);
 
     // Calculate percentage changes
@@ -192,18 +250,42 @@ export async function GET(request: Request) {
       return change >= 0 ? `+${change}%` : `${change}%`;
     };
 
-    // Profile completion
+    // Profile completeness score breakdown
+    const activeCoupons = activeCouponsResult.count || 0;
+    const videoRecs = videoRecsResult.count || 0;
+    const hasCustomDesc = !!(restaurant.custom_description && restaurant.custom_description.length >= 50);
+
+    // Count menu items from nested response
+    let menuItemCount = 0;
+    if (menuItemsResult.data) {
+      for (const menu of menuItemsResult.data) {
+        for (const section of (menu as any).menu_sections || []) {
+          menuItemCount += (section.menu_items || []).length;
+        }
+      }
+    }
+
+    const activeHappyHours = activeHappyHoursResult.data || [];
+    const hasHappyHourItems = activeHappyHours.some((hh: any) => (hh.happy_hour_items || []).length > 0);
+    const activeSpecials = activeSpecialsResult.count || 0;
+    const upcomingEvents = upcomingEventsResult.count || 0;
+    const photoCount = photosResult.count || 0;
+    const hoursCount = hoursCountResult.count || 0;
+
+    // Actionable breakdown — shows what's earning points and what's missing
     const completionItems = [
-      { label: 'Basic info added', completed: !!(restaurant.name && restaurant.address) },
-      { label: 'Description written', completed: !!(restaurant.custom_description || restaurant.description) },
-      { label: 'Phone number added', completed: !!restaurant.phone },
-      { label: 'Website linked', completed: !!restaurant.website },
-      { label: 'Categories selected', completed: restaurant.categories && restaurant.categories.length > 0 },
-      { label: 'Hours set up', completed: (hoursCountResult.count || 0) > 0 },
-      { label: 'Photos uploaded', completed: !!(restaurant.cover_image_url || restaurant.logo_url) },
+      { label: 'Active deals', completed: activeCoupons >= 1, action: activeCoupons < 1 ? 'Add a deal to earn the biggest boost' : undefined, maxPoints: 20 },
+      { label: 'Video recommendations', completed: videoRecs >= 1, action: videoRecs < 1 ? 'Encourage customers to post video recs' : undefined, maxPoints: 15 },
+      { label: 'Custom description', completed: hasCustomDesc, action: !hasCustomDesc ? 'Write a custom description (50+ chars)' : undefined, maxPoints: 10 },
+      { label: 'Menu items', completed: menuItemCount >= 5, action: menuItemCount < 5 ? 'Add at least 5 menu items' : undefined, maxPoints: 15 },
+      { label: 'Happy hours', completed: activeHappyHours.length >= 1 && hasHappyHourItems, action: activeHappyHours.length < 1 ? 'Add your happy hour details' : !hasHappyHourItems ? 'Add items to your happy hour' : undefined, maxPoints: 10 },
+      { label: 'Events', completed: upcomingEvents >= 1, action: upcomingEvents < 1 ? 'Add an upcoming event' : undefined, maxPoints: 8 },
+      { label: 'Specials', completed: activeSpecials >= 1, action: activeSpecials < 1 ? 'Create a special offer' : undefined, maxPoints: 6 },
+      { label: 'Photos', completed: !!(restaurant.cover_image_url) && photoCount >= 3, action: !restaurant.cover_image_url ? 'Upload a cover photo' : photoCount < 3 ? 'Add more photos (3+ recommended)' : undefined, maxPoints: 8 },
+      { label: 'Hours set up', completed: hoursCount >= 7, action: hoursCount < 7 ? 'Set hours for all 7 days' : undefined, maxPoints: 5 },
+      { label: 'Basic info', completed: !!(restaurant.phone && restaurant.website && restaurant.price_range), action: !restaurant.phone ? 'Add phone number' : !restaurant.website ? 'Add website' : !restaurant.price_range ? 'Set price range' : undefined, maxPoints: 3 },
     ];
-    const completedCount = completionItems.filter(item => item.completed).length;
-    const completionPercentage = Math.round((completedCount / completionItems.length) * 100);
+    const completionPercentage = restaurant.profile_score || 0;
 
     // 30-day profile views
     const profileViews30d = profileViews30dResult.count || 0;
@@ -235,6 +317,8 @@ export async function GET(request: Request) {
       },
       profileCompletion: {
         percentage: completionPercentage,
+        band: completionPercentage >= 90 ? 'Optimized' : completionPercentage >= 75 ? 'Great' : completionPercentage >= 55 ? 'Good' : completionPercentage >= 30 ? 'Getting Started' : 'Incomplete',
+        updatedAt: restaurant.profile_score_updated_at || null,
         items: completionItems,
       },
     });

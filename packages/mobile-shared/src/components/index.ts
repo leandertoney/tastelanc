@@ -44,3 +44,9 @@ export { default as CouponsSection } from './CouponsSection';
 export { default as BasicTierAlternativesSection } from './BasicTierAlternativesSection';
 export { default as OnboardingProgressBar } from './OnboardingProgressBar';
 export { default as NightOffSection } from './NightOffSection';
+
+// Retention components
+export { default as RightNowSection } from './RightNowSection';
+export { default as ChallengesSection } from './ChallengesSection';
+export { default as BadgesSection } from './BadgesSection';
+export { default as BadgeToast } from './BadgeToast';

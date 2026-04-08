@@ -197,6 +197,9 @@ const SCORING = {
   // Verified bonus
   VERIFIED_BONUS: 5,
 
+  // Profile completeness bonus (maps score 30–100 → 0–18 pts)
+  PROFILE_SCORE_BONUS_MAX: 18,
+
   // Distance penalty: -1 per mile, capped at -15
   DISTANCE_PENALTY_PER_MILE: 1,
   DISTANCE_PENALTY_MAX: 15,
@@ -411,6 +414,14 @@ export function scoreRestaurant(
       SCORING.DISTANCE_PENALTY_MAX
     );
     score -= distancePenalty;
+  }
+
+  // 9. Profile completeness bonus: restaurants with richer profiles rank higher
+  const profileScore = restaurant.profile_score;
+  if (profileScore && profileScore > 30) {
+    score += Math.round(
+      ((profileScore - 30) / 70) * SCORING.PROFILE_SCORE_BONUS_MAX
+    );
   }
 
   return score;

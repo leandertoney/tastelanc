@@ -29,6 +29,8 @@ import type { RootStackParamList } from '../navigation/types';
 import ProfileStatsRow from '../components/ProfileStatsRow';
 import HowToEarnSection from '../components/rewards/HowToEarnSection';
 import OtherCitiesSection from '../components/OtherCitiesSection';
+import BadgesSection from '../components/BadgesSection';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { CAPTION_TAG_LABELS } from '../types/database';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -334,6 +336,11 @@ export default function ProfileScreen() {
           onVisitsPress={() => navigation.navigate('MyRestaurants')}
         />
 
+        {/* Badges */}
+        <ErrorBoundary level="section">
+          <BadgesSection />
+        </ErrorBoundary>
+
         {/* Quick Links */}
         <View style={styles.quickLinks}>
           <TouchableOpacity
@@ -372,6 +379,24 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             </>
           )}
+          <View style={styles.quickLinkDivider} />
+          <TouchableOpacity
+            style={styles.quickLink}
+            onPress={() => navigation.navigate('Leaderboard')}
+          >
+            <Ionicons name="trophy" size={18} color={colors.accent} />
+            <Text style={styles.quickLinkText}>Leaderboard</Text>
+            <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
+          </TouchableOpacity>
+          <View style={styles.quickLinkDivider} />
+          <TouchableOpacity
+            style={styles.quickLink}
+            onPress={() => navigation.navigate('Labs')}
+          >
+            <Ionicons name="flask" size={18} color={colors.accent} />
+            <Text style={styles.quickLinkText}>Labs</Text>
+            <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
+          </TouchableOpacity>
         </View>
 
         {/* Your Recs */}

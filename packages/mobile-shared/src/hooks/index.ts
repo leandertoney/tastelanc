@@ -142,3 +142,10 @@ export { useSalesRole } from './useSalesRole';
 export { useSalesInbox } from './useSalesInbox';
 export { useSalesLeads } from './useSalesLeads';
 export { useEmailThread } from './useEmailThread';
+
+// Retention / engagement hooks
+export { useRightNow } from './useRightNow';
+export { useUserBadges, useAwardBadges } from './useUserBadges';
+export { useChallenges, useUpdateChallengeProgress, getCurrentWeekStart } from './useChallenges';
+export { useLeaderboard } from './useLeaderboard';
+export { useLabFeatures, useVoteLabFeature, LAB_FEATURES_CATALOG } from './useLabFeatures';

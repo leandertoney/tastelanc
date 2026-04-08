@@ -100,6 +100,7 @@ export function useRestaurantSearch(
         .select('*, restaurant_photos(url, display_order)')
         .eq('is_active', true)
         .or(`name.ilike.%${query}%,description.ilike.%${query}%,address.ilike.%${query}%,name_normalized.ilike.%${query.toLowerCase().replace(/['''\-]/g, '')}%`)
+        .order('profile_score', { ascending: false, nullsFirst: false })
         .order('is_premium', { ascending: false })
         .limit(30);
 

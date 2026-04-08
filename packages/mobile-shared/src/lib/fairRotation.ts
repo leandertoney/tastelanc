@@ -53,6 +53,66 @@ export function seededShuffle<T>(array: T[], seed: number): T[] {
   return result;
 }
 
+// --- Weighted seeded shuffle (profile_score-aware) ---
+
+/**
+ * Weighted shuffle using the Mulberry32 PRNG. Items with higher profile_score
+ * have proportionally higher probability of appearing earlier.
+ * Weight formula: 1.0 + (profile_score / 100) * 0.5  (range 1.0–1.5)
+ */
+export function weightedSeededShuffle<T>(
+  array: T[],
+  getScore: (item: T) => number,
+  seed: number,
+): T[] {
+  if (array.length <= 1) return [...array];
+  const rng = mulberry32(seed);
+
+  // Build weighted pool: each item gets weight based on profile_score
+  const pool = array.map((item) => ({
+    item,
+    weight: 1.0 + (Math.min(getScore(item), 100) / 100) * 0.5,
+  }));
+
+  const result: T[] = [];
+  while (pool.length > 0) {
+    const totalWeight = pool.reduce((sum, p) => sum + p.weight, 0);
+    let r = rng() * totalWeight;
+    let idx = 0;
+    for (let i = 0; i < pool.length; i++) {
+      r -= pool[i].weight;
+      if (r <= 0) {
+        idx = i;
+        break;
+      }
+    }
+    result.push(pool[idx].item);
+    pool.splice(idx, 1);
+  }
+  return result;
+}
+
+// --- Profile score extraction helper ---
+
+/**
+ * Extract profile_score from an item, handling nested restaurant shapes.
+ */
+export function getProfileScore(item: any): number {
+  return item?.profile_score ?? item?.restaurant?.profile_score ?? 0;
+}
+
+/**
+ * Shuffle within a tier bucket using profile_score weighting.
+ * Falls back to plain seeded shuffle if no items have a profile_score.
+ */
+function tierShuffle<T>(items: T[], seed: number): T[] {
+  const hasScores = items.some((item) => getProfileScore(item) > 0);
+  if (hasScores) {
+    return weightedSeededShuffle(items, getProfileScore, seed);
+  }
+  return seededShuffle(items, seed);
+}
+
 // --- Tier extraction helpers ---
 
 /**
@@ -107,8 +167,8 @@ export function paidFairRotate<T>(
   }
 
   return [
-    ...seededShuffle(elite, seed),
-    ...seededShuffle(premium, seed + 1),
+    ...tierShuffle(elite, seed),
+    ...tierShuffle(premium, seed + 1),
   ];
 }
 
@@ -121,7 +181,7 @@ export function basicFairRotate<T>(
   epochMinutes: number = DEFAULT_EPOCH_MINUTES,
 ): T[] {
   const seed = getEpochSeed(epochMinutes);
-  return seededShuffle(items, seed + 2);
+  return tierShuffle(items, seed + 2);
 }
 
 /**
@@ -151,9 +211,9 @@ export function tieredFairRotate<T>(
   }
 
   return [
-    ...seededShuffle(elite, seed),
-    ...seededShuffle(premium, seed + 1),
-    ...seededShuffle(basic, seed + 2),
+    ...tierShuffle(elite, seed),
+    ...tierShuffle(premium, seed + 1),
+    ...tierShuffle(basic, seed + 2),
   ];
 }
 

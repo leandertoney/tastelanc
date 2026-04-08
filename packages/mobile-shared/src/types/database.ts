@@ -99,6 +99,7 @@ export interface Restaurant {
   parking_info: string | null;
   noise_level: string | null;
   display_preferences: { tabs: Array<{ key: string; hidden: boolean }> } | null;
+  profile_score: number;
 }
 
 export interface FeaturedAd {

@@ -92,3 +92,8 @@ export {
   EmailThreadScreen,
   InboxListView,
 } from './sales';
+
+// Retention screens
+export { default as LeaderboardScreen } from './LeaderboardScreen';
+export { default as LabsScreen } from './LabsScreen';
+export { default as RewardClaimScreen } from './RewardClaimScreen';
