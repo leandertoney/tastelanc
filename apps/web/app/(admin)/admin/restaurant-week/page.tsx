@@ -831,53 +831,66 @@ export default function RestaurantWeekPage() {
                     <span className="text-xs text-zinc-500">Add all deals for this restaurant at once</span>
                   </div>
                   {multiRows.map((row, i) => (
-                    <div key={i} className="flex gap-2 mb-2 items-center">
+                    <div key={i} className="mb-3 p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg">
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          value={row.name}
+                          onChange={e => {
+                            const updated = [...multiRows];
+                            updated[i] = { ...updated[i], name: e.target.value };
+                            setMultiRows(updated);
+                          }}
+                          placeholder="e.g. $35 Prix Fixe Menu"
+                          className="flex-1 px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none text-sm"
+                        />
+                        <select
+                          value={row.category}
+                          onChange={e => {
+                            const updated = [...multiRows];
+                            updated[i] = { ...updated[i], category: e.target.value };
+                            setMultiRows(updated);
+                          }}
+                          className="w-32 px-2 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white text-sm focus:border-zinc-400 focus:outline-none"
+                        >
+                          <option value="food">Food</option>
+                          <option value="drink">Drink</option>
+                          <option value="combo">Combo</option>
+                          <option value="entertainment">Event</option>
+                        </select>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={row.special_price}
+                          onChange={e => {
+                            const updated = [...multiRows];
+                            updated[i] = { ...updated[i], special_price: e.target.value };
+                            setMultiRows(updated);
+                          }}
+                          placeholder="Price"
+                          className="w-24 px-2 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none text-sm"
+                        />
+                        {multiRows.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setMultiRows(multiRows.filter((_, j) => j !== i))}
+                            className="p-1.5 text-zinc-500 hover:text-red-400 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                       <input
                         type="text"
-                        value={row.name}
+                        value={row.description}
                         onChange={e => {
                           const updated = [...multiRows];
-                          updated[i] = { ...updated[i], name: e.target.value };
+                          updated[i] = { ...updated[i], description: e.target.value };
                           setMultiRows(updated);
                         }}
-                        placeholder="e.g. $35 Prix Fixe Menu"
-                        className="flex-1 px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none text-sm"
+                        placeholder="Description (optional) — e.g. 3-course dinner with appetizer, entrée, dessert"
+                        className="w-full mt-2 px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none text-sm"
                       />
-                      <select
-                        value={row.category}
-                        onChange={e => {
-                          const updated = [...multiRows];
-                          updated[i] = { ...updated[i], category: e.target.value };
-                          setMultiRows(updated);
-                        }}
-                        className="w-32 px-2 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white text-sm focus:border-zinc-400 focus:outline-none"
-                      >
-                        <option value="food">Food</option>
-                        <option value="drink">Drink</option>
-                        <option value="combo">Combo</option>
-                        <option value="entertainment">Event</option>
-                      </select>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={row.special_price}
-                        onChange={e => {
-                          const updated = [...multiRows];
-                          updated[i] = { ...updated[i], special_price: e.target.value };
-                          setMultiRows(updated);
-                        }}
-                        placeholder="Price"
-                        className="w-24 px-2 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none text-sm"
-                      />
-                      {multiRows.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => setMultiRows(multiRows.filter((_, j) => j !== i))}
-                          className="p-1.5 text-zinc-500 hover:text-red-400 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
                     </div>
                   ))}
                   <button
