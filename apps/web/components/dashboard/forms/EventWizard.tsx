@@ -152,6 +152,7 @@ const INITIAL_FORM_DATA: EventFormData = {
   is_recurring: true,
   days_of_week: [],
   event_date: '',
+  cover_charge: '',
 };
 
 interface EventWizardProps {
@@ -347,6 +348,26 @@ export default function EventWizard({ onClose, onSubmit, restaurantId, allowedTy
             />
           </div>
 
+          {/* Cover Charge */}
+          <div>
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
+              Cover Charge / Ticket Price
+              <span className="text-tastelanc-text-faint font-normal ml-1">(optional — leave blank for free)</span>
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-tastelanc-text-muted">$</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.cover_charge || ''}
+                onChange={(e) => setFormData({ ...formData, cover_charge: e.target.value })}
+                placeholder="0.00"
+                className="w-full pl-8 pr-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+              />
+            </div>
+          </div>
+
           {/* Custom Artwork */}
           <div>
             <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
@@ -480,6 +501,11 @@ export default function EventWizard({ onClose, onSubmit, restaurantId, allowedTy
               <span className="px-2 py-1 bg-tastelanc-bg rounded text-tastelanc-text-secondary">
                 {formatTime(formData.start_time)}
                 {formData.end_time && ` - ${formatTime(formData.end_time)}`}
+              </span>
+              <span className="px-2 py-1 bg-tastelanc-bg rounded text-tastelanc-text-secondary">
+                {formData.cover_charge && parseFloat(formData.cover_charge) > 0
+                  ? `$${parseFloat(formData.cover_charge).toFixed(2)}`
+                  : 'Free'}
               </span>
               {formData.is_recurring ? (
                 formData.days_of_week.map((day) => (

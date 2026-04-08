@@ -68,6 +68,7 @@ export interface EventFormData {
   days_of_week: DayOfWeek[];
   event_date: string;
   image_url?: string;
+  cover_charge?: string;
 }
 
 export interface HappyHourFormData {

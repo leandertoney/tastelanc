@@ -44,6 +44,7 @@ interface Event {
   event_date: string | null;
   is_active: boolean;
   image_url?: string | null;
+  cover_charge?: number | null;
 }
 
 interface EventsManagerProps {
@@ -142,6 +143,9 @@ export default function EventsManager({ mode }: EventsManagerProps) {
       event_date: formData.is_recurring ? null : formData.event_date,
       days_of_week: formData.is_recurring ? formData.days_of_week : [],
       image_url: formData.image_url,
+      cover_charge: formData.cover_charge && parseFloat(formData.cover_charge) > 0
+        ? parseFloat(formData.cover_charge)
+        : null,
     };
 
     const response = await fetch(buildApiUrl('/api/dashboard/events'), {
@@ -228,6 +232,9 @@ export default function EventsManager({ mode }: EventsManagerProps) {
           days_of_week: editingEvent.days_of_week,
           event_date: editingEvent.event_date,
           image_url: editingEvent.image_url,
+          cover_charge: editingEvent.cover_charge != null && editingEvent.cover_charge > 0
+            ? editingEvent.cover_charge
+            : null,
         }),
       });
 
@@ -400,6 +407,26 @@ export default function EventsManager({ mode }: EventsManagerProps) {
               />
             </div>
 
+            {/* Cover Charge */}
+            <div>
+              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
+                Cover Charge / Ticket Price
+                <span className="text-tastelanc-text-faint font-normal ml-1">(leave blank for free)</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-tastelanc-text-muted">$</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={editingEvent.cover_charge ?? ''}
+                  onChange={(e) => setEditingEvent({ ...editingEvent, cover_charge: e.target.value ? parseFloat(e.target.value) : null })}
+                  placeholder="0.00"
+                  className="w-full pl-8 pr-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+                />
+              </div>
+            </div>
+
             {/* Recurring Toggle */}
             <div>
               <label className="flex items-center gap-3 cursor-pointer">
@@ -532,6 +559,11 @@ export default function EventsManager({ mode }: EventsManagerProps) {
                     ) : (
                       <span>{event.event_date}</span>
                     )}
+                    <span className="text-tastelanc-text-muted">
+                      {event.cover_charge != null && event.cover_charge > 0
+                        ? `$${Number(event.cover_charge).toFixed(2)}`
+                        : 'Free'}
+                    </span>
                   </div>
                 </div>
               </div>
