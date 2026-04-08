@@ -55,6 +55,28 @@ export async function POST(request: Request) {
       }
     }
 
+    // Check for duplicate email on this event
+    if (email) {
+      const { data: existing } = await serviceClient
+        .from('party_rsvps')
+        .select('id, qr_token, response')
+        .eq('party_event_id', partyEventId)
+        .eq('email', email.trim().toLowerCase())
+        .limit(1)
+        .single();
+
+      if (existing) {
+        // Already RSVPed — return their existing ticket instead of creating a duplicate
+        return NextResponse.json({
+          success: true,
+          already_registered: true,
+          rsvp_id: existing.id,
+          response: existing.response,
+          qr_token: existing.response === 'yes' ? existing.qr_token : undefined,
+        });
+      }
+    }
+
     // Get the current user (optional — web RSVPs won't have a session)
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();

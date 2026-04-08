@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -45,6 +46,14 @@ export default function PartyTicketScreen({ navigation, route }: Props) {
   const [loading, setLoading] = useState(true);
 
   const apiBase = market?.api_base_url ?? 'https://tastelanc.com';
+
+  // Persist token to AsyncStorage so it appears in Profile → "My Party Ticket"
+  // (covers deep link entry where PartyRSVPScreen didn't save it)
+  useEffect(() => {
+    if (qr_token) {
+      AsyncStorage.setItem('party_rsvp_token', qr_token).catch(() => {});
+    }
+  }, [qr_token]);
 
   useEffect(() => {
     fetch(`${apiBase}/api/party/ticket/${qr_token}`)
