@@ -640,7 +640,7 @@ export async function getFeaturedRestaurants(limit: number = 24, marketId: strin
     }
 
     const paid = paidRestaurants || [];
-    const seed = getEpochSeed();
+    const seed = getEpochSeed(5);
 
     // Separate elite and premium, shuffle each with epoch seed
     const elite = paid.filter((r: any) => r.tiers?.name === 'elite');

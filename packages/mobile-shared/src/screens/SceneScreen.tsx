@@ -277,6 +277,7 @@ interface CouponClaimItem {
   date: string;
   ctaType: string;
   ctaLabel: string | null;
+  imageUrl: string | null;
 }
 
 interface NewCouponItem {
@@ -291,6 +292,7 @@ interface NewCouponItem {
   date: string;
   ctaType: string;
   ctaLabel: string | null;
+  imageUrl: string | null;
 }
 
 interface CrossMarketPromoItem {
@@ -433,7 +435,7 @@ function usePulseFeed() {
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       let couponClaimsQuery = supabase
         .from('coupon_claims')
-        .select('id, claimed_at, coupon:coupons!inner(id, title, discount_type, discount_value, max_claims_total, claims_count, cta_type, cta_label, restaurant:restaurants!inner(id, name, market_id))')
+        .select('id, claimed_at, coupon:coupons!inner(id, title, image_url, discount_type, discount_value, max_claims_total, claims_count, cta_type, cta_label, restaurant:restaurants!inner(id, name, cover_image_url, market_id))')
         .eq('status', 'claimed')
         .gte('claimed_at', oneDayAgo)
         .order('claimed_at', { ascending: false })
@@ -443,7 +445,7 @@ function usePulseFeed() {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       let activeCouponsQuery = supabase
         .from('coupons')
-        .select('id, title, discount_type, discount_value, max_claims_total, claims_count, created_at, cta_type, cta_label, restaurant:restaurants!inner(id, name, market_id)')
+        .select('id, title, image_url, discount_type, discount_value, max_claims_total, claims_count, created_at, cta_type, cta_label, restaurant:restaurants!inner(id, name, cover_image_url, market_id)')
         .eq('is_active', true)
         .gte('created_at', thirtyDaysAgo)
         .order('created_at', { ascending: false })
@@ -683,6 +685,7 @@ function usePulseFeed() {
           date: claim.claimed_at,
           ctaType: coupon.cta_type || 'claim_deal',
           ctaLabel: coupon.cta_label || null,
+          imageUrl: coupon.image_url || coupon.restaurant.cover_image_url || null,
         });
       });
 
@@ -714,6 +717,7 @@ function usePulseFeed() {
           date: coupon.created_at,
           ctaType: coupon.cta_type || 'claim_deal',
           ctaLabel: coupon.cta_label || null,
+          imageUrl: coupon.image_url || coupon.restaurant.cover_image_url || null,
         });
       });
 
@@ -1377,9 +1381,21 @@ function HolidayTeaserCard({ item, onPress }: { item: HolidayTeaserItem; onPress
   );
 }
 
-// ─── Coupon Claim social proof card ──────────────────────────────────────────
+// ─── Shared deal card with hero image (used by both coupon types) ────────────
 
-function CouponClaimCard({ item, onPress }: { item: CouponClaimItem; onPress: () => void }) {
+function DealHeroCard({
+  item,
+  onPress,
+  subtitle,
+  ctaText,
+  ctaIcon,
+}: {
+  item: CouponClaimItem | NewCouponItem;
+  onPress: () => void;
+  subtitle: string;
+  ctaText: string;
+  ctaIcon: keyof typeof Ionicons.glyphMap;
+}) {
   const styles = useStyles();
   const colors = getColors();
 
@@ -1388,85 +1404,107 @@ function CouponClaimCard({ item, onPress }: { item: CouponClaimItem; onPress: ()
     : null;
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
-      <PostHeader
-        avatarIcon="ticket"
-        avatarBg={withAlpha(colors.accent, 0.15)}
-        title={item.restaurantName}
-        subtitle={`Someone just claimed · ${formatTimeAgo(item.date)}`}
-      />
-      <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.md }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-          <View style={{ backgroundColor: colors.accent, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
-            <Text style={{ color: colors.textOnAccent, fontSize: 13, fontWeight: '700' }}>
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.88}>
+      {/* Hero image */}
+      {item.imageUrl ? (
+        <View style={{ height: 160, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, overflow: 'hidden' }}>
+          <Image source={{ uri: item.imageUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+          {/* Gradient overlay for text readability */}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.7)']}
+            style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 90 }}
+          />
+          {/* Discount badge overlaid on image */}
+          <View style={{ position: 'absolute', top: 12, left: 12, backgroundColor: colors.accent, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 14 }}>
+            <Text style={{ color: colors.textOnAccent, fontSize: 14, fontWeight: '800', letterSpacing: 0.3 }}>
               {item.discountLabel}
             </Text>
           </View>
-          <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600', flex: 1 }} numberOfLines={1}>
-            {item.couponTitle}
-          </Text>
+          {/* Restaurant name overlaid at bottom */}
+          <View style={{ position: 'absolute', bottom: 10, left: 12, right: 12 }}>
+            <Text style={{ color: '#fff', fontSize: 18, fontWeight: '800', textShadowColor: 'rgba(0,0,0,0.7)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 }} numberOfLines={1}>
+              {item.restaurantName}
+            </Text>
+            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: '500', marginTop: 1 }}>
+              {subtitle}
+            </Text>
+          </View>
         </View>
+      ) : (
+        <PostHeader
+          avatarIcon="pricetag"
+          avatarBg={withAlpha(colors.accent, 0.15)}
+          title={item.restaurantName}
+          subtitle={subtitle}
+        />
+      )}
+
+      {/* Content area */}
+      <View style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2 }}>
+        <Text style={{ color: colors.text, fontSize: 16, fontWeight: '700', marginBottom: 4 }} numberOfLines={2}>
+          {item.couponTitle}
+        </Text>
+
+        {/* No hero image — show inline discount badge */}
+        {!item.imageUrl && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <View style={{ backgroundColor: colors.accent, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 12 }}>
+              <Text style={{ color: colors.textOnAccent, fontSize: 12, fontWeight: '700' }}>
+                {item.discountLabel}
+              </Text>
+            </View>
+          </View>
+        )}
+
         {urgencyText && (
-          <Text style={{ color: '#ef4444', fontSize: 13, fontWeight: '600' }}>
+          <Text style={{ color: '#ef4444', fontSize: 13, fontWeight: '600', marginBottom: 4 }}>
             {urgencyText}
           </Text>
         )}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 6 }}>
-          <Ionicons name="arrow-forward-circle" size={18} color={colors.accent} />
-          <Text style={{ color: colors.accent, fontSize: 14, fontWeight: '600' }}>
-            View Restaurant
+
+        <TouchableOpacity
+          onPress={onPress}
+          style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: withAlpha(colors.accent, 0.12), paddingVertical: 10, paddingHorizontal: 14, borderRadius: radius.md, marginTop: 4, justifyContent: 'center', gap: 6 }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name={ctaIcon} size={18} color={colors.accent} />
+          <Text style={{ color: colors.accent, fontSize: 14, fontWeight: '700' }}>
+            {ctaText}
           </Text>
-        </View>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
+  );
+}
+
+// ─── Coupon Claim social proof card ──────────────────────────────────────────
+
+function CouponClaimCard({ item, onPress }: { item: CouponClaimItem; onPress: () => void }) {
+  return (
+    <DealHeroCard
+      item={item}
+      onPress={onPress}
+      subtitle={`Someone just claimed · ${formatTimeAgo(item.date)}`}
+      ctaText="View Restaurant"
+      ctaIcon="arrow-forward-circle"
+    />
   );
 }
 
 // ─── New Coupon card ("New deal available") ───────────────────────────────────
 
 function NewCouponCard({ item, onPress }: { item: NewCouponItem; onPress: () => void }) {
-  const styles = useStyles();
-  const colors = getColors();
-
-  const urgencyText = item.remaining != null && item.maxTotal != null
-    ? `Only ${item.remaining} of ${item.maxTotal} left!`
-    : null;
-
   const ctaText = item.ctaLabel || CTA_LABELS[item.ctaType as CtaType] || 'Claim this deal';
   const ctaIcon: keyof typeof Ionicons.glyphMap = item.ctaType === 'leave_recommendation' ? 'videocam' : 'arrow-forward-circle';
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
-      <PostHeader
-        avatarIcon="pricetag"
-        avatarBg={withAlpha(colors.accent, 0.15)}
-        title={item.restaurantName}
-        subtitle="New deal available"
-      />
-      <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.md }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-          <View style={{ backgroundColor: colors.accent, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
-            <Text style={{ color: colors.textOnAccent, fontSize: 13, fontWeight: '700' }}>
-              {item.discountLabel}
-            </Text>
-          </View>
-          <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600', flex: 1 }} numberOfLines={1}>
-            {item.couponTitle}
-          </Text>
-        </View>
-        {urgencyText && (
-          <Text style={{ color: '#ef4444', fontSize: 13, fontWeight: '600' }}>
-            {urgencyText}
-          </Text>
-        )}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 6 }}>
-          <Ionicons name={ctaIcon} size={18} color={colors.accent} />
-          <Text style={{ color: colors.accent, fontSize: 14, fontWeight: '600' }}>
-            {ctaText}
-          </Text>
-        </View>
-      </View>
-    </TouchableOpacity>
+    <DealHeroCard
+      item={item}
+      onPress={onPress}
+      subtitle="New deal available"
+      ctaText={ctaText}
+      ctaIcon={ctaIcon}
+    />
   );
 }
 
