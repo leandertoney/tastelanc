@@ -123,8 +123,9 @@ function RSVPContent() {
         <div style={styles.brand}>TASTELANC</div>
 
         {/* Event info — always visible */}
+        <div style={styles.eyebrow}>POST-RESTAURANT WEEK</div>
         <div style={styles.divider} />
-        <h1 style={styles.eventName}>{event.name}</h1>
+        <h1 style={styles.eventName}>Industry Party</h1>
         <div style={styles.detailRow}>
           <span style={styles.detailIcon}>&#128197;</span>
           <span style={styles.detailText}>{eventDate}</span>
@@ -265,6 +266,14 @@ function RSVPContent() {
   );
 }
 
+// Theme colors matching the mobile app's Restaurant Week terracotta/gold palette
+const TERRACOTTA = '#C84B31';
+const TERRACOTTA_DARK = '#8B2F1A';
+const GOLD = '#F0D060';
+const GOLD_DIM = 'rgba(240,208,96,0.65)';
+const BG_DARK = '#1C0800';
+const CARD_BG = 'rgba(255,255,255,0.06)';
+
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: '100vh',
@@ -272,39 +281,49 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    background: 'linear-gradient(160deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%)',
+    background: `linear-gradient(160deg, ${TERRACOTTA_DARK} 0%, ${BG_DARK} 35%, ${BG_DARK} 100%)`,
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     padding: 20,
   },
   card: {
-    background: 'rgba(255,255,255,0.06)',
+    background: CARD_BG,
     backdropFilter: 'blur(24px)',
     borderRadius: 28,
     padding: '44px 28px',
     maxWidth: 440,
     width: '100%',
-    border: '1px solid rgba(255,255,255,0.1)',
+    border: `1px solid rgba(240,208,96,0.15)`,
   },
   brand: {
     fontSize: 12,
     fontWeight: 700,
     letterSpacing: 4,
     textAlign: 'center',
-    color: '#e8a838',
-    marginBottom: 20,
+    color: GOLD,
+    marginBottom: 8,
+  },
+  eyebrow: {
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    color: GOLD_DIM,
+    marginBottom: 4,
   },
   divider: {
     height: 1,
-    background: 'rgba(255,255,255,0.08)',
+    background: 'rgba(240,208,96,0.12)',
     margin: '16px 0',
   },
   eventName: {
-    fontSize: 26,
-    fontWeight: 800,
-    color: '#fff',
+    fontSize: 28,
+    fontWeight: 900,
+    color: GOLD,
     margin: '0 0 16px',
     lineHeight: 1.15,
     textAlign: 'center',
+    letterSpacing: -0.5,
   },
   detailRow: {
     display: 'flex',
@@ -319,11 +338,11 @@ const styles: Record<string, React.CSSProperties> = {
   },
   detailText: {
     fontSize: 15,
-    color: 'rgba(255,255,255,0.75)',
+    color: GOLD_DIM,
   },
   inviteText: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
+    color: GOLD_DIM,
     lineHeight: 1.55,
     textAlign: 'center',
     marginBottom: 20,
@@ -335,8 +354,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'block',
     fontSize: 11,
     fontWeight: 700,
-    color: 'rgba(255,255,255,0.5)',
-    letterSpacing: 1,
+    color: GOLD_DIM,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
     marginBottom: 6,
   },
@@ -344,16 +363,16 @@ const styles: Record<string, React.CSSProperties> = {
     width: '100%',
     padding: '13px 16px',
     borderRadius: 12,
-    border: '1px solid rgba(255,255,255,0.15)',
+    border: '1px solid rgba(240,208,96,0.2)',
     background: 'rgba(255,255,255,0.06)',
-    color: '#fff',
+    color: GOLD,
     fontSize: 16,
     outline: 'none',
     boxSizing: 'border-box',
   },
   fieldHint: {
     fontSize: 11,
-    color: 'rgba(255,255,255,0.35)',
+    color: 'rgba(240,208,96,0.35)',
     marginTop: 6,
     lineHeight: 1.4,
   },
@@ -363,23 +382,24 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '15px 24px',
     borderRadius: 14,
     border: 'none',
-    background: '#e8a838',
-    color: '#1a1a2e',
-    fontWeight: 700,
+    background: TERRACOTTA,
+    color: GOLD,
+    fontWeight: 800,
     fontSize: 16,
     textAlign: 'center',
     textDecoration: 'none',
     cursor: 'pointer',
     marginBottom: 10,
+    letterSpacing: 0.3,
   },
   btnSecondary: {
     display: 'block',
     width: '100%',
     padding: '13px 24px',
     borderRadius: 14,
-    border: '1px solid rgba(255,255,255,0.15)',
+    border: '1px solid rgba(240,208,96,0.2)',
     background: 'transparent',
-    color: 'rgba(255,255,255,0.6)',
+    color: GOLD_DIM,
     fontWeight: 600,
     fontSize: 15,
     textAlign: 'center',
@@ -392,14 +412,14 @@ const styles: Record<string, React.CSSProperties> = {
   spinner: {
     width: 28,
     height: 28,
-    border: '3px solid rgba(255,255,255,0.15)',
-    borderTopColor: '#e8a838',
+    border: '3px solid rgba(240,208,96,0.15)',
+    borderTopColor: TERRACOTTA,
     borderRadius: '50%',
     animation: 'spin 0.8s linear infinite',
     margin: '0 auto',
   },
   submittingText: {
-    color: 'rgba(255,255,255,0.5)',
+    color: GOLD_DIM,
     fontSize: 14,
     marginTop: 12,
   },
@@ -421,24 +441,24 @@ const styles: Record<string, React.CSSProperties> = {
   confirmTitle: {
     fontSize: 24,
     fontWeight: 800,
-    color: '#fff',
+    color: GOLD,
     margin: '0 0 4px',
   },
   confirmSubtitle: {
     fontSize: 15,
-    color: 'rgba(255,255,255,0.6)',
+    color: GOLD_DIM,
     marginBottom: 20,
   },
   ticketBox: {
-    background: 'rgba(232,168,56,0.1)',
-    border: '1px solid rgba(232,168,56,0.25)',
+    background: `rgba(200,75,49,0.15)`,
+    border: `1px solid rgba(200,75,49,0.3)`,
     borderRadius: 14,
     padding: '16px 18px',
     marginBottom: 20,
   },
   ticketText: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
+    color: GOLD_DIM,
     lineHeight: 1.5,
     margin: 0,
   },
@@ -447,7 +467,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   downloadLabel: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.45)',
+    color: GOLD_DIM,
     marginBottom: 10,
   },
   downloadButtons: {
@@ -459,22 +479,22 @@ const styles: Record<string, React.CSSProperties> = {
   downloadBtn: {
     padding: '10px 20px',
     borderRadius: 10,
-    background: 'rgba(255,255,255,0.08)',
-    color: '#e8a838',
+    background: 'rgba(200,75,49,0.2)',
+    color: GOLD,
     fontSize: 14,
     fontWeight: 600,
     textDecoration: 'none',
-    border: '1px solid rgba(232,168,56,0.2)',
+    border: `1px solid rgba(200,75,49,0.35)`,
   },
   downloadHint: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.35)',
+    color: 'rgba(240,208,96,0.35)',
     lineHeight: 1.5,
   },
   // Declined
   declinedText: {
     fontSize: 16,
-    color: 'rgba(255,255,255,0.7)',
+    color: GOLD_DIM,
     lineHeight: 1.5,
   },
   // Error
@@ -486,12 +506,12 @@ const styles: Record<string, React.CSSProperties> = {
   // No event
   noEvent: {
     fontSize: 15,
-    color: 'rgba(255,255,255,0.5)',
+    color: GOLD_DIM,
     textAlign: 'center',
   },
   footer: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.2)',
+    color: 'rgba(240,208,96,0.2)',
     marginTop: 24,
   },
 };
