@@ -4,7 +4,7 @@ import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// GET /api/party/admin/rsvps — admin view of all RSVPs + codes + headcount by restaurant
+// GET /api/party/admin/rsvps — admin view of all RSVPs (simplified, no codes)
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -36,56 +36,48 @@ export async function GET() {
       .single();
 
     if (!event) {
-      return NextResponse.json({ event: null, codes: [], rsvps: [] });
+      return NextResponse.json({ event: null, rsvps: [] });
     }
 
-    // Get all invite codes with restaurant info
-    const { data: codes } = await serviceClient
-      .from('party_invite_codes')
-      .select(`
-        *,
-        restaurants (
-          id,
-          name,
-          tier_id,
-          tiers ( name, display_name )
-        )
-      `)
-      .eq('party_event_id', event.id)
-      .order('created_at', { ascending: false });
-
-    // Get all RSVPs
+    // Get all RSVPs with direct restaurant + fallback invite_code restaurant
     const { data: rsvps } = await serviceClient
       .from('party_rsvps')
       .select(`
         id,
         name,
+        email,
         qr_token,
+        response,
+        source,
         checked_in,
         checked_in_at,
         created_at,
+        restaurant_id,
+        restaurants (name),
         invite_code_id,
         party_invite_codes (
           code,
           restaurant_id,
-          restaurants ( name )
+          restaurants (name)
         )
       `)
       .eq('party_event_id', event.id)
       .order('created_at', { ascending: false });
 
-    const totalRsvps = rsvps?.length ?? 0;
-    const checkedIn = rsvps?.filter(r => r.checked_in).length ?? 0;
+    const allRsvps = rsvps ?? [];
+    const yesRsvps = allRsvps.filter(r => r.response === 'yes');
+    const checkedIn = allRsvps.filter(r => r.checked_in).length;
 
     return NextResponse.json({
       event: {
         ...event,
-        rsvp_count: totalRsvps,
+        rsvp_count: allRsvps.length,
+        attending_count: yesRsvps.length,
+        declined_count: allRsvps.length - yesRsvps.length,
         checked_in_count: checkedIn,
-        spots_remaining: event.capacity ? event.capacity - totalRsvps : null,
+        spots_remaining: event.capacity ? event.capacity - yesRsvps.length : null,
       },
-      codes: codes ?? [],
-      rsvps: rsvps ?? [],
+      rsvps: allRsvps,
     });
   } catch (err) {
     console.error('[party/admin/rsvps] error:', err);

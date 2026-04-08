@@ -70,7 +70,7 @@ export default function PartyBanner() {
           <Text style={styles.title}>{event.name}</Text>
           <Text style={styles.subtitle}>{eventDate} · {event.venue}</Text>
           <View style={styles.pill}>
-            <Text style={styles.pillText}>GOT AN INVITE? TAP TO RSVP</Text>
+            <Text style={styles.pillText}>TAP TO RSVP</Text>
           </View>
         </View>
       </View>

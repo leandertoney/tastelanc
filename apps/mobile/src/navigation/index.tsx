@@ -53,6 +53,8 @@ const linking = {
     screens: {
       // https://tastelanc.com/party (universal link — QR codes)
       PartyRSVP: 'party',
+      // tastelanc://party-ticket/:qr_token (deep link from web RSVP confirmation)
+      PartyTicket: 'party-ticket/:qr_token',
     },
   },
   // Also handle legacy custom scheme path: tastelanc://party-rsvp

@@ -27,11 +27,15 @@ export async function GET(
         checked_in,
         checked_in_at,
         created_at,
+        restaurant_id,
         party_events (
           name,
           date,
           venue,
           address
+        ),
+        restaurants (
+          name
         ),
         party_invite_codes (
           restaurant_id,
@@ -48,10 +52,19 @@ export async function GET(
     }
 
     const event = Array.isArray(rsvp.party_events) ? rsvp.party_events[0] : rsvp.party_events;
-    const code = Array.isArray(rsvp.party_invite_codes) ? rsvp.party_invite_codes[0] : rsvp.party_invite_codes;
-    const restaurant = code?.restaurants
-      ? (Array.isArray(code.restaurants) ? code.restaurants[0] : code.restaurants)
-      : null;
+
+    // Resolve restaurant name: prefer direct restaurant_id, fallback to invite_code join (old RSVPs)
+    let restaurantName: string | null = null;
+    const directRestaurant = Array.isArray(rsvp.restaurants) ? rsvp.restaurants[0] : rsvp.restaurants;
+    if (directRestaurant?.name) {
+      restaurantName = directRestaurant.name;
+    } else {
+      const code = Array.isArray(rsvp.party_invite_codes) ? rsvp.party_invite_codes[0] : rsvp.party_invite_codes;
+      const codeRestaurant = code?.restaurants
+        ? (Array.isArray(code.restaurants) ? code.restaurants[0] : code.restaurants)
+        : null;
+      restaurantName = codeRestaurant?.name ?? null;
+    }
 
     return NextResponse.json({
       ticket: {
@@ -61,7 +74,7 @@ export async function GET(
         checked_in: rsvp.checked_in,
         checked_in_at: rsvp.checked_in_at,
         created_at: rsvp.created_at,
-        restaurant_name: restaurant?.name ?? null,
+        restaurant_name: restaurantName,
         event: event ?? null,
       },
     });

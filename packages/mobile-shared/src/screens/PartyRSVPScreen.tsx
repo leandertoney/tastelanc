@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
@@ -20,18 +20,13 @@ import { useMarket } from '../context/MarketContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PartyRSVP'>;
 
-type Step = 'enter-code' | 'enter-name' | 'confirming';
-
-interface ValidatedCode {
-  invite_code_id: string;
-  spots_remaining: number;
-  event: {
-    id: string;
-    name: string;
-    date: string;
-    venue: string;
-    address: string;
-  };
+interface PartyEvent {
+  id: string;
+  name: string;
+  date: string;
+  venue: string;
+  address: string;
+  spots_remaining: number | null;
 }
 
 const RW_TERRACOTTA = '#C84B31';
@@ -44,79 +39,119 @@ const CARD_BORDER = 'rgba(240,208,96,0.15)';
 
 export default function PartyRSVPScreen({ navigation }: Props) {
   const { market } = useMarket();
-
-  const [step, setStep] = useState<Step>('enter-code');
-  const [code, setCode] = useState('');
-  const [name, setName] = useState('');
-  const [validatedCode, setValidatedCode] = useState<ValidatedCode | null>(null);
-  const [loading, setLoading] = useState(false);
-
   const apiBase = market?.api_base_url ?? 'https://tastelanc.com';
 
-  async function validateCode() {
-    const trimmed = code.trim().toUpperCase();
-    if (!trimmed) return;
-    setLoading(true);
-    try {
-      const res = await fetch(`${apiBase}/api/party/validate-code`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: trimmed }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.valid) {
-        Alert.alert('Invalid Code', data.error ?? 'This code is not valid. Please check with your restaurant.');
+  const [event, setEvent] = useState<PartyEvent | null>(null);
+  const [loadingEvent, setLoadingEvent] = useState(true);
+
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [declined, setDeclined] = useState(false);
+
+  useEffect(() => {
+    fetch(`${apiBase}/api/party/active`)
+      .then(r => r.json())
+      .then(data => setEvent(data.event))
+      .catch(() => {})
+      .finally(() => setLoadingEvent(false));
+  }, [apiBase]);
+
+  async function handleRSVP(response: 'yes' | 'no') {
+    if (response === 'yes') {
+      const trimmedName = name.trim();
+      const trimmedEmail = email.trim();
+      if (!trimmedName || trimmedName.length < 2) {
+        Alert.alert('Name Required', 'Please enter your first and last name.');
         return;
       }
-      setValidatedCode(data);
-      setStep('enter-name');
-    } catch {
-      Alert.alert('Error', 'Could not connect. Please try again.');
-    } finally {
-      setLoading(false);
+      if (!trimmedEmail || !trimmedEmail.includes('@')) {
+        Alert.alert('Email Required', 'Please enter your email so we can link your ticket.');
+        return;
+      }
+    } else {
+      if (!name.trim() || name.trim().length < 2) {
+        Alert.alert('Name Required', 'Please enter your name.');
+        return;
+      }
     }
-  }
 
-  async function submitRSVP() {
-    const trimmedName = name.trim();
-    if (!trimmedName || trimmedName.length < 2) {
-      Alert.alert('Name Required', 'Please enter your first and last name.');
-      return;
-    }
-    if (!validatedCode) return;
-    setStep('confirming');
-    setLoading(true);
+    setSubmitting(true);
     try {
       const res = await fetch(`${apiBase}/api/party/rsvp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: code.trim().toUpperCase(), name: trimmedName }),
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim() || undefined,
+          response,
+          source: 'app',
+        }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
         Alert.alert('RSVP Failed', data.error ?? 'Could not complete your RSVP. Please try again.');
-        setStep('enter-name');
         return;
       }
-      await AsyncStorage.setItem('party_rsvp_token', data.qr_token);
-      navigation.replace('PartyTicket', { qr_token: data.qr_token, name: data.name });
+
+      if (response === 'yes' && data.qr_token) {
+        await AsyncStorage.setItem('party_rsvp_token', data.qr_token);
+        navigation.replace('PartyTicket', { qr_token: data.qr_token, name: data.name });
+      } else {
+        setDeclined(true);
+      }
     } catch {
       Alert.alert('Error', 'Could not connect. Please try again.');
-      setStep('enter-name');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   }
 
   const styles = getStyles();
 
-  const eventDate = validatedCode
-    ? new Date(validatedCode.event.date + 'T12:00:00').toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-      })
-    : '';
+  if (loadingEvent) {
+    return (
+      <View style={{ flex: 1, backgroundColor: BG_DARK, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color={RW_TERRACOTTA} size="large" />
+      </View>
+    );
+  }
+
+  if (!event) {
+    return (
+      <View style={{ flex: 1, backgroundColor: BG_DARK, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
+        <Text style={{ color: RW_YELLOW_DIM, fontSize: 16, textAlign: 'center' }}>
+          No active event at this time.
+        </Text>
+        <TouchableOpacity style={{ marginTop: 20 }} onPress={() => navigation.goBack()}>
+          <Text style={{ color: RW_YELLOW, fontSize: 15, fontWeight: '600' }}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const eventDate = new Date(event.date + 'T12:00:00').toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  if (declined) {
+    return (
+      <View style={{ flex: 1, backgroundColor: BG_DARK, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
+        <Text style={{ fontSize: 40, marginBottom: 16 }}>👋</Text>
+        <Text style={{ color: RW_YELLOW, fontSize: 18, fontWeight: '700', textAlign: 'center', marginBottom: 8 }}>
+          Thanks for letting us know
+        </Text>
+        <Text style={{ color: RW_YELLOW_DIM, fontSize: 14, textAlign: 'center' }}>
+          We&apos;ll miss you, {name.trim().split(' ')[0]}!
+        </Text>
+        <TouchableOpacity style={{ marginTop: 24 }} onPress={() => navigation.goBack()}>
+          <Text style={{ color: RW_YELLOW, fontSize: 15, fontWeight: '600' }}>Done</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -142,92 +177,77 @@ export default function PartyRSVPScreen({ navigation }: Props) {
               <Text style={{ fontSize: 36 }}>🎉</Text>
             </View>
             <Text style={styles.eyebrow}>POST-RESTAURANT WEEK</Text>
-            <Text style={styles.title}>Industry Party</Text>
-            <Text style={styles.subtitle}>
-              {step === 'enter-code'
-                ? 'Enter the invite code from your restaurant manager to RSVP.'
-                : validatedCode?.event.name ?? 'TasteLanc Launch Party'}
-            </Text>
+            <Text style={styles.title}>{event.name}</Text>
           </View>
 
-          {/* Step: Enter code */}
-          {step === 'enter-code' && (
-            <View style={styles.card}>
-              <Text style={styles.label}>Invite Code</Text>
-              <TextInput
-                style={styles.input}
-                value={code}
-                onChangeText={text => setCode(text.toUpperCase())}
-                placeholder="e.g. TLRW7K4X"
-                placeholderTextColor={RW_YELLOW_DIM}
-                autoCapitalize="characters"
-                autoCorrect={false}
-                returnKeyType="go"
-                onSubmitEditing={validateCode}
-              />
-              <TouchableOpacity
-                style={[styles.button, (loading || !code.trim()) && styles.buttonDisabled]}
-                onPress={validateCode}
-                disabled={loading || !code.trim()}
-              >
-                {loading ? (
-                  <ActivityIndicator color={BG_DARK} size="small" />
-                ) : (
-                  <Text style={styles.buttonText}>Verify Code</Text>
-                )}
-              </TouchableOpacity>
-              <Text style={styles.hint}>
-                Get your code from your restaurant manager. Each code supports a limited number of RSVPs.
-              </Text>
-            </View>
-          )}
-
-          {/* Step: Enter name */}
-          {(step === 'enter-name' || step === 'confirming') && validatedCode && (
-            <View style={styles.card}>
-              {/* Event summary */}
-              <View style={styles.eventBox}>
-                <View style={styles.eventRow}>
-                  <Ionicons name="calendar-outline" size={14} color={RW_YELLOW} />
-                  <Text style={styles.eventText}>{eventDate}</Text>
-                </View>
-                <View style={styles.eventRow}>
-                  <Ionicons name="people-outline" size={14} color={RW_YELLOW} />
-                  <Text style={styles.eventText}>
-                    {validatedCode.spots_remaining} spot{validatedCode.spots_remaining !== 1 ? 's' : ''} remaining on this code
-                  </Text>
-                </View>
+          {/* Event details */}
+          <View style={styles.card}>
+            <View style={styles.eventBox}>
+              <View style={styles.eventRow}>
+                <Ionicons name="calendar-outline" size={14} color={RW_YELLOW} />
+                <Text style={styles.eventText}>{eventDate}</Text>
               </View>
-
-              <Text style={styles.label}>Your Name</Text>
-              <TextInput
-                style={styles.input}
-                value={name}
-                onChangeText={setName}
-                placeholder="First and last name"
-                placeholderTextColor={RW_YELLOW_DIM}
-                autoCapitalize="words"
-                autoCorrect={false}
-                returnKeyType="done"
-                onSubmitEditing={submitRSVP}
-                editable={step === 'enter-name'}
-              />
-              <TouchableOpacity
-                style={[styles.button, (loading || step === 'confirming' || !name.trim()) && styles.buttonDisabled]}
-                onPress={submitRSVP}
-                disabled={loading || step === 'confirming' || !name.trim()}
-              >
-                {loading || step === 'confirming' ? (
-                  <ActivityIndicator color={BG_DARK} size="small" />
-                ) : (
-                  <Text style={styles.buttonText}>Confirm RSVP</Text>
-                )}
-              </TouchableOpacity>
-              <Text style={styles.hint}>
-                Your name will appear on your ticket. This can't be changed after confirming.
-              </Text>
+              <View style={styles.eventRow}>
+                <Ionicons name="location-outline" size={14} color={RW_YELLOW} />
+                <Text style={styles.eventText}>{event.venue}</Text>
+              </View>
+              <View style={styles.eventRow}>
+                <Ionicons name="map-outline" size={14} color={RW_YELLOW} />
+                <Text style={styles.eventText}>{event.address}</Text>
+              </View>
             </View>
-          )}
+
+            {/* Name */}
+            <Text style={styles.label}>Your Name</Text>
+            <TextInput
+              style={styles.input}
+              value={name}
+              onChangeText={setName}
+              placeholder="First and last name"
+              placeholderTextColor={RW_YELLOW_DIM}
+              autoCapitalize="words"
+              autoCorrect={false}
+              returnKeyType="next"
+              editable={!submitting}
+            />
+
+            {/* Email */}
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="you@example.com"
+              placeholderTextColor={RW_YELLOW_DIM}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              autoCorrect={false}
+              returnKeyType="done"
+              editable={!submitting}
+            />
+            <Text style={styles.hint}>Your ticket will be linked to this email.</Text>
+
+            {/* Buttons */}
+            <TouchableOpacity
+              style={[styles.button, (submitting || !name.trim() || !email.includes('@')) && styles.buttonDisabled]}
+              onPress={() => handleRSVP('yes')}
+              disabled={submitting || !name.trim() || !email.includes('@')}
+            >
+              {submitting ? (
+                <ActivityIndicator color={BG_DARK} size="small" />
+              ) : (
+                <Text style={styles.buttonText}>I&apos;ll Be There</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.buttonSecondary, (submitting || !name.trim()) && styles.buttonDisabled]}
+              onPress={() => handleRSVP('no')}
+              disabled={submitting || !name.trim()}
+            >
+              <Text style={styles.buttonSecondaryText}>Can&apos;t Make It</Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </LinearGradient>
     </KeyboardAvoidingView>
@@ -249,7 +269,7 @@ const getStyles = createLazyStyles(() => ({
   },
   logoArea: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 28,
   },
   iconCircle: {
     width: 72,
@@ -271,18 +291,11 @@ const getStyles = createLazyStyles(() => ({
     marginBottom: 4,
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '900',
     color: RW_YELLOW,
     textAlign: 'center',
     letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: RW_YELLOW_DIM,
-    textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 20,
   },
   card: {
     backgroundColor: CARD_BG,
@@ -291,6 +304,25 @@ const getStyles = createLazyStyles(() => ({
     gap: 12,
     borderWidth: 1,
     borderColor: CARD_BORDER,
+  },
+  eventBox: {
+    backgroundColor: 'rgba(200,75,49,0.15)',
+    borderRadius: 12,
+    padding: 14,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(200,75,49,0.3)',
+    marginBottom: 4,
+  },
+  eventRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  eventText: {
+    fontSize: 13,
+    color: RW_YELLOW,
+    flex: 1,
   },
   label: {
     fontSize: 11,
@@ -305,11 +337,14 @@ const getStyles = createLazyStyles(() => ({
     paddingHorizontal: 16,
     paddingVertical: 14,
     color: RW_YELLOW,
-    fontSize: 17,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontSize: 16,
     borderWidth: 1,
     borderColor: 'rgba(240,208,96,0.2)',
-    letterSpacing: 1,
+  },
+  hint: {
+    fontSize: 11,
+    color: 'rgba(240,208,96,0.35)',
+    lineHeight: 16,
   },
   button: {
     backgroundColor: RW_TERRACOTTA,
@@ -327,28 +362,16 @@ const getStyles = createLazyStyles(() => ({
     fontWeight: '800',
     letterSpacing: 0.3,
   },
-  hint: {
-    fontSize: 12,
-    color: 'rgba(240,208,96,0.4)',
-    lineHeight: 18,
-    textAlign: 'center',
-  },
-  eventBox: {
-    backgroundColor: 'rgba(200,75,49,0.15)',
-    borderRadius: 12,
-    padding: 14,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(200,75,49,0.3)',
-  },
-  eventRow: {
-    flexDirection: 'row',
+  buttonSecondary: {
+    borderRadius: 14,
+    paddingVertical: 14,
     alignItems: 'center',
-    gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(240,208,96,0.2)',
   },
-  eventText: {
-    fontSize: 13,
-    color: RW_YELLOW,
-    flex: 1,
+  buttonSecondaryText: {
+    color: RW_YELLOW_DIM,
+    fontSize: 15,
+    fontWeight: '600',
   },
 }));

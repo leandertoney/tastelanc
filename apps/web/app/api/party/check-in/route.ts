@@ -33,10 +33,14 @@ export async function POST(request: Request) {
 
     const serviceClient = createServiceRoleClient();
 
-    // Look up the RSVP
+    // Look up the RSVP with restaurant info (direct + fallback via invite code)
     const { data: rsvp, error: lookupError } = await serviceClient
       .from('party_rsvps')
-      .select('id, name, checked_in, party_invite_codes(restaurant_id, restaurants(name))')
+      .select(`
+        id, name, checked_in, restaurant_id,
+        restaurants (name),
+        party_invite_codes (restaurant_id, restaurants (name))
+      `)
       .eq('qr_token', qr_token.trim())
       .single();
 
@@ -44,16 +48,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid QR code — ticket not found' }, { status: 404 });
     }
 
-    if (rsvp.checked_in) {
+    // Resolve restaurant name: prefer direct, fallback to invite code
+    let restaurantName: string | null = null;
+    const directRestaurant = Array.isArray(rsvp.restaurants) ? rsvp.restaurants[0] : rsvp.restaurants;
+    if (directRestaurant?.name) {
+      restaurantName = directRestaurant.name;
+    } else {
       const code = Array.isArray(rsvp.party_invite_codes) ? rsvp.party_invite_codes[0] : rsvp.party_invite_codes;
-      const restaurant = code?.restaurants
+      const codeRestaurant = code?.restaurants
         ? (Array.isArray(code.restaurants) ? code.restaurants[0] : code.restaurants)
         : null;
+      restaurantName = codeRestaurant?.name ?? null;
+    }
+
+    if (rsvp.checked_in) {
       return NextResponse.json({
         error: 'Already checked in',
         already_checked_in: true,
         name: rsvp.name,
-        restaurant_name: restaurant?.name ?? null,
+        restaurant_name: restaurantName,
       }, { status: 409 });
     }
 
@@ -68,15 +81,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to check in' }, { status: 500 });
     }
 
-    const code = Array.isArray(rsvp.party_invite_codes) ? rsvp.party_invite_codes[0] : rsvp.party_invite_codes;
-    const restaurant = code?.restaurants
-      ? (Array.isArray(code.restaurants) ? code.restaurants[0] : code.restaurants)
-      : null;
-
     return NextResponse.json({
       success: true,
       name: rsvp.name,
-      restaurant_name: restaurant?.name ?? null,
+      restaurant_name: restaurantName,
     });
   } catch (err) {
     console.error('[party/check-in] error:', err);
