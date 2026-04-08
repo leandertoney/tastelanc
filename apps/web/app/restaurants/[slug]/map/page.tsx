@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { fetchRestaurantBySlug } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 export default async function RestaurantMap({ params }: { params: { slug: string } }) {
   const restaurant = await fetchRestaurantBySlug(params.slug);
   if (!restaurant) notFound();
-  if (!restaurant.latitude || !restaurant.longitude) notFound();
+  if (!restaurant.latitude || !restaurant.longitude) redirect(`/restaurants/${restaurant.slug}`);
 
   const claim = pickClaim(`${restaurant.slug}-map`);
   const breadcrumbs = breadcrumbJsonLd([

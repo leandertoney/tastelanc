@@ -13,6 +13,7 @@ import { createServiceRoleClient } from '@/lib/supabase/server';
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
 
 export async function GET() {
+  try {
   const supabase = createServiceRoleClient();
   const lastmod = new Date().toISOString();
 
@@ -69,4 +70,9 @@ export async function GET() {
     status: 200,
     headers: { 'Content-Type': 'application/xml' },
   });
+  } catch (err) {
+    console.error('[sitemap-careers] Error generating sitemap:', err);
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n</urlset>`;
+    return new Response(xml, { status: 200, headers: { 'Content-Type': 'application/xml' } });
+  }
 }

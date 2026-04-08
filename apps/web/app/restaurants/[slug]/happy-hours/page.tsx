@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { fetchRestaurantBySlug, fetchHappyHours, fetchHappyHourItems } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -25,7 +25,7 @@ export default async function RestaurantHappyHours({ params }: { params: { slug:
   if (!restaurant) notFound();
 
   const hh = (await fetchHappyHours()).filter((h) => h.restaurant_id === restaurant.id);
-  if (!hh.length) notFound();
+  if (!hh.length) redirect(`/restaurants/${restaurant.slug}`);
 
   const hhItems = await fetchHappyHourItems(hh.map((h) => h.id));
   const claim = pickClaim(`${restaurant.slug}-hh`);

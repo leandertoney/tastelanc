@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { fetchRestaurantBySlug, fetchEvents } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -24,7 +24,7 @@ export default async function RestaurantEvents({ params }: { params: { slug: str
   const restaurant = await fetchRestaurantBySlug(params.slug);
   if (!restaurant) notFound();
   const events = (await fetchEvents()).filter((e) => e.restaurant_id === restaurant.id);
-  if (!events.length) notFound();
+  if (!events.length) redirect(`/restaurants/${restaurant.slug}`);
 
   const claim = pickClaim(`${restaurant.slug}-events`);
   const breadcrumbs = breadcrumbJsonLd([

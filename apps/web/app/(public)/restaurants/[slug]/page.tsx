@@ -25,13 +25,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (marketRow) metaQuery = metaQuery.eq('market_id', marketRow.id);
   const { data: restaurant } = await metaQuery.single();
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
+
   if (!restaurant) {
     return { title: `Restaurant Not Found | ${BRAND.name}` };
   }
 
+  const description = restaurant.custom_description || restaurant.description || `Discover ${restaurant.name} in ${BRAND.countyShort}, ${BRAND.state}. View menu, hours, happy hours, and upcoming events.`;
+  const url = `${siteUrl}/restaurants/${slug}`;
+
   return {
     title: `${restaurant.name} | ${BRAND.name}`,
-    description: restaurant.custom_description || restaurant.description || `Discover ${restaurant.name} in ${BRAND.countyShort}, ${BRAND.state}. View menu, hours, happy hours, and upcoming events.`,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title: `${restaurant.name} | ${BRAND.name}`,
+      description,
+      url,
+      type: 'website',
+    },
   };
 }
 

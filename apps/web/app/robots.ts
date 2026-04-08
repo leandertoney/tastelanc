@@ -17,6 +17,8 @@ export default function robots(): MetadataRoute.Robots {
         '/delete-account',
         '/unsubscribe',
         '/api/',
+        '/sales',
+        '/promoter',
       ],
     },
     sitemap: `${siteUrl}/sitemap.xml`,

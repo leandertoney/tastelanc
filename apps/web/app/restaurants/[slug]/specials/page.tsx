@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { fetchRestaurantBySlug, fetchSpecials } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -24,7 +24,7 @@ export default async function RestaurantSpecials({ params }: { params: { slug: s
   const restaurant = await fetchRestaurantBySlug(params.slug);
   if (!restaurant) notFound();
   const specials = (await fetchSpecials()).filter((s) => s.restaurant_id === restaurant.id);
-  if (!specials.length) notFound();
+  if (!specials.length) redirect(`/restaurants/${restaurant.slug}`);
 
   const claim = pickClaim(`${restaurant.slug}-specials`);
   const breadcrumbs = breadcrumbJsonLd([

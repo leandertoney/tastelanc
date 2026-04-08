@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { fetchRestaurantBySlug } from '@/lib/seo/data';
 import { pickClaim } from '@/lib/seo/claims';
 import { leadershipLine, restaurantCTAButtons } from '@/lib/seo/internal-links';
@@ -23,7 +23,7 @@ export default async function RestaurantPhotos({ params }: { params: { slug: str
   const restaurant = await fetchRestaurantBySlug(params.slug);
   if (!restaurant) notFound();
   const images = [restaurant.cover_image_url, restaurant.logo_url].filter(Boolean) as string[];
-  if (!images.length) notFound();
+  if (!images.length) redirect(`/restaurants/${restaurant.slug}`);
 
   const claim = pickClaim(`${restaurant.slug}-photos`);
   const breadcrumbs = breadcrumbJsonLd([
