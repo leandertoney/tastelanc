@@ -26,7 +26,7 @@ export type BottomTabParamList = {
  */
 export type RootStackParamList = {
   MainTabs: NavigatorScreenParams<BottomTabParamList>;
-  RestaurantDetail: { id: string; isDailyPick?: boolean };
+  RestaurantDetail: { id: string; isDailyPick?: boolean; initialTab?: string };
   Category: { category: RestaurantCategory };
   // View All screens
   HappyHoursViewAll: undefined;

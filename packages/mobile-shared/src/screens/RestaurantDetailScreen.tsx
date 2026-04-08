@@ -59,7 +59,7 @@ import TierLockedEmptyState from '../components/TierLockedEmptyState';
 import VideoRecommendationFeed from '../components/VideoRecommendationFeed';
 import type { Tab } from '../components';
 import { formatCategoryName, formatTime, formatFeatureName, getFeatureIconName } from '../lib/formatters';
-import { getRestaurantCoupons, formatDiscount, claimCoupon, type Coupon } from '../lib/coupons';
+import { getRestaurantCoupons, formatDiscount, claimCoupon, getCtaLabel, type Coupon } from '../lib/coupons';
 import { useRecordVisit } from '../hooks/useRadarVisits';
 import { useClaimedCouponIds } from '../hooks/useClaimedCouponIds';
 import { useUserLocation, calculateDistance } from '../hooks/useUserLocation';
@@ -162,7 +162,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const colors = getColors();
   const brand = getBrand();
   const supabase = getSupabase();
-  const { id, isDailyPick } = route.params;
+  const { id, isDailyPick, initialTab } = route.params;
   const { userId, isAnonymous } = useAuth();
   const { requireEmailGate } = useEmailGate();
   const { showSignUpModal } = useSignUpModal();
@@ -211,6 +211,8 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const [showLocationUpgrade, setShowLocationUpgrade] = useState(false);
   const [showRecNudge, setShowRecNudge] = useState(false);
   const recNudgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const tabBarYRef = useRef<number>(0);
 
   const queryClient = useQueryClient();
 
@@ -499,6 +501,21 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
     return baseTabs;
   }, [hasFeatures, recsGated, menus.length, restaurant?.display_preferences]);
 
+  // If an initialTab was passed via navigation, switch to it and scroll to the tab bar
+  const initialTabApplied = useRef(false);
+  useEffect(() => {
+    if (initialTab && !initialTabApplied.current && tabs.length > 0 && tabs.some(t => t.key === initialTab)) {
+      setActiveTab(initialTab);
+      initialTabApplied.current = true;
+      // Scroll to tab bar after a brief delay so layout has settled
+      setTimeout(() => {
+        if (tabBarYRef.current > 0) {
+          scrollViewRef.current?.scrollTo({ y: tabBarYRef.current - 10, animated: true });
+        }
+      }, 300);
+    }
+  }, [initialTab, tabs]);
+
   // If the active tab was removed (e.g. recs gated), switch to first available tab
   useEffect(() => {
     if (tabs.length > 0 && !tabs.some(t => t.key === activeTab)) {
@@ -589,6 +606,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   return (
     <View style={styles.container}>
       <ScrollView
+        ref={scrollViewRef}
         style={styles.scrollView}
         refreshControl={
           <RefreshControl
@@ -711,7 +729,9 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
         )}
 
         {/* Tab Bar */}
-        <TabBar tabs={tabs} activeTab={activeTab} onTabPress={handleTabPress} />
+        <View onLayout={(e) => { tabBarYRef.current = e.nativeEvent.layout.y; }}>
+          <TabBar tabs={tabs} activeTab={activeTab} onTabPress={handleTabPress} />
+        </View>
 
         {/* Tab Content */}
         <View style={styles.tabContent}>
@@ -897,23 +917,32 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                       <TouchableOpacity
                         style={{
                           marginTop: 12,
-                          backgroundColor: claimedCouponIds.has(coupon.id) ? colors.cardBg : colors.accent,
+                          backgroundColor: (coupon.cta_type === 'claim_deal' && claimedCouponIds.has(coupon.id)) ? colors.cardBg : colors.accent,
                           paddingVertical: 10,
                           borderRadius: 8,
                           alignItems: 'center',
                           opacity: claimingCouponId === coupon.id ? 0.6 : 1,
-                          borderWidth: claimedCouponIds.has(coupon.id) ? 1 : 0,
+                          borderWidth: (coupon.cta_type === 'claim_deal' && claimedCouponIds.has(coupon.id)) ? 1 : 0,
                           borderColor: colors.accent,
                         }}
-                        onPress={() => !claimedCouponIds.has(coupon.id) && handleClaimCoupon(coupon.id)}
-                        disabled={claimingCouponId === coupon.id || claimedCouponIds.has(coupon.id)}
+                        onPress={() => {
+                          if (coupon.cta_type === 'leave_recommendation') {
+                            navigation.navigate('VideoRecommendCapture', {
+                              restaurantId: restaurant.id,
+                              restaurantName: restaurant.name,
+                            });
+                          } else if (!claimedCouponIds.has(coupon.id)) {
+                            handleClaimCoupon(coupon.id);
+                          }
+                        }}
+                        disabled={coupon.cta_type === 'claim_deal' && (claimingCouponId === coupon.id || claimedCouponIds.has(coupon.id))}
                       >
                         <Text style={{
-                          color: claimedCouponIds.has(coupon.id) ? colors.accent : colors.textOnAccent,
+                          color: (coupon.cta_type === 'claim_deal' && claimedCouponIds.has(coupon.id)) ? colors.accent : colors.textOnAccent,
                           fontWeight: '600',
                           fontSize: 15,
                         }}>
-                          {claimingCouponId === coupon.id ? 'Claiming...' : claimedCouponIds.has(coupon.id) ? 'Claimed ✓' : 'Claim Deal'}
+                          {claimingCouponId === coupon.id ? 'Claiming...' : (coupon.cta_type === 'claim_deal' && claimedCouponIds.has(coupon.id)) ? 'Claimed ✓' : getCtaLabel(coupon)}
                         </Text>
                       </TouchableOpacity>
                     </View>

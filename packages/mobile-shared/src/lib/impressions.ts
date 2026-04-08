@@ -21,6 +21,7 @@ export type SectionName =
   | 'holiday_specials'
   | 'coupons'
   | 'coupons_view_all'
+  | 'deals_section'
   | 'night_off';
 
 interface PendingImpression {

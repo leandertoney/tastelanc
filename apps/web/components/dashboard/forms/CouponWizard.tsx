@@ -10,7 +10,7 @@ import DaySelector from './DaySelector';
 import TimeRangePicker from './TimeRangePicker';
 import SuccessCelebration from './SuccessCelebration';
 import SpecialImageUpload from './SpecialImageUpload';
-import { CouponFormData, Template, formatTimeDisplay } from './types';
+import { CouponFormData, Template, formatTimeDisplay, CTA_TYPE_OPTIONS, type CtaType } from './types';
 
 const COUPON_TEMPLATES: Template<Partial<CouponFormData>>[] = [
   {
@@ -73,6 +73,8 @@ const INITIAL_FORM_DATA: CouponFormData = {
   max_claims_total: '',
   max_claims_per_user: '1',
   image_url: undefined,
+  cta_type: 'claim_deal',
+  cta_label: '',
 };
 
 function formatDiscountDisplay(data: CouponFormData): string {
@@ -371,6 +373,34 @@ export default function CouponWizard({ restaurantId, onClose, onSubmit }: Coupon
             />
           </div>
 
+          {/* CTA Button Type */}
+          <div>
+            <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
+              Button Action
+              <span className="text-tastelanc-text-faint font-normal ml-1">(what happens when users tap the deal)</span>
+            </label>
+            <select
+              value={formData.cta_type}
+              onChange={(e) => setFormData({ ...formData, cta_type: e.target.value as CtaType, cta_label: '' })}
+              className="w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+            >
+              {CTA_TYPE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label} — {opt.description}
+                </option>
+              ))}
+            </select>
+            {formData.cta_type === 'custom' && (
+              <input
+                type="text"
+                value={formData.cta_label}
+                onChange={(e) => setFormData({ ...formData, cta_label: e.target.value })}
+                placeholder="Custom button text"
+                className="mt-2 w-full px-4 py-3 bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg text-tastelanc-text-primary placeholder-tastelanc-text-faint focus:outline-none focus:ring-2 focus:ring-lancaster-gold"
+              />
+            )}
+          </div>
+
           {/* Navigation */}
           <div className="flex gap-3 pt-2">
             <Button variant="secondary" onClick={goBack} className="flex-1">
@@ -445,6 +475,10 @@ export default function CouponWizard({ restaurantId, onClose, onSubmit }: Coupon
 
                 <span className="px-2 py-1 bg-tastelanc-bg rounded text-tastelanc-text-secondary">
                   {formData.max_claims_per_user || '1'} per user
+                </span>
+
+                <span className="px-2 py-1 bg-tastelanc-accent/20 text-tastelanc-accent rounded">
+                  Button: {formData.cta_label || CTA_TYPE_OPTIONS.find(o => o.value === formData.cta_type)?.label || 'Claim Deal'}
                 </span>
               </div>
             </div>

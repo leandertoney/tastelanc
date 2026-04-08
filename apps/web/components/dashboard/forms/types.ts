@@ -95,6 +95,16 @@ export interface SpecialFormData {
   image_url?: string;
 }
 
+export type CtaType = 'claim_deal' | 'leave_recommendation' | 'learn_more' | 'show_to_staff' | 'custom';
+
+export const CTA_TYPE_OPTIONS: { value: CtaType; label: string; description: string }[] = [
+  { value: 'claim_deal', label: 'Claim Deal', description: 'Users claim and redeem with a code' },
+  { value: 'leave_recommendation', label: 'Leave a Recommendation', description: 'Users record a video recommendation' },
+  { value: 'show_to_staff', label: 'Show to Staff', description: 'Users show their screen to staff' },
+  { value: 'learn_more', label: 'Learn More', description: 'Users tap to view details' },
+  { value: 'custom', label: 'Custom', description: 'Set your own button text' },
+];
+
 export interface CouponFormData {
   title: string;
   description: string;
@@ -109,6 +119,8 @@ export interface CouponFormData {
   max_claims_total: string;
   max_claims_per_user: string;
   image_url?: string;
+  cta_type: CtaType;
+  cta_label: string;
 }
 
 // Smart Defaults

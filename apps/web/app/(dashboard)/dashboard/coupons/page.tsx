@@ -123,6 +123,8 @@ export default function CouponsPage() {
       end_time: formData.end_time || null,
       max_claims_total: formData.max_claims_total || null,
       max_claims_per_user: formData.max_claims_per_user || '1',
+      cta_type: formData.cta_type || 'claim_deal',
+      cta_label: formData.cta_label || null,
     };
 
     const response = await fetch(buildApiUrl('/api/dashboard/coupons'), {

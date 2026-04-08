@@ -91,6 +91,8 @@ export async function POST(request: Request) {
       max_claims_total,
       max_claims_per_user,
       is_active,
+      cta_type,
+      cta_label,
     } = body;
 
     if (!title || !discount_type) {
@@ -120,6 +122,8 @@ export async function POST(request: Request) {
         max_claims_total: max_claims_total ? parseInt(max_claims_total) : null,
         max_claims_per_user: max_claims_per_user ? parseInt(max_claims_per_user) : 1,
         is_active: is_active ?? true,
+        cta_type: cta_type || 'claim_deal',
+        cta_label: cta_label || null,
       })
       .select()
       .single();

@@ -52,6 +52,8 @@ export async function PUT(
       max_claims_total,
       max_claims_per_user,
       is_active,
+      cta_type,
+      cta_label,
     } = body;
 
     const updateData: Record<string, unknown> = {};
@@ -69,6 +71,8 @@ export async function PUT(
     if (max_claims_total !== undefined) updateData.max_claims_total = max_claims_total;
     if (max_claims_per_user !== undefined) updateData.max_claims_per_user = max_claims_per_user;
     if (is_active !== undefined) updateData.is_active = is_active;
+    if (cta_type !== undefined) updateData.cta_type = cta_type;
+    if (cta_label !== undefined) updateData.cta_label = cta_label || null;
     updateData.updated_at = new Date().toISOString();
 
     const { data: coupon, error } = await serviceClient

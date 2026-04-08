@@ -29,7 +29,9 @@ import type { PersonalizedFeedSignals } from '../hooks';
 import { useAuth } from '../hooks/useAuth';
 import type { RootStackParamList } from '../navigation/types';
 import { trackClick } from '../lib/analytics';
+import { CTA_LABELS, type CtaType } from '../lib/coupons';
 import { applyContextBoosts, isHappyHourActiveNow } from '../lib/recommendations';
+import { getEpochSeed, seededShuffle } from '../lib/fairRotation';
 import { flushUserEvents, trackDetailView, trackDwell, trackQuickSkip, type BehavioralFeedItemKind } from '../lib/userEvents';
 import { formatCategoryName } from '../lib/formatters';
 import { useOtherCities, type OtherCity } from '../hooks/useOtherCities';
@@ -273,6 +275,8 @@ interface CouponClaimItem {
   remaining: number | null;
   maxTotal: number | null;
   date: string;
+  ctaType: string;
+  ctaLabel: string | null;
 }
 
 interface NewCouponItem {
@@ -285,6 +289,8 @@ interface NewCouponItem {
   remaining: number | null;
   maxTotal: number | null;
   date: string;
+  ctaType: string;
+  ctaLabel: string | null;
 }
 
 interface CrossMarketPromoItem {
@@ -325,7 +331,7 @@ function usePulseFeed() {
 
   return useQuery({
     queryKey: ['pulseFeed', marketId],
-    queryFn: async (): Promise<PulseItem[]> => {
+    queryFn: async (): Promise<{ items: PulseItem[]; tierMap: Record<string, string> }> => {
       let videosQuery = supabase
         .from('restaurant_recommendations')
         .select('id, restaurant_id, thumbnail_url, caption, caption_tag, view_count, like_count, created_at, restaurants!inner(id, name, market_id, cover_image_url, restaurant_photos(url, is_cover))')
@@ -427,7 +433,7 @@ function usePulseFeed() {
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       let couponClaimsQuery = supabase
         .from('coupon_claims')
-        .select('id, claimed_at, coupon:coupons!inner(id, title, discount_type, discount_value, max_claims_total, claims_count, restaurant:restaurants!inner(id, name, market_id))')
+        .select('id, claimed_at, coupon:coupons!inner(id, title, discount_type, discount_value, max_claims_total, claims_count, cta_type, cta_label, restaurant:restaurants!inner(id, name, market_id))')
         .eq('status', 'claimed')
         .gte('claimed_at', oneDayAgo)
         .order('claimed_at', { ascending: false })
@@ -437,17 +443,32 @@ function usePulseFeed() {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       let activeCouponsQuery = supabase
         .from('coupons')
-        .select('id, title, discount_type, discount_value, max_claims_total, claims_count, created_at, restaurant:restaurants!inner(id, name, market_id)')
+        .select('id, title, discount_type, discount_value, max_claims_total, claims_count, created_at, cta_type, cta_label, restaurant:restaurants!inner(id, name, market_id)')
         .eq('is_active', true)
         .gte('created_at', thirtyDaysAgo)
         .order('created_at', { ascending: false })
         .limit(5);
 
-      const [videosRes, adsRes, buzzRes, itinerariesRes, specialsRes, eventsRes, newRestaurantsRes, blogRes, happyHoursRes, holidayRes, couponClaimsRes, activeCouponsRes] = await Promise.all([
+      // Lightweight tier lookup — only id + tier name for all active restaurants
+      let tierQuery = supabase
+        .from('restaurants')
+        .select('id, tiers(name)')
+        .eq('is_active', true)
+        .not('tier_id', 'is', null);
+      if (marketId) tierQuery = tierQuery.eq('market_id', marketId);
+
+      const [videosRes, adsRes, buzzRes, itinerariesRes, specialsRes, eventsRes, newRestaurantsRes, blogRes, happyHoursRes, holidayRes, couponClaimsRes, activeCouponsRes, tierRes] = await Promise.all([
         videosQuery, adsQuery, buzzPromise, itinerariesQuery,
         specialsQuery, eventsQuery, newRestaurantsQuery, blogQuery, happyHoursPromise, holidayQuery,
-        couponClaimsQuery, activeCouponsQuery,
+        couponClaimsQuery, activeCouponsQuery, tierQuery,
       ]);
+
+      // Build restaurant ID → tier name map
+      const tierMap: Record<string, string> = {};
+      (tierRes.data || []).forEach((r: any) => {
+        const tierName = r.tiers?.name;
+        if (tierName) tierMap[r.id] = tierName;
+      });
 
       const items: PulseItem[] = [];
 
@@ -660,6 +681,8 @@ function usePulseFeed() {
           remaining,
           maxTotal: coupon.max_claims_total,
           date: claim.claimed_at,
+          ctaType: coupon.cta_type || 'claim_deal',
+          ctaLabel: coupon.cta_label || null,
         });
       });
 
@@ -689,6 +712,8 @@ function usePulseFeed() {
           remaining,
           maxTotal: coupon.max_claims_total,
           date: coupon.created_at,
+          ctaType: coupon.cta_type || 'claim_deal',
+          ctaLabel: coupon.cta_label || null,
         });
       });
 
@@ -746,7 +771,7 @@ function usePulseFeed() {
         result.push(item);
       });
 
-      return result;
+      return { items: result, tierMap };
     },
     staleTime: 60 * 1000,
   });
@@ -1407,6 +1432,9 @@ function NewCouponCard({ item, onPress }: { item: NewCouponItem; onPress: () => 
     ? `Only ${item.remaining} of ${item.maxTotal} left!`
     : null;
 
+  const ctaText = item.ctaLabel || CTA_LABELS[item.ctaType as CtaType] || 'Claim this deal';
+  const ctaIcon: keyof typeof Ionicons.glyphMap = item.ctaType === 'leave_recommendation' ? 'videocam' : 'arrow-forward-circle';
+
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
       <PostHeader
@@ -1432,9 +1460,9 @@ function NewCouponCard({ item, onPress }: { item: NewCouponItem; onPress: () => 
           </Text>
         )}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 6 }}>
-          <Ionicons name="arrow-forward-circle" size={18} color={colors.accent} />
+          <Ionicons name={ctaIcon} size={18} color={colors.accent} />
           <Text style={{ color: colors.accent, fontSize: 14, fontWeight: '600' }}>
-            Claim this deal
+            {ctaText}
           </Text>
         </View>
       </View>
@@ -1454,6 +1482,8 @@ const FILTERS: { key: FilterType; label: string }[] = [
 ];
 
 const FAMILIAR_RATIO = 0.7;
+const EMPTY_ITEMS: PulseItem[] = [];
+const EMPTY_TIER_MAP: Record<string, string> = {};
 
 // ─── Move Algorithm: Personalization Pass ─────────────────────────────────────
 
@@ -1470,7 +1500,8 @@ const FAMILIAR_RATIO = 0.7;
  */
 function applyPersonalizationToFeed(
   items: PulseItem[],
-  signals: PersonalizedFeedSignals
+  signals: PersonalizedFeedSignals,
+  tierMap: Record<string, string> = {}
 ): PulseItem[] {
   const { context, favorites } = signals;
   const now = context.currentTime;
@@ -1485,10 +1516,20 @@ function applyPersonalizationToFeed(
     ...context.detailViewedRestaurantIds,
   ]);
 
+  // Elite tier boost — elite restaurants get priority placement
+  const ELITE_BOOST = 50;
+
   // Separate only truly fixed items and ads — everything else gets scored
   const fixedItems = items.filter((i) => i.kind === 'holiday_teaser' || i.kind === 'reels_shelf');
   // New coupons are pinned near top — always visible regardless of personalization score
-  const pinnedCoupons = items.filter((i) => i.kind === 'new_coupon');
+  // Engagement deals (leave_recommendation) get priority over standard deals
+  const pinnedCoupons = items
+    .filter((i) => i.kind === 'new_coupon')
+    .sort((a, b) => {
+      const aEngagement = a.kind === 'new_coupon' && a.ctaType === 'leave_recommendation' ? 1 : 0;
+      const bEngagement = b.kind === 'new_coupon' && b.ctaType === 'leave_recommendation' ? 1 : 0;
+      return bEngagement - aEngagement;
+    });
   const ads = items.filter((i) => i.kind === 'ad');
   const scorableItems = items.filter((i) =>
     i.kind !== 'holiday_teaser' && i.kind !== 'reels_shelf' && i.kind !== 'ad' && i.kind !== 'new_coupon'
@@ -1525,7 +1566,7 @@ function applyPersonalizationToFeed(
     } else if (item.kind === 'buzz') {
       restaurantId = item.restaurantId;
       itemSignals.checkinCount7d = item.checkinCount7d;
-    } else if (item.kind === 'coupon_claim' || item.kind === 'new_coupon') {
+    } else if (item.kind === 'coupon_claim') {
       restaurantId = item.restaurantId;
     } else if (item.kind === 'video' || item.kind === 'photo') {
       // Score by the restaurant the content is from
@@ -1534,12 +1575,17 @@ function applyPersonalizationToFeed(
     // itinerary and blog: restaurantId stays '' → score 0, mixes in naturally
 
     const eventMeta = getBehavioralEventMeta(item);
-    const boost = restaurantId
+    let boost = restaurantId
       ? applyContextBoosts(restaurantId, [], context, {
           ...itemSignals,
           feedItemKind: eventMeta?.feedItemKind,
         })
       : 0;
+
+    // Elite restaurants get guaranteed priority placement
+    if (restaurantId && tierMap[restaurantId] === 'elite') {
+      boost += ELITE_BOOST;
+    }
 
     return {
       item,
@@ -1550,20 +1596,26 @@ function applyPersonalizationToFeed(
     };
   });
 
-  // Sort: active-now first, then by score descending
-  scored.sort((a, b) => {
+  // Epoch-based seeded shuffle for fair rotation — items with equal scores
+  // get a different order every 5 minutes instead of always showing in created_at order
+  const epochSeed = getEpochSeed(5);
+  const shuffled = seededShuffle(scored, epochSeed);
+
+  // Sort: active-now first, then elite first, then by score descending.
+  // Within the same score tier, the seeded shuffle order is preserved (stable sort).
+  shuffled.sort((a, b) => {
     if (a.isActiveNow && !b.isActiveNow) return -1;
     if (!a.isActiveNow && b.isActiveNow) return 1;
     return b.score - a.score;
   });
 
-  const familiar = scored.filter((entry) => entry.isFamiliar);
-  const discovery = scored.filter((entry) => !entry.isFamiliar);
-  const blended: typeof scored = [];
+  const familiar = shuffled.filter((entry) => entry.isFamiliar);
+  const discovery = shuffled.filter((entry) => !entry.isFamiliar);
+  const blended: typeof shuffled = [];
   let familiarUsed = 0;
   let discoveryUsed = 0;
 
-  const pickNextCandidate = (pool: typeof scored, recentKinds: string[], recentRestaurantIds: string[]) => {
+  const pickNextCandidate = (pool: typeof shuffled, recentKinds: string[], recentRestaurantIds: string[]) => {
     const preferredIndex = pool.findIndex((candidate, index) => {
       if (index > 4) return false;
       const sameKindStreak = recentKinds.length >= 2
@@ -1723,14 +1775,16 @@ export default function SceneScreen() {
   const interactedItemIdsRef = useRef(new Set<string>());
 
   const { userId } = useAuth();
-  const { data: rawFeed = [], isLoading, refetch } = usePulseFeed();
+  const { data: feedData, isLoading, refetch } = usePulseFeed();
+  const rawFeed = feedData?.items ?? EMPTY_ITEMS;
+  const tierMap = feedData?.tierMap ?? EMPTY_TIER_MAP;
   const { signals } = usePersonalizedFeed(userId ?? undefined);
   const { cities: otherCities } = useOtherCities(marketId);
 
   const allItems = useMemo(() => {
     const base = (!signals || rawFeed.length === 0)
       ? rawFeed
-      : applyPersonalizationToFeed(rawFeed, signals);
+      : applyPersonalizationToFeed(rawFeed, signals, tierMap);
 
     // Inject cross-market promo card at position 12 (after a full scroll of content)
     if (otherCities.length === 0 || base.length === 0) return base;
@@ -1738,7 +1792,7 @@ export default function SceneScreen() {
     const result = [...base];
     result.splice(Math.min(12, result.length), 0, promo);
     return result;
-  }, [rawFeed, signals, otherCities]);
+  }, [rawFeed, signals, tierMap, otherCities]);
 
   useEffect(() => {
     marketIdRef.current = marketId;
@@ -1899,7 +1953,16 @@ export default function SceneScreen() {
       case 'coupon_claim':
         return <CouponClaimCard item={item} onPress={() => handleBehavioralRestaurantPress(item)} />;
       case 'new_coupon':
-        return <NewCouponCard item={item} onPress={() => handleBehavioralRestaurantPress(item)} />;
+        return <NewCouponCard item={item} onPress={() => {
+          if (item.ctaType === 'leave_recommendation') {
+            navigation.navigate('VideoRecommendCapture', {
+              restaurantId: item.restaurantId,
+              restaurantName: item.restaurantName,
+            });
+          } else {
+            handleBehavioralRestaurantPress(item);
+          }
+        }} />;
       case 'cross_market_promo':
         return <CrossMarketPromoCard cities={otherCities} />;
     }

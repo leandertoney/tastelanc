@@ -40,6 +40,7 @@ import {
   RestaurantWeekBanner,
   CoffeeChocolateTrailBanner,
   NightOffSection,
+  DealsSection,
 } from '../components';
 import CuisinesSection from '../components/CuisinesSection';
 import { getColors, getBrand, getAssets, hasFeature } from '../config/theme';
@@ -188,6 +189,11 @@ queryClient.invalidateQueries({ queryKey: hasFeature('happyHours') ? ['activeHap
       </ErrorBoundary>
 
       <Spacer size="md" />
+
+      {/* Section 1b: Deals (PAID — ticket cards) */}
+      <ErrorBoundary level="section">
+        <DealsSection />
+      </ErrorBoundary>
 
       {/* Section 2: Entertainment Tonight */}
       <ErrorBoundary level="section">

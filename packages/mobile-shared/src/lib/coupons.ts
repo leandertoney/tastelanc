@@ -18,6 +18,8 @@ async function getAuthHeaders(): Promise<HeadersInit> {
   };
 }
 
+export type CtaType = 'claim_deal' | 'leave_recommendation' | 'learn_more' | 'show_to_staff' | 'custom';
+
 export interface Coupon {
   id: string;
   restaurant_id: string;
@@ -37,6 +39,23 @@ export interface Coupon {
   claims_count: number;
   is_active: boolean;
   created_at: string;
+  cta_type: CtaType;
+  cta_label: string | null;
+}
+
+/** Default button labels for each CTA type */
+export const CTA_LABELS: Record<CtaType, string> = {
+  claim_deal: 'Claim Deal',
+  leave_recommendation: 'Leave a Recommendation',
+  learn_more: 'Learn More',
+  show_to_staff: 'Show to Staff',
+  custom: 'View Deal',
+};
+
+/** Get the display label for a coupon's CTA button */
+export function getCtaLabel(coupon: Pick<Coupon, 'cta_type' | 'cta_label'>): string {
+  if (coupon.cta_label) return coupon.cta_label;
+  return CTA_LABELS[coupon.cta_type] || CTA_LABELS.claim_deal;
 }
 
 export interface CouponWithRestaurant extends Coupon {
