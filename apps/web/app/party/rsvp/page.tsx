@@ -131,6 +131,10 @@ function RSVPContent() {
           <span style={styles.detailText}>{eventDate}</span>
         </div>
         <div style={styles.detailRow}>
+          <span style={styles.detailIcon}>&#128336;</span>
+          <span style={styles.detailText}>6:00 – 9:30 PM</span>
+        </div>
+        <div style={styles.detailRow}>
           <span style={styles.detailIcon}>&#128205;</span>
           <span style={styles.detailText}>{event.venue}</span>
         </div>

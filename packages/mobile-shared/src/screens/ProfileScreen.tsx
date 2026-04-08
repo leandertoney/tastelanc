@@ -186,6 +186,7 @@ export default function ProfileScreen() {
   const brand = getBrand();
   const navigation = useNavigation<NavigationProp>();
   const { userId, user, isAnonymous } = useAuth();
+  const { market } = useMarket();
   const { showSignUpModal } = useSignUpModal();
   const { data: checkinCount = 0 } = useCheckinCount();
   const { data: profileHeader } = useProfileHeader();
@@ -205,15 +206,44 @@ export default function ProfileScreen() {
   const PARTY_EVENT_END = new Date('2026-04-21T00:00:00');
 
   useEffect(() => {
-    AsyncStorage.getItem('party_rsvp_token').then(token => {
-      if (!token) return;
-      if (new Date() >= PARTY_EVENT_END) {
-        AsyncStorage.removeItem('party_rsvp_token').catch(() => {});
+    async function resolvePartyToken() {
+      // 1. Check local storage first
+      const localToken = await AsyncStorage.getItem('party_rsvp_token').catch(() => null);
+      if (localToken) {
+        if (new Date() >= PARTY_EVENT_END) {
+          AsyncStorage.removeItem('party_rsvp_token').catch(() => {});
+          return;
+        }
+        setPartyRsvpToken(localToken);
         return;
       }
-      setPartyRsvpToken(token);
-    }).catch(() => {});
-  }, []);
+
+      // 2. No local token — try auto-linking by email for web RSVPs
+      if (!userId) return;
+      try {
+        const supabase = getSupabase();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+
+        const base = market?.api_base_url ?? 'https://tastelanc.com';
+        const res = await fetch(`${base}/api/party/link-ticket`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+        const data = await res.json();
+        if (data.linked && data.qr_token) {
+          await AsyncStorage.setItem('party_rsvp_token', data.qr_token);
+          setPartyRsvpToken(data.qr_token);
+        }
+      } catch {
+        // Non-fatal — just means no auto-link this time
+      }
+    }
+    resolvePartyToken();
+  }, [userId]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);

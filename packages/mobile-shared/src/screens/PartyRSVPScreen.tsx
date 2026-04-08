@@ -188,6 +188,10 @@ export default function PartyRSVPScreen({ navigation }: Props) {
                 <Text style={styles.eventText}>{eventDate}</Text>
               </View>
               <View style={styles.eventRow}>
+                <Ionicons name="time-outline" size={14} color={RW_YELLOW} />
+                <Text style={styles.eventText}>6:00 – 9:30 PM</Text>
+              </View>
+              <View style={styles.eventRow}>
                 <Ionicons name="location-outline" size={14} color={RW_YELLOW} />
                 <Text style={styles.eventText}>{event.venue}</Text>
               </View>

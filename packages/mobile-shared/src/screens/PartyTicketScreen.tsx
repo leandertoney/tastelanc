@@ -137,7 +137,7 @@ export default function PartyTicketScreen({ navigation, route }: Props) {
                 </View>
                 <View style={[styles.ticketField, { flex: 1 }]}>
                   <Text style={styles.ticketFieldLabel}>TIME</Text>
-                  <Text style={styles.ticketFieldValueSmall}>7:00 PM</Text>
+                  <Text style={styles.ticketFieldValueSmall}>6:00 – 9:30 PM</Text>
                 </View>
               </View>
 
