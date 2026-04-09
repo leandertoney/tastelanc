@@ -22,7 +22,7 @@ export const BRAND: AppBrand = {
   supportEmail: 'info@tastelanc.com',
   privacyUrl: 'https://tastelanc.com/privacy',
   termsUrl: 'https://tastelanc.com/terms',
-  websiteUrl: 'https://tastelanc.com',
+  websiteUrl: 'https://fayetteville.tastelanc.com',
   appStoreUrl: 'https://apps.apple.com/us/app/tastefayetteville/id0000000000',
   playStoreUrl: 'https://play.google.com/store/apps/details?id=com.tastelanc.fayetteville',
 

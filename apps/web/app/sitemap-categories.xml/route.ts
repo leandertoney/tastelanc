@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { fetchRestaurants } from '@/lib/seo/data';
 import { slugify } from '@/lib/seo/slug';
+import { BRAND } from '@/config/market';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
 
 export async function GET() {
   try {

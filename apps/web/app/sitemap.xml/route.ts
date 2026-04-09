@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
+import { BRAND } from '@/config/market';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tastelanc.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${BRAND.domain}`;
 
 export async function GET() {
   const lastmod = new Date().toISOString();
