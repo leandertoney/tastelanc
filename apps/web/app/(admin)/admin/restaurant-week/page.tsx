@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, Trash2, Beer, UtensilsCrossed, Music, Package, Search, Pencil, X, Eye, Users, MousePointer, BarChart3, FileText, Check, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Beer, UtensilsCrossed, Music, Package, Search, Pencil, X, Eye, Users, MousePointer, BarChart3, FileText, Check, Loader2, ChevronUp, ChevronDown, GripVertical } from 'lucide-react';
 
 interface HolidaySpecial {
   id: string;
@@ -17,6 +17,7 @@ interface HolidaySpecial {
   special_price: number | null;
   discount_description: string | null;
   image_url: string | null;
+  sort_order: number;
   is_active: boolean;
   created_at: string;
   restaurant: {
@@ -205,6 +206,68 @@ export default function RestaurantWeekPage() {
       console.error('Failed to save description:', err);
     } finally {
       setSavingDescId(null);
+    }
+  };
+
+  // Group specials by restaurant (alphabetical) for the deals tab
+  const groupedDeals = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; deals: HolidaySpecial[] }>();
+    for (const s of specials) {
+      const existing = map.get(s.restaurant.id);
+      if (existing) {
+        existing.deals.push(s);
+      } else {
+        map.set(s.restaurant.id, {
+          id: s.restaurant.id,
+          name: s.restaurant.name,
+          deals: [s],
+        });
+      }
+    }
+    // Sort restaurants alphabetically, deals within each restaurant by sort_order
+    const groups = Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+    for (const g of groups) {
+      g.deals.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    }
+    return groups;
+  }, [specials]);
+
+  const handleMoveDeal = async (restaurantId: string, dealId: string, direction: 'up' | 'down') => {
+    const group = groupedDeals.find(g => g.id === restaurantId);
+    if (!group) return;
+
+    const idx = group.deals.findIndex(d => d.id === dealId);
+    if (idx < 0) return;
+    if (direction === 'up' && idx === 0) return;
+    if (direction === 'down' && idx === group.deals.length - 1) return;
+
+    const newDeals = [...group.deals];
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    [newDeals[idx], newDeals[swapIdx]] = [newDeals[swapIdx], newDeals[idx]];
+
+    // Assign new sort_order values
+    const items = newDeals.map((d, i) => ({ id: d.id, sort_order: i }));
+
+    // Optimistically update local state
+    setSpecials(prev => {
+      const updated = [...prev];
+      for (const item of items) {
+        const found = updated.find(s => s.id === item.id);
+        if (found) found.sort_order = item.sort_order;
+      }
+      return updated;
+    });
+
+    // Persist to DB
+    try {
+      await fetch('/api/admin/holiday-specials', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items }),
+      });
+    } catch (err) {
+      console.error('Failed to reorder:', err);
+      fetchSpecials(); // rollback on error
     }
   };
 
@@ -958,7 +1021,7 @@ export default function RestaurantWeekPage() {
           </form>
         )}
 
-        {/* Deals List */}
+        {/* Deals List — grouped by restaurant (alphabetical), deals reorderable */}
         {loading ? (
           <div className="text-center py-12 text-zinc-400">Loading deals...</div>
         ) : specials.length === 0 ? (
@@ -969,75 +1032,103 @@ export default function RestaurantWeekPage() {
             <p className="text-zinc-600 text-sm mt-2">Restaurant Week runs April 13–19, 2026</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {specials.map(special => {
-              const Icon = CATEGORY_ICONS[special.category] || UtensilsCrossed;
-              return (
-                <div
-                  key={special.id}
-                  className="bg-zinc-900 border border-zinc-700 rounded-xl p-4 hover:border-zinc-500 transition-colors group"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-zinc-800 rounded-lg flex items-center justify-center">
-                        <Icon className="w-4 h-4 text-zinc-400" />
-                      </div>
-                      <div>
-                        <span className="text-xs text-zinc-500 uppercase tracking-wide">
-                          {CATEGORY_LABELS[special.category] || special.category}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                      <button
-                        onClick={() => handleEdit(special)}
-                        className="text-zinc-400 hover:text-white p-1"
-                        title="Edit"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(special.id)}
-                        className="text-red-400 hover:text-red-300 p-1"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <h3 className="text-lg font-bold text-white mb-1">{special.name}</h3>
-                  <p className="text-sm text-zinc-400 font-medium mb-2">
-                    {special.restaurant.name}
-                  </p>
-
-                  {special.description && (
-                    <p className="text-sm text-zinc-500 mb-2">{special.description}</p>
-                  )}
-
-                  <div className="flex items-center gap-3 text-sm flex-wrap">
-                    <span className="text-[#C8532A] text-xs font-medium">
-                      {new Date(special.event_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </span>
-                    {special.special_price && (
-                      <span className="text-[#F0D060] font-bold">
-                        ${Number(special.special_price).toFixed(2)}
-                        {special.original_price && (
-                          <span className="text-zinc-600 line-through ml-1 font-normal">
-                            ${Number(special.original_price).toFixed(2)}
-                          </span>
-                        )}
-                      </span>
-                    )}
-                    {special.start_time && (
-                      <span className="text-zinc-500 text-xs">
-                        {special.start_time.slice(0, 5)}{special.end_time ? ` - ${special.end_time.slice(0, 5)}` : '+'}
-                      </span>
-                    )}
-                  </div>
+          <div className="space-y-6">
+            {groupedDeals.map(group => (
+              <div key={group.id} className="bg-zinc-900/50 border border-zinc-700 rounded-xl overflow-hidden">
+                {/* Restaurant header */}
+                <div className="px-5 py-3 border-b border-zinc-700/50 bg-zinc-900">
+                  <h3 className="text-lg font-bold text-white">{group.name}</h3>
+                  <span className="text-xs text-zinc-500">{group.deals.length} deal{group.deals.length !== 1 ? 's' : ''}</span>
                 </div>
-              );
-            })}
+
+                {/* Deals list */}
+                <div className="divide-y divide-zinc-800/50">
+                  {group.deals.map((special, idx) => {
+                    const Icon = CATEGORY_ICONS[special.category] || UtensilsCrossed;
+                    return (
+                      <div
+                        key={special.id}
+                        className="flex items-center gap-3 px-5 py-3 hover:bg-zinc-800/30 transition-colors group"
+                      >
+                        {/* Reorder buttons */}
+                        <div className="flex flex-col gap-0.5 shrink-0">
+                          <button
+                            onClick={() => handleMoveDeal(group.id, special.id, 'up')}
+                            disabled={idx === 0}
+                            className="p-0.5 text-zinc-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                            title="Move up"
+                          >
+                            <ChevronUp className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleMoveDeal(group.id, special.id, 'down')}
+                            disabled={idx === group.deals.length - 1}
+                            className="p-0.5 text-zinc-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                            title="Move down"
+                          >
+                            <ChevronDown className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {/* Category icon */}
+                        <div className="w-8 h-8 bg-zinc-800 rounded-lg flex items-center justify-center shrink-0">
+                          <Icon className="w-4 h-4 text-zinc-400" />
+                        </div>
+
+                        {/* Deal info */}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-bold text-white truncate">{special.name}</h4>
+                          <div className="flex items-center gap-3 text-xs mt-0.5 flex-wrap">
+                            <span className="text-zinc-500 uppercase tracking-wide">
+                              {CATEGORY_LABELS[special.category] || special.category}
+                            </span>
+                            <span className="text-[#C8532A] font-medium">
+                              {new Date(special.event_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </span>
+                            {special.special_price && (
+                              <span className="text-[#F0D060] font-bold">
+                                ${Number(special.special_price).toFixed(2)}
+                                {special.original_price && (
+                                  <span className="text-zinc-600 line-through ml-1 font-normal">
+                                    ${Number(special.original_price).toFixed(2)}
+                                  </span>
+                                )}
+                              </span>
+                            )}
+                            {special.start_time && (
+                              <span className="text-zinc-500">
+                                {special.start_time.slice(0, 5)}{special.end_time ? `–${special.end_time.slice(0, 5)}` : '+'}
+                              </span>
+                            )}
+                          </div>
+                          {special.description && (
+                            <p className="text-xs text-zinc-500 mt-0.5 truncate">{special.description}</p>
+                          )}
+                        </div>
+
+                        {/* Edit / Delete */}
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                          <button
+                            onClick={() => handleEdit(special)}
+                            className="text-zinc-400 hover:text-white p-1"
+                            title="Edit"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(special.id)}
+                            className="text-red-400 hover:text-red-300 p-1"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

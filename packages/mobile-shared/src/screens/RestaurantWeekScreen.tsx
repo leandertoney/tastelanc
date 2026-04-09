@@ -158,6 +158,7 @@ async function fetchRestaurantWeekSpecials(marketSlug: string | null): Promise<H
     .select('id,name,description,category,event_date,start_time,end_time,original_price,special_price,discount_description,image_url,restaurant:restaurants!inner(id,name,cover_image_url,market_id,rw_description,description,custom_description)')
     .eq('holiday_tag', 'restaurant-week-2026')
     .eq('is_active', true)
+    .order('sort_order', { ascending: true })
     .order('name');
   if (marketId) query = query.eq('restaurant.market_id', marketId);
   const { data, error } = await query;

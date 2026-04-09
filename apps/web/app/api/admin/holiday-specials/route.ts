@@ -50,6 +50,7 @@ export async function GET(request: Request) {
         restaurant:restaurants!inner(id, name, cover_image_url, market_id, rw_description)
       `)
       .eq('holiday_tag', holidayTag)
+      .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false });
 
     if (marketUuid) {
@@ -92,6 +93,7 @@ export async function POST(request: Request) {
       special_price,
       discount_description,
       image_url,
+      sort_order,
     } = body;
 
     if (!restaurant_id || !name || !holiday_tag || !event_date) {
@@ -117,6 +119,7 @@ export async function POST(request: Request) {
         special_price: special_price || null,
         discount_description: discount_description || null,
         image_url: image_url || null,
+        sort_order: sort_order ?? 0,
         is_active: true,
       })
       .select()
@@ -163,6 +166,37 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Holiday specials DELETE error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const supabase = await createClient();
+    const user = await verifyAdmin(supabase);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { items } = body as { items: { id: string; sort_order: number }[] };
+
+    if (!items || !Array.isArray(items)) {
+      return NextResponse.json({ error: 'items array is required' }, { status: 400 });
+    }
+
+    const svc = createServiceRoleClient();
+
+    for (const item of items) {
+      await svc
+        .from('holiday_specials')
+        .update({ sort_order: item.sort_order })
+        .eq('id', item.id);
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Holiday specials PUT error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
