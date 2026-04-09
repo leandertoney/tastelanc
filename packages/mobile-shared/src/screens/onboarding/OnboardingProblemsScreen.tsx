@@ -30,9 +30,9 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const HERO_HEIGHT = SCREEN_HEIGHT * 0.35;
 
 const PAIN_POINTS = [
-  '🍻 Happy hours scattered across apps.',
-  '📅 Events you hear about too late.',
-  '🏷️ Deals buried in your feed.',
+  'Happy hours worth showing up for.',
+  'Events before they blow up.',
+  'Deals that hit different.',
 ];
 
 const STAGGER = 500;
@@ -157,7 +157,7 @@ export default function OnboardingProblemsScreen({ navigation }: Props) {
       <SafeAreaView style={styles.safeArea} edges={['bottom']}>
         <View style={styles.content}>
           <Animated.View style={headerAnimatedStyle}>
-            <Text style={styles.headline}>We get it.</Text>
+            <Text style={styles.headline}>This is how you go out.</Text>
           </Animated.View>
 
           <View style={styles.painPointsList}>
@@ -173,7 +173,7 @@ export default function OnboardingProblemsScreen({ navigation }: Props) {
           <View style={styles.closingSection}>
             <Animated.View style={[styles.divider, dividerAnimatedStyle]} />
             <Animated.View style={closingAnimatedStyle}>
-              <Text style={styles.closingText}>There's a better way.</Text>
+              <Text style={styles.closingText}>Ready?</Text>
             </Animated.View>
           </View>
         </View>
