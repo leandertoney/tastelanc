@@ -8,6 +8,7 @@ import { getSupabase, getBrand, hasFeature } from '../config/theme';
 import { getFeaturedRestaurants, getOtherRestaurants, getRecommendations, getUserPreferences } from './recommendations';
 import { getActiveAds } from './ads';
 import { fetchEntertainmentEvents, fetchEvents, ENTERTAINMENT_TYPES, ApiEvent } from './events';
+import { isRecurringEventOnDate } from './eventRecurrence';
 import { getFavorites } from './favorites';
 import { getActiveDailySpecials } from './specials';
 import { queryKeys } from './queryKeys';
@@ -69,7 +70,6 @@ interface EntertainmentResult {
 async function getEntertainmentEvents(marketId?: string | null): Promise<EntertainmentResult> {
   const events = await fetchEntertainmentEvents(marketId);
   const now = new Date();
-  const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as DayOfWeek;
   const todayDate = now.toISOString().split('T')[0];
 
   // Filter to upcoming/recurring events
@@ -80,11 +80,7 @@ async function getEntertainmentEvents(marketId?: string | null): Promise<Enterta
   });
 
   // Identify today's events
-  const isToday = (event: ApiEvent) => {
-    if (event.event_date === todayDate) return true;
-    if (event.is_recurring && event.days_of_week.includes(dayOfWeek)) return true;
-    return false;
-  };
+  const isToday = (event: ApiEvent) => isRecurringEventOnDate(event, now);
 
   const todayEvents = upcoming.filter(isToday);
   const futureEvents = upcoming.filter(e => !isToday(e));
@@ -116,7 +112,6 @@ async function getUpcomingEvents(marketId?: string | null): Promise<EventsResult
 
   const now = new Date();
   const todayDate = now.toISOString().split('T')[0];
-  const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as DayOfWeek;
 
   const upcoming = nonEntertainment.filter(event => {
     if (event.is_recurring) return true;
@@ -124,14 +119,10 @@ async function getUpcomingEvents(marketId?: string | null): Promise<EventsResult
     return false;
   });
 
-  const isToday = (event: ApiEvent) => {
-    if (event.event_date === todayDate) return true;
-    if (event.is_recurring && event.days_of_week.includes(dayOfWeek)) return true;
-    return false;
-  };
+  const isToday2 = (event: ApiEvent) => isRecurringEventOnDate(event, now);
 
-  const todayEvents = upcoming.filter(isToday);
-  const futureEvents = upcoming.filter(e => !isToday(e));
+  const todayEvents = upcoming.filter(isToday2);
+  const futureEvents = upcoming.filter(e => !isToday2(e));
 
   todayEvents.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
   futureEvents.sort((a, b) => {

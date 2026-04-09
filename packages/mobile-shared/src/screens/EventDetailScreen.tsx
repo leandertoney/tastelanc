@@ -10,6 +10,7 @@ import { getBrand } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
 import { trackScreenView } from '../lib/analytics';
+import { formatRecurrenceLabel } from '../lib/eventRecurrence';
 import { isSelfPromoterEvent, getEventVenueName } from '../lib/events';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EventDetail'>;
@@ -106,7 +107,7 @@ export default function EventDetailScreen({ route, navigation }: Props) {
   const handleShare = async () => {
     try {
       let dateStr = '';
-      if (event.is_recurring) dateStr = `Every ${formatDaysOfWeek(event.days_of_week)}`;
+      if (event.is_recurring) dateStr = formatRecurrenceLabel(event);
       else if (event.event_date) dateStr = formatDate(event.event_date);
       const timeStr = `${formatTime(event.start_time)}${event.end_time ? ` - ${formatTime(event.end_time)}` : ''}`;
       const venueStr = venueName ? `${isFromSelfPromoter ? 'by' : 'at'} ${venueName}` : '';
@@ -120,9 +121,7 @@ export default function EventDetailScreen({ route, navigation }: Props) {
   };
 
   // Build date/time strings for reuse
-  const dateLabel = event.is_recurring
-    ? `Every ${formatDaysOfWeek(event.days_of_week)}`
-    : event.event_date ? formatDate(event.event_date) : '';
+  const dateLabel = formatRecurrenceLabel(event) || (event.event_date ? formatDate(event.event_date) : '');
   const timeLabel = event.end_time
     ? `${formatTime(event.start_time)} – ${formatTime(event.end_time)}`
     : formatTime(event.start_time);

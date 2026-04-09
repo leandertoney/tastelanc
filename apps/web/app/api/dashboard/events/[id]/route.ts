@@ -51,6 +51,8 @@ export async function PUT(
       cover_charge,
       image_url,
       is_active,
+      recurrence_frequency,
+      monthly_pattern,
     } = body;
 
     const updateData: Record<string, unknown> = {};
@@ -66,6 +68,8 @@ export async function PUT(
     if (cover_charge !== undefined) updateData.cover_charge = cover_charge || null;
     if (image_url !== undefined) updateData.image_url = image_url || null;
     if (is_active !== undefined) updateData.is_active = is_active;
+    if (recurrence_frequency !== undefined) updateData.recurrence_frequency = recurrence_frequency;
+    if (monthly_pattern !== undefined) updateData.monthly_pattern = monthly_pattern ?? null;
     updateData.updated_at = new Date().toISOString();
 
     // Use service role client for admin operations to bypass RLS

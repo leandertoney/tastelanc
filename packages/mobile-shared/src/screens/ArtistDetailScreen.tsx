@@ -14,6 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { fetchEvents, ApiEvent } from '../lib/events';
+import { formatRecurrenceLabel } from '../lib/eventRecurrence';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { spacing } from '../constants/spacing';
@@ -51,11 +52,10 @@ function formatEventTime(startTime: string, endTime: string | null): string {
   return formatTime(startTime);
 }
 
-function formatEventDate(dateString: string | null, isRecurring: boolean, daysOfWeek?: string[]): string {
-  if (isRecurring && daysOfWeek?.length) {
-    const dayLabels = daysOfWeek.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3));
-    return `Every ${dayLabels.join(', ')}`;
-  }
+function formatEventDate(event: ApiEvent): string {
+  const label = formatRecurrenceLabel(event);
+  if (label) return label;
+  const dateString = event.event_date;
   if (!dateString) return '';
 
   const date = new Date(dateString + 'T00:00:00');
@@ -114,7 +114,7 @@ export default function ArtistDetailScreen({ route }: Props) {
 
   const renderItem = ({ item }: { item: ApiEvent }) => {
     const timeDisplay = formatEventTime(item.start_time, item.end_time);
-    const dateDisplay = formatEventDate(item.event_date ?? null, item.is_recurring, item.days_of_week);
+    const dateDisplay = formatEventDate(item);
     const typeLabel = EVENT_TYPE_LABELS[item.event_type] || 'Event';
 
     return (

@@ -7,6 +7,7 @@ import StepWizard from './StepWizard';
 import WizardStep from './WizardStep';
 import TemplateSelector from './TemplateSelector';
 import DaySelector from './DaySelector';
+import MonthlyPatternPicker from './MonthlyPatternPicker';
 import TimePicker from './TimePicker';
 import SmartSuggestion from './SmartSuggestion';
 import SuccessCelebration from './SuccessCelebration';
@@ -150,7 +151,9 @@ const INITIAL_FORM_DATA: EventFormData = {
   start_time: '19:00',
   end_time: '',
   is_recurring: true,
+  recurrence_frequency: 'weekly',
   days_of_week: [],
+  monthly_pattern: [],
   event_date: '',
   cover_charge: '',
 };
@@ -238,7 +241,9 @@ export default function EventWizard({ onClose, onSubmit, restaurantId, allowedTy
 
   const canProceedStep2 = formData.name.trim().length > 0;
   const canProceedStep3 = formData.is_recurring
-    ? formData.days_of_week.length > 0 && formData.start_time
+    ? ((formData.recurrence_frequency || 'weekly') === 'monthly'
+        ? formData.monthly_pattern.length > 0 && formData.start_time
+        : formData.days_of_week.length > 0 && formData.start_time)
     : formData.event_date && formData.start_time;
 
   // Success state
@@ -397,17 +402,28 @@ export default function EventWizard({ onClose, onSubmit, restaurantId, allowedTy
       <WizardStep isActive={step === 2} direction={direction}>
         <div className="space-y-6">
           {/* Recurring Toggle */}
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => setFormData({ ...formData, is_recurring: true })}
+              onClick={() => setFormData({ ...formData, is_recurring: true, recurrence_frequency: 'weekly' })}
               className={`flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
-                formData.is_recurring
+                formData.is_recurring && (formData.recurrence_frequency || 'weekly') === 'weekly'
                   ? 'bg-lancaster-gold text-black'
                   : 'bg-tastelanc-surface text-tastelanc-text-muted'
               }`}
             >
-              Recurring (weekly)
+              Weekly
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, is_recurring: true, recurrence_frequency: 'monthly' })}
+              className={`flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
+                formData.is_recurring && formData.recurrence_frequency === 'monthly'
+                  ? 'bg-lancaster-gold text-black'
+                  : 'bg-tastelanc-surface text-tastelanc-text-muted'
+              }`}
+            >
+              Monthly
             </button>
             <button
               type="button"
@@ -418,21 +434,36 @@ export default function EventWizard({ onClose, onSubmit, restaurantId, allowedTy
                   : 'bg-tastelanc-surface text-tastelanc-text-muted'
               }`}
             >
-              One-time event
+              One-time
             </button>
           </div>
 
-          {/* Days or Date */}
+          {/* Days, Monthly Pattern, or Date */}
           {formData.is_recurring ? (
-            <div>
-              <label className="block text-sm font-medium text-tastelanc-text-secondary mb-3">
-                Which days? *
-              </label>
-              <DaySelector
-                value={formData.days_of_week}
-                onChange={(days) => setFormData({ ...formData, days_of_week: days })}
-              />
-            </div>
+            (formData.recurrence_frequency || 'weekly') === 'weekly' ? (
+              <div>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-3">
+                  Which days? *
+                </label>
+                <DaySelector
+                  value={formData.days_of_week}
+                  onChange={(days) => setFormData({ ...formData, days_of_week: days })}
+                />
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-tastelanc-text-secondary mb-3">
+                  Which weeks & days? *
+                </label>
+                <p className="text-xs text-tastelanc-text-muted mb-2">
+                  Tap the cells to select (e.g. 1st Sunday, 2nd & 4th Tuesday)
+                </p>
+                <MonthlyPatternPicker
+                  value={formData.monthly_pattern}
+                  onChange={(pattern) => setFormData({ ...formData, monthly_pattern: pattern })}
+                />
+              </div>
+            )
           ) : (
             <div>
               <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">
@@ -508,14 +539,28 @@ export default function EventWizard({ onClose, onSubmit, restaurantId, allowedTy
                   : 'Free'}
               </span>
               {formData.is_recurring ? (
-                formData.days_of_week.map((day) => (
-                  <span
-                    key={day}
-                    className="px-2 py-1 bg-lancaster-gold/20 text-lancaster-gold rounded capitalize"
-                  >
-                    {day.slice(0, 3)}
-                  </span>
-                ))
+                (formData.recurrence_frequency || 'weekly') === 'monthly' && formData.monthly_pattern.length > 0 ? (
+                  formData.monthly_pattern.map((p, i) => {
+                    const ordinals = ['', '1st', '2nd', '3rd', '4th', '5th'];
+                    return (
+                      <span
+                        key={i}
+                        className="px-2 py-1 bg-lancaster-gold/20 text-lancaster-gold rounded capitalize"
+                      >
+                        {ordinals[p.week] || `${p.week}th`} {(p.day as string).slice(0, 3)}
+                      </span>
+                    );
+                  })
+                ) : (
+                  formData.days_of_week.map((day) => (
+                    <span
+                      key={day}
+                      className="px-2 py-1 bg-lancaster-gold/20 text-lancaster-gold rounded capitalize"
+                    >
+                      {day.slice(0, 3)}
+                    </span>
+                  ))
+                )
               ) : (
                 <span className="px-2 py-1 bg-lancaster-gold/20 text-lancaster-gold rounded">
                   {formData.event_date}

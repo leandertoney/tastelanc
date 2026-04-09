@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getSupabase } from '../config/theme';
 import { useMarket } from '../context/MarketContext';
 import type { RightNowItem } from '../types/retention';
+import { isRecurringEventOnDate } from '../lib/eventRecurrence';
 
 function nowTimeString(): string {
   const d = new Date();
@@ -90,11 +91,9 @@ async function fetchRightNowItems(marketId: string | null): Promise<RightNowItem
   }
 
   // Events happening today
+  const nowDate = new Date();
   for (const evt of evtRes.data || []) {
-    const isToday =
-      (evt as any).event_date === today ||
-      ((evt as any).is_recurring && Array.isArray((evt as any).days_of_week) && (evt as any).days_of_week.includes(dow));
-    if (!isToday) continue;
+    if (!isRecurringEventOnDate(evt as any, nowDate)) continue;
     const r = (evt as any).restaurant;
     items.push({
       id: `evt-${evt.id}`,

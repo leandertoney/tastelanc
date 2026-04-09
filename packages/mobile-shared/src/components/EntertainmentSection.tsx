@@ -15,7 +15,8 @@ import type { RootStackParamList } from '../navigation/types';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { spacing } from '../constants/spacing';
 
-import type { DayOfWeek, EventType } from '../types/database';
+import type { EventType } from '../types/database';
+import { isRecurringEventOnDate } from '../lib/eventRecurrence';
 import { useMarket } from '../context/MarketContext';
 import { getBrand } from '../config/theme';
 import { trackClick } from '../lib/analytics';
@@ -46,7 +47,6 @@ interface EntertainmentResult {
 async function getEntertainmentEvents(marketId?: string | null): Promise<EntertainmentResult> {
   const events = await fetchEntertainmentEvents(marketId);
   const now = new Date();
-  const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as DayOfWeek;
   const todayDate = now.toISOString().split('T')[0];
 
   // Filter to upcoming/recurring events
@@ -56,12 +56,8 @@ async function getEntertainmentEvents(marketId?: string | null): Promise<Enterta
     return false;
   });
 
-  // Identify today's events (one-time today OR recurring on this day of week)
-  const isToday = (event: ApiEvent) => {
-    if (event.event_date === todayDate) return true;
-    if (event.is_recurring && event.days_of_week.includes(dayOfWeek)) return true;
-    return false;
-  };
+  // Identify today's events (one-time today OR recurring on this day/week)
+  const isToday = (event: ApiEvent) => isRecurringEventOnDate(event, now);
 
   const todayEvents = upcoming.filter(isToday);
   const futureEvents = upcoming.filter(e => !isToday(e));

@@ -14,7 +14,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { spacing } from '../constants/spacing';
 
-import type { DayOfWeek } from '../types/database';
+import { isRecurringEventOnDate, formatRecurrenceLabel } from '../lib/eventRecurrence';
 import { useMarket } from '../context/MarketContext';
 import { trackClick } from '../lib/analytics';
 import { trackImpression } from '../lib/impressions';
@@ -53,7 +53,6 @@ async function getUpcomingEvents(marketId?: string | null): Promise<EventsResult
 
   const now = new Date();
   const todayDate = now.toISOString().split('T')[0];
-  const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as DayOfWeek;
 
   // Filter to upcoming/recurring events
   const upcoming = nonEntertainment.filter(event => {
@@ -62,12 +61,8 @@ async function getUpcomingEvents(marketId?: string | null): Promise<EventsResult
     return false;
   });
 
-  // Identify today's events (one-time today OR recurring on this day of week)
-  const isToday = (event: ApiEvent) => {
-    if (event.event_date === todayDate) return true;
-    if (event.is_recurring && event.days_of_week.includes(dayOfWeek)) return true;
-    return false;
-  };
+  // Identify today's events (one-time today OR recurring on this day/week)
+  const isToday = (event: ApiEvent) => isRecurringEventOnDate(event, now);
 
   const todayEvents = upcoming.filter(isToday);
   const futureEvents = upcoming.filter(e => !isToday(e));
@@ -97,6 +92,10 @@ async function getUpcomingEvents(marketId?: string | null): Promise<EventsResult
 
 function formatEventDate(event: ApiEvent): string {
   if (event.is_recurring) {
+    const freq = (event as any).recurrence_frequency || 'weekly';
+    if (freq === 'monthly') {
+      return formatRecurrenceLabel(event);
+    }
     const days = event.days_of_week;
     if (days.length === 1) {
       return `Every ${days[0].charAt(0).toUpperCase() + days[0].slice(1)}`;

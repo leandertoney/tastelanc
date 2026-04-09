@@ -8,6 +8,7 @@ import { useRestaurant } from '@/contexts/RestaurantContext';
 import { EventWizard, EventFormData } from '@/components/dashboard/forms';
 import EventImageUpload from '@/components/dashboard/forms/EventImageUpload';
 import DaySelector from '@/components/dashboard/forms/DaySelector';
+import MonthlyPatternPicker from '@/components/dashboard/forms/MonthlyPatternPicker';
 import TimeRangePicker from '@/components/dashboard/forms/TimeRangePicker';
 import TierGate from '@/components/TierGate';
 import EventAnalytics from '@/components/dashboard/EventAnalytics';
@@ -46,6 +47,8 @@ interface Event {
   end_time: string | null;
   is_recurring: boolean;
   days_of_week: DayOfWeek[];
+  recurrence_frequency: 'weekly' | 'monthly' | null;
+  monthly_pattern: Array<{ week: number; day: string }> | null;
   event_date: string | null;
   is_active: boolean;
   image_url?: string | null;
@@ -92,26 +95,63 @@ function getNextOccurrenceSort(event: Event): number {
     // Past events sort to the end
     return diff < -86400000 ? 999 + Math.abs(diff / 86400000) : diff / 86400000;
   }
-  if (event.is_recurring && event.days_of_week?.length > 0) {
-    const today = new Date().getDay(); // 0=Sun
-    let minDays = 7;
-    for (const day of event.days_of_week) {
-      const target = DAY_ORDER[day];
-      const diff = (target - today + 7) % 7;
-      if (diff < minDays) minDays = diff;
+  if (event.is_recurring) {
+    const frequency = event.recurrence_frequency || 'weekly';
+    if (frequency === 'monthly' && event.monthly_pattern?.length) {
+      // Find the next matching nth-weekday from today (check up to 35 days ahead)
+      const now = new Date();
+      for (let i = 0; i <= 35; i++) {
+        const check = new Date(now);
+        check.setDate(check.getDate() + i);
+        const dayOfWeek = check.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+        const week = Math.ceil(check.getDate() / 7);
+        if (event.monthly_pattern.some(p => p.week === week && p.day === dayOfWeek)) {
+          return i;
+        }
+      }
+      return 36;
     }
-    return minDays === 0 ? 0 : minDays;
+    if (event.days_of_week?.length > 0) {
+      const today = new Date().getDay(); // 0=Sun
+      let minDays = 7;
+      for (const day of event.days_of_week) {
+        const target = DAY_ORDER[day];
+        const diff = (target - today + 7) % 7;
+        if (diff < minDays) minDays = diff;
+      }
+      return minDays === 0 ? 0 : minDays;
+    }
   }
   return 500; // no date info — sort near end
 }
 
+const ORDINALS = ['', '1st', '2nd', '3rd', '4th', '5th'];
+
 function getScheduleSummary(event: Event): string {
-  if (event.is_recurring && event.days_of_week?.length > 0) {
-    const days = event.days_of_week
-      .sort((a, b) => DAY_ORDER[a] - DAY_ORDER[b])
-      .map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3))
-      .join(', ');
-    return `Every ${days}`;
+  if (event.is_recurring) {
+    const frequency = event.recurrence_frequency || 'weekly';
+    if (frequency === 'monthly' && event.monthly_pattern?.length) {
+      // Group by day → "1st & 3rd Mon, 2nd Tue"
+      const grouped = new Map<string, number[]>();
+      for (const { week, day } of event.monthly_pattern) {
+        if (!grouped.has(day)) grouped.set(day, []);
+        grouped.get(day)!.push(week);
+      }
+      const parts: string[] = [];
+      for (const [day, weeks] of grouped.entries()) {
+        weeks.sort((a, b) => a - b);
+        const abbr = day.charAt(0).toUpperCase() + day.slice(1, 3);
+        parts.push(`${weeks.map(w => ORDINALS[w] || `${w}th`).join(' & ')} ${abbr}`);
+      }
+      return `Every ${parts.join(', ')}`;
+    }
+    if (event.days_of_week?.length > 0) {
+      const days = event.days_of_week
+        .sort((a, b) => DAY_ORDER[a] - DAY_ORDER[b])
+        .map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3))
+        .join(', ');
+      return `Every ${days}`;
+    }
   }
   if (event.event_date) {
     const d = new Date(event.event_date + 'T00:00:00');
@@ -183,6 +223,7 @@ export default function EventsManager({ mode }: EventsManagerProps) {
   };
 
   const handleCreateEvent = async (formData: EventFormData) => {
+    const frequency = formData.recurrence_frequency || 'weekly';
     const payload = {
       name: formData.name,
       event_type: formData.event_type,
@@ -191,8 +232,10 @@ export default function EventsManager({ mode }: EventsManagerProps) {
       start_time: formData.start_time,
       end_time: formData.end_time || null,
       is_recurring: formData.is_recurring,
+      recurrence_frequency: formData.is_recurring ? frequency : 'weekly',
       event_date: formData.is_recurring ? null : formData.event_date,
-      days_of_week: formData.is_recurring ? formData.days_of_week : [],
+      days_of_week: formData.is_recurring && frequency === 'weekly' ? formData.days_of_week : [],
+      monthly_pattern: formData.is_recurring && frequency === 'monthly' ? formData.monthly_pattern : null,
       image_url: formData.image_url,
       cover_charge: formData.cover_charge && parseFloat(formData.cover_charge) > 0
         ? parseFloat(formData.cover_charge)
@@ -294,7 +337,9 @@ export default function EventsManager({ mode }: EventsManagerProps) {
           start_time: editingEvent.start_time,
           end_time: editingEvent.end_time,
           is_recurring: editingEvent.is_recurring,
+          recurrence_frequency: editingEvent.recurrence_frequency || 'weekly',
           days_of_week: editingEvent.days_of_week,
+          monthly_pattern: editingEvent.monthly_pattern,
           event_date: editingEvent.event_date,
           image_url: editingEvent.image_url,
           cover_charge: editingEvent.cover_charge != null && editingEvent.cover_charge > 0
@@ -553,16 +598,50 @@ export default function EventsManager({ mode }: EventsManagerProps) {
                             <input
                               type="checkbox"
                               checked={editingEvent.is_recurring}
-                              onChange={(e) => setEditingEvent({ ...editingEvent, is_recurring: e.target.checked })}
+                              onChange={(e) => setEditingEvent({ ...editingEvent, is_recurring: e.target.checked, recurrence_frequency: editingEvent.recurrence_frequency || 'weekly' })}
                               className="w-4 h-4 rounded border-tastelanc-border bg-tastelanc-surface text-lancaster-gold focus:ring-lancaster-gold"
                             />
-                            <span className="text-xs font-medium text-tastelanc-text-secondary">Recurring weekly</span>
+                            <span className="text-xs font-medium text-tastelanc-text-secondary">Recurring</span>
                           </label>
                           {editingEvent.is_recurring ? (
-                            <DaySelector
-                              value={editingEvent.days_of_week || []}
-                              onChange={(days) => setEditingEvent({ ...editingEvent, days_of_week: days })}
-                            />
+                            <>
+                              {/* Frequency toggle */}
+                              <div className="flex gap-1 mb-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingEvent({ ...editingEvent, recurrence_frequency: 'weekly' })}
+                                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                                    (editingEvent.recurrence_frequency || 'weekly') === 'weekly'
+                                      ? 'bg-lancaster-gold/20 text-lancaster-gold border border-lancaster-gold/50'
+                                      : 'bg-tastelanc-surface/50 text-tastelanc-text-muted border border-transparent hover:text-tastelanc-text-primary'
+                                  }`}
+                                >
+                                  Weekly
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingEvent({ ...editingEvent, recurrence_frequency: 'monthly' })}
+                                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                                    editingEvent.recurrence_frequency === 'monthly'
+                                      ? 'bg-lancaster-gold/20 text-lancaster-gold border border-lancaster-gold/50'
+                                      : 'bg-tastelanc-surface/50 text-tastelanc-text-muted border border-transparent hover:text-tastelanc-text-primary'
+                                  }`}
+                                >
+                                  Monthly
+                                </button>
+                              </div>
+                              {(editingEvent.recurrence_frequency || 'weekly') === 'weekly' ? (
+                                <DaySelector
+                                  value={editingEvent.days_of_week || []}
+                                  onChange={(days) => setEditingEvent({ ...editingEvent, days_of_week: days })}
+                                />
+                              ) : (
+                                <MonthlyPatternPicker
+                                  value={editingEvent.monthly_pattern || []}
+                                  onChange={(pattern) => setEditingEvent({ ...editingEvent, monthly_pattern: pattern })}
+                                />
+                              )}
+                            </>
                           ) : (
                             <input
                               type="date"
@@ -604,7 +683,7 @@ export default function EventsManager({ mode }: EventsManagerProps) {
                         </Button>
                         <Button
                           onClick={handleUpdateEvent}
-                          disabled={saving || !editingEvent.name.trim() || !editingEvent.start_time || (editingEvent.is_recurring ? editingEvent.days_of_week.length === 0 : !editingEvent.event_date)}
+                          disabled={saving || !editingEvent.name.trim() || !editingEvent.start_time || (editingEvent.is_recurring ? ((editingEvent.recurrence_frequency || 'weekly') === 'monthly' ? !(editingEvent.monthly_pattern?.length) : editingEvent.days_of_week.length === 0) : !editingEvent.event_date)}
                           className="flex-1"
                           size="sm"
                         >
@@ -627,7 +706,15 @@ export default function EventsManager({ mode }: EventsManagerProps) {
                         {event.description && (
                           <p className="text-sm text-tastelanc-text-muted">{event.description}</p>
                         )}
-                        {event.is_recurring && event.days_of_week?.length > 0 && (
+                        {event.is_recurring && (event.recurrence_frequency || 'weekly') === 'monthly' && event.monthly_pattern?.length ? (
+                          <div className="flex flex-wrap gap-1">
+                            {event.monthly_pattern.map((p, i) => (
+                              <Badge key={i} className="capitalize text-xs">
+                                {ORDINALS[p.week] || `${p.week}th`} {(p.day as string).slice(0, 3)}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : event.is_recurring && event.days_of_week?.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
                             {event.days_of_week
                               .sort((a, b) => DAY_ORDER[a] - DAY_ORDER[b])
@@ -635,7 +722,7 @@ export default function EventsManager({ mode }: EventsManagerProps) {
                                 <Badge key={day} className="capitalize text-xs">{day.slice(0, 3)}</Badge>
                               ))}
                           </div>
-                        )}
+                        ) : null}
                       </div>
 
                       {/* Action Buttons */}

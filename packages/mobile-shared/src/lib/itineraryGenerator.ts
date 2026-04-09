@@ -15,6 +15,7 @@ import { calculateDistance } from '../hooks/useUserLocation';
 import type { Restaurant, RestaurantHours, HappyHour, DayOfWeek, RestaurantCategory, CuisineType } from '../types/database';
 import { CUISINE_LABELS } from '../types/database';
 import type { ApiEvent } from './events';
+import { isRecurringEventOnDate } from './eventRecurrence';
 import type { OnboardingData } from '../types/onboarding';
 import { FOOD_PREFERENCE_TO_CUISINE } from '../types/onboarding';
 import type {
@@ -399,13 +400,11 @@ export function generateItinerary(params: GenerateItineraryParams): GenerateResu
   }
 
   const eventsByRestaurant = new Map<string, ApiEvent>();
+  const targetDate = new Date(date + 'T12:00:00');
   for (const event of allEvents) {
     const restaurantId = event.restaurant?.id;
     if (!restaurantId) continue;
-    const isOnDay = event.is_recurring
-      ? event.days_of_week.includes(dayOfWeek)
-      : event.event_date === date;
-    if (isOnDay) eventsByRestaurant.set(restaurantId, event);
+    if (isRecurringEventOnDate(event, targetDate)) eventsByRestaurant.set(restaurantId, event);
   }
 
   // Determine chapters based on mood and stop count
@@ -534,11 +533,11 @@ export function getAlternativesForSlot(
     if (hh.days_of_week.includes(dayOfWeek)) happyHoursByRestaurant.set(hh.restaurant_id, hh);
   }
   const eventsByRestaurant = new Map<string, ApiEvent>();
+  const altTargetDate = new Date(date + 'T12:00:00');
   for (const event of allEvents) {
     const rid = event.restaurant?.id;
     if (!rid) continue;
-    const isOnDay = event.is_recurring ? event.days_of_week.includes(dayOfWeek) : event.event_date === date;
-    if (isOnDay) eventsByRestaurant.set(rid, event);
+    if (isRecurringEventOnDate(event, altTargetDate)) eventsByRestaurant.set(rid, event);
   }
 
   const candidates = restaurants.filter(r => {

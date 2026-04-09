@@ -39,6 +39,8 @@ export interface ApiEvent {
   end_time: string | null;
   is_recurring: boolean;
   days_of_week: DayOfWeek[];
+  recurrence_frequency?: 'weekly' | 'monthly' | null;
+  monthly_pattern?: Array<{ week: number; day: string }> | null;
   event_date?: string | null;
   performer_name?: string | null;
   cover_charge?: number | null;

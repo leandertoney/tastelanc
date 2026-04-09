@@ -14,6 +14,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import type { EventType } from '../types/database';
 import { fetchEntertainmentEvents, ApiEvent, getEventVenueName } from '../lib/events';
+import { formatRecurrenceLabel } from '../lib/eventRecurrence';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { spacing } from '../constants/spacing';
@@ -79,8 +80,12 @@ function formatEventTime(startTime: string, endTime: string | null): string {
   return formatTime(startTime);
 }
 
-function formatEventDate(dateString: string | null, isRecurring: boolean): string {
-  if (isRecurring) return 'Weekly';
+function formatEventDateLabel(event: ApiEvent): string {
+  if (event.is_recurring) {
+    const freq = (event as any).recurrence_frequency || 'weekly';
+    return freq === 'monthly' ? 'Monthly' : 'Weekly';
+  }
+  const dateString = event.event_date;
   if (!dateString) return '';
 
   const date = new Date(dateString + 'T00:00:00');
@@ -176,7 +181,7 @@ export default function EntertainmentViewAllScreen() {
     const imageUrl = item.image_url;
     const venueName = getEventVenueName(item) || 'City-wide Event';
     const timeDisplay = formatEventTime(item.start_time, item.end_time);
-    const dateDisplay = formatEventDate(item.event_date ?? null, item.is_recurring);
+    const dateDisplay = formatEventDateLabel(item);
     const typeLabel = EVENT_TYPE_LABELS[item.event_type];
     const icon = EVENT_TYPE_ICONS[item.event_type] || 'calendar';
 

@@ -57,6 +57,11 @@ export interface Template<T = Record<string, unknown>> {
 }
 
 // Form Data Types
+export interface MonthlyPatternEntry {
+  week: number; // 1-5 (1st through 5th weekday of the month)
+  day: string;
+}
+
 export interface EventFormData {
   name: string;
   event_type: EventType;
@@ -65,7 +70,9 @@ export interface EventFormData {
   start_time: string;
   end_time: string;
   is_recurring: boolean;
+  recurrence_frequency: 'weekly' | 'monthly';
   days_of_week: DayOfWeek[];
+  monthly_pattern: MonthlyPatternEntry[];
   event_date: string;
   image_url?: string;
   cover_charge?: string;

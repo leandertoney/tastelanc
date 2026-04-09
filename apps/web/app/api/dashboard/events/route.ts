@@ -103,6 +103,8 @@ export async function POST(request: Request) {
       cover_charge,
       image_url,
       is_active,
+      recurrence_frequency,
+      monthly_pattern,
     } = body;
 
     // Use service role client for admin operations to bypass RLS
@@ -120,6 +122,9 @@ export async function POST(request: Request) {
     const eventType = event_type || 'other';
     const finalImageUrl = image_url || DEFAULT_EVENT_IMAGES[eventType] || DEFAULT_EVENT_IMAGES.other;
 
+    const effectiveRecurring = is_recurring ?? true;
+    const effectiveFrequency = effectiveRecurring ? (recurrence_frequency || 'weekly') : 'weekly';
+
     // Sanitize optional fields — convert empty strings to null to avoid
     // PostgREST type-validation errors on DATE / TIME columns
     const { data: event, error } = await dbClient
@@ -130,7 +135,7 @@ export async function POST(request: Request) {
         name,
         description: description || null,
         event_type: eventType,
-        is_recurring: is_recurring ?? true,
+        is_recurring: effectiveRecurring,
         days_of_week: days_of_week || [],
         event_date: event_date || null,
         start_time,
@@ -139,6 +144,8 @@ export async function POST(request: Request) {
         cover_charge: cover_charge || null,
         image_url: finalImageUrl,
         is_active: is_active ?? true,
+        recurrence_frequency: effectiveFrequency,
+        monthly_pattern: effectiveFrequency === 'monthly' ? (monthly_pattern || null) : null,
       })
       .select()
       .single();
