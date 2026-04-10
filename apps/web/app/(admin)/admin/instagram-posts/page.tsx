@@ -703,6 +703,39 @@ function PostDetailModal({ post, marketSlug, onClose, onStatusChange, onPublishN
 }) {
   const statusConfig = getStatusConfig(post.status);
   const themeLabel = post.day_theme ? DAY_THEME_LABELS[post.day_theme] : null;
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [showThemePicker, setShowThemePicker] = useState(false);
+  const [regenLoading, setRegenLoading] = useState(false);
+  const [currentUrls, setCurrentUrls] = useState(post.media_urls);
+
+  const COLOR_THEMES = [
+    { name: 'Classic', border: '#6B21A8', accent: '#E8C547' },
+    { name: 'Ocean', border: '#1B3A5C', accent: '#FF6B6B' },
+    { name: 'Emerald', border: '#1A5C3A', accent: '#D4AF37' },
+    { name: 'Midnight', border: '#1A1A2E', accent: '#00D4FF' },
+    { name: 'Burgundy', border: '#722F37', accent: '#F5E6CC' },
+    { name: 'Slate', border: '#2D3436', accent: '#F39C12' },
+    { name: 'Royal', border: '#1A237E', accent: '#FFD700' },
+    { name: 'Rose', border: '#880E4F', accent: '#F8BBD0' },
+  ];
+
+  const handleRegenWithTheme = async (border: string, accent: string) => {
+    setRegenLoading(true);
+    try {
+      const res = await fetch(`/api/admin/instagram-posts/${post.id}/retheme`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ borderColor: border, accentColor: accent }),
+      });
+      const data = await res.json();
+      if (data.media_urls) {
+        setCurrentUrls(data.media_urls);
+      }
+    } catch (err) {
+      console.error('Retheme failed:', err);
+    }
+    setRegenLoading(false);
+  };
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={onClose}>
@@ -758,20 +791,113 @@ function PostDetailModal({ post, marketSlug, onClose, onStatusChange, onPublishN
         </div>
 
         {/* Slide Previews */}
-        {post.media_urls?.length > 0 && (
+        {currentUrls?.length > 0 && (
           <div className="p-6 border-b border-tastelanc-surface-light">
-            <h3 className="text-sm font-semibold text-tastelanc-text-muted mb-3 flex items-center gap-2">
-              <ImageIcon className="w-4 h-4" />
-              Slides ({post.media_urls.length})
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-tastelanc-text-muted flex items-center gap-2">
+                <ImageIcon className="w-4 h-4" />
+                Slides ({currentUrls.length}) — click to view full size
+              </h3>
+              <button
+                onClick={() => setShowThemePicker(!showThemePicker)}
+                className="text-xs px-3 py-1.5 rounded-lg bg-tastelanc-accent/20 text-tastelanc-accent hover:bg-tastelanc-accent/30 transition-all flex items-center gap-1.5"
+              >
+                <span className="w-3 h-3 rounded-full bg-tastelanc-accent" />
+                {showThemePicker ? 'Hide Themes' : 'Change Theme'}
+              </button>
+            </div>
+
+            {/* Color Theme Picker */}
+            {showThemePicker && (
+              <div className="mb-4 p-4 bg-tastelanc-surface-light rounded-xl">
+                <p className="text-xs text-tastelanc-text-muted mb-3">Pick a color theme — slides will regenerate instantly</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {COLOR_THEMES.map(t => (
+                    <button
+                      key={t.name}
+                      onClick={() => handleRegenWithTheme(t.border, t.accent)}
+                      disabled={regenLoading}
+                      className="p-2 rounded-lg border border-tastelanc-surface-light hover:border-white/40 transition-all text-center disabled:opacity-50"
+                    >
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <div className="w-5 h-5 rounded-full border border-white/20" style={{ background: t.border }} />
+                        <div className="w-5 h-5 rounded-full border border-white/20" style={{ background: t.accent }} />
+                      </div>
+                      <div className="text-[10px] font-bold text-white">{t.name}</div>
+                    </button>
+                  ))}
+                </div>
+                {regenLoading && (
+                  <div className="mt-3 text-xs text-tastelanc-accent flex items-center gap-2">
+                    <RefreshCw className="w-3 h-3 animate-spin" />
+                    Regenerating slides with new theme...
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="flex gap-3 overflow-x-auto pb-2">
-              {post.media_urls.map((url, i) => (
-                <div key={i} className="flex-shrink-0 w-40 aspect-square rounded-lg overflow-hidden border border-tastelanc-surface-light">
+              {currentUrls.map((url, i) => (
+                <div
+                  key={`${url}-${i}`}
+                  className="flex-shrink-0 w-40 aspect-square rounded-lg overflow-hidden border border-tastelanc-surface-light cursor-pointer hover:border-tastelanc-accent hover:ring-2 hover:ring-tastelanc-accent/30 transition-all"
+                  onClick={() => setLightboxIndex(i)}
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={url} alt={`Slide ${i + 1}`} className="w-full h-full object-cover" />
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Full-size image lightbox */}
+        {lightboxIndex !== null && currentUrls?.length > 0 && (
+          <div
+            className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center"
+            onClick={() => setLightboxIndex(null)}
+          >
+            {/* Close button */}
+            <button
+              className="absolute top-4 right-4 text-white/70 hover:text-white text-3xl z-10"
+              onClick={() => setLightboxIndex(null)}
+            >
+              &times;
+            </button>
+
+            {/* Slide counter */}
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white/60 text-sm font-medium">
+              {lightboxIndex + 1} / {currentUrls.length}
+            </div>
+
+            {/* Previous button */}
+            {lightboxIndex > 0 && (
+              <button
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white text-4xl z-10 p-2"
+                onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex - 1); }}
+              >
+                &#8249;
+              </button>
+            )}
+
+            {/* Next button */}
+            {lightboxIndex < currentUrls.length - 1 && (
+              <button
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white text-4xl z-10 p-2"
+                onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex + 1); }}
+              >
+                &#8250;
+              </button>
+            )}
+
+            {/* Full-size image */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={currentUrls[lightboxIndex]}
+              alt={`Slide ${lightboxIndex + 1}`}
+              className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
           </div>
         )}
 
