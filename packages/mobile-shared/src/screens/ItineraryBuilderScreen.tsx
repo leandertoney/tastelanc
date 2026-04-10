@@ -31,6 +31,20 @@ import { useFavorites, useUserLocation } from '../hooks';
 import { getUserPreferences } from '../lib/recommendations';
 import { fetchEvents } from '../lib/events';
 import { getSupabase, getColors, getAssets } from '../config/theme';
+import { usePremiumStatus } from '../hooks/usePremiumStatus';
+import { usePaywall } from '../hooks/usePaywall';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const FREE_WEEKLY_ITINERARY_LIMIT = 1;
+const ITINERARY_COUNT_KEY_PREFIX = '@premium_itinerary_count_';
+
+function getWeekKey(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const startOfYear = new Date(year, 0, 1);
+  const weekNum = Math.ceil(((now.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7);
+  return `${ITINERARY_COUNT_KEY_PREFIX}${year}-W${weekNum}`;
+}
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing, typography } from '../constants/spacing';
 import type { OnboardingData } from '../types/onboarding';
@@ -153,6 +167,8 @@ export default function ItineraryBuilderScreen() {
   const colors = getColors();
   const styles = useStyles();
   const assets = getAssets();
+  const { isPremium } = usePremiumStatus();
+  const { showPaywall } = usePaywall();
 
   const [selectedDate, setSelectedDate] = useState(
     route.params?.date || new Date().toISOString().split('T')[0]
@@ -211,7 +227,23 @@ export default function ItineraryBuilderScreen() {
     stopCount,
   }), [selectedDate, selectedMood, preferences, userLocation, favorites, restaurants, allHours, allHappyHours, allEvents, voteCountsRaw, stopCount]);
 
-  const handleGenerate = useCallback(() => {
+  const handleGenerate = useCallback(async () => {
+    // Premium gate: free users get 1 itinerary/week
+    if (!isPremium) {
+      try {
+        const key = getWeekKey();
+        const countStr = await AsyncStorage.getItem(key);
+        const count = countStr ? parseInt(countStr, 10) : 0;
+        if (count >= FREE_WEEKLY_ITINERARY_LIMIT) {
+          showPaywall('itinerary_builder');
+          return;
+        }
+        await AsyncStorage.setItem(key, String(count + 1));
+      } catch (e) {
+        console.warn('[ItineraryBuilder] Premium gate check failed:', e);
+      }
+    }
+
     setIsGenerating(true);
     setTimeout(() => {
       const result = generateItinerary(generatorParams);

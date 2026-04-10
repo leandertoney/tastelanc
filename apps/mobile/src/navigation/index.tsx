@@ -16,7 +16,7 @@ import { ErrorBoundary } from '../components';
 import { ONBOARDING_STORAGE_KEY, ONBOARDING_DATA_KEY } from '../types/onboarding';
 import { env } from '../lib/env';
 import { initRadar, startTracking } from '../lib/radar';
-// import { initRevenueCat } from '../lib/revenuecat'; // Disabled - app is free
+import { initRevenueCat } from '@tastelanc/mobile-shared/src/lib/revenuecat';
 import { useRadarVisits } from '../hooks/useRadarVisits';
 import { useNotifications } from '../hooks/useNotifications';
 import { incrementSessionCount, requestReviewIfEligible } from '../lib/reviewPrompts';
@@ -109,6 +109,14 @@ export default function Navigation() {
       }
     } catch (e) {
       console.warn('[Navigation] Radar initialization failed:', e);
+    }
+
+    try {
+      initRevenueCat(env.REVENUECAT_API_KEY, 'lancaster-pa').catch((e) => {
+        console.warn('[Navigation] RevenueCat initialization failed:', e);
+      });
+    } catch (e) {
+      console.warn('[Navigation] RevenueCat initialization failed:', e);
     }
 
     try {

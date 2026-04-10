@@ -59,7 +59,7 @@ export default function OnboardingReviewAskScreen({ navigation }: Props) {
   const handleSelect = async (sentiment: 'positive' | 'neutral') => {
     setSelectedOption(sentiment);
     await setUserSentiment(sentiment);
-    setTimeout(() => { navigation.navigate('OnboardingPremiumIntro'); }, 400);
+    setTimeout(() => { navigation.navigate('OnboardingPaywall'); }, 400);
   };
 
   return (
@@ -88,7 +88,7 @@ export default function OnboardingReviewAskScreen({ navigation }: Props) {
           </AnimatedTouchable>
         </View>
         <Animated.View style={[styles.skipContainer, skipAnimatedStyle]}>
-          <TouchableOpacity onPress={() => { trackClick('onboarding_skip', undefined); navigation.navigate('OnboardingPremiumIntro'); }}>
+          <TouchableOpacity onPress={() => { trackClick('onboarding_skip', undefined); navigation.navigate('OnboardingPaywall'); }}>
             <Text style={styles.skipText}>Skip</Text>
           </TouchableOpacity>
         </Animated.View>

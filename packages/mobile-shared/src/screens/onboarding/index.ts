@@ -25,6 +25,8 @@ export { default as OnboardingFoodScreen } from './OnboardingFoodScreen';
 export { default as OnboardingPremiumScreen } from './OnboardingPremiumScreen';
 export { default as OnboardingRosieAskScreen } from './OnboardingRosieAskScreen';
 export { default as OnboardingReviewAskScreen } from './OnboardingReviewAskScreen';
+export { default as OnboardingPaywallScreen } from './OnboardingPaywallScreen';
+export { default as OnboardingLifetimeOfferScreen } from './OnboardingLifetimeOfferScreen';
 export { default as OnboardingPremiumIntroScreen } from './OnboardingPremiumIntroScreen';
 
 // Legacy (backward compatibility)

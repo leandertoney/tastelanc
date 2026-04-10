@@ -23,6 +23,8 @@ import {
   OnboardingPremiumScreen,
   OnboardingRosieAskScreen,
   OnboardingReviewAskScreen,
+  OnboardingPaywallScreen,
+  OnboardingLifetimeOfferScreen,
   OnboardingPremiumIntroScreen,
   // Legacy (keeping for backward compatibility)
   OnboardingFrequencyScreen,
@@ -69,6 +71,8 @@ export default function OnboardingNavigator() {
       <Stack.Screen name="OnboardingPremium" component={OnboardingPremiumScreen} />
       <Stack.Screen name="OnboardingRosieAsk" component={OnboardingRosieAskScreen} />
       <Stack.Screen name="OnboardingReviewAsk" component={OnboardingReviewAskScreen} />
+      <Stack.Screen name="OnboardingPaywall" component={OnboardingPaywallScreen} />
+      <Stack.Screen name="OnboardingLifetimeOffer" component={OnboardingLifetimeOfferScreen} />
       <Stack.Screen name="OnboardingPremiumIntro" component={OnboardingPremiumIntroScreen} />
 
       {/* Legacy screens (backward compatibility) */}

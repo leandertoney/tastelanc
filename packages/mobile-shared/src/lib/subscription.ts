@@ -20,10 +20,17 @@ const SUBSCRIPTION_CACHE_KEY = '@tastelanc_subscription_cache';
 const TRIAL_START_KEY = '@tastelanc_trial_start';
 const NO_CARD_TRIAL_KEY = '@tastelanc_no_card_trial_start';
 
+/**
+ * Monetization cutoff date for soft launch.
+ * Users who created their profile before this date get free access during soft launch.
+ * Set this to the date you push the monetization update.
+ */
+export const MONETIZATION_CUTOFF_DATE = '2026-05-01T00:00:00Z';
+
 // 3-day no-card trial duration in milliseconds
 const NO_CARD_TRIAL_DURATION_MS = 3 * 24 * 60 * 60 * 1000;
 
-export type SubscriptionPlan = 'free' | 'monthly' | 'annual';
+export type SubscriptionPlan = 'free' | 'monthly' | 'annual' | 'lifetime';
 export type SubscriptionStatus = 'none' | 'trial' | 'active' | 'expired';
 
 export interface SubscriptionData {
@@ -113,13 +120,56 @@ export async function getNoCardTrialInfo(): Promise<{
 }
 
 /**
- * Check if user has premium access
- * NOTE: Currently returns true for all users (free app launch)
- * To enable payments later, restore the RevenueCat/trial checks
+ * Check if user has premium access.
+ * Checks in order: RevenueCat → no-card trial → Supabase profile → soft launch grandfathering.
  */
 export async function hasPremiumAccess(): Promise<boolean> {
-  // Free app - all features unlocked for everyone
-  return true;
+  try {
+    // 1. Check RevenueCat entitlement (Apple subscriptions + lifetime)
+    const rcStatus = await checkRevenueCatStatus();
+    if (rcStatus.isPremium) return true;
+  } catch {
+    // RevenueCat may not be initialized yet — continue to other checks
+  }
+
+  // 2. Check no-card trial
+  if (await isInNoCardTrial()) return true;
+
+  // 3. Check Supabase profile (Stripe/web purchases)
+  try {
+    const supabase = getSupabase();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('premium_active, premium_expires_at')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profile?.premium_active) {
+        // Check if not expired (null expires_at = lifetime)
+        if (!profile.premium_expires_at) return true;
+        if (new Date(profile.premium_expires_at) > new Date()) return true;
+      }
+
+      // 4. Soft launch: existing users before cutoff date get free access
+      const { data: createdProfile } = await supabase
+        .from('profiles')
+        .select('created_at')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (createdProfile?.created_at) {
+        const createdAt = new Date(createdProfile.created_at);
+        const cutoff = new Date(MONETIZATION_CUTOFF_DATE);
+        if (createdAt < cutoff) return true;
+      }
+    }
+  } catch {
+    // Supabase may not be available — default to free
+  }
+
+  return false;
 }
 
 // Cache for premium status to avoid repeated queries
@@ -251,6 +301,7 @@ export async function restorePurchases(): Promise<{
 export async function getAvailablePackages(): Promise<{
   monthly: PurchasesPackage | null;
   annual: PurchasesPackage | null;
+  lifetime: PurchasesPackage | null;
 }> {
   return getSubscriptionPackages();
 }

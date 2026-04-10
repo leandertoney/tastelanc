@@ -108,6 +108,8 @@ export type RootStackParamList = {
     date: string;
     stopCount?: number;
   };
+  // Paywall (modal)
+  Paywall: { source: string };
 } & Record<string, any>;
 
 // Flyer scanner types
@@ -162,6 +164,8 @@ export type OnboardingStackParamList = {
   OnboardingPremium: undefined;
   OnboardingRosieAsk: undefined;
   OnboardingReviewAsk: undefined;
+  OnboardingPaywall: undefined;
+  OnboardingLifetimeOffer: undefined;
   OnboardingPremiumIntro: undefined;
   // Legacy (keeping for backward compatibility during transition)
   OnboardingFrequency: undefined;

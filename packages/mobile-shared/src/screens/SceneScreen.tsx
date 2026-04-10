@@ -35,6 +35,7 @@ import { getEpochSeed, seededShuffle } from '../lib/fairRotation';
 import { flushUserEvents, trackDetailView, trackDwell, trackQuickSkip, type BehavioralFeedItemKind } from '../lib/userEvents';
 import { formatCategoryName } from '../lib/formatters';
 import { useOtherCities, type OtherCity } from '../hooks/useOtherCities';
+import { usePremiumStatus } from '../hooks/usePremiumStatus';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type FilterType = 'all' | 'photos' | 'itineraries' | 'trending' | 'deals' | 'events';
@@ -1804,6 +1805,7 @@ export default function SceneScreen() {
   const navigation = useNavigation<NavigationProp>();
   const queryClient = useQueryClient();
   const { marketId } = useMarket();
+  const { isPremium } = usePremiumStatus();
 
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -1972,6 +1974,7 @@ export default function SceneScreen() {
       case 'buzz':
         return <BuzzRow item={item} onPress={() => handleBehavioralRestaurantPress(item)} />;
       case 'ad':
+        if (isPremium) return null; // Ad-free for premium users
         return <AdCard item={item} onPress={() => handleItemPress(item.restaurantId)} />;
       case 'special':
         return <SpecialCard item={item} onPress={() => handleBehavioralRestaurantPress(item)} />;

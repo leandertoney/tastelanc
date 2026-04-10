@@ -26,6 +26,8 @@ import { useNavigationActions } from '../context/NavigationActionsContext';
 import { useAuth } from '../hooks/useAuth';
 import { useSalesRole } from '../hooks/useSalesRole';
 import { useUnreadCount } from '../hooks/useSalesInbox';
+import { usePremiumStatus } from '../hooks/usePremiumStatus';
+import { restorePurchases } from '../lib/revenuecat';
 import type { RootStackParamList } from '../navigation/types';
 import {
   simulateGeofenceEntry,
@@ -125,12 +127,14 @@ export default function SettingsScreen() {
   const { data: unreadData } = useUnreadCount();
 
   const { themeMode, setThemeMode, availableModes } = useTheme();
+  const { isPremium, refetch: refetchPremium } = usePremiumStatus();
 
   const [notificationPermission, setNotificationPermission] = useState<string>('undetermined');
   const [locationEnabled, setLocationEnabled] = useState(true);
   const [isTestingVisit, setIsTestingVisit] = useState(false);
   const [isSeedingData, setIsSeedingData] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isRestoringPurchases, setIsRestoringPurchases] = useState(false);
 
   const appSlug = brand.marketSlug === 'lancaster-pa' ? 'tastelanc' : brand.marketSlug === 'cumberland-pa' ? 'taste-cumberland' : 'taste-fayetteville';
 
@@ -348,6 +352,47 @@ export default function SettingsScreen() {
             </View>
           </>
         )}
+
+        {/* Subscription Section */}
+        <SectionHeader title="Subscription" />
+        <View style={styles.section}>
+          {isPremium ? (
+            <SettingItem
+              icon="star"
+              label={`${brand.appName}+ Premium`}
+              subtitle="Active — manage in iOS Settings"
+              onPress={() => Linking.openURL('https://apps.apple.com/account/subscriptions')}
+            />
+          ) : (
+            <SettingItem
+              icon="star-outline"
+              label={`Upgrade to ${brand.appName}+`}
+              subtitle="Unlock unlimited AI chat, ad-free, 2.5x rewards"
+              onPress={() => navigation.navigate('Paywall', { source: 'settings' })}
+            />
+          )}
+          <SettingItem
+            icon="refresh"
+            label="Restore Purchases"
+            subtitle={isRestoringPurchases ? 'Restoring...' : undefined}
+            onPress={async () => {
+              setIsRestoringPurchases(true);
+              try {
+                const result = await restorePurchases();
+                if (result.isPremium) {
+                  refetchPremium();
+                  Alert.alert('Restored!', 'Your premium access has been restored.');
+                } else {
+                  Alert.alert('No Purchases Found', 'We couldn\'t find any previous purchases to restore.');
+                }
+              } catch (e: any) {
+                Alert.alert('Restore Failed', e.message || 'Something went wrong');
+              } finally {
+                setIsRestoringPurchases(false);
+              }
+            }}
+          />
+        </View>
 
         {/* Appearance Section */}
         <SectionHeader title="Appearance" />

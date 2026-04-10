@@ -11,11 +11,31 @@ import Purchases, {
 } from 'react-native-purchases';
 import { Platform } from 'react-native';
 
-// Product identifiers - these must match what's configured in App Store Connect & RevenueCat
-export const PRODUCT_IDS = {
-  MONTHLY: 'tastelanc_monthly',
-  ANNUAL: 'tastelanc_annual',
-} as const;
+/**
+ * Product ID configuration — derived from market slug at init time.
+ * E.g. marketSlug 'lancaster-pa' → prefix 'tastelanc'
+ */
+export interface ProductIds {
+  MONTHLY: string;
+  ANNUAL: string;
+  LIFETIME: string;
+}
+
+/**
+ * Product IDs per market — must match App Store Connect and RevenueCat.
+ */
+const MARKET_PRODUCT_IDS: Record<string, ProductIds> = {
+  'lancaster-pa': { MONTHLY: 'tastelanc_monthly', ANNUAL: 'tastelanc_annual', LIFETIME: 'tastelanc_lifetime' },
+  'cumberland-pa': { MONTHLY: 'tastecumberland_monthly', ANNUAL: 'tastecumberland_annual', LIFETIME: 'tastecumberland_lifetime' },
+  'fayetteville-nc': { MONTHLY: 'tastefayetteville_monthly', ANNUAL: 'tastefayetteville_annual', LIFETIME: 'tastefayetteville_lifetime' },
+};
+
+let _productIds: ProductIds = MARKET_PRODUCT_IDS['lancaster-pa'];
+
+/** Get current product IDs (brand-aware after init) */
+export function getProductIds(): ProductIds {
+  return _productIds;
+}
 
 // Entitlement identifier - configured in RevenueCat dashboard
 export const ENTITLEMENT_ID = 'premium';
@@ -26,9 +46,15 @@ let isInitialized = false;
  * Initialize RevenueCat SDK
  * Call this once when the app starts
  * @param apiKey - RevenueCat API key (from env config)
+ * @param marketSlug - Market slug to derive product IDs (e.g. 'lancaster-pa')
  */
-export async function initRevenueCat(apiKey: string): Promise<void> {
+export async function initRevenueCat(apiKey: string, marketSlug?: string): Promise<void> {
   if (isInitialized) return;
+
+  // Set product IDs from market slug
+  if (marketSlug && MARKET_PRODUCT_IDS[marketSlug]) {
+    _productIds = MARKET_PRODUCT_IDS[marketSlug];
+  }
 
   try {
     // Enable debug logs in development
@@ -63,22 +89,34 @@ export async function getOfferings(): Promise<PurchasesOffering | null> {
 }
 
 /**
- * Get specific packages for display
+ * Get specific packages for display (monthly, annual, and lifetime)
  */
 export async function getSubscriptionPackages(): Promise<{
   monthly: PurchasesPackage | null;
   annual: PurchasesPackage | null;
+  lifetime: PurchasesPackage | null;
 }> {
-  const offering = await getOfferings();
+  try {
+    const offerings = await Purchases.getOfferings();
+    const current = offerings.current;
 
-  if (!offering) {
-    return { monthly: null, annual: null };
+    // Lifetime may be in a separate offering called 'lifetime'
+    const lifetimeOffering = offerings.all['lifetime'] ?? null;
+    const lifetimePackage = lifetimeOffering?.lifetime ?? lifetimeOffering?.availablePackages?.[0] ?? null;
+
+    if (!current) {
+      return { monthly: null, annual: null, lifetime: lifetimePackage };
+    }
+
+    return {
+      monthly: current.monthly ?? null,
+      annual: current.annual ?? null,
+      lifetime: lifetimePackage,
+    };
+  } catch (error) {
+    console.error('Failed to get subscription packages:', error);
+    return { monthly: null, annual: null, lifetime: null };
   }
-
-  return {
-    monthly: offering.monthly ?? null,
-    annual: offering.annual ?? null,
-  };
 }
 
 /**

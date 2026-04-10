@@ -34,6 +34,7 @@ import EmailThreadScreen from '../screens/sales/EmailThreadScreen';
 import ComposeEmailScreen from '../screens/sales/ComposeEmailScreen';
 import LeadDetailScreen from '../screens/sales/LeadDetailScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import PaywallScreen from '../screens/PaywallScreen';
 import InAppBrowserScreen from '../screens/InAppBrowserScreen';
 import StPatricksDayScreen from '../screens/StPatricksDayScreen';
 import RestaurantWeekScreen from '../screens/RestaurantWeekScreen';
@@ -76,6 +77,7 @@ const SafeEmailThread = withScreenErrorBoundary(EmailThreadScreen, 'EmailThread'
 const SafeComposeEmail = withScreenErrorBoundary(ComposeEmailScreen, 'ComposeEmail');
 const SafeLeadDetail = withScreenErrorBoundary(LeadDetailScreen, 'LeadDetail');
 const SafeSettings = withScreenErrorBoundary(SettingsScreen, 'Settings');
+const SafePaywall = withScreenErrorBoundary(PaywallScreen, 'Paywall');
 const SafeInAppBrowser = withScreenErrorBoundary(InAppBrowserScreen, 'InAppBrowser');
 const SafeStPatricksDay = withScreenErrorBoundary(StPatricksDayScreen, 'StPatricksDay');
 const SafeRestaurantWeek = withScreenErrorBoundary(RestaurantWeekScreen, 'RestaurantWeek');
@@ -292,6 +294,12 @@ export default function RootNavigator() {
         name="Settings"
         component={SafeSettings}
         options={{ title: 'Settings' }}
+      />
+      {/* Paywall (modal presentation) */}
+      <Stack.Screen
+        name="Paywall"
+        component={SafePaywall}
+        options={{ headerShown: false, presentation: 'modal' }}
       />
       {/* In-App Browser */}
       <Stack.Screen

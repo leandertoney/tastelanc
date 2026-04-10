@@ -20,6 +20,30 @@ import { createLazyStyles } from '../utils/lazyStyles';
 import { requestReviewIfEligible } from '../lib/reviewPrompts';
 import { ONBOARDING_DATA_KEY } from '../types/onboarding';
 import type { OnboardingData } from '../types/onboarding';
+import { usePremiumStatus } from '../hooks/usePremiumStatus';
+
+const FREE_DAILY_MESSAGE_LIMIT = 3;
+const CHAT_COUNT_KEY_PREFIX = '@premium_chat_count_';
+
+function getTodayKey(): string {
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  return `${CHAT_COUNT_KEY_PREFIX}${today}`;
+}
+
+async function getDailyMessageCount(): Promise<number> {
+  try {
+    const count = await AsyncStorage.getItem(getTodayKey());
+    return count ? parseInt(count, 10) : 0;
+  } catch { return 0; }
+}
+
+async function incrementDailyMessageCount(): Promise<number> {
+  const key = getTodayKey();
+  const current = await getDailyMessageCount();
+  const next = current + 1;
+  await AsyncStorage.setItem(key, String(next));
+  return next;
+}
 
 interface Message {
   id: string;
@@ -32,6 +56,7 @@ interface RosieChatProps {
   visible: boolean;
   onClose: () => void;
   onNavigateToRestaurant?: (restaurantId: string) => void;
+  onShowPaywall?: () => void;
 }
 
 interface QuickActionConfig {
@@ -125,11 +150,12 @@ function TypingDots() {
   );
 }
 
-export default function RosieChat({ visible, onClose, onNavigateToRestaurant }: RosieChatProps) {
+export default function RosieChat({ visible, onClose, onNavigateToRestaurant, onShowPaywall }: RosieChatProps) {
   const colors = getColors();
   const brand = getBrand();
   const assets = getAssets();
   const styles = useStyles();
+  const { isPremium } = usePremiumStatus();
 
   const bottomSheetRef = useRef<BottomSheet>(null);
   const flatListRef = useRef<any>(null);
@@ -199,6 +225,19 @@ export default function RosieChat({ visible, onClose, onNavigateToRestaurant }: 
   const sendMessage = useCallback(async () => {
     if (!inputText.trim()) return;
 
+    // Premium gate: free users get 3 messages/day
+    if (!isPremium) {
+      const count = await getDailyMessageCount();
+      if (count >= FREE_DAILY_MESSAGE_LIMIT) {
+        if (onShowPaywall) {
+          onClose();
+          setTimeout(() => onShowPaywall(), 300);
+        }
+        return;
+      }
+      await incrementDailyMessageCount();
+    }
+
     const messageText = inputText.trim();
     const userMessage: Message = { id: Date.now().toString(), text: messageText, isUser: true, timestamp: new Date() };
 
@@ -264,6 +303,19 @@ export default function RosieChat({ visible, onClose, onNavigateToRestaurant }: 
 
   const handleQuickAction = useCallback(async (text: string) => {
     if (!text.trim() || isTyping) return;
+
+    // Premium gate: free users get 3 messages/day
+    if (!isPremium) {
+      const count = await getDailyMessageCount();
+      if (count >= FREE_DAILY_MESSAGE_LIMIT) {
+        if (onShowPaywall) {
+          onClose();
+          setTimeout(() => onShowPaywall(), 300);
+        }
+        return;
+      }
+      await incrementDailyMessageCount();
+    }
 
     setMessages((prev) => [...prev, { id: Date.now().toString(), text: text.trim(), isUser: true, timestamp: new Date() }]);
     setIsTyping(true);

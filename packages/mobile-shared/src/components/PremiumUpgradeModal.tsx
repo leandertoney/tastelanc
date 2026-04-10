@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getColors } from '../config/theme';
+import { getColors, getBrand } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius } from '../constants/spacing';
 
@@ -12,10 +12,10 @@ interface PremiumUpgradeModalProps {
 }
 
 const PREMIUM_BENEFITS = [
-  { icon: 'trophy', text: "Vote for your city's Best" },
-  { icon: 'pricetag', text: 'Exclusive deals & discounts' },
-  { icon: 'flash', text: 'Early access to events' },
+  { icon: 'chatbubble-ellipses', text: 'Unlimited AI recommendations' },
+  { icon: 'pricetag', text: 'Exclusive deals & early access' },
   { icon: 'remove-circle', text: 'Ad-free experience' },
+  { icon: 'trophy', text: '2.5x rewards on every check-in' },
 ] as const;
 
 export default function PremiumUpgradeModal({
@@ -26,6 +26,7 @@ export default function PremiumUpgradeModal({
 }: PremiumUpgradeModalProps) {
   const styles = useStyles();
   const colors = getColors();
+  const brand = getBrand();
 
   return (
     <Modal
@@ -46,9 +47,9 @@ export default function PremiumUpgradeModal({
             <View style={styles.starContainer}>
               <Ionicons name="star" size={32} color="#FFD700" />
             </View>
-            <Text style={styles.title}>Upgrade to Premium</Text>
+            <Text style={styles.title}>Upgrade to {brand.appName}+</Text>
             <Text style={styles.subtitle}>
-              Unlock {featureName} and more exclusive features
+              Unlock {featureName} and let {brand.aiName} work for you
             </Text>
           </View>
 
@@ -66,7 +67,7 @@ export default function PremiumUpgradeModal({
 
           {/* CTA */}
           <TouchableOpacity style={styles.upgradeButton} onPress={onUpgrade}>
-            <Text style={styles.upgradeButtonText}>Upgrade Now - $4.99/mo</Text>
+            <Text style={styles.upgradeButtonText}>See Plans</Text>
           </TouchableOpacity>
 
           {/* Dismiss */}
