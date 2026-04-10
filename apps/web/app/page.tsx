@@ -79,8 +79,8 @@ export default function HomePage() {
                 </PhoneMockup>
               </div>
             </div>
-            {/* Secondary phone — recommend/camera, offset behind (desktop only) */}
-            <div className="hidden lg:block opacity-0 anim-fade-up-slow -ml-16 mt-12 relative z-0" style={{ animationDelay: '0.55s' }}>
+            {/* Secondary phone — recommend/camera, offset behind */}
+            <div className="opacity-0 anim-fade-up-slow -ml-12 sm:-ml-16 mt-8 sm:mt-12 relative z-0" style={{ animationDelay: '0.55s' }}>
               <div className="anim-float" style={{ animationDelay: '1.6s' }}>
                 <PhoneMockup size="md" tilt="left">
                   <MockupRecommendScreen />

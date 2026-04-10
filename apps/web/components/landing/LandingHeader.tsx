@@ -41,6 +41,12 @@ export default function LandingHeader() {
           >
             For Restaurants
           </Link>
+          <Link
+            href="/login"
+            className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            Sign In
+          </Link>
           {HAS_APP && (
             <StoreBadges size="sm" />
           )}
@@ -72,6 +78,13 @@ export default function LandingHeader() {
             onClick={() => setMenuOpen(false)}
           >
             For Restaurants
+          </Link>
+          <Link
+            href="/login"
+            className="block text-base text-gray-700 dark:text-gray-300"
+            onClick={() => setMenuOpen(false)}
+          >
+            Sign In
           </Link>
           {HAS_APP && (
             <div className="pt-2">
