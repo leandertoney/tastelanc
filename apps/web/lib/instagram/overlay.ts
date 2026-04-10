@@ -78,6 +78,7 @@ const ALL_FONTS = [
   'Inter-Regular.ttf',
   'PlayfairDisplay-Variable.ttf',
   'PlayfairDisplay-Italic-Variable.ttf',
+  'AbrilFatface-Regular.ttf',
 ];
 
 function findFontFile(filename: string): string {
@@ -130,6 +131,7 @@ function ensureSystemFonts(): void {
 
 // Font family constants for SVG — Playfair for editorial, Inter for UI
 const SERIF = 'Playfair Display';
+const DISPLAY = 'Abril Fatface'; // Ultra-bold fatface serif for mastheads
 const SANS = 'Inter';
 
 function escapeXml(str: string): string {
@@ -337,23 +339,11 @@ async function composeRoundupCover(
   const masthead = getMastheadParts(appName);
   const coverDate = formatCoverDate(date);
 
-  // Build "Inside" category block SVGs (backgrounds + labels)
-  const THUMB_W = 184;
-  const THUMB_H = 160;
-  const GAP = 16;
-  const START_X = BORDER + 20;
-  const insideBlocksSvg = INSIDE_CATEGORIES.map((cat, i) => {
-    const bx = START_X + i * (THUMB_W + GAP);
-    const labelX = bx + THUMB_W / 2;
-    return `
-      <!-- ${cat.label} block -->
-      <rect x="${bx}" y="800" width="${THUMB_W}" height="${THUMB_H + 60}" rx="8" fill="rgba(255,255,255,0.06)"/>
-      <text x="${labelX}" y="988" font-family="${SANS}" font-weight="700" font-size="13"
-            fill="${accent}" text-anchor="middle" letter-spacing="1">${cat.label}</text>
-      <text x="${labelX}" y="1006" font-family="${SANS}" font-weight="400" font-size="11"
-            fill="rgba(255,255,255,0.5)" text-anchor="middle">${cat.subtitle}</text>
-    `;
-  }).join('');
+  // Build "Inside" section — 4-row Barfly layout:
+  // Row 1: Two images (event + entertainment) side by side
+  // Row 2: Bold category headlines
+  // Row 3: Smaller text teasers
+  // Row 4: "inside TasteLanc" label + swipe CTA
 
   const textSvg = Buffer.from(`
     <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
@@ -411,16 +401,54 @@ async function composeRoundupCover(
             fill="${accent}" text-anchor="start">&#x2022; ${escapeXml(headline.label.toUpperCase())} EDITION ${theme.decorEmoji}</text>
       ` : ''}
 
-      <!-- ═══ "INSIDE YOUR TASTELANC" SECTION (Barfly's "Inside Your Fly" homage) ═══ -->
-      <rect x="${BORDER}" y="${INSIDE_TOP}" width="${SIZE - BORDER * 2}" height="${SIZE - INSIDE_TOP - BORDER}" fill="rgba(0,0,0,0.88)"/>
+      <!-- ═══ "INSIDE TASTELANC" SECTION (Barfly's "Inside Your Fly" homage) ═══ -->
+      <rect x="${BORDER}" y="${INSIDE_TOP}" width="${SIZE - BORDER * 2}" height="${SIZE - INSIDE_TOP - BORDER}" fill="rgba(0,0,0,0.90)"/>
       <rect x="${BORDER}" y="${INSIDE_TOP}" width="${SIZE - BORDER * 2}" height="3" fill="${accent}"/>
 
-      <text x="30" y="${INSIDE_TOP + 30}" font-family="${SERIF}" font-weight="400" font-size="18" font-style="italic"
-            fill="${accent}" text-anchor="start">inside your ${escapeXml(appName)}</text>
+      <!-- Row 1: "inside TasteLanc" label -->
+      <text x="30" y="${INSIDE_TOP + 28}" font-family="${SERIF}" font-weight="400" font-size="18" font-style="italic"
+            fill="${accent}" text-anchor="start">inside ${escapeXml(appName)}</text>
 
-      ${insideBlocksSvg}
+      <!-- Row 2: Two image blocks side by side (event + entertainment) -->
+      <!-- (images composited by Sharp at these positions) -->
+      <rect x="30" y="${INSIDE_TOP + 42}" width="500" height="120" rx="6" fill="rgba(255,255,255,0.04)"/>
+      <text x="44" y="${INSIDE_TOP + 70}" font-family="${SANS}" font-weight="700" font-size="13"
+            fill="white" letter-spacing="1">LIVE MUSIC</text>
+      <text x="44" y="${INSIDE_TOP + 86}" font-family="${SANS}" font-weight="400" font-size="11"
+            fill="rgba(255,255,255,0.5)">this week&apos;s lineup</text>
 
-      <!-- Swipe CTA -->
+      <rect x="546" y="${INSIDE_TOP + 42}" width="500" height="120" rx="6" fill="rgba(255,255,255,0.04)"/>
+      <text x="560" y="${INSIDE_TOP + 70}" font-family="${SANS}" font-weight="700" font-size="13"
+            fill="white" letter-spacing="1">EVENTS &amp; TRIVIA</text>
+      <text x="560" y="${INSIDE_TOP + 86}" font-family="${SANS}" font-weight="400" font-size="11"
+            fill="rgba(255,255,255,0.5)">what&apos;s happening tonight</text>
+
+      <!-- Row 3: Bold category headlines -->
+      <text x="30" y="${INSIDE_TOP + 195}" font-family="${SANS}" font-weight="700" font-size="14"
+            fill="${accent}" text-anchor="start" letter-spacing="1">HAPPY HOURS</text>
+      <text x="30" y="${INSIDE_TOP + 212}" font-family="${SANS}" font-weight="400" font-size="11"
+            fill="rgba(255,255,255,0.5)">daily specials</text>
+
+      <text x="260" y="${INSIDE_TOP + 195}" font-family="${SANS}" font-weight="700" font-size="14"
+            fill="${accent}" text-anchor="start" letter-spacing="1">DINING</text>
+      <text x="260" y="${INSIDE_TOP + 212}" font-family="${SANS}" font-weight="400" font-size="11"
+            fill="rgba(255,255,255,0.5)">tonight&apos;s picks</text>
+
+      <text x="460" y="${INSIDE_TOP + 195}" font-family="${SANS}" font-weight="700" font-size="14"
+            fill="${accent}" text-anchor="start" letter-spacing="1">DEALS</text>
+      <text x="460" y="${INSIDE_TOP + 212}" font-family="${SANS}" font-weight="400" font-size="11"
+            fill="rgba(255,255,255,0.5)">exclusive savings</text>
+
+      <text x="650" y="${INSIDE_TOP + 195}" font-family="${SANS}" font-weight="700" font-size="14"
+            fill="white" text-anchor="start" letter-spacing="1">PLUS</text>
+      <text x="650" y="${INSIDE_TOP + 212}" font-family="${SANS}" font-weight="400" font-size="11"
+            fill="rgba(255,255,255,0.5)">more on the app</text>
+
+      <!-- Row 4: Smaller text teasers + Swipe CTA -->
+      <line x1="30" y1="${INSIDE_TOP + 226}" x2="${SIZE - 42}" y2="${INSIDE_TOP + 226}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+      <text x="30" y="${INSIDE_TOP + 248}" font-family="${SANS}" font-weight="400" font-size="12"
+            fill="rgba(255,255,255,0.45)">Specials &#x2022; Nightlife &#x2022; Date Night Picks &#x2022; Local Favorites &#x2022; AI Recommendations</text>
+
       <text x="${cx}" y="${SIZE - 22}" font-family="${SANS}" font-weight="400" font-size="13"
             fill="rgba(255,255,255,0.45)" text-anchor="middle" letter-spacing="3">SWIPE FOR THIS WEEK&apos;S PICKS  &#x276F;</text>
     </svg>`);
@@ -428,7 +456,7 @@ async function composeRoundupCover(
   // Load logo and category thumbnails in parallel
   const [resizedLogo, thumbnails] = await Promise.all([
     sharp(logoBuffer).resize(50, 50, { fit: 'cover' }).png().toBuffer(),
-    loadInsideThumbnails(),
+    loadInsideThumbnails(INSIDE_TOP),
   ]);
 
   return base
@@ -1257,19 +1285,22 @@ async function composeCoverSlide(
   appName: string,
   featuredItems: { name: string; detail: string; imageBuffer: Buffer }[] = []
 ): Promise<Buffer> {
-  // FRAMED MAGAZINE COVER — purple border frames the entire image
-  // Text in top border, huge masthead over photo, solid bottom container with featured content
-  const BORDER = 18; // border width on sides
-  const TOP_BAR = 32; // height of text in top border
-  const BOTTOM_H = 220; // height of bottom featured section
-  const BRAND_COLOR = '#6B21A8'; // purple
-  const BRAND_LIGHT = '#A855F7'; // lighter purple for accents
+  // FRAMED MAGAZINE COVER — 4:5 portrait ratio (1080x1350)
+  // Purple border frames everything. Masthead + "inside your" on photo.
+  // Cover lines + bullets + featured images in the purple bottom section.
+  const W = SIZE; // 1080
+  const H = 1350; // 4:5 portrait
+  const BORDER = 18;
+  const TOP_BAR = 36; // taller for bigger tagline text
+  const BOTTOM_H = 290; // images + list only (cover lines are on photo now)
+  const BRAND_COLOR = '#6B21A8';
+  const BRAND_LIGHT = '#A855F7';
 
-  // Photo area dimensions (inside the frame)
-  const photoW = SIZE - BORDER * 2;
-  const photoH = SIZE - TOP_BAR - BOTTOM_H;
+  // Photo area (inside the frame, above the purple bottom)
+  const photoW = W - BORDER * 2;
+  const photoH = H - TOP_BAR - BOTTOM_H;
 
-  // Resize the photo to fit inside the frame
+  // Resize photo
   let photoBuffer: Buffer;
   if (imageBuffer) {
     photoBuffer = await sharp(imageBuffer)
@@ -1283,108 +1314,103 @@ async function composeCoverSlide(
       .toBuffer();
   }
 
-  // Build featured images for bottom section (resize to thumbnails)
+  // Featured thumbnails — BIG, maximize space
+  const THUMB_W = 280;
+  const THUMB_H = 210;
   const featuredThumbs: Buffer[] = [];
   for (const item of featuredItems.slice(0, 2)) {
-    const thumb = await sharp(item.imageBuffer)
-      .resize(160, 120, { fit: 'cover', position: 'centre' })
-      .jpeg({ quality: 85 })
-      .toBuffer();
-    featuredThumbs.push(thumb);
+    featuredThumbs.push(await sharp(item.imageBuffer)
+      .resize(THUMB_W, THUMB_H, { fit: 'cover', position: 'centre' })
+      .jpeg({ quality: 88 })
+      .toBuffer());
   }
 
-  // Start with the purple background (the border color)
-  let base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: hexToRgb(BRAND_COLOR) } });
+  // Start with purple background
+  let base = sharp({ create: { width: W, height: H, channels: 3, background: hexToRgb(BRAND_COLOR) } });
 
-  // Photo overlay — light gradient for text legibility
+  // Photo overlay — light gradient for masthead + "inside your" legibility
   const photoOverlay = Buffer.from(`
     <svg width="${photoW}" height="${photoH}" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="pho" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style="stop-color:black;stop-opacity:0.5"/>
-          <stop offset="15%" style="stop-color:black;stop-opacity:0.15"/>
-          <stop offset="40%" style="stop-color:black;stop-opacity:0.05"/>
-          <stop offset="65%" style="stop-color:black;stop-opacity:0.2"/>
-          <stop offset="85%" style="stop-color:black;stop-opacity:0.55"/>
-          <stop offset="100%" style="stop-color:black;stop-opacity:0.7"/>
+          <stop offset="0%" style="stop-color:black;stop-opacity:0.45"/>
+          <stop offset="15%" style="stop-color:black;stop-opacity:0.12"/>
+          <stop offset="50%" style="stop-color:black;stop-opacity:0.03"/>
+          <stop offset="80%" style="stop-color:black;stop-opacity:0.25"/>
+          <stop offset="100%" style="stop-color:black;stop-opacity:0.6"/>
         </linearGradient>
       </defs>
       <rect width="${photoW}" height="${photoH}" fill="url(#pho)"/>
     </svg>`);
 
-  const cx = SIZE / 2;
-  const pcx = photoW / 2;
+  const cx = W / 2;
   const editorialHeadline = getEditorialHeadline(headline);
-
-  // Issue date
   const now = new Date();
   const issueDate = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
-  // Text overlay on the PHOTO area
+  // Gold accent — used for "Taste", cover lines, separator, category headers
+  const GOLD = '#E8C547';
+  const PAD = 20; // inner padding from photo edges
+
+  // "Taste" width at font-size 105 is approx 310px. "Lanc" will be stretched to match.
+  const TASTE_SIZE = 105;
+  const TASTE_W = 310; // approximate rendered width
+  const TASTE_X = PAD;
+  const TASTE_Y = 115; // moved down from corner
+
+  // Photo text — masthead LEFT + cover lines + date
   const photoTextSvg = Buffer.from(`
     <svg width="${photoW}" height="${photoH}" xmlns="http://www.w3.org/2000/svg">
       ${svgFontStyles()}
 
-      <!-- "Taste" — TOP LEFT, huge -->
-      <text x="22" y="88"
-            font-family="${SERIF}" font-weight="900" font-size="120"
+      <!-- "Taste" — LEFT, gold, moved down from corner -->
+      <text x="${TASTE_X + 2}" y="${TASTE_Y}"
+            font-family="${SERIF}" font-weight="900" font-size="${TASTE_SIZE}"
             fill="rgba(0,0,0,0.45)" text-anchor="start">Taste</text>
-      <text x="20" y="86"
-            font-family="${SERIF}" font-weight="900" font-size="120"
-            fill="white" text-anchor="start">Taste</text>
+      <text x="${TASTE_X}" y="${TASTE_Y - 2}"
+            font-family="${SERIF}" font-weight="900" font-size="${TASTE_SIZE}"
+            fill="${GOLD}" text-anchor="start">Taste</text>
 
-      <!-- "Lanc" — underneath Taste, left-aligned, smaller -->
-      <text x="27" y="128"
-            font-family="${SERIF}" font-weight="700" font-size="38"
-            fill="rgba(0,0,0,0.4)" text-anchor="start" letter-spacing="10">Lanc</text>
-      <text x="25" y="126"
-            font-family="${SERIF}" font-weight="700" font-size="38"
-            fill="white" text-anchor="start" letter-spacing="10">Lanc</text>
+      <!-- "Lanc" — thin, stretched to same width as Taste using textLength -->
+      <text x="${TASTE_X + 2}" y="${TASTE_Y + 38}"
+            font-family="${SANS}" font-weight="300" font-size="30"
+            fill="rgba(0,0,0,0.4)" text-anchor="start"
+            textLength="${TASTE_W}" lengthAdjust="spacing">L A N C</text>
+      <text x="${TASTE_X}" y="${TASTE_Y + 36}"
+            font-family="${SANS}" font-weight="300" font-size="30"
+            fill="white" text-anchor="start"
+            textLength="${TASTE_W}" lengthAdjust="spacing">L A N C</text>
 
-      <!-- Date — TOP RIGHT only -->
-      <text x="${photoW - 15}" y="30"
+      <!-- Date — top right -->
+      <text x="${photoW - PAD}" y="30"
             font-family="${SERIF}" font-weight="600" font-size="16"
             fill="rgba(255,255,255,0.85)" text-anchor="end">${escapeXml(issueDate)}</text>
 
-      <!-- ═══ EDITORIAL COVER LINES ═══ -->
-      <text x="32" y="${photoH - 190}"
-            font-family="${SERIF}" font-weight="700" font-size="64" font-style="italic"
+      <!-- ═══ COVER LINES — ON the photo, gold ═══ -->
+      <text x="${PAD + 12}" y="${photoH - 135}"
+            font-family="${SERIF}" font-weight="700" font-size="56" font-style="italic"
             fill="rgba(0,0,0,0.5)" text-anchor="start">${escapeXml(editorialHeadline.line1)}</text>
-      <text x="30" y="${photoH - 192}"
-            font-family="${SERIF}" font-weight="700" font-size="64" font-style="italic"
-            fill="white" text-anchor="start">${escapeXml(editorialHeadline.line1)}</text>
+      <text x="${PAD + 10}" y="${photoH - 137}"
+            font-family="${SERIF}" font-weight="700" font-size="56" font-style="italic"
+            fill="${GOLD}" text-anchor="start">${escapeXml(editorialHeadline.line1)}</text>
 
-      <text x="32" y="${photoH - 124}"
-            font-family="${SERIF}" font-weight="700" font-size="64" font-style="italic"
+      <text x="${PAD + 12}" y="${photoH - 77}"
+            font-family="${SERIF}" font-weight="700" font-size="56" font-style="italic"
             fill="rgba(0,0,0,0.5)" text-anchor="start">${escapeXml(editorialHeadline.line2)}</text>
-      <text x="30" y="${photoH - 126}"
-            font-family="${SERIF}" font-weight="700" font-size="64" font-style="italic"
-            fill="white" text-anchor="start">${escapeXml(editorialHeadline.line2)}</text>
+      <text x="${PAD + 10}" y="${photoH - 79}"
+            font-family="${SERIF}" font-weight="700" font-size="56" font-style="italic"
+            fill="${GOLD}" text-anchor="start">${escapeXml(editorialHeadline.line2)}</text>
 
-      <!-- Bullet teasers — what's in this issue -->
-      <text x="42" y="${photoH - 68}"
-            font-family="${SERIF}" font-weight="600" font-size="19"
-            fill="rgba(0,0,0,0.5)" text-anchor="start">&#x2022; ${escapeXml(headline.count)}+ ${escapeXml(headline.label)} This Week</text>
-      <text x="40" y="${photoH - 70}"
-            font-family="${SERIF}" font-weight="600" font-size="19"
-            fill="white" text-anchor="start">&#x2022; ${escapeXml(headline.count)}+ ${escapeXml(headline.label)} This Week</text>
-
-      <text x="42" y="${photoH - 43}"
-            font-family="${SERIF}" font-weight="600" font-size="19"
-            fill="rgba(0,0,0,0.5)" text-anchor="start">&#x2022; Live Music, Trivia &amp; Events</text>
-      <text x="40" y="${photoH - 45}"
-            font-family="${SERIF}" font-weight="600" font-size="19"
-            fill="white" text-anchor="start">&#x2022; Live Music, Trivia &amp; Events</text>
-
-      <text x="42" y="${photoH - 18}"
-            font-family="${SERIF}" font-weight="600" font-size="19"
-            fill="rgba(0,0,0,0.5)" text-anchor="start">&#x2022; Exclusive Deals &amp; Specials</text>
-      <text x="40" y="${photoH - 20}"
-            font-family="${SERIF}" font-weight="600" font-size="19"
-            fill="white" text-anchor="start">&#x2022; Exclusive Deals &amp; Specials</text>
+      <!-- Bullet teasers — on the photo, white -->
+      <text x="${PAD + 22}" y="${photoH - 28}"
+            font-family="${SERIF}" font-weight="600" font-size="17"
+            fill="rgba(0,0,0,0.5)" text-anchor="start">&#x2022; ${escapeXml(headline.count)}+ ${escapeXml(headline.label)} This Week  &#x2022; Live Music &amp; Trivia  &#x2022; Deals</text>
+      <text x="${PAD + 20}" y="${photoH - 30}"
+            font-family="${SERIF}" font-weight="600" font-size="17"
+            fill="white" text-anchor="start">&#x2022; ${escapeXml(headline.count)}+ ${escapeXml(headline.label)} This Week  &#x2022; Live Music &amp; Trivia  &#x2022; Deals</text>
     </svg>`);
 
-  // Compose the photo with overlay and text
+  // Compose photo
   const composedPhoto = await sharp(photoBuffer)
     .composite([
       { input: photoOverlay, top: 0, left: 0 },
@@ -1393,109 +1419,135 @@ async function composeCoverSlide(
     .jpeg({ quality: JPEG_QUALITY })
     .toBuffer();
 
-  // Top border text — tagline fits inside the border strip
+  // Top border — tagline text, wider/bigger to fill the border
   const tagline = 'LANCASTER&apos;S MOST COMPLETE GUIDE TO DINING, DRINKS &amp; NIGHTLIFE';
   const topBarSvg = Buffer.from(`
-    <svg width="${SIZE}" height="${TOP_BAR}" xmlns="http://www.w3.org/2000/svg">
+    <svg width="${W}" height="${TOP_BAR}" xmlns="http://www.w3.org/2000/svg">
       ${svgFontStyles()}
-      <text x="${cx}" y="${TOP_BAR - 8}"
-            font-family="${SANS}" font-weight="600" font-size="11"
-            fill="white" text-anchor="middle" letter-spacing="2">${tagline}</text>
+      <text x="${cx}" y="${TOP_BAR - 10}"
+            font-family="${SANS}" font-weight="700" font-size="13"
+            fill="white" text-anchor="middle" letter-spacing="3">${tagline}</text>
     </svg>`);
 
-  // Bottom section — bigger thumbnails, vertical separator only, taller list
+  // Bottom section — Barfly-style: 2 images + category column + "PLUS" list
+  // Layout: [IMG1] [gap] [IMG2] [gap] [CATEGORY COL] [gold sep] [PLUS list]
   const feat1 = featuredItems[0];
   const feat2 = featuredItems[1];
+  const B_PAD = 20; // equal padding from purple border
+  const COL_GAP = 18; // gap between columns/images
 
-  // Thumbnail layout — maximize space, no horizontal lines
-  const THUMB_W = 210;
-  const THUMB_H = 140;
-  const THUMB_PAD = 15;
-  const THUMB_Y = 30; // start right after "inside your" header
-  const THUMB1_X = BORDER + THUMB_PAD;
-  const THUMB2_X = THUMB1_X + THUMB_W + THUMB_PAD;
-  const LIST_X = THUMB2_X + THUMB_W + THUMB_PAD + 15;
+  // Calculate widths — 4 columns: img, img, category, plus-list
+  const usableW = W - B_PAD * 2;
+  const THUMB_W_ACTUAL = Math.floor(usableW * 0.22); // ~238px each image
+  const CAT_W = Math.floor(usableW * 0.22); // category column
+  const LIST_W = usableW - THUMB_W_ACTUAL * 2 - CAT_W - COL_GAP * 3; // remaining for plus list
+  const THUMB_H_ACTUAL = BOTTOM_H - B_PAD * 2 - 25; // room for name below
+
+  const THUMB1_X = B_PAD;
+  const THUMB2_X = THUMB1_X + THUMB_W_ACTUAL + COL_GAP;
+  const CAT_X = THUMB2_X + THUMB_W_ACTUAL + COL_GAP;
+  const SEP_X = CAT_X + CAT_W + Math.floor(COL_GAP / 2);
+  const LIST_X = SEP_X + Math.floor(COL_GAP / 2) + 4;
 
   const bottomSvg = Buffer.from(`
-    <svg width="${SIZE}" height="${BOTTOM_H}" xmlns="http://www.w3.org/2000/svg">
+    <svg width="${W}" height="${BOTTOM_H}" xmlns="http://www.w3.org/2000/svg">
       ${svgFontStyles()}
 
-      <!-- "inside your TasteLanc" header — Playfair Display -->
-      <text x="${cx}" y="20"
-            font-family="${SERIF}" font-weight="700" font-size="16" font-style="italic"
-            fill="white" text-anchor="middle" letter-spacing="3">inside your ${escapeXml(appName)}</text>
-
-      <!-- NO horizontal line — thumbnails start immediately -->
-
-      <!-- Featured 1 label — below its thumbnail -->
+      <!-- Image 1 name -->
       ${feat1 ? `
-      <text x="${THUMB1_X}" y="${THUMB_Y + THUMB_H + 18}"
+      <text x="${THUMB1_X}" y="${B_PAD + THUMB_H_ACTUAL + 18}"
             font-family="${SERIF}" font-weight="700" font-size="14"
             fill="white" text-anchor="start">${escapeXml(feat1.name)}</text>
-      <text x="${THUMB1_X}" y="${THUMB_Y + THUMB_H + 35}"
-            font-family="${SERIF}" font-weight="400" font-size="12" font-style="italic"
-            fill="rgba(255,255,255,0.6)" text-anchor="start">${escapeXml(feat1.detail)}</text>
       ` : ''}
 
-      <!-- Featured 2 label -->
+      <!-- Image 2 name -->
       ${feat2 ? `
-      <text x="${THUMB2_X}" y="${THUMB_Y + THUMB_H + 18}"
+      <text x="${THUMB2_X}" y="${B_PAD + THUMB_H_ACTUAL + 18}"
             font-family="${SERIF}" font-weight="700" font-size="14"
             fill="white" text-anchor="start">${escapeXml(feat2.name)}</text>
-      <text x="${THUMB2_X}" y="${THUMB_Y + THUMB_H + 35}"
-            font-family="${SERIF}" font-weight="400" font-size="12" font-style="italic"
-            fill="rgba(255,255,255,0.6)" text-anchor="start">${escapeXml(feat2.detail)}</text>
       ` : ''}
 
-      <!-- VERTICAL separator only — between images and list -->
-      <rect x="${LIST_X - 12}" y="${THUMB_Y}" width="1" height="${BOTTOM_H - THUMB_Y - 15}" fill="rgba(255,255,255,0.2)"/>
+      <!-- ═══ CATEGORY COLUMN — Barfly-style (DINING / EVENTS / SPOTLIGHT) ═══ -->
+      <text x="${CAT_X}" y="${B_PAD + 18}"
+            font-family="${SANS}" font-weight="700" font-size="13"
+            fill="${GOLD}" text-anchor="start" letter-spacing="2">DINING</text>
+      <text x="${CAT_X}" y="${B_PAD + 38}"
+            font-family="${SERIF}" font-weight="400" font-size="12" font-style="italic"
+            fill="rgba(255,255,255,0.7)" text-anchor="start">New specials this week</text>
 
-      <!-- Right side list — TALL, fills the space, Playfair Display -->
-      <text x="${LIST_X}" y="${THUMB_Y + 14}"
-            font-family="${SERIF}" font-weight="700" font-size="15"
-            fill="${BRAND_LIGHT}" text-anchor="start">Also This Week</text>
+      <text x="${CAT_X}" y="${B_PAD + 72}"
+            font-family="${SANS}" font-weight="700" font-size="13"
+            fill="${GOLD}" text-anchor="start" letter-spacing="2">EVENTS</text>
+      <text x="${CAT_X}" y="${B_PAD + 92}"
+            font-family="${SERIF}" font-weight="400" font-size="12" font-style="italic"
+            fill="rgba(255,255,255,0.7)" text-anchor="start">Live music &amp; trivia</text>
 
-      <text x="${LIST_X + 5}" y="${THUMB_Y + 40}"
+      <text x="${CAT_X}" y="${B_PAD + 126}"
+            font-family="${SANS}" font-weight="700" font-size="13"
+            fill="${GOLD}" text-anchor="start" letter-spacing="2">SPOTLIGHT</text>
+      <text x="${CAT_X}" y="${B_PAD + 146}"
+            font-family="${SERIF}" font-weight="400" font-size="12" font-style="italic"
+            fill="rgba(255,255,255,0.7)" text-anchor="start">Featured restaurants</text>
+
+      <text x="${CAT_X}" y="${B_PAD + 180}"
+            font-family="${SANS}" font-weight="700" font-size="13"
+            fill="${GOLD}" text-anchor="start" letter-spacing="2">HAPPY HOUR</text>
+      <text x="${CAT_X}" y="${B_PAD + 200}"
+            font-family="${SERIF}" font-weight="400" font-size="12" font-style="italic"
+            fill="rgba(255,255,255,0.7)" text-anchor="start">Where to drink after 5</text>
+
+      <!-- ═══ GOLD VERTICAL SEPARATOR ═══ -->
+      <rect x="${SEP_X}" y="${B_PAD}" width="3" height="${BOTTOM_H - B_PAD * 2}" fill="${GOLD}" opacity="0.6"/>
+
+      <!-- ═══ PLUS COLUMN — Barfly-style detailed list ═══ -->
+      <text x="${LIST_X}" y="${B_PAD + 18}"
+            font-family="${SANS}" font-weight="700" font-size="15"
+            fill="${GOLD}" text-anchor="start" letter-spacing="3">PLUS</text>
+
+      <text x="${LIST_X}" y="${B_PAD + 48}"
             font-family="${SERIF}" font-weight="400" font-size="14"
-            fill="rgba(255,255,255,0.75)" text-anchor="start">&#x2022; Happy Hours &amp; Deals</text>
-      <text x="${LIST_X + 5}" y="${THUMB_Y + 62}"
+            fill="rgba(255,255,255,0.85)" text-anchor="start">Happy Hour Guide</text>
+      <text x="${LIST_X}" y="${B_PAD + 70}"
             font-family="${SERIF}" font-weight="400" font-size="14"
-            fill="rgba(255,255,255,0.75)" text-anchor="start">&#x2022; Live Music Lineups</text>
-      <text x="${LIST_X + 5}" y="${THUMB_Y + 84}"
+            fill="rgba(255,255,255,0.85)" text-anchor="start">Dining Directory</text>
+      <text x="${LIST_X}" y="${B_PAD + 92}"
             font-family="${SERIF}" font-weight="400" font-size="14"
-            fill="rgba(255,255,255,0.75)" text-anchor="start">&#x2022; Trivia &amp; Game Nights</text>
-      <text x="${LIST_X + 5}" y="${THUMB_Y + 106}"
+            fill="rgba(255,255,255,0.85)" text-anchor="start">Bar &amp; Club Menus</text>
+      <text x="${LIST_X}" y="${B_PAD + 114}"
             font-family="${SERIF}" font-weight="400" font-size="14"
-            fill="rgba(255,255,255,0.75)" text-anchor="start">&#x2022; Weekend Events</text>
-      <text x="${LIST_X + 5}" y="${THUMB_Y + 128}"
+            fill="rgba(255,255,255,0.85)" text-anchor="start">Music Spotlights</text>
+      <text x="${LIST_X}" y="${B_PAD + 136}"
             font-family="${SERIF}" font-weight="400" font-size="14"
-            fill="rgba(255,255,255,0.75)" text-anchor="start">&#x2022; Exclusive Deals</text>
-      <text x="${LIST_X + 5}" y="${THUMB_Y + 150}"
+            fill="rgba(255,255,255,0.85)" text-anchor="start">Weekend Events</text>
+      <text x="${LIST_X}" y="${B_PAD + 158}"
             font-family="${SERIF}" font-weight="400" font-size="14"
-            fill="rgba(255,255,255,0.75)" text-anchor="start">&#x2022; Restaurant Spotlights</text>
-      <text x="${LIST_X + 5}" y="${THUMB_Y + 172}"
+            fill="rgba(255,255,255,0.85)" text-anchor="start">Deals &amp; Specials</text>
+      <text x="${LIST_X}" y="${B_PAD + 180}"
             font-family="${SERIF}" font-weight="400" font-size="14"
-            fill="rgba(255,255,255,0.75)" text-anchor="start">&#x2022; New on ${escapeXml(appName)}</text>
+            fill="rgba(255,255,255,0.85)" text-anchor="start">New Restaurants</text>
+      <text x="${LIST_X}" y="${B_PAD + 202}"
+            font-family="${SERIF}" font-weight="400" font-size="14"
+            fill="rgba(255,255,255,0.85)" text-anchor="start">Weekly Calendar</text>
     </svg>`);
 
-  // Resize featured thumbnails — bigger and wider
+  // Resize thumbnails
   const thumbs: Buffer[] = [];
   for (const tb of featuredThumbs.slice(0, 2)) {
-    thumbs.push(await sharp(tb).resize(THUMB_W, THUMB_H, { fit: 'cover', position: 'centre' }).jpeg({ quality: 88 }).toBuffer());
+    thumbs.push(await sharp(tb).resize(THUMB_W_ACTUAL, THUMB_H_ACTUAL, { fit: 'cover', position: 'centre' }).jpeg({ quality: 88 }).toBuffer());
   }
 
   // Build composites
   const composites: sharp.OverlayOptions[] = [
     { input: topBarSvg, top: 0, left: 0 },
     { input: composedPhoto, top: TOP_BAR, left: BORDER },
-    { input: bottomSvg, top: SIZE - BOTTOM_H, left: 0 },
+    { input: bottomSvg, top: H - BOTTOM_H, left: 0 },
   ];
 
   if (thumbs[0]) {
-    composites.push({ input: thumbs[0], top: SIZE - BOTTOM_H + THUMB_Y, left: THUMB1_X });
+    composites.push({ input: thumbs[0], top: H - BOTTOM_H + B_PAD, left: THUMB1_X });
   }
   if (thumbs[1]) {
-    composites.push({ input: thumbs[1], top: SIZE - BOTTOM_H + THUMB_Y, left: THUMB2_X });
+    composites.push({ input: thumbs[1], top: H - BOTTOM_H + B_PAD, left: THUMB2_X });
   }
 
   return base
@@ -2215,44 +2267,34 @@ function getCoverTagline(marketName: string): string {
   return `${escapeXml(marketName.toUpperCase())}&apos;S GUIDE TO DINING, DRINKS &amp; NIGHTLIFE`;
 }
 
-/** Category thumbnails for the "Inside Your TasteLanc" section */
-const INSIDE_CATEGORIES = [
-  { label: 'HAPPY HOURS', subtitle: 'daily specials', image: 'events/live_music.png' },
-  { label: 'EVENTS', subtitle: 'live music &amp; more', image: 'events/trivia.png' },
-  { label: 'DINING', subtitle: 'tonight&apos;s picks', image: 'events/other.png' },
-  { label: 'DEALS', subtitle: 'exclusive savings', image: 'events/comedy.png' },
-  { label: 'PLUS', subtitle: 'on the app', image: 'events/sports.png' },
+/** Two "Inside" section images — event + entertainment, side by side */
+const INSIDE_IMAGES = [
+  { image: 'events/live_music.png', x: 30, w: 500 },   // Left block: live music
+  { image: 'events/trivia.png', x: 546, w: 500 },      // Right block: events/trivia
 ];
 
-/** Load and resize category thumbnail images for the "Inside" section */
-async function loadInsideThumbnails(): Promise<{ input: Buffer; left: number; top: number }[]> {
-  const BORDER = 12;
-  const SECTION_IMG_TOP = 808;
-  const THUMB_W = 184;
-  const THUMB_H = 160;
-  const GAP = 16;
-  const START_X = BORDER + 20;
-
+/** Load and position the two "Inside" section images */
+async function loadInsideThumbnails(insideTop: number): Promise<{ input: Buffer; left: number; top: number }[]> {
+  const IMG_H = 120;
+  const IMG_TOP = insideTop + 42;
   const composites: { input: Buffer; left: number; top: number }[] = [];
 
-  for (let i = 0; i < INSIDE_CATEGORIES.length; i++) {
-    const cat = INSIDE_CATEGORIES[i];
-    const imgPath = join(process.cwd(), 'public', 'images', cat.image);
-    const x = START_X + i * (THUMB_W + GAP);
-
+  for (const block of INSIDE_IMAGES) {
+    const imgPath = join(process.cwd(), 'public', 'images', block.image);
     try {
-      const thumbBuf = await sharp(readFileSync(imgPath))
-        .resize(THUMB_W, THUMB_H, { fit: 'cover', position: 'centre' })
+      const buf = await sharp(readFileSync(imgPath))
+        .resize(block.w, IMG_H, { fit: 'cover', position: 'centre' })
         .composite([{
-          input: Buffer.from(`<svg width="${THUMB_W}" height="${THUMB_H}"><rect width="${THUMB_W}" height="${THUMB_H}" rx="8" ry="8" fill="black"/></svg>`),
+          input: Buffer.from(`<svg width="${block.w}" height="${IMG_H}"><rect width="${block.w}" height="${IMG_H}" rx="6" ry="6" fill="black"/></svg>`),
           blend: 'dest-in',
         }])
+        .modulate({ brightness: 0.55 })  // Darken so text overlay is legible
         .png()
         .toBuffer();
 
-      composites.push({ input: thumbBuf, left: x, top: SECTION_IMG_TOP });
+      composites.push({ input: buf, left: block.x, top: IMG_TOP });
     } catch {
-      // Skip if image can't be loaded — the category label still renders via SVG
+      // Skip — SVG background block still shows
     }
   }
 

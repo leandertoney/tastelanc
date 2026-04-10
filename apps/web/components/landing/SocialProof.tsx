@@ -1,34 +1,55 @@
-import { Star, UtensilsCrossed, MapPin } from 'lucide-react';
-import { BRAND, MARKET_CONFIG } from '@/config/market';
+'use client';
 
-const marketCount = Object.keys(MARKET_CONFIG).length;
+import { Star, UtensilsCrossed, Clock, Calendar } from 'lucide-react';
+import { BRAND } from '@/config/market';
+import { useRef, useEffect, useState } from 'react';
 
 const STATS = [
   {
     icon: Star,
-    value: '4.9',
+    value: '5.0',
     label: 'App Store Rating',
   },
   {
     icon: UtensilsCrossed,
-    value: '1,000+',
-    label: 'Local Restaurants',
+    value: '600+',
+    label: `${BRAND.countyShort} Restaurants`,
   },
   {
-    icon: MapPin,
-    value: `${marketCount}`,
-    label: marketCount === 1 ? 'City' : 'Cities',
+    icon: Clock,
+    value: '30+',
+    label: 'Happy Hours Daily',
+  },
+  {
+    icon: Calendar,
+    value: '90+',
+    label: 'Weekly Events',
   },
 ];
 
 export default function SocialProof() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } }, { threshold: 0.2 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
   return (
-    <section className="py-20 px-4 sm:px-6">
+    <section className="py-20 px-4 sm:px-6" ref={ref}>
       <div className="max-w-4xl mx-auto">
-        {/* Stats row */}
-        <div className="grid grid-cols-3 gap-6 text-center mb-16">
-          {STATS.map((stat) => (
-            <div key={stat.label}>
+        {/* Stats row — staggered reveal */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center mb-16">
+          {STATS.map((stat, i) => (
+            <div
+              key={stat.label}
+              className={`transition-all duration-700 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+              style={{ transitionDelay: `${i * 150}ms` }}
+            >
               <div
                 className="w-10 h-10 rounded-xl mx-auto mb-3 flex items-center justify-center"
                 style={{ backgroundColor: `${BRAND.colors.accent}10` }}
@@ -45,18 +66,10 @@ export default function SocialProof() {
           ))}
         </div>
 
-        {/* Pull quote */}
-        <div className="text-center max-w-2xl mx-auto">
-          <div className="flex justify-center gap-1 mb-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-            ))}
-          </div>
-          <blockquote className="text-lg sm:text-xl text-gray-700 dark:text-gray-300 italic leading-relaxed">
-            &ldquo;Finally an app that actually knows what&apos;s going on in {BRAND.countyShort}. The happy hour feature alone is worth it.&rdquo;
-          </blockquote>
-          <p className="text-sm text-gray-400 mt-3">
-            &mdash; App Store Review
+        {/* Tagline — fade in */}
+        <div className={`text-center max-w-2xl mx-auto transition-all duration-700 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '500ms' }}>
+          <p className="text-lg sm:text-xl text-gray-700 dark:text-gray-300 leading-relaxed">
+            Real data from real restaurants, updated daily.
           </p>
         </div>
       </div>
