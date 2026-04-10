@@ -277,7 +277,7 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
     socialHandle: '@tastefayetteville',
     instagramUrl: 'https://www.instagram.com/tastefayetteville/',
 
-    logoPath: '/images/tastefayetteville_logo.png',
+    logoPath: '/images/tastefayetteville_logo_dark.png',
 
     appStoreUrls: {
       ios: 'https://apps.apple.com/us/app/tastefayetteville/id6760276128',
