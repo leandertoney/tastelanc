@@ -1284,7 +1284,7 @@ async function composeCoverSlide(
   headline: HeadlineParts,
   logoBuffer: Buffer,
   appName: string,
-  featuredItems: { name: string; detail: string; imageBuffer: Buffer }[] = []
+  featuredItems: { name: string; detail: string; category?: string; imageBuffer: Buffer }[] = []
 ): Promise<Buffer> {
   // FRAMED MAGAZINE COVER — 4:5 portrait ratio (1080x1350)
   // Purple border frames everything. Masthead + "inside your" on photo.
@@ -1376,10 +1376,10 @@ async function composeCoverSlide(
             font-family="${SERIF}" font-weight="900" font-size="${TASTE_SIZE}"
             fill="${GOLD}" text-anchor="start">Taste</text>
 
-      <!-- "Lanc" — white text, accent color (gold) outline/shadow for depth -->
-      <text x="${TASTE_CX + 3}" y="${TASTE_Y + 40}"
+      <!-- "Lanc" — white text, dark shadow for depth -->
+      <text x="${TASTE_CX + 2}" y="${TASTE_Y + 39}"
             font-family="${SANS}" font-weight="300" font-size="28"
-            fill="${GOLD}" text-anchor="middle"
+            fill="rgba(0,0,0,0.6)" text-anchor="middle"
             textLength="290" lengthAdjust="spacing">L  A  N  C</text>
       <text x="${TASTE_CX}" y="${TASTE_Y + 37}"
             font-family="${SANS}" font-weight="300" font-size="28"
@@ -1464,7 +1464,7 @@ async function composeCoverSlide(
       ${feat1 ? `
       <text x="${THUMB1_X}" y="${B_PAD + THUMB_H_IMG + 18}"
             font-family="${SANS}" font-weight="900" font-size="15"
-            fill="${GOLD}" text-anchor="start" letter-spacing="2">CONCERTS</text>
+            fill="${GOLD}" text-anchor="start" letter-spacing="2">${escapeXml(feat1.category || 'FEATURED')}</text>
       <text x="${THUMB1_X}" y="${B_PAD + THUMB_H_IMG + 38}"
             font-family="${SERIF}" font-weight="600" font-size="13"
             fill="white" text-anchor="start">${escapeXml(feat1.name)}</text>
@@ -1474,7 +1474,7 @@ async function composeCoverSlide(
       ${feat2 ? `
       <text x="${THUMB2_X}" y="${B_PAD + THUMB_H_IMG + 18}"
             font-family="${SANS}" font-weight="900" font-size="15"
-            fill="${GOLD}" text-anchor="start" letter-spacing="2">DINING</text>
+            fill="${GOLD}" text-anchor="start" letter-spacing="2">${escapeXml(feat2.category || 'FEATURED')}</text>
       <text x="${THUMB2_X}" y="${B_PAD + THUMB_H_IMG + 38}"
             font-family="${SERIF}" font-weight="600" font-size="13"
             fill="white" text-anchor="start">${escapeXml(feat2.name)}</text>
@@ -1562,6 +1562,22 @@ async function composeCoverSlide(
 }
 
 // Generate editorial-style headlines instead of plain "15 HAPPY HOURS"
+// Determine the correct category label from the detail text (from real DB data)
+function getCategoryFromDetail(detail: string): string {
+  const d = detail.toLowerCase();
+  if (d.includes('happy hour')) return 'HAPPY HOUR';
+  if (d.includes('live music') || d.includes('concert')) return 'LIVE MUSIC';
+  if (d.includes('trivia')) return 'TRIVIA';
+  if (d.includes('karaoke')) return 'KARAOKE';
+  if (d.includes('comedy')) return 'COMEDY';
+  if (d.includes('dj')) return 'DJ NIGHT';
+  if (d.includes('bingo')) return 'BINGO';
+  if (d.includes('brunch')) return 'BRUNCH';
+  if (d.includes('special') || d.includes('deal')) return 'SPECIALS';
+  if (d.includes('event')) return 'EVENTS';
+  return 'DINING';
+}
+
 function getEditorialHeadline(headline: HeadlineParts): { line1: string; line2: string } {
   const label = headline.label.toLowerCase();
   const count = headline.count;
