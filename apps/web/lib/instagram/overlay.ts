@@ -67,9 +67,18 @@ function getHolidayTheme(holidayTag: string | null): HolidayTheme | null {
   return HOLIDAY_THEMES[base] || null;
 }
 
-// Install Inter fonts via fontconfig so librsvg/Pango can find them.
+// Install Inter + Playfair Display fonts via fontconfig so librsvg/Pango can find them.
+// Playfair Display = serif display font for editorial headlines (Barfly Magazine aesthetic)
+// Inter = clean sans-serif for labels, body text, UI elements
 // Data URI @font-face in SVG is unreliable with librsvg on serverless.
 let fontsInstalled = false;
+
+const ALL_FONTS = [
+  'Inter-Bold.ttf',
+  'Inter-Regular.ttf',
+  'PlayfairDisplay-Variable.ttf',
+  'PlayfairDisplay-Italic-Variable.ttf',
+];
 
 function findFontFile(filename: string): string {
   const candidates = [
@@ -90,13 +99,15 @@ function ensureSystemFonts(): void {
   const fontDir = '/tmp/fonts';
   mkdirSync(fontDir, { recursive: true });
 
-  // Copy Inter TTF files to /tmp/fonts
-  for (const name of ['Inter-Bold.ttf', 'Inter-Regular.ttf']) {
+  // Copy all font files to /tmp/fonts
+  for (const name of ALL_FONTS) {
     const dest = join(fontDir, name);
     if (!existsSync(dest)) {
       const src = findFontFile(name);
-      copyFileSync(src, dest);
-      console.log(`[Instagram] Copied ${name} to ${dest}`);
+      if (existsSync(src)) {
+        copyFileSync(src, dest);
+        console.log(`[Instagram] Copied ${name} to ${dest}`);
+      }
     }
   }
 
@@ -116,6 +127,10 @@ function ensureSystemFonts(): void {
   console.log(`[Instagram] Fontconfig configured: FONTCONFIG_FILE=${fontsConf}`);
   fontsInstalled = true;
 }
+
+// Font family constants for SVG — Playfair for editorial, Inter for UI
+const SERIF = 'Playfair Display';
+const SANS = 'Inter';
 
 function escapeXml(str: string): string {
   return str
@@ -249,7 +264,7 @@ export async function composeWeeklyRoundupSlides(opts: {
   const slides: Buffer[] = [];
 
   // Slide 1: Magazine Cover
-  slides.push(await composeRoundupCover(coverImage, headline, logoBuffer, appName, marketName, accent, accentDim, theme));
+  slides.push(await composeRoundupCover(coverImage, headline, logoBuffer, appName, marketName, accent, accentDim, theme, date));
 
   // Slides 2-4: Individual restaurant/special cards
   for (let i = 0; i < candidates.length; i++) {
@@ -280,113 +295,141 @@ async function composeRoundupCover(
   marketName: string,
   accent: string,
   accentDim: string,
-  theme: HolidayTheme | null
+  theme: HolidayTheme | null,
+  date: string
 ): Promise<Buffer> {
+  // Barfly Magazine homage — outer accent border, split masthead, date block,
+  // photo-forward hero, editorial headlines, color-blocked "Inside" section with thumbnails
+  const BORDER = 12;
+  const INSIDE_TOP = 755;
+
   let base: sharp.Sharp;
   if (imageBuffer) {
-    base = sharp(imageBuffer).resize(SIZE, SIZE, { fit: 'cover', position: 'centre' });
+    base = sharp(imageBuffer)
+      .resize(SIZE, SIZE, { fit: 'cover', position: 'centre' })
+      .modulate({ brightness: 1.05, saturation: 1.1 });
   } else {
-    const bg = theme ? hexToRgb(theme.bgDark) : { r: 20, g: 20, b: 25 };
+    const bg = theme ? hexToRgb(theme.bgDark) : { r: 30, g: 25, b: 35 };
     base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: bg } });
   }
 
-  // Dramatic overlay with accent-tinted gradient
+  // Gradient overlay — darken top for masthead, middle clear for photo, heavy bottom for "Inside" section
   const overlaySvg = Buffer.from(`
     <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="rndCover" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style="stop-color:black;stop-opacity:0.75"/>
-          <stop offset="30%" style="stop-color:black;stop-opacity:0.4"/>
-          <stop offset="60%" style="stop-color:black;stop-opacity:0.4"/>
-          <stop offset="100%" style="stop-color:black;stop-opacity:0.85"/>
+        <linearGradient id="bflyCover" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="black" stop-opacity="0.62"/>
+          <stop offset="14%" stop-color="black" stop-opacity="0.22"/>
+          <stop offset="35%" stop-color="black" stop-opacity="0.08"/>
+          <stop offset="52%" stop-color="black" stop-opacity="0.12"/>
+          <stop offset="65%" stop-color="black" stop-opacity="0.50"/>
+          <stop offset="72%" stop-color="black" stop-opacity="0.80"/>
+          <stop offset="100%" stop-color="black" stop-opacity="0.95"/>
         </linearGradient>
       </defs>
-      <rect width="${SIZE}" height="${SIZE}" fill="url(#rndCover)"/>
-      ${theme ? `<rect width="${SIZE}" height="${SIZE}" fill="${accent}" opacity="0.08"/>` : ''}
+      <rect width="${SIZE}" height="${SIZE}" fill="url(#bflyCover)"/>
+      ${theme ? `<rect width="${SIZE}" height="${SIZE}" fill="${accent}" opacity="0.05"/>` : ''}
     </svg>`);
 
-  const centerX = SIZE / 2;
-  const holidayDecor = theme?.decorEmoji || '';
+  const cx = SIZE / 2;
+  const editorialHeadline = getEditorialHeadline(headline);
+  const tagline = getCoverTagline(marketName);
+  const masthead = getMastheadParts(appName);
+  const coverDate = formatCoverDate(date);
 
-  // The magazine issue layout — bold, editorial
+  // Build "Inside" category block SVGs (backgrounds + labels)
+  const THUMB_W = 184;
+  const THUMB_H = 160;
+  const GAP = 16;
+  const START_X = BORDER + 20;
+  const insideBlocksSvg = INSIDE_CATEGORIES.map((cat, i) => {
+    const bx = START_X + i * (THUMB_W + GAP);
+    const labelX = bx + THUMB_W / 2;
+    return `
+      <!-- ${cat.label} block -->
+      <rect x="${bx}" y="800" width="${THUMB_W}" height="${THUMB_H + 60}" rx="8" fill="rgba(255,255,255,0.06)"/>
+      <text x="${labelX}" y="988" font-family="${SANS}" font-weight="700" font-size="13"
+            fill="${accent}" text-anchor="middle" letter-spacing="1">${cat.label}</text>
+      <text x="${labelX}" y="1006" font-family="${SANS}" font-weight="400" font-size="11"
+            fill="rgba(255,255,255,0.5)" text-anchor="middle">${cat.subtitle}</text>
+    `;
+  }).join('');
+
   const textSvg = Buffer.from(`
     <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
       ${svgFontStyles()}
 
-      <!-- Thin accent border frame -->
-      <rect x="30" y="30" width="${SIZE - 60}" height="${SIZE - 60}"
-            fill="none" stroke="${accent}" stroke-width="2" opacity="0.4"/>
+      <!-- ═══ OUTER ACCENT BORDER (Barfly signature) ═══ -->
+      <rect x="0" y="0" width="${SIZE}" height="${BORDER}" fill="${accent}"/>
+      <rect x="0" y="${SIZE - BORDER}" width="${SIZE}" height="${BORDER}" fill="${accent}"/>
+      <rect x="0" y="0" width="${BORDER}" height="${SIZE}" fill="${accent}"/>
+      <rect x="${SIZE - BORDER}" y="0" width="${BORDER}" height="${SIZE}" fill="${accent}"/>
 
-      <!-- Masthead: app name -->
-      <text x="${centerX}" y="110"
-            font-family="Inter" font-weight="700" font-size="42"
-            fill="white" text-anchor="middle" letter-spacing="14">
-        ${escapeXml(appName.toUpperCase())}
-      </text>
+      <!-- Tagline bar inside border -->
+      <rect x="${BORDER}" y="${BORDER}" width="${SIZE - BORDER * 2}" height="34" fill="rgba(0,0,0,0.65)"/>
+      <text x="${cx}" y="36" font-family="${SANS}" font-weight="600" font-size="11"
+            fill="white" text-anchor="middle" letter-spacing="2.5">${tagline}</text>
 
-      <!-- Accent rule under masthead -->
-      <rect x="${centerX - 180}" y="130" width="360" height="3" fill="${accent}"/>
+      <!-- ═══ MASTHEAD — split "Taste" / "Lanc" (Barfly's "Fly" / "Magazine" homage) ═══ -->
+      <!-- Left: big serif app name split -->
+      <text x="32" y="118" font-family="${SERIF}" font-weight="900" font-size="85"
+            fill="rgba(0,0,0,0.35)" text-anchor="start" letter-spacing="2">${escapeXml(masthead.big)}</text>
+      <text x="30" y="116" font-family="${SERIF}" font-weight="900" font-size="85"
+            fill="white" text-anchor="start" letter-spacing="2">${escapeXml(masthead.big)}</text>
+      ${masthead.small ? `
+      <text x="32" y="${118 + masthead.smallFontSize + 6}" font-family="${SERIF}" font-weight="400" font-size="${masthead.smallFontSize}"
+            fill="${accent}" text-anchor="start" letter-spacing="3">${escapeXml(masthead.small)}</text>
+      ` : ''}
+      <text x="32" y="185" font-family="${SANS}" font-weight="600" font-size="13"
+            fill="${accent}" text-anchor="start" letter-spacing="6">WEEKLY ROUNDUP</text>
 
-      <!-- Issue tagline -->
-      <text x="${centerX}" y="175"
-            font-family="Inter" font-weight="400" font-size="20" font-style="italic"
-            fill="${accentDim}" text-anchor="middle" letter-spacing="2">
-        WEEKLY ROUNDUP
-      </text>
+      <!-- Right: date block (Barfly's month/year homage) -->
+      <text x="${SIZE - 30}" y="78" font-family="${SANS}" font-weight="400" font-size="13"
+            fill="rgba(255,255,255,0.55)" text-anchor="end" letter-spacing="3">${escapeXml(coverDate.label)}</text>
+      <text x="${SIZE - 30}" y="125" font-family="${SERIF}" font-weight="700" font-size="44"
+            fill="white" text-anchor="end">${escapeXml(coverDate.value)}</text>
 
-      <!-- Big hero text — what's the vibe this week -->
-      <text x="${centerX}" y="480"
-            font-family="Inter" font-weight="700" font-size="72"
-            fill="white" text-anchor="middle">
-        ${escapeXml(headline.dayLabel.toUpperCase())}
-      </text>
+      <!-- ═══ EDITORIAL HEADLINE — italic serif ON the photo ═══ -->
+      <text x="50" y="492" font-family="${SERIF}" font-weight="700" font-size="68" font-style="italic"
+            fill="rgba(0,0,0,0.35)" text-anchor="start">${escapeXml(editorialHeadline.line1)}</text>
+      <text x="48" y="490" font-family="${SERIF}" font-weight="700" font-size="68" font-style="italic"
+            fill="white" text-anchor="start">${escapeXml(editorialHeadline.line1)}</text>
 
-      <!-- Accent category label -->
-      <text x="${centerX}" y="560"
-            font-family="Inter" font-weight="700" font-size="48"
-            fill="${accent}" text-anchor="middle" letter-spacing="4">
-        ${escapeXml(headline.label.toUpperCase())}
-      </text>
+      <text x="50" y="568" font-family="${SERIF}" font-weight="700" font-size="68" font-style="italic"
+            fill="rgba(0,0,0,0.35)" text-anchor="start">${escapeXml(editorialHeadline.line2)}</text>
+      <text x="48" y="566" font-family="${SERIF}" font-weight="700" font-size="68" font-style="italic"
+            fill="white" text-anchor="start">${escapeXml(editorialHeadline.line2)}</text>
+
+      <!-- Bullet teasers -->
+      <text x="65" y="628" font-family="${SANS}" font-weight="600" font-size="22"
+            fill="white" text-anchor="start">&#x2022; ${escapeXml(String(headline.count))}+ ${escapeXml(headline.label)} This Week</text>
+      <text x="65" y="663" font-family="${SANS}" font-weight="600" font-size="22"
+            fill="white" text-anchor="start">&#x2022; ${escapeXml(headline.dayLabel)}</text>
 
       ${theme ? `
-      <!-- Holiday badge -->
-      <rect x="${centerX - 200}" y="610" width="400" height="60" rx="30" ry="30"
-            fill="${accent}" opacity="0.2"/>
-      <rect x="${centerX - 200}" y="610" width="400" height="60" rx="30" ry="30"
-            fill="none" stroke="${accent}" stroke-width="2" opacity="0.6"/>
-      <text x="${centerX}" y="650"
-            font-family="Inter" font-weight="700" font-size="26"
-            fill="${accent}" text-anchor="middle" letter-spacing="3">
-        ${escapeXml(headline.label.toUpperCase())} EDITION
-      </text>
+      <text x="65" y="698" font-family="${SANS}" font-weight="600" font-size="22"
+            fill="${accent}" text-anchor="start">&#x2022; ${escapeXml(headline.label.toUpperCase())} EDITION ${theme.decorEmoji}</text>
       ` : ''}
 
-      <!-- Count badge -->
-      <text x="${centerX}" y="${SIZE - 170}"
-            font-family="Inter" font-weight="700" font-size="120"
-            fill="white" text-anchor="middle" opacity="0.15">
-        ${escapeXml(String(headline.count))}+
-      </text>
+      <!-- ═══ "INSIDE YOUR TASTELANC" SECTION (Barfly's "Inside Your Fly" homage) ═══ -->
+      <rect x="${BORDER}" y="${INSIDE_TOP}" width="${SIZE - BORDER * 2}" height="${SIZE - INSIDE_TOP - BORDER}" fill="rgba(0,0,0,0.88)"/>
+      <rect x="${BORDER}" y="${INSIDE_TOP}" width="${SIZE - BORDER * 2}" height="3" fill="${accent}"/>
 
-      <!-- In [market] -->
-      <text x="${centerX}" y="${SIZE - 110}"
-            font-family="Inter" font-weight="400" font-size="24"
-            fill="rgba(255,255,255,0.6)" text-anchor="middle" letter-spacing="3">
-        IN ${escapeXml(marketName.toUpperCase())}
-      </text>
+      <text x="30" y="${INSIDE_TOP + 30}" font-family="${SERIF}" font-weight="400" font-size="18" font-style="italic"
+            fill="${accent}" text-anchor="start">inside your ${escapeXml(appName)}</text>
+
+      ${insideBlocksSvg}
 
       <!-- Swipe CTA -->
-      <text x="${centerX}" y="${SIZE - 55}"
-            font-family="Inter" font-weight="400" font-size="20"
-            fill="rgba(255,255,255,0.5)" text-anchor="middle" letter-spacing="4">
-        SWIPE FOR THIS WEEK&apos;S PICKS  &#x276F;
-      </text>
+      <text x="${cx}" y="${SIZE - 22}" font-family="${SANS}" font-weight="400" font-size="13"
+            fill="rgba(255,255,255,0.45)" text-anchor="middle" letter-spacing="3">SWIPE FOR THIS WEEK&apos;S PICKS  &#x276F;</text>
     </svg>`);
 
-  const resizedLogo = await sharp(logoBuffer)
-    .resize(80, 80, { fit: 'cover' })
-    .png()
-    .toBuffer();
+  // Load logo and category thumbnails in parallel
+  const [resizedLogo, thumbnails] = await Promise.all([
+    sharp(logoBuffer).resize(50, 50, { fit: 'cover' }).png().toBuffer(),
+    loadInsideThumbnails(),
+  ]);
 
   return base
     .jpeg({ quality: JPEG_QUALITY })
@@ -394,7 +437,8 @@ async function composeRoundupCover(
     .then(buf => sharp(buf)
       .composite([
         { input: overlaySvg, top: 0, left: 0 },
-        { input: resizedLogo, top: 40, left: 50 },
+        { input: resizedLogo, top: 58, left: SIZE - 90 },
+        ...thumbnails,
         { input: textSvg, top: 0, left: 0 },
       ])
       .jpeg({ quality: JPEG_QUALITY })
@@ -412,10 +456,11 @@ async function composeRoundupCard(
   totalSlides: number,
   theme: HolidayTheme | null
 ): Promise<Buffer> {
+  // Editorial restaurant card — serif typography, accent blocks, corner brackets
   const base = imageBuffer
     ? sharp(imageBuffer).resize(SIZE, SIZE, { fit: 'cover', position: 'centre' })
     : (() => {
-        const bg = theme ? hexToRgb(theme.bgDark) : { r: 25, g: 25, b: 30 };
+        const bg = theme ? hexToRgb(theme.bgDark) : { r: 15, g: 12, b: 20 };
         return sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: bg } });
       })();
 
@@ -423,54 +468,77 @@ async function composeRoundupCard(
     <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="rndCard" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style="stop-color:black;stop-opacity:0.1"/>
-          <stop offset="50%" style="stop-color:black;stop-opacity:0.15"/>
-          <stop offset="75%" style="stop-color:black;stop-opacity:0.65"/>
-          <stop offset="100%" style="stop-color:black;stop-opacity:0.93"/>
+          <stop offset="0%" style="stop-color:black;stop-opacity:0.06"/>
+          <stop offset="40%" style="stop-color:black;stop-opacity:0.05"/>
+          <stop offset="60%" style="stop-color:black;stop-opacity:0.35"/>
+          <stop offset="80%" style="stop-color:black;stop-opacity:0.8"/>
+          <stop offset="100%" style="stop-color:black;stop-opacity:0.95"/>
         </linearGradient>
       </defs>
       <rect width="${SIZE}" height="${SIZE}" fill="url(#rndCard)"/>
-      ${theme ? `<rect width="${SIZE}" height="${SIZE}" fill="${accent}" opacity="0.05"/>` : ''}
+      ${theme ? `<rect width="${SIZE}" height="${SIZE}" fill="${accent}" opacity="0.04"/>` : ''}
     </svg>`);
 
-  const nameLines = wrapText(candidate.restaurant_name, 22);
+  const nameLines = wrapText(candidate.restaurant_name, 18);
+  const nameStartY = SIZE - 185 - (nameLines.length - 1) * 55;
   const nameSvg = nameLines.map((line, i) =>
-    `<text x="70" y="${SIZE - 145 - (nameLines.length - 1 - i) * 58}"
-           font-family="Inter" font-weight="700" font-size="48"
+    `<text x="70" y="${nameStartY + i * 55}"
+           font-family="${SERIF}" font-weight="700" font-size="48"
            fill="white" text-anchor="start">
        ${escapeXml(line)}
      </text>`
   ).join('\n');
 
+  const detailY = nameStartY + nameLines.length * 55 + 5;
+
+  // Parse price from detail text for callout
+  const priceMatch = candidate.detail_text.match(/\$\d+(?:\.\d{2})?/);
+
   const textSvg = Buffer.from(`
     <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
       ${svgFontStyles()}
 
-      <!-- Slide counter -->
-      <rect x="40" y="40" width="70" height="36" rx="4" ry="4" fill="${accent}"/>
-      <text x="75" y="66"
-            font-family="Inter" font-weight="700" font-size="20"
+      <!-- Corner brackets — editorial framing -->
+      ${cornerBracketsSvg(SIZE, 24, 55, 2, accent, ['tl', 'br'])}
+
+      <!-- Slide counter — gold accent block -->
+      <rect x="24" y="24" width="68" height="30" fill="${accent}"/>
+      <text x="58" y="44"
+            font-family="${SANS}" font-weight="700" font-size="14"
             fill="#111111" text-anchor="middle">
         ${slideNum}/${totalSlides}
       </text>
 
-      <!-- Accent side bar -->
-      <rect x="50" y="${SIZE - 200}" width="4" height="130" fill="${accent}"/>
+      <!-- Vertical accent bar beside name -->
+      <rect x="52" y="${nameStartY - 10}" width="3" height="${nameLines.length * 55 + 25}" fill="${accent}" opacity="0.7"/>
 
-      <!-- Restaurant name -->
+      <!-- Restaurant name — serif -->
       ${nameSvg}
 
-      <!-- Detail text -->
-      <circle cx="82" cy="${SIZE - 75}" r="4" fill="${accent}"/>
-      <text x="98" y="${SIZE - 65}"
-            font-family="Inter" font-weight="400" font-size="26" font-style="italic"
+      <!-- Detail text with separator -->
+      <rect x="70" y="${detailY - 2}" width="${SIZE - 160}" height="1" fill="${accent}" opacity="0.3"/>
+      <text x="70" y="${detailY + 26}"
+            font-family="${SERIF}" font-weight="400" font-size="24" font-style="italic"
             fill="${accentDim}" text-anchor="start">
         ${escapeXml(candidate.detail_text)}
       </text>
+
+      ${priceMatch ? `
+      <!-- Price callout block -->
+      <rect x="${SIZE - 190}" y="${nameStartY - 50}" width="150" height="46" fill="${accent}"/>
+      <text x="${SIZE - 115}" y="${nameStartY - 20}"
+            font-family="${SANS}" font-weight="700" font-size="26"
+            fill="#111111" text-anchor="middle">
+        ${escapeXml(priceMatch[0])}
+      </text>
+      ` : ''}
+
+      <!-- Bottom rule -->
+      <rect x="50" y="${SIZE - 50}" width="${SIZE - 100}" height="1" fill="${accent}" opacity="0.2"/>
     </svg>`);
 
   const smallLogo = await sharp(logoBuffer)
-    .resize(55, 55, { fit: 'cover' })
+    .resize(40, 40, { fit: 'cover' })
     .png()
     .toBuffer();
 
@@ -480,7 +548,7 @@ async function composeRoundupCard(
     .then(buf => sharp(buf)
       .composite([
         { input: gradientSvg, top: 0, left: 0 },
-        { input: smallLogo, top: 40, left: SIZE - 100 },
+        { input: smallLogo, top: 28, left: SIZE - 72 },
         { input: textSvg, top: 0, left: 0 },
       ])
       .jpeg({ quality: JPEG_QUALITY })
@@ -497,82 +565,115 @@ async function composeRoundupCTA(
   accentDim: string,
   theme: HolidayTheme | null
 ): Promise<Buffer> {
+  // Editorial CTA — magazine back-page with urgency, feature teasers, corner brackets
   let base: sharp.Sharp;
   if (backgroundImage) {
     const blurred = await sharp(backgroundImage)
       .resize(SIZE, SIZE, { fit: 'cover', position: 'centre' })
-      .blur(35)
-      .modulate({ brightness: 0.2 })
+      .blur(25)
+      .modulate({ brightness: 0.15 })
       .toBuffer();
     base = sharp(blurred);
   } else {
-    const bg = theme ? hexToRgb(theme.bgDark) : { r: 18, g: 18, b: 22 };
+    const bg = theme ? hexToRgb(theme.bgDark) : { r: 12, g: 10, b: 16 };
     base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: bg } });
   }
 
   const resizedLogo = await sharp(logoBuffer)
-    .resize(200, 200, { fit: 'cover' })
+    .resize(130, 130, { fit: 'cover' })
     .png()
     .toBuffer();
+
+  const cx = SIZE / 2;
 
   const textSvg = Buffer.from(`
     <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
       ${svgFontStyles()}
 
-      <!-- Border frame -->
-      <rect x="30" y="30" width="${SIZE - 60}" height="${SIZE - 60}"
-            fill="none" stroke="${accent}" stroke-width="2" opacity="0.3"/>
+      <!-- Editorial border frame -->
+      <rect x="40" y="40" width="${SIZE - 80}" height="${SIZE - 80}"
+            fill="none" stroke="${accent}" stroke-width="1.5" opacity="0.3"/>
 
-      <!-- See all X -->
-      <text x="${SIZE / 2}" y="560"
-            font-family="Inter" font-weight="700" font-size="52"
+      <!-- Corner brackets -->
+      ${cornerBracketsSvg(SIZE, 35, 70, 3, accent, ['tl', 'tr', 'bl', 'br'])}
+
+      <!-- App name echo — small at top -->
+      <text x="${cx}" y="90"
+            font-family="${SANS}" font-weight="700" font-size="14"
+            fill="${accent}" text-anchor="middle" letter-spacing="6">
+        ${escapeXml(appName.toUpperCase())}
+      </text>
+      <rect x="${cx - 60}" y="102" width="120" height="1" fill="${accent}" opacity="0.4"/>
+
+      <!-- Big serif headline -->
+      <text x="${cx}" y="430"
+            font-family="${SERIF}" font-weight="700" font-size="58"
             fill="white" text-anchor="middle">
-        See all ${totalCount}+
+        Don&apos;t Miss
+      </text>
+      <text x="${cx}" y="505"
+            font-family="${SERIF}" font-weight="700" font-size="58"
+            fill="white" text-anchor="middle">
+        What&apos;s Next
       </text>
 
-      <!-- Accent rule -->
-      <rect x="${SIZE / 2 - 80}" y="585" width="160" height="3" fill="${accent}"/>
+      <rect x="${cx - 40}" y="530" width="80" height="3" fill="${accent}"/>
 
-      <!-- Subtitle -->
-      <text x="${SIZE / 2}" y="640"
-            font-family="Inter" font-weight="400" font-size="28" font-style="italic"
-            fill="${accentDim}" text-anchor="middle">
-        this week on ${escapeXml(appName)}
+      <text x="${cx}" y="585"
+            font-family="${SERIF}" font-weight="400" font-size="24" font-style="italic"
+            fill="rgba(255,255,255,0.7)" text-anchor="middle">
+        ${totalCount}+ places this week on ${escapeXml(appName)}
       </text>
 
-      <!-- Download -->
-      <text x="${SIZE / 2}" y="700"
-            font-family="Inter" font-weight="400" font-size="22"
-            fill="rgba(255,255,255,0.5)" text-anchor="middle">
+      <!-- Feature teasers -->
+      <rect x="120" y="630" width="${SIZE - 240}" height="1" fill="${accent}" opacity="0.2"/>
+      <text x="${cx}" y="668"
+            font-family="${SANS}" font-weight="400" font-size="15"
+            fill="rgba(255,255,255,0.5)" text-anchor="middle" letter-spacing="1">
+        PLUS: Happy Hours &#183; Live Music &#183; Exclusive Deals &#183; Events
+      </text>
+      <rect x="120" y="688" width="${SIZE - 240}" height="1" fill="${accent}" opacity="0.2"/>
+
+      <!-- Download text -->
+      <text x="${cx}" y="740"
+            font-family="${SANS}" font-weight="400" font-size="18"
+            fill="rgba(255,255,255,0.45)" text-anchor="middle">
         Free on the App Store &amp; Google Play
       </text>
 
       <!-- CTA button -->
-      <rect x="${SIZE / 2 - 140}" y="740" width="280" height="56" rx="28" ry="28"
+      <rect x="${cx - 150}" y="780" width="300" height="56" rx="4" ry="4"
             fill="${accent}"/>
-      <text x="${SIZE / 2}" y="776"
-            font-family="Inter" font-weight="700" font-size="24"
-            fill="#111111" text-anchor="middle" letter-spacing="2">
+      <text x="${cx}" y="816"
+            font-family="${SANS}" font-weight="700" font-size="20"
+            fill="#111111" text-anchor="middle" letter-spacing="3">
         LINK IN BIO
       </text>
 
       ${theme ? `
-      <!-- Holiday tab callout -->
-      <text x="${SIZE / 2}" y="850"
-            font-family="Inter" font-weight="400" font-size="20"
-            fill="${accent}" text-anchor="middle" letter-spacing="1">
-        Check the holiday tab for all the deals ${theme.decorEmoji}
+      <!-- Holiday callout -->
+      <text x="${cx}" y="880"
+            font-family="${SERIF}" font-weight="400" font-size="18" font-style="italic"
+            fill="${accent}" text-anchor="middle">
+        Check the ${theme.decorEmoji} holiday tab for all the deals
       </text>
-      ` : ''}
+      ` : `
+      <!-- Tagline -->
+      <text x="${cx}" y="${SIZE - 60}"
+            font-family="${SERIF}" font-weight="400" font-size="16" font-style="italic"
+            fill="rgba(255,255,255,0.3)" text-anchor="middle">
+        Your city. Your guide. Your next favorite spot.
+      </text>
+      `}
     </svg>`);
 
   const darkOverlay = Buffer.from(`
     <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
-      <rect width="${SIZE}" height="${SIZE}" fill="rgba(0,0,0,0.55)"/>
-      ${theme ? `<rect width="${SIZE}" height="${SIZE}" fill="${accent}" opacity="0.06"/>` : ''}
+      <rect width="${SIZE}" height="${SIZE}" fill="rgba(0,0,0,0.6)"/>
+      ${theme ? `<rect width="${SIZE}" height="${SIZE}" fill="${accent}" opacity="0.04"/>` : ''}
     </svg>`);
 
-  const logoLeft = Math.round((SIZE - 200) / 2);
+  const logoLeft = Math.round((SIZE - 130) / 2);
 
   return base
     .jpeg({ quality: JPEG_QUALITY })
@@ -580,7 +681,7 @@ async function composeRoundupCTA(
     .then(buf => sharp(buf)
       .composite([
         { input: darkOverlay, top: 0, left: 0 },
-        { input: resizedLogo, top: 250, left: logoLeft },
+        { input: resizedLogo, top: 190, left: logoLeft },
         { input: textSvg, top: 0, left: 0 },
       ])
       .jpeg({ quality: JPEG_QUALITY })
@@ -1100,25 +1201,35 @@ export async function generateCarouselSlides(opts: {
     })
   );
 
-  // Keep ALL candidates — use null buffer for those without images (slides will use solid bg)
+  // ONLY use candidates that have images — never post black background slides
+  const validIndices = imageBuffers.map((b, i) => b !== null ? i : -1).filter(i => i !== -1);
+  const validBuffers = validIndices.map(i => imageBuffers[i]!);
+  const validCandidates = validIndices.map(i => candidates[i]);
+
+  if (validBuffers.length === 0) {
+    throw new Error('No candidates with photos — cannot generate carousel. Every slide needs an image.');
+  }
+
   let allSlides: Buffer[];
 
   if (contentType === 'upcoming_events') {
-    // EVENT POSTER style — only use candidates with images
-    const validIndices = imageBuffers.map((b, i) => b !== null ? i : -1).filter(i => i !== -1);
-    const validBuffers = validIndices.map(i => imageBuffers[i]!);
-    const validCandidates = validIndices.map(i => candidates[i]);
     allSlides = await composeEventPosterSlides(validBuffers, validCandidates, headline, totalCount, logoBuffer, appName, marketName);
   } else {
-    // MAGAZINE style — ALL candidates get slides, even without images
-    const coverImage = imageBuffers.find(b => b !== null) || null;
+    // MAGAZINE style — only candidates with photos get slides
+    const coverImage = validBuffers[0];
+    // Pass featured candidates for the bottom section of the cover
+    const featuredForCover = validCandidates.slice(0, 2).map((c, i) => ({
+      name: c.restaurant_name,
+      detail: c.detail_text,
+      imageBuffer: validBuffers[i],
+    }));
     const [coverSlide, ...restaurantSlides] = await Promise.all([
-      composeCoverSlide(coverImage, headline, logoBuffer, appName),
-      ...candidates.map((c, i) =>
-        composeRestaurantSlide(imageBuffers[i], c.restaurant_name, c.detail_text, logoBuffer)
+      composeCoverSlide(coverImage, headline, logoBuffer, appName, featuredForCover),
+      ...validCandidates.map((c, i) =>
+        composeRestaurantSlide(validBuffers[i], c.restaurant_name, c.detail_text, logoBuffer)
       ),
     ]);
-    const ctaBackgroundImage = imageBuffers.filter(b => b !== null).pop() || coverImage;
+    const ctaBackgroundImage = validBuffers[validBuffers.length - 1] || coverImage;
     const ctaSlide = await composeCTASlide(appName, totalCount, logoBuffer, ctaBackgroundImage);
     allSlides = [coverSlide, ...restaurantSlides, ctaSlide];
   }
@@ -1143,106 +1254,285 @@ async function composeCoverSlide(
   imageBuffer: Buffer | null,
   headline: HeadlineParts,
   logoBuffer: Buffer,
-  appName: string
+  appName: string,
+  featuredItems: { name: string; detail: string; imageBuffer: Buffer }[] = []
 ): Promise<Buffer> {
-  // Magazine cover: big photo with heavy dark overlay, text scattered like a masthead
-  let base: sharp.Sharp;
+  // FRAMED MAGAZINE COVER — purple border frames the entire image
+  // Text in top border, huge masthead over photo, solid bottom container with featured content
+  const BORDER = 18; // border width on sides
+  const TOP_BAR = 32; // height of text in top border
+  const BOTTOM_H = 220; // height of bottom featured section
+  const BRAND_COLOR = '#6B21A8'; // purple
+  const BRAND_LIGHT = '#A855F7'; // lighter purple for accents
+
+  // Photo area dimensions (inside the frame)
+  const photoW = SIZE - BORDER * 2;
+  const photoH = SIZE - TOP_BAR - BOTTOM_H;
+
+  // Resize the photo to fit inside the frame
+  let photoBuffer: Buffer;
   if (imageBuffer) {
-    base = sharp(imageBuffer).resize(SIZE, SIZE, { fit: 'cover', position: 'centre' });
+    photoBuffer = await sharp(imageBuffer)
+      .resize(photoW, photoH, { fit: 'cover', position: 'centre' })
+      .modulate({ brightness: 1.05, saturation: 1.1 })
+      .jpeg({ quality: JPEG_QUALITY })
+      .toBuffer();
   } else {
-    base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: { r: 25, g: 20, b: 30 } } });
+    photoBuffer = await sharp({ create: { width: photoW, height: photoH, channels: 3, background: { r: 30, g: 25, b: 35 } } })
+      .jpeg({ quality: JPEG_QUALITY })
+      .toBuffer();
   }
 
-  // Heavy dark overlay — magazine covers darken the photo so text pops
-  const overlaySvg = Buffer.from(`
-    <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
+  // Build featured images for bottom section (resize to thumbnails)
+  const featuredThumbs: Buffer[] = [];
+  for (const item of featuredItems.slice(0, 2)) {
+    const thumb = await sharp(item.imageBuffer)
+      .resize(160, 120, { fit: 'cover', position: 'centre' })
+      .jpeg({ quality: 85 })
+      .toBuffer();
+    featuredThumbs.push(thumb);
+  }
+
+  // Start with the purple background (the border color)
+  let base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: hexToRgb(BRAND_COLOR) } });
+
+  // Photo overlay — light gradient for text legibility
+  const photoOverlay = Buffer.from(`
+    <svg width="${photoW}" height="${photoH}" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="mag" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style="stop-color:black;stop-opacity:0.7"/>
-          <stop offset="35%" style="stop-color:black;stop-opacity:0.35"/>
-          <stop offset="65%" style="stop-color:black;stop-opacity:0.35"/>
-          <stop offset="100%" style="stop-color:black;stop-opacity:0.8"/>
+        <linearGradient id="pho" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:black;stop-opacity:0.5"/>
+          <stop offset="15%" style="stop-color:black;stop-opacity:0.15"/>
+          <stop offset="40%" style="stop-color:black;stop-opacity:0.05"/>
+          <stop offset="65%" style="stop-color:black;stop-opacity:0.2"/>
+          <stop offset="85%" style="stop-color:black;stop-opacity:0.55"/>
+          <stop offset="100%" style="stop-color:black;stop-opacity:0.7"/>
         </linearGradient>
       </defs>
-      <rect width="${SIZE}" height="${SIZE}" fill="url(#mag)"/>
+      <rect width="${photoW}" height="${photoH}" fill="url(#pho)"/>
     </svg>`);
 
-  // Masthead: app name top-center (like magazine title)
-  // Big count number center, category label, day label
-  // "Swipe" CTA at bottom
-  const centerX = SIZE / 2;
+  const cx = SIZE / 2;
+  const pcx = photoW / 2;
+  const editorialHeadline = getEditorialHeadline(headline);
 
-  const textSvg = Buffer.from(`
-    <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
+  // Issue date
+  const now = new Date();
+  const issueDate = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+  // Text overlay on the PHOTO area
+  const photoTextSvg = Buffer.from(`
+    <svg width="${photoW}" height="${photoH}" xmlns="http://www.w3.org/2000/svg">
       ${svgFontStyles()}
 
-      <!-- Masthead: app name, uppercase, letterspaced -->
-      <text x="${centerX}" y="100"
-            font-family="Inter" font-weight="700" font-size="52"
-            fill="white" text-anchor="middle"
-            letter-spacing="12">
-        ${escapeXml(appName.toUpperCase())}
-      </text>
+      <!-- "Taste" — TOP LEFT, huge -->
+      <text x="22" y="88"
+            font-family="${SERIF}" font-weight="900" font-size="120"
+            fill="rgba(0,0,0,0.45)" text-anchor="start">Taste</text>
+      <text x="20" y="86"
+            font-family="${SERIF}" font-weight="900" font-size="120"
+            fill="white" text-anchor="start">Taste</text>
 
-      <!-- Thin gold rule under masthead -->
-      <rect x="${centerX - 160}" y="120" width="320" height="2" fill="${ACCENT}"/>
+      <!-- "Lanc" — underneath Taste, left-aligned, smaller -->
+      <text x="27" y="128"
+            font-family="${SERIF}" font-weight="700" font-size="38"
+            fill="rgba(0,0,0,0.4)" text-anchor="start" letter-spacing="10">Lanc</text>
+      <text x="25" y="126"
+            font-family="${SERIF}" font-weight="700" font-size="38"
+            fill="white" text-anchor="start" letter-spacing="10">Lanc</text>
 
-      <!-- Tagline under masthead -->
-      <text x="${centerX}" y="160"
-            font-family="Inter" font-weight="400" font-size="22" font-style="italic"
-            fill="${ACCENT_DIM}" text-anchor="middle">
-        Your guide to what&apos;s happening tonight
-      </text>
+      <!-- Date — TOP RIGHT only -->
+      <text x="${photoW - 15}" y="30"
+            font-family="${SERIF}" font-weight="600" font-size="16"
+            fill="rgba(255,255,255,0.85)" text-anchor="end">${escapeXml(issueDate)}</text>
 
-      <!-- Big count number — the hero element -->
-      <text x="${centerX}" y="620"
-            font-family="Inter" font-weight="700" font-size="200"
-            fill="white" text-anchor="middle"
-            opacity="1">
-        ${escapeXml(headline.count)}
-      </text>
+      <!-- ═══ EDITORIAL COVER LINES ═══ -->
+      <text x="32" y="${photoH - 190}"
+            font-family="${SERIF}" font-weight="700" font-size="64" font-style="italic"
+            fill="rgba(0,0,0,0.5)" text-anchor="start">${escapeXml(editorialHeadline.line1)}</text>
+      <text x="30" y="${photoH - 192}"
+            font-family="${SERIF}" font-weight="700" font-size="64" font-style="italic"
+            fill="white" text-anchor="start">${escapeXml(editorialHeadline.line1)}</text>
 
-      <!-- Category label in gold -->
-      <text x="${centerX}" y="700"
-            font-family="Inter" font-weight="700" font-size="52"
-            fill="${ACCENT}" text-anchor="middle">
-        ${escapeXml(headline.label.toUpperCase())}
-      </text>
+      <text x="32" y="${photoH - 124}"
+            font-family="${SERIF}" font-weight="700" font-size="64" font-style="italic"
+            fill="rgba(0,0,0,0.5)" text-anchor="start">${escapeXml(editorialHeadline.line2)}</text>
+      <text x="30" y="${photoH - 126}"
+            font-family="${SERIF}" font-weight="700" font-size="64" font-style="italic"
+            fill="white" text-anchor="start">${escapeXml(editorialHeadline.line2)}</text>
 
-      <!-- Day label, italic white -->
-      <text x="${centerX}" y="770"
-            font-family="Inter" font-weight="400" font-size="40" font-style="italic"
-            fill="rgba(255,255,255,0.9)" text-anchor="middle">
-        ${escapeXml(headline.dayLabel)}
-      </text>
+      <!-- Bullet teasers — what's in this issue -->
+      <text x="42" y="${photoH - 68}"
+            font-family="${SERIF}" font-weight="600" font-size="19"
+            fill="rgba(0,0,0,0.5)" text-anchor="start">&#x2022; ${escapeXml(headline.count)}+ ${escapeXml(headline.label)} This Week</text>
+      <text x="40" y="${photoH - 70}"
+            font-family="${SERIF}" font-weight="600" font-size="19"
+            fill="white" text-anchor="start">&#x2022; ${escapeXml(headline.count)}+ ${escapeXml(headline.label)} This Week</text>
 
-      <!-- Swipe CTA at bottom -->
-      <text x="${centerX}" y="${SIZE - 60}"
-            font-family="Inter" font-weight="400" font-size="26"
-            fill="rgba(255,255,255,0.6)" text-anchor="middle"
-            letter-spacing="3">
-        SWIPE FOR TOP PICKS  &gt;
-      </text>
+      <text x="42" y="${photoH - 43}"
+            font-family="${SERIF}" font-weight="600" font-size="19"
+            fill="rgba(0,0,0,0.5)" text-anchor="start">&#x2022; Live Music, Trivia &amp; Events</text>
+      <text x="40" y="${photoH - 45}"
+            font-family="${SERIF}" font-weight="600" font-size="19"
+            fill="white" text-anchor="start">&#x2022; Live Music, Trivia &amp; Events</text>
+
+      <text x="42" y="${photoH - 18}"
+            font-family="${SERIF}" font-weight="600" font-size="19"
+            fill="rgba(0,0,0,0.5)" text-anchor="start">&#x2022; Exclusive Deals &amp; Specials</text>
+      <text x="40" y="${photoH - 20}"
+            font-family="${SERIF}" font-weight="600" font-size="19"
+            fill="white" text-anchor="start">&#x2022; Exclusive Deals &amp; Specials</text>
     </svg>`);
 
-  // Logo: app icon with built-in background, no extra badge needed
-  const resizedLogo = await sharp(logoBuffer)
-    .resize(100, 100, { fit: 'cover' })
-    .png()
+  // Compose the photo with overlay and text
+  const composedPhoto = await sharp(photoBuffer)
+    .composite([
+      { input: photoOverlay, top: 0, left: 0 },
+      { input: photoTextSvg, top: 0, left: 0 },
+    ])
+    .jpeg({ quality: JPEG_QUALITY })
     .toBuffer();
+
+  // Top border text — tagline fits inside the border strip
+  const tagline = 'LANCASTER&apos;S MOST COMPLETE GUIDE TO DINING, DRINKS &amp; NIGHTLIFE';
+  const topBarSvg = Buffer.from(`
+    <svg width="${SIZE}" height="${TOP_BAR}" xmlns="http://www.w3.org/2000/svg">
+      ${svgFontStyles()}
+      <text x="${cx}" y="${TOP_BAR - 8}"
+            font-family="${SANS}" font-weight="600" font-size="11"
+            fill="white" text-anchor="middle" letter-spacing="2">${tagline}</text>
+    </svg>`);
+
+  // Bottom section — bigger thumbnails, vertical separator only, taller list
+  const feat1 = featuredItems[0];
+  const feat2 = featuredItems[1];
+
+  // Thumbnail layout — maximize space, no horizontal lines
+  const THUMB_W = 210;
+  const THUMB_H = 140;
+  const THUMB_PAD = 15;
+  const THUMB_Y = 30; // start right after "inside your" header
+  const THUMB1_X = BORDER + THUMB_PAD;
+  const THUMB2_X = THUMB1_X + THUMB_W + THUMB_PAD;
+  const LIST_X = THUMB2_X + THUMB_W + THUMB_PAD + 15;
+
+  const bottomSvg = Buffer.from(`
+    <svg width="${SIZE}" height="${BOTTOM_H}" xmlns="http://www.w3.org/2000/svg">
+      ${svgFontStyles()}
+
+      <!-- "inside your TasteLanc" header — Playfair Display -->
+      <text x="${cx}" y="20"
+            font-family="${SERIF}" font-weight="700" font-size="16" font-style="italic"
+            fill="white" text-anchor="middle" letter-spacing="3">inside your ${escapeXml(appName)}</text>
+
+      <!-- NO horizontal line — thumbnails start immediately -->
+
+      <!-- Featured 1 label — below its thumbnail -->
+      ${feat1 ? `
+      <text x="${THUMB1_X}" y="${THUMB_Y + THUMB_H + 18}"
+            font-family="${SERIF}" font-weight="700" font-size="14"
+            fill="white" text-anchor="start">${escapeXml(feat1.name)}</text>
+      <text x="${THUMB1_X}" y="${THUMB_Y + THUMB_H + 35}"
+            font-family="${SERIF}" font-weight="400" font-size="12" font-style="italic"
+            fill="rgba(255,255,255,0.6)" text-anchor="start">${escapeXml(feat1.detail)}</text>
+      ` : ''}
+
+      <!-- Featured 2 label -->
+      ${feat2 ? `
+      <text x="${THUMB2_X}" y="${THUMB_Y + THUMB_H + 18}"
+            font-family="${SERIF}" font-weight="700" font-size="14"
+            fill="white" text-anchor="start">${escapeXml(feat2.name)}</text>
+      <text x="${THUMB2_X}" y="${THUMB_Y + THUMB_H + 35}"
+            font-family="${SERIF}" font-weight="400" font-size="12" font-style="italic"
+            fill="rgba(255,255,255,0.6)" text-anchor="start">${escapeXml(feat2.detail)}</text>
+      ` : ''}
+
+      <!-- VERTICAL separator only — between images and list -->
+      <rect x="${LIST_X - 12}" y="${THUMB_Y}" width="1" height="${BOTTOM_H - THUMB_Y - 15}" fill="rgba(255,255,255,0.2)"/>
+
+      <!-- Right side list — TALL, fills the space, Playfair Display -->
+      <text x="${LIST_X}" y="${THUMB_Y + 14}"
+            font-family="${SERIF}" font-weight="700" font-size="15"
+            fill="${BRAND_LIGHT}" text-anchor="start">Also This Week</text>
+
+      <text x="${LIST_X + 5}" y="${THUMB_Y + 40}"
+            font-family="${SERIF}" font-weight="400" font-size="14"
+            fill="rgba(255,255,255,0.75)" text-anchor="start">&#x2022; Happy Hours &amp; Deals</text>
+      <text x="${LIST_X + 5}" y="${THUMB_Y + 62}"
+            font-family="${SERIF}" font-weight="400" font-size="14"
+            fill="rgba(255,255,255,0.75)" text-anchor="start">&#x2022; Live Music Lineups</text>
+      <text x="${LIST_X + 5}" y="${THUMB_Y + 84}"
+            font-family="${SERIF}" font-weight="400" font-size="14"
+            fill="rgba(255,255,255,0.75)" text-anchor="start">&#x2022; Trivia &amp; Game Nights</text>
+      <text x="${LIST_X + 5}" y="${THUMB_Y + 106}"
+            font-family="${SERIF}" font-weight="400" font-size="14"
+            fill="rgba(255,255,255,0.75)" text-anchor="start">&#x2022; Weekend Events</text>
+      <text x="${LIST_X + 5}" y="${THUMB_Y + 128}"
+            font-family="${SERIF}" font-weight="400" font-size="14"
+            fill="rgba(255,255,255,0.75)" text-anchor="start">&#x2022; Exclusive Deals</text>
+      <text x="${LIST_X + 5}" y="${THUMB_Y + 150}"
+            font-family="${SERIF}" font-weight="400" font-size="14"
+            fill="rgba(255,255,255,0.75)" text-anchor="start">&#x2022; Restaurant Spotlights</text>
+      <text x="${LIST_X + 5}" y="${THUMB_Y + 172}"
+            font-family="${SERIF}" font-weight="400" font-size="14"
+            fill="rgba(255,255,255,0.75)" text-anchor="start">&#x2022; New on ${escapeXml(appName)}</text>
+    </svg>`);
+
+  // Resize featured thumbnails — bigger and wider
+  const thumbs: Buffer[] = [];
+  for (const tb of featuredThumbs.slice(0, 2)) {
+    thumbs.push(await sharp(tb).resize(THUMB_W, THUMB_H, { fit: 'cover', position: 'centre' }).jpeg({ quality: 88 }).toBuffer());
+  }
+
+  // Build composites
+  const composites: sharp.OverlayOptions[] = [
+    { input: topBarSvg, top: 0, left: 0 },
+    { input: composedPhoto, top: TOP_BAR, left: BORDER },
+    { input: bottomSvg, top: SIZE - BOTTOM_H, left: 0 },
+  ];
+
+  if (thumbs[0]) {
+    composites.push({ input: thumbs[0], top: SIZE - BOTTOM_H + THUMB_Y, left: THUMB1_X });
+  }
+  if (thumbs[1]) {
+    composites.push({ input: thumbs[1], top: SIZE - BOTTOM_H + THUMB_Y, left: THUMB2_X });
+  }
 
   return base
     .jpeg({ quality: JPEG_QUALITY })
     .toBuffer()
     .then(buf => sharp(buf)
-      .composite([
-        { input: overlaySvg, top: 0, left: 0 },
-        { input: resizedLogo, top: 30, left: 40 },
-        { input: textSvg, top: 0, left: 0 },
-      ])
+      .composite(composites)
       .jpeg({ quality: JPEG_QUALITY })
       .toBuffer()
     );
+}
+
+// Generate editorial-style headlines instead of plain "15 HAPPY HOURS"
+function getEditorialHeadline(headline: HeadlineParts): { line1: string; line2: string } {
+  const label = headline.label.toLowerCase();
+  const count = headline.count;
+
+  if (label.includes('happy hour')) {
+    return { line1: 'Where', line2: `${count} Bars Pour` };
+  }
+  if (label.includes('deal')) {
+    return { line1: `${count} Deals`, line2: 'Worth the Trip' };
+  }
+  if (label.includes('special')) {
+    return { line1: "Tonight's", line2: 'Best Bites' };
+  }
+  if (label.includes('event') || label.includes('concert') || label.includes('music')) {
+    return { line1: `${count} Stages`, line2: 'Lit Tonight' };
+  }
+  if (label.includes('brunch')) {
+    return { line1: 'Weekend', line2: 'Brunch Guide' };
+  }
+  if (label.includes('roundup') || label.includes('week')) {
+    return { line1: 'Your Week', line2: 'Starts Here' };
+  }
+  // Fallback — still editorial
+  return { line1: `${count} Spots`, line2: 'You Need' };
 }
 
 async function composeRestaurantSlide(
@@ -1251,46 +1541,97 @@ async function composeRestaurantSlide(
   detail: string,
   logoBuffer: Buffer
 ): Promise<Buffer> {
-  // If no image, create a dark gradient background
+  // Editorial restaurant card — full-bleed photo with bold typographic treatment
+  // Inspired by Barfly's dense, information-rich layout
   const base = imageBuffer
     ? sharp(imageBuffer).resize(SIZE, SIZE, { fit: 'cover', position: 'centre' })
-    : sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: { r: 25, g: 25, b: 30 } } });
+    : sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: { r: 15, g: 12, b: 20 } } });
 
-  // Heavier bottom gradient for magazine feel
+  // Cinematic bottom gradient — heavier for text legibility
   const gradientSvg = Buffer.from(`
     <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style="stop-color:black;stop-opacity:0.15"/>
-          <stop offset="45%" style="stop-color:black;stop-opacity:0.05"/>
-          <stop offset="70%" style="stop-color:black;stop-opacity:0.5"/>
-          <stop offset="100%" style="stop-color:black;stop-opacity:0.92"/>
+          <stop offset="0%" style="stop-color:black;stop-opacity:0.08"/>
+          <stop offset="35%" style="stop-color:black;stop-opacity:0.05"/>
+          <stop offset="55%" style="stop-color:black;stop-opacity:0.25"/>
+          <stop offset="75%" style="stop-color:black;stop-opacity:0.78"/>
+          <stop offset="100%" style="stop-color:black;stop-opacity:0.95"/>
         </linearGradient>
       </defs>
       <rect width="${SIZE}" height="${SIZE}" fill="url(#grad)"/>
     </svg>`);
 
-  // Restaurant name (large bold) + detail (gold italic) + thin gold rule
+  // Convert any 24h times in detail text to 12h format (e.g. "15:00" → "3pm")
+  detail = detail.replace(/\b(\d{1,2}):(\d{2})\b/g, (_, h, m) => {
+    const hour = parseInt(h, 10);
+    const ampm = hour >= 12 ? 'pm' : 'am';
+    const h12 = hour % 12 || 12;
+    return m === '00' ? `${h12}${ampm}` : `${h12}:${m}${ampm}`;
+  });
+
+  // Parse the detail text to extract price/deal info for visual callouts
+  const priceMatch = detail.match(/\$\d+(?:\.\d{2})?/);
+  const hasPrice = !!priceMatch;
+
+  // Wrap restaurant name for long names
+  const nameLines = wrapText(name, 18);
+  const nameStartY = SIZE - 190 - (nameLines.length - 1) * 58;
+  const nameSvgParts = nameLines.map((line, i) =>
+    `<text x="70" y="${nameStartY + i * 58}"
+           font-family="${SERIF}" font-weight="700" font-size="52"
+           fill="white" text-anchor="start">
+       ${escapeXml(line)}
+     </text>`
+  ).join('\n');
+
+  const detailY = nameStartY + nameLines.length * 58 + 8;
+
   const textSvg = Buffer.from(`
     <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
       ${svgFontStyles()}
-      <text x="60" y="${SIZE - 110}"
-            font-family="Inter" font-weight="700" font-size="52"
-            fill="white" text-anchor="start">
-        ${escapeXml(name)}
-      </text>
-      <!-- Gold dot + detail text -->
-      <circle cx="72" cy="${SIZE - 68}" r="5" fill="${ACCENT}"/>
-      <text x="88" y="${SIZE - 58}"
-            font-family="Inter" font-weight="400" font-size="30" font-style="italic"
+
+      <!-- Corner brackets — editorial framing -->
+      ${cornerBracketsSvg(SIZE, 24, 60, 2, `${ACCENT}`, ['tl', 'br'])}
+
+      <!-- Section badge — top left, what kind of content this is -->
+      <rect x="24" y="24" width="120" height="30" fill="${ACCENT}"/>
+      <text x="84" y="44"
+            font-family="${SANS}" font-weight="700" font-size="12"
+            fill="#111111" text-anchor="middle"
+            letter-spacing="3">FEATURED</text>
+
+      <!-- Vertical accent bar beside restaurant name -->
+      <rect x="52" y="${nameStartY - 10}" width="3" height="${nameLines.length * 58 + 30}" fill="${ACCENT}" opacity="0.7"/>
+
+      <!-- Restaurant name — serif, editorial -->
+      ${nameSvgParts}
+
+      <!-- Detail text with gold accent -->
+      <rect x="70" y="${detailY - 2}" width="${SIZE - 140}" height="1" fill="${ACCENT}" opacity="0.3"/>
+      <text x="70" y="${detailY + 28}"
+            font-family="${SERIF}" font-weight="400" font-size="26" font-style="italic"
             fill="${ACCENT}" text-anchor="start">
         ${escapeXml(detail)}
       </text>
+
+      ${hasPrice ? `
+      <!-- Price callout — bold accent block -->
+      <rect x="${SIZE - 200}" y="${nameStartY - 50}" width="160" height="50" fill="${ACCENT}"/>
+      <text x="${SIZE - 120}" y="${nameStartY - 18}"
+            font-family="${SANS}" font-weight="700" font-size="28"
+            fill="#111111" text-anchor="middle">
+        ${escapeXml(priceMatch![0])}
+      </text>
+      ` : ''}
+
+      <!-- Bottom rule -->
+      <rect x="50" y="${SIZE - 50}" width="${SIZE - 100}" height="1" fill="${ACCENT}" opacity="0.25"/>
     </svg>`);
 
-  // App icon top-right — has its own background, no badge needed
+  // App icon top-right
   const smallLogo = await sharp(logoBuffer)
-    .resize(70, 70, { fit: 'cover' })
+    .resize(44, 44, { fit: 'cover' })
     .png()
     .toBuffer();
 
@@ -1300,7 +1641,7 @@ async function composeRestaurantSlide(
     .then(buf => sharp(buf)
       .composite([
         { input: gradientSvg, top: 0, left: 0 },
-        { input: smallLogo, top: 30, left: SIZE - 100 },
+        { input: smallLogo, top: 30, left: SIZE - 80 },
         { input: textSvg, top: 0, left: 0 },
       ])
       .jpeg({ quality: JPEG_QUALITY })
@@ -1314,68 +1655,112 @@ async function composeCTASlide(
   logoBuffer: Buffer,
   backgroundImage: Buffer | null = null
 ): Promise<Buffer> {
-  // Use a blurred/darkened photo as background instead of plain black
+  // Editorial CTA slide — magazine back-page feel with urgency and feature teasers
   let base: sharp.Sharp;
   if (backgroundImage) {
-    // Resize, blur heavily, and darken for a rich textured background
     const blurred = await sharp(backgroundImage)
       .resize(SIZE, SIZE, { fit: 'cover', position: 'centre' })
-      .blur(30)
-      .modulate({ brightness: 0.25 })
+      .blur(25)
+      .modulate({ brightness: 0.18 })
       .toBuffer();
     base = sharp(blurred);
   } else {
     base = sharp({
-      create: { width: SIZE, height: SIZE, channels: 3, background: { r: 18, g: 18, b: 22 } }
+      create: { width: SIZE, height: SIZE, channels: 3, background: { r: 12, g: 10, b: 16 } }
     });
   }
 
-  // App icon centered — already has its own dark background
   const resizedLogo = await sharp(logoBuffer)
-    .resize(240, 240, { fit: 'cover' })
+    .resize(140, 140, { fit: 'cover' })
     .png()
     .toBuffer();
 
-  const logoLeft = Math.round((SIZE - 240) / 2);
-  const logoTop = 230;
+  const logoLeft = Math.round((SIZE - 140) / 2);
+  const cx = SIZE / 2;
 
   const textSvg = Buffer.from(`
     <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
       ${svgFontStyles()}
 
-      <!-- Gold rule -->
-      <rect x="${SIZE / 2 - 100}" y="580" width="200" height="2" fill="${ACCENT}"/>
+      <!-- Full editorial border frame -->
+      <rect x="40" y="40" width="${SIZE - 80}" height="${SIZE - 80}"
+            fill="none" stroke="${ACCENT}" stroke-width="1.5" opacity="0.35"/>
 
-      <text x="${SIZE / 2}" y="640"
-            font-family="Inter" font-weight="700" font-size="52"
+      <!-- Corner brackets -->
+      ${cornerBracketsSvg(SIZE, 35, 70, 3, ACCENT, ['tl', 'tr', 'bl', 'br'])}
+
+      <!-- Masthead echo — small app name at top -->
+      <text x="${cx}" y="90"
+            font-family="${SANS}" font-weight="700" font-size="14"
+            fill="${ACCENT}" text-anchor="middle"
+            letter-spacing="6">
+        ${escapeXml(appName.toUpperCase())}
+      </text>
+      <rect x="${cx - 60}" y="102" width="120" height="1" fill="${ACCENT}" opacity="0.4"/>
+
+      <!-- Big serif headline — editorial urgency -->
+      <text x="${cx}" y="430"
+            font-family="${SERIF}" font-weight="700" font-size="62"
             fill="white" text-anchor="middle">
-        See all ${totalCount}
+        Don&apos;t Miss
       </text>
-      <text x="${SIZE / 2}" y="700"
-            font-family="Inter" font-weight="400" font-size="32" font-style="italic"
-            fill="${ACCENT}" text-anchor="middle">
-        on ${escapeXml(appName)}
-      </text>
-      <text x="${SIZE / 2}" y="760"
-            font-family="Inter" font-weight="400" font-size="26"
-            fill="rgba(255,255,255,0.6)" text-anchor="middle">
-        Download free on the App Store or Google Play
+      <text x="${cx}" y="510"
+            font-family="${SERIF}" font-weight="700" font-size="62"
+            fill="white" text-anchor="middle">
+        What&apos;s Next
       </text>
 
-      <!-- CTA button -->
-      <rect x="${SIZE / 2 - 130}" y="810" width="260" height="56" rx="28" ry="28"
+      <!-- Gold rule -->
+      <rect x="${cx - 40}" y="540" width="80" height="3" fill="${ACCENT}"/>
+
+      <!-- Count + description -->
+      <text x="${cx}" y="595"
+            font-family="${SERIF}" font-weight="400" font-size="26" font-style="italic"
+            fill="rgba(255,255,255,0.75)" text-anchor="middle">
+        ${totalCount}+ places waiting for you on ${escapeXml(appName)}
+      </text>
+
+      <!-- Feature teasers — what else is in the app -->
+      <rect x="120" y="650" width="${SIZE - 240}" height="1" fill="${ACCENT}" opacity="0.2"/>
+
+      <text x="${cx}" y="690"
+            font-family="${SANS}" font-weight="400" font-size="16"
+            fill="rgba(255,255,255,0.5)" text-anchor="middle"
+            letter-spacing="1">
+        PLUS: Happy Hours &#183; Live Music &#183; Exclusive Deals &#183; Events
+      </text>
+
+      <rect x="120" y="710" width="${SIZE - 240}" height="1" fill="${ACCENT}" opacity="0.2"/>
+
+      <!-- Download text -->
+      <text x="${cx}" y="760"
+            font-family="${SANS}" font-weight="400" font-size="18"
+            fill="rgba(255,255,255,0.45)" text-anchor="middle">
+        Free on the App Store &amp; Google Play
+      </text>
+
+      <!-- CTA button — gold, editorial -->
+      <rect x="${cx - 150}" y="800" width="300" height="56" rx="4" ry="4"
             fill="${ACCENT}"/>
-      <text x="${SIZE / 2}" y="846"
-            font-family="Inter" font-weight="700" font-size="24"
-            fill="#121216" text-anchor="middle">
-        Link in Bio
+      <text x="${cx}" y="836"
+            font-family="${SANS}" font-weight="700" font-size="20"
+            fill="#111111" text-anchor="middle"
+            letter-spacing="3">
+        LINK IN BIO
+      </text>
+
+      <!-- Bottom tagline -->
+      <text x="${cx}" y="${SIZE - 60}"
+            font-family="${SERIF}" font-weight="400" font-size="16" font-style="italic"
+            fill="rgba(255,255,255,0.3)" text-anchor="middle">
+        Your city. Your guide. Your next favorite spot.
       </text>
     </svg>`);
 
-  // Dark overlay to ensure text readability over the blurred photo
   const darkOverlay = Buffer.from(`
     <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
-      <rect width="${SIZE}" height="${SIZE}" fill="rgba(0,0,0,0.5)"/>
+      <rect width="${SIZE}" height="${SIZE}" fill="rgba(0,0,0,0.6)"/>
+      <rect width="${SIZE}" height="${SIZE}" fill="${ACCENT}" opacity="0.03"/>
     </svg>`);
 
   return base
@@ -1384,7 +1769,7 @@ async function composeCTASlide(
     .then(buf => sharp(buf)
       .composite([
         { input: darkOverlay, top: 0, left: 0 },
-        { input: resizedLogo, top: logoTop, left: logoLeft },
+        { input: resizedLogo, top: 180, left: logoLeft },
         { input: textSvg, top: 0, left: 0 },
       ])
       .jpeg({ quality: JPEG_QUALITY })
@@ -1462,91 +1847,110 @@ async function composeEventCover(
   appName: string,
   marketName: string
 ): Promise<Buffer> {
+  // Editorial event cover — Barfly-inspired with serif headlines and bold blocks
   let base: sharp.Sharp;
   if (imageBuffer) {
     base = sharp(imageBuffer).resize(SIZE, SIZE, { fit: 'cover', position: 'centre' });
   } else {
-    base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: { r: 20, g: 20, b: 25 } } });
+    base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: { r: 15, g: 12, b: 20 } } });
   }
 
-  // Heavy dark overlay so shapes and text pop
   const overlaySvg = Buffer.from(`
     <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
-      <rect width="${SIZE}" height="${SIZE}" fill="rgba(0,0,0,0.72)"/>
+      <defs>
+        <linearGradient id="evtCov" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:black;stop-opacity:0.82"/>
+          <stop offset="25%" style="stop-color:black;stop-opacity:0.5"/>
+          <stop offset="55%" style="stop-color:black;stop-opacity:0.35"/>
+          <stop offset="80%" style="stop-color:black;stop-opacity:0.7"/>
+          <stop offset="100%" style="stop-color:black;stop-opacity:0.92"/>
+        </linearGradient>
+      </defs>
+      <rect width="${SIZE}" height="${SIZE}" fill="url(#evtCov)"/>
+      <rect width="${SIZE}" height="${SIZE}" fill="${ACCENT}" opacity="0.03"/>
     </svg>`);
 
-  // Build the geometric block layout
-  // Large gold block at top with "THIS WEEK" + market name
-  // Big count in a dark block in the center
-  // Corner brackets framing the whole slide
-  const blockW = 620;
-  const blockH = 180;
-  const blockX = 60;
-  const blockY = 160;
-
-  const countBlockW = 400;
-  const countBlockH = 260;
-  const countBlockX = SIZE - countBlockW - 60;
-  const countBlockY = 500;
+  const cx = SIZE / 2;
 
   const textSvg = Buffer.from(`
     <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
       ${svgFontStyles()}
 
-      <!-- Corner brackets — top-left and bottom-right -->
-      ${cornerBracketsSvg(SIZE, 30, 100, 4, ACCENT, ['tl', 'br'])}
+      <!-- Corner brackets — all four -->
+      ${cornerBracketsSvg(SIZE, 28, 80, 3, ACCENT, ['tl', 'tr', 'bl', 'br'])}
 
-      <!-- Gold block — "THIS WEEK IN LANCASTER" -->
-      <rect x="${blockX}" y="${blockY}" width="${blockW}" height="${blockH}" fill="${ACCENT}"/>
-      <text x="${blockX + 32}" y="${blockY + 72}"
-            font-family="Inter" font-weight="700" font-size="60"
-            fill="#111111" text-anchor="start"
+      <!-- Top rule -->
+      <rect x="50" y="45" width="${SIZE - 100}" height="1" fill="${ACCENT}" opacity="0.5"/>
+
+      <!-- Gold block — "THIS WEEK" label -->
+      <rect x="60" y="140" width="230" height="42" fill="${ACCENT}"/>
+      <text x="175" y="168"
+            font-family="${SANS}" font-weight="700" font-size="18"
+            fill="#111111" text-anchor="middle"
+            letter-spacing="5">
+        THIS WEEK
+      </text>
+
+      <!-- Big serif headline — "Live Events" -->
+      <rect x="52" y="220" width="3" height="160" fill="${ACCENT}" opacity="0.6"/>
+
+      <text x="70" y="285"
+            font-family="${SERIF}" font-weight="700" font-size="80"
+            fill="white" text-anchor="start">
+        Live
+      </text>
+      <text x="70" y="380"
+            font-family="${SERIF}" font-weight="700" font-size="80"
+            fill="white" text-anchor="start">
+        ${escapeXml(headline.label)}
+      </text>
+
+      <!-- Market name — italic serif -->
+      <text x="70" y="430"
+            font-family="${SERIF}" font-weight="400" font-size="26" font-style="italic"
+            fill="${ACCENT_DIM}" text-anchor="start">
+        in ${escapeXml(marketName)}
+      </text>
+
+      <!-- Count block — right-aligned -->
+      <rect x="${SIZE - 220}" y="480" width="170" height="110" fill="rgba(0,0,0,0.8)"/>
+      <rect x="${SIZE - 220}" y="480" width="170" height="4" fill="${ACCENT}"/>
+      <text x="${SIZE - 135}" y="535"
+            font-family="${SANS}" font-weight="700" font-size="48"
+            fill="white" text-anchor="middle">
+        ${escapeXml(String(headline.count))}
+      </text>
+      <text x="${SIZE - 135}" y="575"
+            font-family="${SANS}" font-weight="700" font-size="14"
+            fill="${ACCENT}" text-anchor="middle"
             letter-spacing="3">
         THIS WEEK
       </text>
-      <text x="${blockX + 32}" y="${blockY + 135}"
-            font-family="Inter" font-weight="700" font-size="44"
-            fill="rgba(0,0,0,0.7)" text-anchor="start">
-        IN ${escapeXml(marketName.toUpperCase())}
-      </text>
 
-      <!-- Dark block with label text -->
-      <rect x="${countBlockX}" y="${countBlockY}" width="${countBlockW}" height="${countBlockH}" fill="rgba(0,0,0,0.85)"/>
-      <rect x="${countBlockX}" y="${countBlockY}" width="${countBlockW}" height="5" fill="${ACCENT}"/>
-      <text x="${countBlockX + countBlockW / 2}" y="${countBlockY + 110}"
-            font-family="Inter" font-weight="700" font-size="52"
-            fill="white" text-anchor="middle"
-            letter-spacing="3">
-        LIVE
-      </text>
-      <text x="${countBlockX + countBlockW / 2}" y="${countBlockY + 180}"
-            font-family="Inter" font-weight="700" font-size="52"
+      <!-- ═══ Bottom ═══ -->
+      <rect x="50" y="${SIZE - 145}" width="${SIZE - 100}" height="1" fill="${ACCENT}" opacity="0.35"/>
+
+      <!-- App name — left -->
+      <rect x="60" y="${SIZE - 110}" width="200" height="36" rx="4" fill="rgba(0,0,0,0.6)"/>
+      <rect x="60" y="${SIZE - 110}" width="200" height="36" rx="4" fill="none" stroke="${ACCENT}" stroke-width="1" opacity="0.3"/>
+      <text x="160" y="${SIZE - 86}"
+            font-family="${SANS}" font-weight="700" font-size="14"
             fill="${ACCENT}" text-anchor="middle"
             letter-spacing="3">
-        ${escapeXml(headline.label.toUpperCase())}
-      </text>
-
-      <!-- App name bottom-left in a small dark pill -->
-      <rect x="60" y="${SIZE - 110}" width="260" height="50" rx="4" ry="4" fill="rgba(0,0,0,0.7)"/>
-      <text x="80" y="${SIZE - 78}"
-            font-family="Inter" font-weight="700" font-size="24"
-            fill="white" text-anchor="start"
-            letter-spacing="2">
         ${escapeXml(appName.toUpperCase())}
       </text>
 
-      <!-- Swipe CTA bottom right -->
-      <text x="${SIZE - 50}" y="${SIZE - 50}"
-            font-family="Inter" font-weight="400" font-size="20"
-            fill="rgba(255,255,255,0.5)" text-anchor="end"
-            letter-spacing="2">
-        SWIPE &gt;
+      <!-- Swipe CTA — right -->
+      <text x="${SIZE - 55}" y="${SIZE - 55}"
+            font-family="${SANS}" font-weight="400" font-size="16"
+            fill="rgba(255,255,255,0.45)" text-anchor="end"
+            letter-spacing="4">
+        SWIPE  &#x276F;
       </text>
     </svg>`);
 
-  // App icon top-right — has its own dark background
   const resizedLogo = await sharp(logoBuffer)
-    .resize(70, 70, { fit: 'cover' })
+    .resize(50, 50, { fit: 'cover' })
     .png()
     .toBuffer();
 
@@ -1557,7 +1961,7 @@ async function composeEventCover(
       .composite([
         { input: overlaySvg, top: 0, left: 0 },
         { input: textSvg, top: 0, left: 0 },
-        { input: resizedLogo, top: 50, left: SIZE - 120 },
+        { input: resizedLogo, top: 55, left: SIZE - 110 },
       ])
       .jpeg({ quality: JPEG_QUALITY })
       .toBuffer()
@@ -1578,70 +1982,74 @@ async function composeEventSlide(
 
   const base = sharp(imageBuffer).resize(SIZE, SIZE, { fit: 'cover', position: 'centre' });
 
-  // Bottom gradient — text block sits at the bottom
+  // Cinematic gradient
   const gradientSvg = Buffer.from(`
     <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="evtBlock" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style="stop-color:black;stop-opacity:0"/>
-          <stop offset="55%" style="stop-color:black;stop-opacity:0.1"/>
-          <stop offset="75%" style="stop-color:black;stop-opacity:0.7"/>
+          <stop offset="0%" style="stop-color:black;stop-opacity:0.05"/>
+          <stop offset="45%" style="stop-color:black;stop-opacity:0.08"/>
+          <stop offset="65%" style="stop-color:black;stop-opacity:0.5"/>
+          <stop offset="80%" style="stop-color:black;stop-opacity:0.82"/>
           <stop offset="100%" style="stop-color:black;stop-opacity:0.95"/>
         </linearGradient>
       </defs>
       <rect width="${SIZE}" height="${SIZE}" fill="url(#evtBlock)"/>
     </svg>`);
 
-  // Solid block at bottom with restaurant name
-  const nameLines = wrapText(name, 20);
-  const blockH = 180 + (nameLines.length - 1) * 60;
+  // Restaurant name — serif, editorial
+  const nameLines = wrapText(name, 17);
+  const blockH = 170 + (nameLines.length - 1) * 58;
   const blockY = SIZE - blockH;
 
   const nameSvgParts = nameLines.map((line, i) =>
-    `<text x="100" y="${blockY + 75 + i * 60}"
-           font-family="Inter" font-weight="700" font-size="50"
+    `<text x="95" y="${blockY + 70 + i * 58}"
+           font-family="${SERIF}" font-weight="700" font-size="48"
            fill="white" text-anchor="start">
        ${escapeXml(line)}
      </text>`
   ).join('\n');
 
-  const detailY = blockY + 75 + nameLines.length * 60 + 10;
+  const detailY = blockY + 70 + nameLines.length * 58 + 8;
 
   const textSvg = Buffer.from(`
     <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
       ${svgFontStyles()}
 
-      <!-- Corner brackets — top-right and bottom-left -->
-      ${cornerBracketsSvg(SIZE, 24, 70, 3, ACCENT, ['tr', 'bl'])}
+      <!-- Corner brackets — editorial framing -->
+      ${cornerBracketsSvg(SIZE, 24, 60, 2, ACCENT, ['tl', 'br'])}
 
-      <!-- Slide counter — top left, gold block -->
-      <rect x="30" y="30" width="80" height="40" fill="${ACCENT}"/>
-      <text x="70" y="58"
-            font-family="Inter" font-weight="700" font-size="22"
+      <!-- Slide counter — gold tag -->
+      <rect x="24" y="24" width="68" height="30" fill="${ACCENT}"/>
+      <text x="58" y="44"
+            font-family="${SANS}" font-weight="700" font-size="14"
             fill="#111111" text-anchor="middle">
         ${slideNumber}/${totalSlides}
       </text>
 
-      <!-- Dark text block at bottom -->
-      <rect x="60" y="${blockY}" width="${SIZE - 120}" height="${blockH}" rx="0" ry="0" fill="rgba(0,0,0,0.75)"/>
+      <!-- Dark editorial block at bottom -->
+      <rect x="55" y="${blockY}" width="${SIZE - 110}" height="${blockH}" fill="rgba(0,0,0,0.78)"/>
 
-      <!-- Gold top border on the text block -->
-      <rect x="60" y="${blockY}" width="${SIZE - 120}" height="4" fill="${ACCENT}"/>
+      <!-- Gold accent bar at top of block -->
+      <rect x="55" y="${blockY}" width="${SIZE - 110}" height="3" fill="${ACCENT}"/>
 
-      <!-- Restaurant name -->
+      <!-- Vertical accent beside name -->
+      <rect x="72" y="${blockY + 45}" width="3" height="${nameLines.length * 58 + 10}" fill="${ACCENT}" opacity="0.6"/>
+
+      <!-- Restaurant name — serif -->
       ${nameSvgParts}
 
-      <!-- Detail text -->
-      <text x="100" y="${detailY}"
-            font-family="Inter" font-weight="400" font-size="26"
+      <!-- Detail text — serif italic -->
+      <rect x="95" y="${detailY - 3}" width="${SIZE - 200}" height="1" fill="${ACCENT}" opacity="0.3"/>
+      <text x="95" y="${detailY + 24}"
+            font-family="${SERIF}" font-weight="400" font-size="24" font-style="italic"
             fill="${ACCENT}" text-anchor="start">
         ${escapeXml(detail)}
       </text>
     </svg>`);
 
-  // App icon top-right — has its own dark background
   const smallLogo = await sharp(logoBuffer)
-    .resize(50, 50, { fit: 'cover' })
+    .resize(44, 44, { fit: 'cover' })
     .png()
     .toBuffer();
 
@@ -1652,7 +2060,7 @@ async function composeEventSlide(
       .composite([
         { input: gradientSvg, top: 0, left: 0 },
         { input: textSvg, top: 0, left: 0 },
-        { input: smallLogo, top: 34, left: SIZE - 84 },
+        { input: smallLogo, top: 28, left: SIZE - 76 },
       ])
       .jpeg({ quality: JPEG_QUALITY })
       .toBuffer()
@@ -1665,85 +2073,107 @@ async function composeEventCTA(
   logoBuffer: Buffer,
   backgroundImage: Buffer | null
 ): Promise<Buffer> {
-  // Blurred photo background with dark overlay
+  // Editorial event CTA — Barfly-inspired close with urgency
   let base: sharp.Sharp;
   if (backgroundImage) {
     const blurred = await sharp(backgroundImage)
       .resize(SIZE, SIZE, { fit: 'cover', position: 'centre' })
-      .blur(30)
-      .modulate({ brightness: 0.2 })
+      .blur(25)
+      .modulate({ brightness: 0.18 })
       .toBuffer();
     base = sharp(blurred);
   } else {
     base = sharp({
-      create: { width: SIZE, height: SIZE, channels: 3, background: { r: 18, g: 18, b: 22 } }
+      create: { width: SIZE, height: SIZE, channels: 3, background: { r: 12, g: 10, b: 16 } }
     });
   }
 
-  // App icon centered — has its own dark background
-  const logoSize = 200;
+  const logoSize = 130;
   const resizedLogo = await sharp(logoBuffer)
     .resize(logoSize, logoSize, { fit: 'cover' })
     .png()
     .toBuffer();
 
   const logoLeft = Math.round((SIZE - logoSize) / 2);
-  const logoTop = 200;
-
-  // Big centered block with count + CTA
-  const ctaBlockW = SIZE - 120;
-  const ctaBlockH = 320;
-  const ctaBlockX = 60;
-  const ctaBlockY = 480;
+  const cx = SIZE / 2;
 
   const textSvg = Buffer.from(`
     <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
       ${svgFontStyles()}
 
-      <!-- Corner brackets — all four corners -->
-      ${cornerBracketsSvg(SIZE, 30, 100, 4, ACCENT, ['tl', 'tr', 'bl', 'br'])}
+      <!-- Editorial border -->
+      <rect x="40" y="40" width="${SIZE - 80}" height="${SIZE - 80}"
+            fill="none" stroke="${ACCENT}" stroke-width="1.5" opacity="0.3"/>
 
-      <!-- Dark CTA block -->
-      <rect x="${ctaBlockX}" y="${ctaBlockY}" width="${ctaBlockW}" height="${ctaBlockH}" rx="0" ry="0" fill="rgba(0,0,0,0.8)"/>
-      <rect x="${ctaBlockX}" y="${ctaBlockY}" width="${ctaBlockW}" height="5" fill="${ACCENT}"/>
+      <!-- Corner brackets -->
+      ${cornerBracketsSvg(SIZE, 35, 70, 3, ACCENT, ['tl', 'tr', 'bl', 'br'])}
 
-      <!-- Headline -->
-      <text x="${SIZE / 2}" y="${ctaBlockY + 70}"
-            font-family="Inter" font-weight="700" font-size="48"
+      <!-- App name at top -->
+      <text x="${cx}" y="90"
+            font-family="${SANS}" font-weight="700" font-size="14"
+            fill="${ACCENT}" text-anchor="middle" letter-spacing="6">
+        ${escapeXml(appName.toUpperCase())}
+      </text>
+      <rect x="${cx - 60}" y="102" width="120" height="1" fill="${ACCENT}" opacity="0.4"/>
+
+      <!-- Big serif headline -->
+      <text x="${cx}" y="430"
+            font-family="${SERIF}" font-weight="700" font-size="58"
             fill="white" text-anchor="middle">
-        Don&apos;t Miss Out
+        Don&apos;t Miss
+      </text>
+      <text x="${cx}" y="505"
+            font-family="${SERIF}" font-weight="700" font-size="58"
+            fill="white" text-anchor="middle">
+        the Lineup
       </text>
 
-      <!-- Subtitle -->
-      <text x="${SIZE / 2}" y="${ctaBlockY + 125}"
-            font-family="Inter" font-weight="400" font-size="28"
-            fill="rgba(255,255,255,0.6)" text-anchor="middle">
-        See the full lineup on ${escapeXml(appName)}
+      <rect x="${cx - 40}" y="530" width="80" height="3" fill="${ACCENT}"/>
+
+      <!-- Count + CTA -->
+      <text x="${cx}" y="585"
+            font-family="${SERIF}" font-weight="400" font-size="24" font-style="italic"
+            fill="rgba(255,255,255,0.7)" text-anchor="middle">
+        ${totalCount}+ events this week on ${escapeXml(appName)}
       </text>
 
-      <!-- Gold divider inside block -->
-      <rect x="${SIZE / 2 - 60}" y="${ctaBlockY + 155}" width="120" height="3" fill="${ACCENT}"/>
+      <!-- Feature teasers -->
+      <rect x="120" y="630" width="${SIZE - 240}" height="1" fill="${ACCENT}" opacity="0.2"/>
+      <text x="${cx}" y="665"
+            font-family="${SANS}" font-weight="400" font-size="15"
+            fill="rgba(255,255,255,0.45)" text-anchor="middle" letter-spacing="1">
+        Live Music &#183; Trivia &#183; Karaoke &#183; Comedy &#183; DJ Nights
+      </text>
+      <rect x="120" y="685" width="${SIZE - 240}" height="1" fill="${ACCENT}" opacity="0.2"/>
 
       <!-- Download text -->
-      <text x="${SIZE / 2}" y="${ctaBlockY + 205}"
-            font-family="Inter" font-weight="400" font-size="22"
-            fill="rgba(255,255,255,0.5)" text-anchor="middle">
+      <text x="${cx}" y="735"
+            font-family="${SANS}" font-weight="400" font-size="18"
+            fill="rgba(255,255,255,0.45)" text-anchor="middle">
         Free on the App Store &amp; Google Play
       </text>
 
-      <!-- CTA button — gold rectangle, not rounded -->
-      <rect x="${SIZE / 2 - 130}" y="${ctaBlockY + 235}" width="260" height="54" rx="4" ry="4"
+      <!-- CTA button -->
+      <rect x="${cx - 150}" y="775" width="300" height="56" rx="4" ry="4"
             fill="${ACCENT}"/>
-      <text x="${SIZE / 2}" y="${ctaBlockY + 270}"
-            font-family="Inter" font-weight="700" font-size="24"
-            fill="#111111" text-anchor="middle">
+      <text x="${cx}" y="811"
+            font-family="${SANS}" font-weight="700" font-size="20"
+            fill="#111111" text-anchor="middle" letter-spacing="3">
         LINK IN BIO
+      </text>
+
+      <!-- Tagline -->
+      <text x="${cx}" y="${SIZE - 60}"
+            font-family="${SERIF}" font-weight="400" font-size="16" font-style="italic"
+            fill="rgba(255,255,255,0.3)" text-anchor="middle">
+        Your city. Your guide. Your next favorite spot.
       </text>
     </svg>`);
 
   const darkOverlay = Buffer.from(`
     <svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
-      <rect width="${SIZE}" height="${SIZE}" fill="rgba(0,0,0,0.5)"/>
+      <rect width="${SIZE}" height="${SIZE}" fill="rgba(0,0,0,0.6)"/>
+      <rect width="${SIZE}" height="${SIZE}" fill="${ACCENT}" opacity="0.03"/>
     </svg>`);
 
   return base
@@ -1752,7 +2182,7 @@ async function composeEventCTA(
     .then(buf => sharp(buf)
       .composite([
         { input: darkOverlay, top: 0, left: 0 },
-        { input: resizedLogo, top: logoTop, left: logoLeft },
+        { input: resizedLogo, top: 180, left: logoLeft },
         { input: textSvg, top: 0, left: 0 },
       ])
       .jpeg({ quality: JPEG_QUALITY })
@@ -1763,6 +2193,71 @@ async function composeEventCTA(
 // ============================================================
 // Helpers
 // ============================================================
+
+/** Format a date string for the Barfly-style cover masthead */
+function formatCoverDate(dateStr: string): { label: string; value: string } {
+  const d = new Date(dateStr + 'T12:00:00'); // noon to avoid TZ issues
+  const month = d.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+  const day = d.getDate();
+  return { label: 'WEEK OF', value: `${month} ${day}` };
+}
+
+/** Split app name for Barfly-style masthead ("Taste" big / "Lanc" small) */
+function getMastheadParts(appName: string): { big: string; small: string; smallFontSize: number } {
+  if (appName === 'TasteLanc') return { big: 'Taste', small: 'Lanc', smallFontSize: 32 };
+  if (appName === 'TasteCumberland') return { big: 'Taste', small: 'Cumberland', smallFontSize: 28 };
+  if (appName === 'TasteFayetteville') return { big: 'Taste', small: 'Fayetteville', smallFontSize: 26 };
+  return { big: appName, small: '', smallFontSize: 30 };
+}
+
+/** Market-specific tagline for the cover banner */
+function getCoverTagline(marketName: string): string {
+  return `${escapeXml(marketName.toUpperCase())}&apos;S GUIDE TO DINING, DRINKS &amp; NIGHTLIFE`;
+}
+
+/** Category thumbnails for the "Inside Your TasteLanc" section */
+const INSIDE_CATEGORIES = [
+  { label: 'HAPPY HOURS', subtitle: 'daily specials', image: 'events/live_music.png' },
+  { label: 'EVENTS', subtitle: 'live music &amp; more', image: 'events/trivia.png' },
+  { label: 'DINING', subtitle: 'tonight&apos;s picks', image: 'events/other.png' },
+  { label: 'DEALS', subtitle: 'exclusive savings', image: 'events/comedy.png' },
+  { label: 'PLUS', subtitle: 'on the app', image: 'events/sports.png' },
+];
+
+/** Load and resize category thumbnail images for the "Inside" section */
+async function loadInsideThumbnails(): Promise<{ input: Buffer; left: number; top: number }[]> {
+  const BORDER = 12;
+  const SECTION_IMG_TOP = 808;
+  const THUMB_W = 184;
+  const THUMB_H = 160;
+  const GAP = 16;
+  const START_X = BORDER + 20;
+
+  const composites: { input: Buffer; left: number; top: number }[] = [];
+
+  for (let i = 0; i < INSIDE_CATEGORIES.length; i++) {
+    const cat = INSIDE_CATEGORIES[i];
+    const imgPath = join(process.cwd(), 'public', 'images', cat.image);
+    const x = START_X + i * (THUMB_W + GAP);
+
+    try {
+      const thumbBuf = await sharp(readFileSync(imgPath))
+        .resize(THUMB_W, THUMB_H, { fit: 'cover', position: 'centre' })
+        .composite([{
+          input: Buffer.from(`<svg width="${THUMB_W}" height="${THUMB_H}"><rect width="${THUMB_W}" height="${THUMB_H}" rx="8" ry="8" fill="black"/></svg>`),
+          blend: 'dest-in',
+        }])
+        .png()
+        .toBuffer();
+
+      composites.push({ input: thumbBuf, left: x, top: SECTION_IMG_TOP });
+    } catch {
+      // Skip if image can't be loaded — the category label still renders via SVG
+    }
+  }
+
+  return composites;
+}
 
 function wrapText(text: string, maxCharsPerLine: number): string[] {
   const words = text.split(' ');
@@ -1880,7 +2375,7 @@ function formatEventLine(event: SpotlightEvent): string {
   return label;
 }
 
-// Cover slide: full-bleed photo + "INSIDE" editorial header + restaurant name
+// Cover slide: editorial magazine feature — "INSIDE" + restaurant name, Barfly-inspired
 async function composeSpotlightCover(
   imageBuffer: Buffer | null,
   restaurantName: string,
@@ -1895,42 +2390,70 @@ async function composeSpotlightCover(
     base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: { r: 14, g: 14, b: 18 } } });
   }
 
-  const nameLines = wrapText(restaurantName, 18);
-  const nameY = 175;
-  const lineH = 66;
+  const nameLines = wrapText(restaurantName, 15);
+  const nameY = 200;
+  const lineH = 70;
   const nameSvg = nameLines.map((line, i) =>
-    `<text x="60" y="${nameY + i * lineH}" font-family="Inter" font-size="58" font-weight="700"
+    `<text x="70" y="${nameY + i * lineH}" font-family="${SERIF}" font-size="62" font-weight="700"
       fill="white" dominant-baseline="hanging">${escapeXml(line)}</text>`
   ).join('\n');
 
-  const bottomY = SIZE - 60;
+  const bottomY = SIZE - 55;
+  const cx = SIZE / 2;
+  const nameBlockEnd = nameY + nameLines.length * lineH + 20;
+
   const svg = `<svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
     ${svgFontStyles()}
-    <!-- Dark gradient overlay -->
+    <!-- Cinematic gradient overlay -->
     <defs>
       <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="rgba(0,0,0,0.72)"/>
-        <stop offset="45%" stop-color="rgba(0,0,0,0.35)"/>
-        <stop offset="100%" stop-color="rgba(0,0,0,0.88)"/>
+        <stop offset="0%" stop-color="rgba(0,0,0,0.8)"/>
+        <stop offset="25%" stop-color="rgba(0,0,0,0.4)"/>
+        <stop offset="55%" stop-color="rgba(0,0,0,0.25)"/>
+        <stop offset="80%" stop-color="rgba(0,0,0,0.65)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0.92)"/>
       </linearGradient>
     </defs>
     <rect width="${SIZE}" height="${SIZE}" fill="url(#cg)"/>
-    <!-- Gold accent rule above INSIDE label -->
-    <rect x="60" y="95" width="44" height="3" fill="${ACCENT}" rx="1"/>
-    <!-- INSIDE label -->
-    <text x="60" y="115" font-family="Inter" font-size="22" font-weight="400"
-      fill="${ACCENT_DIM}" letter-spacing="8" dominant-baseline="hanging">INSIDE</text>
-    <!-- Restaurant name -->
+    <rect width="${SIZE}" height="${SIZE}" fill="${ACCENT}" opacity="0.03"/>
+
+    <!-- Corner brackets -->
+    ${cornerBracketsSvg(SIZE, 28, 65, 2, ACCENT, ['tl', 'tr', 'bl', 'br'])}
+
+    <!-- Thin rule at top -->
+    <rect x="50" y="50" width="${SIZE - 100}" height="1" fill="${ACCENT}" opacity="0.4"/>
+
+    <!-- "INSIDE" label — editorial tag -->
+    <rect x="70" y="105" width="110" height="30" fill="${ACCENT}"/>
+    <text x="125" y="126" font-family="${SANS}" font-size="14" font-weight="700"
+      fill="#111111" text-anchor="middle" letter-spacing="4">INSIDE</text>
+
+    <!-- Gold accent bar beside name -->
+    <rect x="52" y="${nameY - 5}" width="3" height="${nameLines.length * lineH + 10}" fill="${ACCENT}" opacity="0.7"/>
+
+    <!-- Restaurant name — serif, large, editorial -->
     ${nameSvg}
-    <!-- Bottom-left: swipe hint -->
-    <rect x="60" y="${bottomY - 14}" width="2" height="30" fill="${ACCENT}" rx="1" opacity="0.6"/>
-    <text x="72" y="${bottomY - 4}" font-family="Inter" font-size="15" fill="rgba(255,255,255,0.55)"
-      dominant-baseline="hanging">Swipe to explore →</text>
-    <!-- Bottom-right: market brand badge -->
-    <rect x="${SIZE - 200}" y="${bottomY - 8}" width="160" height="26" rx="13"
-      fill="rgba(232,197,71,0.15)" stroke="${ACCENT}" stroke-width="1"/>
-    <text x="${SIZE - 120}" y="${bottomY + 5}" font-family="Inter" font-size="13" font-weight="600"
-      fill="${ACCENT}" text-anchor="middle" dominant-baseline="middle">${escapeXml(appName.toUpperCase())}</text>
+
+    <!-- Subtitle: what's inside -->
+    <text x="70" y="${nameBlockEnd + 10}" font-family="${SERIF}" font-size="22" font-style="italic"
+      fill="${ACCENT_DIM}" dominant-baseline="hanging">Happy Hours, Deals, Events &amp; More</text>
+
+    <!-- ═══ Bottom zone ═══ -->
+    <rect x="50" y="${SIZE - 145}" width="${SIZE - 100}" height="1" fill="${ACCENT}" opacity="0.35"/>
+
+    <!-- Swipe hint — left -->
+    <rect x="60" y="${bottomY - 8}" width="2" height="24" fill="${ACCENT}" rx="1" opacity="0.6"/>
+    <text x="72" y="${bottomY}" font-family="${SANS}" font-size="14" fill="rgba(255,255,255,0.5)"
+      dominant-baseline="hanging" letter-spacing="3">SWIPE TO EXPLORE  &#x276F;</text>
+
+    <!-- Brand badge — right -->
+    <rect x="${SIZE - 200}" y="${bottomY - 4}" width="160" height="26" rx="4"
+      fill="rgba(232,197,71,0.12)" stroke="${ACCENT}" stroke-width="1"/>
+    <text x="${SIZE - 120}" y="${bottomY + 9}" font-family="${SANS}" font-size="12" font-weight="700"
+      fill="${ACCENT}" text-anchor="middle" dominant-baseline="middle"
+      letter-spacing="2">${escapeXml(appName.toUpperCase())}</text>
+
+    <rect x="50" y="${SIZE - 40}" width="${SIZE - 100}" height="1" fill="${ACCENT}" opacity="0.2"/>
   </svg>`;
 
   const logo = await sharp(logoBuffer)
@@ -1942,12 +2465,12 @@ async function composeSpotlightCover(
     .jpeg({ quality: JPEG_QUALITY })
     .composite([
       { input: Buffer.from(svg), top: 0, left: 0 },
-      { input: logo, top: 36, left: SIZE - 80 },
+      { input: logo, top: 56, left: SIZE - 80 },
     ])
     .toBuffer();
 }
 
-// Content slide: upper photo zone + lower dark panel with section label and items
+// Content slide: photo top + editorial dark panel with section label and items
 async function composeSpotlightContentSlide(
   imageBuffer: Buffer | null,
   sectionLabel: string,
@@ -1956,7 +2479,7 @@ async function composeSpotlightContentSlide(
   slideNum: number,
   totalSlides: number,
 ): Promise<Buffer> {
-  const PANEL_TOP = Math.round(SIZE * 0.52); // panel starts at 52%
+  const PANEL_TOP = Math.round(SIZE * 0.50); // slightly more photo visible
   const PHOTO_H = PANEL_TOP;
 
   let photoComposite: Buffer;
@@ -1967,18 +2490,27 @@ async function composeSpotlightContentSlide(
       .toBuffer();
   } else {
     photoComposite = await sharp({
-      create: { width: SIZE, height: PHOTO_H, channels: 3, background: { r: 18, g: 18, b: 22 } },
+      create: { width: SIZE, height: PHOTO_H, channels: 3, background: { r: 14, g: 12, b: 18 } },
     }).jpeg({ quality: JPEG_QUALITY }).toBuffer();
   }
 
-  // Composite: photo top + dark panel bottom
   const capped = items.slice(0, 3);
-  const itemsY = PANEL_TOP + 100;
-  const itemH = 38;
-  const itemSvg = capped.map((item, i) =>
-    `<text x="64" y="${itemsY + i * itemH}" font-family="Inter" font-size="24" fill="rgba(255,255,255,0.88)"
-      dominant-baseline="hanging">• ${escapeXml(item)}</text>`
-  ).join('\n');
+  const itemsY = PANEL_TOP + 115;
+  const itemH = 44;
+
+  // Items with gold bullets and serif font
+  const itemSvg = capped.map((item, i) => {
+    // Parse price from item for callout
+    const priceMatch = item.match(/\$\d+(?:\.\d{2})?/);
+    const itemText = priceMatch ? item.replace(priceMatch[0], '').replace(/—\s*$/, '').trim() : item;
+    return `
+      <rect x="64" y="${itemsY + i * itemH + 4}" width="6" height="6" fill="${ACCENT}" rx="1"/>
+      <text x="82" y="${itemsY + i * itemH}" font-family="${SERIF}" font-size="24" fill="rgba(255,255,255,0.9)"
+        dominant-baseline="hanging">${escapeXml(itemText)}</text>
+      ${priceMatch ? `<text x="${SIZE - 60}" y="${itemsY + i * itemH}" font-family="${SANS}" font-size="22" font-weight="700"
+        fill="${ACCENT}" text-anchor="end" dominant-baseline="hanging">${escapeXml(priceMatch[0])}</text>` : ''}
+    `;
+  }).join('\n');
 
   const logo = await sharp(logoBuffer)
     .resize(36, 36, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
@@ -1987,29 +2519,46 @@ async function composeSpotlightContentSlide(
 
   const svg = `<svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
     ${svgFontStyles()}
-    <!-- Photo zone subtle vignette -->
+    <!-- Photo zone vignette -->
     <defs>
       <linearGradient id="pv" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="70%" stop-color="rgba(0,0,0,0)"/>
-        <stop offset="100%" stop-color="rgba(0,0,0,0.5)"/>
+        <stop offset="60%" stop-color="rgba(0,0,0,0)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0.6)"/>
       </linearGradient>
     </defs>
     <rect y="0" width="${SIZE}" height="${PHOTO_H}" fill="url(#pv)"/>
-    <!-- Dark panel -->
-    <rect y="${PANEL_TOP}" width="${SIZE}" height="${SIZE - PANEL_TOP}" fill="rgba(10,10,14,0.96)"/>
-    <!-- Gold accent rule at top of panel -->
-    <rect y="${PANEL_TOP}" width="${SIZE}" height="3" fill="${ACCENT}" rx="0"/>
-    <!-- Section label -->
-    <text x="60" y="${PANEL_TOP + 22}" font-family="Inter" font-size="20" font-weight="700"
-      fill="${ACCENT}" letter-spacing="6" dominant-baseline="hanging">${escapeXml(sectionLabel)}</text>
+
+    <!-- Dark panel with subtle texture -->
+    <rect y="${PANEL_TOP}" width="${SIZE}" height="${SIZE - PANEL_TOP}" fill="rgba(10,10,14,0.97)"/>
+
+    <!-- Gold accent rule at panel top -->
+    <rect y="${PANEL_TOP}" width="${SIZE}" height="3" fill="${ACCENT}"/>
+
+    <!-- Corner brackets on the panel zone -->
+    <rect x="50" y="${PANEL_TOP + 12}" width="45" height="2" fill="${ACCENT}" opacity="0.4"/>
+    <rect x="50" y="${PANEL_TOP + 12}" width="2" height="35" fill="${ACCENT}" opacity="0.4"/>
+    <rect x="${SIZE - 95}" y="${SIZE - 55}" width="45" height="2" fill="${ACCENT}" opacity="0.4"/>
+    <rect x="${SIZE - 52}" y="${SIZE - 90}" width="2" height="35" fill="${ACCENT}" opacity="0.4"/>
+
+    <!-- Section label — editorial tag -->
+    <rect x="60" y="${PANEL_TOP + 20}" width="${sectionLabel.length * 12 + 30}" height="30" fill="${ACCENT}"/>
+    <text x="${60 + (sectionLabel.length * 12 + 30) / 2}" y="${PANEL_TOP + 41}"
+      font-family="${SANS}" font-size="13" font-weight="700"
+      fill="#111111" text-anchor="middle" letter-spacing="4">${escapeXml(sectionLabel)}</text>
+
     <!-- Accent hairline under label -->
-    <rect x="60" y="${PANEL_TOP + 56}" width="48" height="2" fill="${ACCENT}" rx="1" opacity="0.5"/>
-    <!-- Items -->
+    <rect x="60" y="${PANEL_TOP + 68}" width="40" height="2" fill="${ACCENT}" rx="1" opacity="0.4"/>
+
+    <!-- Items — serif font, gold prices right-aligned -->
     ${itemSvg}
+
+    <!-- Bottom rule -->
+    <rect x="50" y="${SIZE - 45}" width="${SIZE - 100}" height="1" fill="${ACCENT}" opacity="0.2"/>
+
     <!-- Slide counter badge -->
-    <rect x="${SIZE - 90}" y="20" width="68" height="26" rx="13" fill="${ACCENT}"/>
-    <text x="${SIZE - 56}" y="33" font-family="Inter" font-size="13" font-weight="700"
-      fill="#1a1a1a" text-anchor="middle" dominant-baseline="middle">${slideNum}/${totalSlides}</text>
+    <rect x="${SIZE - 88}" y="22" width="64" height="26" rx="4" fill="${ACCENT}"/>
+    <text x="${SIZE - 56}" y="35" font-family="${SANS}" font-size="13" font-weight="700"
+      fill="#111111" text-anchor="middle" dominant-baseline="middle">${slideNum}/${totalSlides}</text>
   </svg>`;
 
   return sharp({
@@ -2018,25 +2567,25 @@ async function composeSpotlightContentSlide(
     .composite([
       { input: photoComposite, top: 0, left: 0 },
       { input: Buffer.from(svg), top: 0, left: 0 },
-      { input: logo, top: 20, left: 20 },
+      { input: logo, top: 22, left: 22 },
     ])
     .jpeg({ quality: JPEG_QUALITY })
     .toBuffer();
 }
 
-// Photo gallery slide: 2x2 grid of restaurant photos
+// Photo gallery slide: 2x2 grid with editorial framing and gold accents
 async function composeSpotlightPhotoGrid(
   photoBuffers: Buffer[],
   logoBuffer: Buffer,
   slideNum: number,
   totalSlides: number,
 ): Promise<Buffer> {
-  const GAP = 8;
-  const CELL = Math.floor((SIZE - GAP) / 2); // ~536px
+  const GAP = 6;
+  const CELL = Math.floor((SIZE - GAP) / 2);
 
   const cells = await Promise.all(
     photoBuffers.slice(0, 4).map(buf =>
-      sharp(buf).resize(CELL, CELL, { fit: 'cover', position: 'attention' }).jpeg({ quality: 88 }).toBuffer()
+      sharp(buf).resize(CELL, CELL, { fit: 'cover', position: 'attention' }).jpeg({ quality: 90 }).toBuffer()
     )
   );
 
@@ -2058,30 +2607,41 @@ async function composeSpotlightPhotoGrid(
 
   const svg = `<svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
     ${svgFontStyles()}
-    <!-- Gap fill -->
+    <!-- Gap fill — dark -->
     <rect x="${CELL}" y="0" width="${GAP}" height="${SIZE}" fill="rgba(10,10,14,1)"/>
     <rect x="0" y="${CELL}" width="${SIZE}" height="${GAP}" fill="rgba(10,10,14,1)"/>
-    <!-- Photos label -->
-    <rect x="60" y="18" width="90" height="24" rx="12" fill="rgba(232,197,71,0.18)" stroke="${ACCENT}" stroke-width="1"/>
-    <text x="105" y="30" font-family="Inter" font-size="12" font-weight="600"
-      fill="${ACCENT}" text-anchor="middle" dominant-baseline="middle">PHOTOS</text>
+
+    <!-- Gold accent lines along the gap -->
+    <rect x="${CELL + 1}" y="0" width="1" height="${SIZE}" fill="${ACCENT}" opacity="0.25"/>
+    <rect x="${CELL + GAP - 2}" y="0" width="1" height="${SIZE}" fill="${ACCENT}" opacity="0.25"/>
+    <rect x="0" y="${CELL + 1}" width="${SIZE}" height="1" fill="${ACCENT}" opacity="0.25"/>
+    <rect x="0" y="${CELL + GAP - 2}" width="${SIZE}" height="1" fill="${ACCENT}" opacity="0.25"/>
+
+    <!-- Corner brackets on outer edges -->
+    ${cornerBracketsSvg(SIZE, 10, 50, 2, ACCENT, ['tl', 'tr', 'bl', 'br'])}
+
+    <!-- Photos label — gold tag -->
+    <rect x="60" y="16" width="94" height="26" rx="4" fill="${ACCENT}"/>
+    <text x="107" y="29" font-family="${SANS}" font-size="12" font-weight="700"
+      fill="#111111" text-anchor="middle" dominant-baseline="middle" letter-spacing="3">PHOTOS</text>
+
     <!-- Slide counter badge -->
-    <rect x="${SIZE - 90}" y="18" width="68" height="24" rx="12" fill="${ACCENT}"/>
-    <text x="${SIZE - 56}" y="30" font-family="Inter" font-size="12" font-weight="700"
-      fill="#1a1a1a" text-anchor="middle" dominant-baseline="middle">${slideNum}/${totalSlides}</text>
+    <rect x="${SIZE - 88}" y="16" width="64" height="26" rx="4" fill="${ACCENT}"/>
+    <text x="${SIZE - 56}" y="29" font-family="${SANS}" font-size="12" font-weight="700"
+      fill="#111111" text-anchor="middle" dominant-baseline="middle">${slideNum}/${totalSlides}</text>
   </svg>`;
 
   return sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: { r: 10, g: 10, b: 14 } } })
     .composite([
       ...composites,
       { input: Buffer.from(svg), top: 0, left: 0 },
-      { input: logo, top: 18, left: 18 },
+      { input: logo, top: 16, left: 16 },
     ])
     .jpeg({ quality: JPEG_QUALITY })
     .toBuffer();
 }
 
-// CTA slide: blurred/darkened restaurant photo + "Discover [Restaurant] on [App]"
+// CTA slide: editorial close — "Discover [Restaurant] on [App]", Barfly-inspired
 async function composeSpotlightCTA(
   restaurantName: string,
   appName: string,
@@ -2092,57 +2652,83 @@ async function composeSpotlightCTA(
   if (backgroundBuffer) {
     const blurred = await sharp(backgroundBuffer)
       .resize(SIZE, SIZE, { fit: 'cover', position: 'attention' })
-      .blur(18)
+      .blur(20)
+      .modulate({ brightness: 0.18 })
       .jpeg({ quality: 80 })
       .toBuffer();
     base = sharp(blurred);
   } else {
-    base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: { r: 14, g: 14, b: 18 } } });
+    base = sharp({ create: { width: SIZE, height: SIZE, channels: 3, background: { r: 12, g: 10, b: 16 } } });
   }
 
   const logo = await sharp(logoBuffer)
-    .resize(160, 160, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .resize(120, 120, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
     .png()
     .toBuffer();
 
-  const nameLines = wrapText(restaurantName, 20);
-  const nameY = SIZE / 2 + 40;
-  const nameSvg = nameLines.map((line, i) =>
-    `<text x="${SIZE / 2}" y="${nameY + i * 42}" font-family="Inter" font-size="36" font-weight="700"
-      fill="white" text-anchor="middle" dominant-baseline="hanging">${escapeXml(line)}</text>`
-  ).join('\n');
-
-  const nameBlockH = nameLines.length * 42;
-  const accentY = nameY + nameBlockH + 16;
+  const cx = SIZE / 2;
 
   const svg = `<svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">
     ${svgFontStyles()}
-    <!-- Dark scrim -->
-    <rect width="${SIZE}" height="${SIZE}" fill="rgba(0,0,0,0.78)"/>
-    <!-- "Discover [Restaurant] on" -->
-    <text x="${SIZE / 2}" y="${SIZE / 2 - 16}" font-family="Inter" font-size="24" font-style="italic"
-      fill="rgba(255,255,255,0.72)" text-anchor="middle" dominant-baseline="auto">Discover ${escapeXml(restaurantName)} on</text>
-    <!-- App name -->
-    <text x="${SIZE / 2}" y="${SIZE / 2 + 14}" font-family="Inter" font-size="52" font-weight="700"
-      fill="white" text-anchor="middle" dominant-baseline="hanging">${escapeXml(appName)}</text>
+    <!-- Dark scrim with warm tint -->
+    <rect width="${SIZE}" height="${SIZE}" fill="rgba(0,0,0,0.72)"/>
+    <rect width="${SIZE}" height="${SIZE}" fill="${ACCENT}" opacity="0.03"/>
+
+    <!-- Editorial border frame -->
+    <rect x="40" y="40" width="${SIZE - 80}" height="${SIZE - 80}"
+          fill="none" stroke="${ACCENT}" stroke-width="1.5" opacity="0.3"/>
+
+    <!-- Corner brackets -->
+    ${cornerBracketsSvg(SIZE, 35, 70, 3, ACCENT, ['tl', 'tr', 'bl', 'br'])}
+
+    <!-- App name at top -->
+    <text x="${cx}" y="90" font-family="${SANS}" font-size="14" font-weight="700"
+      fill="${ACCENT}" text-anchor="middle" letter-spacing="6">${escapeXml(appName.toUpperCase())}</text>
+    <rect x="${cx - 60}" y="102" width="120" height="1" fill="${ACCENT}" opacity="0.4"/>
+
+    <!-- "Discover" label -->
+    <text x="${cx}" y="${cx - 55}" font-family="${SERIF}" font-size="26" font-style="italic"
+      fill="rgba(255,255,255,0.65)" text-anchor="middle">Discover</text>
+
+    <!-- Restaurant name — bold serif -->
+    <text x="${cx}" y="${cx + 5}" font-family="${SERIF}" font-size="46" font-weight="700"
+      fill="white" text-anchor="middle">${escapeXml(restaurantName)}</text>
+
+    <!-- "on [App]" -->
+    <text x="${cx}" y="${cx + 50}" font-family="${SERIF}" font-size="24" font-style="italic"
+      fill="${ACCENT_DIM}" text-anchor="middle">on ${escapeXml(appName)}</text>
+
     <!-- Accent rule -->
-    <rect x="${SIZE / 2 - 30}" y="${SIZE / 2 + 80}" width="60" height="3" fill="${ACCENT}" rx="1"/>
-    <!-- "Free on App Store & Google Play" -->
-    <text x="${SIZE / 2}" y="${SIZE / 2 + 100}" font-family="Inter" font-size="17"
-      fill="rgba(255,255,255,0.45)" text-anchor="middle" dominant-baseline="hanging">Free on App Store &amp; Google Play</text>
+    <rect x="${cx - 40}" y="${cx + 75}" width="80" height="3" fill="${ACCENT}" rx="1"/>
+
+    <!-- Feature teasers -->
+    <text x="${cx}" y="${cx + 120}" font-family="${SANS}" font-size="15"
+      fill="rgba(255,255,255,0.45)" text-anchor="middle" letter-spacing="1">
+      Happy Hours &#183; Deals &#183; Events &#183; Specials
+    </text>
+
+    <!-- Download text -->
+    <text x="${cx}" y="${SIZE - 210}" font-family="${SANS}" font-size="17"
+      fill="rgba(255,255,255,0.4)" text-anchor="middle">Free on App Store &amp; Google Play</text>
+
     <!-- Gold CTA button -->
-    <rect x="${SIZE / 2 - 160}" y="${SIZE - 160}" width="320" height="52" rx="26" fill="${ACCENT}"/>
-    <text x="${SIZE / 2}" y="${SIZE - 134}" font-family="Inter" font-size="16" font-weight="700"
-      fill="#1a1a1a" text-anchor="middle" dominant-baseline="middle">FIND ON ${escapeXml(appName.toUpperCase())}</text>
+    <rect x="${cx - 150}" y="${SIZE - 180}" width="300" height="52" rx="4" fill="${ACCENT}"/>
+    <text x="${cx}" y="${SIZE - 154}" font-family="${SANS}" font-size="16" font-weight="700"
+      fill="#111111" text-anchor="middle" dominant-baseline="middle"
+      letter-spacing="3">FIND ON ${escapeXml(appName.toUpperCase())}</text>
+
+    <!-- Bottom tagline -->
+    <text x="${cx}" y="${SIZE - 60}" font-family="${SERIF}" font-size="15" font-style="italic"
+      fill="rgba(255,255,255,0.25)" text-anchor="middle">Your city. Your guide. Your next favorite spot.</text>
   </svg>`;
 
-  const logoTop = Math.round(SIZE / 2 - 240);
+  const logoTop = 160;
 
   return base
     .jpeg({ quality: JPEG_QUALITY })
     .composite([
       { input: Buffer.from(svg), top: 0, left: 0 },
-      { input: logo, top: logoTop, left: Math.round(SIZE / 2 - 80) },
+      { input: logo, top: logoTop, left: Math.round(cx - 60) },
     ])
     .toBuffer();
 }
@@ -2165,12 +2751,16 @@ export async function composeRestaurantSpotlightSlides(opts: {
     logoBuffer = Buffer.alloc(0);
   }
 
-  // 2. Best cover photo
+  // 2. Best cover photo — REQUIRED. Never generate a spotlight without imagery.
   const coverPhoto = restaurant.photos.find(p => p.is_cover) ?? restaurant.photos[0] ?? null;
   const coverUrl = coverPhoto?.url ?? restaurant.cover_image_url ?? null;
   let coverBuffer: Buffer | null = null;
   if (coverUrl) {
     try { coverBuffer = await fetchImageBuffer(coverUrl); } catch { /* no image */ }
+  }
+
+  if (!coverBuffer) {
+    throw new Error(`Cannot generate spotlight for "${restaurant.name}" — no photos available. Every slide needs an image.`);
   }
 
   // 3. Build content sections in priority order: HH → Deals → Specials → Events
