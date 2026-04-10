@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { BRAND } from '@/config/market';
+import { mockupData } from './mockup-data';
 
 export default function MockupRecommendScreen() {
   const accent = BRAND.colors.accent;
@@ -90,7 +91,7 @@ export default function MockupRecommendScreen() {
       </div>
 
       {/* Bottom tab bar */}
-      <div className="relative z-10 border-t border-white/10 px-1 pt-1.5 pb-1 flex justify-around items-center bg-black/50 backdrop-blur-sm">
+      <div className="relative z-10 px-1 pt-1.5 pb-1 flex justify-around items-center bg-black/50 backdrop-blur-sm" style={{ borderTop: `1px solid ${mockupData.theme.borderColor}` }}>
         <TabIcon label="Home" icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>} />
         <TabIcon label="Search" icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>} />
         <TabIcon label="Move" icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M16.24 7.76a6 6 0 010 8.49m-8.48-.01a6 6 0 010-8.49" /><circle cx="12" cy="12" r="2" /></svg>} />

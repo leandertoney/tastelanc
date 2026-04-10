@@ -1249,6 +1249,7 @@ export async function generateCarouselSlides(opts: {
     const featuredForCover = validCandidates.slice(0, 2).map((c, i) => ({
       name: c.restaurant_name,
       detail: c.detail_text,
+      category: getCategoryFromDetail(c.detail_text),
       imageBuffer: validBuffers[i],
     }));
     const [coverSlide, ...restaurantSlides] = await Promise.all([
@@ -1352,34 +1353,38 @@ async function composeCoverSlide(
   const GOLD = '#E8C547';
   const PAD = 20; // inner padding from photo edges
 
-  // "Taste" width at font-size 105 is approx 310px. "Lanc" will be stretched to match.
   const TASTE_SIZE = 105;
-  const TASTE_W = 310; // approximate rendered width
   const TASTE_X = PAD;
-  const TASTE_Y = 115; // moved down from corner
+  const TASTE_Y = 115;
 
-  // Photo text — masthead LEFT + cover lines + date
+  // Taste center X = TASTE_X + half of rendered width (~150px at 105)
+  const TASTE_CX = TASTE_X + 150;
+
+  // Photo text — "Taste" LEFT, "Lanc" centered beneath, cover lines on photo
   const photoTextSvg = Buffer.from(`
     <svg width="${photoW}" height="${photoH}" xmlns="http://www.w3.org/2000/svg">
       ${svgFontStyles()}
 
-      <!-- "Taste" — LEFT, gold, moved down from corner -->
-      <text x="${TASTE_X + 2}" y="${TASTE_Y}"
+      <!-- "Taste" — LEFT, gold with white drop shadow for depth -->
+      <text x="${TASTE_X + 4}" y="${TASTE_Y + 4}"
             font-family="${SERIF}" font-weight="900" font-size="${TASTE_SIZE}"
-            fill="rgba(0,0,0,0.45)" text-anchor="start">Taste</text>
-      <text x="${TASTE_X}" y="${TASTE_Y - 2}"
+            fill="rgba(255,255,255,0.3)" text-anchor="start">Taste</text>
+      <text x="${TASTE_X + 2}" y="${TASTE_Y + 2}"
+            font-family="${SERIF}" font-weight="900" font-size="${TASTE_SIZE}"
+            fill="rgba(0,0,0,0.5)" text-anchor="start">Taste</text>
+      <text x="${TASTE_X}" y="${TASTE_Y}"
             font-family="${SERIF}" font-weight="900" font-size="${TASTE_SIZE}"
             fill="${GOLD}" text-anchor="start">Taste</text>
 
-      <!-- "Lanc" — thin, stretched to same width as Taste using textLength -->
-      <text x="${TASTE_X + 2}" y="${TASTE_Y + 38}"
-            font-family="${SANS}" font-weight="300" font-size="30"
-            fill="rgba(0,0,0,0.4)" text-anchor="start"
-            textLength="${TASTE_W}" lengthAdjust="spacing">L A N C</text>
-      <text x="${TASTE_X}" y="${TASTE_Y + 36}"
-            font-family="${SANS}" font-weight="300" font-size="30"
-            fill="white" text-anchor="start"
-            textLength="${TASTE_W}" lengthAdjust="spacing">L A N C</text>
+      <!-- "Lanc" — white text, accent color (gold) outline/shadow for depth -->
+      <text x="${TASTE_CX + 3}" y="${TASTE_Y + 40}"
+            font-family="${SANS}" font-weight="300" font-size="28"
+            fill="${GOLD}" text-anchor="middle"
+            textLength="290" lengthAdjust="spacing">L  A  N  C</text>
+      <text x="${TASTE_CX}" y="${TASTE_Y + 37}"
+            font-family="${SANS}" font-weight="300" font-size="28"
+            fill="white" text-anchor="middle"
+            textLength="290" lengthAdjust="spacing">L  A  N  C</text>
 
       <!-- Date — top right -->
       <text x="${photoW - PAD}" y="30"
@@ -1429,111 +1434,107 @@ async function composeCoverSlide(
             fill="white" text-anchor="middle" letter-spacing="3">${tagline}</text>
     </svg>`);
 
-  // Bottom section — Barfly-style: 2 images + category column + "PLUS" list
-  // Layout: [IMG1] [gap] [IMG2] [gap] [CATEGORY COL] [gold sep] [PLUS list]
+  // Bottom section — LARGER rectangular images + categories + PLUS (no abbreviations)
   const feat1 = featuredItems[0];
   const feat2 = featuredItems[1];
-  const B_PAD = 20; // equal padding from purple border
-  const COL_GAP = 18; // gap between columns/images
+  const B_PAD = 18;
+  const COL_GAP = 28; // larger gap between images
 
-  // Calculate widths — 4 columns: img, img, category, plus-list
+  // Images are LARGER and RECTANGULAR (landscape)
+  const LABEL_H = 42;
+  const THUMB_H_IMG = BOTTOM_H - B_PAD * 2 - LABEL_H; // image height
+  // Give images more width — 24% each instead of 21%
   const usableW = W - B_PAD * 2;
-  const THUMB_W_ACTUAL = Math.floor(usableW * 0.22); // ~238px each image
-  const CAT_W = Math.floor(usableW * 0.22); // category column
-  const LIST_W = usableW - THUMB_W_ACTUAL * 2 - CAT_W - COL_GAP * 3; // remaining for plus list
-  const THUMB_H_ACTUAL = BOTTOM_H - B_PAD * 2 - 25; // room for name below
-
+  const THUMB_W_ACTUAL = Math.floor(usableW * 0.24);
+  const CAT_W = Math.floor(usableW * 0.26);
   const THUMB1_X = B_PAD;
   const THUMB2_X = THUMB1_X + THUMB_W_ACTUAL + COL_GAP;
   const CAT_X = THUMB2_X + THUMB_W_ACTUAL + COL_GAP;
-  const SEP_X = CAT_X + CAT_W + Math.floor(COL_GAP / 2);
-  const LIST_X = SEP_X + Math.floor(COL_GAP / 2) + 4;
+  const SEP_X = CAT_X + CAT_W + 8;
+  const LIST_X = SEP_X + 14;
+
+  // Total content height from top of images to bottom of labels
+  const CONTENT_H = THUMB_H_IMG + LABEL_H;
 
   const bottomSvg = Buffer.from(`
     <svg width="${W}" height="${BOTTOM_H}" xmlns="http://www.w3.org/2000/svg">
       ${svgFontStyles()}
 
-      <!-- Image 1 name -->
+      <!-- Image 1: gold category + white venue BELOW -->
       ${feat1 ? `
-      <text x="${THUMB1_X}" y="${B_PAD + THUMB_H_ACTUAL + 18}"
-            font-family="${SERIF}" font-weight="700" font-size="14"
+      <text x="${THUMB1_X}" y="${B_PAD + THUMB_H_IMG + 18}"
+            font-family="${SANS}" font-weight="900" font-size="15"
+            fill="${GOLD}" text-anchor="start" letter-spacing="2">CONCERTS</text>
+      <text x="${THUMB1_X}" y="${B_PAD + THUMB_H_IMG + 38}"
+            font-family="${SERIF}" font-weight="600" font-size="13"
             fill="white" text-anchor="start">${escapeXml(feat1.name)}</text>
       ` : ''}
 
-      <!-- Image 2 name -->
+      <!-- Image 2: gold category + white venue BELOW -->
       ${feat2 ? `
-      <text x="${THUMB2_X}" y="${B_PAD + THUMB_H_ACTUAL + 18}"
-            font-family="${SERIF}" font-weight="700" font-size="14"
+      <text x="${THUMB2_X}" y="${B_PAD + THUMB_H_IMG + 18}"
+            font-family="${SANS}" font-weight="900" font-size="15"
+            fill="${GOLD}" text-anchor="start" letter-spacing="2">DINING</text>
+      <text x="${THUMB2_X}" y="${B_PAD + THUMB_H_IMG + 38}"
+            font-family="${SERIF}" font-weight="600" font-size="13"
             fill="white" text-anchor="start">${escapeXml(feat2.name)}</text>
       ` : ''}
 
-      <!-- ═══ CATEGORY COLUMN — Barfly-style (DINING / EVENTS / SPOTLIGHT) ═══ -->
-      <text x="${CAT_X}" y="${B_PAD + 18}"
-            font-family="${SANS}" font-weight="700" font-size="13"
-            fill="${GOLD}" text-anchor="start" letter-spacing="2">DINING</text>
-      <text x="${CAT_X}" y="${B_PAD + 38}"
-            font-family="${SERIF}" font-weight="400" font-size="12" font-style="italic"
-            fill="rgba(255,255,255,0.7)" text-anchor="start">New specials this week</text>
+      <!-- ═══ CATEGORIES — bigger, fills full height ═══ -->
+      ${(() => {
+        // 3 categories spread across full CONTENT_H with equal spacing
+        const blockH = Math.floor(CONTENT_H / 3);
+        const cats = [
+          { title: 'DINING', desc: 'New specials &amp; menus' },
+          { title: 'EVENTS', desc: 'Live music &amp; trivia' },
+          { title: 'HAPPY HOUR', desc: 'Where to drink after 5' },
+        ];
+        return cats.map((c, i) => {
+          const blockY = B_PAD + blockH * i;
+          return `
+            <text x="${CAT_X}" y="${blockY + 24}"
+                  font-family="${SANS}" font-weight="900" font-size="24"
+                  fill="${GOLD}" text-anchor="start" letter-spacing="2">${c.title}</text>
+            <text x="${CAT_X}" y="${blockY + 50}"
+                  font-family="${SERIF}" font-weight="700" font-size="17"
+                  fill="rgba(255,255,255,0.9)" text-anchor="start">${c.desc}</text>
+          `;
+        }).join('');
+      })()}
 
-      <text x="${CAT_X}" y="${B_PAD + 72}"
-            font-family="${SANS}" font-weight="700" font-size="13"
-            fill="${GOLD}" text-anchor="start" letter-spacing="2">EVENTS</text>
-      <text x="${CAT_X}" y="${B_PAD + 92}"
-            font-family="${SERIF}" font-weight="400" font-size="12" font-style="italic"
-            fill="rgba(255,255,255,0.7)" text-anchor="start">Live music &amp; trivia</text>
-
-      <text x="${CAT_X}" y="${B_PAD + 126}"
-            font-family="${SANS}" font-weight="700" font-size="13"
-            fill="${GOLD}" text-anchor="start" letter-spacing="2">SPOTLIGHT</text>
-      <text x="${CAT_X}" y="${B_PAD + 146}"
-            font-family="${SERIF}" font-weight="400" font-size="12" font-style="italic"
-            fill="rgba(255,255,255,0.7)" text-anchor="start">Featured restaurants</text>
-
-      <text x="${CAT_X}" y="${B_PAD + 180}"
-            font-family="${SANS}" font-weight="700" font-size="13"
-            fill="${GOLD}" text-anchor="start" letter-spacing="2">HAPPY HOUR</text>
-      <text x="${CAT_X}" y="${B_PAD + 200}"
-            font-family="${SERIF}" font-weight="400" font-size="12" font-style="italic"
-            fill="rgba(255,255,255,0.7)" text-anchor="start">Where to drink after 5</text>
-
-      <!-- ═══ GOLD VERTICAL SEPARATOR ═══ -->
-      <rect x="${SEP_X}" y="${B_PAD}" width="3" height="${BOTTOM_H - B_PAD * 2}" fill="${GOLD}" opacity="0.6"/>
-
-      <!-- ═══ PLUS COLUMN — Barfly-style detailed list ═══ -->
-      <text x="${LIST_X}" y="${B_PAD + 18}"
-            font-family="${SANS}" font-weight="700" font-size="15"
+      <!-- ═══ PLUS header ═══ -->
+      <text x="${LIST_X}" y="${B_PAD + 22}"
+            font-family="${SANS}" font-weight="900" font-size="22"
             fill="${GOLD}" text-anchor="start" letter-spacing="3">PLUS</text>
 
-      <text x="${LIST_X}" y="${B_PAD + 48}"
-            font-family="${SERIF}" font-weight="400" font-size="14"
-            fill="rgba(255,255,255,0.85)" text-anchor="start">Happy Hour Guide</text>
-      <text x="${LIST_X}" y="${B_PAD + 70}"
-            font-family="${SERIF}" font-weight="400" font-size="14"
-            fill="rgba(255,255,255,0.85)" text-anchor="start">Dining Directory</text>
-      <text x="${LIST_X}" y="${B_PAD + 92}"
-            font-family="${SERIF}" font-weight="400" font-size="14"
-            fill="rgba(255,255,255,0.85)" text-anchor="start">Bar &amp; Club Menus</text>
-      <text x="${LIST_X}" y="${B_PAD + 114}"
-            font-family="${SERIF}" font-weight="400" font-size="14"
-            fill="rgba(255,255,255,0.85)" text-anchor="start">Music Spotlights</text>
-      <text x="${LIST_X}" y="${B_PAD + 136}"
-            font-family="${SERIF}" font-weight="400" font-size="14"
-            fill="rgba(255,255,255,0.85)" text-anchor="start">Weekend Events</text>
-      <text x="${LIST_X}" y="${B_PAD + 158}"
-            font-family="${SERIF}" font-weight="400" font-size="14"
-            fill="rgba(255,255,255,0.85)" text-anchor="start">Deals &amp; Specials</text>
-      <text x="${LIST_X}" y="${B_PAD + 180}"
-            font-family="${SERIF}" font-weight="400" font-size="14"
-            fill="rgba(255,255,255,0.85)" text-anchor="start">New Restaurants</text>
-      <text x="${LIST_X}" y="${B_PAD + 202}"
-            font-family="${SERIF}" font-weight="400" font-size="14"
-            fill="rgba(255,255,255,0.85)" text-anchor="start">Weekly Calendar</text>
+      <!-- ═══ PLUS list — bumped up closer to header ═══ -->
+      ${(() => {
+        const items = ['Happy Hour Guide', 'Dining Directory', 'Bar &amp; Club Menus', 'Music Spotlights', 'Weekend Events', 'Deals &amp; Specials', 'Weekly Calendar'];
+        const listStart = B_PAD + 48; // closer to PLUS header
+        const listEnd = B_PAD + CONTENT_H;
+        const itemSpace = Math.floor((listEnd - listStart) / items.length);
+        return items.map((item, i) => `
+          <text x="${LIST_X}" y="${listStart + itemSpace * i + 14}"
+                font-family="${SERIF}" font-weight="600" font-size="14"
+                fill="rgba(255,255,255,0.9)" text-anchor="start">${item}</text>
+        `).join('');
+      })()}
+
+      <!-- ═══ GOLD SEPARATOR — only spans the list items, not up to PLUS ═══ -->
+      ${(() => {
+        const listStart = B_PAD + 48;
+        const listEnd = B_PAD + CONTENT_H;
+        return `<rect x="${SEP_X}" y="${listStart - 5}" width="3" height="${listEnd - listStart + 5}" fill="${GOLD}" opacity="0.7"/>`;
+      })()}
     </svg>`);
 
-  // Resize thumbnails
+  // Resize thumbnails — LARGER, RECTANGULAR (landscape)
   const thumbs: Buffer[] = [];
   for (const tb of featuredThumbs.slice(0, 2)) {
-    thumbs.push(await sharp(tb).resize(THUMB_W_ACTUAL, THUMB_H_ACTUAL, { fit: 'cover', position: 'centre' }).jpeg({ quality: 88 }).toBuffer());
+    thumbs.push(await sharp(tb)
+      .resize(THUMB_W_ACTUAL, THUMB_H_IMG, { fit: 'cover', position: 'centre' })
+      .jpeg({ quality: 88 })
+      .toBuffer());
   }
 
   // Build composites
