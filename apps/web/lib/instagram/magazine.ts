@@ -1,0 +1,553 @@
+// Instagram Magazine Issue Generator
+// Creates a full weekly magazine carousel: cover + inside page spreads
+// Design: Barfly Magazine-inspired editorial layouts with real data
+
+import sharp from 'sharp';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { MarketConfig } from './types';
+import { getAppName, getMarketDisplayName } from './prompts';
+import { generateCarouselSlides } from './overlay';
+
+const W = 1080;
+const H = 1350; // 4:5 portrait
+const JPEG_Q = 92;
+
+// Shared helpers from overlay.ts
+function escapeXml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+}
+
+function formatTime12h(t: string | null): string {
+  if (!t) return '';
+  const [h, m] = t.split(':');
+  const hr = parseInt(h, 10);
+  const ampm = hr >= 12 ? 'pm' : 'am';
+  const h12 = hr % 12 || 12;
+  return m === '00' ? `${h12}${ampm}` : `${h12}:${m}${ampm}`;
+}
+
+async function fetchImageBuffer(url: string): Promise<Buffer> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Failed to fetch image: ${response.status} ${url}`);
+  return Buffer.from(await response.arrayBuffer());
+}
+
+async function uploadSlide(supabase: SupabaseClient, buffer: Buffer, path: string): Promise<string> {
+  const { error } = await supabase.storage.from('images').upload(path, buffer, { contentType: 'image/jpeg', upsert: true });
+  if (error) throw new Error(`Upload failed: ${error.message}`);
+  const { data } = supabase.storage.from('images').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+// ============================================================
+// Magazine Issue Data Types
+// ============================================================
+
+interface MagazineIssueData {
+  theme: string;          // e.g. "Game Night Edition"
+  coverHeadline1: string; // e.g. "It's Game"
+  coverHeadline2: string; // e.g. "Night"
+  happiestHours: Array<{ venue: string; time: string; deals: string[]; imageUrl: string | null }>;
+  events: Array<{ venue: string; type: string; performer: string | null; day: string; time: string; imageUrl: string | null }>;
+  specials: Array<{ venue: string; name: string; price: string | null; day: string }>;
+  spotlightVenue: { name: string; description: string; imageUrl: string | null; highlights: string[] } | null;
+}
+
+// ============================================================
+// Analyze week's content and generate editorial theme
+// ============================================================
+
+async function analyzeWeekContent(supabase: SupabaseClient, marketId: string): Promise<MagazineIssueData> {
+  // Fetch all active content for this market
+  const [eventsRes, hhRes, specialsRes] = await Promise.all([
+    supabase.from('events')
+      .select('event_type, name, start_time, days_of_week, performer_name, image_url, restaurants!inner(name, cover_image_url, market_id)')
+      .eq('restaurants.market_id', marketId).eq('is_active', true).limit(50),
+    supabase.from('happy_hours')
+      .select('name, start_time, end_time, days_of_week, image_url, restaurants!inner(name, cover_image_url, market_id), happy_hour_items(name, discounted_price)')
+      .eq('restaurants.market_id', marketId).eq('is_active', true).limit(30),
+    supabase.from('specials')
+      .select('name, special_price, days_of_week, restaurants!inner(name, market_id)')
+      .eq('restaurants.market_id', marketId).eq('is_active', true).limit(30),
+  ]);
+
+  const events = eventsRes.data || [];
+  const happyHours = hhRes.data || [];
+  const specials = specialsRes.data || [];
+
+  // Count event types to determine theme
+  const typeCounts: Record<string, number> = {};
+  events.forEach((e: any) => {
+    typeCounts[e.event_type] = (typeCounts[e.event_type] || 0) + 1;
+  });
+
+  // Pick editorial theme based on what's dominant
+  const topType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0];
+  let theme = 'Your Weekly Guide';
+  let coverHeadline1 = 'This Week';
+  let coverHeadline2 = 'in Lancaster';
+
+  if (topType) {
+    const [type, count] = topType;
+    switch (type) {
+      case 'trivia':
+        theme = 'Game Night Edition';
+        coverHeadline1 = "It's Game";
+        coverHeadline2 = 'Night';
+        break;
+      case 'karaoke':
+        theme = 'Sing It Out';
+        coverHeadline1 = 'Grab the';
+        coverHeadline2 = 'Mic';
+        break;
+      case 'live_music':
+        theme = 'Live & Loud';
+        coverHeadline1 = 'The Sound';
+        coverHeadline2 = 'of Lancaster';
+        break;
+      case 'dj':
+        theme = 'After Dark';
+        coverHeadline1 = 'Turn It';
+        coverHeadline2 = 'Up';
+        break;
+      case 'bingo':
+      case 'music_bingo':
+        theme = 'Bingo Night';
+        coverHeadline1 = 'Lucky';
+        coverHeadline2 = 'Numbers';
+        break;
+      default:
+        theme = 'Out & About';
+        coverHeadline1 = "What's";
+        coverHeadline2 = 'Happening';
+    }
+  }
+
+  // Build structured data for each section
+  const happiestHours = happyHours.map((h: any) => ({
+    venue: h.restaurants.name,
+    time: `${formatTime12h(h.start_time)}–${formatTime12h(h.end_time)}`,
+    deals: (h.happy_hour_items || []).slice(0, 3).map((i: any) =>
+      i.discounted_price ? `${i.name} $${i.discounted_price}` : i.name
+    ),
+    imageUrl: h.image_url || h.restaurants.cover_image_url,
+  }));
+
+  // Deduplicate by venue
+  const seenVenues = new Set<string>();
+  const uniqueHH = happiestHours.filter((h: any) => {
+    if (seenVenues.has(h.venue)) return false;
+    seenVenues.add(h.venue);
+    return true;
+  });
+
+  const eventList = events.map((e: any) => ({
+    venue: e.restaurants.name,
+    type: e.event_type,
+    performer: e.performer_name,
+    day: (e.days_of_week || [])[0] || '',
+    time: formatTime12h(e.start_time),
+    imageUrl: e.image_url || e.restaurants.cover_image_url,
+  }));
+
+  const specialList = specials.map((s: any) => ({
+    venue: s.restaurants.name,
+    name: s.name,
+    price: s.special_price ? `$${s.special_price}` : null,
+    day: (s.days_of_week || [])[0] || '',
+  }));
+
+  return {
+    theme,
+    coverHeadline1,
+    coverHeadline2,
+    happiestHours: uniqueHH,
+    events: eventList,
+    specials: specialList,
+    spotlightVenue: null, // TODO: pick a spotlight venue
+  };
+}
+
+// ============================================================
+// Magazine Page Spread Composers
+// ============================================================
+
+/**
+ * Happy Hour Guide — clean magazine spread
+ * ONE photo on left, text listings on right. Typography carries the page.
+ */
+async function composeHappyHourSpread(
+  data: MagazineIssueData,
+  accentColor: string,
+): Promise<Buffer> {
+  const bg = sharp({ create: { width: W, height: H, channels: 3, background: { r: 245, g: 242, b: 238 } } });
+  const composites: sharp.OverlayOptions[] = [];
+  const PAD = 50;
+
+  // ONE venue photo — full image, no cropping
+  const venueWithPhoto = data.happiestHours.find(h => h.imageUrl?.includes('supabase'));
+  if (venueWithPhoto) {
+    try {
+      const raw = await fetchImageBuffer(venueWithPhoto.imageUrl!);
+      const PHOTO_W = Math.floor(W * 0.44);
+      const PHOTO_H = Math.floor(H * 0.50);
+      const photo = await sharp(raw)
+        .resize(PHOTO_W, PHOTO_H, { fit: 'contain', background: { r: 245, g: 242, b: 238, alpha: 1 } })
+        .jpeg({ quality: JPEG_Q })
+        .toBuffer();
+      composites.push({ input: photo, top: 180, left: PAD });
+    } catch { /* skip */ }
+  }
+
+  // Text listings on the right side
+  const textX = Math.floor(W * 0.52);
+  const venues = data.happiestHours.slice(0, 8);
+
+  let svgContent = `
+    <text x="${PAD}" y="60" font-family="Inter" font-weight="900" font-size="16"
+          fill="${accentColor}" letter-spacing="4">HAPPY HOUR GUIDE</text>
+    <rect x="${PAD}" y="78" width="60" height="3" fill="${accentColor}"/>
+    <text x="${PAD}" y="130" font-family="Playfair Display" font-weight="700" font-size="46"
+          fill="#1a1a1a">Where to</text>
+    <text x="${PAD}" y="170" font-family="Playfair Display" font-weight="700" font-size="46"
+          fill="#1a1a1a">Drink</text>
+  `;
+
+  // Venue listings — clean, typographic
+  let y = 220;
+  venues.forEach((v, i) => {
+    const col = i < 4 ? textX : PAD; // first 4 on right, rest below photo on left
+    const rowY = i < 4 ? y + i * 130 : (H * 0.55 + 60) + (i - 4) * 130;
+
+    svgContent += `
+      <text x="${col}" y="${rowY}"
+            font-family="Playfair Display" font-weight="900" font-size="26"
+            fill="#1a1a1a">${escapeXml(v.venue)}</text>
+      <text x="${col}" y="${rowY + 30}"
+            font-family="Inter" font-weight="600" font-size="18"
+            fill="${accentColor}">${escapeXml(v.time)}</text>
+      ${v.deals.length > 0 ? `
+      <text x="${col}" y="${rowY + 55}"
+            font-family="Playfair Display" font-weight="400" font-size="16" font-style="italic"
+            fill="#777">${escapeXml(v.deals.slice(0, 2).join(' · '))}</text>
+      ` : ''}
+      <rect x="${col}" y="${rowY + 70}" width="200" height="1" fill="#ddd"/>
+    `;
+  });
+
+  svgContent += `
+    <text x="${W - PAD}" y="${H - 30}" font-family="Playfair Display" font-weight="400" font-size="14"
+          fill="#999" text-anchor="end">02</text>
+    <rect x="0" y="0" width="6" height="${H}" fill="${accentColor}"/>
+  `;
+
+  const svg = Buffer.from(`<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">${svgContent}</svg>`);
+  composites.push({ input: svg, top: 0, left: 0 });
+
+  return bg.jpeg({ quality: JPEG_Q }).toBuffer()
+    .then(buf => sharp(buf).composite(composites).jpeg({ quality: JPEG_Q }).toBuffer());
+}
+
+/**
+ * Events This Week — magazine spread with venue photos
+ * Left column: featured event photo (full, no crop). Right: event listings by type.
+ */
+async function composeEventsSpread(
+  data: MagazineIssueData,
+  accentColor: string,
+): Promise<Buffer> {
+  const bg = sharp({ create: { width: W, height: H, channels: 3, background: { r: 22, g: 20, b: 28 } } });
+  const composites: sharp.OverlayOptions[] = [];
+
+  const EVENT_LABELS: Record<string, string> = {
+    live_music: 'LIVE MUSIC', trivia: 'TRIVIA', karaoke: 'KARAOKE',
+    dj: 'DJ NIGHT', comedy: 'COMEDY', bingo: 'BINGO', music_bingo: 'MUSIC BINGO',
+    poker: 'POKER', other: 'EVENT', promotion: 'PROMO',
+  };
+
+  // Group events by type
+  const byType: Record<string, typeof data.events> = {};
+  data.events.forEach(e => {
+    const t = e.type || 'other';
+    if (!byType[t]) byType[t] = [];
+    byType[t].push(e);
+  });
+  const sortedTypes = Object.entries(byType).sort((a, b) => b[1].length - a[1].length).slice(0, 5);
+
+  // ONE venue photo — from the first event that has one
+  const eventWithPhoto = data.events.find(e => e.imageUrl?.includes('supabase'));
+  if (eventWithPhoto) {
+    try {
+      const raw = await fetchImageBuffer(eventWithPhoto.imageUrl!);
+      const PHOTO_W = Math.floor(W * 0.44);
+      const PHOTO_H = Math.floor(H * 0.38);
+      const photo = await sharp(raw)
+        .resize(PHOTO_W, PHOTO_H, { fit: 'contain', background: { r: 22, g: 20, b: 28, alpha: 1 } })
+        .jpeg({ quality: JPEG_Q })
+        .toBuffer();
+      composites.push({ input: photo, top: H - PHOTO_H - 50, left: W - PHOTO_W - 40 });
+    } catch { /* skip */ }
+  }
+
+  // Text listings fill the page
+  const textX = 60;
+
+  let svgContent = `
+    <text x="60" y="70" font-family="Inter" font-weight="900" font-size="16"
+          fill="${accentColor}" letter-spacing="4">EVENTS THIS WEEK</text>
+    <rect x="60" y="85" width="60" height="3" fill="${accentColor}"/>
+
+    <text x="60" y="130" font-family="Playfair Display" font-weight="700" font-size="42"
+          fill="white">${escapeXml(data.theme)}</text>
+  `;
+
+  let y = 200;
+  for (const [type, events] of sortedTypes) {
+    if (y > H - 120) break;
+    const label = EVENT_LABELS[type] || type.toUpperCase();
+
+    svgContent += `
+      <text x="${textX}" y="${y}" font-family="Inter" font-weight="900" font-size="18"
+            fill="${accentColor}" letter-spacing="3">${escapeXml(label)}</text>
+    `;
+    y += 8;
+
+    for (const event of events.slice(0, 3)) {
+      if (y > H - 80) break;
+      y += 32;
+      const dayLabel = event.day ? event.day.charAt(0).toUpperCase() + event.day.slice(1) : '';
+      const timeLabel = event.time ? ` at ${event.time}` : '';
+      svgContent += `
+        <text x="${textX + 10}" y="${y}" font-family="Playfair Display" font-weight="700" font-size="20"
+              fill="white">${escapeXml(event.venue)}</text>
+        <text x="${textX + 10}" y="${y + 22}" font-family="Playfair Display" font-weight="400" font-size="15" font-style="italic"
+              fill="rgba(255,255,255,0.6)">${escapeXml((event.performer || dayLabel) + timeLabel)}</text>
+      `;
+      y += 28;
+    }
+    y += 25;
+  }
+
+  svgContent += `
+    <text x="${W - 40}" y="${H - 30}" font-family="Playfair Display" font-weight="400" font-size="14"
+          fill="rgba(255,255,255,0.4)" text-anchor="end">03</text>
+    <rect x="${W - 6}" y="0" width="6" height="${H}" fill="${accentColor}"/>
+  `;
+
+  const svg = Buffer.from(`<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">${svgContent}</svg>`);
+  composites.push({ input: svg, top: 0, left: 0 });
+
+  return bg.jpeg({ quality: JPEG_Q }).toBuffer()
+    .then(buf => sharp(buf).composite(composites).jpeg({ quality: JPEG_Q }).toBuffer());
+}
+
+/**
+ * Specials & Deals — magazine spread
+ * Clean white background with deal cards
+ */
+async function composeSpecialsSpread(
+  data: MagazineIssueData,
+  accentColor: string,
+): Promise<Buffer> {
+  const bg = sharp({ create: { width: W, height: H, channels: 3, background: { r: 250, g: 248, b: 244 } } });
+
+  const DAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  const DAY_SHORT: Record<string, string> = {
+    monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu',
+    friday: 'Fri', saturday: 'Sat', sunday: 'Sun',
+  };
+
+  // Group specials by day
+  const byDay: Record<string, typeof data.specials> = {};
+  data.specials.forEach(s => {
+    const d = s.day.toLowerCase();
+    if (!byDay[d]) byDay[d] = [];
+    byDay[d].push(s);
+  });
+
+  let svgContent = `
+    <text x="60" y="80" font-family="Inter" font-weight="900" font-size="16"
+          fill="${accentColor}" letter-spacing="4">SPECIALS &amp; DEALS</text>
+    <rect x="60" y="95" width="60" height="3" fill="${accentColor}"/>
+
+    <text x="60" y="140" font-family="Playfair Display" font-weight="700" font-size="36"
+          fill="#1a1a1a">This Week&apos;s Best Bites</text>
+  `;
+
+  let y = 190;
+  for (const day of DAY_ORDER) {
+    const specials = byDay[day];
+    if (!specials || specials.length === 0) continue;
+
+    svgContent += `
+      <text x="60" y="${y}" font-family="Inter" font-weight="900" font-size="18"
+            fill="${accentColor}" letter-spacing="2">${escapeXml((DAY_SHORT[day] || day).toUpperCase())}</text>
+    `;
+    y += 8;
+
+    for (const s of specials.slice(0, 2)) {
+      y += 35;
+      svgContent += `
+        <text x="80" y="${y}" font-family="Playfair Display" font-weight="700" font-size="22"
+              fill="#1a1a1a">${escapeXml(s.venue)}</text>
+        <text x="80" y="${y + 26}" font-family="Playfair Display" font-weight="400" font-size="18" font-style="italic"
+              fill="#555">${escapeXml(s.name)}${s.price ? ` — ${escapeXml(s.price)}` : ''}</text>
+      `;
+      y += 32;
+    }
+    y += 25;
+
+    if (y > H - 100) break; // don't overflow
+  }
+
+  svgContent += `
+    <text x="${W - 60}" y="${H - 30}" font-family="Playfair Display" font-weight="400" font-size="14"
+          fill="#999" text-anchor="end">04</text>
+    <rect x="0" y="0" width="6" height="${H}" fill="${accentColor}"/>
+  `;
+
+  const svg = Buffer.from(`<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">${svgContent}</svg>`);
+
+  return bg.jpeg({ quality: JPEG_Q }).toBuffer()
+    .then(buf => sharp(buf).composite([{ input: svg, top: 0, left: 0 }]).jpeg({ quality: JPEG_Q }).toBuffer());
+}
+
+/**
+ * Back Cover / CTA — download the app
+ */
+async function composeBackCover(
+  appName: string,
+  accentColor: string,
+  borderColor: string,
+  logoBuffer: Buffer,
+): Promise<Buffer> {
+  const bg = sharp({ create: { width: W, height: H, channels: 3, background: hexToRgb(borderColor) } });
+  const cx = W / 2;
+
+  const logo = await sharp(logoBuffer).resize(180, 180, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
+
+  const svg = Buffer.from(`
+    <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+      <!-- "See you next week" -->
+      <text x="${cx}" y="520" font-family="Playfair Display" font-weight="700" font-size="52"
+            fill="white" text-anchor="middle">See You</text>
+      <text x="${cx}" y="585" font-family="Playfair Display" font-weight="700" font-size="52"
+            fill="white" text-anchor="middle">Next Week</text>
+
+      <rect x="${cx - 40}" y="615" width="80" height="3" fill="${accentColor}"/>
+
+      <text x="${cx}" y="670" font-family="Playfair Display" font-weight="400" font-size="22" font-style="italic"
+            fill="rgba(255,255,255,0.7)" text-anchor="middle">Get every issue on the app</text>
+
+      <text x="${cx}" y="730" font-family="Inter" font-weight="400" font-size="18"
+            fill="rgba(255,255,255,0.5)" text-anchor="middle">Free on App Store &amp; Google Play</text>
+
+      <!-- CTA button -->
+      <rect x="${cx - 150}" y="780" width="300" height="56" rx="4" fill="${accentColor}"/>
+      <text x="${cx}" y="816" font-family="Inter" font-weight="700" font-size="20"
+            fill="#111" text-anchor="middle" letter-spacing="3">LINK IN BIO</text>
+
+      <!-- Tagline -->
+      <text x="${cx}" y="${H - 80}" font-family="Playfair Display" font-weight="400" font-size="18" font-style="italic"
+            fill="rgba(255,255,255,0.4)" text-anchor="middle">Your city. Your guide. Your next favorite spot.</text>
+    </svg>`);
+
+  return bg.jpeg({ quality: JPEG_Q }).toBuffer()
+    .then(buf => sharp(buf).composite([
+      { input: logo, top: 260, left: Math.round(cx - 90) },
+      { input: svg, top: 0, left: 0 },
+    ]).jpeg({ quality: JPEG_Q }).toBuffer());
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const h = hex.replace('#', '');
+  return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16) };
+}
+
+// ============================================================
+// Main: Generate Full Magazine Issue
+// ============================================================
+
+export async function generateMagazineIssue(opts: {
+  supabase: SupabaseClient;
+  market: MarketConfig;
+  date: string;
+  borderColor?: string;
+  accentColor?: string;
+}): Promise<string[]> {
+  const { supabase, market, date, borderColor = '#6B21A8', accentColor = '#E8C547' } = opts;
+  const appName = getAppName(market.market_slug);
+
+  // 1. Analyze the week's content
+  console.log('[Magazine] Analyzing content for', market.market_slug);
+  const issueData = await analyzeWeekContent(supabase, market.market_id);
+  console.log('[Magazine] Theme:', issueData.theme);
+  console.log('[Magazine] Events:', issueData.events.length, '| HH:', issueData.happiestHours.length, '| Specials:', issueData.specials.length);
+
+  // 2. Generate the cover using the existing pipeline
+  const coverCandidates = issueData.happiestHours
+    .filter(h => h.imageUrl?.includes('supabase'))
+    .slice(0, 4)
+    .map(h => ({
+      restaurant_name: h.venue,
+      detail_text: `Happy Hour ${h.time}`,
+      image_url: h.imageUrl,
+      cover_image_url: h.imageUrl,
+    }));
+
+  if (coverCandidates.length === 0) {
+    throw new Error('No restaurants with uploaded photos for magazine cover');
+  }
+
+  // Override the headline with the editorial theme
+  const coverUrls = await generateCarouselSlides({
+    supabase,
+    market,
+    candidates: coverCandidates,
+    headline: {
+      count: String(issueData.happiestHours.length + issueData.events.length),
+      label: issueData.theme,
+      dayLabel: issueData.coverHeadline1 + ' ' + issueData.coverHeadline2,
+    },
+    totalCount: issueData.happiestHours.length + issueData.events.length + issueData.specials.length,
+    date,
+  });
+
+  // We only want the cover (slide 0)
+  const coverUrl = coverUrls[0];
+
+  // 3. Generate inside page spreads
+  console.log('[Magazine] Generating inside pages...');
+  const [hhSpread, eventsSpread, specialsSpread] = await Promise.all([
+    composeHappyHourSpread(issueData, accentColor),
+    composeEventsSpread(issueData, accentColor),
+    composeSpecialsSpread(issueData, accentColor),
+  ]);
+
+  // 4. Load logo for back cover
+  const { readFileSync, existsSync } = require('fs');
+  const { join } = require('path');
+  let logoBuffer: Buffer;
+  const logoPath = join(process.cwd(), 'public/images/tastelanc_icon.png');
+  if (existsSync(logoPath)) {
+    logoBuffer = readFileSync(logoPath);
+  } else {
+    logoBuffer = await sharp({ create: { width: 200, height: 200, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).png().toBuffer();
+  }
+
+  const backCover = await composeBackCover(appName, accentColor, borderColor, logoBuffer);
+
+  // 5. Upload all pages
+  const timestamp = Date.now();
+  const storagePath = `instagram/${market.market_slug}/${date}/magazine-${timestamp}`;
+  const slideBuffers = [hhSpread, eventsSpread, specialsSpread, backCover];
+  const slideUrls = await Promise.all(
+    slideBuffers.map((buf, i) => uploadSlide(supabase, buf, `${storagePath}/page-${i + 2}.jpg`))
+  );
+
+  // 6. Full carousel: cover + inside pages
+  const allUrls = [coverUrl, ...slideUrls];
+  console.log('[Magazine] Issue complete:', allUrls.length, 'pages');
+
+  return allUrls;
+}
