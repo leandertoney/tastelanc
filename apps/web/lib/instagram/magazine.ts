@@ -58,17 +58,27 @@ interface MagazineIssueData {
 // ============================================================
 
 async function analyzeWeekContent(supabase: SupabaseClient, marketId: string): Promise<MagazineIssueData> {
-  // Fetch all active content for this market
+  // Get paid tier IDs (premium + elite only — no basic, no free)
+  const PREMIUM_ID = '00000000-0000-0000-0000-000000000002';
+  const ELITE_ID = '00000000-0000-0000-0000-000000000003';
+
+  // Fetch ONLY paid-tier content for this market
   const [eventsRes, hhRes, specialsRes] = await Promise.all([
     supabase.from('events')
-      .select('event_type, name, start_time, days_of_week, performer_name, image_url, restaurants!inner(name, cover_image_url, market_id)')
-      .eq('restaurants.market_id', marketId).eq('is_active', true).limit(50),
+      .select('event_type, name, start_time, days_of_week, performer_name, image_url, restaurants!inner(name, cover_image_url, market_id, tier_id)')
+      .eq('restaurants.market_id', marketId).eq('is_active', true)
+      .in('restaurants.tier_id', [PREMIUM_ID, ELITE_ID])
+      .limit(50),
     supabase.from('happy_hours')
-      .select('name, start_time, end_time, days_of_week, image_url, restaurants!inner(name, cover_image_url, market_id), happy_hour_items(name, discounted_price)')
-      .eq('restaurants.market_id', marketId).eq('is_active', true).limit(30),
+      .select('name, start_time, end_time, days_of_week, image_url, restaurants!inner(name, cover_image_url, market_id, tier_id), happy_hour_items(name, discounted_price)')
+      .eq('restaurants.market_id', marketId).eq('is_active', true)
+      .in('restaurants.tier_id', [PREMIUM_ID, ELITE_ID])
+      .limit(50),
     supabase.from('specials')
-      .select('name, special_price, days_of_week, image_url, restaurants!inner(name, market_id)')
-      .eq('restaurants.market_id', marketId).eq('is_active', true).limit(30),
+      .select('name, special_price, days_of_week, image_url, restaurants!inner(name, market_id, tier_id)')
+      .eq('restaurants.market_id', marketId).eq('is_active', true)
+      .in('restaurants.tier_id', [PREMIUM_ID, ELITE_ID])
+      .limit(50),
   ]);
 
   const events = eventsRes.data || [];
@@ -461,7 +471,7 @@ async function composeSpecialsSpread(
 }
 
 /**
- * Back Cover / CTA — download the app
+ * Back Cover — big Taste/Lanc branding, App Store + Google Play badges, filled layout
  */
 async function composeBackCover(
   appName: string,
@@ -472,37 +482,78 @@ async function composeBackCover(
   const bg = sharp({ create: { width: W, height: H, channels: 3, background: hexToRgb(borderColor) } });
   const cx = W / 2;
 
-  const logo = await sharp(logoBuffer).resize(180, 180, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
+  const logo = await sharp(logoBuffer).resize(160, 160, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
+
+  const BW = 200; // badge width
+  const BH = 60; // badge height
+  const BG = 20; // gap between badges
 
   const svg = Buffer.from(`
     <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
-      <!-- "See you next week" -->
-      <text x="${cx}" y="520" font-family="Playfair Display" font-weight="700" font-size="52"
-            fill="white" text-anchor="middle">See You</text>
-      <text x="${cx}" y="585" font-family="Playfair Display" font-weight="700" font-size="52"
-            fill="white" text-anchor="middle">Next Week</text>
 
-      <rect x="${cx - 40}" y="615" width="80" height="3" fill="${accentColor}"/>
+      <!-- Big "Taste" -->
+      <text x="${cx}" y="440" font-family="Playfair Display" font-weight="900" font-size="140"
+            fill="${accentColor}" text-anchor="middle">Taste</text>
+      <!-- "Lanc" proportionate -->
+      <text x="${cx}" y="500" font-family="Inter" font-weight="300" font-size="50"
+            fill="white" text-anchor="middle" letter-spacing="20">Lanc</text>
 
-      <text x="${cx}" y="670" font-family="Playfair Display" font-weight="400" font-size="22" font-style="italic"
-            fill="rgba(255,255,255,0.7)" text-anchor="middle">Get every issue on the app</text>
+      <rect x="${cx - 50}" y="530" width="100" height="3" fill="${accentColor}"/>
 
-      <text x="${cx}" y="730" font-family="Inter" font-weight="400" font-size="18"
-            fill="rgba(255,255,255,0.5)" text-anchor="middle">Free on App Store &amp; Google Play</text>
+      <!-- Subtitle -->
+      <text x="${cx}" y="585" font-family="Playfair Display" font-weight="400" font-size="24" font-style="italic"
+            fill="rgba(255,255,255,0.75)" text-anchor="middle">Your Weekly Guide to</text>
+      <text x="${cx}" y="620" font-family="Playfair Display" font-weight="700" font-size="26"
+            fill="white" text-anchor="middle">Lancaster&apos;s Best Dining,</text>
+      <text x="${cx}" y="655" font-family="Playfair Display" font-weight="700" font-size="26"
+            fill="white" text-anchor="middle">Drinks &amp; Nightlife</text>
 
-      <!-- CTA button -->
-      <rect x="${cx - 150}" y="780" width="300" height="56" rx="4" fill="${accentColor}"/>
-      <text x="${cx}" y="816" font-family="Inter" font-weight="700" font-size="20"
-            fill="#111" text-anchor="middle" letter-spacing="3">LINK IN BIO</text>
+      <rect x="${cx - 30}" y="685" width="60" height="2" fill="rgba(255,255,255,0.2)"/>
 
-      <!-- Tagline -->
-      <text x="${cx}" y="${H - 80}" font-family="Playfair Display" font-weight="400" font-size="18" font-style="italic"
-            fill="rgba(255,255,255,0.4)" text-anchor="middle">Your city. Your guide. Your next favorite spot.</text>
+      <text x="${cx}" y="725" font-family="Playfair Display" font-weight="400" font-size="20" font-style="italic"
+            fill="rgba(255,255,255,0.6)" text-anchor="middle">New issue every Friday</text>
+
+      <!-- App Store Badge -->
+      <g transform="translate(${cx - BW - BG / 2}, 770)">
+        <rect width="${BW}" height="${BH}" rx="8" fill="#000"/>
+        <rect x="0.5" y="0.5" width="${BW - 1}" height="${BH - 1}" rx="7.5" stroke="#A6A6A6" stroke-width="1" fill="none"/>
+        <g fill="#fff" transform="translate(15, 10)">
+          <path d="M18.6 15.2a3.7 3.7 0 011.77-3.11 3.8 3.8 0 00-2.99-1.62c-1.26-.13-2.48.76-3.13.76-.65 0-1.64-.74-2.71-.72a3.99 3.99 0 00-3.36 2.05c-1.45 2.5-.37 6.2 1.02 8.23.7 1 1.51 2.11 2.58 2.07 1.04-.04 1.44-.67 2.7-.67 1.26 0 1.62.67 2.72.64 1.12-.02 1.83-1 2.5-2a8.22 8.22 0 001.14-2.32 3.59 3.59 0 01-2.24-3.31z" transform="scale(0.8)"/>
+          <path d="M16.5 9.16a3.65 3.65 0 00.84-2.62 3.72 3.72 0 00-2.41 1.25 3.48 3.48 0 00-.86 2.52 3.08 3.08 0 002.43-1.15z" transform="scale(0.8)"/>
+        </g>
+        <text x="42" y="23" font-family="Inter, sans-serif" font-size="10" fill="#fff">Download on the</text>
+        <text x="42" y="42" font-family="Inter, sans-serif" font-size="20" font-weight="600" fill="#fff">App Store</text>
+      </g>
+
+      <!-- Google Play Badge -->
+      <g transform="translate(${cx + BG / 2}, 770)">
+        <rect width="${BW}" height="${BH}" rx="8" fill="#000"/>
+        <rect x="0.5" y="0.5" width="${BW - 1}" height="${BH - 1}" rx="7.5" stroke="#A6A6A6" stroke-width="1" fill="none"/>
+        <g transform="translate(15, 12)">
+          <path d="M1.1.9C.9 1.1.8 1.5.8 2v15.6c0 .5.1.8.3 1.1l8.2-9L1.1.9z" fill="#00C3FF"/>
+          <path d="M12.1 12.5l-2.7 2.7 2.7 2.7c.3-.2 2.5-1.4 2.5-1.4.7-.4.7-1 0-1.4l-2.5-2.6z" fill="#FFCE00"/>
+          <path d="M1.1 18.6c.2.2.6.3 1 .1l10-5.7-2.7-2.7-8.3 8.3z" fill="#FF3A44"/>
+          <path d="M1.1.9l8.3 8.3 2.7-2.7L2.1.8C1.7.6 1.3.7 1.1.9z" fill="#4CAF50"/>
+        </g>
+        <text x="42" y="22" font-family="Inter, sans-serif" font-size="9" fill="#fff" letter-spacing="1">GET IT ON</text>
+        <text x="42" y="42" font-family="Inter, sans-serif" font-size="19" font-weight="500" fill="#fff">Google Play</text>
+      </g>
+
+      <!-- Follow -->
+      <text x="${cx}" y="880" font-family="Inter" font-weight="400" font-size="18"
+            fill="rgba(255,255,255,0.5)" text-anchor="middle">Follow @tastelanc for more</text>
+
+      <!-- Bottom -->
+      <rect x="${cx - 200}" y="${H - 120}" width="400" height="1" fill="rgba(255,255,255,0.15)"/>
+      <text x="${cx}" y="${H - 80}" font-family="Playfair Display" font-weight="400" font-size="20" font-style="italic"
+            fill="rgba(255,255,255,0.5)" text-anchor="middle">Your city. Your guide.</text>
+      <text x="${cx}" y="${H - 50}" font-family="Playfair Display" font-weight="400" font-size="20" font-style="italic"
+            fill="rgba(255,255,255,0.5)" text-anchor="middle">Your next favorite spot.</text>
     </svg>`);
 
   return bg.jpeg({ quality: JPEG_Q }).toBuffer()
     .then(buf => sharp(buf).composite([
-      { input: logo, top: 260, left: Math.round(cx - 90) },
+      { input: logo, top: 200, left: Math.round(cx - 80) },
       { input: svg, top: 0, left: 0 },
     ]).jpeg({ quality: JPEG_Q }).toBuffer());
 }
