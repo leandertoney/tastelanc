@@ -16,6 +16,8 @@ const DEV_CONFIG = {
   RADAR_PUBLISHABLE_KEY: 'prj_live_pk_b2193ad3ae39983e40540e7724f28e9539c82b1f',
   // RevenueCat Apple public API key
   REVENUECAT_API_KEY: 'appl_KMhUHfmxkYLnEBmMrxVxiYczSuN',
+  // AdMob interstitial ad unit ID
+  ADMOB_INTERSTITIAL_ID: 'ca-app-pub-3615537963243783/3992807826',
 };
 
 const PROD_CONFIG = {
@@ -25,6 +27,8 @@ const PROD_CONFIG = {
   RADAR_PUBLISHABLE_KEY: 'prj_live_pk_b2193ad3ae39983e40540e7724f28e9539c82b1f',
   // RevenueCat Apple public API key
   REVENUECAT_API_KEY: 'appl_KMhUHfmxkYLnEBmMrxVxiYczSuN',
+  // AdMob interstitial ad unit ID
+  ADMOB_INTERSTITIAL_ID: 'ca-app-pub-3615537963243783/3992807826',
 };
 
 // Select config based on environment

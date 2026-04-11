@@ -33,6 +33,8 @@ import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
 import { fetchEvents } from '../lib/events';
 import { trackScreenView, trackClick } from '../lib/analytics';
+import { onRestaurantDetailView } from '../lib/interstitialAds';
+import { usePremiumStatus } from '../hooks/usePremiumStatus';
 import { useAuth } from '../hooks/useAuth';
 import { useEmailGate } from '../hooks/useEmailGate';
 import { useSignUpModal } from '../context/SignUpModalContext';
@@ -307,11 +309,14 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
     fetchRestaurantData();
   }, [fetchRestaurantData]);
 
-  // Track screen view when restaurant loads
+  const { isPremium } = usePremiumStatus();
+
+  // Track screen view when restaurant loads + count for ad frequency
   useEffect(() => {
     if (restaurant) {
       trackScreenView('RestaurantDetail', id);
       trackScreenView('RestaurantHappyHours', id);
+      onRestaurantDetailView(isPremium);
     }
   }, [restaurant, id]);
 

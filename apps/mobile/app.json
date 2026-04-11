@@ -137,6 +137,10 @@
         "projectId": "18a9e6d1-1240-4875-b38f-67edc5b50bdd"
       }
     },
-    "owner": "leandertoney"
+    "owner": "leandertoney",
+    "react-native-google-mobile-ads": {
+      "ios_app_id": "ca-app-pub-3615537963243783~6794655045",
+      "android_app_id": "ca-app-pub-3615537963243783~6794655045"
+    }
   }
 }

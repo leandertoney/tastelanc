@@ -23,6 +23,8 @@ import { useAuth } from '../hooks/useAuth';
 import { useRecordCheckinForSocialProof } from '../hooks/useSocialProof';
 import { rewardsQueryKeys } from '../hooks/useRewards';
 import { requestReviewIfEligible } from '../lib/reviewPrompts';
+import { onCheckInComplete } from '../lib/interstitialAds';
+import { usePremiumStatus } from '../hooks/usePremiumStatus';
 import { LocationUpgradePrompt } from './LocationUpgradePrompt';
 
 interface CheckInModalProps {
@@ -49,6 +51,7 @@ export default function CheckInModal({
   const styles = useStyles();
   const colors = getColors();
   const { userId } = useAuth();
+  const { isPremium } = usePremiumStatus();
   const queryClient = useQueryClient();
   const recordCheckinForSocialProof = useRecordCheckinForSocialProof();
   const [pin, setPin] = useState(['', '', '', '']);
@@ -175,7 +178,9 @@ export default function CheckInModal({
 
         setTimeout(() => {
           onClose();
-          // Show location upgrade prompt after modal closes — only if not already on background
+          // Show interstitial ad after check-in (skipped for premium users)
+          onCheckInComplete(isPremium);
+          // Show location upgrade prompt after modal closes
           setShowLocationUpgrade(true);
         }, 2000);
       } else {

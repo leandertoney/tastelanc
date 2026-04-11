@@ -17,6 +17,7 @@ import { ONBOARDING_STORAGE_KEY, ONBOARDING_DATA_KEY } from '../types/onboarding
 import { env } from '../lib/env';
 import { initRadar, startTracking } from '../lib/radar';
 import { initRevenueCat } from '@tastelanc/mobile-shared/src/lib/revenuecat';
+import { initInterstitialAds } from '@tastelanc/mobile-shared/src/lib/interstitialAds';
 import { useRadarVisits } from '../hooks/useRadarVisits';
 import { useNotifications } from '../hooks/useNotifications';
 import { incrementSessionCount, requestReviewIfEligible } from '../lib/reviewPrompts';
@@ -117,6 +118,14 @@ export default function Navigation() {
       });
     } catch (e) {
       console.warn('[Navigation] RevenueCat initialization failed:', e);
+    }
+
+    try {
+      initInterstitialAds(env.ADMOB_INTERSTITIAL_ID).catch((e) => {
+        console.warn('[Navigation] AdMob initialization failed:', e);
+      });
+    } catch (e) {
+      console.warn('[Navigation] AdMob initialization failed:', e);
     }
 
     try {
