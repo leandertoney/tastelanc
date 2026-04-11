@@ -290,10 +290,14 @@ async function composeEventsSpread(
   data.events.forEach(e => { const t = e.type || 'other'; if (!byType[t]) byType[t] = []; byType[t].push(e); });
   const sortedTypes = Object.entries(byType).sort((a, b) => b[1].length - a[1].length).slice(0, 4);
 
-  // Text in top 45% — header + event listings
-  const TEXT_H = Math.floor(H * 0.45);
-  const totalItems = sortedTypes.reduce((sum, [, evts]) => sum + Math.min(evts.length, 2), 0) + sortedTypes.length;
-  const itemH = Math.floor((TEXT_H - 130) / Math.max(totalItems, 1));
+  // Text fills the FULL page — two columns, evenly distributed
+  const CONTENT_H = H - 170 - 50; // header + footer
+  const totalItems = sortedTypes.reduce((sum, [, evts]) => sum + Math.min(evts.length, 3), 0) + sortedTypes.length;
+  const itemH = Math.floor(CONTENT_H / Math.max(totalItems, 1));
+
+  // Split into two columns if we have enough content
+  const leftTypes = sortedTypes.slice(0, Math.ceil(sortedTypes.length / 2));
+  const rightTypes = sortedTypes.slice(Math.ceil(sortedTypes.length / 2));
 
   let svgContent = `
     <text x="${PAD}" y="55" font-family="Inter" font-weight="900" font-size="15"
@@ -303,22 +307,47 @@ async function composeEventsSpread(
           fill="white">${escapeXml(data.theme)}</text>
   `;
 
-  let y = 150;
-  for (const [type, events] of sortedTypes) {
-    if (y > TEXT_H - 30) break;
+  // Left column
+  let y = 170;
+  for (const [type, events] of leftTypes) {
+    if (y > H - 80) break;
     svgContent += `
-      <text x="${PAD}" y="${y + 16}" font-family="Inter" font-weight="900" font-size="16"
+      <text x="${PAD}" y="${y + 16}" font-family="Inter" font-weight="900" font-size="18"
             fill="${accentColor}" letter-spacing="3">${escapeXml(EVENT_LABELS[type] || type.toUpperCase())}</text>
     `;
     y += itemH;
-    for (const event of events.slice(0, 2)) {
-      if (y > TEXT_H - 10) break;
+    for (const event of events.slice(0, 3)) {
+      if (y > H - 60) break;
       const dayLabel = event.day ? event.day.charAt(0).toUpperCase() + event.day.slice(1) : '';
       const timeLabel = event.time ? ` at ${event.time}` : '';
       svgContent += `
-        <text x="${PAD + 10}" y="${y + 12}" font-family="Playfair Display" font-weight="700" font-size="18"
+        <text x="${PAD + 10}" y="${y + 14}" font-family="Playfair Display" font-weight="700" font-size="20"
               fill="white">${escapeXml(event.venue)}</text>
-        <text x="${PAD + 10}" y="${y + 30}" font-family="Playfair Display" font-weight="400" font-size="13" font-style="italic"
+        <text x="${PAD + 10}" y="${y + 36}" font-family="Playfair Display" font-weight="400" font-size="15" font-style="italic"
+              fill="rgba(255,255,255,0.55)">${escapeXml((event.performer || dayLabel) + timeLabel)}</text>
+      `;
+      y += itemH;
+    }
+  }
+
+  // Right column
+  const colR = W / 2 + 20;
+  y = 170;
+  for (const [type, events] of rightTypes) {
+    if (y > H - 80) break;
+    svgContent += `
+      <text x="${colR}" y="${y + 16}" font-family="Inter" font-weight="900" font-size="18"
+            fill="${accentColor}" letter-spacing="3">${escapeXml(EVENT_LABELS[type] || type.toUpperCase())}</text>
+    `;
+    y += itemH;
+    for (const event of events.slice(0, 3)) {
+      if (y > H - 60) break;
+      const dayLabel = event.day ? event.day.charAt(0).toUpperCase() + event.day.slice(1) : '';
+      const timeLabel = event.time ? ` at ${event.time}` : '';
+      svgContent += `
+        <text x="${colR + 10}" y="${y + 14}" font-family="Playfair Display" font-weight="700" font-size="20"
+              fill="white">${escapeXml(event.venue)}</text>
+        <text x="${colR + 10}" y="${y + 36}" font-family="Playfair Display" font-weight="400" font-size="15" font-style="italic"
               fill="rgba(255,255,255,0.55)">${escapeXml((event.performer || dayLabel) + timeLabel)}</text>
       `;
       y += itemH;
@@ -332,24 +361,6 @@ async function composeEventsSpread(
   `;
 
   composites.push({ input: Buffer.from(`<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">${svgContent}</svg>`), top: 0, left: 0 });
-
-  // BIG image — fills the bottom 50%, full width minus padding
-  const IMG_Y = TEXT_H + 10;
-  const IMG_H = H - IMG_Y - 50;
-  const IMG_W = W - PAD * 2;
-
-  const eventWithPhoto = data.events.find(e => e.imageUrl?.includes('supabase'));
-  if (eventWithPhoto) {
-    try {
-      const raw = await fetchImageBuffer(eventWithPhoto.imageUrl!);
-      const photo = await sharp(raw)
-        .resize(IMG_W, IMG_H, { fit: 'contain', background: { r: 22, g: 20, b: 28, alpha: 1 } })
-        .jpeg({ quality: JPEG_Q })
-        .toBuffer();
-      composites.push({ input: photo, top: IMG_Y, left: PAD });
-    } catch { /* skip */ }
-  }
-
   return bg.jpeg({ quality: JPEG_Q }).toBuffer()
     .then(buf => sharp(buf).composite(composites).jpeg({ quality: JPEG_Q }).toBuffer());
 }
@@ -627,7 +638,8 @@ export async function generateMagazineIssue(opts: {
   const { readFileSync, existsSync } = require('fs');
   const { join } = require('path');
   let logoBuffer: Buffer;
-  const logoPath = join(process.cwd(), 'public/images/tastelanc_icon.png');
+  // Use transparent logo (RGBA), not the one with black background
+  const logoPath = join(process.cwd(), 'public/images/tastelanc_new_dark.png');
   if (existsSync(logoPath)) {
     logoBuffer = readFileSync(logoPath);
   } else {
