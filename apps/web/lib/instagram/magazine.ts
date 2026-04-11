@@ -178,8 +178,7 @@ async function analyzeWeekContent(supabase: SupabaseClient, marketId: string): P
 // ============================================================
 
 /**
- * Happy Hour Guide — magazine spread
- * Header at top. Below: photo LEFT + text RIGHT, both same height. Aligned grid.
+ * Happy Hour Guide — BIG image top (60%), text listings below
  */
 async function composeHappyHourSpread(
   data: MagazineIssueData,
@@ -188,55 +187,60 @@ async function composeHappyHourSpread(
   const bg = sharp({ create: { width: W, height: H, channels: 3, background: { r: 245, g: 242, b: 238 } } });
   const composites: sharp.OverlayOptions[] = [];
   const PAD = 50;
-  const HEADER_H = 140; // space for title
-  const FOOTER_H = 50; // page number
-  const CONTENT_Y = HEADER_H;
-  const CONTENT_H = H - HEADER_H - FOOTER_H; // photo and text share this height exactly
 
-  // ONE image — HH-specific first, venue photo as fallback
+  // BIG image — 60% of the page height, full width minus padding
+  const IMG_H = Math.floor(H * 0.55);
+  const IMG_W = W - PAD * 2;
+  const IMG_Y = 130; // below header
+
   const hhWithImage = data.happiestHours.find(h => h.imageUrl && !h.imageUrl.includes('cover.'));
   const hhFallback = data.happiestHours.find(h => h.imageUrl?.includes('supabase'));
   const hhImageSource = hhWithImage || hhFallback;
-  const PHOTO_W = Math.floor(W * 0.44);
 
   if (hhImageSource) {
     try {
       const raw = await fetchImageBuffer(hhImageSource.imageUrl!);
       const photo = await sharp(raw)
-        .resize(PHOTO_W, CONTENT_H, { fit: 'contain', background: { r: 245, g: 242, b: 238, alpha: 1 } })
+        .resize(IMG_W, IMG_H, { fit: 'contain', background: { r: 245, g: 242, b: 238, alpha: 1 } })
         .jpeg({ quality: JPEG_Q })
         .toBuffer();
-      composites.push({ input: photo, top: CONTENT_Y, left: PAD });
+      composites.push({ input: photo, top: IMG_Y, left: PAD });
     } catch { /* skip */ }
   }
 
-  // Text on right — same height as photo, venues fill the space evenly
-  const textX = PAD + PHOTO_W + 30;
-  const venues = data.happiestHours.slice(0, 8);
-  const venueSpacing = Math.floor(CONTENT_H / Math.max(venues.length, 1));
+  // Text listings BELOW the image — evenly spaced in remaining space
+  const textY = IMG_Y + IMG_H + 20;
+  const textH = H - textY - 50; // remaining space
+  const venues = data.happiestHours.slice(0, 6);
+  const venueSpacing = Math.floor(textH / Math.max(venues.length, 1));
+
+  // Two columns for the listings
+  const col1X = PAD;
+  const col2X = W / 2 + 10;
 
   let svgContent = `
-    <!-- Header -->
-    <text x="${PAD}" y="55" font-family="Inter" font-weight="900" font-size="15"
+    <text x="${PAD}" y="50" font-family="Inter" font-weight="900" font-size="15"
           fill="${accentColor}" letter-spacing="4">HAPPY HOUR GUIDE</text>
-    <rect x="${PAD}" y="70" width="50" height="3" fill="${accentColor}"/>
-    <text x="${PAD}" y="115" font-family="Playfair Display" font-weight="700" font-size="44"
+    <rect x="${PAD}" y="65" width="50" height="3" fill="${accentColor}"/>
+    <text x="${PAD}" y="110" font-family="Playfair Display" font-weight="700" font-size="42"
           fill="#1a1a1a">Where to Drink</text>
   `;
 
-  // Venues — evenly distributed across CONTENT_H
   venues.forEach((v, i) => {
-    const rowY = CONTENT_Y + i * venueSpacing + 30;
+    const col = i < 3 ? col1X : col2X;
+    const row = i < 3 ? i : i - 3;
+    const rowY = textY + row * venueSpacing + 20;
+
     svgContent += `
-      <text x="${textX}" y="${rowY}"
+      <text x="${col}" y="${rowY}"
             font-family="Playfair Display" font-weight="900" font-size="24"
             fill="#1a1a1a">${escapeXml(v.venue)}</text>
-      <text x="${textX}" y="${rowY + 28}"
+      <text x="${col}" y="${rowY + 28}"
             font-family="Inter" font-weight="600" font-size="17"
             fill="${accentColor}">${escapeXml(v.time)}</text>
       ${v.deals.length > 0 ? `
-      <text x="${textX}" y="${rowY + 52}"
-            font-family="Playfair Display" font-weight="400" font-size="15" font-style="italic"
+      <text x="${col}" y="${rowY + 52}"
+            font-family="Playfair Display" font-weight="400" font-size="14" font-style="italic"
             fill="#888">${escapeXml(v.deals.slice(0, 2).join(' · '))}</text>
       ` : ''}
     `;
@@ -249,14 +253,13 @@ async function composeHappyHourSpread(
   `;
 
   composites.push({ input: Buffer.from(`<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">${svgContent}</svg>`), top: 0, left: 0 });
-
   return bg.jpeg({ quality: JPEG_Q }).toBuffer()
     .then(buf => sharp(buf).composite(composites).jpeg({ quality: JPEG_Q }).toBuffer());
 }
 
 /**
- * Events This Week — dark editorial spread
- * Header at top. Text LEFT + photo RIGHT, both same height. Distinct from HH page.
+ * Events This Week — text at top, BIG image filling bottom half
+ * Completely different layout from Happy Hour page
  */
 async function composeEventsSpread(
   data: MagazineIssueData,
@@ -265,10 +268,6 @@ async function composeEventsSpread(
   const bg = sharp({ create: { width: W, height: H, channels: 3, background: { r: 22, g: 20, b: 28 } } });
   const composites: sharp.OverlayOptions[] = [];
   const PAD = 50;
-  const HEADER_H = 150;
-  const FOOTER_H = 50;
-  const CONTENT_Y = HEADER_H;
-  const CONTENT_H = H - HEADER_H - FOOTER_H;
 
   const EVENT_LABELS: Record<string, string> = {
     live_music: 'LIVE MUSIC', trivia: 'TRIVIA', karaoke: 'KARAOKE',
@@ -279,25 +278,12 @@ async function composeEventsSpread(
   // Group and sort
   const byType: Record<string, typeof data.events> = {};
   data.events.forEach(e => { const t = e.type || 'other'; if (!byType[t]) byType[t] = []; byType[t].push(e); });
-  const sortedTypes = Object.entries(byType).sort((a, b) => b[1].length - a[1].length).slice(0, 5);
+  const sortedTypes = Object.entries(byType).sort((a, b) => b[1].length - a[1].length).slice(0, 4);
 
-  // ONE event image — RIGHT side, same height as text block
-  const PHOTO_W = Math.floor(W * 0.40);
-  const eventWithPhoto = data.events.find(e => e.imageUrl?.includes('supabase'));
-  if (eventWithPhoto) {
-    try {
-      const raw = await fetchImageBuffer(eventWithPhoto.imageUrl!);
-      const photo = await sharp(raw)
-        .resize(PHOTO_W, CONTENT_H, { fit: 'contain', background: { r: 22, g: 20, b: 28, alpha: 1 } })
-        .jpeg({ quality: JPEG_Q })
-        .toBuffer();
-      composites.push({ input: photo, top: CONTENT_Y, left: W - PHOTO_W - PAD });
-    } catch { /* skip */ }
-  }
-
-  // Text LEFT — evenly distributed across CONTENT_H
-  const totalItems = sortedTypes.reduce((sum, [, evts]) => sum + Math.min(evts.length, 3), 0) + sortedTypes.length;
-  const itemH = Math.floor(CONTENT_H / Math.max(totalItems, 1));
+  // Text in top 45% — header + event listings
+  const TEXT_H = Math.floor(H * 0.45);
+  const totalItems = sortedTypes.reduce((sum, [, evts]) => sum + Math.min(evts.length, 2), 0) + sortedTypes.length;
+  const itemH = Math.floor((TEXT_H - 130) / Math.max(totalItems, 1));
 
   let svgContent = `
     <text x="${PAD}" y="55" font-family="Inter" font-weight="900" font-size="15"
@@ -307,22 +293,22 @@ async function composeEventsSpread(
           fill="white">${escapeXml(data.theme)}</text>
   `;
 
-  let y = CONTENT_Y + 10;
+  let y = 150;
   for (const [type, events] of sortedTypes) {
-    if (y > H - FOOTER_H - 40) break;
+    if (y > TEXT_H - 30) break;
     svgContent += `
-      <text x="${PAD}" y="${y + 18}" font-family="Inter" font-weight="900" font-size="17"
+      <text x="${PAD}" y="${y + 16}" font-family="Inter" font-weight="900" font-size="16"
             fill="${accentColor}" letter-spacing="3">${escapeXml(EVENT_LABELS[type] || type.toUpperCase())}</text>
     `;
     y += itemH;
-    for (const event of events.slice(0, 3)) {
-      if (y > H - FOOTER_H - 20) break;
+    for (const event of events.slice(0, 2)) {
+      if (y > TEXT_H - 10) break;
       const dayLabel = event.day ? event.day.charAt(0).toUpperCase() + event.day.slice(1) : '';
       const timeLabel = event.time ? ` at ${event.time}` : '';
       svgContent += `
-        <text x="${PAD + 10}" y="${y + 14}" font-family="Playfair Display" font-weight="700" font-size="19"
+        <text x="${PAD + 10}" y="${y + 12}" font-family="Playfair Display" font-weight="700" font-size="18"
               fill="white">${escapeXml(event.venue)}</text>
-        <text x="${PAD + 10}" y="${y + 34}" font-family="Playfair Display" font-weight="400" font-size="14" font-style="italic"
+        <text x="${PAD + 10}" y="${y + 30}" font-family="Playfair Display" font-weight="400" font-size="13" font-style="italic"
               fill="rgba(255,255,255,0.55)">${escapeXml((event.performer || dayLabel) + timeLabel)}</text>
       `;
       y += itemH;
@@ -336,13 +322,32 @@ async function composeEventsSpread(
   `;
 
   composites.push({ input: Buffer.from(`<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">${svgContent}</svg>`), top: 0, left: 0 });
+
+  // BIG image — fills the bottom 50%, full width minus padding
+  const IMG_Y = TEXT_H + 10;
+  const IMG_H = H - IMG_Y - 50;
+  const IMG_W = W - PAD * 2;
+
+  const eventWithPhoto = data.events.find(e => e.imageUrl?.includes('supabase'));
+  if (eventWithPhoto) {
+    try {
+      const raw = await fetchImageBuffer(eventWithPhoto.imageUrl!);
+      const photo = await sharp(raw)
+        .resize(IMG_W, IMG_H, { fit: 'contain', background: { r: 22, g: 20, b: 28, alpha: 1 } })
+        .jpeg({ quality: JPEG_Q })
+        .toBuffer();
+      composites.push({ input: photo, top: IMG_Y, left: PAD });
+    } catch { /* skip */ }
+  }
+
   return bg.jpeg({ quality: JPEG_Q }).toBuffer()
     .then(buf => sharp(buf).composite(composites).jpeg({ quality: JPEG_Q }).toBuffer());
 }
 
 /**
- * Specials & Deals — magazine spread
- * ONE special-specific image + day-by-day text listings
+ * Specials & Deals — TWO images stacked, text to the right of each
+ * Image 1 top-left + text right. Image 2 bottom-left + text right.
+ * Each image and its text block are the same height.
  */
 async function composeSpecialsSpread(
   data: MagazineIssueData,
@@ -350,81 +355,109 @@ async function composeSpecialsSpread(
 ): Promise<Buffer> {
   const bg = sharp({ create: { width: W, height: H, channels: 3, background: { r: 250, g: 248, b: 244 } } });
   const composites: sharp.OverlayOptions[] = [];
+  const PAD = 50;
+  const HEADER_H = 130;
+  const FOOTER_H = 50;
 
-  // ONE special-specific image — a deal/promo graphic, NOT a venue photo
-  const specialWithImage = data.specials.find(s => s.imageUrl?.includes('supabase'));
-  if (specialWithImage) {
+  // Two image blocks, each takes half the remaining height
+  const BLOCK_H = Math.floor((H - HEADER_H - FOOTER_H - 30) / 2); // 30px gap between blocks
+  const IMG_W = Math.floor(W * 0.45);
+
+  // Find TWO specials with images
+  const specialsWithImages = data.specials.filter(s => s.imageUrl?.includes('supabase')).slice(0, 2);
+
+  for (let i = 0; i < specialsWithImages.length; i++) {
+    const blockY = HEADER_H + i * (BLOCK_H + 30);
     try {
-      const raw = await fetchImageBuffer(specialWithImage.imageUrl!);
-      const PHOTO_W = Math.floor(W * 0.44);
-      const PHOTO_H = Math.floor(H * 0.38);
+      const raw = await fetchImageBuffer(specialsWithImages[i].imageUrl!);
       const photo = await sharp(raw)
-        .resize(PHOTO_W, PHOTO_H, { fit: 'contain', background: { r: 250, g: 248, b: 244, alpha: 1 } })
+        .resize(IMG_W, BLOCK_H, { fit: 'contain', background: { r: 250, g: 248, b: 244, alpha: 1 } })
         .jpeg({ quality: JPEG_Q })
         .toBuffer();
-      composites.push({ input: photo, top: H - PHOTO_H - 40, left: W - PHOTO_W - 40 });
+      composites.push({ input: photo, top: blockY, left: PAD });
     } catch { /* skip */ }
   }
 
+  // Group specials by day for the text sections
   const DAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   const DAY_SHORT: Record<string, string> = {
     monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu',
     friday: 'Fri', saturday: 'Sat', sunday: 'Sun',
   };
-
-  // Group specials by day
   const byDay: Record<string, typeof data.specials> = {};
-  data.specials.forEach(s => {
-    const d = s.day.toLowerCase();
-    if (!byDay[d]) byDay[d] = [];
-    byDay[d].push(s);
-  });
+  data.specials.forEach(s => { const d = s.day.toLowerCase(); if (!byDay[d]) byDay[d] = []; byDay[d].push(s); });
+  const activeDays = DAY_ORDER.filter(d => byDay[d]?.length > 0);
+
+  // Split days into two halves for the two text blocks
+  const half = Math.ceil(activeDays.length / 2);
+  const topDays = activeDays.slice(0, half);
+  const bottomDays = activeDays.slice(half);
+
+  const textX = PAD + IMG_W + 30;
 
   let svgContent = `
-    <text x="60" y="80" font-family="Inter" font-weight="900" font-size="16"
+    <text x="${PAD}" y="50" font-family="Inter" font-weight="900" font-size="15"
           fill="${accentColor}" letter-spacing="4">SPECIALS &amp; DEALS</text>
-    <rect x="60" y="95" width="60" height="3" fill="${accentColor}"/>
-
-    <text x="60" y="140" font-family="Playfair Display" font-weight="700" font-size="36"
-          fill="#1a1a1a">This Week&apos;s Best Bites</text>
+    <rect x="${PAD}" y="65" width="50" height="3" fill="${accentColor}"/>
+    <text x="${PAD}" y="110" font-family="Playfair Display" font-weight="700" font-size="40"
+          fill="#1a1a1a">This Week&apos;s Best</text>
   `;
 
-  let y = 190;
-  for (const day of DAY_ORDER) {
-    const specials = byDay[day];
-    if (!specials || specials.length === 0) continue;
-
+  // Top text block — right of image 1, same height as BLOCK_H
+  const topBlockY = HEADER_H;
+  const topItemH = Math.floor(BLOCK_H / Math.max(topDays.reduce((s, d) => s + 1 + Math.min((byDay[d] || []).length, 2), 0), 1));
+  let ty = topBlockY + 20;
+  for (const day of topDays) {
+    if (ty > topBlockY + BLOCK_H - 20) break;
     svgContent += `
-      <text x="60" y="${y}" font-family="Inter" font-weight="900" font-size="18"
+      <text x="${textX}" y="${ty}" font-family="Inter" font-weight="900" font-size="16"
             fill="${accentColor}" letter-spacing="2">${escapeXml((DAY_SHORT[day] || day).toUpperCase())}</text>
     `;
-    y += 8;
-
-    for (const s of specials.slice(0, 2)) {
-      y += 35;
+    ty += topItemH;
+    for (const s of (byDay[day] || []).slice(0, 2)) {
+      if (ty > topBlockY + BLOCK_H - 10) break;
       svgContent += `
-        <text x="80" y="${y}" font-family="Playfair Display" font-weight="700" font-size="22"
+        <text x="${textX}" y="${ty}" font-family="Playfair Display" font-weight="700" font-size="19"
               fill="#1a1a1a">${escapeXml(s.venue)}</text>
-        <text x="80" y="${y + 26}" font-family="Playfair Display" font-weight="400" font-size="18" font-style="italic"
-              fill="#555">${escapeXml(s.name)}${s.price ? ` — ${escapeXml(s.price)}` : ''}</text>
+        <text x="${textX}" y="${ty + 22}" font-family="Playfair Display" font-weight="400" font-size="15" font-style="italic"
+              fill="#666">${escapeXml(s.name)}${s.price ? ` — ${escapeXml(s.price)}` : ''}</text>
       `;
-      y += 32;
+      ty += topItemH;
     }
-    y += 25;
+  }
 
-    if (y > H - 100) break; // don't overflow
+  // Bottom text block — right of image 2, same height as BLOCK_H
+  const bottomBlockY = HEADER_H + BLOCK_H + 30;
+  let by = bottomBlockY + 20;
+  const bottomItemH = Math.floor(BLOCK_H / Math.max(bottomDays.reduce((s, d) => s + 1 + Math.min((byDay[d] || []).length, 2), 0), 1));
+  for (const day of bottomDays) {
+    if (by > bottomBlockY + BLOCK_H - 20) break;
+    svgContent += `
+      <text x="${textX}" y="${by}" font-family="Inter" font-weight="900" font-size="16"
+            fill="${accentColor}" letter-spacing="2">${escapeXml((DAY_SHORT[day] || day).toUpperCase())}</text>
+    `;
+    by += bottomItemH;
+    for (const s of (byDay[day] || []).slice(0, 2)) {
+      if (by > bottomBlockY + BLOCK_H - 10) break;
+      svgContent += `
+        <text x="${textX}" y="${by}" font-family="Playfair Display" font-weight="700" font-size="19"
+              fill="#1a1a1a">${escapeXml(s.venue)}</text>
+        <text x="${textX}" y="${by + 22}" font-family="Playfair Display" font-weight="400" font-size="15" font-style="italic"
+              fill="#666">${escapeXml(s.name)}${s.price ? ` — ${escapeXml(s.price)}` : ''}</text>
+      `;
+      by += bottomItemH;
+    }
   }
 
   svgContent += `
-    <text x="${W - 60}" y="${H - 30}" font-family="Playfair Display" font-weight="400" font-size="14"
-          fill="#999" text-anchor="end">04</text>
-    <rect x="0" y="0" width="6" height="${H}" fill="${accentColor}"/>
+    <text x="${W - PAD}" y="${H - 25}" font-family="Playfair Display" font-weight="400" font-size="14"
+          fill="#bbb" text-anchor="end">04</text>
+    <rect x="0" y="0" width="5" height="${H}" fill="${accentColor}"/>
   `;
 
-  const svg = Buffer.from(`<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">${svgContent}</svg>`);
-
+  composites.push({ input: Buffer.from(`<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">${svgContent}</svg>`), top: 0, left: 0 });
   return bg.jpeg({ quality: JPEG_Q }).toBuffer()
-    .then(buf => sharp(buf).composite([{ input: svg, top: 0, left: 0 }]).jpeg({ quality: JPEG_Q }).toBuffer());
+    .then(buf => sharp(buf).composite(composites).jpeg({ quality: JPEG_Q }).toBuffer());
 }
 
 /**
