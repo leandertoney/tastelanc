@@ -65,7 +65,7 @@ export default function OnboardingNameScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <OnboardingProgressBar totalSteps={12} currentStep={6} style={{ paddingHorizontal: 20, paddingTop: 12 }} />
+      <OnboardingProgressBar totalSteps={12} currentStep={9} style={{ paddingHorizontal: 20, paddingTop: 12 }} />
       <KeyboardAvoidingView style={styles.keyboardView} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />

@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
@@ -14,174 +13,197 @@ import Animated, {
   withTiming,
   withDelay,
   withSpring,
+  withSequence,
   Easing,
 } from 'react-native-reanimated';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/types';
-import { getColors, getAssets } from '../../config/theme';
+import { getColors, getAssets, hasFeature } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
-import { duration, spring, reveal } from '../../constants/animations';
 import OnboardingProgressBar from '../../components/OnboardingProgressBar';
 import { trackScreenView } from '../../lib/analytics';
 
+let Haptics: any = null;
+try { Haptics = require('expo-haptics'); } catch {}
+
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingProblems'>;
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const HERO_HEIGHT = SCREEN_HEIGHT * 0.35;
-
-const PAIN_POINTS = [
-  'Happy hours worth showing up for.',
-  'Events before they blow up.',
-  'Deals that hit different.',
-];
-
-const STAGGER = 500;
-
-function AnimatedPainPoint({ text, delay }: { text: string; delay: number }) {
-  const styles = useStyles();
-  const textOpacity = useSharedValue(0);
-  const translateX = useSharedValue(-20);
-  const barHeight = useSharedValue(0);
-
-  useEffect(() => {
-    barHeight.value = withDelay(delay, withSpring(28, { damping: 14, stiffness: 120 }));
-    textOpacity.value = withDelay(delay + 150, withTiming(1, { duration: duration.normal, easing: Easing.out(Easing.cubic) }));
-    translateX.value = withDelay(delay + 150, withSpring(0, spring.gentle));
-  }, [delay]);
-
-  const barAnimatedStyle = useAnimatedStyle(() => ({
-    height: barHeight.value,
-  }));
-
-  const textAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: textOpacity.value,
-    transform: [{ translateX: translateX.value }],
-  }));
-
-  return (
-    <View style={styles.painPoint}>
-      <Animated.View style={[styles.accentBar, barAnimatedStyle]} />
-      <Animated.View style={[styles.painPointTextWrapper, textAnimatedStyle]}>
-        <Text style={styles.painPointText}>{text}</Text>
-      </Animated.View>
-    </View>
-  );
-}
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const HERO_HEIGHT = SCREEN_HEIGHT * 0.48;
 
 export default function OnboardingProblemsScreen({ navigation }: Props) {
   const styles = useStyles();
   const assets = getAssets();
   const colors = getColors();
 
+  // Image
   const imageOpacity = useSharedValue(0);
-  const headerOpacity = useSharedValue(0);
-  const headerTranslate = useSharedValue(20);
+  const imageScale = useSharedValue(1.1);
 
-  const closingOpacity = useSharedValue(0);
-  const closingTranslate = useSharedValue(16);
-  const dividerWidth = useSharedValue(0);
+  // "THIS" slam animation
+  const thisOpacity = useSharedValue(0);
+  const thisScale = useSharedValue(2.5);
+  const thisRotate = useSharedValue(-5);
 
+  // "is how you go out." gentle fade
+  const restOpacity = useSharedValue(0);
+  const restTranslate = useSharedValue(15);
+
+  // Pain points — each from a different direction
+  const line1Opacity = useSharedValue(0);
+  const line1TranslateX = useSharedValue(-SCREEN_WIDTH);
+  const line2Opacity = useSharedValue(0);
+  const line2TranslateX = useSharedValue(SCREEN_WIDTH);
+  const line3Opacity = useSharedValue(0);
+  const line3TranslateX = useSharedValue(-SCREEN_WIDTH);
+
+  // Ready? + tap hint
+  const readyOpacity = useSharedValue(0);
+  const readyScale = useSharedValue(0.8);
   const hintOpacity = useSharedValue(0);
 
-  const closingDelay = reveal.items + PAIN_POINTS.length * STAGGER + 400;
+  useEffect(() => { trackScreenView('OnboardingStep_Interests'); }, []);
 
   useEffect(() => {
-    trackScreenView('OnboardingStep_Interests');
+    // 1. Hero image fades in with subtle zoom
+    imageOpacity.value = withTiming(1, { duration: 1000, easing: Easing.out(Easing.cubic) });
+    imageScale.value = withTiming(1, { duration: 4000, easing: Easing.out(Easing.cubic) });
+
+    // 2. "THIS" slams in from big → normal (400ms in)
+    thisOpacity.value = withDelay(400, withTiming(1, { duration: 200 }));
+    thisScale.value = withDelay(400, withSpring(1, { damping: 10, stiffness: 200 }));
+    thisRotate.value = withDelay(400, withSpring(0, { damping: 12, stiffness: 150 }));
+
+    // Haptic impact when THIS lands
+    if (Haptics) {
+      setTimeout(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+      }, 500);
+    }
+
+    // 3. "is how you go out." fades in gently (700ms)
+    restOpacity.value = withDelay(700, withTiming(1, { duration: 400, easing: Easing.out(Easing.cubic) }));
+    restTranslate.value = withDelay(700, withSpring(0, { damping: 20, stiffness: 100 }));
+
+    // 4. Pain points slide in from alternating sides
+    const lineBaseDelay = 1400;
+    const lineStagger = 400;
+
+    line1Opacity.value = withDelay(lineBaseDelay, withTiming(1, { duration: 300 }));
+    line1TranslateX.value = withDelay(lineBaseDelay, withSpring(0, { damping: 18, stiffness: 100 }));
+
+    line2Opacity.value = withDelay(lineBaseDelay + lineStagger, withTiming(1, { duration: 300 }));
+    line2TranslateX.value = withDelay(lineBaseDelay + lineStagger, withSpring(0, { damping: 18, stiffness: 100 }));
+
+    line3Opacity.value = withDelay(lineBaseDelay + lineStagger * 2, withTiming(1, { duration: 300 }));
+    line3TranslateX.value = withDelay(lineBaseDelay + lineStagger * 2, withSpring(0, { damping: 18, stiffness: 100 }));
+
+    // Light haptic for each line
+    if (Haptics) {
+      [lineBaseDelay, lineBaseDelay + lineStagger, lineBaseDelay + lineStagger * 2].forEach(d => {
+        setTimeout(() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        }, d);
+      });
+    }
+
+    // 5. "Ready?" pops in
+    const readyDelay = lineBaseDelay + lineStagger * 3 + 200;
+    readyOpacity.value = withDelay(readyDelay, withTiming(1, { duration: 300 }));
+    readyScale.value = withDelay(readyDelay, withSequence(
+      withSpring(1.15, { damping: 8, stiffness: 200 }),
+      withSpring(1, { damping: 15, stiffness: 100 })
+    ));
+
+    hintOpacity.value = withDelay(readyDelay + 500, withTiming(1, { duration: 400 }));
   }, []);
 
-  useEffect(() => {
-    // Image fades in first
-    imageOpacity.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.cubic) });
-
-    // Header after image
-    headerOpacity.value = withDelay(300, withTiming(1, { duration: duration.entrance }));
-    headerTranslate.value = withDelay(300, withSpring(0, spring.default));
-
-    // Divider
-    dividerWidth.value = withDelay(closingDelay, withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) }));
-
-    // Closing text
-    closingOpacity.value = withDelay(closingDelay + 300, withTiming(1, { duration: duration.normal }));
-    closingTranslate.value = withDelay(closingDelay + 300, withSpring(0, spring.gentle));
-
-    // Tap hint
-    hintOpacity.value = withDelay(closingDelay + 800, withTiming(1, { duration: duration.normal }));
-  }, []);
-
-  const imageAnimatedStyle = useAnimatedStyle(() => ({
+  const imageStyle = useAnimatedStyle(() => ({
     opacity: imageOpacity.value,
+    transform: [{ scale: imageScale.value }],
   }));
-
-  const headerAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: headerOpacity.value,
-    transform: [{ translateY: headerTranslate.value }],
+  const thisStyle = useAnimatedStyle(() => ({
+    opacity: thisOpacity.value,
+    transform: [{ scale: thisScale.value }, { rotate: `${thisRotate.value}deg` }],
   }));
-
-  const dividerAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scaleX: dividerWidth.value }],
+  const restStyle = useAnimatedStyle(() => ({
+    opacity: restOpacity.value,
+    transform: [{ translateY: restTranslate.value }],
   }));
-
-  const closingAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: closingOpacity.value,
-    transform: [{ translateY: closingTranslate.value }],
+  const line1Style = useAnimatedStyle(() => ({
+    opacity: line1Opacity.value,
+    transform: [{ translateX: line1TranslateX.value }],
   }));
-
-  const hintAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: hintOpacity.value,
+  const line2Style = useAnimatedStyle(() => ({
+    opacity: line2Opacity.value,
+    transform: [{ translateX: line2TranslateX.value }],
   }));
-
-  const handleContinue = () => {
-    navigation.navigate('OnboardingSolution');
-  };
+  const line3Style = useAnimatedStyle(() => ({
+    opacity: line3Opacity.value,
+    transform: [{ translateX: line3TranslateX.value }],
+  }));
+  const readyStyle = useAnimatedStyle(() => ({
+    opacity: readyOpacity.value,
+    transform: [{ scale: readyScale.value }],
+  }));
+  const hintStyle = useAnimatedStyle(() => ({ opacity: hintOpacity.value }));
 
   return (
-    <TouchableOpacity
-      style={styles.container}
-      activeOpacity={1}
-      onPress={handleContinue}
-    >
+    <TouchableOpacity style={styles.container} activeOpacity={1} onPress={() => navigation.navigate(hasFeature('happyHours') ? 'OnboardingHappyHours' : 'OnboardingEvents')}>
       <OnboardingProgressBar totalSteps={12} currentStep={0} style={styles.progressBar} />
-      {/* Hero image with gradient fade */}
-      <Animated.View style={[styles.heroSection, imageAnimatedStyle]}>
+
+      {/* Hero image with ken burns zoom */}
+      <Animated.View style={[styles.heroSection, imageStyle]}>
         {assets.onboardingHero && (
           <Image source={assets.onboardingHero} style={styles.heroImage} resizeMode="cover" />
         )}
         <LinearGradient
-          colors={['transparent', `${colors.primary}99`, colors.primary]}
-          locations={[0, 0.5, 1]}
+          colors={['transparent', `${colors.primary}30`, colors.primary]}
+          locations={[0.25, 0.65, 1]}
           style={styles.heroGradient}
         />
       </Animated.View>
 
-      {/* Content below hero */}
-      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-        <View style={styles.content}>
-          <Animated.View style={headerAnimatedStyle}>
-            <Text style={styles.headline}>This is how you go out.</Text>
-          </Animated.View>
-
-          <View style={styles.painPointsList}>
-            {PAIN_POINTS.map((point, index) => (
-              <AnimatedPainPoint
-                key={point}
-                text={point}
-                delay={reveal.items + index * STAGGER}
-              />
-            ))}
-          </View>
-
-          <View style={styles.closingSection}>
-            <Animated.View style={[styles.divider, dividerAnimatedStyle]} />
-            <Animated.View style={closingAnimatedStyle}>
-              <Text style={styles.closingText}>Ready?</Text>
-            </Animated.View>
-          </View>
+      {/* Content */}
+      <View style={styles.content}>
+        {/* Headline: "THIS is how you go out." */}
+        <View style={styles.headlineRow}>
+          <Animated.Text style={[styles.thisText, thisStyle]}>THIS</Animated.Text>
+          <Animated.Text style={[styles.restText, restStyle]}> is how you go out!</Animated.Text>
         </View>
 
-        <Animated.View style={[styles.footer, hintAnimatedStyle]}>
-          <Text style={styles.tapHint}>Tap anywhere to continue</Text>
-        </Animated.View>
-      </SafeAreaView>
+        {/* Pain points from alternating directions */}
+        <View style={styles.linesSection}>
+          <Animated.View style={[styles.lineContainer, line1Style]}>
+            <View style={[styles.lineAccent, { backgroundColor: colors.accent }]} />
+            <Text style={styles.lineText}>
+              Happy hours <Text style={[styles.lineEmphasis, { color: colors.accent }]}>worth</Text> showing up for
+            </Text>
+          </Animated.View>
+
+          <Animated.View style={[styles.lineContainer, styles.lineRight, line2Style]}>
+            <Text style={styles.lineText}>
+              Events you'll <Text style={[styles.lineEmphasis, { color: colors.accent }]}>actually</Text> want to go to
+            </Text>
+            <View style={[styles.lineAccent, { backgroundColor: colors.accent }]} />
+          </Animated.View>
+
+          <Animated.View style={[styles.lineContainer, line3Style]}>
+            <View style={[styles.lineAccent, { backgroundColor: colors.accent }]} />
+            <Text style={styles.lineText}>
+              Deals you <Text style={[styles.lineEmphasis, { color: colors.accent }]}>won't find</Text> anywhere else
+            </Text>
+          </Animated.View>
+        </View>
+
+        {/* Ready? */}
+        <Animated.Text style={[styles.readyText, readyStyle]}>Ready?</Animated.Text>
+      </View>
+
+      {/* Tap hint */}
+      <Animated.View style={[styles.footer, hintStyle]}>
+        <Text style={styles.tapHint}>Tap anywhere to continue</Text>
+      </Animated.View>
     </TouchableOpacity>
   );
 }
@@ -217,60 +239,66 @@ const useStyles = createLazyStyles((colors) => ({
     right: 0,
     bottom: 0,
   },
-  safeArea: {
-    flex: 1,
-  },
   content: {
     flex: 1,
-    paddingHorizontal: 32,
-    paddingTop: 24,
+    paddingHorizontal: 28,
+    paddingTop: 8,
   },
-  headline: {
-    fontSize: 28,
-    fontWeight: '700' as const,
-    color: colors.text,
-    marginBottom: 32,
+  headlineRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'baseline' as const,
+    flexWrap: 'wrap' as const,
+    marginBottom: 28,
   },
-  painPointsList: {
-    gap: 24,
+  thisText: {
+    fontSize: 38,
+    fontWeight: '900' as const,
+    color: '#FFFFFF',
+    letterSpacing: 3,
+    textShadowColor: colors.accent,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 12,
   },
-  painPoint: {
+  restText: {
+    fontSize: 24,
+    fontWeight: '300' as const,
+    color: colors.textMuted,
+  },
+  linesSection: {
+    gap: 18,
+  },
+  lineContainer: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
+    gap: 12,
   },
-  accentBar: {
+  lineRight: {
+    justifyContent: 'flex-end' as const,
+  },
+  lineAccent: {
     width: 3,
-    height: 0,
-    backgroundColor: colors.accent,
+    height: 24,
     borderRadius: 2,
-    marginRight: 16,
   },
-  painPointTextWrapper: {
-    flex: 1,
-  },
-  painPointText: {
-    fontSize: 20,
+  lineText: {
+    fontSize: 18,
     fontWeight: '400' as const,
-    color: colors.textMuted,
-    lineHeight: 28,
+    color: 'rgba(255,255,255,0.7)',
+    lineHeight: 26,
   },
-  closingSection: {
-    marginTop: 36,
+  lineEmphasis: {
+    fontWeight: '700' as const,
   },
-  divider: {
-    height: 1,
-    backgroundColor: colors.accent,
-    marginBottom: 20,
-    transformOrigin: 'left' as const,
-  },
-  closingText: {
-    fontSize: 22,
-    fontWeight: '600' as const,
+  readyText: {
+    marginTop: 32,
+    fontSize: 26,
+    fontWeight: '700' as const,
     color: colors.accent,
+    textAlign: 'center' as const,
   },
   footer: {
     paddingHorizontal: 32,
-    paddingBottom: 40,
+    paddingBottom: 44,
     alignItems: 'center' as const,
   },
   tapHint: {

@@ -87,7 +87,7 @@ export default function OnboardingFoodScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <OnboardingProgressBar totalSteps={12} currentStep={10} style={{ paddingHorizontal: 20, paddingTop: 12 }} />
+      <OnboardingProgressBar totalSteps={12} currentStep={13} style={{ paddingHorizontal: 20, paddingTop: 12 }} />
       <View style={styles.topBar}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />

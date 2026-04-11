@@ -1,15 +1,34 @@
 /**
  * RevenueCat Integration
- * Handles subscription purchases and status management
+ * Handles subscription purchases and status management.
+ * Uses guarded require() so it doesn't crash in Expo Go.
  */
 
-import Purchases, {
+// Type imports are erased at compile time — safe in all environments
+import type {
   PurchasesOffering,
   PurchasesPackage,
   CustomerInfo,
-  LOG_LEVEL,
 } from 'react-native-purchases';
-import { Platform } from 'react-native';
+
+// Runtime import — guarded for Expo Go where native module isn't available
+let Purchases: any = null;
+let LOG_LEVEL: any = null;
+let isRevenueCatAvailable = false;
+
+try {
+  const rc = require('react-native-purchases');
+  Purchases = rc.default;
+  LOG_LEVEL = rc.LOG_LEVEL;
+  isRevenueCatAvailable = true;
+} catch {
+  console.log('[RevenueCat] Native module not available (running in Expo Go?)');
+}
+
+/** Check if RevenueCat SDK is available (false in Expo Go) */
+export function isRevenueCatSDKAvailable(): boolean {
+  return isRevenueCatAvailable;
+}
 
 /**
  * Product ID configuration — derived from market slug at init time.
@@ -56,6 +75,11 @@ export async function initRevenueCat(apiKey: string, marketSlug?: string): Promi
     _productIds = MARKET_PRODUCT_IDS[marketSlug];
   }
 
+  if (!isRevenueCatAvailable) {
+    console.log('[RevenueCat] Skipping init — native module not available');
+    return;
+  }
+
   try {
     // Enable debug logs in development
     if (__DEV__) {
@@ -79,6 +103,7 @@ export async function initRevenueCat(apiKey: string, marketSlug?: string): Promi
  * Get current offerings (available subscription packages)
  */
 export async function getOfferings(): Promise<PurchasesOffering | null> {
+  if (!isRevenueCatAvailable) return null;
   try {
     const offerings = await Purchases.getOfferings();
     return offerings.current;
@@ -96,6 +121,7 @@ export async function getSubscriptionPackages(): Promise<{
   annual: PurchasesPackage | null;
   lifetime: PurchasesPackage | null;
 }> {
+  if (!isRevenueCatAvailable) return { monthly: null, annual: null, lifetime: null };
   try {
     const offerings = await Purchases.getOfferings();
     const current = offerings.current;
@@ -125,6 +151,7 @@ export async function getSubscriptionPackages(): Promise<{
 export async function purchasePackage(
   pkg: PurchasesPackage
 ): Promise<{ success: boolean; customerInfo: CustomerInfo | null; error?: string }> {
+  if (!isRevenueCatAvailable) return { success: false, customerInfo: null, error: 'RevenueCat not available' };
   try {
     const { customerInfo } = await Purchases.purchasePackage(pkg);
 
@@ -162,6 +189,7 @@ export async function checkPremiumStatus(): Promise<{
   willRenew: boolean;
   expirationDate: string | null;
 }> {
+  if (!isRevenueCatAvailable) return { isPremium: false, willRenew: false, expirationDate: null };
   try {
     const customerInfo = await Purchases.getCustomerInfo();
     const entitlement = customerInfo.entitlements.active[ENTITLEMENT_ID];
@@ -197,6 +225,7 @@ export async function restorePurchases(): Promise<{
   isPremium: boolean;
   error?: string;
 }> {
+  if (!isRevenueCatAvailable) return { success: false, isPremium: false, error: 'RevenueCat not available' };
   try {
     const customerInfo = await Purchases.restorePurchases();
     const isPremium = customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
@@ -219,6 +248,7 @@ export async function restorePurchases(): Promise<{
  * Get customer info (for debugging/display)
  */
 export async function getCustomerInfo(): Promise<CustomerInfo | null> {
+  if (!isRevenueCatAvailable) return null;
   try {
     return await Purchases.getCustomerInfo();
   } catch (error) {
@@ -253,6 +283,7 @@ export function getMonthlyPriceFromAnnual(pkg: PurchasesPackage): string {
  * Identify user with RevenueCat (call after user signs in)
  */
 export async function identifyUser(userId: string): Promise<void> {
+  if (!isRevenueCatAvailable) return;
   try {
     await Purchases.logIn(userId);
     console.log('User identified with RevenueCat:', userId);
@@ -265,6 +296,7 @@ export async function identifyUser(userId: string): Promise<void> {
  * Log out user from RevenueCat (call when user signs out)
  */
 export async function logOutUser(): Promise<void> {
+  if (!isRevenueCatAvailable) return;
   try {
     await Purchases.logOut();
     console.log('User logged out from RevenueCat');

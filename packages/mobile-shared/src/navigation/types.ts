@@ -151,6 +151,9 @@ export type OnboardingStackParamList = {
   OnboardingHappyHours: undefined;
   OnboardingEvents: undefined;
   OnboardingSpecials: undefined;
+  OnboardingMove: undefined;
+  OnboardingVideoRecs: undefined;
+  OnboardingRewards: undefined;
   // Phase 2: Personal Questions
   OnboardingUserType: undefined;
   OnboardingName: undefined;

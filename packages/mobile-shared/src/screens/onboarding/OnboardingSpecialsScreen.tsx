@@ -1,124 +1,186 @@
 import { useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Dimensions,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withTiming,
   withDelay,
+  withSpring,
+  withTiming,
   withRepeat,
   withSequence,
-  withSpring,
   Easing,
-  interpolate,
 } from 'react-native-reanimated';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/types';
 import { getColors, getBrand } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
-import OnboardingProgressBar from '../../components/OnboardingProgressBar';
-import { radius } from '../../constants/spacing';
-import { duration, spring, reveal, pulse } from '../../constants/animations';
+import FeatureDemoScreen from '../../components/FeatureDemoScreen';
 import { trackScreenView } from '../../lib/analytics';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingSpecials'>;
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const DEALS = [
+  { deal: '50¢ Wing Night', place: 'Decades Lancaster', day: 'Sundays', savings: '50¢ each' },
+  { deal: 'Taco Tuesday', place: 'Lucky Dog Cafe', day: 'Tuesdays', savings: 'Weekly' },
+  { deal: 'Prime Rib Dinner', place: 'Conestoga Restaurant', day: 'Fri & Sat', savings: 'Special' },
+];
 
 export default function OnboardingSpecialsScreen({ navigation }: Props) {
   const styles = useStyles();
   const colors = getColors();
   const brand = getBrand();
-  const iconScale = useSharedValue(0);
-  const textOpacity = useSharedValue(0);
-  const textTranslate = useSharedValue(30);
-  const glowOpacity = useSharedValue(0.3);
-  const sparkleRotate = useSharedValue(0);
-  const tagBounce = useSharedValue(0);
+
+  // Cards cascade with rotation
+  const cards = DEALS.map(() => ({
+    opacity: useSharedValue(0),
+    translateY: useSharedValue(50),
+    rotate: useSharedValue(0),
+  }));
+
+  // Floating sparkles
+  const sparkle1 = useSharedValue(0);
+  const sparkle2 = useSharedValue(0);
+  const sparkleFloat = useSharedValue(0);
 
   useEffect(() => {
     trackScreenView('OnboardingStep_Specials');
+
+    // Cards cascade in with slight rotation
+    DEALS.forEach((_, i) => {
+      const delay = 400 + i * 180;
+      const rotations = [-2, 1, -1];
+      cards[i].opacity.value = withDelay(delay, withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) }));
+      cards[i].translateY.value = withDelay(delay, withSpring(0, { damping: 14, stiffness: 85 }));
+      cards[i].rotate.value = withDelay(delay, withSpring(rotations[i], { damping: 20, stiffness: 100 }));
+    });
+
+    // Sparkle animations
+    sparkle1.value = withDelay(300, withTiming(0.2, { duration: 600 }));
+    sparkle2.value = withDelay(500, withTiming(0.15, { duration: 600 }));
+    sparkleFloat.value = withRepeat(
+      withSequence(
+        withTiming(-10, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
+        withTiming(10, { duration: 2000, easing: Easing.inOut(Easing.sin) })
+      ), -1, true
+    );
   }, []);
 
-  useEffect(() => {
-    iconScale.value = withDelay(reveal.content, withSpring(1, spring.default));
-    textOpacity.value = withDelay(reveal.items, withTiming(1, { duration: duration.normal }));
-    textTranslate.value = withDelay(reveal.items, withSpring(0, spring.default));
-    glowOpacity.value = withRepeat(withSequence(withTiming(0.6, { duration: pulse.duration / 2 }), withTiming(0.3, { duration: pulse.duration / 2 })), -1, true);
-    sparkleRotate.value = withRepeat(withTiming(360, { duration: 6000, easing: Easing.linear }), -1, false);
-    tagBounce.value = withRepeat(withSequence(withTiming(-6, { duration: 800, easing: Easing.sin }), withTiming(6, { duration: 800, easing: Easing.sin })), -1, true);
-  }, []);
+  const cardStyles = cards.map(c => useAnimatedStyle(() => ({
+    opacity: c.opacity.value,
+    transform: [{ translateY: c.translateY.value }, { rotate: `${c.rotate.value}deg` }],
+  })));
 
-  const iconAnimatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: iconScale.value }] }));
-  const glowAnimatedStyle = useAnimatedStyle(() => ({ opacity: glowOpacity.value, transform: [{ scale: interpolate(glowOpacity.value, [0.3, 0.6], [1, 1.15]) }] }));
-  const sparkleAnimatedStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${sparkleRotate.value}deg` }] }));
-  const tagAnimatedStyle = useAnimatedStyle(() => ({ transform: [{ translateY: tagBounce.value }] }));
-  const textAnimatedStyle = useAnimatedStyle(() => ({ opacity: textOpacity.value, transform: [{ translateY: textTranslate.value }] }));
+  const sparkle1Style = useAnimatedStyle(() => ({
+    opacity: sparkle1.value,
+    transform: [{ translateY: sparkleFloat.value }],
+  }));
+  const sparkle2Style = useAnimatedStyle(() => ({
+    opacity: sparkle2.value,
+    transform: [{ translateY: -sparkleFloat.value }],
+  }));
 
   return (
-    <TouchableOpacity style={styles.container} activeOpacity={1} onPress={() => navigation.navigate('OnboardingUserType')}>
-      <SafeAreaView style={styles.safeArea}>
-        <OnboardingProgressBar totalSteps={12} currentStep={4} style={{ paddingHorizontal: 20, paddingTop: 12 }} />
-        <View style={styles.content}>
-          <View style={styles.iconSection}>
-            <Animated.View style={[styles.glowCircle, glowAnimatedStyle]} />
-            <Animated.View style={[styles.iconContainer, iconAnimatedStyle]}>
-              <Ionicons name="pricetag" size={80} color={colors.accent} />
-            </Animated.View>
-            <Animated.View style={[styles.sparkleOrbit, sparkleAnimatedStyle]}>
-              <View style={[styles.sparkle, styles.sparkle1]}><Ionicons name="sparkles" size={20} color={colors.accent} /></View>
-              <View style={[styles.sparkle, styles.sparkle2]}><Ionicons name="star" size={18} color={colors.accent} /></View>
-              <View style={[styles.sparkle, styles.sparkle3]}><Ionicons name="sparkles" size={16} color={colors.accent} /></View>
-            </Animated.View>
-            <Animated.View style={[styles.floatingTag, styles.tagLeft, tagAnimatedStyle]}><Text style={styles.tagText}>2 for 1</Text></Animated.View>
-            <Animated.View style={[styles.floatingTag, styles.tagRight, tagAnimatedStyle]}><Text style={styles.tagText}>$5 Apps</Text></Animated.View>
-          </View>
-          <Animated.View style={[styles.textContent, textAnimatedStyle]}>
-            <Text style={styles.headline}>Daily Deals, Weekly Picks</Text>
-            <Text style={styles.subheadline}>{`Special deals picked\njust for ${brand.cityName}.`}</Text>
+    <FeatureDemoScreen
+      headline="Daily Deals, Weekly Picks"
+      subheadline={`Special savings picked\njust for ${brand.cityName}.`}
+      gradientColors={[colors.primary, '#0a1a0f', colors.primary]}
+      progressStep={4}
+      totalProgressSteps={15}
+      onContinue={() => navigation.navigate('OnboardingMove')}
+    >
+      {/* Floating sparkle tags */}
+      <Animated.View style={[styles.sparkleTag, styles.sparkle1, sparkle1Style]}>
+        <Ionicons name="pricetag" size={40} color={colors.valueGreen} />
+      </Animated.View>
+      <Animated.View style={[styles.sparkleTag, styles.sparkle2, sparkle2Style]}>
+        <Text style={styles.sparkleText}>💰</Text>
+      </Animated.View>
+
+      {/* Deal cards with slight rotation and glassmorphic feel */}
+      <View style={styles.cardsStack}>
+        {DEALS.map((deal, i) => (
+          <Animated.View key={i} style={[styles.dealCard, cardStyles[i]]}>
+            <View style={styles.dealHeader}>
+              <Text style={styles.dealTitle}>{deal.deal}</Text>
+              <View style={styles.savingsBadge}>
+                <Text style={styles.savingsText}>{deal.savings}</Text>
+              </View>
+            </View>
+            <Text style={styles.dealPlace}>{deal.place}</Text>
+            <View style={styles.dealFooter}>
+              <Ionicons name="calendar-outline" size={12} color="rgba(255,255,255,0.4)" />
+              <Text style={styles.dealDay}>{deal.day}</Text>
+            </View>
           </Animated.View>
-        </View>
-        <View style={styles.footer}>
-          <View style={styles.pagination}>
-            <View style={styles.dot} />
-            <View style={styles.dot} />
-            <View style={[styles.dot, styles.dotActive]} />
-          </View>
-          <Text style={styles.tapHint}>Tap anywhere to continue</Text>
-        </View>
-      </SafeAreaView>
-    </TouchableOpacity>
+        ))}
+      </View>
+    </FeatureDemoScreen>
   );
 }
 
 const useStyles = createLazyStyles((colors) => ({
-  container: { flex: 1, backgroundColor: colors.primary },
-  safeArea: { flex: 1 },
-  content: { flex: 1, justifyContent: 'center' as const, alignItems: 'center' as const, paddingHorizontal: 32 },
-  iconSection: { width: SCREEN_WIDTH * 0.7, height: SCREEN_WIDTH * 0.7, justifyContent: 'center' as const, alignItems: 'center' as const, marginBottom: 48 },
-  glowCircle: { position: 'absolute' as const, width: 200, height: 200, borderRadius: 100, backgroundColor: colors.accent },
-  iconContainer: { width: 140, height: 140, borderRadius: 70, backgroundColor: colors.cardBg, justifyContent: 'center' as const, alignItems: 'center' as const, shadowColor: colors.accent, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 30, elevation: 10 },
-  sparkleOrbit: { position: 'absolute' as const, width: 240, height: 240 },
-  sparkle: { position: 'absolute' as const, backgroundColor: colors.cardBg, borderRadius: radius.full, padding: 8 },
-  sparkle1: { top: 0, left: '50%', marginLeft: -16 },
-  sparkle2: { bottom: 20, left: 20 },
-  sparkle3: { bottom: 20, right: 20 },
-  floatingTag: { position: 'absolute' as const, backgroundColor: colors.valueGreen, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
-  tagLeft: { left: -10, top: '40%' },
-  tagRight: { right: -10, bottom: '35%' },
-  tagText: { color: colors.text, fontSize: 13, fontWeight: '700' as const },
-  textContent: { alignItems: 'center' as const },
-  headline: { fontSize: 32, fontWeight: '700' as const, color: colors.text, textAlign: 'center' as const, marginBottom: 16 },
-  subheadline: { fontSize: 17, color: colors.textMuted, textAlign: 'center' as const, lineHeight: 26 },
-  footer: { paddingHorizontal: 32, paddingBottom: 40, alignItems: 'center' as const },
-  pagination: { flexDirection: 'row' as const, gap: 8, marginBottom: 16 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.textSecondary },
-  dotActive: { width: 24, backgroundColor: colors.accent },
-  tapHint: { fontSize: 14, color: colors.textSecondary },
+  sparkleTag: {
+    position: 'absolute' as const,
+  },
+  sparkle1: {
+    top: -25,
+    right: 5,
+  },
+  sparkle2: {
+    top: 0,
+    left: -5,
+  },
+  sparkleText: {
+    fontSize: 32,
+  },
+  cardsStack: {
+    width: '100%',
+    gap: 10,
+  },
+  dealCard: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    borderLeftWidth: 3,
+    borderLeftColor: colors.valueGreen,
+  },
+  dealHeader: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    marginBottom: 6,
+  },
+  dealTitle: {
+    fontSize: 18,
+    fontWeight: '800' as const,
+    color: '#FFFFFF',
+  },
+  savingsBadge: {
+    backgroundColor: `${colors.valueGreen}25`,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  savingsText: {
+    fontSize: 12,
+    fontWeight: '700' as const,
+    color: colors.valueGreen,
+  },
+  dealPlace: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.6)',
+    marginBottom: 6,
+  },
+  dealFooter: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 4,
+  },
+  dealDay: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.4)',
+  },
 }));

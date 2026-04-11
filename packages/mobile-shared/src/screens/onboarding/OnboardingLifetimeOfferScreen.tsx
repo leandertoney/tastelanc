@@ -7,15 +7,20 @@ import {
   Alert,
   Linking,
   Image,
+  ScrollView,
+  Platform,
+  Dimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withDelay,
   withSpring,
+  withRepeat,
+  withSequence,
   Easing,
 } from 'react-native-reanimated';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -34,7 +39,66 @@ import {
 import OnboardingProgressBar from '../../components/OnboardingProgressBar';
 import { trackScreenView, trackClick } from '../../lib/analytics';
 
+let Haptics: any = null;
+try { Haptics = require('expo-haptics'); } catch {}
+
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingLifetimeOffer'>;
+
+const { width: SW, height: SH } = Dimensions.get('window');
+
+// Celebration particles
+const PARTICLES = [
+  { x: SW * 0.08, y: SH * 0.10, size: 6, color: '#FFD700', delay: 0 },
+  { x: SW * 0.88, y: SH * 0.08, size: 8, color: '#FF6B6B', delay: 100 },
+  { x: SW * 0.20, y: SH * 0.22, size: 5, color: '#4ECDC4', delay: 200 },
+  { x: SW * 0.82, y: SH * 0.25, size: 7, color: '#FFD700', delay: 150 },
+  { x: SW * 0.05, y: SH * 0.40, size: 4, color: '#FF6B6B', delay: 300 },
+  { x: SW * 0.93, y: SH * 0.42, size: 6, color: '#4ECDC4', delay: 250 },
+];
+
+function Particle({ x, y, size, color, delay }: typeof PARTICLES[0]) {
+  const opacity = useSharedValue(0);
+  const scale = useSharedValue(0);
+  const floatY = useSharedValue(0);
+
+  useEffect(() => {
+    opacity.value = withDelay(delay + 300, withTiming(0.5, { duration: 500 }));
+    scale.value = withDelay(delay + 300, withSpring(1, { damping: 8, stiffness: 120 }));
+    floatY.value = withDelay(delay + 300, withRepeat(
+      withSequence(
+        withTiming(-10, { duration: 2000 + Math.random() * 1000, easing: Easing.inOut(Easing.sin) }),
+        withTiming(10, { duration: 2000 + Math.random() * 1000, easing: Easing.inOut(Easing.sin) })
+      ), -1, true
+    ));
+  }, []);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }, { translateY: floatY.value }],
+  }));
+
+  return (
+    <Animated.View style={[{
+      position: 'absolute',
+      left: x,
+      top: y,
+      width: size,
+      height: size,
+      borderRadius: size / 2,
+      backgroundColor: color,
+    }, style]} />
+  );
+}
+
+const BENEFITS = [
+  'Ad-free experience',
+  'Exclusive daily deals & specials',
+  '2.5x rewards on every check-in',
+  'Priority event notifications',
+  'Unlimited AI-powered itineraries',
+  'Premium restaurant insights',
+  'Early access to new features',
+];
 
 export default function OnboardingLifetimeOfferScreen({ navigation }: Props) {
   const styles = useStyles();
@@ -50,20 +114,37 @@ export default function OnboardingLifetimeOfferScreen({ navigation }: Props) {
   const [restoring, setRestoring] = useState(false);
 
   // Animations
-  const headerOpacity = useSharedValue(0);
-  const headerTranslate = useSharedValue(-20);
-  const cardScale = useSharedValue(0.85);
+  const badgeOpacity = useSharedValue(0);
+  const badgeScale = useSharedValue(0.6);
+  const avatarOpacity = useSharedValue(0);
+  const avatarScale = useSharedValue(0.7);
+  const headlineOpacity = useSharedValue(0);
+  const headlineTranslate = useSharedValue(20);
   const cardOpacity = useSharedValue(0);
-  const footerOpacity = useSharedValue(0);
+  const cardScale = useSharedValue(0.9);
+  const ctaOpacity = useSharedValue(0);
+  const ctaTranslate = useSharedValue(20);
 
   useEffect(() => {
     trackScreenView('OnboardingStep_LifetimeOffer');
     loadPackages();
-    headerOpacity.value = withTiming(1, { duration: 400 });
-    headerTranslate.value = withTiming(0, { duration: 500, easing: Easing.out(Easing.cubic) });
-    cardOpacity.value = withDelay(250, withTiming(1, { duration: 400 }));
-    cardScale.value = withDelay(250, withSpring(1, { damping: 12, stiffness: 100 }));
-    footerOpacity.value = withDelay(500, withTiming(1, { duration: 400 }));
+
+    if (Haptics) {
+      setTimeout(() => {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      }, 200);
+    }
+
+    badgeOpacity.value = withDelay(100, withTiming(1, { duration: 400 }));
+    badgeScale.value = withDelay(100, withSpring(1, { damping: 10, stiffness: 120 }));
+    avatarOpacity.value = withDelay(250, withTiming(1, { duration: 400 }));
+    avatarScale.value = withDelay(250, withSpring(1, { damping: 12, stiffness: 80 }));
+    headlineOpacity.value = withDelay(400, withTiming(1, { duration: 500 }));
+    headlineTranslate.value = withDelay(400, withSpring(0, { damping: 16, stiffness: 80 }));
+    cardOpacity.value = withDelay(600, withTiming(1, { duration: 500 }));
+    cardScale.value = withDelay(600, withSpring(1, { damping: 14, stiffness: 80 }));
+    ctaOpacity.value = withDelay(800, withTiming(1, { duration: 400 }));
+    ctaTranslate.value = withDelay(800, withSpring(0, { damping: 16, stiffness: 80 }));
   }, []);
 
   const loadPackages = async () => {
@@ -79,8 +160,8 @@ export default function OnboardingLifetimeOfferScreen({ navigation }: Props) {
 
   const handlePurchase = useCallback(async () => {
     if (!lifetime || purchasing) return;
-
     setPurchasing(true);
+    if (Haptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     trackClick('onboarding_lifetime_purchase');
 
     try {
@@ -123,121 +204,260 @@ export default function OnboardingLifetimeOfferScreen({ navigation }: Props) {
     navigation.navigate('OnboardingPremiumIntro');
   };
 
-  const headerAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: headerOpacity.value,
-    transform: [{ translateY: headerTranslate.value }],
+  const badgeStyle = useAnimatedStyle(() => ({
+    opacity: badgeOpacity.value,
+    transform: [{ scale: badgeScale.value }],
   }));
-  const cardAnimatedStyle = useAnimatedStyle(() => ({
+  const avatarStyle = useAnimatedStyle(() => ({
+    opacity: avatarOpacity.value,
+    transform: [{ scale: avatarScale.value }],
+  }));
+  const headlineStyle = useAnimatedStyle(() => ({
+    opacity: headlineOpacity.value,
+    transform: [{ translateY: headlineTranslate.value }],
+  }));
+  const cardStyle = useAnimatedStyle(() => ({
     opacity: cardOpacity.value,
     transform: [{ scale: cardScale.value }],
   }));
-  const footerAnimatedStyle = useAnimatedStyle(() => ({ opacity: footerOpacity.value }));
+  const ctaStyle = useAnimatedStyle(() => ({
+    opacity: ctaOpacity.value,
+    transform: [{ translateY: ctaTranslate.value }],
+  }));
 
   const priceString = lifetime?.product.priceString ?? '$14.99';
 
   return (
-    <SafeAreaView style={styles.container}>
-      <OnboardingProgressBar totalSteps={13} currentStep={12} style={{ paddingHorizontal: 20, paddingTop: 12 }} />
+    <View style={styles.container}>
+      <LinearGradient
+        colors={[colors.primary, `${colors.accent}15`, colors.primary]}
+        locations={[0, 0.4, 1]}
+        style={styles.gradient}
+      />
 
-      <View style={styles.content}>
-        {/* Header */}
-        <Animated.View style={[styles.headerSection, headerAnimatedStyle]}>
-          <Text style={styles.waitText}>Wait — one-time offer</Text>
-          <Image source={assets.aiAvatar} style={styles.avatar} />
-          <Text style={styles.headline}>Lifetime Access</Text>
-          <Text style={styles.subheadline}>
-            {priceString} — never pay again
-          </Text>
+      {/* Celebration particles */}
+      {PARTICLES.map((p, i) => (
+        <Particle key={i} {...p} />
+      ))}
+
+      <View style={styles.progressWrap}>
+        <OnboardingProgressBar totalSteps={12} currentStep={10} style={{ paddingHorizontal: 20 }} />
+      </View>
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        {/* Badge */}
+        <Animated.View style={[styles.badgeContainer, badgeStyle]}>
+          <View style={styles.badge}>
+            <Ionicons name="flash" size={14} color="#FFFFFF" />
+            <Text style={styles.badgeText}>Limited Offer</Text>
+          </View>
         </Animated.View>
 
-        {/* Lifetime card */}
+        {/* Avatar */}
+        <Animated.View style={[styles.avatarContainer, avatarStyle]}>
+          <Image source={assets.aiAvatar} style={styles.avatar} />
+        </Animated.View>
+
+        {/* Headline */}
+        <Animated.View style={[styles.headerSection, headlineStyle]}>
+          <Text style={styles.headline}>40% Off Your First Year</Text>
+          <Text style={styles.subheadline}>{priceString}/year — just this once</Text>
+        </Animated.View>
+
+        {/* Benefits card */}
         {loading ? (
           <ActivityIndicator color={colors.accent} style={{ marginVertical: 24 }} />
         ) : (
-          <Animated.View style={[styles.lifetimeCard, cardAnimatedStyle]}>
-            <View style={styles.lifetimeBadge}>
-              <Ionicons name="infinity" size={20} color={colors.textOnAccent} />
+          <Animated.View style={[styles.card, cardStyle]}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>{brand.appName}+</Text>
+              <Text style={styles.cardPrice}>{priceString}<Text style={styles.cardPricePeriod}>/yr</Text></Text>
             </View>
-            <Text style={styles.cardTitle}>Lifetime {brand.appName}+</Text>
-            <Text style={styles.cardPrice}>{priceString}</Text>
-            <Text style={styles.cardSubtitle}>One-time purchase. No subscription.</Text>
+
+            <View style={styles.cardDivider} />
+
             <View style={styles.cardBenefits}>
-              <Text style={styles.cardBenefitItem}>Unlimited AI recommendations</Text>
-              <Text style={styles.cardBenefitItem}>Ad-free experience forever</Text>
-              <Text style={styles.cardBenefitItem}>2.5x rewards on every check-in</Text>
-              <Text style={styles.cardBenefitItem}>All future premium features</Text>
+              {BENEFITS.map((benefit, i) => (
+                <View key={i} style={styles.benefitRow}>
+                  <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
+                  <Text style={styles.benefitText}>{benefit}</Text>
+                </View>
+              ))}
             </View>
+
+            <Text style={styles.cardRenewal}>Renews at $24.99/yr — cancel anytime</Text>
           </Animated.View>
         )}
-      </View>
+      </ScrollView>
 
-      {/* Footer */}
-      <Animated.View style={[styles.footer, footerAnimatedStyle]}>
+      {/* Fixed footer */}
+      <Animated.View style={[styles.footer, ctaStyle]}>
         <TouchableOpacity
-          style={[styles.ctaButton, (purchasing || !lifetime) && styles.ctaButtonDisabled]}
+          style={[styles.ctaButton, (purchasing || !lifetime) && styles.ctaDisabled]}
           onPress={handlePurchase}
           disabled={purchasing || !lifetime}
-          activeOpacity={0.8}
+          activeOpacity={0.9}
         >
           {purchasing ? (
-            <ActivityIndicator color={colors.textOnAccent} />
+            <ActivityIndicator color="#000" />
           ) : (
-            <Text style={styles.ctaText}>Get Lifetime Access — {priceString}</Text>
+            <Text style={styles.ctaText}>Get 40% Off — {priceString}/year</Text>
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-          <Text style={styles.skipText}>No thanks, continue free</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.restoreButton}
-          onPress={handleRestore}
-          disabled={restoring}
-        >
-          <Text style={styles.restoreText}>
-            {restoring ? 'Restoring...' : 'Restore Purchases'}
-          </Text>
-        </TouchableOpacity>
-
-        <View style={styles.legalRow}>
-          <TouchableOpacity onPress={() => Linking.openURL(brand.termsUrl)}>
-            <Text style={styles.legalLink}>Terms of Use</Text>
+        <View style={styles.footerLinks}>
+          <TouchableOpacity onPress={handleSkip}>
+            <Text style={styles.footerLink}>No thanks</Text>
           </TouchableOpacity>
-          <Text style={styles.legalDivider}>|</Text>
+          <Text style={styles.footerDot}>·</Text>
+          <TouchableOpacity onPress={handleRestore} disabled={restoring}>
+            <Text style={styles.footerLink}>{restoring ? 'Restoring...' : 'Restore'}</Text>
+          </TouchableOpacity>
+          <Text style={styles.footerDot}>·</Text>
+          <TouchableOpacity onPress={() => Linking.openURL(brand.termsUrl)}>
+            <Text style={styles.footerLink}>Terms</Text>
+          </TouchableOpacity>
+          <Text style={styles.footerDot}>·</Text>
           <TouchableOpacity onPress={() => Linking.openURL(brand.privacyUrl)}>
-            <Text style={styles.legalLink}>Privacy Policy</Text>
+            <Text style={styles.footerLink}>Privacy</Text>
           </TouchableOpacity>
         </View>
       </Animated.View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const useStyles = createLazyStyles((colors) => ({
   container: { flex: 1, backgroundColor: colors.primary },
-  content: { flex: 1, paddingHorizontal: 24, justifyContent: 'center' as const },
-  headerSection: { alignItems: 'center' as const, marginBottom: 28 },
-  waitText: { fontSize: 14, fontWeight: '600' as const, color: colors.accent, letterSpacing: 0.5, textTransform: 'uppercase' as const, marginBottom: 16 },
-  avatar: { width: 80, height: 80, borderRadius: 40, marginBottom: 16 },
-  headline: { fontSize: 30, fontWeight: '700' as const, color: colors.text, textAlign: 'center' as const, marginBottom: 8 },
-  subheadline: { fontSize: 18, color: colors.textMuted, textAlign: 'center' as const },
-  lifetimeCard: { backgroundColor: colors.cardBg, borderRadius: radius.xl, padding: 28, alignItems: 'center' as const, borderWidth: 2, borderColor: colors.accent },
-  lifetimeBadge: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.accent, justifyContent: 'center' as const, alignItems: 'center' as const, marginBottom: 14 },
-  cardTitle: { fontSize: 20, fontWeight: '700' as const, color: colors.text, marginBottom: 4 },
-  cardPrice: { fontSize: 32, fontWeight: '800' as const, color: colors.accent, marginBottom: 4 },
-  cardSubtitle: { fontSize: 14, color: colors.textMuted, marginBottom: 18 },
-  cardBenefits: { gap: 8, width: '100%' as any },
-  cardBenefitItem: { fontSize: 14, color: colors.text, paddingLeft: 8 },
-  footer: { paddingHorizontal: 24, paddingBottom: 16 },
-  ctaButton: { backgroundColor: colors.accent, borderRadius: radius.full, paddingVertical: 18, alignItems: 'center' as const, marginBottom: 10 },
-  ctaButtonDisabled: { opacity: 0.6 },
-  ctaText: { fontSize: 17, fontWeight: '700' as const, color: colors.textOnAccent },
-  skipButton: { alignItems: 'center' as const, paddingVertical: 10, marginBottom: 6 },
-  skipText: { fontSize: 15, color: colors.textMuted },
-  restoreButton: { alignItems: 'center' as const, paddingVertical: 6, marginBottom: 8 },
-  restoreText: { fontSize: 13, color: colors.textMuted },
-  legalRow: { flexDirection: 'row' as const, justifyContent: 'center' as const, alignItems: 'center' as const, gap: 8 },
-  legalLink: { fontSize: 11, color: colors.textMuted, textDecorationLine: 'underline' as const },
-  legalDivider: { fontSize: 11, color: colors.textMuted },
+  gradient: { position: 'absolute' as const, top: 0, left: 0, right: 0, bottom: 0 },
+  progressWrap: { paddingTop: Platform.OS === 'ios' ? 54 : 24 },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 16,
+  },
+
+  // Badge
+  badgeContainer: { alignItems: 'center' as const, marginBottom: 16 },
+  badge: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 6,
+    backgroundColor: colors.accent,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  badgeText: {
+    fontSize: 13,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase' as const,
+  },
+
+  // Avatar
+  avatarContainer: { alignItems: 'center' as const, marginBottom: 16 },
+  avatar: { width: 72, height: 72, borderRadius: 36, borderWidth: 2, borderColor: 'rgba(255,255,255,0.15)' },
+
+  // Header
+  headerSection: { alignItems: 'center' as const, marginBottom: 24 },
+  headline: {
+    fontSize: 28,
+    fontWeight: '800' as const,
+    color: '#FFFFFF',
+    textAlign: 'center' as const,
+    marginBottom: 8,
+    letterSpacing: -0.5,
+  },
+  subheadline: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.55)',
+    textAlign: 'center' as const,
+  },
+
+  // Card
+  card: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 1.5,
+    borderColor: `${colors.accent}40`,
+  },
+  cardHeader: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'baseline' as const,
+    marginBottom: 16,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+  },
+  cardPrice: {
+    fontSize: 24,
+    fontWeight: '800' as const,
+    color: colors.accent,
+  },
+  cardPricePeriod: {
+    fontSize: 14,
+    fontWeight: '500' as const,
+    color: 'rgba(255,255,255,0.4)',
+  },
+  cardDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    marginBottom: 16,
+  },
+  cardBenefits: { gap: 12 },
+  benefitRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10 },
+  benefitText: { fontSize: 14, color: 'rgba(255,255,255,0.8)', flex: 1 },
+  cardRenewal: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.35)',
+    textAlign: 'center' as const,
+    marginTop: 16,
+  },
+
+  // Footer
+  footer: {
+    paddingHorizontal: 24,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+    paddingTop: 12,
+  },
+  ctaButton: {
+    backgroundColor: colors.accent,
+    borderRadius: 14,
+    paddingVertical: 18,
+    alignItems: 'center' as const,
+    marginBottom: 12,
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  ctaDisabled: { opacity: 0.6 },
+  ctaText: { fontSize: 17, fontWeight: '700' as const, color: '#000' },
+  footerLinks: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: 8,
+  },
+  footerLink: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.4)',
+    fontWeight: '500' as const,
+  },
+  footerDot: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.2)',
+  },
 }));

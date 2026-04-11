@@ -16,8 +16,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/types';
-import { ContinueButton } from '../../components/Onboarding';
-import { getColors, getBrand, getAssets } from '../../config/theme';
+import { getBrand, getAssets } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import { trackScreenView } from '../../lib/analytics';
 
@@ -95,8 +94,6 @@ export default function OnboardingSlidesScreen({ navigation }: Props) {
   const logoOpacity = useSharedValue(0);
   const logoScale = useSharedValue(0.7);
   const contentOpacity = useSharedValue(0);
-  const buttonOpacity = useSharedValue(0);
-  const buttonTranslate = useSharedValue(30);
   const subtitleOpacity = useSharedValue(0);
   const subtitleTranslate = useSharedValue(20);
 
@@ -117,10 +114,12 @@ export default function OnboardingSlidesScreen({ navigation }: Props) {
     subtitleOpacity.value = withDelay(subtitleDelay, withTiming(1, { duration: 500 }));
     subtitleTranslate.value = withDelay(subtitleDelay, withSpring(0, { damping: 18, stiffness: 100 }));
 
-    // Button after everything settles
-    const buttonDelay = 2200;
-    buttonOpacity.value = withDelay(buttonDelay, withTiming(1, { duration: 400 }));
-    buttonTranslate.value = withDelay(buttonDelay, withSpring(0, { damping: 16, stiffness: 100 }));
+    // Auto-advance after brand moment lands (~2.5s)
+    const timer = setTimeout(() => {
+      navigation.replace('OnboardingProblems');
+    }, 2500);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const logoAnimatedStyle = useAnimatedStyle(() => ({
@@ -136,15 +135,6 @@ export default function OnboardingSlidesScreen({ navigation }: Props) {
     opacity: subtitleOpacity.value,
     transform: [{ translateY: subtitleTranslate.value }],
   }));
-
-  const buttonAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: buttonOpacity.value,
-    transform: [{ translateY: buttonTranslate.value }],
-  }));
-
-  const handleContinue = () => {
-    navigation.navigate('OnboardingProblems');
-  };
 
   // Calculate word delays for dramatic reveal
   const wordBaseDelay = 600;
@@ -186,10 +176,6 @@ export default function OnboardingSlidesScreen({ navigation }: Props) {
             </Animated.View>
           </Animated.View>
 
-          {/* Continue Button */}
-          <Animated.View style={[styles.buttonContainer, buttonAnimatedStyle]}>
-            <ContinueButton onPress={handleContinue} label="Get Started" />
-          </Animated.View>
         </View>
       </SafeAreaView>
     </View>
@@ -277,9 +263,4 @@ const useStyles = createLazyStyles((colors) => ({
     marginTop: 16,
   },
 
-  // Button
-  buttonContainer: {
-    marginTop: 'auto' as const,
-    paddingTop: 20,
-  },
 }));

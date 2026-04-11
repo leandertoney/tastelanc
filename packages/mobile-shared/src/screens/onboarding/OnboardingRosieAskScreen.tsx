@@ -94,7 +94,7 @@ export default function OnboardingRosieAskScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <OnboardingProgressBar totalSteps={12} currentStep={11} style={{ paddingHorizontal: 20, paddingTop: 12 }} />
+      <OnboardingProgressBar totalSteps={12} currentStep={8} style={{ paddingHorizontal: 20, paddingTop: 12 }} />
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color={colors.text} />
       </TouchableOpacity>
@@ -115,7 +115,7 @@ export default function OnboardingRosieAskScreen({ navigation }: Props) {
         </View>
       </View>
       <Animated.View style={[styles.footer, buttonAnimatedStyle]}>
-        <TouchableOpacity style={styles.continueButton} onPress={() => navigation.navigate('OnboardingPremiumIntro')}>
+        <TouchableOpacity style={styles.continueButton} onPress={() => navigation.navigate('OnboardingReviewAsk')}>
           <Text style={styles.continueText}>Continue</Text>
           <Ionicons name="arrow-forward" size={20} color={colors.text} />
         </TouchableOpacity>

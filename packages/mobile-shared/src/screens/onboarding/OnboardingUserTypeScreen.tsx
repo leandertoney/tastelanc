@@ -65,7 +65,7 @@ export default function OnboardingUserTypeScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <OnboardingProgressBar totalSteps={12} currentStep={5} style={{ paddingHorizontal: 20, paddingTop: 12 }} />
+      <OnboardingProgressBar totalSteps={12} currentStep={8} style={{ paddingHorizontal: 20, paddingTop: 12 }} />
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color={colors.text} />
       </TouchableOpacity>

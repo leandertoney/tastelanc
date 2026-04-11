@@ -52,9 +52,7 @@ export { default as SplashVideoScreen } from './SplashVideoScreen';
 
 // Onboarding screens
 export {
-  OnboardingSlidesScreen,
   OnboardingProblemsScreen,
-  OnboardingSolutionScreen,
   OnboardingHappyHoursScreen,
   OnboardingEventsScreen,
   OnboardingSpecialsScreen,

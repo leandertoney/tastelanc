@@ -1,14 +1,13 @@
-// Welcome
-export { default as OnboardingSlidesScreen } from './OnboardingSlidesScreen';
-
-// Problem & Solution
+// Opening
 export { default as OnboardingProblemsScreen } from './OnboardingProblemsScreen';
-export { default as OnboardingSolutionScreen } from './OnboardingSolutionScreen';
 
-// Feature Discovery (animated)
+// Feature Discovery (app mockups)
 export { default as OnboardingHappyHoursScreen } from './OnboardingHappyHoursScreen';
 export { default as OnboardingEventsScreen } from './OnboardingEventsScreen';
 export { default as OnboardingSpecialsScreen } from './OnboardingSpecialsScreen';
+export { default as OnboardingMoveScreen } from './OnboardingMoveScreen';
+export { default as OnboardingVideoRecsScreen } from './OnboardingVideoRecsScreen';
+export { default as OnboardingRewardsScreen } from './OnboardingRewardsScreen';
 
 // Personal Questions (auto-advance on single select)
 export { default as OnboardingUserTypeScreen } from './OnboardingUserTypeScreen';

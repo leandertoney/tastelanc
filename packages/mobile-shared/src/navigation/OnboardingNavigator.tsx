@@ -1,21 +1,21 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from './types';
 import {
-  // Welcome
-  OnboardingSlidesScreen,
-  // Problem & Solution
+  // Opening
   OnboardingProblemsScreen,
-  OnboardingSolutionScreen,
   // Feature Discovery
   OnboardingHappyHoursScreen,
   OnboardingEventsScreen,
   OnboardingSpecialsScreen,
-  // Personal Questions
+  OnboardingMoveScreen,
+  OnboardingVideoRecsScreen,
+  OnboardingRewardsScreen,
+  // Personal Questions (kept registered for backward compat, but skipped in flow)
   OnboardingUserTypeScreen,
   OnboardingNameScreen,
   OnboardingDiningHabitsScreen,
   OnboardingEventSeekingScreen,
-  // Preferences
+  // Preferences (kept registered for backward compat, but skipped in flow)
   OnboardingBudgetScreen,
   OnboardingEntertainmentScreen,
   OnboardingFoodScreen,
@@ -45,35 +45,38 @@ export default function OnboardingNavigator() {
         gestureEnabled: true,
       }}
     >
-      {/* Phase 1: Welcome, Problem & Solution */}
-      <Stack.Screen name="OnboardingSlides" component={OnboardingSlidesScreen} />
+      {/* 1. THIS is how you go out */}
       <Stack.Screen name="OnboardingProblems" component={OnboardingProblemsScreen} />
-      <Stack.Screen name="OnboardingSolution" component={OnboardingSolutionScreen} />
-      {/* Feature Discovery */}
+      {/* 2-7. Feature Discovery */}
       {hasFeature('happyHours') && (
         <Stack.Screen name="OnboardingHappyHours" component={OnboardingHappyHoursScreen} />
       )}
       <Stack.Screen name="OnboardingEvents" component={OnboardingEventsScreen} />
       <Stack.Screen name="OnboardingSpecials" component={OnboardingSpecialsScreen} />
+      <Stack.Screen name="OnboardingMove" component={OnboardingMoveScreen} />
+      <Stack.Screen name="OnboardingVideoRecs" component={OnboardingVideoRecsScreen} />
+      <Stack.Screen name="OnboardingRewards" component={OnboardingRewardsScreen} />
 
-      {/* Phase 2: Personal Questions */}
+      {/* 10. Meet Rosie */}
+      <Stack.Screen name="OnboardingPremium" component={OnboardingPremiumScreen} />
+      <Stack.Screen name="OnboardingRosieAsk" component={OnboardingRosieAskScreen} />
+      {/* 11. Sentiment check */}
+      <Stack.Screen name="OnboardingReviewAsk" component={OnboardingReviewAskScreen} />
+      {/* 12-13. Paywall */}
+      <Stack.Screen name="OnboardingPaywall" component={OnboardingPaywallScreen} />
+      <Stack.Screen name="OnboardingLifetimeOffer" component={OnboardingLifetimeOfferScreen} />
+      {/* 14. Completion */}
+      <Stack.Screen name="OnboardingPremiumIntro" component={OnboardingPremiumIntroScreen} />
+
+      {/* Personal Questions — registered but skipped in main flow.
+          Still accessible from Settings > Dining Preferences for later collection. */}
       <Stack.Screen name="OnboardingUserType" component={OnboardingUserTypeScreen} />
       <Stack.Screen name="OnboardingName" component={OnboardingNameScreen} />
       <Stack.Screen name="OnboardingDiningHabits" component={OnboardingDiningHabitsScreen} />
       <Stack.Screen name="OnboardingEventSeeking" component={OnboardingEventSeekingScreen} />
-
-      {/* Phase 3: Preferences */}
       <Stack.Screen name="OnboardingBudget" component={OnboardingBudgetScreen} />
       <Stack.Screen name="OnboardingEntertainment" component={OnboardingEntertainmentScreen} />
       <Stack.Screen name="OnboardingFood" component={OnboardingFoodScreen} />
-
-      {/* Phase 4: Summary & Conversion */}
-      <Stack.Screen name="OnboardingPremium" component={OnboardingPremiumScreen} />
-      <Stack.Screen name="OnboardingRosieAsk" component={OnboardingRosieAskScreen} />
-      <Stack.Screen name="OnboardingReviewAsk" component={OnboardingReviewAskScreen} />
-      <Stack.Screen name="OnboardingPaywall" component={OnboardingPaywallScreen} />
-      <Stack.Screen name="OnboardingLifetimeOffer" component={OnboardingLifetimeOfferScreen} />
-      <Stack.Screen name="OnboardingPremiumIntro" component={OnboardingPremiumIntroScreen} />
 
       {/* Legacy screens (backward compatibility) */}
       <Stack.Screen name="OnboardingFrequency" component={OnboardingFrequencyScreen} />

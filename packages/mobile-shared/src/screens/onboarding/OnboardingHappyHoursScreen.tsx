@@ -1,147 +1,181 @@
 import { useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Dimensions,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withTiming,
   withDelay,
+  withSpring,
+  withTiming,
   withRepeat,
   withSequence,
-  withSpring,
   Easing,
-  interpolate,
 } from 'react-native-reanimated';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/types';
 import { getColors } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
-import OnboardingProgressBar from '../../components/OnboardingProgressBar';
-import { radius } from '../../constants/spacing';
-import { duration, spring, reveal, pulse } from '../../constants/animations';
+import FeatureDemoScreen from '../../components/FeatureDemoScreen';
 import { trackScreenView } from '../../lib/analytics';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingHappyHours'>;
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SW } = Dimensions.get('window');
+
+const DEALS = [
+  { name: 'The Imperial', deal: '$5 Drafts + Half Off Bar Menu', time: '4–7 PM', color: '#FFB347' },
+  { name: 'Marion Court Room', deal: '$2 Domestic Drafts, $4 Wells', time: '5–7 PM', color: '#FF6B6B' },
+  { name: 'Lucky Dog Cafe', deal: '$6 Cheesesteak Eggrolls', time: '4–6 PM', color: '#4ECDC4' },
+];
 
 export default function OnboardingHappyHoursScreen({ navigation }: Props) {
   const styles = useStyles();
   const colors = getColors();
 
-  const iconScale = useSharedValue(0);
-  const iconRotate = useSharedValue(0);
-  const textOpacity = useSharedValue(0);
-  const textTranslate = useSharedValue(30);
-  const glowOpacity = useSharedValue(0.3);
-  const floatY = useSharedValue(0);
+  // Staggered card entrances
+  const card0 = useSharedValue(0);
+  const card1 = useSharedValue(0);
+  const card2 = useSharedValue(0);
+  const cardTranslate0 = useSharedValue(60);
+  const cardTranslate1 = useSharedValue(60);
+  const cardTranslate2 = useSharedValue(60);
+
+  // Floating beer icon
+  const beerFloat = useSharedValue(0);
+  const beerRotate = useSharedValue(-8);
+  const beerOpacity = useSharedValue(0);
 
   useEffect(() => {
     trackScreenView('OnboardingStep_HappyHours');
-  }, []);
 
-  useEffect(() => {
-    iconScale.value = withDelay(reveal.content, withSpring(1, spring.default));
-    iconRotate.value = withDelay(reveal.content, withTiming(360, { duration: duration.slow, easing: Easing.out(Easing.cubic) }));
-    textOpacity.value = withDelay(reveal.items, withTiming(1, { duration: duration.normal }));
-    textTranslate.value = withDelay(reveal.items, withSpring(0, spring.default));
-    glowOpacity.value = withRepeat(
+    // Cards cascade in from below
+    card0.value = withDelay(400, withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) }));
+    cardTranslate0.value = withDelay(400, withSpring(0, { damping: 16, stiffness: 90 }));
+    card1.value = withDelay(550, withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) }));
+    cardTranslate1.value = withDelay(550, withSpring(0, { damping: 16, stiffness: 90 }));
+    card2.value = withDelay(700, withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) }));
+    cardTranslate2.value = withDelay(700, withSpring(0, { damping: 16, stiffness: 90 }));
+
+    // Floating beer icon
+    beerOpacity.value = withDelay(300, withTiming(0.15, { duration: 800 }));
+    beerFloat.value = withRepeat(
       withSequence(
-        withTiming(0.6, { duration: pulse.duration / 2 }),
-        withTiming(0.3, { duration: pulse.duration / 2 })
+        withTiming(-12, { duration: 2500, easing: Easing.inOut(Easing.sin) }),
+        withTiming(12, { duration: 2500, easing: Easing.inOut(Easing.sin) })
       ), -1, true
     );
-    floatY.value = withRepeat(
+    beerRotate.value = withRepeat(
       withSequence(
-        withTiming(-10, { duration: 2000, easing: Easing.sin }),
-        withTiming(10, { duration: 2000, easing: Easing.sin })
+        withTiming(8, { duration: 3000, easing: Easing.inOut(Easing.sin) }),
+        withTiming(-8, { duration: 3000, easing: Easing.inOut(Easing.sin) })
       ), -1, true
     );
   }, []);
 
-  const iconAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: iconScale.value },
-      { rotate: `${iconRotate.value}deg` },
-      { translateY: floatY.value },
-    ],
+  const cardStyles = [
+    useAnimatedStyle(() => ({ opacity: card0.value, transform: [{ translateY: cardTranslate0.value }] })),
+    useAnimatedStyle(() => ({ opacity: card1.value, transform: [{ translateY: cardTranslate1.value }] })),
+    useAnimatedStyle(() => ({ opacity: card2.value, transform: [{ translateY: cardTranslate2.value }] })),
+  ];
+  const beerStyle = useAnimatedStyle(() => ({
+    opacity: beerOpacity.value,
+    transform: [{ translateY: beerFloat.value }, { rotate: `${beerRotate.value}deg` }],
   }));
-
-  const glowAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
-    transform: [{ scale: interpolate(glowOpacity.value, [0.3, 0.6], [1, 1.2]) }],
-  }));
-
-  const textAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: textOpacity.value,
-    transform: [{ translateY: textTranslate.value }],
-  }));
-
-  const handleContinue = () => {
-    navigation.navigate('OnboardingEvents');
-  };
 
   return (
-    <TouchableOpacity style={styles.container} activeOpacity={1} onPress={handleContinue}>
-      <SafeAreaView style={styles.safeArea}>
-        <OnboardingProgressBar totalSteps={12} currentStep={2} style={{ paddingHorizontal: 20, paddingTop: 12 }} />
-        <View style={styles.content}>
-          <View style={styles.iconSection}>
-            <Animated.View style={[styles.glowCircle, glowAnimatedStyle]} />
-            <Animated.View style={[styles.iconContainer, iconAnimatedStyle]}>
-              <Ionicons name="beer" size={80} color={colors.accent} />
-            </Animated.View>
-            <Animated.View style={[styles.floatingElement, styles.floatLeft, iconAnimatedStyle]}>
-              <Ionicons name="time" size={32} color={colors.accent} />
-            </Animated.View>
-            <Animated.View style={[styles.floatingElement, styles.floatRight, styles.dealBadge, iconAnimatedStyle]}>
-              <Text style={styles.dealText}>50% OFF</Text>
-            </Animated.View>
-          </View>
-          <Animated.View style={[styles.textContent, textAnimatedStyle]}>
-            <Text style={styles.headline}>Happy Hour Finds You</Text>
-            <Text style={styles.subheadline}>
-              {`Real-time deals from your favorite spots.\nNo searching required.`}
-            </Text>
+    <FeatureDemoScreen
+      headline="Happy Hour Finds You"
+      subheadline={`Real-time deals, no searching\nJust show up`}
+      gradientColors={[colors.primary, `${colors.accent}25`, colors.primary]}
+      progressStep={2}
+      totalProgressSteps={15}
+      onContinue={() => navigation.navigate('OnboardingEvents')}
+    >
+      {/* Ambient floating beer icon */}
+      <Animated.View style={[styles.floatingIcon, styles.floatingBeer, beerStyle]}>
+        <Ionicons name="beer" size={80} color={colors.accent} />
+      </Animated.View>
+
+      {/* Deal cards */}
+      <View style={styles.cardsStack}>
+        {DEALS.map((deal, i) => (
+          <Animated.View
+            key={i}
+            style={[
+              styles.dealCard,
+              { borderLeftColor: deal.color, shadowColor: deal.color },
+              cardStyles[i],
+            ]}
+          >
+            <View style={styles.dealRow}>
+              <View style={styles.dealInfo}>
+                <Text style={styles.dealName}>{deal.name}</Text>
+                <Text style={[styles.dealOffer, { color: deal.color }]}>{deal.deal}</Text>
+              </View>
+              <View style={[styles.timeBadge, { backgroundColor: `${deal.color}18` }]}>
+                <Ionicons name="time-outline" size={12} color={deal.color} />
+                <Text style={[styles.timeText, { color: deal.color }]}>{deal.time}</Text>
+              </View>
+            </View>
           </Animated.View>
-        </View>
-        <View style={styles.footer}>
-          <View style={styles.pagination}>
-            <View style={[styles.dot, styles.dotActive]} />
-            <View style={styles.dot} />
-            <View style={styles.dot} />
-          </View>
-          <Text style={styles.tapHint}>Tap anywhere to continue</Text>
-        </View>
-      </SafeAreaView>
-    </TouchableOpacity>
+        ))}
+      </View>
+    </FeatureDemoScreen>
   );
 }
 
 const useStyles = createLazyStyles((colors) => ({
-  container: { flex: 1, backgroundColor: colors.primary },
-  safeArea: { flex: 1 },
-  content: { flex: 1, justifyContent: 'center' as const, alignItems: 'center' as const, paddingHorizontal: 32 },
-  iconSection: { width: SCREEN_WIDTH * 0.6, height: SCREEN_WIDTH * 0.6, justifyContent: 'center' as const, alignItems: 'center' as const, marginBottom: 48 },
-  glowCircle: { position: 'absolute' as const, width: 200, height: 200, borderRadius: 100, backgroundColor: colors.accent },
-  iconContainer: { width: 140, height: 140, borderRadius: 70, backgroundColor: colors.cardBg, justifyContent: 'center' as const, alignItems: 'center' as const, shadowColor: colors.accent, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 30, elevation: 10 },
-  floatingElement: { position: 'absolute' as const, backgroundColor: colors.cardBg, borderRadius: radius.lg, padding: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
-  floatLeft: { left: 0, top: '30%' },
-  floatRight: { right: 0, bottom: '30%' },
-  dealBadge: { backgroundColor: colors.valueGreen },
-  dealText: { color: colors.text, fontSize: 14, fontWeight: '700' as const },
-  textContent: { alignItems: 'center' as const },
-  headline: { fontSize: 32, fontWeight: '700' as const, color: colors.text, textAlign: 'center' as const, marginBottom: 16 },
-  subheadline: { fontSize: 17, color: colors.textMuted, textAlign: 'center' as const, lineHeight: 26 },
-  footer: { paddingHorizontal: 32, paddingBottom: 40, alignItems: 'center' as const },
-  pagination: { flexDirection: 'row' as const, gap: 8, marginBottom: 16 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.textSecondary },
-  dotActive: { width: 24, backgroundColor: colors.accent },
-  tapHint: { fontSize: 14, color: colors.textSecondary },
+  floatingIcon: {
+    position: 'absolute' as const,
+  },
+  floatingBeer: {
+    top: -20,
+    right: -10,
+  },
+  cardsStack: {
+    width: '100%',
+    gap: 12,
+  },
+  dealCard: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    borderLeftWidth: 4,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  dealRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 14,
+  },
+  dealInfo: {
+    flex: 1,
+  },
+  dealName: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: 'rgba(255,255,255,0.6)',
+    marginBottom: 3,
+  },
+  dealOffer: {
+    fontSize: 18,
+    fontWeight: '800' as const,
+  },
+  timeBadge: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  timeText: {
+    fontSize: 12,
+    fontWeight: '600' as const,
+  },
 }));
