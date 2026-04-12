@@ -16,6 +16,10 @@ import {
   X,
   Send,
   Eye,
+  Plus,
+  Pencil,
+  Trash2,
+  BarChart3,
 } from 'lucide-react';
 
 interface PlatformContact {
@@ -54,6 +58,15 @@ interface PlatformCampaign {
   sent_count: number;
   sent_at: string | null;
   created_at: string;
+}
+
+interface CampaignStats {
+  total: number;
+  delivered: number;
+  opened: number;
+  clicked: number;
+  bounced: number;
+  failed: number;
 }
 
 const MARKET_OPTIONS = [
@@ -211,6 +224,620 @@ function ImportModal({ onClose, onImported }: { onClose: () => void; onImported:
   );
 }
 
+// ─── Campaign Composer Modal ──────────────────────────────────────────────────
+
+function CampaignComposerModal({
+  campaign,
+  sources,
+  onClose,
+  onSaved,
+}: {
+  campaign?: PlatformCampaign;
+  sources: string[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [name, setName] = useState(campaign?.name || '');
+  const [subject, setSubject] = useState(campaign?.subject || '');
+  const [previewText, setPreviewText] = useState(campaign?.preview_text || '');
+  const [body, setBody] = useState(campaign?.body || '');
+  const [ctaText, setCtaText] = useState(campaign?.cta_text || '');
+  const [ctaUrl, setCtaUrl] = useState(campaign?.cta_url || '');
+  const [audienceMarketId, setAudienceMarketId] = useState(campaign?.audience_market_id || '');
+  const [audienceSource, setAudienceSource] = useState(campaign?.audience_source || '');
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [audienceCount, setAudienceCount] = useState<number | null>(null);
+
+  // Fetch audience count when filters change
+  useEffect(() => {
+    const fetchCount = async () => {
+      const params = new URLSearchParams();
+      if (audienceMarketId) params.set('market_id', audienceMarketId);
+      if (audienceSource) params.set('source', audienceSource);
+      try {
+        const res = await fetch(`/api/admin/platform-campaigns/audience-count?${params.toString()}`);
+        const data = await res.json();
+        setAudienceCount(data.count ?? null);
+      } catch {
+        setAudienceCount(null);
+      }
+    };
+    fetchCount();
+  }, [audienceMarketId, audienceSource]);
+
+  const handleSave = async () => {
+    if (!name.trim() || !subject.trim() || !body.trim()) return;
+    setIsSaving(true);
+    setError(null);
+
+    const payload = {
+      name: name.trim(),
+      subject: subject.trim(),
+      preview_text: previewText.trim() || null,
+      body: body.trim(),
+      cta_text: ctaText.trim() || null,
+      cta_url: ctaUrl.trim() || null,
+      audience_source: audienceSource || null,
+      audience_market_id: audienceMarketId || null,
+    };
+
+    try {
+      const url = campaign
+        ? `/api/admin/platform-campaigns/${campaign.id}`
+        : '/api/admin/platform-campaigns';
+      const res = await fetch(url, {
+        method: campaign ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Failed to save campaign');
+      } else {
+        onSaved();
+      }
+    } catch {
+      setError('Network error — please try again');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-tastelanc-surface rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="flex items-center justify-between p-6 border-b border-tastelanc-surface-light">
+          <div className="flex items-center gap-2">
+            <Mail className="w-5 h-5 text-tastelanc-accent" />
+            <h3 className="text-lg font-bold text-tastelanc-text-primary">
+              {campaign ? 'Edit Campaign' : 'New Campaign'}
+            </h3>
+          </div>
+          <button onClick={onClose} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm text-tastelanc-text-muted mb-1">
+              Campaign Name <span className="text-red-400">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Weekend Deals Roundup"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-3 py-2 bg-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder:text-tastelanc-text-faint focus:outline-none focus:ring-1 focus:ring-tastelanc-accent/50"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-tastelanc-text-muted mb-1">
+              Subject Line <span className="text-red-400">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. This weekend's hottest deals"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="w-full px-3 py-2 bg-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder:text-tastelanc-text-faint focus:outline-none focus:ring-1 focus:ring-tastelanc-accent/50"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-tastelanc-text-muted mb-1">Preview Text</label>
+            <input
+              type="text"
+              placeholder="Short preview shown in inbox (optional)"
+              value={previewText}
+              onChange={(e) => setPreviewText(e.target.value)}
+              className="w-full px-3 py-2 bg-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder:text-tastelanc-text-faint focus:outline-none focus:ring-1 focus:ring-tastelanc-accent/50"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-tastelanc-text-muted mb-1">
+              Email Body <span className="text-red-400">*</span>
+            </label>
+            <textarea
+              rows={8}
+              placeholder="Write your email content here..."
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              className="w-full px-3 py-2 bg-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder:text-tastelanc-text-faint focus:outline-none focus:ring-1 focus:ring-tastelanc-accent/50 resize-y"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm text-tastelanc-text-muted mb-1">CTA Button Text</label>
+              <input
+                type="text"
+                placeholder="e.g. Open the App"
+                value={ctaText}
+                onChange={(e) => setCtaText(e.target.value)}
+                className="w-full px-3 py-2 bg-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder:text-tastelanc-text-faint focus:outline-none focus:ring-1 focus:ring-tastelanc-accent/50"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-tastelanc-text-muted mb-1">CTA URL</label>
+              <input
+                type="text"
+                placeholder="e.g. https://tastelanc.com"
+                value={ctaUrl}
+                onChange={(e) => setCtaUrl(e.target.value)}
+                className="w-full px-3 py-2 bg-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary placeholder:text-tastelanc-text-faint focus:outline-none focus:ring-1 focus:ring-tastelanc-accent/50"
+              />
+            </div>
+          </div>
+
+          <div className="border-t border-tastelanc-surface-light pt-4">
+            <p className="text-sm font-medium text-tastelanc-text-primary mb-3">Audience Targeting</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm text-tastelanc-text-muted mb-1">Market</label>
+                <select
+                  value={audienceMarketId}
+                  onChange={(e) => setAudienceMarketId(e.target.value)}
+                  className="w-full px-3 py-2 bg-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary focus:outline-none focus:ring-1 focus:ring-tastelanc-accent/50"
+                >
+                  {MARKET_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-tastelanc-text-muted mb-1">Source</label>
+                <select
+                  value={audienceSource}
+                  onChange={(e) => setAudienceSource(e.target.value)}
+                  className="w-full px-3 py-2 bg-tastelanc-surface-light rounded-lg text-sm text-tastelanc-text-primary focus:outline-none focus:ring-1 focus:ring-tastelanc-accent/50"
+                >
+                  <option value="">All Sources</option>
+                  {sources.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {audienceCount !== null && (
+              <p className="text-tastelanc-text-muted text-sm mt-2">
+                Will send to <span className="font-bold text-tastelanc-text-primary">{audienceCount}</span> subscribed contacts
+              </p>
+            )}
+          </div>
+
+          {error && (
+            <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
+
+          <button
+            onClick={handleSave}
+            disabled={!name.trim() || !subject.trim() || !body.trim() || isSaving}
+            className="w-full py-3 bg-tastelanc-accent hover:bg-tastelanc-accent/90 text-black font-bold rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isSaving ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+            ) : (
+              campaign ? 'Update Draft' : 'Save as Draft'
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Send Confirmation Modal ──────────────────────────────────────────────────
+
+function SendConfirmationModal({
+  campaign,
+  onClose,
+  onSent,
+}: {
+  campaign: PlatformCampaign;
+  onClose: () => void;
+  onSent: () => void;
+}) {
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<{ sent: number; total: number } | null>(null);
+  const [audienceCount, setAudienceCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      const params = new URLSearchParams();
+      if (campaign.audience_market_id) params.set('market_id', campaign.audience_market_id);
+      if (campaign.audience_source) params.set('source', campaign.audience_source);
+      try {
+        const res = await fetch(`/api/admin/platform-campaigns/audience-count?${params.toString()}`);
+        const data = await res.json();
+        setAudienceCount(data.count ?? 0);
+      } catch {
+        setAudienceCount(0);
+      }
+    };
+    fetchCount();
+  }, [campaign]);
+
+  const handleSend = async () => {
+    setIsSending(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/platform-campaigns/${campaign.id}/send`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Failed to send campaign');
+      } else {
+        setResult(data);
+      }
+    } catch {
+      setError('Network error — please try again');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-tastelanc-surface rounded-2xl w-full max-w-md p-6 shadow-2xl">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Send className="w-5 h-5 text-tastelanc-accent" />
+            <h3 className="text-lg font-bold text-tastelanc-text-primary">Send Campaign</h3>
+          </div>
+          <button onClick={onClose} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {result ? (
+          <div className="text-center py-4">
+            <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-3" />
+            <p className="text-tastelanc-text-primary font-bold text-lg mb-1">
+              Campaign sent!
+            </p>
+            <p className="text-tastelanc-text-muted text-sm">
+              {result.sent} of {result.total} emails sent successfully
+            </p>
+            <button
+              onClick={() => { onSent(); onClose(); }}
+              className="mt-6 w-full py-2 bg-tastelanc-accent text-black font-medium rounded-xl"
+            >
+              Done
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="bg-tastelanc-surface-light rounded-xl p-4">
+              <p className="text-tastelanc-text-primary font-medium">{campaign.name}</p>
+              <p className="text-tastelanc-text-faint text-sm mt-0.5">Subject: {campaign.subject}</p>
+              <p className="text-tastelanc-text-faint text-sm">
+                Audience: {campaign.audience_source || 'All Contacts'}
+                {campaign.market_name && ` · ${campaign.market_name}`}
+              </p>
+            </div>
+
+            {audienceCount !== null && (
+              <div className="bg-tastelanc-accent/10 border border-tastelanc-accent/20 rounded-xl p-4 text-center">
+                <p className="text-tastelanc-text-primary text-lg font-bold">{audienceCount}</p>
+                <p className="text-tastelanc-text-muted text-sm">contacts will receive this email</p>
+              </div>
+            )}
+
+            <p className="text-tastelanc-text-muted text-sm">
+              This action cannot be undone. The email will be sent immediately to all matching contacts.
+            </p>
+
+            {error && (
+              <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={onClose}
+                className="flex-1 py-3 bg-tastelanc-surface-light text-tastelanc-text-primary font-medium rounded-xl hover:bg-tastelanc-surface-light/80 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSend}
+                disabled={isSending || audienceCount === 0}
+                className="flex-1 py-3 bg-tastelanc-accent hover:bg-tastelanc-accent/90 text-black font-bold rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isSending ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</>
+                ) : (
+                  <><Send className="w-4 h-4" /> Send Now</>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Campaign Preview Modal ───────────────────────────────────────────────────
+
+function CampaignPreviewModal({
+  campaign,
+  onClose,
+}: {
+  campaign: PlatformCampaign;
+  onClose: () => void;
+}) {
+  const [activeTab, setActiveTab] = useState<'preview' | 'details' | 'stats'>('preview');
+  const [stats, setStats] = useState<CampaignStats | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    if (campaign.status === 'sent') {
+      const fetchStats = async () => {
+        try {
+          const res = await fetch(`/api/admin/platform-campaigns/${campaign.id}`);
+          const data = await res.json();
+          setStats(data.stats || null);
+        } catch {
+          // ignore
+        }
+      };
+      fetchStats();
+    }
+  }, [campaign]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-tastelanc-surface rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-tastelanc-surface-light">
+          <div>
+            <h3 className="text-base font-bold text-tastelanc-text-primary">{campaign.name}</h3>
+            <p className="text-tastelanc-text-faint text-xs mt-0.5">
+              {campaign.status === 'sent' && campaign.sent_at
+                ? `Sent ${new Date(campaign.sent_at).toLocaleDateString()} · ${campaign.sent_count} delivered`
+                : 'Draft'}
+            </p>
+          </div>
+          <button onClick={onClose} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-tastelanc-surface-light px-6">
+          <button
+            onClick={() => setActiveTab('preview')}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'preview'
+                ? 'border-tastelanc-accent text-tastelanc-accent'
+                : 'border-transparent text-tastelanc-text-muted hover:text-tastelanc-text-primary'
+            }`}
+          >
+            Email Preview
+          </button>
+          <button
+            onClick={() => setActiveTab('details')}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'details'
+                ? 'border-tastelanc-accent text-tastelanc-accent'
+                : 'border-transparent text-tastelanc-text-muted hover:text-tastelanc-text-primary'
+            }`}
+          >
+            Details
+          </button>
+          {campaign.status === 'sent' && (
+            <button
+              onClick={() => setActiveTab('stats')}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'stats'
+                  ? 'border-tastelanc-accent text-tastelanc-accent'
+                  : 'border-transparent text-tastelanc-text-muted hover:text-tastelanc-text-primary'
+              }`}
+            >
+              Stats
+            </button>
+          )}
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {activeTab === 'preview' && (
+            <div className="p-4">
+              <iframe
+                ref={iframeRef}
+                src={`/api/admin/platform-campaigns/${campaign.id}/preview`}
+                className="w-full rounded-lg border border-tastelanc-surface-light bg-white"
+                style={{ minHeight: '500px' }}
+                title="Email Preview"
+              />
+            </div>
+          )}
+
+          {activeTab === 'details' && (
+            <div className="p-6 space-y-4">
+              <div>
+                <p className="text-tastelanc-text-faint text-xs uppercase tracking-wide mb-1">Subject</p>
+                <p className="text-tastelanc-text-primary font-medium">{campaign.subject}</p>
+              </div>
+              {campaign.preview_text && (
+                <div>
+                  <p className="text-tastelanc-text-faint text-xs uppercase tracking-wide mb-1">Preview text</p>
+                  <p className="text-tastelanc-text-muted text-sm">{campaign.preview_text}</p>
+                </div>
+              )}
+              <div>
+                <p className="text-tastelanc-text-faint text-xs uppercase tracking-wide mb-1">Body</p>
+                <div className="bg-tastelanc-surface-light rounded-lg p-4">
+                  {campaign.body.split('\n').map((line, i) => (
+                    <p key={i} className="text-tastelanc-text-primary text-sm mb-2 last:mb-0">{line || <>&nbsp;</>}</p>
+                  ))}
+                </div>
+              </div>
+              {campaign.cta_text && (
+                <div>
+                  <p className="text-tastelanc-text-faint text-xs uppercase tracking-wide mb-1">Call to action</p>
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-tastelanc-accent/20 text-tastelanc-accent rounded-lg text-sm font-medium">
+                    {campaign.cta_text}
+                  </div>
+                  {campaign.cta_url && (
+                    <p className="text-tastelanc-text-faint text-xs mt-1">{campaign.cta_url}</p>
+                  )}
+                </div>
+              )}
+              <div className="pt-2 border-t border-tastelanc-surface-light">
+                <p className="text-tastelanc-text-faint text-xs">
+                  Audience: <span className="text-tastelanc-text-muted">{campaign.audience_source || 'All platform contacts'}</span>
+                  {campaign.market_name && <span> · {campaign.market_name}</span>}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'stats' && (
+            <div className="p-6">
+              {stats ? (
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-tastelanc-surface-light rounded-xl p-4 text-center">
+                    <p className="text-2xl font-bold text-tastelanc-text-primary">{stats.total}</p>
+                    <p className="text-tastelanc-text-muted text-xs mt-1">Sent</p>
+                  </div>
+                  <div className="bg-tastelanc-surface-light rounded-xl p-4 text-center">
+                    <p className="text-2xl font-bold text-green-400">{stats.delivered}</p>
+                    <p className="text-tastelanc-text-muted text-xs mt-1">Delivered</p>
+                  </div>
+                  <div className="bg-tastelanc-surface-light rounded-xl p-4 text-center">
+                    <p className="text-2xl font-bold text-blue-400">{stats.opened}</p>
+                    <p className="text-tastelanc-text-muted text-xs mt-1">Opened</p>
+                  </div>
+                  <div className="bg-tastelanc-surface-light rounded-xl p-4 text-center">
+                    <p className="text-2xl font-bold text-purple-400">{stats.clicked}</p>
+                    <p className="text-tastelanc-text-muted text-xs mt-1">Clicked</p>
+                  </div>
+                  <div className="bg-tastelanc-surface-light rounded-xl p-4 text-center">
+                    <p className="text-2xl font-bold text-red-400">{stats.bounced}</p>
+                    <p className="text-tastelanc-text-muted text-xs mt-1">Bounced</p>
+                  </div>
+                  <div className="bg-tastelanc-surface-light rounded-xl p-4 text-center">
+                    <p className="text-2xl font-bold text-tastelanc-text-faint">{stats.failed}</p>
+                    <p className="text-tastelanc-text-muted text-xs mt-1">Failed</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Loader2 className="w-6 h-6 text-tastelanc-accent mx-auto mb-2 animate-spin" />
+                  <p className="text-tastelanc-text-muted text-sm">Loading stats...</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Delete Confirmation Modal ────────────────────────────────────────────────
+
+function DeleteConfirmationModal({
+  campaign,
+  onClose,
+  onDeleted,
+}: {
+  campaign: PlatformCampaign;
+  onClose: () => void;
+  onDeleted: () => void;
+}) {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/platform-campaigns/${campaign.id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || 'Failed to delete campaign');
+      } else {
+        onDeleted();
+        onClose();
+      }
+    } catch {
+      setError('Network error — please try again');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-tastelanc-surface rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+        <h3 className="text-lg font-bold text-tastelanc-text-primary mb-2">Delete Campaign?</h3>
+        <p className="text-tastelanc-text-muted text-sm mb-4">
+          &quot;{campaign.name}&quot; will be permanently deleted. This cannot be undone.
+        </p>
+        {error && (
+          <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/20 rounded-lg p-3 mb-4">
+            <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+            <p className="text-red-400 text-sm">{error}</p>
+          </div>
+        )}
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2 bg-tastelanc-surface-light text-tastelanc-text-primary font-medium rounded-xl hover:bg-tastelanc-surface-light/80 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isDeleting ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Deleting...</>
+            ) : (
+              'Delete'
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Platform Contacts Tab ────────────────────────────────────────────────────
 
 export default function PlatformContactsTab() {
@@ -224,6 +851,10 @@ export default function PlatformContactsTab() {
   const [showImport, setShowImport] = useState(false);
   const [campaigns, setCampaigns] = useState<PlatformCampaign[]>([]);
   const [previewCampaign, setPreviewCampaign] = useState<PlatformCampaign | null>(null);
+  const [showComposer, setShowComposer] = useState(false);
+  const [editCampaign, setEditCampaign] = useState<PlatformCampaign | undefined>(undefined);
+  const [sendCampaign, setSendCampaign] = useState<PlatformCampaign | null>(null);
+  const [deleteCampaign, setDeleteCampaign] = useState<PlatformCampaign | null>(null);
 
   const fetchContacts = useCallback(async () => {
     setIsLoading(true);
@@ -262,6 +893,11 @@ export default function PlatformContactsTab() {
     const params = new URLSearchParams({ format: 'csv' });
     if (sourceFilter) params.set('source', sourceFilter);
     window.open(`/api/admin/platform-contacts?${params.toString()}`, '_blank');
+  };
+
+  const openComposer = (campaign?: PlatformCampaign) => {
+    setEditCampaign(campaign);
+    setShowComposer(true);
   };
 
   return (
@@ -446,12 +1082,27 @@ export default function PlatformContactsTab() {
       </Card>
 
       {/* Campaigns */}
-      {campaigns.length > 0 && (
-        <Card className="overflow-hidden mt-6">
-          <div className="p-4 md:p-6 border-b border-tastelanc-surface-light">
+      <Card className="overflow-hidden mt-6">
+        <div className="p-4 md:p-6 border-b border-tastelanc-surface-light flex items-center justify-between">
+          <div>
             <h3 className="text-base font-semibold text-tastelanc-text-primary">Email Campaigns</h3>
             <p className="text-tastelanc-text-muted text-sm mt-0.5">Draft and sent campaigns for your platform contacts</p>
           </div>
+          <button
+            onClick={() => openComposer()}
+            className="flex items-center gap-2 px-3 py-2 bg-tastelanc-accent rounded-lg text-black font-medium hover:bg-tastelanc-accent/90 transition-colors text-sm"
+          >
+            <Plus className="w-4 h-4" />
+            New Campaign
+          </button>
+        </div>
+
+        {campaigns.length === 0 ? (
+          <div className="p-12 text-center">
+            <Mail className="w-10 h-10 text-tastelanc-text-faint mx-auto mb-3" />
+            <p className="text-tastelanc-text-muted text-sm">No campaigns yet. Create your first one above.</p>
+          </div>
+        ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -477,9 +1128,20 @@ export default function PlatformContactsTab() {
                       {c.status === 'draft' ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400">Draft</span>
                       ) : c.status === 'sent' ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-400">Sent</span>
+                        <div>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-400">Sent</span>
+                          {c.sent_at && (
+                            <p className="text-tastelanc-text-faint text-xs mt-0.5">
+                              {new Date(c.sent_at).toLocaleDateString()} · {c.sent_count} sent
+                            </p>
+                          )}
+                        </div>
+                      ) : c.status === 'sending' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400">
+                          <Loader2 className="w-3 h-3 animate-spin" /> Sending
+                        </span>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-tastelanc-surface-light text-tastelanc-text-faint">{c.status}</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-400">{c.status}</span>
                       )}
                     </td>
                     <td className="py-3 px-6">
@@ -487,18 +1149,46 @@ export default function PlatformContactsTab() {
                         <button
                           onClick={() => setPreviewCampaign(c)}
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-tastelanc-surface-light text-tastelanc-text-muted rounded-lg text-xs hover:text-tastelanc-text-primary transition-colors"
+                          title="Preview email"
                         >
                           <Eye className="w-3 h-3" />
                           Preview
                         </button>
                         {c.status === 'draft' && (
+                          <>
+                            <button
+                              onClick={() => openComposer(c)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-tastelanc-surface-light text-tastelanc-text-muted rounded-lg text-xs hover:text-tastelanc-text-primary transition-colors"
+                              title="Edit campaign"
+                            >
+                              <Pencil className="w-3 h-3" />
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => setSendCampaign(c)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-tastelanc-accent/20 text-tastelanc-accent rounded-lg text-xs hover:bg-tastelanc-accent/30 transition-colors"
+                              title="Send campaign"
+                            >
+                              <Send className="w-3 h-3" />
+                              Send
+                            </button>
+                            <button
+                              onClick={() => setDeleteCampaign(c)}
+                              className="flex items-center gap-1.5 px-2 py-1.5 text-tastelanc-text-faint rounded-lg text-xs hover:text-red-400 transition-colors"
+                              title="Delete campaign"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </>
+                        )}
+                        {c.status === 'sent' && (
                           <button
-                            disabled
-                            title="Coming soon — send when ready"
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-tastelanc-accent/20 text-tastelanc-accent rounded-lg text-xs opacity-50 cursor-not-allowed"
+                            onClick={() => { setPreviewCampaign(c); }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-tastelanc-surface-light text-tastelanc-text-muted rounded-lg text-xs hover:text-tastelanc-text-primary transition-colors"
+                            title="View stats"
                           >
-                            <Send className="w-3 h-3" />
-                            Send
+                            <BarChart3 className="w-3 h-3" />
+                            Stats
                           </button>
                         )}
                       </div>
@@ -508,61 +1198,50 @@ export default function PlatformContactsTab() {
               </tbody>
             </table>
           </div>
-        </Card>
+        )}
+      </Card>
+
+      {/* Modals */}
+      {previewCampaign && (
+        <CampaignPreviewModal
+          campaign={previewCampaign}
+          onClose={() => setPreviewCampaign(null)}
+        />
       )}
 
-      {/* Campaign Preview Modal */}
-      {previewCampaign && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-tastelanc-surface rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-center justify-between p-6 border-b border-tastelanc-surface-light">
-              <div>
-                <h3 className="text-base font-bold text-tastelanc-text-primary">{previewCampaign.name}</h3>
-                <p className="text-tastelanc-text-faint text-xs mt-0.5">Email preview</p>
-              </div>
-              <button onClick={() => setPreviewCampaign(null)} className="text-tastelanc-text-muted hover:text-tastelanc-text-primary">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <p className="text-tastelanc-text-faint text-xs uppercase tracking-wide mb-1">Subject</p>
-                <p className="text-tastelanc-text-primary font-medium">{previewCampaign.subject}</p>
-              </div>
-              {previewCampaign.preview_text && (
-                <div>
-                  <p className="text-tastelanc-text-faint text-xs uppercase tracking-wide mb-1">Preview text</p>
-                  <p className="text-tastelanc-text-muted text-sm">{previewCampaign.preview_text}</p>
-                </div>
-              )}
-              <div>
-                <p className="text-tastelanc-text-faint text-xs uppercase tracking-wide mb-1">Body</p>
-                <div className="bg-tastelanc-surface-light rounded-lg p-4">
-                  {previewCampaign.body.split('\n').map((line, i) => (
-                    <p key={i} className="text-tastelanc-text-primary text-sm mb-2 last:mb-0">{line || <>&nbsp;</>}</p>
-                  ))}
-                </div>
-              </div>
-              {previewCampaign.cta_text && (
-                <div>
-                  <p className="text-tastelanc-text-faint text-xs uppercase tracking-wide mb-1">Call to action</p>
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-tastelanc-accent/20 text-tastelanc-accent rounded-lg text-sm font-medium">
-                    {previewCampaign.cta_text}
-                  </div>
-                  {previewCampaign.cta_url && (
-                    <p className="text-tastelanc-text-faint text-xs mt-1">{previewCampaign.cta_url}</p>
-                  )}
-                </div>
-              )}
-              <div className="pt-2 border-t border-tastelanc-surface-light">
-                <p className="text-tastelanc-text-faint text-xs">
-                  Audience: <span className="text-tastelanc-text-muted">{previewCampaign.audience_source || 'All platform contacts'}</span>
-                  {previewCampaign.market_name && <span> · {previewCampaign.market_name}</span>}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+      {showComposer && (
+        <CampaignComposerModal
+          campaign={editCampaign}
+          sources={sources}
+          onClose={() => { setShowComposer(false); setEditCampaign(undefined); }}
+          onSaved={() => {
+            setShowComposer(false);
+            setEditCampaign(undefined);
+            fetchCampaigns();
+          }}
+        />
+      )}
+
+      {sendCampaign && (
+        <SendConfirmationModal
+          campaign={sendCampaign}
+          onClose={() => setSendCampaign(null)}
+          onSent={() => {
+            setSendCampaign(null);
+            fetchCampaigns();
+          }}
+        />
+      )}
+
+      {deleteCampaign && (
+        <DeleteConfirmationModal
+          campaign={deleteCampaign}
+          onClose={() => setDeleteCampaign(null)}
+          onDeleted={() => {
+            setDeleteCampaign(null);
+            fetchCampaigns();
+          }}
+        />
       )}
 
       {showImport && (

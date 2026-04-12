@@ -5,6 +5,7 @@ import {
   Text,
   ScrollView,
   Image,
+  FlatList,
   ActivityIndicator,
   Dimensions,
   RefreshControl,
@@ -24,14 +25,13 @@ import type {
   RestaurantHours,
   HappyHour,
   Special,
-  Event,
   Tier,
   Menu,
 } from '../types/database';
 import { getColors, getBrand, getSupabase, hasFeature } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
-import { fetchEvents } from '../lib/events';
+import { fetchEvents, type ApiEvent } from '../lib/events';
 import { trackScreenView, trackClick } from '../lib/analytics';
 import { onRestaurantDetailView } from '../lib/interstitialAds';
 import { usePremiumStatus } from '../hooks/usePremiumStatus';
@@ -58,6 +58,7 @@ import RestaurantWeekBadge from '../components/RestaurantWeekBadge';
 import CoffeeChocolateTrailBadge from '../components/CoffeeChocolateTrailBadge';
 import HoursAccordion from '../components/HoursAccordion';
 import TierLockedEmptyState from '../components/TierLockedEmptyState';
+import EventFlyerCard from '../components/EventFlyerCard';
 import VideoRecommendationFeed from '../components/VideoRecommendationFeed';
 import type { Tab } from '../components';
 import { formatCategoryName, formatTime, formatFeatureName, getFeatureIconName } from '../lib/formatters';
@@ -84,6 +85,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'RestaurantDetail'>;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HERO_HEIGHT = 320;
 const ELITE_HERO_HEIGHT = 350;
+const EVENT_FLYER_WIDTH = SCREEN_WIDTH * 0.7;
+const EVENT_FLYER_HEIGHT = EVENT_FLYER_WIDTH * 1.3;
 
 // Day abbreviations for hours display
 const DAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -190,7 +193,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
     () => new Set([...serverClaimedIds, ...localClaimedIds]),
     [serverClaimedIds, localClaimedIds]
   );
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<ApiEvent[]>([]);
   // Partner events bypass the tier gate — always visible regardless of restaurant tier
   const partnerEvents = useMemo(
     () => events.filter((e) => e.partner_slug === 'thirsty-for-knowledge'),
@@ -279,23 +282,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
       if (specialsRes.data) setSpecials(specialsRes.data);
       if (menusRes.data) setMenus((menusRes.data as Menu[]).filter(m => !m.is_hidden_from_tab));
       setCoupons(couponsData);
-      // Map API events to Event type
-      setEvents(eventsData.map(e => ({
-        id: e.id,
-        restaurant_id: id,
-        name: e.name,
-        description: e.description || null,
-        event_type: e.event_type,
-        is_recurring: e.is_recurring,
-        days_of_week: e.days_of_week,
-        event_date: e.event_date || null,
-        start_time: e.start_time,
-        end_time: e.end_time,
-        performer_name: e.performer_name || null,
-        cover_charge: e.cover_charge || null,
-        image_url: e.image_url,
-        is_active: true,
-      })));
+      setEvents(eventsData);
     } catch (err) {
       console.error('Error fetching restaurant:', err);
       setError('Failed to load restaurant details');
@@ -973,40 +960,23 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                     <Ionicons name="bulb" size={13} color="#FCD34D" />
                     <Text style={styles.partnerEventsBadgeText}>Thirsty for Knowledge</Text>
                   </View>
-                  {partnerEvents.map((event) => (
-                    <TouchableOpacity
-                      key={event.id}
-                      style={styles.contentCard}
-                      activeOpacity={0.8}
-                      onPress={() => navigation.navigate('EventDetail', { event: event as any })}
-                    >
-                      {event.image_url && (
-                        <Image
-                          source={{ uri: event.image_url }}
-                          style={styles.contentImage}
-                          resizeMode="cover"
-                        />
-                      )}
-                      <View style={styles.contentCardBody}>
-                        <View style={styles.contentHeader}>
-                          <Text style={styles.contentTitle}>{event.name}</Text>
-                          <TagChip label="Trivia" variant="info" />
-                        </View>
-                        {event.performer_name && (
-                          <Text style={styles.contentPerformer}>{event.performer_name}</Text>
-                        )}
-                        <Text style={styles.contentTime}>
-                          {formatTime(event.start_time)}
-                          {event.end_time && ` - ${formatTime(event.end_time)}`}
-                        </Text>
-                        {event.is_recurring && (
-                          <Text style={styles.contentDays}>
-                            {event.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
-                          </Text>
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                  ))}
+                  <FlatList
+                    data={partnerEvents}
+                    keyExtractor={(item) => item.id}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    snapToInterval={EVENT_FLYER_WIDTH + 12}
+                    decelerationRate="fast"
+                    contentContainerStyle={styles.eventFlyerList}
+                    renderItem={({ item }) => (
+                      <EventFlyerCard
+                        event={item}
+                        width={EVENT_FLYER_WIDTH}
+                        height={EVENT_FLYER_HEIGHT}
+                        onPress={() => navigation.navigate('EventDetail', { event: item as any })}
+                      />
+                    )}
+                  />
                 </View>
               )}
 
@@ -1029,38 +999,23 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                   />
                 ) : null
               ) : regularEvents.length > 0 ? (
-                regularEvents.map((event) => (
-                  <View key={event.id} style={styles.contentCard}>
-                    {event.image_url && (
-                      <Image
-                        source={{ uri: event.image_url }}
-                        style={styles.contentImage}
-                        resizeMode="cover"
-                      />
-                    )}
-                    <View style={styles.contentCardBody}>
-                      <View style={styles.contentHeader}>
-                        <Text style={styles.contentTitle}>{event.name}</Text>
-                        <TagChip label={event.event_type.replace('_', ' ')} variant="info" />
-                      </View>
-                      {event.performer_name && (
-                        <Text style={styles.contentPerformer}>{event.performer_name}</Text>
-                      )}
-                      <Text style={styles.contentTime}>
-                        {formatTime(event.start_time)}
-                        {event.end_time && ` - ${formatTime(event.end_time)}`}
-                      </Text>
-                      {event.is_recurring && (
-                        <Text style={styles.contentDays}>
-                          {event.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
-                        </Text>
-                      )}
-                      {event.cover_charge && (
-                        <Text style={styles.contentPrice}>Cover: ${event.cover_charge}</Text>
-                      )}
-                    </View>
-                  </View>
-                ))
+                <FlatList
+                  data={regularEvents}
+                  keyExtractor={(item) => item.id}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  snapToInterval={EVENT_FLYER_WIDTH + 12}
+                  decelerationRate="fast"
+                  contentContainerStyle={styles.eventFlyerList}
+                  renderItem={({ item }) => (
+                    <EventFlyerCard
+                      event={item}
+                      width={EVENT_FLYER_WIDTH}
+                      height={EVENT_FLYER_HEIGHT}
+                      onPress={() => navigation.navigate('EventDetail', { event: item as any })}
+                    />
+                  )}
+                />
               ) : partnerEvents.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Ionicons name="calendar-outline" size={48} color={colors.textSecondary} />
@@ -1355,6 +1310,7 @@ const useStyles = createLazyStyles((colors) => ({
   tabContent: { minHeight: 200 },
   tabSection: { padding: 16 },
   partnerEventsBlock: { marginBottom: 16 },
+  eventFlyerList: { gap: 12 },
   partnerEventsBadge: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 5, marginBottom: 10, alignSelf: 'flex-start' as const, backgroundColor: '#0D1B2A', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(252,211,77,0.5)', paddingHorizontal: 8, paddingVertical: 4 },
   partnerEventsBadgeText: { fontSize: 12, fontWeight: '800' as const, color: '#FCD34D', letterSpacing: 0.3 },
   contentCard: { backgroundColor: colors.cardBg, borderRadius: radius.md, overflow: 'hidden' as const, marginBottom: 12 },

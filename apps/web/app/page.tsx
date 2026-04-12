@@ -70,7 +70,7 @@ export default function HomePage() {
           </div>
 
           {/* Right: Two phones — home screen + recommend camera */}
-          <div className="flex-shrink-0 flex items-start">
+          <div className="flex-shrink-0 flex items-start scale-[0.65] sm:scale-100 origin-top">
             {/* Primary phone — home screen */}
             <div className="opacity-0 anim-fade-up-slow relative z-10" style={{ animationDelay: '0.3s' }}>
               <div className="anim-float" style={{ animationDelay: '1.2s' }}>

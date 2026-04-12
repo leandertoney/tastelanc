@@ -1,17 +1,21 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { verifyAdminAccess } from '@/lib/auth/admin-access';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function GET() {
   try {
-    const { data: campaigns, error } = await supabaseAdmin
+    const supabase = await createClient();
+    try { await verifyAdminAccess(supabase); }
+    catch (err: unknown) {
+      const e = err as { message?: string; status?: number };
+      return NextResponse.json({ error: e.message }, { status: e.status || 500 });
+    }
+
+    const serviceClient = createServiceRoleClient();
+    const { data: campaigns, error } = await serviceClient
       .from('platform_email_campaigns')
       .select('*, market:markets(name)')
       .order('created_at', { ascending: false });
@@ -30,6 +34,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    let admin;
+    try { admin = await verifyAdminAccess(supabase); }
+    catch (err: unknown) {
+      const e = err as { message?: string; status?: number };
+      return NextResponse.json({ error: e.message }, { status: e.status || 500 });
+    }
+
     const body = await request.json();
     const { name, subject, preview_text, body: emailBody, cta_text, cta_url, audience_source, audience_market_id } = body;
 
@@ -37,7 +49,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'name, subject, and body are required' }, { status: 400 });
     }
 
-    const { data, error } = await supabaseAdmin
+    const serviceClient = createServiceRoleClient();
+    const { data, error } = await serviceClient
       .from('platform_email_campaigns')
       .insert({
         name,
@@ -49,6 +62,7 @@ export async function POST(request: Request) {
         audience_source: audience_source || null,
         audience_market_id: audience_market_id || null,
         status: 'draft',
+        created_by: admin.userId,
       })
       .select()
       .single();

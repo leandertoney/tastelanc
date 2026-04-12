@@ -30,6 +30,28 @@ export async function GET(request: Request) {
       );
     }
 
+    // Handle platform unsubscribes
+    if (type === 'platform') {
+      const { error: platError } = await supabase
+        .from('platform_contacts')
+        .update({
+          is_unsubscribed: true,
+          unsubscribed_at: new Date().toISOString(),
+        })
+        .eq('email', email.toLowerCase());
+
+      if (platError) {
+        console.error('Platform unsubscribe error:', platError);
+        return NextResponse.redirect(
+          new URL('/unsubscribe?error=failed', request.url)
+        );
+      }
+
+      return NextResponse.redirect(
+        new URL('/unsubscribe?success=true', request.url)
+      );
+    }
+
     // Handle restaurant-specific unsubscribes
     if (type === 'restaurant') {
       const restaurantIdParam = searchParams.get('restaurant_id');

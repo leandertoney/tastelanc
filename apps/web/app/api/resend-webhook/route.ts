@@ -51,14 +51,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true });
     }
 
-    // Get the email send record
-    const { data: sendRecord } = await supabase
-      .from('email_sends')
-      .select('id, status, opened_at, clicked_at')
-      .eq('resend_id', resendId)
-      .single();
+    // Cascade lookup across all send tables
+    const SEND_TABLES = ['email_sends', 'restaurant_email_sends', 'platform_email_sends'] as const;
+    let sendRecord: { id: string; status: string; opened_at: string | null; clicked_at: string | null } | null = null;
+    let tableName = '';
 
-    if (!sendRecord) {
+    for (const table of SEND_TABLES) {
+      const { data: record } = await supabase
+        .from(table)
+        .select('id, status, opened_at, clicked_at')
+        .eq('resend_id', resendId)
+        .single();
+      if (record) {
+        sendRecord = record;
+        tableName = table;
+        break;
+      }
+    }
+
+    if (!sendRecord || !tableName) {
       console.log('No send record found for:', resendId);
       return NextResponse.json({ received: true });
     }
@@ -68,7 +79,7 @@ export async function POST(request: Request) {
     switch (type) {
       case 'email.delivered':
         await supabase
-          .from('email_sends')
+          .from(tableName)
           .update({ status: 'delivered' })
           .eq('id', sendRecord.id);
         break;
@@ -76,7 +87,7 @@ export async function POST(request: Request) {
       case 'email.opened':
         if (!sendRecord.opened_at) {
           await supabase
-            .from('email_sends')
+            .from(tableName)
             .update({ status: 'opened', opened_at: now })
             .eq('id', sendRecord.id);
         }
@@ -85,13 +96,13 @@ export async function POST(request: Request) {
       case 'email.clicked':
         if (!sendRecord.clicked_at) {
           await supabase
-            .from('email_sends')
+            .from(tableName)
             .update({ status: 'clicked', clicked_at: now })
             .eq('id', sendRecord.id);
 
           if (!sendRecord.opened_at) {
             await supabase
-              .from('email_sends')
+              .from(tableName)
               .update({ opened_at: now })
               .eq('id', sendRecord.id);
           }
@@ -100,7 +111,7 @@ export async function POST(request: Request) {
 
       case 'email.bounced':
         await supabase
-          .from('email_sends')
+          .from(tableName)
           .update({
             status: 'bounced',
             bounced_at: now,
@@ -111,6 +122,7 @@ export async function POST(request: Request) {
 
       case 'email.complained':
         if (data?.to?.[0]) {
+          // Add to general unsubscribe list
           await supabase
             .from('email_unsubscribes')
             .upsert(
@@ -120,6 +132,17 @@ export async function POST(request: Request) {
               },
               { onConflict: 'email' }
             );
+
+          // Also mark platform contact as unsubscribed if applicable
+          if (tableName === 'platform_email_sends') {
+            await supabase
+              .from('platform_contacts')
+              .update({
+                is_unsubscribed: true,
+                unsubscribed_at: now,
+              })
+              .eq('email', data.to[0].toLowerCase());
+          }
         }
         break;
 

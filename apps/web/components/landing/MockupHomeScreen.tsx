@@ -58,12 +58,12 @@ export default function MockupHomeScreen() {
         <div className="flex gap-2 overflow-hidden">
           {/* TFK Partner Card — Lancaster only */}
           {showTFK && (
-            <div className="w-[90px] h-[110px] rounded-xl overflow-hidden flex-shrink-0 relative">
+            <div className="w-[80px] h-[80px] rounded-xl overflow-hidden flex-shrink-0 relative">
               <div
                 className="absolute inset-0 flex items-center justify-center"
                 style={{ background: 'linear-gradient(135deg, #F9A8D4 0%, #C084FC 50%, #93C5FD 100%)' }}
               >
-                <Image src={TFK_LOGO_URL} alt="Thirsty for Knowledge" width={78} height={78} className="object-contain" />
+                <Image src={TFK_LOGO_URL} alt="Thirsty for Knowledge" width={60} height={60} className="object-contain" />
               </div>
               <div className="absolute bottom-1.5 left-1.5 right-1.5 z-10">
                 <p className="text-[7px] font-bold text-white drop-shadow-md">Trivia Tonight</p>
@@ -73,8 +73,8 @@ export default function MockupHomeScreen() {
           )}
 
           {/* Live Music Card */}
-          <div className="w-[90px] h-[110px] rounded-xl overflow-hidden flex-shrink-0 relative">
-            <Image src="/images/events/live_music.png" alt="" fill className="object-cover" sizes="100px" />
+          <div className="w-[80px] h-[80px] rounded-xl overflow-hidden flex-shrink-0 relative">
+            <Image src="/images/events/live_music.png" alt="" fill className="object-cover" sizes="80px" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
             <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[6px] font-bold text-white z-10" style={{ backgroundColor: accent }}>
               Live Music
@@ -87,8 +87,8 @@ export default function MockupHomeScreen() {
 
           {/* Extra card for non-TFK markets to fill space */}
           {!showTFK && (
-            <div className="w-[90px] h-[110px] rounded-xl overflow-hidden flex-shrink-0 relative">
-              <Image src="/images/events/trivia.png" alt="" fill className="object-cover" sizes="100px" />
+            <div className="w-[80px] h-[80px] rounded-xl overflow-hidden flex-shrink-0 relative">
+              <Image src="/images/events/trivia.png" alt="" fill className="object-cover" sizes="80px" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
               <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[6px] font-bold text-white z-10" style={{ backgroundColor: '#A78BFA' }}>
                 Trivia

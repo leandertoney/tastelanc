@@ -290,12 +290,28 @@ async function composeEventsSpread(
   data.events.forEach(e => { const t = e.type || 'other'; if (!byType[t]) byType[t] = []; byType[t].push(e); });
   const sortedTypes = Object.entries(byType).sort((a, b) => b[1].length - a[1].length).slice(0, 4);
 
-  // Text fills the FULL page — two columns, evenly distributed
-  const CONTENT_H = H - 170 - 50; // header + footer
+  // ONE venue photo — right side, portrait orientation, fills space
+  const IMG_W = Math.floor(W * 0.38);
+  const IMG_H = Math.floor(H * 0.45);
+
+  // Find a venue cover photo (uploaded, no text) from an event venue
+  const venueWithPhoto = data.events.find(e => e.venueImageUrl?.includes('supabase'));
+  if (venueWithPhoto) {
+    try {
+      const raw = await fetchImageBuffer(venueWithPhoto.venueImageUrl!);
+      const photo = await sharp(raw)
+        .resize(IMG_W, IMG_H, { fit: 'cover', position: 'centre' })
+        .jpeg({ quality: JPEG_Q })
+        .toBuffer();
+      composites.push({ input: photo, top: H - IMG_H - PAD, left: W - IMG_W - PAD });
+    } catch { /* skip */ }
+  }
+
+  // Text fills the page — left column full height, right column above the image
+  const CONTENT_H = H - 170 - 50;
   const totalItems = sortedTypes.reduce((sum, [, evts]) => sum + Math.min(evts.length, 3), 0) + sortedTypes.length;
   const itemH = Math.floor(CONTENT_H / Math.max(totalItems, 1));
 
-  // Split into two columns if we have enough content
   const leftTypes = sortedTypes.slice(0, Math.ceil(sortedTypes.length / 2));
   const rightTypes = sortedTypes.slice(Math.ceil(sortedTypes.length / 2));
 
@@ -380,11 +396,12 @@ async function composeSpecialsSpread(
   const HEADER_H = 130;
   const FOOTER_H = 50;
 
-  // Two image blocks, each takes half the remaining height
-  const BLOCK_H = Math.floor((H - HEADER_H - FOOTER_H - 30) / 2); // 30px gap between blocks
-  const IMG_W = Math.floor(W * 0.45);
+  // Two image blocks — PORTRAIT orientation (taller than wide), fills space completely
+  const BLOCK_H = Math.floor((H - HEADER_H - FOOTER_H - 30) / 2);
+  const IMG_W = Math.floor(W * 0.35); // narrower but taller = portrait
 
-  // Find TWO specials with images
+  // Find TWO specials with images — skip ones with text baked in (promo graphics)
+  // Use venue cover photos as these are more likely to be food/atmosphere shots
   const specialsWithImages = data.specials.filter(s => s.imageUrl?.includes('supabase')).slice(0, 2);
 
   for (let i = 0; i < specialsWithImages.length; i++) {
@@ -392,7 +409,7 @@ async function composeSpecialsSpread(
     try {
       const raw = await fetchImageBuffer(specialsWithImages[i].imageUrl!);
       const photo = await sharp(raw)
-        .resize(IMG_W, BLOCK_H, { fit: 'contain', background: { r: 250, g: 248, b: 244, alpha: 1 } })
+        .resize(IMG_W, BLOCK_H, { fit: 'cover', position: 'centre' })
         .jpeg({ quality: JPEG_Q })
         .toBuffer();
       composites.push({ input: photo, top: blockY, left: PAD });
