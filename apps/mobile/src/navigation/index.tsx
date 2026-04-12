@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react';
-import { View, Animated, StyleSheet } from 'react-native';
+import { View, Animated, StyleSheet, Platform } from 'react-native';
 import { NavigationContainer, getStateFromPath } from '@react-navigation/native';
 import { useNavigationTheme } from '@tastelanc/mobile-shared/src/hooks/useNavigationTheme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,11 +17,16 @@ import { ONBOARDING_STORAGE_KEY, ONBOARDING_DATA_KEY } from '../types/onboarding
 import { env } from '../lib/env';
 import { initRadar, startTracking } from '../lib/radar';
 import { initRevenueCat } from '@tastelanc/mobile-shared/src/lib/revenuecat';
-import { initInterstitialAds } from '@tastelanc/mobile-shared/src/lib/interstitialAds';
 import { useRadarVisits } from '../hooks/useRadarVisits';
 import { useNotifications } from '../hooks/useNotifications';
 import { incrementSessionCount, requestReviewIfEligible } from '../lib/reviewPrompts';
 import SignInNudge from '../components/SignInNudge';
+
+// Conditional import for AdMob (native only - doesn't support web)
+let initInterstitialAds: ((adUnitId: string) => Promise<void>) | null = null;
+if (Platform.OS !== 'web') {
+  initInterstitialAds = require('@tastelanc/mobile-shared/src/lib/interstitialAds').initInterstitialAds;
+}
 
 // Context to allow resetting/completing onboarding from anywhere in the app
 type NavigationContextType = {
@@ -121,9 +126,11 @@ export default function Navigation() {
     }
 
     try {
-      initInterstitialAds(env.ADMOB_INTERSTITIAL_ID).catch((e) => {
-        console.warn('[Navigation] AdMob initialization failed:', e);
-      });
+      if (initInterstitialAds) {
+        initInterstitialAds(env.ADMOB_INTERSTITIAL_ID).catch((e) => {
+          console.warn('[Navigation] AdMob initialization failed:', e);
+        });
+      }
     } catch (e) {
       console.warn('[Navigation] AdMob initialization failed:', e);
     }
