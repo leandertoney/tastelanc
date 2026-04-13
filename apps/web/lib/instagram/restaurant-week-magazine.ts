@@ -464,8 +464,8 @@ async function composeParticipatingRestaurants(
   supabase: SupabaseClient,
   marketId: string
 ): Promise<Buffer> {
-  // Fetch PAYING Restaurant Week participants with photos for the grid
-  const { data: payingRestaurants } = await supabase
+  // Fetch ALL RW participants with photos, sorted by tier
+  const { data: allWithPhotos } = await supabase
     .from('restaurants')
     .select(`
       id,
@@ -479,11 +479,10 @@ async function composeParticipatingRestaurants(
     .eq('market_id', marketId)
     .eq('is_active', true)
     .not('rw_description', 'is', null)
-    .not('tier_id', 'is', null) // Only paying subscribers
     .not('cover_image_url', 'is', null)
     .order('created_at', { ascending: false });
 
-  // Fetch ALL Restaurant Week participants for text list
+  // Fetch ALL Restaurant Week participants for count
   const { data: allRestaurants } = await supabase
     .from('restaurants')
     .select('id, name, tier_id')
@@ -492,18 +491,18 @@ async function composeParticipatingRestaurants(
     .not('rw_description', 'is', null)
     .order('name', { ascending: true });
 
-  // Sort paying restaurants by tier: elite → premium → basic
-  const sortedPaying = payingRestaurants?.sort((a, b) => {
+  // Sort by tier: elite → premium → basic/free, then take top 9 for grid
+  const sortedForGrid = allWithPhotos?.sort((a, b) => {
     const tierOrder = { elite: 1, premium: 2, basic: 3 };
-    const aTier = a.tiers?.name as keyof typeof tierOrder;
-    const bTier = b.tiers?.name as keyof typeof tierOrder;
-    const aOrder = tierOrder[aTier] || 99;
-    const bOrder = tierOrder[bTier] || 99;
+    const aTier = a.tiers?.[0]?.name as keyof typeof tierOrder | undefined;
+    const bTier = b.tiers?.[0]?.name as keyof typeof tierOrder | undefined;
+    const aOrder = aTier ? tierOrder[aTier] || 99 : 99; // 99 for free/no tier
+    const bOrder = bTier ? tierOrder[bTier] || 99 : 99;
     return aOrder - bOrder;
-  }).slice(0, 9); // Show top 9 paying subscribers
+  }).slice(0, 9); // Show top 9 (premium/elite first, then fill with others)
 
   // Get remaining restaurants (not in the top 9 images)
-  const shownIds = new Set(sortedPaying?.map(r => r.id) || []);
+  const shownIds = new Set(sortedForGrid?.map(r => r.id) || []);
   const remainingRestaurants = allRestaurants?.filter(r => !shownIds.has(r.id)) || [];
 
   const totalCount = allRestaurants?.length || 0;
@@ -534,13 +533,13 @@ async function composeParticipatingRestaurants(
   const IMG_W = Math.floor((W - PAD * 2 - GAP * (COLS - 1)) / COLS);
   const IMG_H = Math.floor((GRID_H - PAD * 2 - GAP * (ROWS - 1)) / ROWS);
 
-  console.log(`[Page 3] Showing ${Math.min(9, sortedPaying?.length || 0)} images, ${remainingRestaurants.length} in text list`);
+  console.log(`[Page 3] Showing ${Math.min(9, sortedForGrid?.length || 0)} images, ${remainingRestaurants.length} in text list`);
 
   const composites: sharp.OverlayOptions[] = [{ input: headerSvg, top: 0, left: 0 }];
 
-  // Fetch and composite paying restaurant images (9 total, prioritized by tier)
-  for (let i = 0; i < Math.min(9, sortedPaying?.length || 0); i++) {
-    const r = sortedPaying![i];
+  // Fetch and composite restaurant images (9 total, prioritized by tier)
+  for (let i = 0; i < Math.min(9, sortedForGrid?.length || 0); i++) {
+    const r = sortedForGrid![i];
     const col = i % COLS;
     const row = Math.floor(i / COLS);
     const x = PAD + col * (IMG_W + GAP);
