@@ -16,6 +16,7 @@ const SOURCE_COLORS: Record<string, string> = {
   Google: '#4285F4',
   Direct: '#10b981',
   Instagram: '#E4405F',
+  TikTok: '#000000',
   Facebook: '#1877F2',
   Linktree: '#43E55E',
   Bing: '#008373',

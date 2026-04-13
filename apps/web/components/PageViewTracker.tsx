@@ -76,6 +76,7 @@ export default function PageViewTracker({ pagePath, pageType = 'other', restaura
             utmMedium,
             utmCampaign,
             screenWidth: window.innerWidth,
+            referrer: document.referrer || undefined, // Capture original external referrer
           }),
         });
       } catch (error) {

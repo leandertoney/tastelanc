@@ -107,7 +107,7 @@ export async function GET(request: Request) {
       totalViews: 0, uniqueVisitors: 0, totalSessions: 0, totalClicks: 0,
       singlePageSessions: 0,
       sourceDirect: 0, sourceGoogle: 0, sourceFacebook: 0, sourceInstagram: 0,
-      sourceLinktree: 0, sourceBing: 0, sourceEmail: 0, sourceOther: 0,
+      sourceTiktok: 0, sourceLinktree: 0, sourceBing: 0, sourceEmail: 0, sourceOther: 0,
       deviceDesktop: 0, deviceMobile: 0, deviceTablet: 0,
     };
     const dailyMap = new Map<string, { views: number; visitors: number }>();
@@ -122,6 +122,7 @@ export async function GET(request: Request) {
       totals.sourceGoogle += r.source_google;
       totals.sourceFacebook += r.source_facebook;
       totals.sourceInstagram += r.source_instagram;
+      totals.sourceTiktok += r.source_tiktok || 0;
       totals.sourceLinktree += r.source_linktree;
       totals.sourceBing += r.source_bing;
       totals.sourceEmail += r.source_email;
@@ -212,32 +213,72 @@ export async function GET(request: Request) {
       .slice(0, 20);
 
     // ============================================================
-    // 5. Top referrer domains (from raw table, limited scope)
+    // 5. Top referrer domains with enhanced ROI metrics
     // ============================================================
     let referrerQuery = serviceClient.from('analytics_page_views')
-      .select('referrer')
+      .select('referrer, visitor_id, session_id, is_landing')
       .not('referrer', 'is', null)
       .neq('referrer', '');
     if (start) referrerQuery = referrerQuery.gte('viewed_at', start.toISOString());
     if (marketFilter) referrerQuery = referrerQuery.eq('market_id', marketFilter);
-    referrerQuery = referrerQuery.limit(5000); // sample for performance
+    referrerQuery = referrerQuery.limit(10000); // increased sample for better accuracy
     const { data: referrerRows } = await referrerQuery;
 
-    const domainCounts = new Map<string, number>();
+    // Calculate comprehensive metrics per referrer domain
+    interface ReferrerMetrics {
+      domain: string;
+      views: number;
+      uniqueVisitors: Set<string>;
+      sessions: Set<string>;
+      landingPageSessions: Set<string>;
+    }
+
+    const referrerMetrics = new Map<string, ReferrerMetrics>();
+    const siteHost = process.env.NEXT_PUBLIC_SITE_URL
+      ? new URL(process.env.NEXT_PUBLIC_SITE_URL).hostname : '';
+
     for (const row of referrerRows || []) {
       try {
         const hostname = new URL(row.referrer).hostname;
         // Skip self-referrals
-        const siteHost = process.env.NEXT_PUBLIC_SITE_URL
-          ? new URL(process.env.NEXT_PUBLIC_SITE_URL).hostname : '';
         if (siteHost && hostname.includes(siteHost)) continue;
-        domainCounts.set(hostname, (domainCounts.get(hostname) || 0) + 1);
+
+        if (!referrerMetrics.has(hostname)) {
+          referrerMetrics.set(hostname, {
+            domain: hostname,
+            views: 0,
+            uniqueVisitors: new Set(),
+            sessions: new Set(),
+            landingPageSessions: new Set(),
+          });
+        }
+
+        const metrics = referrerMetrics.get(hostname)!;
+        metrics.views++;
+        metrics.uniqueVisitors.add(row.visitor_id);
+        if (row.session_id) {
+          metrics.sessions.add(row.session_id);
+          if (row.is_landing) {
+            metrics.landingPageSessions.add(row.session_id);
+          }
+        }
       } catch { /* invalid URL */ }
     }
-    const topReferrers = Array.from(domainCounts.entries())
-      .map(([domain, count]) => ({ domain, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 15);
+
+    // Calculate derived metrics and format for response
+    const topReferrers = Array.from(referrerMetrics.values())
+      .map(m => ({
+        domain: m.domain,
+        views: m.views,
+        uniqueVisitors: m.uniqueVisitors.size,
+        avgPagesPerSession: m.sessions.size > 0 ? Math.round((m.views / m.sessions.size) * 10) / 10 : 0,
+        // Bounce rate: % of sessions where this referrer was landing page AND only had 1 view
+        bounceRate: m.landingPageSessions.size > 0
+          ? Math.round((m.landingPageSessions.size / m.sessions.size) * 100)
+          : null,
+      }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 20);
 
     // ============================================================
     // 6. Browser breakdown (from raw table, sampled)
@@ -268,7 +309,7 @@ export async function GET(request: Request) {
     // 7. Build response
     // ============================================================
     const totalSourceViews = totals.sourceDirect + totals.sourceGoogle + totals.sourceFacebook +
-      totals.sourceInstagram + totals.sourceLinktree + totals.sourceBing + totals.sourceEmail + totals.sourceOther;
+      totals.sourceInstagram + totals.sourceTiktok + totals.sourceLinktree + totals.sourceBing + totals.sourceEmail + totals.sourceOther;
 
     const pct = (v: number) => totalSourceViews > 0 ? Math.round((v / totalSourceViews) * 100) : 0;
 
@@ -276,6 +317,7 @@ export async function GET(request: Request) {
       { source: 'Google', count: totals.sourceGoogle, percentage: pct(totals.sourceGoogle) },
       { source: 'Direct', count: totals.sourceDirect, percentage: pct(totals.sourceDirect) },
       { source: 'Instagram', count: totals.sourceInstagram, percentage: pct(totals.sourceInstagram) },
+      { source: 'TikTok', count: totals.sourceTiktok, percentage: pct(totals.sourceTiktok) },
       { source: 'Facebook', count: totals.sourceFacebook, percentage: pct(totals.sourceFacebook) },
       { source: 'Linktree', count: totals.sourceLinktree, percentage: pct(totals.sourceLinktree) },
       { source: 'Bing', count: totals.sourceBing, percentage: pct(totals.sourceBing) },

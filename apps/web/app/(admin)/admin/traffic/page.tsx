@@ -11,6 +11,7 @@ import TopLandingPagesTable from '@/components/admin/traffic/TopLandingPagesTabl
 import TopReferrersTable from '@/components/admin/traffic/TopReferrersTable';
 import BrowserChart from '@/components/admin/traffic/BrowserChart';
 import PeriodSelector from '@/components/admin/traffic/PeriodSelector';
+import MarketSelector from '@/components/admin/traffic/MarketSelector';
 
 type Period = 'today' | '7d' | '30d' | 'all';
 
@@ -28,7 +29,13 @@ interface TrafficData {
   topLandingPages: { path: string; landings: number }[];
   devices: { type: string; count: number; percentage: number }[];
   browsers: { name: string; count: number; percentage: number }[];
-  topReferrers: { domain: string; count: number }[];
+  topReferrers: {
+    domain: string;
+    views: number;
+    uniqueVisitors: number;
+    avgPagesPerSession: number;
+    bounceRate: number | null;
+  }[];
 }
 
 function computeDelta(current: number, previous: number): number | null {
@@ -38,13 +45,14 @@ function computeDelta(current: number, previous: number): number | null {
 
 export default function TrafficDashboardPage() {
   const [period, setPeriod] = useState<Period>('30d');
+  const [market, setMarket] = useState<string>('all');
   const [data, setData] = useState<TrafficData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/traffic-analytics?period=${period}`);
+      const res = await fetch(`/api/admin/traffic-analytics?period=${period}&market=${market}`);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || `HTTP ${res.status}`);
@@ -57,7 +65,7 @@ export default function TrafficDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [period]);
+  }, [period, market]);
 
   useEffect(() => {
     setLoading(true);
@@ -76,7 +84,7 @@ export default function TrafficDashboardPage() {
     if (period === 'today') return; // already auto-refreshing
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/admin/traffic-analytics?period=${period}`);
+        const res = await fetch(`/api/admin/traffic-analytics?period=${period}&market=${market}`);
         if (res.ok) {
           const json = await res.json();
           setData(prev => prev ? { ...prev, activeNow: json.activeNow } : json);
@@ -84,7 +92,7 @@ export default function TrafficDashboardPage() {
       } catch { /* silent */ }
     }, 30_000);
     return () => clearInterval(interval);
-  }, [period]);
+  }, [period, market]);
 
   if (error && !data) {
     return (
@@ -109,17 +117,27 @@ export default function TrafficDashboardPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-tastelanc-text-primary flex items-center gap-2">
-            <Globe className="w-6 h-6 text-tastelanc-accent" />
-            Web Traffic
-          </h1>
-          <p className="text-sm text-tastelanc-text-muted mt-1">
-            Website performance and visitor analytics
-          </p>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-tastelanc-text-primary flex items-center gap-2">
+              <Globe className="w-6 h-6 text-tastelanc-accent" />
+              Web Traffic
+            </h1>
+            <p className="text-sm text-tastelanc-text-muted mt-1">
+              Website performance and visitor analytics
+            </p>
+          </div>
+          <PeriodSelector value={period} onChange={setPeriod} />
         </div>
-        <PeriodSelector value={period} onChange={setPeriod} />
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-tastelanc-text-muted">
+            Viewing: <span className="font-medium text-tastelanc-text-primary">
+              {market === 'all' ? 'All Markets' : 'Filtered Market'}
+            </span>
+          </div>
+          <MarketSelector value={market} onChange={setMarket} />
+        </div>
       </div>
 
       {/* Loading skeleton */}

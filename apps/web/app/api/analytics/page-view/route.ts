@@ -57,6 +57,7 @@ function parseTrafficSource(referrer: string, utmSource?: string): string {
     if (hostname.includes('google.')) return 'google';
     if (hostname.includes('facebook.com') || hostname.includes('l.facebook.com') || hostname === 'fb.com') return 'facebook';
     if (hostname.includes('instagram.com') || hostname.includes('l.instagram.com')) return 'instagram';
+    if (hostname.includes('tiktok.com') || hostname === 'vm.tiktok.com') return 'tiktok';
     if (hostname === 'linktr.ee' || hostname.includes('linktree.')) return 'linktree';
     if (hostname.includes('bing.com')) return 'bing';
     if (hostname === 't.co' || hostname.includes('twitter.com') || hostname.includes('x.com')) return 'twitter';
@@ -109,12 +110,13 @@ export async function POST(request: Request) {
     const supabaseAdmin = getSupabaseAdmin();
     const {
       pagePath, visitorId, pageType, restaurantId,
-      sessionId, isLanding, utmSource, utmMedium, utmCampaign, screenWidth
+      sessionId, isLanding, utmSource, utmMedium, utmCampaign, screenWidth, referrer: clientReferrer
     } = await request.json();
     const headersList = await headers();
 
     const userAgent = headersList.get('user-agent') || '';
-    const referrer = headersList.get('referer') || '';
+    // Use client-provided referrer (from document.referrer) if available, fall back to header
+    const referrer = clientReferrer || headersList.get('referer') || '';
 
     // Don't track bots
     if (BOT_PATTERN.test(userAgent)) {
