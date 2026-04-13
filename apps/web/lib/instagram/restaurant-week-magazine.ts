@@ -797,33 +797,15 @@ async function composeFeaturedMenus(supabase: SupabaseClient, marketId: string):
 // ============================================================
 
 async function composeThirstyKnowledgePartnership(supabase: SupabaseClient): Promise<Buffer> {
-  // Fetch all active TFK events (they are recurring, not date-specific)
-  const { data: tfkEvents } = await supabase
-    .from('events')
-    .select('name, performer_name, start_time, days_of_week, restaurant:restaurants(name)')
-    .eq('partner_slug', 'thirsty-for-knowledge')
-    .eq('is_active', true)
-    .order('start_time', { ascending: true });
-
-  // Group events by day
-  const dayMap: Record<string, string[]> = {
-    monday: [],
-    tuesday: [],
-    wednesday: [],
-    thursday: [],
-    friday: [],
-    saturday: [],
-    sunday: [],
+  // Hardcoded TFK TRIVIA schedule - exact locations provided by user
+  // NOTE: Friday/Saturday are karaoke only, not trivia
+  const schedule = {
+    Monday: ['BierHall Brewing'],
+    Tuesday: ['Our Town Brewery', "Stubby's (Downtown)", 'Appalachian Lititz', 'Lucky Dog Cafe', 'Union Station Grill', "Jack's Family Tavern"],
+    Wednesday: ['Collusion Tap Works', 'Reflections', "Stubby's (Oregon Pike)", 'Stoner Grille', 'Southern Market', "P.J. Whelihan's", 'Rumplebrewskin\'s', 'Marion Court Room', 'New Town Food & Spirits'],
+    Thursday: ['Raney Cellars', 'Warehouse District', 'Columbia Kettle Works', 'Inspiration Brewing'],
+    Sunday: ['Lititz Springs VFW'],
   };
-
-  tfkEvents?.forEach(event => {
-    event.days_of_week?.forEach((day: string) => {
-      const venueName = (event.restaurant as any)?.name || event.performer_name;
-      if (venueName && !dayMap[day].includes(venueName)) {
-        dayMap[day].push(venueName);
-      }
-    });
-  });
 
   // Pastel tie-dye gradient background (matching TFK app design)
   const bgGradient = Buffer.from(`
@@ -844,11 +826,11 @@ async function composeThirstyKnowledgePartnership(supabase: SupabaseClient): Pro
   const bg = sharp(bgGradient);
   const composites: sharp.OverlayOptions[] = [];
 
-  // Centered TFK logo at top
-  const LOGO_W = 240;
-  const LOGO_H = 240;
+  // Centered TFK logo at top - smaller
+  const LOGO_W = 180;
+  const LOGO_H = 180;
   const LOGO_X = (W - LOGO_W) / 2;
-  const LOGO_Y = 60;
+  const LOGO_Y = 40;
   const tfkLogoUrl = 'https://kufcxxynjvyharhtfptd.supabase.co/storage/v1/object/public/images/ads/tfk_logo.png';
 
   try {
@@ -863,99 +845,78 @@ async function composeThirstyKnowledgePartnership(supabase: SupabaseClient): Pro
     console.error('Failed to load TFK logo:', err);
   }
 
-  // Content layout - use full width symmetrically
-  const CONTENT_START_X = 60;
-  const CONTENT_WIDTH = W - 120;
-  const COL_WIDTH = (CONTENT_WIDTH - 40) / 2; // Two columns with gap
+  const cx = W / 2;
+  const PAD = 40; // Content stays inside this padding
 
-  // Build location text dynamically - TWO COLUMNS
-  let locationY = 540;
-  const leftColLines: string[] = [];
-  const rightColLines: string[] = [];
+  // Build schedule centered - each day with locations beneath
+  const scheduleLines: string[] = [];
+  let y = 560; // Start schedule here
 
-  const daysToShow = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-  let leftY = locationY;
-  let rightY = locationY;
+  Object.entries(schedule).forEach(([day, venues]) => {
+    // Day name - bold and centered
+    scheduleLines.push(`
+      <text x="${cx}" y="${y}"
+            font-family="Inter" font-weight="900" font-size="22"
+            fill="#1A2A4A" text-anchor="middle">${day}</text>
+    `);
+    y += 28;
 
-  daysToShow.forEach((day, idx) => {
-    if (dayMap[day].length > 0) {
-      const dayLabel = day.charAt(0).toUpperCase() + day.slice(1);
-      const venues = dayMap[day].slice(0, 2).join(' • '); // 2 venues per day
-      const isLeft = idx % 2 === 0;
-      const x = isLeft ? CONTENT_START_X : CONTENT_START_X + COL_WIDTH + 40;
-      const y = isLeft ? leftY : rightY;
-
-      const lines = `
-        <text x="${x}" y="${y}"
-              font-family="Inter" font-weight="800" font-size="17"
-              fill="#1A2A4A">${dayLabel}</text>
-        <text x="${x}" y="${y + 24}"
-              font-family="Inter" font-weight="600" font-size="14"
-              fill="#1A2A4A">${escapeXml(venues)}</text>
-      `;
-
-      if (isLeft) {
-        leftColLines.push(lines);
-        leftY += 52;
-      } else {
-        rightColLines.push(lines);
-        rightY += 52;
-      }
-    }
+    // Venues - smaller, centered, max 3 per line
+    const venueText = venues.slice(0, 6).join(' • ');
+    scheduleLines.push(`
+      <text x="${cx}" y="${y}"
+            font-family="Inter" font-weight="600" font-size="15"
+            fill="#1A2A4A" text-anchor="middle">${escapeXml(venueText)}</text>
+    `);
+    y += 34;
   });
 
-  const BW = 160;
-  const BH = 48;
-  const BG = 15;
-  const BADGE_Y = H - 180;
-
-  const cx = W / 2;
+  const BW = 150;
+  const BH = 45;
+  const BG = 12;
+  const BADGE_Y = H - 120;
 
   const contentSvg = Buffer.from(`
     <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
       <!-- Centered headline -->
-      <text x="${cx}" y="330"
-            font-family="Inter" font-weight="900" font-size="11"
+      <text x="${cx}" y="250"
+            font-family="Inter" font-weight="900" font-size="12"
             fill="#1A2A4A" letter-spacing="3" text-anchor="middle">PARTNERSHIP SPOTLIGHT</text>
 
-      <text x="${cx}" y="370"
-            font-family="Playfair Display" font-weight="800" font-size="46"
+      <text x="${cx}" y="290"
+            font-family="Playfair Display" font-weight="800" font-size="44"
             fill="#1A2A4A" text-anchor="middle">We're Sponsoring</text>
-      <text x="${cx}" y="420"
-            font-family="Playfair Display" font-weight="800" font-size="46"
+      <text x="${cx}" y="335"
+            font-family="Playfair Display" font-weight="800" font-size="44"
             fill="#1A2A4A" text-anchor="middle">the Picture Round!</text>
 
       <!-- Centered $25 Prize Box -->
-      <rect x="${cx - 180}" y="450" width="360" height="70" rx="12" fill="#FFA500" />
-      <text x="${cx - 120}" y="502"
-            font-family="Playfair Display" font-weight="900" font-size="60"
+      <rect x="${cx - 170}" y="355" width="340" height="70" rx="12" fill="#FFA500" />
+      <text x="${cx - 105}" y="407"
+            font-family="Playfair Display" font-weight="900" font-size="64"
             fill="#1A2A4A">$25</text>
-      <text x="${cx + 20}" y="485"
+      <text x="${cx + 15}" y="387"
             font-family="Inter" font-weight="800" font-size="20"
             fill="#1A2A4A">Bonus Prize</text>
-      <text x="${cx + 20}" y="510"
+      <text x="${cx + 15}" y="412"
             font-family="Inter" font-weight="800" font-size="20"
             fill="#1A2A4A">Each Night!</text>
 
+      <!-- Prize details -->
+      <text x="${cx}" y="460"
+            font-family="Inter" font-weight="600" font-size="16"
+            fill="#1A2A4A" text-anchor="middle">On top of TFK's regular prize! Claimed in the app.</text>
+
       <!-- Section: Schedule (centered) -->
-      <text x="${cx}" y="${locationY - 20}"
-            font-family="Inter" font-weight="900" font-size="12"
+      <text x="${cx}" y="510"
+            font-family="Inter" font-weight="900" font-size="16"
             fill="#1A2A4A" letter-spacing="2" text-anchor="middle">THIS WEEK'S SCHEDULE</text>
 
-      <!-- TFK Locations - Two Columns -->
-      ${leftColLines.join('\n')}
-      ${rightColLines.join('\n')}
-
-      <!-- Prize details centered -->
-      <text x="${cx}" y="${Math.max(leftY, rightY) + 30}"
-            font-family="Inter" font-weight="600" font-size="16"
-            fill="#1A2A4A" text-anchor="middle">On top of their regular prize, one winning team gets $25!</text>
-      <text x="${cx}" y="${Math.max(leftY, rightY) + 60}"
-            font-family="Inter" font-weight="700" font-size="16"
-            fill="#1A2A4A" text-anchor="middle">Claimed in the TasteLanc app</text>
+      <!-- All schedule days centered -->
+      ${scheduleLines.join('\n')}
 
       <!-- Centered Download CTA -->
-      <text x="${cx}" y="${BADGE_Y - 20}"
+      <text x="${cx}" y="${BADGE_Y - 15}"
             font-family="Inter" font-weight="900" font-size="18"
             fill="#1A2A4A" text-anchor="middle">Download TasteLanc</text>
 
@@ -963,26 +924,26 @@ async function composeThirstyKnowledgePartnership(supabase: SupabaseClient): Pro
       <g transform="translate(${cx - BW - BG / 2}, ${BADGE_Y})">
         <rect width="${BW}" height="${BH}" rx="6" fill="#000"/>
         <rect x="0.5" y="0.5" width="${BW - 1}" height="${BH - 1}" rx="5.5" stroke="#A6A6A6" stroke-width="1" fill="none"/>
-        <g fill="#fff" transform="translate(12, 8)">
-          <path d="M18.6 15.2a3.7 3.7 0 011.77-3.11 3.8 3.8 0 00-2.99-1.62c-1.26-.13-2.48.76-3.13.76-.65 0-1.64-.74-2.71-.72a3.99 3.99 0 00-3.36 2.05c-1.45 2.5-.37 6.2 1.02 8.23.7 1 1.51 2.11 2.58 2.07 1.04-.04 1.44-.67 2.7-.67 1.26 0 1.62.67 2.72.64 1.12-.02 1.83-1 2.5-2a8.22 8.22 0 001.14-2.32 3.59 3.59 0 01-2.24-3.31z" transform="scale(0.65)"/>
-          <path d="M16.5 9.16a3.65 3.65 0 00.84-2.62 3.72 3.72 0 00-2.41 1.25 3.48 3.48 0 00-.86 2.52 3.08 3.08 0 002.43-1.15z" transform="scale(0.65)"/>
+        <g fill="#fff" transform="translate(10, 7)">
+          <path d="M18.6 15.2a3.7 3.7 0 011.77-3.11 3.8 3.8 0 00-2.99-1.62c-1.26-.13-2.48.76-3.13.76-.65 0-1.64-.74-2.71-.72a3.99 3.99 0 00-3.36 2.05c-1.45 2.5-.37 6.2 1.02 8.23.7 1 1.51 2.11 2.58 2.07 1.04-.04 1.44-.67 2.7-.67 1.26 0 1.62.67 2.72.64 1.12-.02 1.83-1 2.5-2a8.22 8.22 0 001.14-2.32 3.59 3.59 0 01-2.24-3.31z" transform="scale(0.6)"/>
+          <path d="M16.5 9.16a3.65 3.65 0 00.84-2.62 3.72 3.72 0 00-2.41 1.25 3.48 3.48 0 00-.86 2.52 3.08 3.08 0 002.43-1.15z" transform="scale(0.6)"/>
         </g>
-        <text x="34" y="18" font-family="Inter, sans-serif" font-size="8" fill="#fff">Download on the</text>
-        <text x="34" y="34" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#fff">App Store</text>
+        <text x="32" y="17" font-family="Inter" font-size="7" fill="#fff">Download on the</text>
+        <text x="32" y="32" font-family="Inter" font-size="14" font-weight="600" fill="#fff">App Store</text>
       </g>
 
       <!-- Google Play Badge - centered -->
       <g transform="translate(${cx + BG / 2}, ${BADGE_Y})">
         <rect width="${BW}" height="${BH}" rx="6" fill="#000"/>
         <rect x="0.5" y="0.5" width="${BW - 1}" height="${BH - 1}" rx="5.5" stroke="#A6A6A6" stroke-width="1" fill="none"/>
-        <g transform="translate(12, 10)">
-          <path d="M1.1.9C.9 1.1.8 1.5.8 2v15.6c0 .5.1.8.3 1.1l8.2-9L1.1.9z" fill="#00C3FF" transform="scale(0.65)"/>
-          <path d="M12.1 12.5l-2.7 2.7 2.7 2.7c.3-.2 2.5-1.4 2.5-1.4.7-.4.7-1 0-1.4l-2.5-2.6z" fill="#FFCE00" transform="scale(0.65)"/>
-          <path d="M1.1 18.6c.2.2.6.3 1 .1l10-5.7-2.7-2.7-8.3 8.3z" fill="#FF3A44" transform="scale(0.65)"/>
-          <path d="M1.1.9l8.3 8.3 2.7-2.7L2.1.8C1.7.6 1.3.7 1.1.9z" fill="#4CAF50" transform="scale(0.65)"/>
+        <g transform="translate(10, 9)">
+          <path d="M1.1.9C.9 1.1.8 1.5.8 2v15.6c0 .5.1.8.3 1.1l8.2-9L1.1.9z" fill="#00C3FF" transform="scale(0.6)"/>
+          <path d="M12.1 12.5l-2.7 2.7 2.7 2.7c.3-.2 2.5-1.4 2.5-1.4.7-.4.7-1 0-1.4l-2.5-2.6z" fill="#FFCE00" transform="scale(0.6)"/>
+          <path d="M1.1 18.6c.2.2.6.3 1 .1l10-5.7-2.7-2.7-8.3 8.3z" fill="#FF3A44" transform="scale(0.6)"/>
+          <path d="M1.1.9l8.3 8.3 2.7-2.7L2.1.8C1.7.6 1.3.7 1.1.9z" fill="#4CAF50" transform="scale(0.6)"/>
         </g>
-        <text x="34" y="17" font-family="Inter, sans-serif" font-size="7" fill="#fff" letter-spacing="1">GET IT ON</text>
-        <text x="34" y="34" font-family="Inter, sans-serif" font-size="15" font-weight="500" fill="#fff">Google Play</text>
+        <text x="32" y="16" font-family="Inter" font-size="6" fill="#fff" letter-spacing="1">GET IT ON</text>
+        <text x="32" y="32" font-family="Inter" font-size="13" font-weight="500" fill="#fff">Google Play</text>
       </g>
 
       <!-- Page Number -->
