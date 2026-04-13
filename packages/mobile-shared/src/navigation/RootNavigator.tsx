@@ -44,6 +44,7 @@ import PartyRSVPScreen from '../screens/PartyRSVPScreen';
 import PartyTicketScreen from '../screens/PartyTicketScreen';
 import CouponsViewAllScreen from '../screens/CouponsViewAllScreen';
 import MyCouponsScreen from '../screens/MyCouponsScreen';
+import TestRevenueCatScreen from '../screens/TestRevenueCatScreen';
 
 // Wrap each screen so crashes show inline error instead of killing the app
 const SafeRestaurantDetail = withScreenErrorBoundary(RestaurantDetailScreen, 'RestaurantDetail');
@@ -87,6 +88,7 @@ const SafePartyRSVP = withScreenErrorBoundary(PartyRSVPScreen, 'PartyRSVP');
 const SafePartyTicket = withScreenErrorBoundary(PartyTicketScreen, 'PartyTicket');
 const SafeCouponsViewAll = withScreenErrorBoundary(CouponsViewAllScreen, 'CouponsViewAll');
 const SafeMyCoupons = withScreenErrorBoundary(MyCouponsScreen, 'MyCoupons');
+const SafeTestRevenueCat = withScreenErrorBoundary(TestRevenueCatScreen, 'TestRevenueCat');
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -327,6 +329,12 @@ export default function RootNavigator() {
         name="LeadDetail"
         component={SafeLeadDetail}
         options={{ headerShown: false }}
+      />
+      {/* Debug / Test screens */}
+      <Stack.Screen
+        name="TestRevenueCat"
+        component={SafeTestRevenueCat}
+        options={{ title: 'RevenueCat Test' }}
       />
     </Stack.Navigator>
   );

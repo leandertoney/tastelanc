@@ -95,3 +95,6 @@ export {
 export { default as LeaderboardScreen } from './LeaderboardScreen';
 export { default as LabsScreen } from './LabsScreen';
 export { default as RewardClaimScreen } from './RewardClaimScreen';
+
+// Debug/Test screens
+export { default as TestRevenueCatScreen } from './TestRevenueCatScreen';

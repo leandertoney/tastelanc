@@ -37,16 +37,16 @@ export function isRevenueCatSDKAvailable(): boolean {
 export interface ProductIds {
   MONTHLY: string;
   ANNUAL: string;
-  LIFETIME: string;
+  LIFETIME: string; // Actually the discounted annual ($14.99/yr) shown in "lifetime offer" screen
 }
 
 /**
  * Product IDs per market — must match App Store Connect and RevenueCat.
  */
 const MARKET_PRODUCT_IDS: Record<string, ProductIds> = {
-  'lancaster-pa': { MONTHLY: 'tastelanc_monthly', ANNUAL: 'tastelanc_annual', LIFETIME: 'tastelanc_lifetime' },
-  'cumberland-pa': { MONTHLY: 'tastecumberland_monthly', ANNUAL: 'tastecumberland_annual', LIFETIME: 'tastecumberland_lifetime' },
-  'fayetteville-nc': { MONTHLY: 'tastefayetteville_monthly', ANNUAL: 'tastefayetteville_annual', LIFETIME: 'tastefayetteville_lifetime' },
+  'lancaster-pa': { MONTHLY: 'tastelanc_monthly_v2', ANNUAL: 'tastelanc_annual_v2', LIFETIME: 'tastelanc_annual_discount' },
+  'cumberland-pa': { MONTHLY: 'tastecumberland_monthly', ANNUAL: 'tastecumberland_annual', LIFETIME: 'tastecumberland_annual_discount' },
+  'fayetteville-nc': { MONTHLY: 'tastefayetteville_monthly', ANNUAL: 'tastefayetteville_annual', LIFETIME: 'tastefayetteville_annual_discount' },
 };
 
 let _productIds: ProductIds = MARKET_PRODUCT_IDS['lancaster-pa'];

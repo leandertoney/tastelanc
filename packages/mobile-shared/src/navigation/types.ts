@@ -110,6 +110,8 @@ export type RootStackParamList = {
   };
   // Paywall (modal)
   Paywall: { source: string };
+  // Debug/Test screens
+  TestRevenueCat: undefined;
 } & Record<string, any>;
 
 // Flyer scanner types

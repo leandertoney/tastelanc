@@ -618,6 +618,12 @@ export default function SettingsScreen() {
                 </View>
                 {isSeedingData ? <ActivityIndicator size="small" color={colors.accent} /> : <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />}
               </TouchableOpacity>
+              <SettingItem
+                icon="cash-outline"
+                label="Test RevenueCat"
+                subtitle="Verify subscription products & offerings"
+                onPress={() => navigation.navigate('TestRevenueCat')}
+              />
             </View>
             <View style={styles.devNote}>
               <Text style={styles.devNoteText}>User ID: {userId ? `${userId.slice(0, 8)}...` : 'Not authenticated'}</Text>
