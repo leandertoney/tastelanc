@@ -2,7 +2,14 @@ import { withSentryConfig } from '@sentry/nextjs';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ['sharp', '@napi-rs/canvas', 'pdfjs-dist', 'pdf-parse'],
+  experimental: {
+    serverComponentsExternalPackages: ['sharp', '@napi-rs/canvas', 'pdfjs-dist', 'pdf-parse'],
+    // Ensure font files are included in serverless function bundles
+    outputFileTracingIncludes: {
+      '/api/instagram/cron': ['./lib/instagram/fonts/**/*'],
+      '/api/instagram/publish-approved': ['./lib/instagram/fonts/**/*'],
+    },
+  },
   images: {
     unoptimized: true,
     remotePatterns: [
@@ -12,11 +19,6 @@ const nextConfig = {
         pathname: '/storage/v1/object/public/**',
       },
     ],
-  },
-  // Ensure font files are included in serverless function bundles
-  outputFileTracingIncludes: {
-    '/api/instagram/cron': ['./lib/instagram/fonts/**/*'],
-    '/api/instagram/publish-approved': ['./lib/instagram/fonts/**/*'],
   },
 };
 
