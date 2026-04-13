@@ -47,10 +47,12 @@ export default async function handler(req: Request, context: Context) {
       }
 
       // Find new active coupons for this market created in the last 25 hours
+      // Exclude coupons with send_notification = false (promotional/informational deals)
       const { data: coupons, error: couponsError } = await supabase
         .from('coupons')
         .select('id, title, discount_type, discount_value, restaurant:restaurants!inner(id, name, market_id)')
         .eq('is_active', true)
+        .eq('send_notification', true)
         .eq('restaurant.market_id', marketId)
         .gte('created_at', windowStart)
         .order('created_at', { ascending: false });

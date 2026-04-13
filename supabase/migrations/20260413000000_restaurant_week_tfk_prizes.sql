@@ -14,7 +14,8 @@ INSERT INTO public.coupons (
   days_of_week,
   is_active,
   max_claims_total,
-  max_claims_per_user
+  max_claims_per_user,
+  send_notification
 ) VALUES
   -- The Gloomy Rooster
   (
@@ -29,7 +30,8 @@ INSERT INTO public.coupons (
     '{}',
     true,
     NULL,
-    1
+    1,
+    false
   ),
   -- Cabbage Hill Schnitzel Haus
   (
@@ -44,7 +46,8 @@ INSERT INTO public.coupons (
     '{}',
     true,
     NULL,
-    1
+    1,
+    false
   ),
   -- Trio Bar and Grill
   (
@@ -59,22 +62,8 @@ INSERT INTO public.coupons (
     '{}',
     true,
     NULL,
-    1
-  ),
-  -- Antonio's Pizza House
-  (
-    '2d62b56d-5119-438d-bc59-f75ea75d8b69',
-    '$25 TasteLanc Prize',
-    'Play Thirsty for Knowledge trivia during Restaurant Week for a chance to win $25! Prizes awarded nightly in the app.',
-    'custom',
-    'learn_more',
-    'View TFK Schedule',
-    '2026-04-13',
-    '2026-04-19',
-    '{}',
-    true,
-    NULL,
-    1
+    1,
+    false
   ),
   -- The Bunker at Crossgates
   (
@@ -89,7 +78,8 @@ INSERT INTO public.coupons (
     '{}',
     true,
     NULL,
-    1
+    1,
+    false
   ),
   -- Josie's Pub
   (
@@ -104,20 +94,6 @@ INSERT INTO public.coupons (
     '{}',
     true,
     NULL,
-    1
-  ),
-  -- Vécu
-  (
-    '41015c8a-9589-4c37-9d2a-2802ead8dad7',
-    '$25 TasteLanc Prize',
-    'Play Thirsty for Knowledge trivia during Restaurant Week for a chance to win $25! Prizes awarded nightly in the app.',
-    'custom',
-    'learn_more',
-    'View TFK Schedule',
-    '2026-04-13',
-    '2026-04-19',
-    '{}',
-    true,
-    NULL,
-    1
+    1,
+    false
   );
