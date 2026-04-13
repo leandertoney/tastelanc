@@ -4,23 +4,26 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Eye,
-  Heart,
-  Calendar,
-  Clock,
-  Sparkles,
-  ArrowRight,
-  AlertCircle,
   Phone,
   Globe,
   MapPin,
   Share2,
-  Layers,
-  Crown,
-  Lightbulb,
   RefreshCw,
   Loader2,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  Heart,
+  Calendar,
+  Layers,
+  X,
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
+  Activity,
   HelpCircle,
+  ArrowRight,
+  Mail
 } from 'lucide-react';
 import { Card, Badge, Tooltip } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
@@ -44,6 +47,7 @@ interface DashboardStats {
   happyHourChange: string;
   menuViews: number;
   menuChange: string;
+  emailSubscribers: number;
 }
 
 interface ProfileCompletion {
@@ -92,6 +96,25 @@ interface AnalyticsData {
     clickRate: number;
     viewRate: number;
   };
+  benchmarking?: {
+    percentile: number;
+    categoryAverage: number;
+    top25Threshold: number;
+    totalComparable: number;
+    performanceLabel: 'excellent' | 'good' | 'average' | 'needs_improvement';
+  } | null;
+  predictions?: {
+    next30Days: number;
+    endOfMonth: number;
+    dailyAverage: number;
+    trend: 'growing' | 'declining' | 'stable';
+  } | null;
+  quickWins?: Array<{
+    action: string;
+    impact: string;
+    estimate: string;
+    priority: number;
+  }> | null;
 }
 
 const DASHBOARD_REFRESH_INTERVAL = 2 * 60 * 60 * 1000; // 2 hours
@@ -110,6 +133,9 @@ export default function DashboardPage() {
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [fetchError, setFetchError] = useState(false);
+  const [showCharts, setShowCharts] = useState(false);
+  const [dismissedTips, setDismissedTips] = useState<number[]>([]);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const buildNavHref = (href: string) => {
@@ -166,6 +192,22 @@ export default function DashboardPage() {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [fetchAll]);
 
+  // Fetch Elite recommendations
+  useEffect(() => {
+    async function fetchRecommendations() {
+      if (!restaurantId || !hasElite) return;
+      try {
+        const response = await fetch(buildApiUrl(`/api/dashboard/insights?restaurant_id=${restaurantId}`));
+        if (!response.ok) throw new Error('Failed to fetch insights');
+        const data = await response.json();
+        setRecommendations(data.recommendations || []);
+      } catch (err) {
+        console.error('Error fetching insights:', err);
+      }
+    }
+    fetchRecommendations();
+  }, [restaurantId, buildApiUrl, hasElite]);
+
   if (contextLoading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -195,41 +237,6 @@ export default function DashboardPage() {
     );
   }
 
-  const statsDisplay = [
-    {
-      label: 'Impressions',
-      value: (stats?.impressions30d ?? 0).toLocaleString(),
-      change: stats?.impressionsChange || '+0%',
-      changePeriod: 'from last week',
-      subtitle: 'Last 30 days',
-      icon: Layers,
-    },
-    {
-      label: 'Profile Views',
-      value: (stats?.profileViews30d ?? 0).toLocaleString(),
-      change: stats?.profileViewsChange || '+0%',
-      changePeriod: 'vs prev 30 days',
-      subtitle: stats?.conversionRate ? `${stats.conversionRate}% from impressions` : undefined,
-      icon: Eye,
-    },
-    {
-      label: 'Happy Hour Views',
-      value: (stats?.happyHourViews ?? 0).toLocaleString(),
-      change: stats?.happyHourChange || '+0%',
-      changePeriod: 'from last week',
-      subtitle: undefined,
-      icon: Clock,
-    },
-    {
-      label: 'Favorites',
-      value: (stats?.favorites ?? 0).toLocaleString(),
-      change: stats?.favoritesChange || '+0%',
-      changePeriod: 'from last week',
-      subtitle: undefined,
-      icon: Heart,
-    },
-  ];
-
   // Analytics chart data
   const dailyImpressions = analyticsData?.dailyImpressions || [];
   const maxImpressions = Math.max(...dailyImpressions.map((d) => d.impressions), 1);
@@ -241,20 +248,117 @@ export default function DashboardPage() {
   ] : [];
   const totalClicksForPercentage = clickTypes.reduce((sum, c) => sum + c.count, 1);
 
+  // Tips and recommendations
+  const quickWins = analyticsData?.quickWins || [];
+  const allTips = [...quickWins.slice(0, 3), ...recommendations.slice(0, 3)].slice(0, 5);
+  const visibleTips = allTips.filter((_, index) => !dismissedTips.includes(index));
+
+  const dismissTip = (index: number) => {
+    setDismissedTips([...dismissedTips, index]);
+  };
+
+  // Performance config
+  const trendConfig = analyticsData?.predictions?.trend ? {
+    growing: { icon: <TrendingUp className="w-4 h-4" />, label: 'Growing', color: 'text-green-600' },
+    declining: { icon: <TrendingDown className="w-4 h-4" />, label: 'Declining', color: 'text-red-600' },
+    stable: { icon: <Activity className="w-4 h-4" />, label: 'Stable', color: 'text-tastelanc-text-secondary' },
+  }[analyticsData.predictions.trend] : null;
+
+  const performanceConfig = analyticsData?.benchmarking?.performanceLabel ? {
+    excellent: { label: 'Excellent', color: 'text-green-600' },
+    good: { label: 'Above Average', color: 'text-blue-600' },
+    average: { label: 'Average', color: 'text-tastelanc-text-secondary' },
+    needs_improvement: { label: 'Growing', color: 'text-amber-600' },
+  }[analyticsData.benchmarking.performanceLabel] : null;
+
+  // Shareable deep link to app
+  const shareableLink = restaurant?.slug
+    ? `tastelanc://restaurant/${restaurant.slug}`
+    : null;
+
+  const copyShareableLink = () => {
+    if (shareableLink) {
+      navigator.clipboard.writeText(shareableLink);
+    }
+  };
+
   return (
     <div className="space-y-8">
-      {/* Party Invite Card — shown when restaurant is eligible and event is active */}
+      {/* 1. Party Invite Card - Collapsible (at top) */}
       {restaurantId && (
         <PartyInviteCard restaurantId={restaurantId} buildApiUrl={buildApiUrl} />
       )}
 
-      {/* Stats Header with Refresh */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-tastelanc-text-primary">Overview</h2>
+      {/* 2. Shareable Link - Compact */}
+      {shareableLink && (
+        <div className="flex items-center gap-3 px-2 py-1.5 bg-tastelanc-surface/50 rounded border border-tastelanc-border/50">
+          <Tooltip content="Share this link to open your restaurant directly in the TasteLanc app. Perfect for social media, email signatures, and marketing materials." position="bottom">
+            <span className="text-xs text-tastelanc-text-muted shrink-0 cursor-help flex items-center gap-1">
+              App Link <HelpCircle className="w-3 h-3" />
+            </span>
+          </Tooltip>
+          <code className="text-xs text-tastelanc-text-primary font-mono flex-1 truncate">{shareableLink}</code>
+          <button
+            onClick={copyShareableLink}
+            className="px-3 py-1 bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white text-xs font-medium rounded transition-colors shrink-0"
+          >
+            Copy
+          </button>
+        </div>
+      )}
+
+      {/* 3. Stats Header with Stacked Tips Cards and Refresh */}
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-lg font-semibold text-tastelanc-text-primary shrink-0">Overview</h2>
+
+        {/* Stacked Tips Cards - Deck Style with Square Edges */}
+        {visibleTips.length > 0 && (
+          <div className="relative flex-1 h-14 max-w-2xl">
+            {visibleTips.map((tip, index) => {
+              const isQuickWin = 'estimate' in tip;
+              const priority = isQuickWin ? 'high' : tip.priority;
+              const priorityColors = { high: 'bg-red-500', medium: 'bg-amber-500', low: 'bg-blue-500' };
+              const isTop = index === visibleTips.length - 1;
+
+              return (
+                <div
+                  key={allTips.indexOf(tip)}
+                  className="absolute inset-0 bg-tastelanc-surface border border-tastelanc-border p-3 flex items-center gap-3 transition-all duration-300"
+                  style={{
+                    zIndex: isTop ? 10 : visibleTips.length - index,
+                    transform: `translateY(${(visibleTips.length - 1 - index) * 2}px)`,
+                    opacity: isTop ? 1 : 0.7
+                  }}
+                >
+                  <div className={`w-2 h-2 ${priorityColors[priority]} flex-shrink-0`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-tastelanc-text-primary font-medium text-sm">
+                      {isQuickWin ? tip.action : tip.message}
+                    </p>
+                  </div>
+                  <Link
+                    href={isQuickWin ? '/dashboard/photos' : tip.action}
+                    className="text-tastelanc-accent hover:text-tastelanc-accent-hover text-sm font-medium shrink-0"
+                  >
+                    Start →
+                  </Link>
+                  <button
+                    onClick={() => dismissTip(allTips.indexOf(tip))}
+                    className="p-1 hover:bg-tastelanc-surface-light transition-colors shrink-0"
+                    title="Dismiss"
+                  >
+                    <X className="w-4 h-4 text-tastelanc-text-muted" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         <button
           onClick={() => fetchAll(true)}
           disabled={isRefreshing}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-tastelanc-text-muted hover:text-tastelanc-text-primary rounded-lg hover:bg-tastelanc-surface-light transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-tastelanc-text-muted hover:text-tastelanc-text-primary rounded-lg hover:bg-tastelanc-surface-light transition-colors disabled:opacity-50 shrink-0"
           title="Refresh data"
         >
           <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -262,174 +366,301 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statsDisplay.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={stat.label} className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-tastelanc-text-muted text-sm">{stat.label}</p>
-                  <p className="text-2xl font-bold text-tastelanc-text-primary mt-1">{stat.value}</p>
+      {/* 3. Main Grid: Stats (left 2/3) + Performance (right 1/3) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left: Stats Grid */}
+        <div className="lg:col-span-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <Card className="p-6">
+              <Tooltip content="Total number of times users have viewed your restaurant profile in the last 30 days. This includes all page visits from the app." position="top">
+                <div className="flex items-center gap-2 mb-2 cursor-help">
+                  <Eye className="w-4 h-4 text-tastelanc-accent" />
+                  <span className="text-xs text-tastelanc-text-muted">Views</span>
+                  <HelpCircle className="w-3 h-3 text-tastelanc-text-faint" />
                 </div>
-                <div className="p-2 bg-tastelanc-surface rounded-lg">
-                  <Icon className="w-5 h-5 text-tastelanc-accent" />
+              </Tooltip>
+              <p className="text-2xl font-bold text-tastelanc-text-primary">{(stats?.profileViews30d ?? 0).toLocaleString()}</p>
+              <p className={`text-xs mt-1 ${stats?.profileViewsChange?.startsWith('+') ? 'text-green-400' : 'text-tastelanc-text-faint'}`}>
+                {stats?.profileViewsChange || '+0%'}
+              </p>
+            </Card>
+
+            <Card className="p-6">
+              <Tooltip content="Number of times your restaurant appeared in user feeds, search results, and browse sections in the last 30 days. Higher impressions = more visibility." position="top">
+                <div className="flex items-center gap-2 mb-2 cursor-help">
+                  <Layers className="w-4 h-4 text-tastelanc-accent" />
+                  <span className="text-xs text-tastelanc-text-muted">Impressions</span>
+                  <HelpCircle className="w-3 h-3 text-tastelanc-text-faint" />
+                </div>
+              </Tooltip>
+              <p className="text-2xl font-bold text-tastelanc-text-primary">{(stats?.impressions30d ?? 0).toLocaleString()}</p>
+              <p className={`text-xs mt-1 ${stats?.impressionsChange?.startsWith('+') ? 'text-green-400' : 'text-tastelanc-text-faint'}`}>
+                {stats?.impressionsChange || '+0%'}
+              </p>
+            </Card>
+
+            <Card className="p-6">
+              <Tooltip content="Total number of users who have added your restaurant to their favorites list. Favorited restaurants appear at the top of users' feeds." position="top">
+                <div className="flex items-center gap-2 mb-2 cursor-help">
+                  <Heart className="w-4 h-4 text-tastelanc-accent" />
+                  <span className="text-xs text-tastelanc-text-muted">Favorites</span>
+                  <HelpCircle className="w-3 h-3 text-tastelanc-text-faint" />
+                </div>
+              </Tooltip>
+              <p className="text-2xl font-bold text-tastelanc-text-primary">{stats?.favorites ?? 0}</p>
+              <p className="text-xs mt-1 text-tastelanc-text-faint">All time</p>
+            </Card>
+
+            <Card className="p-6">
+              <Tooltip content="Number of email subscribers you've uploaded. Use email campaigns to announce specials, events, and send exclusive deals directly to your customers." position="top">
+                <div className="flex items-center gap-2 mb-2 cursor-help">
+                  <Mail className="w-4 h-4 text-tastelanc-accent" />
+                  <span className="text-xs text-tastelanc-text-muted">Email List</span>
+                  <HelpCircle className="w-3 h-3 text-tastelanc-text-faint" />
+                </div>
+              </Tooltip>
+              <p className="text-2xl font-bold text-tastelanc-text-primary">{stats?.emailSubscribers ?? 0}</p>
+              <p className="text-xs mt-1 text-tastelanc-text-faint">Subscribers</p>
+            </Card>
+          </div>
+
+          {/* Email List CTA - Show if no subscribers */}
+          {(stats?.emailSubscribers ?? 0) === 0 && (
+            <Card className="p-4 bg-tastelanc-surface-light border-tastelanc-accent/30 mt-4">
+              <div className="flex items-start gap-3">
+                <Mail className="w-5 h-5 text-tastelanc-accent shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-tastelanc-text-primary mb-1">
+                    Build Your Email List
+                  </h4>
+                  <p className="text-xs text-tastelanc-text-muted mb-3">
+                    Upload your existing customer emails to send targeted campaigns and announcements.
+                  </p>
+                  <Link
+                    href={buildNavHref('/dashboard/marketing')}
+                    className="inline-flex items-center gap-1 text-tastelanc-accent hover:text-tastelanc-accent-hover text-sm font-medium"
+                  >
+                    Upload Email List <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
               </div>
-              {stat.change && (
-                <p className={`text-sm mt-2 ${stat.change.startsWith('+') && stat.change !== '+0%' ? 'text-green-400' : 'text-tastelanc-text-faint'}`}>
-                  {stat.change} {stat.changePeriod}
-                </p>
-              )}
-              {stat.subtitle && (
-                <p className="text-sm text-tastelanc-accent">{stat.subtitle}</p>
-              )}
             </Card>
-          );
-        })}
+          )}
+        </div>
+
+        {/* Right: Performance Summary */}
+        {hasPremium && (
+          <div className="lg:col-span-1">
+            <Card className="p-6 h-full">
+              <Tooltip content="Track how your restaurant performs compared to similar venues. Includes ranking, trends, user actions, and forecasts based on your data." position="left">
+                <div className="flex items-center gap-2 mb-4 cursor-help">
+                  <BarChart3 className="w-5 h-5 text-tastelanc-accent" />
+                  <h3 className="text-base font-bold text-tastelanc-text-primary">Performance</h3>
+                  <HelpCircle className="w-3.5 h-3.5 text-tastelanc-text-faint" />
+                </div>
+              </Tooltip>
+
+              <div className="space-y-4">
+                {/* Key Metrics Grid */}
+                {analyticsData?.benchmarking && analyticsData.benchmarking.totalComparable > 0 && (stats?.profileViews30d ?? 0) >= 10 ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <Tooltip content={`You're in the top ${100 - analyticsData.benchmarking.percentile}% of restaurants in your category based on views and engagement.`} position="top">
+                      <div className="bg-tastelanc-surface rounded p-3 cursor-help">
+                        <div className="text-xs text-tastelanc-text-muted mb-1 flex items-center gap-1">
+                          Ranking <HelpCircle className="w-2.5 h-2.5" />
+                        </div>
+                        <div className="text-xl font-bold text-tastelanc-text-primary">{analyticsData.benchmarking.percentile}%</div>
+                        <div className={`text-xs mt-0.5 font-medium ${performanceConfig?.color}`}>
+                          {performanceConfig?.label}
+                        </div>
+                      </div>
+                    </Tooltip>
+
+                    {analyticsData?.predictions && analyticsData.predictions.dailyAverage >= 10 && (
+                      <Tooltip content={`Your views are ${analyticsData.predictions.trend === 'growing' ? 'increasing' : analyticsData.predictions.trend === 'declining' ? 'decreasing' : 'holding steady'} based on recent activity patterns.`} position="top">
+                        <div className="bg-tastelanc-surface rounded p-3 cursor-help">
+                          <div className="text-xs text-tastelanc-text-muted mb-1 flex items-center gap-1">
+                            Trend <HelpCircle className="w-2.5 h-2.5" />
+                          </div>
+                          <div className={`flex items-center gap-1.5 ${trendConfig?.color || 'text-tastelanc-text-primary'}`}>
+                            {trendConfig?.icon}
+                            <span className="text-lg font-bold">{trendConfig?.label}</span>
+                          </div>
+                          <div className="text-xs mt-0.5 text-tastelanc-text-muted">
+                            {Math.round(analyticsData.predictions.dailyAverage)} / day
+                          </div>
+                        </div>
+                      </Tooltip>
+                    )}
+                  </div>
+                ) : null}
+
+                {/* 7-Day Impressions Chart */}
+                {dailyImpressions.length > 0 && (
+                  <div>
+                    <Tooltip content="Visual chart showing how many times your restaurant appeared in the app over the last 7 days. Taller bars = more visibility." position="top">
+                      <div className="text-xs text-tastelanc-text-muted mb-2 cursor-help flex items-center gap-1">
+                        Last 7 Days Impressions <HelpCircle className="w-2.5 h-2.5" />
+                      </div>
+                    </Tooltip>
+                    <div className="flex items-end justify-between gap-1 h-24">
+                      {dailyImpressions.slice(-7).map((day, i) => {
+                        const heightPercent = (day.impressions / maxImpressions) * 100;
+                        return (
+                          <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                            <div className="w-full flex items-end justify-center h-20">
+                              <div
+                                className="w-full bg-tastelanc-accent rounded-t transition-all"
+                                style={{ height: `${Math.max(heightPercent, 5)}%` }}
+                                title={`${day.impressions} impressions`}
+                              />
+                            </div>
+                            <span className="text-[9px] text-tastelanc-text-faint">
+                              {day.day.slice(0, 3)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Click Breakdown */}
+                {clickTypes.length > 0 && clickTypes.some(c => c.count > 0) && (
+                  <div>
+                    <Tooltip content="See what actions users take most often when viewing your profile. Phone calls, website visits, and directions show strong engagement." position="top">
+                      <div className="text-xs text-tastelanc-text-muted mb-2 cursor-help flex items-center gap-1">
+                        Top Actions <HelpCircle className="w-2.5 h-2.5" />
+                      </div>
+                    </Tooltip>
+                    <div className="space-y-2">
+                      {clickTypes
+                        .filter(c => c.count > 0)
+                        .sort((a, b) => b.count - a.count)
+                        .slice(0, 3)
+                        .map((click, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <click.icon className="w-3.5 h-3.5 text-tastelanc-text-secondary shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="w-full bg-tastelanc-surface rounded-full h-1.5">
+                                <div
+                                  className="bg-tastelanc-accent h-1.5 rounded-full transition-all"
+                                  style={{ width: `${(click.count / totalClicksForPercentage) * 100}%` }}
+                                />
+                              </div>
+                            </div>
+                            <span className="text-xs text-tastelanc-text-primary font-medium shrink-0">
+                              {click.count}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Forecast */}
+                {analyticsData?.predictions && analyticsData.predictions.dailyAverage >= 10 && (
+                  <Tooltip content="AI-powered prediction of how many profile views you'll receive in the next 30 days based on your current trends and historical data." position="top">
+                    <div className="pt-2 border-t border-tastelanc-border cursor-help">
+                      <div className="text-xs text-tastelanc-text-muted mb-1 flex items-center gap-1">
+                        Next 30 Days Forecast <HelpCircle className="w-2.5 h-2.5" />
+                      </div>
+                      <div className="text-2xl font-bold text-tastelanc-text-primary">
+                        {analyticsData.predictions.next30Days.toLocaleString()}
+                      </div>
+                      <div className="text-xs mt-0.5 text-tastelanc-text-muted">Projected views</div>
+                    </div>
+                  </Tooltip>
+                )}
+
+                {/* Show message if no performance data */}
+                {(!analyticsData?.benchmarking || analyticsData.benchmarking.totalComparable === 0 || (stats?.profileViews30d ?? 0) < 10) &&
+                 (!analyticsData?.predictions || analyticsData.predictions.dailyAverage < 10) &&
+                 dailyImpressions.length === 0 && (
+                  <div className="text-center py-4 text-tastelanc-text-muted text-sm">
+                    Performance data will appear once you reach 10+ daily views
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+        )}
       </div>
 
-      {/* Market Insights Teaser */}
-      {!hasElite ? (
-        <Card className="relative min-h-[200px] sm:min-h-[280px]">
-          <div className="blur-md pointer-events-none select-none p-6" aria-hidden="true">
-            <div className="flex items-center gap-6">
-              <div className="w-20 h-20 rounded-full border-4 border-tastelanc-surface-light flex items-center justify-center flex-shrink-0">
-                <span className="text-2xl font-bold text-tastelanc-text-primary">73</span>
-              </div>
-              <div className="flex-1 space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-tastelanc-text-secondary">Menu Items</span>
-                  <div className="flex gap-4">
-                    <span className="text-tastelanc-text-primary font-medium">5</span>
-                    <span className="text-tastelanc-text-faint">28 avg</span>
-                  </div>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-tastelanc-text-secondary">Happy Hours</span>
-                  <div className="flex gap-4">
-                    <span className="text-tastelanc-text-primary font-medium">1</span>
-                    <span className="text-tastelanc-text-faint">4 avg</span>
-                  </div>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-tastelanc-text-secondary">Events</span>
-                  <div className="flex gap-4">
-                    <span className="text-tastelanc-text-primary font-medium">0</span>
-                    <span className="text-tastelanc-text-faint">3 avg</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+      {/* 4. Visibility Score */}
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-tastelanc-text-primary flex items-center gap-2">
+            Visibility Score
+            <Tooltip content="Your Visibility Score determines how prominently your restaurant appears in the app. Add deals, videos, menus, and more to boost your score." position="top">
+              <HelpCircle className="w-3.5 h-3.5 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
+            </Tooltip>
+          </h3>
+          <div className="flex items-center gap-2">
+            <Badge variant="accent">{profileCompletion?.percentage || 0}/100</Badge>
+            {profileCompletion?.band && (
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                profileCompletion.band === 'Optimized' ? 'bg-green-500/20 text-green-400' :
+                profileCompletion.band === 'Great' ? 'bg-blue-500/20 text-blue-400' :
+                profileCompletion.band === 'Good' ? 'bg-yellow-500/20 text-yellow-400' :
+                profileCompletion.band === 'Getting Started' ? 'bg-orange-500/20 text-orange-400' :
+                'bg-red-500/20 text-red-400'
+              }`}>
+                {profileCompletion.band}
+              </span>
+            )}
           </div>
-          <div className="absolute inset-0 flex items-center justify-center bg-tastelanc-bg/60 backdrop-blur-sm rounded-lg">
-            <div className="text-center px-6 py-6">
-              <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full flex items-center justify-center">
-                <Crown className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-1">Market Insights</h3>
-              <p className="text-tastelanc-text-muted text-sm mb-4 max-w-xs mx-auto">
-                See how you compare to competitors and get AI-powered growth recommendations.
-              </p>
-              <Link
-                href={buildNavHref('/dashboard/subscription')}
-                className="inline-flex items-center gap-2 px-6 py-2 rounded-lg font-semibold text-sm transition-colors bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-black"
+        </div>
+        <div className="w-full bg-tastelanc-surface rounded-full h-2 mb-4">
+          <div
+            className="bg-tastelanc-accent h-2 rounded-full transition-all"
+            style={{ width: `${profileCompletion?.percentage || 0}%` }}
+          />
+        </div>
+        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {profileCompletion?.items.map((item, index) => (
+            <li key={index}>
+              <Tooltip
+                content={item.action || `You've completed: ${item.label}`}
+                position="top"
               >
-                <Crown className="w-4 h-4" />
-                Upgrade to Elite
-              </Link>
-            </div>
-          </div>
-        </Card>
-      ) : (
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-tastelanc-text-primary flex items-center gap-2">
-              <Lightbulb className="w-5 h-5 text-tastelanc-accent" />
-              Market Insights
-            </h3>
-            <Link
-              href={buildNavHref('/dashboard/insights')}
-              className="text-tastelanc-accent hover:underline text-sm flex items-center gap-1"
-            >
-              View Full Insights <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-          <p className="text-tastelanc-text-muted text-sm mt-2">
-            Check your visibility score, see how you compare to top performers, and get growth recommendations.
-          </p>
-        </Card>
-      )}
+                <div className="flex items-center gap-2 text-sm cursor-help">
+                  <span className={`w-4 h-4 rounded-full flex items-center justify-center ${item.completed ? 'bg-green-500' : 'bg-tastelanc-surface-light'}`}>
+                    <span className={`text-xs ${item.completed ? 'text-white' : 'text-tastelanc-text-muted'}`}>
+                      {item.completed ? '✓' : '○'}
+                    </span>
+                  </span>
+                  <span className={item.completed ? 'text-tastelanc-text-secondary' : 'text-tastelanc-text-faint'}>
+                    {item.label}
+                  </span>
+                </div>
+              </Tooltip>
+            </li>
+          ))}
+        </ul>
+        <Link
+          href={buildNavHref('/dashboard/profile')}
+          className="inline-flex items-center gap-1 text-tastelanc-accent hover:underline mt-4 text-sm"
+        >
+          Boost your visibility <ArrowRight className="w-4 h-4" />
+        </Link>
+      </Card>
 
-      {/* Analytics Section - Premium+ */}
-      {hasPremium && (
-        <>
-          {analyticsLoading ? (
+      {/* Charts Row - Collapsible */}
+      {hasPremium && analyticsData && (
+        <div>
+          <button
+            onClick={() => setShowCharts(!showCharts)}
+            className="flex items-center gap-2 text-tastelanc-text-secondary hover:text-tastelanc-text-primary mb-4 text-sm font-medium"
+          >
+            {showCharts ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            {showCharts ? 'Hide' : 'Show'} Detailed Charts
+          </button>
+
+          {showCharts && (
             <div className="grid lg:grid-cols-2 gap-8">
-              {[1, 2].map((i) => (
-                <Card key={i} className="p-6 animate-pulse">
-                  <div className="h-4 bg-tastelanc-surface rounded w-40 mb-6" />
-                  <div className="h-48 bg-tastelanc-surface rounded" />
-                </Card>
-              ))}
-            </div>
-          ) : analyticsData && (
-            <>
-              {/* Conversion Funnel - Top of Analytics */}
-              {analyticsData.conversionFunnel && (
-                <Card className="p-6">
-                  <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-6 flex items-center gap-2">
-                    Conversion Funnel (30d)
-                    <Tooltip content="How users discover your restaurant: Impressions (seen in listings) → Detail Views (clicked your page) → Actions (called, visited website, etc.)" position="right">
-                      <HelpCircle className="w-3.5 h-3.5 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
-                    </Tooltip>
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <p className="text-2xl sm:text-3xl font-bold text-tastelanc-text-primary">{analyticsData.conversionFunnel.impressions.toLocaleString()}</p>
-                      <p className="text-tastelanc-text-muted text-sm mt-1">Seen in App</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl sm:text-3xl font-bold text-tastelanc-text-primary">{analyticsData.conversionFunnel.detailViews.toLocaleString()}</p>
-                      <p className="text-tastelanc-text-muted text-sm mt-1">Viewed Profile</p>
-                      <p className="text-tastelanc-accent text-xs mt-0.5">
-                        {analyticsData.conversionFunnel.impressions > 0
-                          ? `${Math.round((analyticsData.conversionFunnel.detailViews / analyticsData.conversionFunnel.impressions) * 1000) / 10}%`
-                          : '0%'} of impressions
-                      </p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl sm:text-3xl font-bold text-tastelanc-text-primary">{analyticsData.conversionFunnel.clicks.toLocaleString()}</p>
-                      <p className="text-tastelanc-text-muted text-sm mt-1">Took Action</p>
-                      <p className="text-green-400 text-xs mt-0.5">
-                        {analyticsData.conversionFunnel.detailViews > 0
-                          ? `${Math.round((analyticsData.conversionFunnel.clicks / analyticsData.conversionFunnel.detailViews) * 1000) / 10}%`
-                          : '0%'} of views
-                      </p>
-                    </div>
-                  </div>
-                  {analyticsData.conversionFunnel.impressions > 0 && (
-                    <>
-                      <div className="mt-4 flex gap-1 h-3 rounded-full overflow-hidden">
-                        <div className="bg-blue-500 flex-1 rounded-l-full" />
-                        <div className="bg-tastelanc-accent" style={{ flex: Math.max(analyticsData.conversionFunnel.clickRate / 100, 0.05) }} />
-                        <div className="bg-green-500 rounded-r-full" style={{ flex: Math.max((analyticsData.conversionFunnel.viewRate * analyticsData.conversionFunnel.clickRate) / 10000, 0.02) }} />
-                      </div>
-                      <div className="flex justify-between mt-2 text-xs text-tastelanc-text-faint">
-                        <span>Impressions</span>
-                        <span>Profile Views</span>
-                        <span>Actions</span>
-                      </div>
-                    </>
-                  )}
-                </Card>
-              )}
-
-              {/* Charts Row */}
-              <div className="grid lg:grid-cols-2 gap-8">
-                {/* Weekly Impressions Chart */}
-                <Card className="p-6">
+              {/* Weekly Impressions Chart */}
+              <Card className="p-6">
                   <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-6">Weekly Impressions</h3>
                   {dailyImpressions.every(d => d.impressions === 0) ? (
                     <div className="h-48 flex items-center justify-center text-tastelanc-text-faint">
@@ -485,104 +716,10 @@ export default function DashboardPage() {
                   )}
                 </Card>
               </div>
-            </>
-          )}
-        </>
-      )}
-
-      {/* Two Column Layout */}
-      <div className="grid lg:grid-cols-2 gap-8">
-        {/* Visibility Score */}
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-tastelanc-text-primary flex items-center gap-2">
-              Visibility Score
-              <Tooltip content="Your Visibility Score determines how prominently your restaurant appears in the app. Add deals, videos, menus, and more to boost your score." position="top">
-                <HelpCircle className="w-3.5 h-3.5 text-tastelanc-text-faint hover:text-tastelanc-text-muted cursor-help" />
-              </Tooltip>
-            </h3>
-            <div className="flex items-center gap-2">
-              <Badge variant="accent">{profileCompletion?.percentage || 0}/100</Badge>
-              {profileCompletion?.band && (
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                  profileCompletion.band === 'Optimized' ? 'bg-green-500/20 text-green-400' :
-                  profileCompletion.band === 'Great' ? 'bg-blue-500/20 text-blue-400' :
-                  profileCompletion.band === 'Good' ? 'bg-yellow-500/20 text-yellow-400' :
-                  profileCompletion.band === 'Getting Started' ? 'bg-orange-500/20 text-orange-400' :
-                  'bg-red-500/20 text-red-400'
-                }`}>
-                  {profileCompletion.band}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="w-full bg-tastelanc-surface rounded-full h-2 mb-4">
-            <div
-              className="bg-tastelanc-accent h-2 rounded-full transition-all"
-              style={{ width: `${profileCompletion?.percentage || 0}%` }}
-            />
-          </div>
-          <ul className="space-y-2">
-            {profileCompletion?.items.map((item, index) => (
-              <li key={index} className="flex items-center gap-2 text-sm">
-                <span className={`w-4 h-4 rounded-full flex items-center justify-center ${item.completed ? 'bg-green-500' : 'bg-tastelanc-surface-light'}`}>
-                  <span className={`text-xs ${item.completed ? 'text-white' : 'text-tastelanc-text-muted'}`}>
-                    {item.completed ? '✓' : '○'}
-                  </span>
-                </span>
-                <span className={item.completed ? 'text-tastelanc-text-secondary' : 'text-tastelanc-text-faint'}>
-                  {item.label}
-                </span>
-                {!item.completed && item.action && (
-                  <span className="text-tastelanc-accent text-xs ml-auto">{item.action}</span>
-                )}
-              </li>
-            ))}
-          </ul>
-          <Link
-            href={buildNavHref('/dashboard/profile')}
-            className="inline-flex items-center gap-1 text-tastelanc-accent hover:underline mt-4 text-sm"
-          >
-            Boost your visibility <ArrowRight className="w-4 h-4" />
-          </Link>
-        </Card>
-
-        {/* Alerts & Tips */}
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-tastelanc-text-primary mb-4">Tips & Alerts</h3>
-          <div className="space-y-4">
-            {stats?.upcomingEvents === 0 && (
-              <div className="flex gap-3 p-3 bg-yellow-900/20 border border-yellow-600/30 rounded-lg">
-                <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-yellow-200 text-sm font-medium">Add some events!</p>
-                  <p className="text-yellow-200/70 text-xs mt-1">
-                    Restaurants with events get more engagement from visitors.
-                  </p>
-                </div>
-              </div>
             )}
-            <div className="flex gap-3 p-3 bg-tastelanc-surface rounded-lg">
-              <Sparkles className="w-5 h-5 text-tastelanc-accent flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-tastelanc-text-secondary text-sm font-medium">Pro tip: Add happy hour specials</p>
-                <p className="text-tastelanc-text-muted text-xs mt-1">
-                  Restaurants with happy hours get 3x more engagement.
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-3 p-3 bg-tastelanc-surface rounded-lg">
-              <Calendar className="w-5 h-5 text-tastelanc-accent flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-tastelanc-text-secondary text-sm font-medium">Schedule recurring events</p>
-                <p className="text-tastelanc-text-muted text-xs mt-1">
-                  Weekly trivia nights and live music attract regulars.
-                </p>
-              </div>
-            </div>
           </div>
-        </Card>
-      </div>
+        )}
+
 
       {/* Subscription CTA */}
       {!restaurant?.stripe_subscription_id && (

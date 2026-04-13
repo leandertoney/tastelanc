@@ -59,6 +59,7 @@ export async function GET(request: Request) {
       activeSpecialsResult,
       upcomingEventsResult,
       photosResult,
+      emailSubscribersResult,
     ] = await Promise.all([
       // Total profile views (all time)
       serviceClient
@@ -229,6 +230,13 @@ export async function GET(request: Request) {
         .from('restaurant_photos')
         .select('*', { count: 'exact', head: true })
         .eq('restaurant_id', restaurantId),
+
+      // Email subscribers
+      serviceClient
+        .from('restaurant_contacts')
+        .select('*', { count: 'exact', head: true })
+        .eq('restaurant_id', restaurantId)
+        .eq('is_unsubscribed', false),
     ]);
 
     // Calculate percentage changes
@@ -314,6 +322,7 @@ export async function GET(request: Request) {
         menuViews,
         menuChange: calcChange(menuViews, lastWeekMenuViews),
         upcomingEvents: 0,
+        emailSubscribers: emailSubscribersResult.count || 0,
       },
       profileCompletion: {
         percentage: completionPercentage,
