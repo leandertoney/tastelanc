@@ -23,7 +23,8 @@ import {
   Activity,
   HelpCircle,
   ArrowRight,
-  Mail
+  Mail,
+  AlertCircle
 } from 'lucide-react';
 import { Card, Badge, Tooltip } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
