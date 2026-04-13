@@ -923,6 +923,8 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                               restaurantId: restaurant.id,
                               restaurantName: restaurant.name,
                             });
+                          } else if (coupon.cta_type === 'learn_more') {
+                            navigation.navigate('ThirstyKnowledge');
                           } else if (!claimedCouponIds.has(coupon.id)) {
                             handleClaimCoupon(coupon.id);
                           }

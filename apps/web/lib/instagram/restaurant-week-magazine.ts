@@ -397,9 +397,9 @@ async function composeContents(): Promise<Buffer> {
   const contents = [
     { page: '03', title: 'Participating Restaurants', desc: 'Featured venues + full list' },
     { page: '04', title: 'Featured Menus', desc: 'Signature dishes & specialties' },
-    { page: '05', title: 'Thirsty for Knowledge', desc: 'Trivia partnership & leaderboard' },
-    { page: '06', title: 'Win Prizes', desc: 'Check in & compete' },
-    { page: '07', title: 'Events This Week', desc: 'Dining, drinks & entertainment' },
+    { page: '05', title: 'Thirsty for Knowledge', desc: 'Trivia schedule & nightly prizes' },
+    { page: '06', title: 'Events This Week', desc: 'Live entertainment & more' },
+    { page: '07', title: 'Download the App', desc: 'Track favorites & compete' },
   ];
 
   let y = 260;
@@ -642,14 +642,16 @@ async function composeFeaturedMenus(supabase: SupabaseClient, marketId: string):
   const bg = sharp({ create: { width: W, height: H, channels: 3, background: hexToRgb(RW.textLight) } });
   const composites: sharp.OverlayOptions[] = [];
 
-  // Fetch ONE food photo from each restaurant
-  const { data: cabbagePhotos } = await supabase
+  // Fetch ONE food photo from each restaurant (skip Google Photos URLs - they return 403)
+  const { data: allCabbagePhotos } = await supabase
     .from('restaurant_photos')
     .select('url')
     .eq('restaurant_id', (await supabase.from('restaurants').select('id').eq('name', 'Cabbage Hill Schnitzel Haus').single()).data?.id)
     .eq('is_cover', false)
     .order('display_order')
-    .limit(1);
+    .limit(10);
+
+  const cabbagePhotos = allCabbagePhotos?.filter(p => !p.url.includes('googleusercontent.com')).slice(0, 1);
 
   const { data: roosterPhotos } = await supabase
     .from('restaurant_photos')
@@ -702,36 +704,42 @@ async function composeFeaturedMenus(supabase: SupabaseClient, marketId: string):
   const textX = PAD + IMG_W + PAD;
   const textSvg = Buffer.from(`
     <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+      <!-- Page title at very top -->
+      <text x="${PAD}" y="40"
+            font-family="Inter" font-weight="900" font-size="11"
+            fill="${RW.terracotta}" letter-spacing="3">FEATURED MENUS</text>
+      <rect x="${PAD}" y="48" width="50" height="2" fill="${RW.terracotta}" />
+
       <!-- TOP: Cabbage Hill -->
-      <text x="${textX}" y="60"
+      <text x="${textX}" y="90"
             font-family="Playfair Display" font-weight="700" font-size="28"
             fill="${RW.terracotta}">Cabbage Hill</text>
-      <text x="${textX}" y="90"
+      <text x="${textX}" y="120"
             font-family="Playfair Display" font-weight="700" font-size="28"
             fill="${RW.terracotta}">Schnitzel Haus</text>
 
-      <text x="${textX}" y="135"
+      <text x="${textX}" y="165"
             font-family="Inter" font-weight="600" font-size="15"
             fill="#1a1a1a">Traditional German Cuisine</text>
 
-      <text x="${textX}" y="175"
+      <text x="${textX}" y="205"
             font-family="Inter" font-weight="400" font-size="13"
             fill="#555">From their trademark</text>
-      <text x="${textX}" y="195"
+      <text x="${textX}" y="225"
             font-family="Inter" font-weight="400" font-size="13"
             fill="#555">schnitzel to other delectable</text>
-      <text x="${textX}" y="215"
+      <text x="${textX}" y="245"
             font-family="Inter" font-weight="400" font-size="13"
             fill="#555">dishes, Cabbage Hill brings</text>
-      <text x="${textX}" y="235"
+      <text x="${textX}" y="265"
             font-family="Inter" font-weight="400" font-size="13"
             fill="#555">authentic German flavors</text>
-      <text x="${textX}" y="255"
+      <text x="${textX}" y="285"
             font-family="Inter" font-weight="400" font-size="13"
             fill="#555">to Lancaster.</text>
 
-      <rect x="${textX}" y="290" width="200" height="40" fill="${RW.terracotta}" rx="6" />
-      <text x="${textX + 100}" y="318"
+      <rect x="${textX}" y="320" width="200" height="40" fill="${RW.terracotta}" rx="6" />
+      <text x="${textX + 100}" y="348"
             font-family="Inter" font-weight="700" font-size="14"
             fill="${RW.yellow}" text-anchor="middle">View RW Menu in App</text>
 
@@ -785,105 +793,192 @@ async function composeFeaturedMenus(supabase: SupabaseClient, marketId: string):
 }
 
 // ============================================================
-// Page 5: Thirsty for Knowledge Partnership (BIG IMAGE)
+// Page 5: Thirsty for Knowledge Partnership — Restaurant Week Edition
 // ============================================================
 
 async function composeThirstyKnowledgePartnership(supabase: SupabaseClient): Promise<Buffer> {
-  const bg = sharp({ create: { width: W, height: H, channels: 3, background: hexToRgb('#1F2937') } }); // Lighter dark gray instead of hard black
+  // Fetch actual TFK events during Restaurant Week (April 13-19, 2026)
+  const { data: tfkEvents } = await supabase
+    .from('events')
+    .select('name, performer_name, start_time, days_of_week, restaurant:restaurants(name)')
+    .eq('partner_slug', 'thirsty-for-knowledge')
+    .gte('event_date', '2026-04-13')
+    .lte('event_date', '2026-04-19')
+    .order('start_time', { ascending: true });
+
+  // Group events by day
+  const dayMap: Record<string, string[]> = {
+    monday: [],
+    tuesday: [],
+    wednesday: [],
+    thursday: [],
+    friday: [],
+    saturday: [],
+    sunday: [],
+  };
+
+  tfkEvents?.forEach(event => {
+    event.days_of_week?.forEach((day: string) => {
+      const venueName = (event.restaurant as any)?.name || event.performer_name;
+      if (venueName && !dayMap[day].includes(venueName)) {
+        dayMap[day].push(venueName);
+      }
+    });
+  });
+
+  // Pastel tie-dye gradient background (matching TFK app design)
+  const bgGradient = Buffer.from(`
+    <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="tfkGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:#F9A8D4;stop-opacity:1"/>
+          <stop offset="50%" style="stop-color:#C084FC;stop-opacity:1"/>
+          <stop offset="100%" style="stop-color:#93C5FD;stop-opacity:1"/>
+        </linearGradient>
+      </defs>
+      <rect width="${W}" height="${H}" fill="url(#tfkGrad)"/>
+      <!-- Page border -->
+      <rect x="20" y="20" width="${W - 40}" height="${H - 40}"
+            fill="none" stroke="#6D28D9" stroke-width="3" rx="8" />
+    </svg>
+  `);
+  const bg = sharp(bgGradient);
   const composites: sharp.OverlayOptions[] = [];
 
-  // BIG TFK logo image — 55% of page height at top
-  const IMG_H = Math.floor(H * 0.55);
+  // BIG TFK logo in left corner - takes up left third of page
+  const LOGO_W = 320;
+  const LOGO_H = 600;
+  const LOGO_X = 40;
+  const LOGO_Y = 80;
   const tfkLogoUrl = 'https://kufcxxynjvyharhtfptd.supabase.co/storage/v1/object/public/images/ads/tfk_logo.png';
 
   try {
     const tfkLogoRaw = await fetchImageBuffer(tfkLogoUrl);
-    const tfkImg = await sharp(tfkLogoRaw)
-      .resize(W, IMG_H, { fit: 'cover', position: 'centre' })
-      .modulate({ brightness: 0.9, saturation: 1.1 })
-      .jpeg({ quality: JPEG_Q })
+    const tfkLogo = await sharp(tfkLogoRaw)
+      .resize(LOGO_W, LOGO_H, { fit: 'inside', position: 'left', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .png()
       .toBuffer();
 
-    // Dark gradient overlay on bottom
-    const imgOverlay = Buffer.from(`
-      <svg width="${W}" height="${IMG_H}" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="triviaGrad" x1="0%" y1="60%" x2="0%" y2="100%">
-            <stop offset="0%" style="stop-color:black;stop-opacity:0.2"/>
-            <stop offset="100%" style="stop-color:black;stop-opacity:0.85"/>
-          </linearGradient>
-        </defs>
-        <rect width="${W}" height="${IMG_H}" fill="url(#triviaGrad)"/>
-        <text x="50" y="${IMG_H - 90}"
-              font-family="Inter" font-weight="900" font-size="16"
-              fill="#FCD34D" letter-spacing="4">PARTNERSHIP SPOTLIGHT</text>
-        <text x="50" y="${IMG_H - 40}"
-              font-family="Playfair Display" font-weight="700" font-size="48"
-              fill="white">Thirsty for Knowledge</text>
-      </svg>
-    `);
-
-    const labeled = await sharp(tfkImg)
-      .composite([{ input: imgOverlay, top: 0, left: 0 }])
-      .jpeg({ quality: JPEG_Q })
-      .toBuffer();
-
-    composites.push({ input: labeled, top: 0, left: 0 });
+    composites.push({ input: tfkLogo, top: LOGO_Y, left: LOGO_X });
   } catch (err) {
     console.error('Failed to load TFK logo:', err);
   }
 
-  // Text section below image (bottom 45%)
-  const TEXT_H = H - IMG_H;
-  const textSvg = Buffer.from(`
-    <svg width="${W}" height="${TEXT_H}" xmlns="http://www.w3.org/2000/svg">
-      <!-- Partnership Info -->
-      <text x="60" y="50"
-            font-family="Playfair Display" font-weight="700" font-size="28"
-            fill="#FFFFFF">We're Sponsoring the Picture Round!</text>
+  // Magazine-style content on the right side
+  const RIGHT_START = LOGO_X + LOGO_W + 50;
+  const RIGHT_WIDTH = W - RIGHT_START - 60;
 
-      <text x="60" y="95"
-            font-family="Inter" font-weight="400" font-size="15"
-            fill="rgba(255,255,255,0.85)">During Restaurant Week, TasteLanc sponsors the Picture</text>
-      <text x="60" y="120"
-            font-family="Inter" font-weight="400" font-size="15"
-            fill="rgba(255,255,255,0.85)">Round at TFK trivia nights. Win that round? Win prizes!</text>
+  // Build location text dynamically - show ALL days with MORE venues
+  let locationY = 260;
+  const locationLines: string[] = [];
 
-      <!-- Live Leaderboard Section -->
-      <rect x="60" y="160" width="${W - 120}" height="120"
-            fill="rgba(124,58,237,0.3)" stroke="#7C3AED" stroke-width="2" rx="8" />
-      <text x="${W / 2}" y="195"
-            font-family="Inter" font-weight="900" font-size="22"
-            fill="#FCD34D" text-anchor="middle">LIVE LEADERBOARD</text>
-      <text x="${W / 2}" y="225"
-            font-family="Inter" font-weight="400" font-size="15"
-            fill="rgba(255,255,255,0.85)" text-anchor="middle">Track your favorite teams in real-time</text>
-      <text x="${W / 2}" y="250"
-            font-family="Inter" font-weight="400" font-size="15"
-            fill="rgba(255,255,255,0.85)" text-anchor="middle">Updates as scores come in each week</text>
+  const daysToShow = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  daysToShow.forEach(day => {
+    if (dayMap[day].length > 0) {
+      const dayLabel = day.charAt(0).toUpperCase() + day.slice(1);
+      const venues = dayMap[day].slice(0, 4).join(' • '); // Show up to 4 venues per day
+      locationLines.push(`
+        <text x="${RIGHT_START}" y="${locationY}"
+              font-family="Inter" font-weight="700" font-size="18"
+              fill="#6D28D9">${dayLabel}</text>
+        <text x="${RIGHT_START}" y="${locationY + 24}"
+              font-family="Inter" font-weight="500" font-size="15"
+              fill="rgba(26,42,74,0.85)">${escapeXml(venues)}</text>
+      `);
+      locationY += 55;
+    }
+  });
 
-      <!-- App Download CTA -->
-      <text x="60" y="310"
-            font-family="Inter" font-weight="700" font-size="18"
-            fill="#FCD34D">Download the TasteLanc App</text>
-      <text x="60" y="340"
-            font-family="Inter" font-weight="400" font-size="14"
-            fill="rgba(255,255,255,0.85)">Track your leaderboard position in real-time</text>
-      <text x="60" y="365"
-            font-family="Inter" font-weight="400" font-size="14"
-            fill="rgba(255,255,255,0.85)">All prize winners announced on the TFK page in the app</text>
-      <text x="60" y="390"
-            font-family="Inter" font-weight="400" font-size="14"
-            fill="rgba(255,255,255,0.85)">30+ trivia nights every week across Lancaster</text>
+  const BW = 160; // badge width
+  const BH = 48; // badge height
+  const BG = 15; // gap between badges
+  const BADGE_Y = H - 200;
+
+  const contentSvg = Buffer.from(`
+    <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+      <!-- Magazine headline -->
+      <text x="${RIGHT_START}" y="70"
+            font-family="Inter" font-weight="900" font-size="12"
+            fill="#6D28D9" letter-spacing="3">PARTNERSHIP SPOTLIGHT</text>
+      <rect x="${RIGHT_START}" y="80" width="60" height="2" fill="#6D28D9" />
+
+      <text x="${RIGHT_START}" y="130"
+            font-family="Playfair Display" font-weight="700" font-size="42"
+            fill="#1A2A4A">We're Sponsoring</text>
+      <text x="${RIGHT_START}" y="175"
+            font-family="Playfair Display" font-weight="700" font-size="42"
+            fill="#1A2A4A">the Picture Round!</text>
+
+      <!-- Section: Schedule -->
+      <text x="${RIGHT_START}" y="225"
+            font-family="Inter" font-weight="900" font-size="11"
+            fill="#6D28D9" letter-spacing="2">THIS WEEK'S SCHEDULE</text>
+
+      <!-- TFK Locations -->
+      ${locationLines.join('\n')}
+
+      <text x="${RIGHT_START}" y="${locationY + 8}"
+            font-family="Inter" font-weight="700" font-size="14"
+            fill="#D97706">+ more locations every night</text>
+
+      <!-- Divider line -->
+      <rect x="${RIGHT_START}" y="${locationY + 28}" width="${RIGHT_WIDTH - 40}" height="2" fill="rgba(109,40,217,0.2)" />
+
+      <!-- BIG $25 PRIZE callout -->
+      <text x="${RIGHT_START}" y="${locationY + 80}"
+            font-family="Playfair Display" font-weight="900" font-size="68"
+            fill="#D97706">$25</text>
+      <text x="${RIGHT_START}" y="${locationY + 120}"
+            font-family="Inter" font-weight="700" font-size="22"
+            fill="#1A2A4A">Bonus Prize Each Night!</text>
+      <text x="${RIGHT_START}" y="${locationY + 150}"
+            font-family="Inter" font-weight="600" font-size="16"
+            fill="rgba(26,42,74,0.8)">On top of their regular prize,</text>
+      <text x="${RIGHT_START}" y="${locationY + 175}"
+            font-family="Inter" font-weight="600" font-size="16"
+            fill="rgba(26,42,74,0.8)">one winning team gets $25!</text>
+      <text x="${RIGHT_START}" y="${locationY + 205}"
+            font-family="Inter" font-weight="700" font-size="16"
+            fill="#6D28D9">Claimed in the TasteLanc app</text>
+
+      <!-- Download CTA -->
+      <text x="${RIGHT_START}" y="${BADGE_Y - 20}"
+            font-family="Inter" font-weight="900" font-size="20"
+            fill="#1A2A4A">Download TasteLanc</text>
+
+      <!-- App Store Badge -->
+      <g transform="translate(${RIGHT_START}, ${BADGE_Y})">
+        <rect width="${BW}" height="${BH}" rx="6" fill="#000"/>
+        <rect x="0.5" y="0.5" width="${BW - 1}" height="${BH - 1}" rx="5.5" stroke="#A6A6A6" stroke-width="1" fill="none"/>
+        <g fill="#fff" transform="translate(12, 8)">
+          <path d="M18.6 15.2a3.7 3.7 0 011.77-3.11 3.8 3.8 0 00-2.99-1.62c-1.26-.13-2.48.76-3.13.76-.65 0-1.64-.74-2.71-.72a3.99 3.99 0 00-3.36 2.05c-1.45 2.5-.37 6.2 1.02 8.23.7 1 1.51 2.11 2.58 2.07 1.04-.04 1.44-.67 2.7-.67 1.26 0 1.62.67 2.72.64 1.12-.02 1.83-1 2.5-2a8.22 8.22 0 001.14-2.32 3.59 3.59 0 01-2.24-3.31z" transform="scale(0.65)"/>
+          <path d="M16.5 9.16a3.65 3.65 0 00.84-2.62 3.72 3.72 0 00-2.41 1.25 3.48 3.48 0 00-.86 2.52 3.08 3.08 0 002.43-1.15z" transform="scale(0.65)"/>
+        </g>
+        <text x="34" y="18" font-family="Inter, sans-serif" font-size="8" fill="#fff">Download on the</text>
+        <text x="34" y="34" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#fff">App Store</text>
+      </g>
+
+      <!-- Google Play Badge -->
+      <g transform="translate(${RIGHT_START + BW + BG}, ${BADGE_Y})">
+        <rect width="${BW}" height="${BH}" rx="6" fill="#000"/>
+        <rect x="0.5" y="0.5" width="${BW - 1}" height="${BH - 1}" rx="5.5" stroke="#A6A6A6" stroke-width="1" fill="none"/>
+        <g transform="translate(12, 10)">
+          <path d="M1.1.9C.9 1.1.8 1.5.8 2v15.6c0 .5.1.8.3 1.1l8.2-9L1.1.9z" fill="#00C3FF" transform="scale(0.65)"/>
+          <path d="M12.1 12.5l-2.7 2.7 2.7 2.7c.3-.2 2.5-1.4 2.5-1.4.7-.4.7-1 0-1.4l-2.5-2.6z" fill="#FFCE00" transform="scale(0.65)"/>
+          <path d="M1.1 18.6c.2.2.6.3 1 .1l10-5.7-2.7-2.7-8.3 8.3z" fill="#FF3A44" transform="scale(0.65)"/>
+          <path d="M1.1.9l8.3 8.3 2.7-2.7L2.1.8C1.7.6 1.3.7 1.1.9z" fill="#4CAF50" transform="scale(0.65)"/>
+        </g>
+        <text x="34" y="17" font-family="Inter, sans-serif" font-size="7" fill="#fff" letter-spacing="1">GET IT ON</text>
+        <text x="34" y="34" font-family="Inter, sans-serif" font-size="15" font-weight="500" fill="#fff">Google Play</text>
+      </g>
 
       <!-- Page Number -->
-      <text x="${W - 50}" y="${TEXT_H - 30}"
+      <text x="${W - 50}" y="${H - 30}"
             font-family="Playfair Display" font-weight="400" font-size="14"
-            fill="rgba(252,211,77,0.4)" text-anchor="end">05</text>
-      <rect x="0" y="0" width="5" height="${TEXT_H}" fill="#7C3AED" />
+            fill="rgba(109,40,217,0.5)" text-anchor="end">05</text>
     </svg>
   `);
-  composites.push({ input: textSvg, top: IMG_H, left: 0 });
+  composites.push({ input: contentSvg, top: 0, left: 0 });
 
   return bg.composite(composites).jpeg({ quality: JPEG_Q }).toBuffer();
 }
@@ -989,73 +1084,96 @@ async function composeEventsThisWeek(supabase: SupabaseClient): Promise<Buffer> 
   const bg = sharp({ create: { width: W, height: H, channels: 3, background: hexToRgb(RW.bgDark) } });
   const composites: sharp.OverlayOptions[] = [];
 
-  // Text header at top (40% of page)
-  const TEXT_H = Math.floor(H * 0.40);
+  const PADDING = 40; // Border padding
+
+  // Page border
+  const borderSvg = Buffer.from(`
+    <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+      <rect x="20" y="20" width="${W - 40}" height="${H - 40}"
+            fill="none" stroke="${RW.yellow}" stroke-width="3" rx="8" />
+    </svg>
+  `);
+  composites.push({ input: borderSvg, top: 0, left: 0 });
+
+  // Text header at top (35% of page)
+  const TEXT_H = Math.floor(H * 0.35);
   const headerSvg = Buffer.from(`
     <svg width="${W}" height="${TEXT_H}" xmlns="http://www.w3.org/2000/svg">
-      <text x="50" y="60"
+      <text x="${PADDING + 10}" y="60"
             font-family="Inter" font-weight="900" font-size="14"
             fill="${RW.yellow}" letter-spacing="4">APRIL 13–19</text>
-      <rect x="50" y="75" width="60" height="3" fill="${RW.yellow}" />
-      <text x="50" y="140"
+      <rect x="${PADDING + 10}" y="75" width="60" height="3" fill="${RW.yellow}" />
+      <text x="${PADDING + 10}" y="140"
             font-family="Playfair Display" font-weight="700" font-size="48"
             fill="${RW.textLight}">Events This Week</text>
 
-      <text x="80" y="230"
+      <text x="${PADDING + 30}" y="220"
             font-family="Inter" font-weight="600" font-size="18"
-            fill="${RW.yellow}">Live music • Trivia • Happy hours • Special events</text>
-      <text x="80" y="270"
-            font-family="Playfair Display" font-weight="400" font-size="17" font-style="italic"
+            fill="${RW.yellow}">Live music - Trivia - Happy hours - Special events</text>
+      <text x="${PADDING + 30}" y="260"
+            font-family="Playfair Display" font-weight="400" font-size="16" font-style="italic"
             fill="rgba(245,242,238,0.7)">Something happening every night during Restaurant Week</text>
 
-      <text x="80" y="400"
-            font-family="Inter" font-weight="700" font-size="17"
+      <text x="${PADDING + 30}" y="360"
+            font-family="Inter" font-weight="700" font-size="16"
             fill="${RW.yellow}">Browse the full calendar in the TasteLanc app</text>
-
-      <rect x="0" y="0" width="5" height="${TEXT_H}" fill="${RW.yellow}" />
     </svg>
   `);
   composites.push({ input: headerSvg, top: 0, left: 0 });
 
-  // BIG event image filling bottom 60% - use The Lounge's "Live in The Lounge" event
-  const IMG_H = H - TEXT_H;
+  // Event image - confined within borders (not edge-to-edge)
+  const IMG_TOP = TEXT_H + 20;
+  const IMG_H = H - IMG_TOP - (PADDING + 60); // Leave room for page number
+  const IMG_PADDING = PADDING + 10;
 
-  // Fetch The Lounge's event photo (they have great artwork and recurring events)
+  // Fetch upcoming events with images (Restaurant Week dates: April 13-19, 2026)
   const { data: loungeEvents } = await supabase
     .from('events')
-    .select('name, image_url')
+    .select('name, image_url, event_date')
     .eq('restaurant_id', (await supabase.from('restaurants').select('id').eq('name', 'The Lounge at Hempfield Apothetique').single()).data?.id)
     .not('image_url', 'is', null)
+    .gte('event_date', '2026-04-13') // Only upcoming/current events
+    .lte('event_date', '2026-04-19') // During Restaurant Week
+    .order('event_date', { ascending: true })
     .limit(1);
 
   if (loungeEvents && loungeEvents[0]?.image_url) {
     try {
       const raw = await fetchImageBuffer(loungeEvents[0].image_url);
       const eventImg = await sharp(raw)
-        .resize(W, IMG_H, { fit: 'cover', position: 'centre' })
+        .resize(W - (IMG_PADDING * 2), IMG_H, { fit: 'cover', position: 'centre' })
         .modulate({ brightness: 0.95, saturation: 1.1 })
         .jpeg({ quality: JPEG_Q })
         .toBuffer();
 
-      // Page number overlay on image
-      const pageOverlay = Buffer.from(`
-        <svg width="${W}" height="${IMG_H}" xmlns="http://www.w3.org/2000/svg">
-          <text x="${W - 50}" y="${IMG_H - 30}"
-                font-family="Playfair Display" font-weight="400" font-size="14"
-                fill="rgba(240,208,96,0.6)" text-anchor="end">07</text>
+      // Border around image
+      const imgBorder = Buffer.from(`
+        <svg width="${W - (IMG_PADDING * 2)}" height="${IMG_H}" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="${W - (IMG_PADDING * 2)}" height="${IMG_H}"
+                fill="none" stroke="${RW.yellow}" stroke-width="2" rx="8" />
         </svg>
       `);
 
-      const labeled = await sharp(eventImg)
-        .composite([{ input: pageOverlay, top: 0, left: 0 }])
+      const bordered = await sharp(eventImg)
+        .composite([{ input: imgBorder, top: 0, left: 0 }])
         .jpeg({ quality: JPEG_Q })
         .toBuffer();
 
-      composites.push({ input: labeled, top: TEXT_H, left: 0 });
+      composites.push({ input: bordered, top: IMG_TOP, left: IMG_PADDING });
     } catch (err) {
       console.error('Failed to load venue image for events page:', err);
     }
   }
+
+  // Page number
+  const pageNumSvg = Buffer.from(`
+    <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+      <text x="${W - 50}" y="${H - 30}"
+            font-family="Playfair Display" font-weight="400" font-size="14"
+            fill="rgba(240,208,96,0.6)" text-anchor="end">06</text>
+    </svg>
+  `);
+  composites.push({ input: pageNumSvg, top: 0, left: 0 });
 
   return bg.composite(composites).jpeg({ quality: JPEG_Q }).toBuffer();
 }
@@ -1238,14 +1356,13 @@ export async function generateRestaurantWeekMagazine(opts: {
   console.log(`[RW Magazine] Market: ${market.market_name}`);
   console.log(`[RW Magazine] Date: ${date}`);
 
-  // Generate all 8 pages (removed standalone leaderboard - now on TFK page)
-  const [cover, contents, participating, menus, tfk, prizes, events, backCover] = await Promise.all([
+  // Generate all 7 pages (removed Win Prizes page per user request)
+  const [cover, contents, participating, menus, tfk, events, backCover] = await Promise.all([
     composeCover(supabase, market.market_id),
     composeContents(),
     composeParticipatingRestaurants(supabase, market.market_id),
     composeFeaturedMenus(supabase, market.market_id),
     composeThirstyKnowledgePartnership(supabase),
-    composeWinPrizes(),
     composeEventsThisWeek(supabase),
     composeRWBackCover(),
   ]);
@@ -1254,7 +1371,7 @@ export async function generateRestaurantWeekMagazine(opts: {
   const timestamp = Date.now();
   const storagePath = `instagram/${market.market_slug}/${date}/rw-magazine-${timestamp}`;
 
-  const pages = [cover, contents, participating, menus, tfk, prizes, events, backCover];
+  const pages = [cover, contents, participating, menus, tfk, events, backCover];
   const urls = await Promise.all(
     pages.map((buf, i) => uploadSlide(supabase, buf, `${storagePath}/page-${i + 1}.jpg`))
   );
