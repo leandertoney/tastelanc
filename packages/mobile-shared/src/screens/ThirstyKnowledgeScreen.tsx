@@ -204,11 +204,11 @@ function CampaignBanner() {
     <View style={styles.campaignBanner}>
       <View style={styles.campaignRow}>
         <Ionicons name="trophy-outline" size={20} color={TFK.goldLight} />
-        <Text style={styles.campaignTitle}>We're Partnering with Restaurant Week!</Text>
+        <Text style={styles.campaignTitle}>We're Sponsoring the Picture Round!</Text>
       </View>
       <Text style={styles.campaignBody}>
-        Top scorer across all 7 nights wins "The Full Taste of Lancaster" — dinner for two at
-        every participating Restaurant Week venue. Play every night to maximize your score!
+        TasteLanc is proud to sponsor the Picture Round at Thirsty for Knowledge trivia during
+        Restaurant Week. Plus, one winning team each night wins $25 — announced and claimed in the app!
       </Text>
     </View>
   );
@@ -280,7 +280,7 @@ function LeaderboardSection({
         <Ionicons name="trophy" size={22} color={TFK.goldLight} />
         <View style={styles.leaderboardHeaderText}>
           <Text style={styles.leaderboardTitle}>Restaurant Week Leaderboard</Text>
-          <Text style={styles.leaderboardSubtitle}>The Full Taste of Lancaster · April 13–19</Text>
+          <Text style={styles.leaderboardSubtitle}>$25 Nightly Prizes · April 13–19</Text>
         </View>
       </View>
 

@@ -797,13 +797,12 @@ async function composeFeaturedMenus(supabase: SupabaseClient, marketId: string):
 // ============================================================
 
 async function composeThirstyKnowledgePartnership(supabase: SupabaseClient): Promise<Buffer> {
-  // Fetch actual TFK events during Restaurant Week (April 13-19, 2026)
+  // Fetch all active TFK events (they are recurring, not date-specific)
   const { data: tfkEvents } = await supabase
     .from('events')
     .select('name, performer_name, start_time, days_of_week, restaurant:restaurants(name)')
     .eq('partner_slug', 'thirsty-for-knowledge')
-    .gte('event_date', '2026-04-13')
-    .lte('event_date', '2026-04-19')
+    .eq('is_active', true)
     .order('start_time', { ascending: true });
 
   // Group events by day
@@ -845,17 +844,17 @@ async function composeThirstyKnowledgePartnership(supabase: SupabaseClient): Pro
   const bg = sharp(bgGradient);
   const composites: sharp.OverlayOptions[] = [];
 
-  // BIG TFK logo in left corner - takes up left third of page
-  const LOGO_W = 320;
-  const LOGO_H = 600;
-  const LOGO_X = 40;
-  const LOGO_Y = 80;
+  // Centered TFK logo at top
+  const LOGO_W = 240;
+  const LOGO_H = 240;
+  const LOGO_X = (W - LOGO_W) / 2;
+  const LOGO_Y = 60;
   const tfkLogoUrl = 'https://kufcxxynjvyharhtfptd.supabase.co/storage/v1/object/public/images/ads/tfk_logo.png';
 
   try {
     const tfkLogoRaw = await fetchImageBuffer(tfkLogoUrl);
     const tfkLogo = await sharp(tfkLogoRaw)
-      .resize(LOGO_W, LOGO_H, { fit: 'inside', position: 'left', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .resize(LOGO_W, LOGO_H, { fit: 'inside', background: { r: 0, g: 0, b: 0, alpha: 0 } })
       .png()
       .toBuffer();
 
@@ -864,90 +863,104 @@ async function composeThirstyKnowledgePartnership(supabase: SupabaseClient): Pro
     console.error('Failed to load TFK logo:', err);
   }
 
-  // Magazine-style content on the right side
-  const RIGHT_START = LOGO_X + LOGO_W + 50;
-  const RIGHT_WIDTH = W - RIGHT_START - 60;
+  // Content layout - use full width symmetrically
+  const CONTENT_START_X = 60;
+  const CONTENT_WIDTH = W - 120;
+  const COL_WIDTH = (CONTENT_WIDTH - 40) / 2; // Two columns with gap
 
-  // Build location text dynamically - show ALL days with MORE venues
-  let locationY = 260;
-  const locationLines: string[] = [];
+  // Build location text dynamically - TWO COLUMNS
+  let locationY = 540;
+  const leftColLines: string[] = [];
+  const rightColLines: string[] = [];
 
   const daysToShow = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-  daysToShow.forEach(day => {
+  let leftY = locationY;
+  let rightY = locationY;
+
+  daysToShow.forEach((day, idx) => {
     if (dayMap[day].length > 0) {
       const dayLabel = day.charAt(0).toUpperCase() + day.slice(1);
-      const venues = dayMap[day].slice(0, 4).join(' • '); // Show up to 4 venues per day
-      locationLines.push(`
-        <text x="${RIGHT_START}" y="${locationY}"
-              font-family="Inter" font-weight="700" font-size="18"
-              fill="#6D28D9">${dayLabel}</text>
-        <text x="${RIGHT_START}" y="${locationY + 24}"
-              font-family="Inter" font-weight="500" font-size="15"
-              fill="rgba(26,42,74,0.85)">${escapeXml(venues)}</text>
-      `);
-      locationY += 55;
+      const venues = dayMap[day].slice(0, 2).join(' • '); // 2 venues per day
+      const isLeft = idx % 2 === 0;
+      const x = isLeft ? CONTENT_START_X : CONTENT_START_X + COL_WIDTH + 40;
+      const y = isLeft ? leftY : rightY;
+
+      const lines = `
+        <text x="${x}" y="${y}"
+              font-family="Inter" font-weight="800" font-size="17"
+              fill="#1A2A4A">${dayLabel}</text>
+        <text x="${x}" y="${y + 24}"
+              font-family="Inter" font-weight="600" font-size="14"
+              fill="#1A2A4A">${escapeXml(venues)}</text>
+      `;
+
+      if (isLeft) {
+        leftColLines.push(lines);
+        leftY += 52;
+      } else {
+        rightColLines.push(lines);
+        rightY += 52;
+      }
     }
   });
 
-  const BW = 160; // badge width
-  const BH = 48; // badge height
-  const BG = 15; // gap between badges
-  const BADGE_Y = H - 200;
+  const BW = 160;
+  const BH = 48;
+  const BG = 15;
+  const BADGE_Y = H - 180;
+
+  const cx = W / 2;
 
   const contentSvg = Buffer.from(`
     <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
-      <!-- Magazine headline -->
-      <text x="${RIGHT_START}" y="70"
-            font-family="Inter" font-weight="900" font-size="12"
-            fill="#6D28D9" letter-spacing="3">PARTNERSHIP SPOTLIGHT</text>
-      <rect x="${RIGHT_START}" y="80" width="60" height="2" fill="#6D28D9" />
-
-      <text x="${RIGHT_START}" y="130"
-            font-family="Playfair Display" font-weight="700" font-size="42"
-            fill="#1A2A4A">We're Sponsoring</text>
-      <text x="${RIGHT_START}" y="175"
-            font-family="Playfair Display" font-weight="700" font-size="42"
-            fill="#1A2A4A">the Picture Round!</text>
-
-      <!-- Section: Schedule -->
-      <text x="${RIGHT_START}" y="225"
+      <!-- Centered headline -->
+      <text x="${cx}" y="330"
             font-family="Inter" font-weight="900" font-size="11"
-            fill="#6D28D9" letter-spacing="2">THIS WEEK'S SCHEDULE</text>
+            fill="#1A2A4A" letter-spacing="3" text-anchor="middle">PARTNERSHIP SPOTLIGHT</text>
 
-      <!-- TFK Locations -->
-      ${locationLines.join('\n')}
+      <text x="${cx}" y="370"
+            font-family="Playfair Display" font-weight="800" font-size="46"
+            fill="#1A2A4A" text-anchor="middle">We're Sponsoring</text>
+      <text x="${cx}" y="420"
+            font-family="Playfair Display" font-weight="800" font-size="46"
+            fill="#1A2A4A" text-anchor="middle">the Picture Round!</text>
 
-      <text x="${RIGHT_START}" y="${locationY + 8}"
-            font-family="Inter" font-weight="700" font-size="14"
-            fill="#D97706">+ more locations every night</text>
+      <!-- Centered $25 Prize Box -->
+      <rect x="${cx - 180}" y="450" width="360" height="70" rx="12" fill="#FFA500" />
+      <text x="${cx - 120}" y="502"
+            font-family="Playfair Display" font-weight="900" font-size="60"
+            fill="#1A2A4A">$25</text>
+      <text x="${cx + 20}" y="485"
+            font-family="Inter" font-weight="800" font-size="20"
+            fill="#1A2A4A">Bonus Prize</text>
+      <text x="${cx + 20}" y="510"
+            font-family="Inter" font-weight="800" font-size="20"
+            fill="#1A2A4A">Each Night!</text>
 
-      <!-- Divider line -->
-      <rect x="${RIGHT_START}" y="${locationY + 28}" width="${RIGHT_WIDTH - 40}" height="2" fill="rgba(109,40,217,0.2)" />
+      <!-- Section: Schedule (centered) -->
+      <text x="${cx}" y="${locationY - 20}"
+            font-family="Inter" font-weight="900" font-size="12"
+            fill="#1A2A4A" letter-spacing="2" text-anchor="middle">THIS WEEK'S SCHEDULE</text>
 
-      <!-- BIG $25 PRIZE callout -->
-      <text x="${RIGHT_START}" y="${locationY + 80}"
-            font-family="Playfair Display" font-weight="900" font-size="68"
-            fill="#D97706">$25</text>
-      <text x="${RIGHT_START}" y="${locationY + 120}"
-            font-family="Inter" font-weight="700" font-size="22"
-            fill="#1A2A4A">Bonus Prize Each Night!</text>
-      <text x="${RIGHT_START}" y="${locationY + 150}"
+      <!-- TFK Locations - Two Columns -->
+      ${leftColLines.join('\n')}
+      ${rightColLines.join('\n')}
+
+      <!-- Prize details centered -->
+      <text x="${cx}" y="${Math.max(leftY, rightY) + 30}"
             font-family="Inter" font-weight="600" font-size="16"
-            fill="rgba(26,42,74,0.8)">On top of their regular prize,</text>
-      <text x="${RIGHT_START}" y="${locationY + 175}"
-            font-family="Inter" font-weight="600" font-size="16"
-            fill="rgba(26,42,74,0.8)">one winning team gets $25!</text>
-      <text x="${RIGHT_START}" y="${locationY + 205}"
+            fill="#1A2A4A" text-anchor="middle">On top of their regular prize, one winning team gets $25!</text>
+      <text x="${cx}" y="${Math.max(leftY, rightY) + 60}"
             font-family="Inter" font-weight="700" font-size="16"
-            fill="#6D28D9">Claimed in the TasteLanc app</text>
+            fill="#1A2A4A" text-anchor="middle">Claimed in the TasteLanc app</text>
 
-      <!-- Download CTA -->
-      <text x="${RIGHT_START}" y="${BADGE_Y - 20}"
-            font-family="Inter" font-weight="900" font-size="20"
-            fill="#1A2A4A">Download TasteLanc</text>
+      <!-- Centered Download CTA -->
+      <text x="${cx}" y="${BADGE_Y - 20}"
+            font-family="Inter" font-weight="900" font-size="18"
+            fill="#1A2A4A" text-anchor="middle">Download TasteLanc</text>
 
-      <!-- App Store Badge -->
-      <g transform="translate(${RIGHT_START}, ${BADGE_Y})">
+      <!-- App Store Badge - centered -->
+      <g transform="translate(${cx - BW - BG / 2}, ${BADGE_Y})">
         <rect width="${BW}" height="${BH}" rx="6" fill="#000"/>
         <rect x="0.5" y="0.5" width="${BW - 1}" height="${BH - 1}" rx="5.5" stroke="#A6A6A6" stroke-width="1" fill="none"/>
         <g fill="#fff" transform="translate(12, 8)">
@@ -958,8 +971,8 @@ async function composeThirstyKnowledgePartnership(supabase: SupabaseClient): Pro
         <text x="34" y="34" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#fff">App Store</text>
       </g>
 
-      <!-- Google Play Badge -->
-      <g transform="translate(${RIGHT_START + BW + BG}, ${BADGE_Y})">
+      <!-- Google Play Badge - centered -->
+      <g transform="translate(${cx + BG / 2}, ${BADGE_Y})">
         <rect width="${BW}" height="${BH}" rx="6" fill="#000"/>
         <rect x="0.5" y="0.5" width="${BW - 1}" height="${BH - 1}" rx="5.5" stroke="#A6A6A6" stroke-width="1" fill="none"/>
         <g transform="translate(12, 10)">
