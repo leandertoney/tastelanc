@@ -317,8 +317,12 @@ export default function DashboardPage() {
           <div className="relative flex-1 h-14 max-w-2xl">
             {visibleTips.map((tip, index) => {
               const isQuickWin = 'estimate' in tip;
-              const priority = isQuickWin ? 'high' : tip.priority;
-              const priorityColors = { high: 'bg-red-500', medium: 'bg-amber-500', low: 'bg-blue-500' };
+              const priorityColors: Record<'high' | 'medium' | 'low', string> = {
+                high: 'bg-red-500',
+                medium: 'bg-amber-500',
+                low: 'bg-blue-500'
+              };
+              const priority: 'high' | 'medium' | 'low' = isQuickWin ? 'high' : (tip.priority as 'high' | 'medium' | 'low');
               const isTop = index === visibleTips.length - 1;
 
               return (
