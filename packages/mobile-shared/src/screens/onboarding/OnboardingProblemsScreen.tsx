@@ -177,13 +177,13 @@ export default function OnboardingProblemsScreen({ navigation }: Props) {
           <Animated.View style={[styles.lineContainer, line1Style]}>
             <View style={[styles.lineAccent, { backgroundColor: colors.accent }]} />
             <Text style={styles.lineText}>
-              Happy hours <Text style={[styles.lineEmphasis, { color: colors.accent }]}>worth</Text> showing up for
+              Happy hours <Text style={[styles.lineEmphasis, { color: colors.valueGreen }]}>worth</Text> showing up for
             </Text>
           </Animated.View>
 
           <Animated.View style={[styles.lineContainer, styles.lineRight, line2Style]}>
             <Text style={styles.lineText}>
-              Events you'll <Text style={[styles.lineEmphasis, { color: colors.accent }]}>actually</Text> want to go to
+              Events you'll <Text style={[styles.lineEmphasis, { color: colors.valueGreen }]}>actually</Text> want to go to
             </Text>
             <View style={[styles.lineAccent, { backgroundColor: colors.accent }]} />
           </Animated.View>
@@ -191,7 +191,7 @@ export default function OnboardingProblemsScreen({ navigation }: Props) {
           <Animated.View style={[styles.lineContainer, line3Style]}>
             <View style={[styles.lineAccent, { backgroundColor: colors.accent }]} />
             <Text style={styles.lineText}>
-              Deals you <Text style={[styles.lineEmphasis, { color: colors.accent }]}>won't find</Text> anywhere else
+              Deals you <Text style={[styles.lineEmphasis, { color: colors.valueGreen }]}>won't find</Text> anywhere else
             </Text>
           </Animated.View>
         </View>
@@ -257,7 +257,7 @@ const useStyles = createLazyStyles((colors) => ({
     letterSpacing: 3,
     textShadowColor: colors.accent,
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 12,
+    textShadowRadius: 8,
   },
   restText: {
     fontSize: 24,
@@ -283,7 +283,8 @@ const useStyles = createLazyStyles((colors) => ({
   lineText: {
     fontSize: 18,
     fontWeight: '400' as const,
-    color: 'rgba(255,255,255,0.7)',
+    color: colors.textMuted,
+    opacity: 0.9,
     lineHeight: 26,
   },
   lineEmphasis: {
@@ -293,8 +294,11 @@ const useStyles = createLazyStyles((colors) => ({
     marginTop: 32,
     fontSize: 26,
     fontWeight: '700' as const,
-    color: colors.accent,
+    color: '#FFFFFF',
     textAlign: 'center' as const,
+    textShadowColor: colors.accent,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
   },
   footer: {
     paddingHorizontal: 32,

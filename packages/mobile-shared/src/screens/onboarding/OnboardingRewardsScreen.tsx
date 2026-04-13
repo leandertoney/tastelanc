@@ -118,10 +118,11 @@ export default function OnboardingRewardsScreen({ navigation }: Props) {
     <FeatureDemoScreen
       headline="Get Rewarded for Going Out"
       subheadline={`Earn points just for doing what you love.\nRedeem perks at your favorite spots.`}
-      gradientColors={[colors.primary, '#1a1400', colors.primary]}
+      gradientColors={[colors.primary, colors.primary, colors.primary]}
+      headlineShadowColor="#DAA520"
       progressStep={7}
       totalProgressSteps={15}
-      onContinue={() => navigation.navigate('OnboardingPremium')}
+      onContinue={() => navigation.navigate('Main')}
     >
       {/* Floating star */}
       <Animated.View style={[styles.floatingStar, starStyle]}>
@@ -155,7 +156,7 @@ export default function OnboardingRewardsScreen({ navigation }: Props) {
       </View>
 
       {/* Check-in button */}
-      <Animated.View style={[styles.checkinBtn, { backgroundColor: colors.accent }, btnStyle]}>
+      <Animated.View style={[styles.checkinBtn, { backgroundColor: '#DAA520' }, btnStyle]}>
         <Ionicons name="location" size={18} color="#FFFFFF" />
         <Text style={styles.checkinText}>Check In  +50 pts</Text>
       </Animated.View>
@@ -172,16 +173,22 @@ const useStyles = createLazyStyles((colors) => ({
   pointsCard: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
     width: '100%',
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,215,0,0.2)',
+    borderColor: 'rgba(15,30,46,0.1)',
+    borderLeftWidth: 6,
+    borderLeftColor: '#DAA520',
     gap: 12,
     position: 'relative' as const,
     overflow: 'hidden' as const,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   trophyGlow: {
     position: 'absolute' as const,
@@ -197,16 +204,17 @@ const useStyles = createLazyStyles((colors) => ({
   },
   pointsLabel: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
+    color: colors.text,
+    opacity: 0.5,
     marginBottom: 2,
   },
   pointsNumber: {
     fontSize: 28,
     fontWeight: '800' as const,
-    color: '#FFD700',
+    color: '#DAA520',
   },
   multiplierBadge: {
-    backgroundColor: `${colors.accent}30`,
+    backgroundColor: 'rgba(218,165,32,0.15)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 10,
@@ -214,7 +222,7 @@ const useStyles = createLazyStyles((colors) => ({
   multiplierText: {
     fontSize: 14,
     fontWeight: '800' as const,
-    color: colors.accent,
+    color: '#DAA520',
   },
   leaderboard: {
     width: '100%',
@@ -224,10 +232,16 @@ const useStyles = createLazyStyles((colors) => ({
   leaderRow: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 12,
     gap: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(15,30,46,0.08)',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   medalCircle: {
     width: 32,
@@ -243,13 +257,14 @@ const useStyles = createLazyStyles((colors) => ({
   leaderName: {
     fontSize: 15,
     fontWeight: '600' as const,
-    color: '#FFFFFF',
+    color: colors.text,
     flex: 1,
   },
   leaderPts: {
     fontSize: 14,
     fontWeight: '600' as const,
-    color: 'rgba(255,255,255,0.5)',
+    color: colors.text,
+    opacity: 0.5,
   },
   checkinBtn: {
     flexDirection: 'row' as const,

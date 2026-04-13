@@ -74,7 +74,7 @@ export default function OnboardingReviewAskScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={[colors.primary, `${colors.accent}15`, colors.primary]}
+        colors={[colors.accent, `${colors.accent}DD`, colors.accent]}
         locations={[0, 0.5, 1]}
         style={styles.gradient}
       />
@@ -111,7 +111,7 @@ export default function OnboardingReviewAskScreen({ navigation }: Props) {
             </View>
             {selectedOption === 'positive' && (
               <View style={styles.checkmark}>
-                <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                <Ionicons name="checkmark" size={18} color={colors.textOnAccent} />
               </View>
             )}
           </AnimatedTouchable>
@@ -132,7 +132,7 @@ export default function OnboardingReviewAskScreen({ navigation }: Props) {
             </View>
             {selectedOption === 'neutral' && (
               <View style={styles.checkmark}>
-                <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                <Ionicons name="checkmark" size={18} color={colors.textOnAccent} />
               </View>
             )}
           </AnimatedTouchable>
@@ -156,26 +156,26 @@ const useStyles = createLazyStyles((colors) => ({
   avatarContainer: { alignItems: 'center' as const, marginBottom: 20 },
   avatar: { width: 80, height: 80, borderRadius: 40 },
   headerSection: { marginBottom: 36, alignItems: 'center' as const },
-  headline: { fontSize: 28, fontWeight: '800' as const, color: '#FFFFFF', marginBottom: 10, textAlign: 'center' as const },
-  subheadline: { fontSize: 16, color: 'rgba(255,255,255,0.6)', textAlign: 'center' as const, lineHeight: 24 },
+  headline: { fontSize: 28, fontWeight: '800' as const, color: colors.textOnAccent, marginBottom: 10, textAlign: 'center' as const },
+  subheadline: { fontSize: 16, color: colors.textOnAccent, opacity: 0.85, textAlign: 'center' as const, lineHeight: 24 },
   cardsContainer: { gap: 14 },
   card: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: radius.lg,
     padding: 20,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.accent,
     position: 'relative' as const,
   },
   cardSelected: { borderColor: colors.accent, backgroundColor: `${colors.accent}15` },
   cardInner: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 16 },
-  iconCircle: { width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.08)', justifyContent: 'center' as const, alignItems: 'center' as const },
+  iconCircle: { width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center' as const, alignItems: 'center' as const },
   iconCircleSelected: { backgroundColor: `${colors.accent}30` },
   emoji: { fontSize: 28 },
   cardText: { flex: 1 },
-  cardTitle: { fontSize: 18, fontWeight: '700' as const, color: '#FFFFFF', marginBottom: 4 },
-  cardDescription: { fontSize: 14, color: 'rgba(255,255,255,0.5)' },
-  checkmark: { position: 'absolute' as const, top: 14, right: 14, width: 28, height: 28, borderRadius: 14, backgroundColor: colors.accent, justifyContent: 'center' as const, alignItems: 'center' as const },
+  cardTitle: { fontSize: 18, fontWeight: '700' as const, color: colors.textOnAccent, marginBottom: 4 },
+  cardDescription: { fontSize: 14, color: colors.textOnAccent, opacity: 0.7 },
+  checkmark: { position: 'absolute' as const, top: 14, right: 14, width: 28, height: 28, borderRadius: 14, backgroundColor: colors.valueGreen, justifyContent: 'center' as const, alignItems: 'center' as const },
   skipContainer: { marginTop: 32, alignItems: 'center' as const },
-  skipText: { fontSize: 15, color: 'rgba(255,255,255,0.4)', padding: 12 },
+  skipText: { fontSize: 15, color: colors.textOnAccent, opacity: 0.6, padding: 12 },
 }));

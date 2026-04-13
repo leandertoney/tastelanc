@@ -25,7 +25,7 @@ const PHONE_HEIGHT = SH * 0.52;
 
 const VIDEO = {
   restaurant: 'Cabbage Hill Schnitzel Haus',
-  user: '@leander',
+  user: '@local_foodie',
   caption: "Best German soda I\u2019ve ever had!",
   tag: 'Amazing Service',
   video: 'https://kufcxxynjvyharhtfptd.supabase.co/storage/v1/object/public/recommendation-videos/d1b931ce-66ca-40c1-8144-cabf146e006b/7eb1ab76be3a.mp4',
@@ -88,7 +88,8 @@ export default function OnboardingVideoRecsScreen({ navigation }: Props) {
     <FeatureDemoScreen
       headline="Watch. Discover. Go."
       subheadline={`Real people, real recs.\nVideo reviews from locals who know.`}
-      gradientColors={[colors.primary, '#0a0a14', colors.primary]}
+      gradientColors={[colors.primary, colors.primary, colors.primary]}
+      headlineShadowColor="#26A69A"
       progressStep={6}
       totalProgressSteps={12}
       onContinue={() => navigation.navigate('OnboardingRewards')}
@@ -111,7 +112,7 @@ export default function OnboardingVideoRecsScreen({ navigation }: Props) {
           {/* Video info overlay */}
           <View style={styles.videoInfo}>
             <Text style={styles.infoUser}>{VIDEO.user}</Text>
-            <Text style={[styles.infoRestaurant, { color: colors.accent }]}>{VIDEO.restaurant}</Text>
+            <Text style={[styles.infoRestaurant, { color: '#26A69A' }]}>{VIDEO.restaurant}</Text>
             <Text style={styles.infoCaption} numberOfLines={2}>{VIDEO.caption}</Text>
             <View style={styles.infoTag}>
               <Text style={styles.infoTagText}>{VIDEO.tag}</Text>
@@ -144,12 +145,12 @@ const useStyles = createLazyStyles((colors) => ({
     height: PHONE_HEIGHT,
     borderRadius: 32,
     backgroundColor: '#000000',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 3,
+    borderColor: '#26A69A',
     overflow: 'hidden' as const,
-    shadowColor: '#000',
+    shadowColor: '#26A69A',
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.5,
+    shadowOpacity: 0.3,
     shadowRadius: 24,
     elevation: 20,
   },
@@ -160,12 +161,15 @@ const useStyles = createLazyStyles((colors) => ({
     backgroundColor: '#1a1a1a',
     alignSelf: 'center' as const,
     marginTop: 8,
+    marginBottom: 4,
     zIndex: 10,
   },
   videoViewport: {
     flex: 1,
     overflow: 'hidden' as const,
     position: 'relative' as const,
+    marginHorizontal: 2,
+    marginBottom: 2,
   },
   videoPlayer: {
     width: '100%',
@@ -195,6 +199,9 @@ const useStyles = createLazyStyles((colors) => ({
     fontSize: 15,
     fontWeight: '800' as const,
     marginBottom: 3,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   infoCaption: {
     fontSize: 11,

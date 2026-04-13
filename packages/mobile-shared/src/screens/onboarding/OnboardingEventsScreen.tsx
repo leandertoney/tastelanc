@@ -30,8 +30,8 @@ const CATEGORIES = [
 ];
 
 const EVENTS = [
-  { name: 'Friday Live Music', venue: 'Marion Court Room', when: 'Tonight', hot: true },
-  { name: 'Bar Trivia Night', venue: 'Thirsty For Knowledge', when: 'Tomorrow' },
+  { name: 'Friday Live Music', venue: 'Marion Court Room', when: 'Tonight', favorited: true },
+  { name: 'Bar Trivia Night', venue: 'Thirsty For Knowledge', when: 'Tomorrow', favorited: true },
 ];
 
 export default function OnboardingEventsScreen({ navigation }: Props) {
@@ -93,24 +93,25 @@ export default function OnboardingEventsScreen({ navigation }: Props) {
     <FeatureDemoScreen
       headline="Never Miss a Beat"
       subheadline={`Live music, trivia, comedy — every night\nworth going out for.`}
-      gradientColors={[colors.primary, '#1a0a2e', colors.primary]}
+      gradientColors={[colors.primary, colors.primary, colors.primary]}
+      headlineShadowColor="#D81B60"
       progressStep={3}
       totalProgressSteps={15}
       onContinue={() => navigation.navigate('OnboardingSpecials')}
     >
       {/* Floating music notes */}
       <Animated.View style={[styles.floatingNote, styles.noteLeft, noteStyle]}>
-        <Ionicons name="musical-notes" size={48} color={colors.accent} />
+        <Ionicons name="musical-notes" size={48} color="#D81B60" />
       </Animated.View>
       <Animated.View style={[styles.floatingNote, styles.noteRight, noteStyle]}>
-        <Ionicons name="musical-note" size={32} color={`${colors.accent}60`} />
+        <Ionicons name="musical-note" size={32} color="#D81B60" style={{ opacity: 0.6 }} />
       </Animated.View>
 
       {/* Category chips scattered */}
       <View style={styles.chipsRow}>
         {CATEGORIES.map((cat, i) => (
           <Animated.View key={cat.label} style={[styles.chip, chipStyles[i]]}>
-            <Ionicons name={cat.icon as any} size={14} color={colors.accent} />
+            <Ionicons name={cat.icon as any} size={14} color="#D81B60" />
             <Text style={styles.chipText}>{cat.label}</Text>
           </Animated.View>
         ))}
@@ -119,13 +120,13 @@ export default function OnboardingEventsScreen({ navigation }: Props) {
       {/* Event cards */}
       <View style={styles.eventsStack}>
         {EVENTS.map((event, i) => (
-          <Animated.View key={i} style={[styles.eventCard, event.hot && styles.eventCardHot, i === 0 ? event0Style : event1Style]}>
+          <Animated.View key={i} style={[styles.eventCard, i === 0 ? event0Style : event1Style]}>
             <View style={styles.eventTop}>
-              <View style={[styles.whenBadge, event.hot && styles.whenBadgeHot]}>
-                <Text style={[styles.whenText, event.hot && styles.whenTextHot]}>{event.when}</Text>
+              <View style={styles.whenBadge}>
+                <Text style={styles.whenText}>{event.when}</Text>
               </View>
-              {event.hot && (
-                <Text style={styles.hotIcon}>🔥</Text>
+              {event.favorited && (
+                <Ionicons name="heart" size={22} color="#FF6B9D" />
               )}
             </View>
             <Text style={styles.eventName}>{event.name}</Text>
@@ -160,9 +161,9 @@ const useStyles = createLazyStyles((colors) => ({
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: 5,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: `${colors.accent}30`,
+    borderColor: 'rgba(15,30,46,0.15)',
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 20,
@@ -170,25 +171,24 @@ const useStyles = createLazyStyles((colors) => ({
   chipText: {
     fontSize: 13,
     fontWeight: '600' as const,
-    color: 'rgba(255,255,255,0.8)',
+    color: colors.text,
   },
   eventsStack: {
     width: '100%',
     gap: 10,
   },
   eventCard: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-  },
-  eventCardHot: {
-    borderColor: `${colors.accent}40`,
-    shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
+    borderColor: 'rgba(15,30,46,0.1)',
+    borderLeftWidth: 6,
+    borderLeftColor: '#D81B60',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   eventTop: {
     flexDirection: 'row' as const,
@@ -197,33 +197,26 @@ const useStyles = createLazyStyles((colors) => ({
     marginBottom: 8,
   },
   whenBadge: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.3)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
   },
-  whenBadgeHot: {
-    backgroundColor: `${colors.accent}25`,
-  },
   whenText: {
     fontSize: 12,
     fontWeight: '600' as const,
-    color: 'rgba(255,255,255,0.6)',
-  },
-  whenTextHot: {
-    color: colors.accent,
-  },
-  hotIcon: {
-    fontSize: 16,
+    color: colors.textOnAccent,
+    opacity: 0.9,
   },
   eventName: {
     fontSize: 17,
     fontWeight: '700' as const,
-    color: '#FFFFFF',
+    color: colors.text,
     marginBottom: 3,
   },
   eventVenue: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.5)',
+    color: colors.text,
+    opacity: 0.6,
   },
 }));

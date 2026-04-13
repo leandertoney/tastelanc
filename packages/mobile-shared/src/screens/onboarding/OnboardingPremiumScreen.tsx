@@ -65,7 +65,7 @@ export default function OnboardingPremiumScreen({ navigation }: Props) {
       </TouchableOpacity>
       <View style={styles.content}>
         <Animated.View style={[styles.videoContainer, videoAnimatedStyle]}>
-          <VideoView player={player} style={styles.video} contentFit="contain" nativeControls={false} />
+          <VideoView player={player} style={styles.video} contentFit="cover" nativeControls={false} />
         </Animated.View>
         <Animated.View style={headlineAnimatedStyle}>
           <Text style={styles.headline}>{`Meet ${brand.aiName}`}</Text>
@@ -75,7 +75,7 @@ export default function OnboardingPremiumScreen({ navigation }: Props) {
       <Animated.View style={[styles.footer, buttonAnimatedStyle]}>
         <TouchableOpacity style={styles.continueButton} onPress={() => navigation.navigate('OnboardingRosieAsk')}>
           <Text style={styles.continueText}>Continue</Text>
-          <Ionicons name="arrow-forward" size={20} color={colors.text} />
+          <Ionicons name="arrow-forward" size={20} color={colors.textOnAccent} />
         </TouchableOpacity>
       </Animated.View>
     </SafeAreaView>
@@ -92,5 +92,5 @@ const useStyles = createLazyStyles((colors) => ({
   subheadline: { fontSize: 17, color: colors.textMuted, textAlign: 'center' as const, lineHeight: 24 },
   footer: { paddingHorizontal: 24, paddingBottom: 24 },
   continueButton: { backgroundColor: colors.accent, borderRadius: 28, paddingVertical: 16, flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 8 },
-  continueText: { color: colors.text, fontSize: 16, fontWeight: '600' as const },
+  continueText: { color: colors.textOnAccent, fontSize: 16, fontWeight: '600' as const },
 }));

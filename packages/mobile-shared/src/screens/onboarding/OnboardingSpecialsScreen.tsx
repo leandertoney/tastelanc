@@ -84,14 +84,15 @@ export default function OnboardingSpecialsScreen({ navigation }: Props) {
     <FeatureDemoScreen
       headline="Daily Deals, Weekly Picks"
       subheadline={`Special savings picked\njust for ${brand.cityName}.`}
-      gradientColors={[colors.primary, '#0a1a0f', colors.primary]}
+      gradientColors={[colors.primary, colors.primary, colors.primary]}
+      headlineShadowColor="#388E3C"
       progressStep={4}
       totalProgressSteps={15}
       onContinue={() => navigation.navigate('OnboardingMove')}
     >
       {/* Floating sparkle tags */}
       <Animated.View style={[styles.sparkleTag, styles.sparkle1, sparkle1Style]}>
-        <Ionicons name="pricetag" size={40} color={colors.valueGreen} />
+        <Ionicons name="pricetag" size={40} color="#388E3C" />
       </Animated.View>
       <Animated.View style={[styles.sparkleTag, styles.sparkle2, sparkle2Style]}>
         <Text style={styles.sparkleText}>💰</Text>
@@ -109,7 +110,7 @@ export default function OnboardingSpecialsScreen({ navigation }: Props) {
             </View>
             <Text style={styles.dealPlace}>{deal.place}</Text>
             <View style={styles.dealFooter}>
-              <Ionicons name="calendar-outline" size={12} color="rgba(255,255,255,0.4)" />
+              <Ionicons name="calendar-outline" size={12} color={colors.text} style={{ opacity: 0.5 }} />
               <Text style={styles.dealDay}>{deal.day}</Text>
             </View>
           </Animated.View>
@@ -139,13 +140,17 @@ const useStyles = createLazyStyles((colors) => ({
     gap: 10,
   },
   dealCard: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 18,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    borderLeftWidth: 3,
-    borderLeftColor: colors.valueGreen,
+    borderColor: 'rgba(15,30,46,0.1)',
+    borderLeftWidth: 6,
+    borderLeftColor: '#388E3C',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   dealHeader: {
     flexDirection: 'row' as const,
@@ -156,22 +161,23 @@ const useStyles = createLazyStyles((colors) => ({
   dealTitle: {
     fontSize: 18,
     fontWeight: '800' as const,
-    color: '#FFFFFF',
+    color: colors.text,
   },
   savingsBadge: {
-    backgroundColor: `${colors.valueGreen}25`,
+    backgroundColor: 'rgba(56,142,60,0.1)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
   },
   savingsText: {
     fontSize: 12,
-    fontWeight: '700' as const,
-    color: colors.valueGreen,
+    fontWeight: '800' as const,
+    color: '#388E3C',
   },
   dealPlace: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.text,
+    opacity: 0.6,
     marginBottom: 6,
   },
   dealFooter: {
@@ -181,6 +187,7 @@ const useStyles = createLazyStyles((colors) => ({
   },
   dealDay: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.4)',
+    color: colors.text,
+    opacity: 0.5,
   },
 }));

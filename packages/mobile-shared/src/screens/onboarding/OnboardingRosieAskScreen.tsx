@@ -100,7 +100,7 @@ export default function OnboardingRosieAskScreen({ navigation }: Props) {
       </TouchableOpacity>
       <View style={styles.content}>
         <Animated.View style={[styles.rosieContainer, rosieAnimatedStyle]}>
-          <VideoView player={player} style={styles.rosieAvatar} contentFit="contain" nativeControls={false} />
+          <VideoView player={player} style={styles.rosieAvatar} contentFit="cover" nativeControls={false} />
         </Animated.View>
         <Animated.View style={[styles.headerSection, titleAnimatedStyle]}>
           <Text style={styles.headline}>Ask <Text style={styles.rosieText}>{brand.aiName}</Text> anything</Text>
@@ -117,7 +117,7 @@ export default function OnboardingRosieAskScreen({ navigation }: Props) {
       <Animated.View style={[styles.footer, buttonAnimatedStyle]}>
         <TouchableOpacity style={styles.continueButton} onPress={() => navigation.navigate('OnboardingReviewAsk')}>
           <Text style={styles.continueText}>Continue</Text>
-          <Ionicons name="arrow-forward" size={20} color={colors.text} />
+          <Ionicons name="arrow-forward" size={20} color={colors.textOnAccent} />
         </TouchableOpacity>
       </Animated.View>
     </SafeAreaView>
@@ -128,17 +128,17 @@ const useStyles = createLazyStyles((colors) => ({
   container: { flex: 1, backgroundColor: colors.primary },
   backButton: { padding: 16 },
   content: { flex: 1, paddingHorizontal: 24 },
-  rosieContainer: { alignItems: 'center' as const, marginTop: 10 },
-  rosieAvatar: { width: 100, height: 100, borderRadius: 50, borderWidth: 2, borderColor: colors.accent, overflow: 'hidden' as const },
+  rosieContainer: { alignItems: 'center' as const, marginTop: 10, overflow: 'hidden' as const, borderRadius: 50, width: 100, height: 100, alignSelf: 'center' as const, backgroundColor: colors.primary, borderWidth: 2, borderColor: colors.accent },
+  rosieAvatar: { width: '100%', height: '100%' },
   headerSection: { alignItems: 'center' as const, marginTop: 16 },
   headline: { fontSize: 32, fontWeight: '700' as const, color: colors.text, textAlign: 'center' as const },
   rosieText: { color: colors.accent, fontWeight: '800' as const },
   questionsContainer: { flex: 1, position: 'relative' as const },
-  questionBubble: { position: 'absolute' as const, backgroundColor: 'rgba(255, 255, 255, 0.08)', paddingHorizontal: 20, paddingVertical: 14, borderRadius: radius.full, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.12)' },
-  questionText: { fontSize: 16, fontWeight: '500' as const, color: colors.text },
+  questionBubble: { position: 'absolute' as const, backgroundColor: 'rgba(255, 255, 255, 0.15)', paddingHorizontal: 20, paddingVertical: 14, borderRadius: radius.full, borderWidth: 2, borderColor: colors.accent },
+  questionText: { fontSize: 16, fontWeight: '500' as const, color: colors.text, opacity: 0.9 },
   footer: { paddingHorizontal: 24, paddingBottom: 24 },
   continueButton: { backgroundColor: colors.accent, borderRadius: 28, paddingVertical: 16, flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 8 },
-  continueText: { color: colors.text, fontSize: 16, fontWeight: '600' as const },
+  continueText: { color: colors.textOnAccent, fontSize: 16, fontWeight: '600' as const },
   taglineContainer: { position: 'absolute' as const, bottom: 0, left: 0, right: 0, alignItems: 'center' as const, paddingBottom: 16 },
   tagline: { fontSize: 15, color: colors.textMuted, fontStyle: 'italic' as const },
 }));

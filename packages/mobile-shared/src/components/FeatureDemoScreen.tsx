@@ -32,6 +32,8 @@ interface FeatureDemoScreenProps {
   subheadline: string;
   /** Gradient colors for the background wash [top, middle, bottom] */
   gradientColors: [string, string, string];
+  /** Color for the headline drop shadow (accent color) */
+  headlineShadowColor?: string;
   progressStep: number;
   totalProgressSteps: number;
   onContinue: () => void;
@@ -43,6 +45,7 @@ export default function FeatureDemoScreen({
   headline,
   subheadline,
   gradientColors,
+  headlineShadowColor,
   progressStep,
   totalProgressSteps,
   onContinue,
@@ -142,7 +145,15 @@ export default function FeatureDemoScreen({
       <View style={styles.mainContent}>
         {/* Headline section — top third */}
         <View style={styles.headlineSection}>
-          <Animated.Text style={[styles.headline, headlineStyle]}>
+          <Animated.Text
+            style={[
+              styles.headline,
+              headlineStyle,
+              headlineShadowColor && {
+                textShadowColor: headlineShadowColor,
+              },
+            ]}
+          >
             {headline}
           </Animated.Text>
           <Animated.Text style={[styles.subheadline, subStyle]}>
@@ -192,17 +203,18 @@ const useStyles = createLazyStyles((colors) => ({
   headline: {
     fontSize: 36,
     fontWeight: '800' as const,
-    color: '#FFFFFF',
+    color: colors.textOnAccent,
     textAlign: 'center' as const,
     letterSpacing: -0.5,
     marginBottom: 12,
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 8,
+    textShadowColor: 'rgba(0,0,0,0.15)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   subheadline: {
     fontSize: 17,
-    color: 'rgba(255,255,255,0.75)',
+    color: colors.text,
+    opacity: 0.7,
     textAlign: 'center' as const,
     lineHeight: 24,
   },
@@ -218,6 +230,7 @@ const useStyles = createLazyStyles((colors) => ({
   },
   tapHint: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.4)',
+    color: colors.text,
+    opacity: 0.4,
   },
 }));

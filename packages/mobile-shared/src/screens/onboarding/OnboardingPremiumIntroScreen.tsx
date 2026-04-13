@@ -190,7 +190,7 @@ export default function OnboardingPremiumIntroScreen({ navigation }: Props) {
           activeOpacity={0.9}
         >
           <Text style={styles.ctaText}>Let's Go</Text>
-          <Ionicons name="arrow-forward" size={20} color="#000" />
+          <Ionicons name="arrow-forward" size={20} color={colors.textOnAccent} />
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -198,7 +198,7 @@ export default function OnboardingPremiumIntroScreen({ navigation }: Props) {
 }
 
 const useStyles = createLazyStyles((colors) => ({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1, backgroundColor: colors.primary },
   progressWrap: { paddingTop: Platform.OS === 'ios' ? 54 : 24 },
   content: {
     flex: 1,
@@ -221,13 +221,13 @@ const useStyles = createLazyStyles((colors) => ({
   headline: {
     fontSize: 34,
     fontWeight: '800' as const,
-    color: '#FFFFFF',
+    color: colors.text,
     textAlign: 'center' as const,
     letterSpacing: -0.5,
   },
   subheadline: {
     fontSize: 17,
-    color: 'rgba(255,255,255,0.55)',
+    color: colors.textMuted,
     textAlign: 'center' as const,
     lineHeight: 26,
   },
@@ -253,6 +253,6 @@ const useStyles = createLazyStyles((colors) => ({
   ctaText: {
     fontSize: 19,
     fontWeight: '700' as const,
-    color: '#000',
+    color: colors.textOnAccent,
   },
 }));

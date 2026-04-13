@@ -168,7 +168,7 @@ export default function OnboardingPaywallScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={[`${colors.accent}15`, colors.primary, colors.primary]}
+        colors={[colors.accent, `${colors.accent}DD`, colors.accent]}
         style={styles.gradient}
       />
       <View style={styles.progressWrap}>
@@ -242,8 +242,8 @@ export default function OnboardingPaywallScreen({ navigation }: Props) {
               <Text style={styles.planPrice}>{monthlyPrice.replace('/month', '').replace('/mo', '')}</Text>
               <Text style={styles.planPeriod}>per month</Text>
               {selectedPlan === 'monthly' && (
-                <View style={[styles.checkBadge, { backgroundColor: colors.accent }]}>
-                  <Ionicons name="checkmark" size={14} color="#fff" />
+                <View style={[styles.checkBadge, { backgroundColor: '#C9A227' }]}>
+                  <Ionicons name="checkmark" size={14} color="#000" />
                 </View>
               )}
             </TouchableOpacity>
@@ -255,7 +255,7 @@ export default function OnboardingPaywallScreen({ navigation }: Props) {
               activeOpacity={0.8}
             >
               {selectedPlan === 'annual' && (
-                <View style={[styles.trialBadge, { backgroundColor: colors.accent }]}>
+                <View style={[styles.trialBadge, { backgroundColor: '#C9A227' }]}>
                   <Text style={styles.trialBadgeText}>3 days free</Text>
                 </View>
               )}
@@ -264,8 +264,8 @@ export default function OnboardingPaywallScreen({ navigation }: Props) {
               <Text style={styles.planPeriod}>per year</Text>
               <Text style={styles.planBreakdown}>{perMonth}/mo</Text>
               {selectedPlan === 'annual' && (
-                <View style={[styles.checkBadge, { backgroundColor: colors.accent }]}>
-                  <Ionicons name="checkmark" size={14} color="#fff" />
+                <View style={[styles.checkBadge, { backgroundColor: '#C9A227' }]}>
+                  <Ionicons name="checkmark" size={14} color="#000" />
                 </View>
               )}
             </TouchableOpacity>
@@ -274,16 +274,16 @@ export default function OnboardingPaywallScreen({ navigation }: Props) {
 
         {/* No payment now */}
         <Animated.View style={[styles.reassurance, ctaStyle]}>
-          <Ionicons name="checkmark-circle" size={18} color={colors.accent} />
+          <Ionicons name="checkmark-circle" size={18} color="#C9A227" />
           <Text style={styles.reassuranceText}>No payment due now</Text>
         </Animated.View>
 
         {/* CTA */}
         <Animated.View style={ctaStyle}>
           <TouchableOpacity
-            style={[styles.ctaButton, { backgroundColor: colors.accent }, (purchasing || (!monthly && !annual)) && styles.ctaDisabled]}
+            style={[styles.ctaButton, { backgroundColor: '#C9A227' }, purchasing && styles.ctaDisabled]}
             onPress={handlePurchase}
-            disabled={purchasing || (!monthly && !annual)}
+            disabled={purchasing}
             activeOpacity={0.9}
           >
             {purchasing ? (
@@ -337,7 +337,7 @@ const useStyles = createLazyStyles((colors) => ({
   },
   headerSection: { alignItems: 'center' as const, marginBottom: 24 },
   avatar: { width: 64, height: 64, borderRadius: 32, marginBottom: 12 },
-  brandName: { fontSize: 16, fontWeight: '700' as const, color: colors.accent, letterSpacing: 0.5, marginBottom: 8 },
+  brandName: { fontSize: 16, fontWeight: '700' as const, color: '#C9A227', letterSpacing: 0.5, marginBottom: 8 },
   headline: {
     fontSize: 32,
     fontWeight: '800' as const,
@@ -386,8 +386,8 @@ const useStyles = createLazyStyles((colors) => ({
     position: 'relative' as const,
   },
   priceCardSelected: {
-    borderColor: colors.accent,
-    backgroundColor: `${colors.accent}10`,
+    borderColor: '#C9A227',
+    backgroundColor: 'rgba(201,162,39,0.1)',
   },
   trialBadge: {
     position: 'absolute' as const,
@@ -454,7 +454,7 @@ const useStyles = createLazyStyles((colors) => ({
     paddingVertical: 18,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    shadowColor: colors.accent,
+    shadowColor: '#C9A227',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -482,7 +482,7 @@ const useStyles = createLazyStyles((colors) => ({
   },
   footerLink: {
     fontSize: 14,
-    color: colors.accent,
+    color: '#FFFFFF',
     fontWeight: '500' as const,
   },
   footerDot: {

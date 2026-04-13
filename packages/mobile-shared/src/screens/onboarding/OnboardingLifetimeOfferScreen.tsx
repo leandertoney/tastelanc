@@ -230,8 +230,8 @@ export default function OnboardingLifetimeOfferScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={[colors.primary, `${colors.accent}15`, colors.primary]}
-        locations={[0, 0.4, 1]}
+        colors={[colors.accent, `${colors.accent}DD`, colors.accent]}
+        locations={[0, 0.5, 1]}
         style={styles.gradient}
       />
 
@@ -283,7 +283,7 @@ export default function OnboardingLifetimeOfferScreen({ navigation }: Props) {
             <View style={styles.cardBenefits}>
               {BENEFITS.map((benefit, i) => (
                 <View key={i} style={styles.benefitRow}>
-                  <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
+                  <Ionicons name="checkmark-circle" size={16} color="#C9A227" />
                   <Text style={styles.benefitText}>{benefit}</Text>
                 </View>
               ))}
@@ -297,9 +297,9 @@ export default function OnboardingLifetimeOfferScreen({ navigation }: Props) {
       {/* Fixed footer */}
       <Animated.View style={[styles.footer, ctaStyle]}>
         <TouchableOpacity
-          style={[styles.ctaButton, (purchasing || !lifetime) && styles.ctaDisabled]}
+          style={[styles.ctaButton, purchasing && styles.ctaDisabled]}
           onPress={handlePurchase}
-          disabled={purchasing || !lifetime}
+          disabled={purchasing}
           activeOpacity={0.9}
         >
           {purchasing ? (
@@ -348,7 +348,7 @@ const useStyles = createLazyStyles((colors) => ({
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: 6,
-    backgroundColor: colors.accent,
+    backgroundColor: '#C9A227',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
@@ -356,7 +356,7 @@ const useStyles = createLazyStyles((colors) => ({
   badgeText: {
     fontSize: 13,
     fontWeight: '700' as const,
-    color: '#FFFFFF',
+    color: '#000',
     letterSpacing: 0.5,
     textTransform: 'uppercase' as const,
   },
@@ -370,14 +370,15 @@ const useStyles = createLazyStyles((colors) => ({
   headline: {
     fontSize: 28,
     fontWeight: '800' as const,
-    color: '#FFFFFF',
+    color: colors.textOnAccent,
     textAlign: 'center' as const,
     marginBottom: 8,
     letterSpacing: -0.5,
   },
   subheadline: {
     fontSize: 16,
-    color: 'rgba(255,255,255,0.55)',
+    color: colors.textOnAccent,
+    opacity: 0.7,
     textAlign: 'center' as const,
   },
 
@@ -387,7 +388,7 @@ const useStyles = createLazyStyles((colors) => ({
     borderRadius: 20,
     padding: 24,
     borderWidth: 1.5,
-    borderColor: `${colors.accent}40`,
+    borderColor: 'rgba(201,162,39,0.4)',
   },
   cardHeader: {
     flexDirection: 'row' as const,
@@ -403,7 +404,7 @@ const useStyles = createLazyStyles((colors) => ({
   cardPrice: {
     fontSize: 24,
     fontWeight: '800' as const,
-    color: colors.accent,
+    color: '#C9A227',
   },
   cardPricePeriod: {
     fontSize: 14,
@@ -417,10 +418,11 @@ const useStyles = createLazyStyles((colors) => ({
   },
   cardBenefits: { gap: 12 },
   benefitRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10 },
-  benefitText: { fontSize: 14, color: 'rgba(255,255,255,0.8)', flex: 1 },
+  benefitText: { fontSize: 14, color: colors.textOnAccent, opacity: 0.85, flex: 1 },
   cardRenewal: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.35)',
+    color: colors.textOnAccent,
+    opacity: 0.5,
     textAlign: 'center' as const,
     marginTop: 16,
   },
@@ -432,12 +434,12 @@ const useStyles = createLazyStyles((colors) => ({
     paddingTop: 12,
   },
   ctaButton: {
-    backgroundColor: colors.accent,
+    backgroundColor: '#C9A227',
     borderRadius: 14,
     paddingVertical: 18,
     alignItems: 'center' as const,
     marginBottom: 12,
-    shadowColor: colors.accent,
+    shadowColor: '#C9A227',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -453,11 +455,11 @@ const useStyles = createLazyStyles((colors) => ({
   },
   footerLink: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.4)',
+    color: '#FFFFFF',
     fontWeight: '500' as const,
   },
   footerDot: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.2)',
+    color: 'rgba(255,255,255,0.3)',
   },
 }));

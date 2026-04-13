@@ -86,14 +86,15 @@ export default function OnboardingHappyHoursScreen({ navigation }: Props) {
     <FeatureDemoScreen
       headline="Happy Hour Finds You"
       subheadline={`Real-time deals, no searching\nJust show up`}
-      gradientColors={[colors.primary, `${colors.accent}25`, colors.primary]}
+      gradientColors={[colors.primary, colors.primary, colors.primary]}
+      headlineShadowColor="#00897B"
       progressStep={2}
       totalProgressSteps={15}
       onContinue={() => navigation.navigate('OnboardingEvents')}
     >
       {/* Ambient floating beer icon */}
       <Animated.View style={[styles.floatingIcon, styles.floatingBeer, beerStyle]}>
-        <Ionicons name="beer" size={80} color={colors.accent} />
+        <Ionicons name="beer" size={80} color="#00897B" />
       </Animated.View>
 
       {/* Deal cards */}
@@ -137,16 +138,17 @@ const useStyles = createLazyStyles((colors) => ({
     gap: 12,
   },
   dealCard: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 18,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    borderLeftWidth: 4,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 4,
+    borderColor: 'rgba(15,30,46,0.1)',
+    borderLeftWidth: 6,
+    borderLeftColor: '#00897B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   dealRow: {
     flexDirection: 'row' as const,
@@ -159,7 +161,8 @@ const useStyles = createLazyStyles((colors) => ({
   dealName: {
     fontSize: 14,
     fontWeight: '600' as const,
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.text,
+    opacity: 0.7,
     marginBottom: 3,
   },
   dealOffer: {

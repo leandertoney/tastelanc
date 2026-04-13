@@ -75,14 +75,15 @@ export default function OnboardingMoveScreen({ navigation }: Props) {
     <FeatureDemoScreen
       headline={`What's the Move?`}
       subheadline={`Your social feed for ${brand.cityName}\nTrending spots, community picks, and real photos`}
-      gradientColors={[colors.primary, '#0f1a2e', colors.primary]}
+      gradientColors={[colors.primary, colors.primary, colors.primary]}
+      headlineShadowColor="#F4511E"
       progressStep={5}
       totalProgressSteps={15}
       onContinue={() => navigation.navigate('OnboardingVideoRecs')}
     >
       {/* Floating compass */}
       <Animated.View style={[styles.floatingCompass, compassStyle]}>
-        <Ionicons name="compass" size={60} color={colors.accent} />
+        <Ionicons name="compass" size={60} color="#F4511E" />
       </Animated.View>
 
       {/* Social feed posts */}
@@ -103,8 +104,8 @@ export default function OnboardingMoveScreen({ navigation }: Props) {
               <Text style={styles.postCaption}>{post.caption}</Text>
               <View style={styles.postActions}>
                 <Ionicons name="heart" size={14} color={post.color} />
-                <Ionicons name="chatbubble-outline" size={13} color="rgba(255,255,255,0.3)" style={{ marginLeft: 12 }} />
-                <Ionicons name="share-outline" size={13} color="rgba(255,255,255,0.3)" style={{ marginLeft: 12 }} />
+                <Ionicons name="chatbubble-outline" size={13} color={colors.text} style={{ marginLeft: 12, opacity: 0.4 }} />
+                <Ionicons name="share-outline" size={13} color={colors.text} style={{ marginLeft: 12, opacity: 0.4 }} />
               </View>
             </View>
           </Animated.View>
@@ -126,14 +127,20 @@ const useStyles = createLazyStyles((colors) => ({
   },
   postCard: {
     flexDirection: 'row' as const,
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 14,
     overflow: 'hidden' as const,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: 'rgba(15,30,46,0.1)',
+    borderLeftWidth: 6,
+    borderLeftColor: '#F4511E',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   photoBar: {
-    width: 6,
+    width: 0,
     position: 'relative' as const,
   },
   photoAccent: {
@@ -141,9 +148,7 @@ const useStyles = createLazyStyles((colors) => ({
     top: 0,
     bottom: 0,
     left: 0,
-    width: 6,
-    borderTopLeftRadius: 14,
-    borderBottomLeftRadius: 14,
+    width: 0,
   },
   postContent: {
     flex: 1,
@@ -158,7 +163,7 @@ const useStyles = createLazyStyles((colors) => ({
   postUser: {
     fontSize: 14,
     fontWeight: '700' as const,
-    color: '#FFFFFF',
+    color: colors.text,
   },
   tagBadge: {
     paddingHorizontal: 8,
@@ -171,7 +176,8 @@ const useStyles = createLazyStyles((colors) => ({
   },
   postCaption: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.65)',
+    color: colors.text,
+    opacity: 0.7,
     marginBottom: 8,
     lineHeight: 20,
   },
