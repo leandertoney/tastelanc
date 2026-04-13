@@ -273,8 +273,8 @@ export default function DashboardPage() {
   }[analyticsData.benchmarking.performanceLabel] : null;
 
   // Shareable deep link to app
-  const shareableLink = restaurant?.slug
-    ? `tastelanc://restaurant/${restaurant.slug}`
+  const shareableLink = restaurant?.id
+    ? `tastelanc://restaurant/${restaurant.id}`
     : null;
 
   const copyShareableLink = () => {

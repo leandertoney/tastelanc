@@ -61,6 +61,8 @@ const linking = {
       PartyRSVP: 'party',
       // tastelanc://party-ticket/:qr_token (deep link from web RSVP confirmation)
       PartyTicket: 'party-ticket/:qr_token',
+      // tastelanc://restaurant/:id (deep link from web dashboard)
+      RestaurantDetail: 'restaurant/:id',
     },
   },
   // Also handle legacy custom scheme path: tastelanc://party-rsvp
