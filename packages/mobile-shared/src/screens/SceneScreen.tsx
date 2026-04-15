@@ -301,10 +301,23 @@ interface CrossMarketPromoItem {
   id: string;
 }
 
+interface TFKWinnerItem {
+  kind: 'tfk_winner';
+  id: string;
+  playerName: string;
+  venueName: string;
+  score: number;
+  nightlyDate: string;
+  prizeDescription: string | null;
+  emailVerified: boolean;
+  date: string;
+}
+
 type PulseItem =
   | VideoItem | PhotoItem | ItineraryItem | BuzzItem | AdItem | ReelsShelfItem
   | SpecialItem | HappyHourItem | EventItem | NewRestaurantItem | BlogItem
-  | HolidayTeaserItem | CouponClaimItem | NewCouponItem | CrossMarketPromoItem;
+  | HolidayTeaserItem | CouponClaimItem | NewCouponItem | CrossMarketPromoItem
+  | TFKWinnerItem;
 
 function getBehavioralEventMeta(
   item: PulseItem
@@ -405,6 +418,18 @@ function usePulseFeed() {
         .order('event_date', { ascending: true })
         .limit(20);
 
+      // TFK Winners — recent winners from last 7 days
+      const sevenDaysAgo = new Date(today.getTime() - 7 * 86400000).toISOString().split('T')[0];
+      let tfkWinnersQuery = supabase
+        .from('trivia_leaderboard_entries')
+        .select('id, player_name, venue_name, score, nightly_date, prize_description, email_verified, created_at')
+        .eq('is_active', true)
+        .eq('is_winner', true)
+        .gte('nightly_date', sevenDaysAgo)
+        .order('nightly_date', { ascending: false })
+        .order('score', { ascending: false })
+        .limit(10);
+
       // Market scoping
       if (marketId) {
         videosQuery = videosQuery.eq('restaurants.market_id', marketId);
@@ -414,6 +439,7 @@ function usePulseFeed() {
         newRestaurantsQuery = newRestaurantsQuery.eq('market_id', marketId);
         blogQuery = blogQuery.eq('market_id', marketId);
         holidayQuery = holidayQuery.eq('restaurant.market_id', marketId);
+        tfkWinnersQuery = tfkWinnersQuery.eq('market_id', marketId);
       }
 
       const buzzPromise = marketId
@@ -465,10 +491,10 @@ function usePulseFeed() {
         .not('tier_id', 'is', null);
       if (marketId) tierQuery = tierQuery.eq('market_id', marketId);
 
-      const [videosRes, adsRes, buzzRes, itinerariesRes, specialsRes, eventsRes, newRestaurantsRes, blogRes, happyHoursRes, holidayRes, couponClaimsRes, activeCouponsRes, tierRes] = await Promise.all([
+      const [videosRes, adsRes, buzzRes, itinerariesRes, specialsRes, eventsRes, newRestaurantsRes, blogRes, happyHoursRes, holidayRes, couponClaimsRes, activeCouponsRes, tfkWinnersRes, tierRes] = await Promise.all([
         videosQuery, adsQuery, buzzPromise, itinerariesQuery,
         specialsQuery, eventsQuery, newRestaurantsQuery, blogQuery, happyHoursPromise, holidayQuery,
-        couponClaimsQuery, activeCouponsQuery, tierQuery,
+        couponClaimsQuery, activeCouponsQuery, tfkWinnersQuery, tierQuery,
       ]);
 
       // Build restaurant ID → tier name map
@@ -660,6 +686,21 @@ function usePulseFeed() {
           });
         });
       }
+
+      // ── TFK Winners (recent trivia winners from last 7 days)
+      (tfkWinnersRes.data || []).slice(0, 5).forEach((w: any) => {
+        items.push({
+          kind: 'tfk_winner',
+          id: `tfk-${w.id}`,
+          playerName: w.player_name,
+          venueName: w.venue_name,
+          score: w.score,
+          nightlyDate: w.nightly_date || '',
+          prizeDescription: w.prize_description || null,
+          emailVerified: w.email_verified || false,
+          date: w.created_at,
+        });
+      });
 
       // ── Coupon claim social proof ("Someone just claimed...")
       const couponClaims = couponClaimsRes.data || [];
@@ -1387,6 +1428,104 @@ function HolidayTeaserCard({ item, onPress }: { item: HolidayTeaserItem; onPress
   );
 }
 
+// ─── TFK Winner Card ──────────────────────────────────────────────────────────
+
+function TFKWinnerCard({ item, onPress }: { item: TFKWinnerItem; onPress: () => void }) {
+  const colors = getColors();
+
+  const nightDate = item.nightlyDate ? new Date(item.nightlyDate + 'T00:00:00') : null;
+  const dayName = nightDate ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][nightDate.getDay()] : '';
+  const monthDay = nightDate ? `${nightDate.getMonth() + 1}/${nightDate.getDate()}` : '';
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={() => {
+        trackClick('tfk_winner');
+        onPress();
+      }}
+      style={{
+        marginHorizontal: spacing.md,
+        marginVertical: spacing.sm,
+        backgroundColor: '#1A0F20',
+        borderRadius: radius.lg,
+        borderWidth: 1.5,
+        borderColor: withAlpha('#FFD700', 0.35),
+        padding: spacing.md,
+        overflow: 'hidden',
+      }}
+    >
+      {/* Trophy watermarks */}
+      <Text style={{ position: 'absolute', right: 10, top: -5, fontSize: 40, opacity: 0.08 }}>
+        🏆
+      </Text>
+      <Text style={{ position: 'absolute', right: 55, bottom: -8, fontSize: 28, opacity: 0.06 }}>
+        🍺
+      </Text>
+
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Text style={{ fontSize: 28 }}>🏆</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 17, fontWeight: '800', color: '#FFD700', letterSpacing: -0.3 }}>
+            TFK Trivia Winner
+          </Text>
+          <Text style={{ fontSize: 13, color: '#9B59B6', fontWeight: '500', marginTop: 1 }}>
+            {dayName} {monthDay} • {item.score} pts
+          </Text>
+        </View>
+      </View>
+
+      <View style={{ marginTop: spacing.sm }}>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: '#F0F0F0' }}>
+          {item.playerName}
+        </Text>
+        <Text style={{ fontSize: 13, color: withAlpha('#FFFFFF', 0.6), marginTop: 2 }}>
+          {item.venueName}
+        </Text>
+      </View>
+
+      {!item.emailVerified && (
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginTop: spacing.sm,
+          backgroundColor: withAlpha('#10b981', 0.15),
+          padding: spacing.xs,
+          borderRadius: radius.sm,
+          gap: 6,
+        }}>
+          <Ionicons name="gift" size={16} color="#10b981" />
+          <Text style={{ fontSize: 12, fontWeight: '700', color: '#10b981', flex: 1 }}>
+            Claim your $25 prize! Sign up to redeem.
+          </Text>
+        </View>
+      )}
+
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        marginTop: spacing.sm,
+        gap: 6,
+      }}>
+        <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFD700' }}>
+          See All Winners
+        </Text>
+        <View style={{
+          width: 24,
+          height: 24,
+          borderRadius: 12,
+          backgroundColor: withAlpha('#FFD700', 0.15),
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}>
+          <Ionicons name="chevron-forward" size={14} color="#FFD700" />
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
 // ─── Shared deal card with hero image (used by both coupon types) ────────────
 
 function DealHeroCard({
@@ -1996,6 +2135,8 @@ export default function SceneScreen() {
         const holidayDest = holidayBase === 'restaurant-week' ? 'RestaurantWeek' : 'StPatricksDay';
         return <HolidayTeaserCard item={item} onPress={() => navigation.navigate(holidayDest)} />;
       }
+      case 'tfk_winner':
+        return <TFKWinnerCard item={item} onPress={() => navigation.navigate('TFKWinners')} />;
       case 'coupon_claim':
         return <CouponClaimCard item={item} onPress={() => {
           const meta = getBehavioralEventMeta(item);
