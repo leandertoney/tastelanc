@@ -13,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/types';
-import { getColors } from '../../config/theme';
+import { getColors, getBrand } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import FeatureDemoScreen from '../../components/FeatureDemoScreen';
 import { trackScreenView } from '../../lib/analytics';
@@ -29,14 +29,26 @@ const CATEGORIES = [
   { icon: 'trophy', label: 'Sports' },
 ];
 
-const EVENTS = [
-  { name: 'Friday Live Music', venue: 'Marion Court Room', when: 'Tonight', favorited: true },
-  { name: 'Bar Trivia Night', venue: 'Thirsty For Knowledge', when: 'Tomorrow', favorited: true },
-];
+const EVENTS_BY_MARKET: Record<string, Array<{ name: string; venue: string; when: string; favorited: boolean }>> = {
+  'lancaster-pa': [
+    { name: 'Friday Live Music', venue: 'Marion Court Room', when: 'Tonight', favorited: true },
+    { name: 'Bar Trivia Night', venue: 'Lucky Dog Cafe', when: 'Tomorrow', favorited: true },
+  ],
+  'cumberland-pa': [
+    { name: 'Live Band Night', venue: 'Market Cross Pub', when: 'Tonight', favorited: true },
+    { name: 'Trivia Night', venue: 'Caddy Shack', when: 'Tomorrow', favorited: true },
+  ],
+  'fayetteville-nc': [
+    { name: 'Friday Live Music', venue: '316 Oyster Bar', when: 'Tonight', favorited: true },
+    { name: 'Trivia Night', venue: '22 Klicks Bar & Grill', when: 'Tomorrow', favorited: true },
+  ],
+};
 
 export default function OnboardingEventsScreen({ navigation }: Props) {
   const styles = useStyles();
   const colors = getColors();
+  const brand = getBrand();
+  const EVENTS = EVENTS_BY_MARKET[brand.marketSlug] || EVENTS_BY_MARKET['lancaster-pa'];
 
   // Floating category chips
   const chipScales = CATEGORIES.map(() => useSharedValue(0));
@@ -94,24 +106,24 @@ export default function OnboardingEventsScreen({ navigation }: Props) {
       headline="Never Miss a Beat"
       subheadline={`Live music, trivia, comedy — every night\nworth going out for.`}
       gradientColors={[colors.primary, colors.primary, colors.primary]}
-      headlineShadowColor="#D81B60"
+      headlineShadowColor={colors.error}
       progressStep={3}
       totalProgressSteps={15}
       onContinue={() => navigation.navigate('OnboardingSpecials')}
     >
       {/* Floating music notes */}
       <Animated.View style={[styles.floatingNote, styles.noteLeft, noteStyle]}>
-        <Ionicons name="musical-notes" size={48} color="#D81B60" />
+        <Ionicons name="musical-notes" size={48} color={colors.error} />
       </Animated.View>
       <Animated.View style={[styles.floatingNote, styles.noteRight, noteStyle]}>
-        <Ionicons name="musical-note" size={32} color="#D81B60" style={{ opacity: 0.6 }} />
+        <Ionicons name="musical-note" size={32} color={colors.error} style={{ opacity: 0.6 }} />
       </Animated.View>
 
       {/* Category chips scattered */}
       <View style={styles.chipsRow}>
         {CATEGORIES.map((cat, i) => (
           <Animated.View key={cat.label} style={[styles.chip, chipStyles[i]]}>
-            <Ionicons name={cat.icon as any} size={14} color="#D81B60" />
+            <Ionicons name={cat.icon as any} size={14} color={colors.error} />
             <Text style={styles.chipText}>{cat.label}</Text>
           </Animated.View>
         ))}
@@ -126,7 +138,7 @@ export default function OnboardingEventsScreen({ navigation }: Props) {
                 <Text style={styles.whenText}>{event.when}</Text>
               </View>
               {event.favorited && (
-                <Ionicons name="heart" size={22} color="#FF6B9D" />
+                <Ionicons name="heart" size={22} color={colors.error} />
               )}
             </View>
             <Text style={styles.eventName}>{event.name}</Text>
@@ -171,7 +183,7 @@ const useStyles = createLazyStyles((colors) => ({
   chipText: {
     fontSize: 13,
     fontWeight: '600' as const,
-    color: colors.text,
+    color: '#1A2838',
   },
   eventsStack: {
     width: '100%',
@@ -184,7 +196,7 @@ const useStyles = createLazyStyles((colors) => ({
     borderWidth: 1,
     borderColor: 'rgba(15,30,46,0.1)',
     borderLeftWidth: 6,
-    borderLeftColor: '#D81B60',
+    borderLeftColor: colors.error,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
@@ -205,18 +217,18 @@ const useStyles = createLazyStyles((colors) => ({
   whenText: {
     fontSize: 12,
     fontWeight: '600' as const,
-    color: colors.textOnAccent,
+    color: '#1A2838',
     opacity: 0.9,
   },
   eventName: {
     fontSize: 17,
     fontWeight: '700' as const,
-    color: colors.text,
+    color: '#1A2838',
     marginBottom: 3,
   },
   eventVenue: {
     fontSize: 14,
-    color: colors.text,
+    color: '#1A2838',
     opacity: 0.6,
   },
 }));

@@ -9,6 +9,9 @@ export { default as OnboardingSolutionScreen } from './OnboardingSolutionScreen'
 export { default as OnboardingHappyHoursScreen } from './OnboardingHappyHoursScreen';
 export { default as OnboardingEventsScreen } from './OnboardingEventsScreen';
 export { default as OnboardingSpecialsScreen } from './OnboardingSpecialsScreen';
+export { default as OnboardingMoveScreen } from './OnboardingMoveScreen';
+export { default as OnboardingVideoRecsScreen } from './OnboardingVideoRecsScreen';
+export { default as OnboardingRewardsScreen } from './OnboardingRewardsScreen';
 
 // Personal Questions (auto-advance on single select)
 export { default as OnboardingUserTypeScreen } from './OnboardingUserTypeScreen';
@@ -25,6 +28,8 @@ export { default as OnboardingFoodScreen } from './OnboardingFoodScreen';
 export { default as OnboardingPremiumScreen } from './OnboardingPremiumScreen';
 export { default as OnboardingRosieAskScreen } from './OnboardingMollieAskScreen';
 export { default as OnboardingReviewAskScreen } from './OnboardingReviewAskScreen';
+export { default as OnboardingPaywallScreen } from './OnboardingPaywallScreen';
+export { default as OnboardingLifetimeOfferScreen } from './OnboardingLifetimeOfferScreen';
 export { default as OnboardingPremiumIntroScreen } from './OnboardingPremiumIntroScreen';
 
 // Legacy (backward compatibility)

@@ -13,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/types';
-import { getColors } from '../../config/theme';
+import { getColors, getBrand } from '../../config/theme';
 import { createLazyStyles } from '../../utils/lazyStyles';
 import FeatureDemoScreen from '../../components/FeatureDemoScreen';
 import { trackScreenView } from '../../lib/analytics';
@@ -22,15 +22,29 @@ type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingHappyHo
 
 const { width: SW } = Dimensions.get('window');
 
-const DEALS = [
-  { name: 'The Imperial', deal: '$5 Drafts + Half Off Bar Menu', time: '4–7 PM', color: '#FFB347' },
-  { name: 'Marion Court Room', deal: '$2 Domestic Drafts, $4 Wells', time: '5–7 PM', color: '#FF6B6B' },
-  { name: 'Lucky Dog Cafe', deal: '$6 Cheesesteak Eggrolls', time: '4–6 PM', color: '#4ECDC4' },
-];
+const DEALS_BY_MARKET: Record<string, Array<{ name: string; deal: string; time: string; color: string }>> = {
+  'lancaster-pa': [
+    { name: 'The Imperial', deal: 'Half Off Bar Menu', time: '4–7 PM', color: '#FFB347' },
+    { name: 'Marion Court Room', deal: '$2 Tacos, $5 Nachos', time: '5–7 PM', color: '#FF6B6B' },
+    { name: 'Lucky Dog Cafe', deal: '$6 Cheesesteak Eggrolls', time: '4–6 PM', color: '#4ECDC4' },
+  ],
+  'cumberland-pa': [
+    { name: 'Back Porch Brewing', deal: 'Half Off Appetizers', time: '4–7 PM', color: '#FFB347' },
+    { name: 'Caddy Shack', deal: '$3 Sliders, $5 Wings', time: '5–7 PM', color: '#FF6B6B' },
+    { name: 'Market Cross Pub', deal: '$6 Nachos', time: '4–6 PM', color: '#4ECDC4' },
+  ],
+  'fayetteville-nc': [
+    { name: '316 Oyster Bar', deal: 'Half Off Small Plates', time: '4–7 PM', color: '#FFB347' },
+    { name: '22 Klicks Bar & Grill', deal: '$3 Tacos, $5 Flatbreads', time: '5–7 PM', color: '#FF6B6B' },
+    { name: 'Bad Daddy\'s Burger Bar', deal: '$6 Loaded Fries', time: '4–6 PM', color: '#4ECDC4' },
+  ],
+};
 
 export default function OnboardingHappyHoursScreen({ navigation }: Props) {
   const styles = useStyles();
   const colors = getColors();
+  const brand = getBrand();
+  const DEALS = DEALS_BY_MARKET[brand.marketSlug] || DEALS_BY_MARKET['lancaster-pa'];
 
   // Staggered card entrances
   const card0 = useSharedValue(0);
@@ -84,17 +98,17 @@ export default function OnboardingHappyHoursScreen({ navigation }: Props) {
 
   return (
     <FeatureDemoScreen
-      headline="Happy Hour Finds You"
-      subheadline={`Real-time deals, no searching\nJust show up`}
+      headline="Great Deals Find You"
+      subheadline={`Daily specials, no searching\nJust show up`}
       gradientColors={[colors.primary, colors.primary, colors.primary]}
-      headlineShadowColor="#00897B"
+      headlineShadowColor={colors.accent}
       progressStep={2}
       totalProgressSteps={15}
       onContinue={() => navigation.navigate('OnboardingEvents')}
     >
-      {/* Ambient floating beer icon */}
+      {/* Ambient floating time icon */}
       <Animated.View style={[styles.floatingIcon, styles.floatingBeer, beerStyle]}>
-        <Ionicons name="beer" size={80} color="#00897B" />
+        <Ionicons name="time" size={80} color={colors.accent} />
       </Animated.View>
 
       {/* Deal cards */}
@@ -144,7 +158,7 @@ const useStyles = createLazyStyles((colors) => ({
     borderWidth: 1,
     borderColor: 'rgba(15,30,46,0.1)',
     borderLeftWidth: 6,
-    borderLeftColor: '#00897B',
+    borderLeftColor: colors.accent,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
@@ -161,7 +175,7 @@ const useStyles = createLazyStyles((colors) => ({
   dealName: {
     fontSize: 14,
     fontWeight: '600' as const,
-    color: colors.text,
+    color: '#1A2838',
     opacity: 0.7,
     marginBottom: 3,
   },

@@ -3,7 +3,7 @@
  * Full-bleed, Spotify Wrapped-style: gradient backgrounds, floating elements,
  * dramatic typography, haptic feedback on transitions.
  */
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -116,12 +116,20 @@ export default function FeatureDemoScreen({
 
   const footerStyle = useAnimatedStyle(() => ({ opacity: footerOpacity.value }));
 
+  const [isPressed, setIsPressed] = useState(false);
+
   const handlePress = useCallback(() => {
+    if (isPressed) return; // Prevent double-tap
+
+    setIsPressed(true);
     if (Haptics) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     }
     onContinue();
-  }, [onContinue]);
+
+    // Re-enable after 1 second (in case navigation fails)
+    setTimeout(() => setIsPressed(false), 1000);
+  }, [isPressed, onContinue]);
 
   return (
     <TouchableOpacity style={styles.container} activeOpacity={1} onPress={handlePress}>

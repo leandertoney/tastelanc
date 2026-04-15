@@ -104,8 +104,8 @@ export default function OnboardingMoveScreen({ navigation }: Props) {
               <Text style={styles.postCaption}>{post.caption}</Text>
               <View style={styles.postActions}>
                 <Ionicons name="heart" size={14} color={post.color} />
-                <Ionicons name="chatbubble-outline" size={13} color={colors.text} style={{ marginLeft: 12, opacity: 0.4 }} />
-                <Ionicons name="share-outline" size={13} color={colors.text} style={{ marginLeft: 12, opacity: 0.4 }} />
+                <Ionicons name="chatbubble-outline" size={13} color="#1A2838" style={{ marginLeft: 12, opacity: 0.4 }} />
+                <Ionicons name="share-outline" size={13} color="#1A2838" style={{ marginLeft: 12, opacity: 0.4 }} />
               </View>
             </View>
           </Animated.View>
@@ -163,7 +163,7 @@ const useStyles = createLazyStyles((colors) => ({
   postUser: {
     fontSize: 14,
     fontWeight: '700' as const,
-    color: colors.text,
+    color: '#1A2838',
   },
   tagBadge: {
     paddingHorizontal: 8,
@@ -176,7 +176,7 @@ const useStyles = createLazyStyles((colors) => ({
   },
   postCaption: {
     fontSize: 14,
-    color: colors.text,
+    color: '#1A2838',
     opacity: 0.7,
     marginBottom: 8,
     lineHeight: 20,

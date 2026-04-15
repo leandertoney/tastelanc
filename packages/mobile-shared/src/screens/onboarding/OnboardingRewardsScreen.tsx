@@ -119,20 +119,20 @@ export default function OnboardingRewardsScreen({ navigation }: Props) {
       headline="Get Rewarded for Going Out"
       subheadline={`Earn points just for doing what you love.\nRedeem perks at your favorite spots.`}
       gradientColors={[colors.primary, colors.primary, colors.primary]}
-      headlineShadowColor="#DAA520"
+      headlineShadowColor={colors.warning}
       progressStep={7}
       totalProgressSteps={15}
-      onContinue={() => navigation.navigate('Main')}
+      onContinue={() => navigation.navigate('OnboardingPremium')}
     >
       {/* Floating star */}
       <Animated.View style={[styles.floatingStar, starStyle]}>
-        <Ionicons name="star" size={50} color="#FFD700" />
+        <Ionicons name="star" size={50} color={colors.warning} />
       </Animated.View>
 
       {/* Points display */}
       <Animated.View style={[styles.pointsCard, pointsStyle]}>
         <Animated.View style={[styles.trophyGlow, trophyStyle]} />
-        <Ionicons name="trophy" size={28} color="#FFD700" />
+        <Ionicons name="trophy" size={28} color={colors.warning} />
         <View style={styles.pointsInfo}>
           <Text style={styles.pointsLabel}>Your Points</Text>
           <Text style={styles.pointsNumber}>1,250</Text>
@@ -156,7 +156,7 @@ export default function OnboardingRewardsScreen({ navigation }: Props) {
       </View>
 
       {/* Check-in button */}
-      <Animated.View style={[styles.checkinBtn, { backgroundColor: '#DAA520' }, btnStyle]}>
+      <Animated.View style={[styles.checkinBtn, { backgroundColor: colors.warning }, btnStyle]}>
         <Ionicons name="location" size={18} color="#FFFFFF" />
         <Text style={styles.checkinText}>Check In  +50 pts</Text>
       </Animated.View>
@@ -181,7 +181,7 @@ const useStyles = createLazyStyles((colors) => ({
     borderWidth: 1,
     borderColor: 'rgba(15,30,46,0.1)',
     borderLeftWidth: 6,
-    borderLeftColor: '#DAA520',
+    borderLeftColor: colors.warning,
     gap: 12,
     position: 'relative' as const,
     overflow: 'hidden' as const,
@@ -197,24 +197,24 @@ const useStyles = createLazyStyles((colors) => ({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#FFD700',
+    backgroundColor: colors.warning,
   },
   pointsInfo: {
     flex: 1,
   },
   pointsLabel: {
     fontSize: 12,
-    color: colors.text,
+    color: '#1A2838',
     opacity: 0.5,
     marginBottom: 2,
   },
   pointsNumber: {
     fontSize: 28,
     fontWeight: '800' as const,
-    color: '#DAA520',
+    color: colors.warning,
   },
   multiplierBadge: {
-    backgroundColor: 'rgba(218,165,32,0.15)',
+    backgroundColor: colors.warning + '26',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 10,
@@ -222,7 +222,7 @@ const useStyles = createLazyStyles((colors) => ({
   multiplierText: {
     fontSize: 14,
     fontWeight: '800' as const,
-    color: '#DAA520',
+    color: colors.warning,
   },
   leaderboard: {
     width: '100%',
@@ -257,13 +257,13 @@ const useStyles = createLazyStyles((colors) => ({
   leaderName: {
     fontSize: 15,
     fontWeight: '600' as const,
-    color: colors.text,
+    color: '#1A2838',
     flex: 1,
   },
   leaderPts: {
     fontSize: 14,
     fontWeight: '600' as const,
-    color: colors.text,
+    color: '#1A2838',
     opacity: 0.5,
   },
   checkinBtn: {

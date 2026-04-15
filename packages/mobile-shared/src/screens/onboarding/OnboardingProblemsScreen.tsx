@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -61,6 +61,9 @@ export default function OnboardingProblemsScreen({ navigation }: Props) {
   const readyOpacity = useSharedValue(0);
   const readyScale = useSharedValue(0.8);
   const hintOpacity = useSharedValue(0);
+
+  // Debounce state to prevent rapid taps
+  const [isPressed, setIsPressed] = useState(false);
 
   useEffect(() => { trackScreenView('OnboardingStep_Interests'); }, []);
 
@@ -148,8 +151,21 @@ export default function OnboardingProblemsScreen({ navigation }: Props) {
   }));
   const hintStyle = useAnimatedStyle(() => ({ opacity: hintOpacity.value }));
 
+  const handlePress = useCallback(() => {
+    if (isPressed) return; // Prevent double-tap
+
+    setIsPressed(true);
+    if (Haptics) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    }
+    navigation.navigate(hasFeature('happyHours') ? 'OnboardingHappyHours' : 'OnboardingEvents');
+
+    // Re-enable after 1 second (in case navigation fails)
+    setTimeout(() => setIsPressed(false), 1000);
+  }, [isPressed, navigation]);
+
   return (
-    <TouchableOpacity style={styles.container} activeOpacity={1} onPress={() => navigation.navigate(hasFeature('happyHours') ? 'OnboardingHappyHours' : 'OnboardingEvents')}>
+    <TouchableOpacity style={styles.container} activeOpacity={1} onPress={handlePress}>
       <OnboardingProgressBar totalSteps={12} currentStep={0} style={styles.progressBar} />
 
       {/* Hero image with ken burns zoom */}

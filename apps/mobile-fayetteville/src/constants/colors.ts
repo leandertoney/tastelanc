@@ -20,8 +20,8 @@ export const colors = {
 
   // Text colors (light text on dark background)
   text: '#FFFFFF',
-  textMuted: 'rgba(255,255,255,0.7)',
-  textSecondary: 'rgba(255,255,255,0.5)',
+  textMuted: 'rgba(255,255,255,0.85)',
+  textSecondary: 'rgba(255,255,255,0.65)',
   textOnAccent: '#FFFFFF',
   textAccent: accentBlue,
 
@@ -87,8 +87,8 @@ export const dimColors = {
   accentLight: '#A8C8E0',
   accentDark: '#7099B8',
   text: '#FFFFFF',
-  textMuted: 'rgba(255,255,255,0.7)',
-  textSecondary: 'rgba(255,255,255,0.5)',
+  textMuted: 'rgba(255,255,255,0.85)',
+  textSecondary: 'rgba(255,255,255,0.65)',
   textOnAccent: '#FFFFFF',
   textAccent: accentBlue,
   cardBg: '#243A50',
@@ -135,8 +135,8 @@ export const lightColors = {
   accentLight: '#2275AD',
   accentDark: '#134670',
   text: '#1A2838',
-  textMuted: 'rgba(26,40,56,0.55)',
-  textSecondary: 'rgba(26,40,56,0.4)',
+  textMuted: 'rgba(26,40,56,0.7)',
+  textSecondary: 'rgba(26,40,56,0.55)',
   textOnAccent: '#FFFFFF',
   textAccent: '#1A5C8A',
   cardBg: '#FFFFFF',

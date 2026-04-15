@@ -37,9 +37,9 @@ export const BRAND: AppBrand = {
   mollieSubtitle: 'Your AI Concierge',
   mollieSamplePrompt: 'What are the best dinner spots in Fayetteville?',
 
-  // Market features — NC bans happy hour drink specials
+  // Market features — NC bans happy hour drink specials, but we show food deals instead
   features: {
-    happyHours: false,
+    happyHours: true,
     dailySpecialsCarousel: true,
   },
 

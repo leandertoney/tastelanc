@@ -20,16 +20,29 @@ import { trackScreenView } from '../../lib/analytics';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingSpecials'>;
 
-const DEALS = [
-  { deal: '50¢ Wing Night', place: 'Decades Lancaster', day: 'Sundays', savings: '50¢ each' },
-  { deal: 'Taco Tuesday', place: 'Lucky Dog Cafe', day: 'Tuesdays', savings: 'Weekly' },
-  { deal: 'Prime Rib Dinner', place: 'Conestoga Restaurant', day: 'Fri & Sat', savings: 'Special' },
-];
+const DEALS_BY_MARKET: Record<string, Array<{ deal: string; place: string; day: string; savings: string }>> = {
+  'lancaster-pa': [
+    { deal: '50¢ Wing Night', place: 'The Imperial', day: 'Sundays', savings: '50¢ each' },
+    { deal: 'Taco Tuesday', place: 'Marion Court Room', day: 'Tuesdays', savings: 'Weekly' },
+    { deal: 'Prime Rib Dinner', place: 'Lucky Dog Cafe', day: 'Fri & Sat', savings: 'Special' },
+  ],
+  'cumberland-pa': [
+    { deal: '50¢ Wing Night', place: 'Back Porch Brewing', day: 'Sundays', savings: '50¢ each' },
+    { deal: 'Taco Tuesday', place: 'Caddy Shack', day: 'Tuesdays', savings: 'Weekly' },
+    { deal: 'Weekend Specials', place: 'Market Cross Pub', day: 'Fri & Sat', savings: 'Special' },
+  ],
+  'fayetteville-nc': [
+    { deal: '50¢ Wing Night', place: '316 Oyster Bar', day: 'Sundays', savings: '50¢ each' },
+    { deal: 'Taco Tuesday', place: '22 Klicks Bar & Grill', day: 'Tuesdays', savings: 'Weekly' },
+    { deal: 'Weekend Specials', place: 'Bad Daddy\'s Burger Bar', day: 'Fri & Sat', savings: 'Special' },
+  ],
+};
 
 export default function OnboardingSpecialsScreen({ navigation }: Props) {
   const styles = useStyles();
   const colors = getColors();
   const brand = getBrand();
+  const DEALS = DEALS_BY_MARKET[brand.marketSlug] || DEALS_BY_MARKET['lancaster-pa'];
 
   // Cards cascade with rotation
   const cards = DEALS.map(() => ({
@@ -85,14 +98,14 @@ export default function OnboardingSpecialsScreen({ navigation }: Props) {
       headline="Daily Deals, Weekly Picks"
       subheadline={`Special savings picked\njust for ${brand.cityName}.`}
       gradientColors={[colors.primary, colors.primary, colors.primary]}
-      headlineShadowColor="#388E3C"
+      headlineShadowColor={colors.valueGreen}
       progressStep={4}
       totalProgressSteps={15}
       onContinue={() => navigation.navigate('OnboardingMove')}
     >
       {/* Floating sparkle tags */}
       <Animated.View style={[styles.sparkleTag, styles.sparkle1, sparkle1Style]}>
-        <Ionicons name="pricetag" size={40} color="#388E3C" />
+        <Ionicons name="pricetag" size={40} color={colors.valueGreen} />
       </Animated.View>
       <Animated.View style={[styles.sparkleTag, styles.sparkle2, sparkle2Style]}>
         <Text style={styles.sparkleText}>💰</Text>
@@ -110,7 +123,7 @@ export default function OnboardingSpecialsScreen({ navigation }: Props) {
             </View>
             <Text style={styles.dealPlace}>{deal.place}</Text>
             <View style={styles.dealFooter}>
-              <Ionicons name="calendar-outline" size={12} color={colors.text} style={{ opacity: 0.5 }} />
+              <Ionicons name="calendar-outline" size={12} color="#1A2838" style={{ opacity: 0.5 }} />
               <Text style={styles.dealDay}>{deal.day}</Text>
             </View>
           </Animated.View>
@@ -146,7 +159,7 @@ const useStyles = createLazyStyles((colors) => ({
     borderWidth: 1,
     borderColor: 'rgba(15,30,46,0.1)',
     borderLeftWidth: 6,
-    borderLeftColor: '#388E3C',
+    borderLeftColor: colors.valueGreen,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
@@ -161,10 +174,10 @@ const useStyles = createLazyStyles((colors) => ({
   dealTitle: {
     fontSize: 18,
     fontWeight: '800' as const,
-    color: colors.text,
+    color: '#1A2838',
   },
   savingsBadge: {
-    backgroundColor: 'rgba(56,142,60,0.1)',
+    backgroundColor: colors.valueGreen + '1A',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
@@ -172,11 +185,11 @@ const useStyles = createLazyStyles((colors) => ({
   savingsText: {
     fontSize: 12,
     fontWeight: '800' as const,
-    color: '#388E3C',
+    color: colors.valueGreen,
   },
   dealPlace: {
     fontSize: 14,
-    color: colors.text,
+    color: '#1A2838',
     opacity: 0.6,
     marginBottom: 6,
   },
@@ -187,7 +200,7 @@ const useStyles = createLazyStyles((colors) => ({
   },
   dealDay: {
     fontSize: 12,
-    color: colors.text,
+    color: '#1A2838',
     opacity: 0.5,
   },
 }));
