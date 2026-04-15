@@ -98,8 +98,9 @@ export default function TFKWinnersScreen() {
         .select('id, player_name, venue_name, nightly_date, prize_description, email_verified, week_start, score, is_winner')
         .eq('market_id', market.id)
         .eq('is_active', true)
-        .order('score', { ascending: false })
-        .order('nightly_date', { ascending: false });
+        .eq('is_winner', true)
+        .order('nightly_date', { ascending: false })
+        .order('score', { ascending: false });
 
       if (error) {
         console.error('TFK winners error:', error);
@@ -111,8 +112,15 @@ export default function TFKWinnersScreen() {
     enabled: !!marketSlug,
   });
 
-  // Winners are already sorted by score (highest first)
-  // No need to group by week - just show as a ranked list
+  // Group winners by night for easy social sharing
+  const winnersByNight = winners.reduce((acc, winner) => {
+    const date = winner.nightly_date || 'Unknown';
+    if (!acc[date]) acc[date] = [];
+    acc[date].push(winner);
+    return acc;
+  }, {} as Record<string, TriviaWinner[]>);
+
+  const nights = Object.keys(winnersByNight).sort((a, b) => b.localeCompare(a));
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -127,7 +135,7 @@ export default function TFKWinnersScreen() {
       {/* Subtitle */}
       <View style={styles.subtitleContainer}>
         <Ionicons name="trophy" size={20} color="#FFD700" />
-        <Text style={styles.subtitle}>Best Scores - Nightly Winners Marked with 🏆</Text>
+        <Text style={styles.subtitle}>Nightly Winners • April 13-19</Text>
       </View>
 
       {isLoading ? (
@@ -145,21 +153,40 @@ export default function TFKWinnersScreen() {
       ) : (
         <>
           <FlatList
-            data={winners}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item, index }) => <WinnerRow winner={item} rank={index + 1} />}
+            data={nights}
+            keyExtractor={(night) => night}
+            renderItem={({ item: night }) => {
+              const nightWinners = winnersByNight[night];
+              const dateObj = new Date(night + 'T00:00:00');
+              const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dateObj.getDay()];
+              const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][dateObj.getMonth()];
+              const dayNum = dateObj.getDate();
+
+              return (
+                <View style={styles.nightSection}>
+                  {/* Night Header */}
+                  <View style={styles.nightHeader}>
+                    <Text style={styles.nightTitle}>{dayName.toUpperCase()} WINNERS</Text>
+                    <Text style={styles.nightDate}>{monthName} {dayNum}</Text>
+                  </View>
+
+                  {/* Winners for this night */}
+                  {nightWinners.map((winner, index) => (
+                    <WinnerRow key={winner.id} winner={winner} rank={index + 1} />
+                  ))}
+                </View>
+              );
+            }}
             contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.xl }}
           />
 
           {/* Info Banner */}
-          {winners.some(w => w.is_winner) && (
-            <View style={styles.infoBanner}>
-              <Ionicons name="trophy" size={20} color="#FFD700" />
-              <Text style={styles.infoText}>
-                🏆 Winners: Your $25 prize automatically appears in "My Deals" when you sign up!
-              </Text>
-            </View>
-          )}
+          <View style={styles.infoBanner}>
+            <Ionicons name="trophy" size={20} color="#FFD700" />
+            <Text style={styles.infoText}>
+              🏆 Winners: Your $25 prize automatically appears in "My Deals" when you sign up!
+            </Text>
+          </View>
         </>
       )}
     </SafeAreaView>
@@ -198,6 +225,32 @@ const useStyles = createLazyStyles(() => {
     },
     subtitle: {
       fontSize: 14,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    nightSection: {
+      marginBottom: spacing.lg,
+    },
+    nightHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.sm,
+      backgroundColor: `${colors.accent}15`,
+      borderLeftWidth: 3,
+      borderLeftColor: colors.accent,
+      marginBottom: spacing.sm,
+      borderRadius: radius.sm,
+    },
+    nightTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.accent,
+      letterSpacing: 0.5,
+    },
+    nightDate: {
+      fontSize: 13,
       fontWeight: '600',
       color: colors.textSecondary,
     },

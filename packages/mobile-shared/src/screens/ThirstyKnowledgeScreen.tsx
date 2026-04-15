@@ -261,8 +261,22 @@ function LeaderboardSection({
 }) {
   const styles = useStyles();
 
-  // Show all entries sorted by score (already sorted from query)
-  const displayed = useMemo(() => entries.slice(0, 20), [entries]);
+  // Group winners by night
+  const winnersByNight = useMemo(() => {
+    const winners = entries.filter(e => e.is_winner);
+    const grouped = winners.reduce((acc, winner) => {
+      const date = winner.nightly_date || 'Unknown';
+      if (!acc[date]) acc[date] = [];
+      acc[date].push(winner);
+      return acc;
+    }, {} as Record<string, LeaderboardEntry[]>);
+    return grouped;
+  }, [entries]);
+
+  const nights = useMemo(() =>
+    Object.keys(winnersByNight).sort((a, b) => b.localeCompare(a)),
+    [winnersByNight]
+  );
 
   return (
     <View style={styles.leaderboardSection}>
@@ -271,46 +285,87 @@ function LeaderboardSection({
         <Ionicons name="trophy" size={22} color={TFK.goldLight} />
         <View style={styles.leaderboardHeaderText}>
           <Text style={styles.leaderboardTitle}>Restaurant Week Leaderboard</Text>
-          <Text style={styles.leaderboardSubtitle}>Best Scores · Winners Marked with 🏆</Text>
+          <Text style={styles.leaderboardSubtitle}>Nightly Winners • April 13-19</Text>
         </View>
       </View>
 
       {/* Example label — only shown when no real data yet */}
-      {displayed.length === 0 && (
+      {nights.length === 0 && (
         <View style={styles.demoBanner}>
           <Text style={styles.demoBannerText}>EXAMPLE · Live standings begin April 13</Text>
         </View>
       )}
 
-      {/* Entries — show real data when available, demo placeholders when empty */}
-      {(displayed.length > 0 ? displayed : DEMO_ENTRIES).map((entry: LeaderboardEntry, idx: number, arr: LeaderboardEntry[]) => (
-        <View
-          key={entry.id}
-          style={[
-            styles.leaderboardRow,
-            entry.is_winner && styles.leaderboardRowWinner,
-            idx < arr.length - 1 && styles.leaderboardRowDivider,
-            displayed.length === 0 && styles.leaderboardRowDemo,
-          ]}
-        >
-          <Text style={styles.leaderboardMedal}>{getMedalIcon(entry.position)}</Text>
-          <View style={styles.leaderboardRowBody}>
-            <Text style={[styles.leaderboardPlayerName, entry.is_winner && styles.leaderboardWinnerText]}>
-              {entry.player_name}
-              {entry.is_winner ? '  🏆' : ''}
-            </Text>
-            <Text style={styles.leaderboardVenue}>{entry.venue_name}</Text>
-            {entry.prize_description ? (
-              <Text style={styles.leaderboardPrize}>{entry.prize_description}</Text>
-            ) : null}
-          </View>
-          <Text style={[styles.leaderboardScore, entry.is_winner && styles.leaderboardWinnerText]}>
-            {entry.score} pts
-          </Text>
-        </View>
-      ))}
+      {/* Group winners by night */}
+      {nights.length > 0 ? (
+        nights.map((night) => {
+          const nightWinners = winnersByNight[night];
+          const dateObj = new Date(night + 'T00:00:00');
+          const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dateObj.getDay()];
+          const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][dateObj.getMonth()];
+          const dayNum = dateObj.getDate();
 
-      {displayed.length === 0 && (
+          return (
+            <View key={night} style={styles.leaderboardNightSection}>
+              {/* Night Header */}
+              <View style={styles.leaderboardNightHeader}>
+                <Text style={styles.leaderboardNightTitle}>{dayName.toUpperCase()} WINNERS</Text>
+                <Text style={styles.leaderboardNightDate}>{monthName} {dayNum}</Text>
+              </View>
+
+              {/* Winners for this night */}
+              {nightWinners.map((entry: LeaderboardEntry, idx: number) => (
+                <View
+                  key={entry.id}
+                  style={[
+                    styles.leaderboardRow,
+                    styles.leaderboardRowWinner,
+                    idx < nightWinners.length - 1 && styles.leaderboardRowDivider,
+                  ]}
+                >
+                  <Text style={styles.leaderboardMedal}>🏆</Text>
+                  <View style={styles.leaderboardRowBody}>
+                    <Text style={[styles.leaderboardPlayerName, styles.leaderboardWinnerText]}>
+                      {entry.player_name}
+                    </Text>
+                    <Text style={styles.leaderboardVenue}>{entry.venue_name}</Text>
+                  </View>
+                  <Text style={[styles.leaderboardScore, styles.leaderboardWinnerText]}>
+                    {entry.score} pts
+                  </Text>
+                </View>
+              ))}
+            </View>
+          );
+        })
+      ) : (
+        // Demo placeholders
+        DEMO_ENTRIES.map((entry: LeaderboardEntry, idx: number, arr: LeaderboardEntry[]) => (
+          <View
+            key={entry.id}
+            style={[
+              styles.leaderboardRow,
+              entry.is_winner && styles.leaderboardRowWinner,
+              idx < arr.length - 1 && styles.leaderboardRowDivider,
+              styles.leaderboardRowDemo,
+            ]}
+          >
+            <Text style={styles.leaderboardMedal}>{getMedalIcon(entry.position)}</Text>
+            <View style={styles.leaderboardRowBody}>
+              <Text style={[styles.leaderboardPlayerName, entry.is_winner && styles.leaderboardWinnerText]}>
+                {entry.player_name}
+                {entry.is_winner ? '  🏆' : ''}
+              </Text>
+              <Text style={styles.leaderboardVenue}>{entry.venue_name}</Text>
+            </View>
+            <Text style={[styles.leaderboardScore, entry.is_winner && styles.leaderboardWinnerText]}>
+              {entry.score} pts
+            </Text>
+          </View>
+        ))
+      )}
+
+      {nights.length === 0 && (
         <Text style={styles.leaderboardDemoNote}>
           Standings update nightly starting April 13
         </Text>
@@ -364,8 +419,9 @@ export default function ThirstyKnowledgeScreen() {
         .from('trivia_leaderboard_entries')
         .select('*')
         .eq('is_active', true)
-        .order('score', { ascending: false })
+        .eq('is_winner', true)
         .order('nightly_date', { ascending: false })
+        .order('score', { ascending: false })
         .limit(50);
       if (marketId) {
         query = query.eq('market_id', marketId);
@@ -736,7 +792,35 @@ const useStyles = createLazyStyles(() => ({
     color: TFK.textMuted,
   },
 
-  // Tabs
+  // Night section headers
+  leaderboardNightSection: {
+    marginBottom: spacing.md,
+  },
+  leaderboardNightHeader: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: `${TFK.goldLight}15`,
+    borderLeftWidth: 3,
+    borderLeftColor: TFK.goldLight,
+    marginBottom: spacing.xs,
+    borderRadius: radius.sm,
+  },
+  leaderboardNightTitle: {
+    fontSize: 13,
+    fontWeight: '800' as const,
+    color: TFK.goldLight,
+    letterSpacing: 0.5,
+  },
+  leaderboardNightDate: {
+    fontSize: 12,
+    fontWeight: '600' as const,
+    color: TFK.textMuted,
+  },
+
+  // Tabs (kept for compatibility, not used anymore)
   tabRow: {
     flexDirection: 'row' as const,
     gap: spacing.sm,
