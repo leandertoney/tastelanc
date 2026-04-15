@@ -259,19 +259,10 @@ function LeaderboardSection({
   entries: LeaderboardEntry[];
   marketId: string | null;
 }) {
-  const [tab, setTab] = useState<'overall' | 'nightly'>('overall');
   const styles = useStyles();
 
-  const overallEntries = useMemo(
-    () => entries.filter((e) => e.nightly_date === null).slice(0, 10),
-    [entries]
-  );
-  const nightlyEntries = useMemo(
-    () => entries.filter((e) => e.nightly_date !== null).slice(0, 20),
-    [entries]
-  );
-
-  const displayed = tab === 'overall' ? overallEntries : nightlyEntries;
+  // Show all entries sorted by score (already sorted from query)
+  const displayed = useMemo(() => entries.slice(0, 20), [entries]);
 
   return (
     <View style={styles.leaderboardSection}>
@@ -280,24 +271,8 @@ function LeaderboardSection({
         <Ionicons name="trophy" size={22} color={TFK.goldLight} />
         <View style={styles.leaderboardHeaderText}>
           <Text style={styles.leaderboardTitle}>Restaurant Week Leaderboard</Text>
-          <Text style={styles.leaderboardSubtitle}>$25 Nightly Prizes · April 13–19</Text>
+          <Text style={styles.leaderboardSubtitle}>Best Scores · Winners Marked with 🏆</Text>
         </View>
-      </View>
-
-      {/* Tabs */}
-      <View style={styles.tabRow}>
-        <TouchableOpacity
-          style={[styles.tab, tab === 'overall' && styles.tabActive]}
-          onPress={() => setTab('overall')}
-        >
-          <Text style={[styles.tabText, tab === 'overall' && styles.tabTextActive]}>Overall</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, tab === 'nightly' && styles.tabActive]}
-          onPress={() => setTab('nightly')}
-        >
-          <Text style={[styles.tabText, tab === 'nightly' && styles.tabTextActive]}>Nightly</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Example label — only shown when no real data yet */}
@@ -389,8 +364,8 @@ export default function ThirstyKnowledgeScreen() {
         .from('trivia_leaderboard_entries')
         .select('*')
         .eq('is_active', true)
-        .order('week_start', { ascending: false })
-        .order('position', { ascending: true })
+        .order('score', { ascending: false })
+        .order('nightly_date', { ascending: false })
         .limit(50);
       if (marketId) {
         query = query.eq('market_id', marketId);
