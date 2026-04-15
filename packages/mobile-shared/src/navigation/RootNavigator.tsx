@@ -40,6 +40,7 @@ import StPatricksDayScreen from '../screens/StPatricksDayScreen';
 import RestaurantWeekScreen from '../screens/RestaurantWeekScreen';
 import CoffeeChocolateTrailScreen from '../screens/CoffeeChocolateTrailScreen';
 import ThirstyKnowledgeScreen from '../screens/ThirstyKnowledgeScreen';
+import TFKWinnersScreen from '../screens/TFKWinnersScreen';
 import PartyRSVPScreen from '../screens/PartyRSVPScreen';
 import PartyTicketScreen from '../screens/PartyTicketScreen';
 import CouponsViewAllScreen from '../screens/CouponsViewAllScreen';
@@ -84,6 +85,7 @@ const SafeStPatricksDay = withScreenErrorBoundary(StPatricksDayScreen, 'StPatric
 const SafeRestaurantWeek = withScreenErrorBoundary(RestaurantWeekScreen, 'RestaurantWeek');
 const SafeCoffeeChocolateTrail = withScreenErrorBoundary(CoffeeChocolateTrailScreen, 'CoffeeChocolateTrail');
 const SafeThirstyKnowledge = withScreenErrorBoundary(ThirstyKnowledgeScreen, 'ThirstyKnowledge');
+const SafeTFKWinners = withScreenErrorBoundary(TFKWinnersScreen, 'TFKWinners');
 const SafePartyRSVP = withScreenErrorBoundary(PartyRSVPScreen, 'PartyRSVP');
 const SafePartyTicket = withScreenErrorBoundary(PartyTicketScreen, 'PartyTicket');
 const SafeCouponsViewAll = withScreenErrorBoundary(CouponsViewAllScreen, 'CouponsViewAll');
@@ -278,6 +280,11 @@ export default function RootNavigator() {
       <Stack.Screen
         name="ThirstyKnowledge"
         component={SafeThirstyKnowledge}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TFKWinners"
+        component={SafeTFKWinners}
         options={{ headerShown: false }}
       />
       {/* Party RSVP */}

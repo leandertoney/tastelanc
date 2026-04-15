@@ -11,6 +11,8 @@ interface LeaderboardEntry {
   position: number;
   is_winner: boolean;
   prize_description: string | null;
+  winner_email: string | null;
+  email_verified: boolean;
   week_start: string;
   nightly_date: string | null;
   is_active: boolean;
@@ -29,6 +31,7 @@ const EMPTY_FORM = {
   position: 1,
   is_winner: false,
   prize_description: '',
+  winner_email: '',
 };
 
 export default function TriviaLeaderboardPage() {
@@ -46,9 +49,15 @@ export default function TriviaLeaderboardPage() {
     try {
       const res = await fetch('/api/admin/trivia-leaderboard');
       const data = await res.json();
+      console.log('[TFK Debug] API Response:', data);
+      console.log('[TFK Debug] Entries:', data.entries);
+      console.log('[TFK Debug] First entry:', data.entries?.[0]);
+      console.log('[TFK Debug] First entry player_name:', data.entries?.[0]?.player_name);
+      console.log('[TFK Debug] player_name type:', typeof data.entries?.[0]?.player_name);
       setEntries(data.entries || []);
     } catch (e) {
       setError('Failed to load entries');
+      console.error('[TFK Debug] Fetch error:', e);
     } finally {
       setLoading(false);
     }
@@ -113,6 +122,7 @@ export default function TriviaLeaderboardPage() {
       position: entry.position,
       is_winner: entry.is_winner,
       prize_description: entry.prize_description || '',
+      winner_email: entry.winner_email || '',
     });
     setEditingId(entry.id);
     setShowForm(true);
@@ -140,8 +150,8 @@ export default function TriviaLeaderboardPage() {
         <div className="flex items-center gap-3">
           <Trophy className="text-yellow-500" size={28} />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Trivia Leaderboard</h1>
-            <p className="text-sm text-gray-500">Thirsty for Knowledge — Restaurant Week Grand Prize</p>
+            <h1 className="text-2xl font-bold text-gray-900">TFK Trivia Winners</h1>
+            <p className="text-sm text-gray-500">Thirsty for Knowledge — Restaurant Week Nightly Winners</p>
           </div>
         </div>
         <button
@@ -238,11 +248,27 @@ export default function TriviaLeaderboardPage() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                 value={form.prize_description}
                 onChange={(e) => setForm({ ...form, prize_description: e.target.value })}
-                placeholder="$50 gift card to Southern Market"
+                placeholder="$25 prize"
               />
             </div>
 
-            <div className="flex items-center gap-3 pt-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Winner's Email <span className="text-gray-400">(ask winner for their email)</span>
+              </label>
+              <input
+                type="email"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                value={form.winner_email}
+                onChange={(e) => setForm({ ...form, winner_email: e.target.value })}
+                placeholder="winner@gmail.com"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Ask winner for the email they'll use in the app. Deal auto-appears when they sign up.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 pt-6 col-span-2">
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
                 <input
                   type="checkbox"
@@ -306,9 +332,8 @@ export default function TriviaLeaderboardPage() {
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Player</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Venue</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Score</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Week</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Night</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Prize</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Prize Status</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Active</th>
                 <th className="px-4 py-3" />
               </tr>
@@ -319,12 +344,35 @@ export default function TriviaLeaderboardPage() {
                   <td className="px-4 py-3 font-bold text-purple-700">
                     {entry.is_winner ? '🏆 ' : ''}{entry.position}
                   </td>
-                  <td className="px-4 py-3 font-medium">{entry.player_name}</td>
+                  <td className="px-4 py-3">
+                    <div className="font-medium">
+                      {entry.player_name || '[EMPTY]'}
+                      <span className="text-xs text-red-500 ml-2">
+                        {typeof entry.player_name} | len: {entry.player_name?.length || 0}
+                      </span>
+                    </div>
+                    {entry.winner_email && (
+                      <div className="text-xs text-gray-500 mt-0.5">{entry.winner_email}</div>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-gray-600">{entry.venue_name}</td>
                   <td className="px-4 py-3 font-mono font-bold">{entry.score}</td>
-                  <td className="px-4 py-3 text-gray-500">{entry.week_start}</td>
                   <td className="px-4 py-3 text-gray-500">{entry.nightly_date || '—'}</td>
-                  <td className="px-4 py-3 text-gray-500 max-w-[140px] truncate">{entry.prize_description || '—'}</td>
+                  <td className="px-4 py-3">
+                    {entry.winner_email ? (
+                      <div className="flex items-center gap-1">
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                          entry.email_verified
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {entry.email_verified ? '✓ Claimed' : 'Pending'}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">No email</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <button
                       onClick={() => handleToggleActive(entry)}

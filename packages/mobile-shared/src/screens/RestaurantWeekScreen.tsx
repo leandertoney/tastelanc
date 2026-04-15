@@ -418,7 +418,9 @@ export default function RestaurantWeekScreen() {
           <Text style={styles.headerTitle}>Restaurant Week</Text>
           <CutleryLogo size={32} />
         </View>
-        <View style={styles.backButton} />
+        <TouchableOpacity onPress={() => navigation.navigate('TFKWinners')} style={styles.backButton}>
+          <Ionicons name="trophy" size={24} color={RW.yellow} />
+        </TouchableOpacity>
       </View>
 
       <Text style={styles.headerSubtitle}>{dateSubtitle}</Text>
@@ -426,6 +428,18 @@ export default function RestaurantWeekScreen() {
       <View style={styles.sponsorRow}>
         <Text style={styles.sponsorLabel}>IN PARTNERSHIP WITH LCRW</Text>
       </View>
+
+      {/* TFK Trivia CTA */}
+      <TouchableOpacity
+        style={styles.tfkButton}
+        onPress={() => navigation.navigate('TFKWinners')}
+      >
+        <View style={styles.tfkContent}>
+          <Ionicons name="beer" size={20} color={RW.terracotta} />
+          <Text style={styles.tfkText}>🏆 Thirsty for Knowledge Trivia Winners</Text>
+          <Ionicons name="chevron-forward" size={18} color={RW.terracotta} />
+        </View>
+      </TouchableOpacity>
 
       {/* Restaurant List */}
       <FlatList
@@ -682,6 +696,32 @@ const useStyles = createLazyStyles(() => ({
     paddingVertical: 4,
     borderRadius: 20,
     overflow: 'hidden',
+  },
+
+  tfkButton: {
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: RW.yellow,
+    borderRadius: 12,
+    padding: spacing.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  tfkContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+  },
+  tfkText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: RW.terracotta,
+    flex: 1,
+    textAlign: 'center',
   },
 
   listContent: { padding: spacing.md, paddingTop: spacing.sm },

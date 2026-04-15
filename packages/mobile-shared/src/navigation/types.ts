@@ -87,6 +87,8 @@ export type RootStackParamList = {
   RestaurantWeek: undefined;
   CoffeeChocolateTrail: undefined;
   ThirstyKnowledge: undefined;
+  TFKLeaderboard: undefined;
+  TFKWinners: undefined;
   // Party RSVP
   PartyRSVP: undefined;
   PartyTicket: { qr_token: string; name?: string };

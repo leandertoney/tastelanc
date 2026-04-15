@@ -46,6 +46,8 @@ export { default as ItineraryCardScreen } from './ItineraryCardScreen';
 // Holiday / Seasonal
 export { default as StPatricksDayScreen } from './StPatricksDayScreen';
 export { default as RestaurantWeekScreen } from './RestaurantWeekScreen';
+export { default as TFKLeaderboardScreen } from './TFKLeaderboardScreen';
+export { default as TFKWinnersScreen } from './TFKWinnersScreen';
 
 // Splash
 export { default as SplashVideoScreen } from './SplashVideoScreen';
