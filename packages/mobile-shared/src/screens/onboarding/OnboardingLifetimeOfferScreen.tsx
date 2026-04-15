@@ -283,7 +283,7 @@ export default function OnboardingLifetimeOfferScreen({ navigation }: Props) {
             <View style={styles.cardBenefits}>
               {BENEFITS.map((benefit, i) => (
                 <View key={i} style={styles.benefitRow}>
-                  <Ionicons name="checkmark-circle" size={16} color="#C9A227" />
+                  <Ionicons name="checkmark-circle" size={16} color="#1A2838" />
                   <Text style={styles.benefitText}>{benefit}</Text>
                 </View>
               ))}
@@ -388,7 +388,7 @@ const useStyles = createLazyStyles((colors) => ({
     borderRadius: 20,
     padding: 24,
     borderWidth: 1.5,
-    borderColor: 'rgba(201,162,39,0.4)',
+    borderColor: `${colors.accent}DD`,
   },
   cardHeader: {
     flexDirection: 'row' as const,
@@ -404,7 +404,7 @@ const useStyles = createLazyStyles((colors) => ({
   cardPrice: {
     fontSize: 24,
     fontWeight: '800' as const,
-    color: '#C9A227',
+    color: '#1A2838',
   },
   cardPricePeriod: {
     fontSize: 14,

@@ -185,7 +185,7 @@ export default function OnboardingPaywallScreen({ navigation }: Props) {
           <Image source={assets.aiAvatar} style={styles.avatar} />
           <Text style={styles.brandName}>{brand.appName}+</Text>
           <Text style={styles.headline}>
-            {selectedPlan === 'annual' ? `Start your 3-day\nfree trial` : `Unlock everything`}
+            {selectedPlan === 'annual' ? `Start your 7-day\nfree trial` : `Unlock everything`}
           </Text>
         </Animated.View>
 
@@ -204,24 +204,24 @@ export default function OnboardingPaywallScreen({ navigation }: Props) {
               </Text>
             </View>
           </View>
-          {/* Day 2 */}
+          {/* Day 6 */}
           <View style={styles.timelineRow}>
             <View style={styles.dotColumn}>
               <View style={[styles.dot, { backgroundColor: colors.accent }]} />
               <View style={[styles.dotLine, { backgroundColor: `${colors.accent}30` }]} />
             </View>
             <View style={styles.timelineContent}>
-              <Text style={styles.dayLabel}>Day 2</Text>
-              <Text style={styles.dayText}>We'll remind you before your trial ends</Text>
+              <Text style={styles.dayLabel}>Day 6</Text>
+              <Text style={styles.dayText}>We'll send you a reminder tomorrow before billing starts</Text>
             </View>
           </View>
-          {/* Day 3 */}
+          {/* Day 7 */}
           <View style={styles.timelineRow}>
             <View style={styles.dotColumn}>
               <View style={[styles.dot, { backgroundColor: colors.accent }]} />
             </View>
             <View style={styles.timelineContent}>
-              <Text style={styles.dayLabel}>Day 3</Text>
+              <Text style={styles.dayLabel}>Day 7</Text>
               <Text style={styles.dayText}>{billingText}</Text>
             </View>
           </View>
@@ -243,7 +243,7 @@ export default function OnboardingPaywallScreen({ navigation }: Props) {
               <Text style={styles.planPeriod}>per month</Text>
               {selectedPlan === 'monthly' && (
                 <View style={[styles.checkBadge, { backgroundColor: '#C9A227' }]}>
-                  <Ionicons name="checkmark" size={14} color="#000" />
+                  <Ionicons name="checkmark" size={14} color="#1A2838" />
                 </View>
               )}
             </TouchableOpacity>
@@ -256,7 +256,7 @@ export default function OnboardingPaywallScreen({ navigation }: Props) {
             >
               {selectedPlan === 'annual' && (
                 <View style={[styles.trialBadge, { backgroundColor: '#C9A227' }]}>
-                  <Text style={styles.trialBadgeText}>3 days free</Text>
+                  <Text style={styles.trialBadgeText}>7 days free</Text>
                 </View>
               )}
               <Text style={[styles.planName, { marginTop: 18 }]}>Yearly</Text>
@@ -265,7 +265,7 @@ export default function OnboardingPaywallScreen({ navigation }: Props) {
               <Text style={styles.planBreakdown}>{perMonth}/mo</Text>
               {selectedPlan === 'annual' && (
                 <View style={[styles.checkBadge, { backgroundColor: '#C9A227' }]}>
-                  <Ionicons name="checkmark" size={14} color="#000" />
+                  <Ionicons name="checkmark" size={14} color="#1A2838" />
                 </View>
               )}
             </TouchableOpacity>
@@ -274,7 +274,7 @@ export default function OnboardingPaywallScreen({ navigation }: Props) {
 
         {/* No payment now */}
         <Animated.View style={[styles.reassurance, ctaStyle]}>
-          <Ionicons name="checkmark-circle" size={18} color="#C9A227" />
+          <Ionicons name="checkmark-circle-sharp" size={18} color="#C9A227" />
           <Text style={styles.reassuranceText}>No payment due now</Text>
         </Animated.View>
 
@@ -290,14 +290,14 @@ export default function OnboardingPaywallScreen({ navigation }: Props) {
               <ActivityIndicator color="#000" />
             ) : (
               <Text style={styles.ctaText}>
-                {selectedPlan === 'annual' ? 'Start my 3-day free trial' : `Subscribe — ${monthlyPrice}/month`}
+                {selectedPlan === 'annual' ? 'Start my 7-day free trial' : `Subscribe — ${monthlyPrice}/month`}
               </Text>
             )}
           </TouchableOpacity>
 
           <Text style={styles.belowCta}>
             {selectedPlan === 'annual'
-              ? `3 days free, then ${annualPrice} per year (${perMonth}/mo)`
+              ? `7 days free, then ${annualPrice} per year (${perMonth}/mo)`
               : `${monthlyPrice} per month. Cancel anytime.`}
           </Text>
         </Animated.View>
@@ -337,7 +337,7 @@ const useStyles = createLazyStyles((colors) => ({
   },
   headerSection: { alignItems: 'center' as const, marginBottom: 24 },
   avatar: { width: 64, height: 64, borderRadius: 32, marginBottom: 12 },
-  brandName: { fontSize: 16, fontWeight: '700' as const, color: '#C9A227', letterSpacing: 0.5, marginBottom: 8 },
+  brandName: { fontSize: 16, fontWeight: '700' as const, color: '#1A2838', letterSpacing: 0.5, marginBottom: 8 },
   headline: {
     fontSize: 32,
     fontWeight: '800' as const,
@@ -446,7 +446,7 @@ const useStyles = createLazyStyles((colors) => ({
   reassuranceText: {
     fontSize: 17,
     fontWeight: '600' as const,
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(255,255,255,0.95)',
   },
   // CTA
   ctaButton: {
@@ -468,7 +468,7 @@ const useStyles = createLazyStyles((colors) => ({
   },
   belowCta: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.4)',
+    color: 'rgba(255,255,255,0.75)',
     textAlign: 'center' as const,
     marginTop: 10,
   },
