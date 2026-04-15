@@ -11,6 +11,7 @@ import {
   TrendingUp,
   AlertCircle,
   DollarSign,
+  Trophy,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -322,6 +323,26 @@ export default async function AdminDashboardPage() {
           <p className="text-2xl md:text-3xl font-bold text-tastelanc-text-primary">{stats.totalContacts}</p>
           <p className="text-tastelanc-text-muted text-xs md:text-sm">Contacts</p>
         </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="mb-6 md:mb-8">
+        <h2 className="text-xl font-semibold text-tastelanc-text-primary mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Link href="/admin/trivia-leaderboard">
+            <Card className="p-4 md:p-6 hover:ring-2 hover:ring-purple-500/50 transition-all cursor-pointer">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                  <Trophy className="w-6 h-6 text-purple-500" />
+                </div>
+                <div>
+                  <p className="font-semibold text-tastelanc-text-primary">TFK Trivia Winners</p>
+                  <p className="text-tastelanc-text-muted text-sm">Manage nightly winners & prizes</p>
+                </div>
+              </div>
+            </Card>
+          </Link>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4 md:gap-8">

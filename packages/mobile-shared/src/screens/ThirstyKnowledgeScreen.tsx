@@ -314,27 +314,35 @@ function LeaderboardSection({
               </View>
 
               {/* Winners for this night */}
-              {nightWinners.map((entry: LeaderboardEntry, idx: number) => (
-                <View
-                  key={entry.id}
-                  style={[
-                    styles.leaderboardRow,
-                    styles.leaderboardRowWinner,
-                    idx < nightWinners.length - 1 && styles.leaderboardRowDivider,
-                  ]}
-                >
-                  <Text style={styles.leaderboardMedal}>🏆</Text>
-                  <View style={styles.leaderboardRowBody}>
-                    <Text style={[styles.leaderboardPlayerName, styles.leaderboardWinnerText]}>
-                      {entry.player_name}
-                    </Text>
-                    <Text style={styles.leaderboardVenue}>{entry.venue_name}</Text>
+              {nightWinners.map((entry: LeaderboardEntry, idx: number) => {
+                const isTopWinner = idx === 0;
+                return (
+                  <View
+                    key={entry.id}
+                    style={[
+                      styles.leaderboardRow,
+                      isTopWinner && styles.leaderboardWinnerRow,
+                      idx < nightWinners.length - 1 && styles.leaderboardRowDivider,
+                    ]}
+                  >
+                    <View style={styles.leaderboardRankContainer}>
+                      <Text style={[styles.leaderboardRankText, isTopWinner && styles.leaderboardWinnerRank]}>
+                        {isTopWinner ? '🏆' : `#${idx + 1}`}
+                      </Text>
+                    </View>
+                    <View style={styles.leaderboardRowBody}>
+                      <View style={styles.leaderboardNameRow}>
+                        <Text style={[styles.leaderboardPlayerName, isTopWinner && styles.leaderboardWinnerName]}>
+                          {entry.player_name}
+                        </Text>
+                        {isTopWinner && <Text style={styles.leaderboardPrizeBadge}>$25</Text>}
+                      </View>
+                      <Text style={styles.leaderboardScore}>{entry.score} pts</Text>
+                      <Text style={styles.leaderboardVenue}>{entry.venue_name}</Text>
+                    </View>
                   </View>
-                  <Text style={[styles.leaderboardScore, styles.leaderboardWinnerText]}>
-                    {entry.score} pts
-                  </Text>
-                </View>
-              ))}
+                );
+              })}
             </View>
           );
         })
@@ -850,23 +858,45 @@ const useStyles = createLazyStyles(() => ({
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: spacing.sm,
-    paddingVertical: 10,
+    paddingVertical: spacing.sm,
   },
-  leaderboardRowWinner: {
-    backgroundColor: TFK.winnerBg,
-    marginHorizontal: -spacing.md,
-    paddingHorizontal: spacing.md,
+  leaderboardWinnerRow: {
     borderLeftWidth: 3,
-    borderLeftColor: TFK.winnerBorder,
+    borderLeftColor: '#FFD700',
+    paddingLeft: spacing.sm,
   },
   leaderboardRowDivider: {
     borderBottomWidth: 1,
     borderBottomColor: TFK.rowDivider,
   },
-  leaderboardMedal: {
-    fontSize: 20,
+  leaderboardRankContainer: {
     width: 32,
-    textAlign: 'center' as const,
+    alignItems: 'center' as const,
+  },
+  leaderboardRankText: {
+    fontSize: 15,
+    fontWeight: '700' as const,
+    color: TFK.textMuted,
+  },
+  leaderboardWinnerRank: {
+    fontSize: 18,
+  },
+  leaderboardNameRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: spacing.xs,
+  },
+  leaderboardWinnerName: {
+    fontWeight: '800' as const,
+  },
+  leaderboardPrizeBadge: {
+    fontSize: 10,
+    fontWeight: '800' as const,
+    color: '#10b981',
+    backgroundColor: '#10b98120',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
   leaderboardRowBody: {
     flex: 1,
@@ -877,17 +907,9 @@ const useStyles = createLazyStyles(() => ({
     fontWeight: '700' as const,
     color: TFK.textWhite,
   },
-  leaderboardWinnerText: {
-    color: TFK.goldLight,
-  },
   leaderboardVenue: {
     fontSize: typography.footnote,
     color: TFK.textMuted,
-  },
-  leaderboardPrize: {
-    fontSize: typography.footnote,
-    color: TFK.gold,
-    fontStyle: 'italic' as const,
   },
   leaderboardScore: {
     fontSize: typography.subhead,

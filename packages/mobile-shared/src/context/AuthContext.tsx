@@ -139,6 +139,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
     initializeAuth();
   }, [initializeAuth]);
 
+  const checkTriviaAutoClaim = useCallback(async (user: User) => {
+    // Only check for non-anonymous users with email
+    if (!user.email || user.is_anonymous) return;
+
+    try {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || 'https://tastelanc.com'}/api/trivia/auto-claim`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await getSupabase().auth.getSession()).data.session?.access_token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.claimed && data.results?.length > 0) {
+          console.log('[TFK Auto-Claim] ✓ Prizes claimed:', data.results);
+          // Prizes automatically appear in My Coupons
+        }
+      }
+    } catch (error) {
+      console.error('[TFK Auto-Claim] Error:', error);
+      // Fail silently - don't block login
+    }
+  }, []);
+
   useEffect(() => {
     const supabase = getSupabase();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -148,6 +174,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (newSession) {
           setSession(newSession);
           setUser(newSession.user);
+
+          // Check for trivia prize auto-claims when user signs in
+          if (event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') {
+            checkTriviaAutoClaim(newSession.user);
+          }
         } else if (event === 'SIGNED_OUT') {
           setSession(null);
           setUser(null);
@@ -158,7 +189,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [checkTriviaAutoClaim]);
 
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {

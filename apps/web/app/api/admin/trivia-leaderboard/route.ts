@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await request.json();
-    const { week_start, nightly_date, player_name, score, venue_name, position, is_winner, prize_description, market_id } = body;
+    const { week_start, nightly_date, player_name, score, venue_name, position, is_winner, prize_description, winner_email, market_id } = body;
 
     if (!week_start || !player_name || !venue_name) {
       return NextResponse.json({ error: 'week_start, player_name, and venue_name are required' }, { status: 400 });
@@ -70,6 +70,8 @@ export async function POST(request: Request) {
         position: position ?? 1,
         is_winner: is_winner ?? false,
         prize_description: prize_description || null,
+        winner_email: winner_email || null,
+        email_verified: false,
         market_id: market_id || null,
         is_active: true,
       })

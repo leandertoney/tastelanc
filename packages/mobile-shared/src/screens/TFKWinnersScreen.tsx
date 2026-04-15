@@ -33,44 +33,29 @@ function formatDate(dateStr: string): string {
   return `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`;
 }
 
-function WinnerRow({ winner, rank }: { winner: TriviaWinner; rank: number }) {
+function WinnerRow({ winner, rank, isTopWinner }: { winner: TriviaWinner; rank: number; isTopWinner: boolean }) {
   const styles = useStyles();
   const colors = getColors();
 
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, isTopWinner && styles.winnerRow]}>
       <View style={styles.rankContainer}>
-        <Text style={styles.rankText}>#{rank}</Text>
-      </View>
-      {winner.is_winner && (
-        <View style={styles.trophyIcon}>
-          <Ionicons name="trophy" size={20} color="#FFD700" />
-        </View>
-      )}
-      <View style={styles.rowContent}>
-        <Text style={styles.teamName} numberOfLines={1}>
-          {winner.player_name}
+        <Text style={[styles.rankText, isTopWinner && styles.winnerRank]}>
+          {isTopWinner ? '🏆' : `#${rank}`}
         </Text>
+      </View>
+      <View style={styles.rowContent}>
+        <View style={styles.nameRow}>
+          <Text style={[styles.teamName, isTopWinner && styles.winnerName]} numberOfLines={1}>
+            {winner.player_name}
+          </Text>
+          {isTopWinner && <Text style={styles.prizeBadge}>$25</Text>}
+        </View>
         <Text style={styles.scoreText}>{winner.score} pts</Text>
         <Text style={styles.venueText} numberOfLines={1}>
-          {winner.venue_name} · {formatDate(winner.nightly_date)}
+          {winner.venue_name}
         </Text>
       </View>
-      {winner.is_winner && (
-        <View style={styles.statusBadge}>
-          {winner.email_verified ? (
-            <View style={styles.claimedBadge}>
-              <Ionicons name="checkmark-circle" size={14} color="#10b981" />
-              <Text style={styles.claimedText}>Claimed</Text>
-            </View>
-          ) : (
-            <View style={styles.pendingBadge}>
-              <Ionicons name="time-outline" size={14} color="#f59e0b" />
-              <Text style={styles.pendingText}>Pending</Text>
-            </View>
-          )}
-        </View>
-      )}
     </View>
   );
 }
@@ -172,7 +157,12 @@ export default function TFKWinnersScreen() {
 
                   {/* Winners for this night */}
                   {nightWinners.map((winner, index) => (
-                    <WinnerRow key={winner.id} winner={winner} rank={index + 1} />
+                    <WinnerRow
+                      key={winner.id}
+                      winner={winner}
+                      rank={index + 1}
+                      isTopWinner={index === 0}
+                    />
                   ))}
                 </View>
               );
@@ -257,23 +247,44 @@ const useStyles = createLazyStyles(() => {
     row: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingVertical: spacing.md,
+      paddingVertical: spacing.sm,
       gap: spacing.sm,
       borderBottomWidth: 1,
       borderBottomColor: colors.cardBg,
     },
+    winnerRow: {
+      borderLeftWidth: 3,
+      borderLeftColor: '#FFD700',
+      paddingLeft: spacing.sm,
+    },
     rankContainer: {
-      width: 36,
+      width: 32,
       alignItems: 'center',
     },
     rankText: {
-      fontSize: 16,
+      fontSize: 15,
       fontWeight: '700',
       color: colors.textSecondary,
     },
-    trophyIcon: {
-      width: 24,
+    winnerRank: {
+      fontSize: 18,
+    },
+    nameRow: {
+      flexDirection: 'row',
       alignItems: 'center',
+      gap: spacing.xs,
+    },
+    winnerName: {
+      fontWeight: '800',
+    },
+    prizeBadge: {
+      fontSize: 10,
+      fontWeight: '800',
+      color: '#10b981',
+      backgroundColor: '#10b98120',
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
     },
     rowContent: {
       flex: 1,
@@ -292,37 +303,6 @@ const useStyles = createLazyStyles(() => {
     venueText: {
       fontSize: 12,
       color: colors.textSecondary,
-    },
-    statusBadge: {
-      flexShrink: 0,
-    },
-    claimedBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      backgroundColor: '#10b98115',
-      paddingHorizontal: spacing.sm,
-      paddingVertical: 4,
-      borderRadius: radius.sm,
-    },
-    claimedText: {
-      fontSize: 11,
-      fontWeight: '600',
-      color: '#10b981',
-    },
-    pendingBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      backgroundColor: '#f59e0b15',
-      paddingHorizontal: spacing.sm,
-      paddingVertical: 4,
-      borderRadius: radius.sm,
-    },
-    pendingText: {
-      fontSize: 11,
-      fontWeight: '600',
-      color: '#f59e0b',
     },
     center: {
       flex: 1,

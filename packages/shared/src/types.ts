@@ -1,4 +1,4 @@
-/**
+/****
  * Shared type definitions for TasteLanc
  * Used by both web and mobile apps
  */
@@ -53,6 +53,19 @@ export type RewardActionType = 'trivia' | 'checkin' | 'review' | 'photo' | 'shar
 // ============================================
 // BASE INTERFACES (Common to both platforms)
 // ============================================
+
+export interface Area {
+  id: string;
+  name: string;
+  slug: string;
+  latitude: number;
+  longitude: number;
+  radius: number;
+  market_id: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface BaseRestaurant {
   id: string;
@@ -129,6 +142,12 @@ export interface Event {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface NotificationTest {
+  id: string;
+  test_message: string;
+  created_at: string;
 }
 
 export interface Special {
