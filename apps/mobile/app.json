@@ -27,7 +27,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tastelanc.app",
-      "buildNumber": "11",
+      "buildNumber": "12",
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": []
       },
@@ -37,6 +37,7 @@
         "NSCameraUsageDescription": "TasteLanc uses the camera for check-in verification and recording video recommendations.",
         "NSMicrophoneUsageDescription": "TasteLanc uses the microphone to record audio for video recommendations.",
         "NSMotionUsageDescription": "TasteLanc uses motion data to improve location accuracy for check-ins and visit insights.",
+        "GADApplicationIdentifier": "ca-app-pub-3615537963243783~6794655045",
         "UIBackgroundModes": [
           "remote-notification",
           "location"
