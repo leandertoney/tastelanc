@@ -33,6 +33,7 @@ import {
   useUserLocation,
   calculateDistance,
   isNearMarketCenter,
+  getInitialMapRegion,
 } from '../hooks/useUserLocation';
 import type { RestaurantCategory, RestaurantWithTier } from '../types/database';
 import type { RootStackParamList } from '../navigation/types';
@@ -94,11 +95,10 @@ export default function SearchScreen() {
     longitude: market?.center_longitude ?? themeCenter.longitude,
   }), [market]);
 
-  const initialRegion: Region = useMemo(() => ({
-    ...mapCenter,
-    latitudeDelta: 0.05,
-    longitudeDelta: 0.05,
-  }), [mapCenter]);
+  // Smart initial region based on user location and area boundaries
+  const initialRegion: Region = useMemo(() => {
+    return getInitialMapRegion(location, NEIGHBORHOOD_BOUNDARIES);
+  }, [location, NEIGHBORHOOD_BOUNDARIES]);
 
   // Search & filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -146,19 +146,15 @@ export default function SearchScreen() {
     }, [])
   );
 
-  // Auto-center on user location when in Lancaster area
+  // Auto-center on user location with smart area detection
   useEffect(() => {
     if (!location || !mapRef.current || !mapReady || hasCenteredOnUser.current) return;
     hasCenteredOnUser.current = true;
 
-    if (isNearMarketCenter(location)) {
-      mapRef.current.animateToRegion({
-        ...location,
-        latitudeDelta: 0.02,
-        longitudeDelta: 0.02,
-      });
-    }
-  }, [location, mapReady]);
+    // Use smart region calculation to zoom to user's specific area
+    const smartRegion = getInitialMapRegion(location, NEIGHBORHOOD_BOUNDARIES);
+    mapRef.current.animateToRegion(smartRegion);
+  }, [location, mapReady, NEIGHBORHOOD_BOUNDARIES]);
 
   // Load restaurants on mount and when market changes
   useEffect(() => {

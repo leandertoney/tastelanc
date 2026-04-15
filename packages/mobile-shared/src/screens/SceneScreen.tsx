@@ -88,7 +88,7 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 
 const HOLIDAY_META: Record<string, { label: string; emoji: string; accent: string; bg: string }> = {
   'st-patricks':       { label: "St. Patrick's Day", emoji: '☘️',  accent: '#2ECC40', bg: '#0A3D0A' },
-  'restaurant-week':   { label: 'Restaurant Week',   emoji: '🍽️', accent: '#C8532A', bg: '#1A0C08' },
+  'restaurant-week':   { label: 'Restaurant Week',   emoji: '🍽️', accent: '#FF8C42', bg: '#2A1810' },
   'cinco-de-mayo':     { label: 'Cinco de Mayo',     emoji: '🎉', accent: '#E84142', bg: '#1A0A0A' },
   'easter':            { label: 'Easter',             emoji: '🐣', accent: '#9B59B6', bg: '#1A0F20' },
   'valentines':     { label: "Valentine's Day",    emoji: '💕', accent: '#E74C8B', bg: '#1A0A12' },
@@ -363,12 +363,18 @@ function usePulseFeed() {
         .order('created_at', { ascending: false })
         .limit(10);
 
+      // Show events happening today and next 7 days (sorted by event_date, not created_at)
+      const todayStr = new Date().toISOString().split('T')[0];
+      const sevenDaysFromNow = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
       let eventsQuery = supabase
         .from('events')
         .select('id, name, event_type, performer_name, image_url, start_time, end_time, event_date, created_at, restaurant:restaurants!inner(id, name, market_id)')
         .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(10);
+        .gte('event_date', todayStr)
+        .lte('event_date', sevenDaysFromNow)
+        .order('event_date', { ascending: true })
+        .order('start_time', { ascending: true })
+        .limit(20);
 
       const twoWeeksAgo = new Date(Date.now() - 14 * 86400000).toISOString();
       let newRestaurantsQuery = supabase
