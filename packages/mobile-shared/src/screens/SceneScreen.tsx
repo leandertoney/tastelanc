@@ -363,16 +363,15 @@ function usePulseFeed() {
         .order('created_at', { ascending: false })
         .limit(10);
 
-      // Show events happening today and next 7 days (sorted by event_date, not created_at)
+      // Show upcoming events AND recurring events (trivia, karaoke, etc. with NULL event_date)
       const todayStr = new Date().toISOString().split('T')[0];
       const sevenDaysFromNow = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
       let eventsQuery = supabase
         .from('events')
         .select('id, name, event_type, performer_name, image_url, start_time, end_time, event_date, created_at, restaurant:restaurants!inner(id, name, market_id)')
         .eq('is_active', true)
-        .gte('event_date', todayStr)
-        .lte('event_date', sevenDaysFromNow)
-        .order('event_date', { ascending: true })
+        .or(`event_date.gte.${todayStr}.and.event_date.lte.${sevenDaysFromNow},event_date.is.null`)
+        .order('event_date', { ascending: true, nullsFirst: false })
         .order('start_time', { ascending: true })
         .limit(20);
 
@@ -553,8 +552,8 @@ function usePulseFeed() {
         });
       });
 
-      // ── Specials
-      (specialsRes.data || []).slice(0, 6).forEach((s: any) => {
+      // ── Specials (increased from 6 to 10)
+      (specialsRes.data || []).slice(0, 10).forEach((s: any) => {
         items.push({
           kind: 'special',
           id: `special-${s.id}`,
@@ -570,8 +569,8 @@ function usePulseFeed() {
         });
       });
 
-      // ── Happy Hours
-      (happyHoursRes.data || []).slice(0, 6).forEach((h: any) => {
+      // ── Happy Hours (increased from 6 to 10)
+      (happyHoursRes.data || []).slice(0, 10).forEach((h: any) => {
         const dealNames = (h.happy_hour_items || []).slice(0, 3).map((i: any) => i.name);
         items.push({
           kind: 'happy_hour',
@@ -588,8 +587,8 @@ function usePulseFeed() {
         });
       });
 
-      // ── Events
-      (eventsRes.data || []).slice(0, 8).forEach((e: any) => {
+      // ── Events (increased from 8 to 15)
+      (eventsRes.data || []).slice(0, 15).forEach((e: any) => {
         items.push({
           kind: 'event',
           id: `event-${e.id}`,
