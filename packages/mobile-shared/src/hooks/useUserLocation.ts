@@ -170,3 +170,120 @@ export function formatDistance(miles: number): string {
     return `${miles.toFixed(1)} mi`;
   }
 }
+
+/**
+ * Point-in-polygon test using ray casting algorithm
+ * Returns true if the point is inside the polygon
+ */
+function isPointInPolygon(
+  point: LocationCoords,
+  polygon: LocationCoords[]
+): boolean {
+  let inside = false;
+  const { latitude: x, longitude: y } = point;
+
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].latitude;
+    const yi = polygon[i].longitude;
+    const xj = polygon[j].latitude;
+    const yj = polygon[j].longitude;
+
+    const intersect =
+      yi > y !== yj > y &&
+      x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+
+    if (intersect) inside = !inside;
+  }
+
+  return inside;
+}
+
+/**
+ * Find which neighborhood boundary contains the given coordinates
+ * Returns the boundary object if found, null otherwise
+ */
+export function findContainingArea(
+  coords: LocationCoords,
+  boundaries: Array<{
+    slug: string;
+    name: string;
+    labelCoordinate: LocationCoords;
+    coordinates: LocationCoords[];
+    fillColor: string;
+    strokeColor: string;
+  }>
+): {
+  slug: string;
+  name: string;
+  labelCoordinate: LocationCoords;
+  coordinates: LocationCoords[];
+} | null {
+  for (const boundary of boundaries) {
+    if (isPointInPolygon(coords, boundary.coordinates)) {
+      return boundary;
+    }
+  }
+  return null;
+}
+
+/**
+ * Get the appropriate initial region for the map based on user location
+ * If user is within Lancaster County, zoom to their specific area
+ * Otherwise, show the entire market view
+ */
+export function getInitialMapRegion(
+  userLocation: LocationCoords | null,
+  boundaries: Array<{
+    slug: string;
+    name: string;
+    labelCoordinate: LocationCoords;
+    coordinates: LocationCoords[];
+    fillColor: string;
+    strokeColor: string;
+  }>
+): {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+} {
+  const marketCenter = getMarketCenter();
+
+  // If no user location, return market center with wide view
+  if (!userLocation) {
+    return {
+      ...marketCenter,
+      latitudeDelta: 0.3, // Wide view of entire county
+      longitudeDelta: 0.3,
+    };
+  }
+
+  // Check if user is within any specific area boundary
+  const containingArea = findContainingArea(userLocation, boundaries);
+  if (containingArea) {
+    // Zoom to the user's specific area
+    return {
+      ...userLocation,
+      latitudeDelta: 0.05, // Closer zoom for specific area
+      longitudeDelta: 0.05,
+    };
+  }
+
+  // Check if user is within the broader market area
+  if (isNearMarketCenter(userLocation)) {
+    // User is in Lancaster County but not in a specific defined area
+    // Center on their location with medium zoom
+    return {
+      ...userLocation,
+      latitudeDelta: 0.1,
+      longitudeDelta: 0.1,
+    };
+  }
+
+  // User is outside Lancaster County - show full market view
+  return {
+    ...marketCenter,
+    latitudeDelta: 0.3,
+    longitudeDelta: 0.3,
+  };
+}

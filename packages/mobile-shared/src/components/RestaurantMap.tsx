@@ -6,13 +6,13 @@ import {
   Image,
   Platform,
 } from 'react-native';
-import MapView, { Marker, Callout, Region, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Callout, Region, PROVIDER_GOOGLE, Polygon } from 'react-native-maps';
 import ClusteredMapView from 'react-native-map-clustering';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RestaurantWithTier } from '../types/database';
-import { getColors, getAssets, getMarketCenter } from '../config/theme';
+import { getColors, getAssets, getMarketCenter, getNeighborhoodBoundaries } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
 import {
@@ -20,6 +20,7 @@ import {
   calculateDistance,
   formatDistance,
   isNearMarketCenter,
+  getInitialMapRegion,
 } from '../hooks/useUserLocation';
 import { formatCuisineName } from '../lib/formatters';
 
@@ -37,12 +38,6 @@ const RADIUS_OPTIONS = [
   { value: 5, label: '5 mi' },
 ];
 
-const INITIAL_REGION: Region = {
-  ...getMarketCenter(),
-  latitudeDelta: 0.05,
-  longitudeDelta: 0.05,
-};
-
 export default function RestaurantMap({
   restaurants,
   radiusFilter,
@@ -58,19 +53,21 @@ export default function RestaurantMap({
   const [selectedRestaurant, setSelectedRestaurant] = useState<RestaurantWithTier | null>(null);
   const hasCenteredOnUser = useRef(false);
   const [mapReady, setMapReady] = useState(false);
+  const boundaries = getNeighborhoodBoundaries();
+
+  // Calculate smart initial region based on user location
+  const initialRegion = useMemo(() => {
+    return getInitialMapRegion(location, boundaries);
+  }, [location, boundaries]);
 
   useEffect(() => {
     if (!location || !mapRef.current || !mapReady || hasCenteredOnUser.current) return;
     hasCenteredOnUser.current = true;
 
-    if (isNearMarketCenter(location)) {
-      mapRef.current.animateToRegion({
-        ...location,
-        latitudeDelta: 0.02,
-        longitudeDelta: 0.02,
-      });
-    }
-  }, [location, mapReady]);
+    // Use smart region calculation
+    const smartRegion = getInitialMapRegion(location, boundaries);
+    mapRef.current.animateToRegion(smartRegion);
+  }, [location, mapReady, boundaries]);
 
   const filteredRestaurants = useMemo(() => {
     const center = getMarketCenter();
@@ -165,7 +162,7 @@ export default function RestaurantMap({
         ref={mapRef}
         style={styles.map}
         provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-        initialRegion={INITIAL_REGION}
+        initialRegion={initialRegion}
         onMapReady={() => setMapReady(true)}
         showsUserLocation={permissionStatus === 'granted'}
         showsMyLocationButton={false}
@@ -179,6 +176,17 @@ export default function RestaurantMap({
         maxZoom={20}
         customMapStyle={darkMapStyle}
       >
+        {/* Area boundary polygons */}
+        {boundaries.map((boundary) => (
+          <Polygon
+            key={boundary.slug}
+            coordinates={boundary.coordinates}
+            fillColor={boundary.fillColor}
+            strokeColor={boundary.strokeColor}
+            strokeWidth={2}
+          />
+        ))}
+
         {validRestaurants.map((restaurant) => (
             <Marker
               key={restaurant.id}
