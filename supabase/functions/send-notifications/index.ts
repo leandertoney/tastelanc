@@ -61,6 +61,7 @@ interface ExpoPushResponse {
 // These are transactional/internal notifications that should send at any hour.
 const QUIET_HOURS_EXEMPT = new Set([
   'sales_team_alert',
+  'geofence_alert', // Location-based notifications triggered by user behavior
 ]);
 
 // Throttle cooldown in minutes (matches apps/web/lib/notifications/throttle.ts)
