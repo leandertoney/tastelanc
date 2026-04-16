@@ -14,14 +14,13 @@ import type { OnboardingData } from '../types/onboarding';
 import {
   getRecommendations,
   getUserPreferences,
-  getPersonalizedGreeting,
   getRecommendationReason,
 } from '../lib/recommendations';
 import { useAuth } from '../hooks/useAuth';
 import { useFavorites, useToggleFavorite } from '../hooks';
 import { useMarket } from '../context/MarketContext';
 import { trackVisibleItems } from '../lib/impressions';
-import { getColors } from '../config/theme';
+import { getColors, getBrand } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius } from '../constants/spacing';
 import OpenStatusBadge from './OpenStatusBadge';
@@ -55,10 +54,8 @@ export default function RecommendedSection({
     staleTime: 10 * 60 * 1000,
   });
 
-  const greeting = useMemo(
-    () => getPersonalizedGreeting(preferences),
-    [preferences]
-  );
+  const brand = getBrand();
+  const appName = brand.appName;
 
   // Track impressions when recommendations load
   useEffect(() => {
@@ -114,7 +111,7 @@ export default function RecommendedSection({
         )}
       </View>
 
-      <Text style={styles.greeting}>{greeting}</Text>
+      <Text style={styles.greeting}>{appName}</Text>
 
       <ScrollView
         horizontal
