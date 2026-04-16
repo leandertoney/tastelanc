@@ -6,7 +6,6 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Updates from 'expo-updates';
-import mobileAds from 'react-native-google-mobile-ads';
 import { initTheme } from '@tastelanc/mobile-shared/src/config/theme';
 import { ThemeProvider } from '@tastelanc/mobile-shared/src/context/ThemeContext';
 import Navigation from './src/navigation';
@@ -23,11 +22,6 @@ import { MARKET_CENTER } from './src/config/market';
 
 // Initialize Sentry as early as possible (before React renders)
 initSentry();
-
-// Initialize Google Mobile Ads
-mobileAds()
-  .initialize()
-  .catch((error) => console.warn('[AdMob] Initialization failed:', error));
 
 // Initialize shared theme singleton so shared components can access brand/colors/assets
 initTheme(BRAND, colors, {
