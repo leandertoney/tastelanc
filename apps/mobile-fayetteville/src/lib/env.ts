@@ -16,6 +16,8 @@ const DEV_CONFIG = {
   RADAR_PUBLISHABLE_KEY: 'prj_live_pk_b2193ad3ae39983e40540e7724f28e9539c82b1f',
   // RevenueCat Apple public API key
   REVENUECAT_API_KEY: 'appl_KMhUHfmxkYLnEBmMrxVxiYczSuN',
+  // Premium bypass flag - grants free access to all premium features
+  DISABLE_PREMIUM: process.env.EXPO_PUBLIC_DISABLE_PREMIUM === 'true',
 };
 
 const PROD_CONFIG = {
@@ -25,6 +27,8 @@ const PROD_CONFIG = {
   RADAR_PUBLISHABLE_KEY: 'prj_live_pk_b2193ad3ae39983e40540e7724f28e9539c82b1f',
   // RevenueCat Apple public API key
   REVENUECAT_API_KEY: 'appl_KMhUHfmxkYLnEBmMrxVxiYczSuN',
+  // Premium bypass flag - grants free access to all premium features
+  DISABLE_PREMIUM: process.env.EXPO_PUBLIC_DISABLE_PREMIUM === 'true',
 };
 
 // Select config based on environment

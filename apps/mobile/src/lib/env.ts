@@ -18,6 +18,8 @@ const DEV_CONFIG = {
   REVENUECAT_API_KEY: 'appl_KMhUHfmxkYLnEBmMrxVxiYczSuN',
   // AdMob interstitial ad unit ID
   ADMOB_INTERSTITIAL_ID: 'ca-app-pub-3615537963243783/3992807826',
+  // Premium bypass flag - grants free access to all premium features
+  DISABLE_PREMIUM: process.env.EXPO_PUBLIC_DISABLE_PREMIUM === 'true',
 };
 
 const PROD_CONFIG = {
@@ -29,6 +31,8 @@ const PROD_CONFIG = {
   REVENUECAT_API_KEY: 'appl_KMhUHfmxkYLnEBmMrxVxiYczSuN',
   // AdMob interstitial ad unit ID
   ADMOB_INTERSTITIAL_ID: 'ca-app-pub-3615537963243783/3992807826',
+  // Premium bypass flag - grants free access to all premium features
+  DISABLE_PREMIUM: process.env.EXPO_PUBLIC_DISABLE_PREMIUM === 'true',
 };
 
 // Select config based on environment

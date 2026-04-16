@@ -62,9 +62,13 @@ export default function OnboardingNavigator() {
       <Stack.Screen name="OnboardingRosieAsk" component={OnboardingRosieAskScreen} />
       {/* 11. Sentiment check */}
       <Stack.Screen name="OnboardingReviewAsk" component={OnboardingReviewAskScreen} />
-      {/* 12-13. Paywall */}
-      <Stack.Screen name="OnboardingPaywall" component={OnboardingPaywallScreen} />
-      <Stack.Screen name="OnboardingLifetimeOffer" component={OnboardingLifetimeOfferScreen} />
+      {/* 12-13. Paywall (hidden if DISABLE_PREMIUM flag is set) */}
+      {process.env.EXPO_PUBLIC_DISABLE_PREMIUM !== 'true' && (
+        <>
+          <Stack.Screen name="OnboardingPaywall" component={OnboardingPaywallScreen} />
+          <Stack.Screen name="OnboardingLifetimeOffer" component={OnboardingLifetimeOfferScreen} />
+        </>
+      )}
       {/* 14. Completion */}
       <Stack.Screen name="OnboardingPremiumIntro" component={OnboardingPremiumIntroScreen} />
 

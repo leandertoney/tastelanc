@@ -68,7 +68,9 @@ export default function OnboardingReviewAskScreen({ navigation }: Props) {
   const handleSelect = async (sentiment: 'positive' | 'neutral') => {
     setSelectedOption(sentiment);
     await setUserSentiment(sentiment);
-    setTimeout(() => { navigation.navigate('OnboardingPaywall'); }, 400);
+    // Skip paywall if DISABLE_PREMIUM flag is set
+    const nextScreen = process.env.EXPO_PUBLIC_DISABLE_PREMIUM === 'true' ? 'OnboardingPremiumIntro' : 'OnboardingPaywall';
+    setTimeout(() => { navigation.navigate(nextScreen as 'OnboardingPaywall'); }, 400);
   };
 
   return (
@@ -139,7 +141,11 @@ export default function OnboardingReviewAskScreen({ navigation }: Props) {
         </View>
 
         <Animated.View style={[styles.skipContainer, skipAnimatedStyle]}>
-          <TouchableOpacity onPress={() => { trackClick('onboarding_skip', undefined); navigation.navigate('OnboardingPaywall'); }}>
+          <TouchableOpacity onPress={() => {
+            trackClick('onboarding_skip', undefined);
+            const nextScreen = process.env.EXPO_PUBLIC_DISABLE_PREMIUM === 'true' ? 'OnboardingPremiumIntro' : 'OnboardingPaywall';
+            navigation.navigate(nextScreen as 'OnboardingPaywall');
+          }}>
             <Text style={styles.skipText}>Skip</Text>
           </TouchableOpacity>
         </Animated.View>

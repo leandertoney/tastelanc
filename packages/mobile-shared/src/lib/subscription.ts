@@ -124,6 +124,11 @@ export async function getNoCardTrialInfo(): Promise<{
  * Checks in order: RevenueCat → no-card trial → Supabase profile → soft launch grandfathering.
  */
 export async function hasPremiumAccess(): Promise<boolean> {
+  // DEV BYPASS: If DISABLE_PREMIUM flag is set, grant free access to all premium features
+  if (process.env.EXPO_PUBLIC_DISABLE_PREMIUM === 'true') {
+    return true;
+  }
+
   try {
     // 1. Check RevenueCat entitlement (Apple subscriptions + lifetime)
     const rcStatus = await checkRevenueCatStatus();
