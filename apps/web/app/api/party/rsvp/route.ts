@@ -23,6 +23,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'email is required to receive your ticket' }, { status: 400 });
     }
 
+    // Restaurant ID is required for tracking
+    if (!restaurant_id || typeof restaurant_id !== 'string') {
+      return NextResponse.json({ error: 'restaurant selection is required' }, { status: 400 });
+    }
+
     const serviceClient = createServiceRoleClient();
 
     // Resolve event_id — use provided or find active event
@@ -91,7 +96,7 @@ export async function POST(request: Request) {
         name: name.trim(),
         email: email?.trim().toLowerCase() ?? null,
         response: rsvpResponse,
-        restaurant_id: restaurant_id ?? null,
+        restaurant_id: restaurant_id, // Required field
         source: source ?? 'link',
       })
       .select('id, name, qr_token, response')

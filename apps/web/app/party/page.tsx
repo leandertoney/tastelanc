@@ -31,7 +31,7 @@ export default function PartyPage() {
       <div style={styles.card}>
         <div style={styles.brand}>TASTELANC</div>
         <div style={styles.eyebrow}>POST-RESTAURANT WEEK</div>
-        <h1 style={styles.title}>Industry Party</h1>
+        <h1 style={styles.title}>Industry Social</h1>
         <p style={styles.subtitle}>
           April 20, 2026 · 6:00 – 9:30 PM
         </p>

@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
 
-export const alt = '🎉 Industry Party - Exclusive Event';
+export const alt = '🎉 Industry Social - Exclusive Event';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -87,7 +87,7 @@ export default async function Image() {
             letterSpacing: '-2px',
           }}
         >
-          Industry Party
+          Industry Social
         </div>
 
         {/* Subtitle */}

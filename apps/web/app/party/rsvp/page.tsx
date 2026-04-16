@@ -15,6 +15,11 @@ interface PartyEvent {
   spots_remaining: number | null;
 }
 
+interface Restaurant {
+  id: string;
+  name: string;
+}
+
 type Stage = 'form' | 'submitting' | 'confirmed' | 'declined' | 'error';
 
 export default function RSVPPage() {
@@ -35,27 +40,46 @@ function RSVPContent() {
 
   const [event, setEvent] = useState<PartyEvent | null>(null);
   const [loading, setLoading] = useState(true);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [restaurantId, setRestaurantId] = useState('');
   const [stage, setStage] = useState<Stage>('form');
   const [qrToken, setQrToken] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
+    // Fetch active event
     fetch('/api/party/active')
       .then(r => r.json())
       .then(data => setEvent(data.event))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+
+    // Fetch Restaurant Week restaurants
+    fetch('/api/restaurants/restaurant-week')
+      .then(r => r.json())
+      .then(data => {
+        const rwRestaurants = data.restaurants || [];
+        setRestaurants(rwRestaurants);
+
+        // Pre-select restaurant if ref parameter exists
+        if (ref && rwRestaurants.some((r: Restaurant) => r.id === ref)) {
+          setRestaurantId(ref);
+        }
+      })
+      .catch(() => {});
+  }, [ref]);
 
   async function handleRSVP(response: 'yes' | 'no') {
     if (response === 'yes') {
       if (!name.trim() || name.trim().length < 2) return;
       if (!email.trim() || !email.includes('@')) return;
+      if (!restaurantId) return; // Restaurant is required
     } else {
       if (!name.trim() || name.trim().length < 2) return;
+      if (!restaurantId) return; // Restaurant is required for all responses
     }
 
     setStage('submitting');
@@ -67,7 +91,7 @@ function RSVPContent() {
           name: name.trim(),
           email: response === 'yes' ? email.trim() : email.trim() || undefined,
           response,
-          restaurant_id: ref || undefined,
+          restaurant_id: restaurantId,
           source: 'link',
         }),
       });
@@ -125,7 +149,7 @@ function RSVPContent() {
         {/* Event info — always visible */}
         <div style={styles.eyebrow}>POST-RESTAURANT WEEK</div>
         <div style={styles.divider} />
-        <h1 style={styles.eventName}>Industry Party</h1>
+        <h1 style={styles.eventName}>Industry Social</h1>
         <div style={styles.detailRow}>
           <span style={styles.detailIcon}>&#128197;</span>
           <span style={styles.detailText}>{eventDate}</span>
@@ -144,6 +168,19 @@ function RSVPContent() {
         </div>
         <div style={styles.divider} />
 
+        {/* Event perks */}
+        <div style={styles.perksSection}>
+          <div style={styles.perkRow}>
+            <span style={styles.perkIcon}>🎫</span>
+            <span style={styles.perkText}>Complimentary drink tickets included</span>
+          </div>
+          <div style={styles.perkRow}>
+            <span style={styles.perkIcon}>🎵</span>
+            <span style={styles.perkText}>Music by DJ Eddy Mena</span>
+          </div>
+        </div>
+        <div style={styles.divider} />
+
         {/* FORM */}
         {stage === 'form' && (
           <>
@@ -151,6 +188,24 @@ function RSVPContent() {
               You&apos;ve been invited to an industry-only event. RSVP below to
               secure your spot.
             </p>
+
+            <div style={styles.fieldGroup}>
+              <label style={styles.label}>Restaurant</label>
+              <select
+                style={styles.select}
+                value={restaurantId}
+                onChange={e => setRestaurantId(e.target.value)}
+              >
+                <option value="">Select your restaurant...</option>
+                {restaurants.map(r => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+                <option value="other">Other / Not Listed</option>
+              </select>
+              <p style={styles.fieldHint}>
+                Which Restaurant Week restaurant are you with?
+              </p>
+            </div>
 
             <div style={styles.fieldGroup}>
               <label style={styles.label}>Your Name</label>
@@ -180,9 +235,9 @@ function RSVPContent() {
             <button
               style={{
                 ...styles.btnPrimary,
-                opacity: name.trim().length >= 2 && email.includes('@') ? 1 : 0.45,
+                opacity: name.trim().length >= 2 && email.includes('@') && restaurantId ? 1 : 0.45,
               }}
-              disabled={name.trim().length < 2 || !email.includes('@')}
+              disabled={name.trim().length < 2 || !email.includes('@') || !restaurantId}
               onClick={() => handleRSVP('yes')}
             >
               I&apos;ll Be There
@@ -190,7 +245,7 @@ function RSVPContent() {
 
             <button
               style={styles.btnSecondary}
-              disabled={name.trim().length < 2}
+              disabled={name.trim().length < 2 || !restaurantId}
               onClick={() => handleRSVP('no')}
             >
               Can&apos;t Make It
@@ -293,38 +348,38 @@ const styles: Record<string, React.CSSProperties> = {
     background: CARD_BG,
     backdropFilter: 'blur(24px)',
     borderRadius: 28,
-    padding: '44px 28px',
+    padding: '28px 24px',
     maxWidth: 440,
     width: '100%',
     border: `1px solid rgba(240,208,96,0.15)`,
   },
   brand: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 700,
-    letterSpacing: 4,
+    letterSpacing: 3,
     textAlign: 'center',
     color: GOLD,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   eyebrow: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: 700,
     letterSpacing: 2,
     textTransform: 'uppercase',
     textAlign: 'center',
     color: GOLD_DIM,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   divider: {
     height: 1,
     background: 'rgba(240,208,96,0.12)',
-    margin: '16px 0',
+    margin: '10px 0',
   },
   eventName: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 900,
     color: GOLD,
-    margin: '0 0 16px',
+    margin: '0 0 10px',
     lineHeight: 1.15,
     textAlign: 'center',
     letterSpacing: -0.5,
@@ -332,8 +387,8 @@ const styles: Record<string, React.CSSProperties> = {
   detailRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 8,
+    gap: 8,
+    marginBottom: 6,
   },
   detailIcon: {
     fontSize: 16,
@@ -344,15 +399,34 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 15,
     color: GOLD_DIM,
   },
-  inviteText: {
-    fontSize: 14,
-    color: GOLD_DIM,
-    lineHeight: 1.55,
+  perksSection: {
+    marginBottom: 0,
+  },
+  perkRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  perkIcon: {
+    fontSize: 16,
+    width: 22,
     textAlign: 'center',
-    marginBottom: 20,
+  },
+  perkText: {
+    fontSize: 13,
+    color: GOLD,
+    fontWeight: 600,
+  },
+  inviteText: {
+    fontSize: 13,
+    color: GOLD_DIM,
+    lineHeight: 1.5,
+    textAlign: 'center',
+    marginBottom: 14,
   },
   fieldGroup: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   label: {
     display: 'block',
@@ -365,47 +439,59 @@ const styles: Record<string, React.CSSProperties> = {
   },
   input: {
     width: '100%',
-    padding: '13px 16px',
-    borderRadius: 12,
+    padding: '11px 14px',
+    borderRadius: 10,
     border: '1px solid rgba(240,208,96,0.2)',
     background: 'rgba(255,255,255,0.06)',
     color: GOLD,
-    fontSize: 16,
+    fontSize: 15,
     outline: 'none',
     boxSizing: 'border-box',
   },
+  select: {
+    width: '100%',
+    padding: '11px 14px',
+    borderRadius: 10,
+    border: '1px solid rgba(240,208,96,0.2)',
+    background: 'rgba(255,255,255,0.06)',
+    color: GOLD,
+    fontSize: 15,
+    outline: 'none',
+    boxSizing: 'border-box',
+    cursor: 'pointer',
+  },
   fieldHint: {
-    fontSize: 11,
+    fontSize: 10,
     color: 'rgba(240,208,96,0.35)',
-    marginTop: 6,
-    lineHeight: 1.4,
+    marginTop: 4,
+    lineHeight: 1.3,
   },
   btnPrimary: {
     display: 'block',
     width: '100%',
-    padding: '15px 24px',
-    borderRadius: 14,
+    padding: '13px 20px',
+    borderRadius: 12,
     border: 'none',
     background: TERRACOTTA,
     color: GOLD,
     fontWeight: 800,
-    fontSize: 16,
+    fontSize: 15,
     textAlign: 'center',
     textDecoration: 'none',
     cursor: 'pointer',
-    marginBottom: 10,
+    marginBottom: 8,
     letterSpacing: 0.3,
   },
   btnSecondary: {
     display: 'block',
     width: '100%',
-    padding: '13px 24px',
-    borderRadius: 14,
+    padding: '11px 20px',
+    borderRadius: 12,
     border: '1px solid rgba(240,208,96,0.2)',
     background: 'transparent',
     color: GOLD_DIM,
     fontWeight: 600,
-    fontSize: 15,
+    fontSize: 14,
     textAlign: 'center',
     cursor: 'pointer',
   },
