@@ -6,8 +6,6 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Updates from 'expo-updates';
-import * as Font from 'expo-font';
-import { PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
 import { initTheme } from '@tastelanc/mobile-shared/src/config/theme';
 import { ThemeProvider } from '@tastelanc/mobile-shared/src/context/ThemeContext';
 import Navigation from './src/navigation';
@@ -42,21 +40,7 @@ ErrorUtils.setGlobalHandler((error, isFatal) => {
 });
 
 function App() {
-  const [fontsLoaded, setFontsLoaded] = useState(false);
-
   useEffect(() => {
-    // Load fonts
-    (async () => {
-      try {
-        await Font.loadAsync({ PlayfairDisplay_700Bold });
-        setFontsLoaded(true);
-      } catch (error) {
-        console.warn('[Font] Failed to load Playfair Display:', error);
-        // Continue without custom font - will use system default
-        setFontsLoaded(true);
-      }
-    })();
-
     // Clear old corrupted React Query cache keys from AsyncStorage
     (async () => {
       try {
@@ -103,10 +87,6 @@ function App() {
       }
     })();
   }, []);
-
-  if (!fontsLoaded) {
-    return null;
-  }
 
   return (
     <ThemeProvider colorSchemes={colorSchemes}>

@@ -12,9 +12,9 @@ export default function HeaderLogo() {
 const useStyles = createLazyStyles((colors) => ({
   wordmark: {
     fontFamily: Platform.select({
-      ios: 'PlayfairDisplay_700Bold',
-      android: 'PlayfairDisplay_700Bold',
-      default: undefined, // Fallback to system font
+      ios: 'Georgia', // Elegant serif font on iOS
+      android: 'serif', // Serif font on Android
+      default: undefined,
     }),
     fontWeight: '700',
     fontSize: 20,
