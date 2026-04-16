@@ -1,20 +1,19 @@
-import { Image } from 'react-native';
-import { getAssets, getColors } from '../config/theme';
+import { Text } from 'react-native';
+import { getBrand, getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 
 export default function HeaderLogo() {
-  const assets = getAssets();
+  const brand = getBrand();
   const styles = useStyles();
 
-  return <Image source={assets.appIcon} style={styles.logo} resizeMode="contain" />;
+  return <Text style={styles.wordmark}>{brand.appName}</Text>;
 }
 
 const useStyles = createLazyStyles((colors) => ({
-  logo: {
-    height: 32,
-    width: 32,
-    borderRadius: 6,
-    borderWidth: 0.25,
-    borderColor: colors.accent,
+  wordmark: {
+    fontFamily: 'PlayfairDisplay_700Bold',
+    fontSize: 20,
+    color: colors.accent,
+    letterSpacing: -0.5,
   },
 }));
