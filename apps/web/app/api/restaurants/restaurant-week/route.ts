@@ -7,26 +7,35 @@ export const revalidate = 0;
 /**
  * GET /api/restaurants/restaurant-week
  * Returns all restaurants participating in Restaurant Week (have rw_description)
- * Sorted alphabetically by name
+ * Sorted with TasteLanc first, then alphabetically, then "Other / Not Listed" last
  */
 export async function GET() {
   try {
     const serviceClient = createServiceRoleClient();
 
     // Fetch all restaurants participating in Restaurant Week (have rw_description)
+    // Custom ordering: TasteLanc first, then alphabetically, then "Other / Not Listed" last
     const { data: restaurants, error } = await serviceClient
       .from('restaurants')
       .select('id, name')
       .not('rw_description', 'is', null)
-      .eq('is_active', true)
-      .order('name', { ascending: true });
+      .eq('is_active', true);
 
     if (error) {
       console.error('[restaurant-week] fetch error:', error);
       return NextResponse.json({ error: 'Failed to fetch restaurants' }, { status: 500 });
     }
 
-    return NextResponse.json({ restaurants: restaurants || [] });
+    // Sort in-memory: TasteLanc first, then alphabetically, then "Other / Not Listed" last
+    const sorted = (restaurants || []).sort((a, b) => {
+      if (a.name === 'TasteLanc') return -1;
+      if (b.name === 'TasteLanc') return 1;
+      if (a.name === 'Other / Not Listed') return 1;
+      if (b.name === 'Other / Not Listed') return -1;
+      return a.name.localeCompare(b.name);
+    });
+
+    return NextResponse.json({ restaurants: sorted });
   } catch (err) {
     console.error('[restaurant-week] error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

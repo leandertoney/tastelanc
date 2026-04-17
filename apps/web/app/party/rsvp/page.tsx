@@ -200,7 +200,6 @@ function RSVPContent() {
                 {restaurants.map(r => (
                   <option key={r.id} value={r.id}>{r.name}</option>
                 ))}
-                <option value="other">Other / Not Listed</option>
               </select>
               <p style={styles.fieldHint}>
                 Which Restaurant Week restaurant are you with?
