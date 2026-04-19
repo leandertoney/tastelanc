@@ -41,7 +41,25 @@ export async function POST(request: Request) {
 
     const serviceClient = createServiceRoleClient();
 
-    // Find unlinked "yes" RSVP matching this email
+    // If this user is already linked to an RSVP, return it (handles reinstall / re-login)
+    const { data: existing } = await serviceClient
+      .from('party_rsvps')
+      .select('qr_token, name')
+      .eq('user_id', userId)
+      .eq('response', 'yes')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existing?.qr_token) {
+      return NextResponse.json({
+        linked: true,
+        qr_token: existing.qr_token,
+        name: existing.name,
+      });
+    }
+
+    // Otherwise, find an unlinked "yes" RSVP matching this email and link it
     const { data: rsvp, error } = await serviceClient
       .from('party_rsvps')
       .select('id, qr_token, name')
@@ -49,13 +67,12 @@ export async function POST(request: Request) {
       .eq('response', 'yes')
       .is('user_id', null)
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (error || !rsvp) {
       return NextResponse.json({ linked: false });
     }
 
-    // Link the RSVP to this user
     const { error: updateError } = await serviceClient
       .from('party_rsvps')
       .update({ user_id: userId })
