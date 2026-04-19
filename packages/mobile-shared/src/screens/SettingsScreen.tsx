@@ -634,10 +634,6 @@ export default function SettingsScreen() {
         <View style={styles.versionContainer}>
           <Text style={styles.versionText}>{`${brand.appName} v${Updates.runtimeVersion || '?'}`}</Text>
           <Text style={styles.versionSubtext}>{brand.tagline}</Text>
-          <Text style={styles.versionSubtext}>
-            {Updates.updateId ? `OTA: ${Updates.updateId.slice(0, 8)}` : 'Embedded bundle'}
-            {Updates.channel ? ` · ${Updates.channel}` : ''}
-          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
