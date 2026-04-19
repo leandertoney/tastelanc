@@ -26,8 +26,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch restaurants' }, { status: 500 });
     }
 
-    // Sort in-memory: TasteLanc first, then alphabetically, then "Other / Not Listed" last
     const sorted = (restaurants || []).sort((a, b) => {
+      if (a.name === 'TasteLanc User') return -1;
+      if (b.name === 'TasteLanc User') return 1;
+      if (a.name === 'The Lounge at Hempfield Apothetique') return -1;
+      if (b.name === 'The Lounge at Hempfield Apothetique') return 1;
       if (a.name === 'TasteLanc') return -1;
       if (b.name === 'TasteLanc') return 1;
       if (a.name === 'Other / Not Listed') return 1;
