@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -37,12 +38,17 @@ export default function RestaurantCard({
   const isRestaurantWeek = restaurantWeekIds.has(restaurant.id);
   const coffeeTrailIds = useCoffeeChocolateTrailIds();
   const isCoffeeTrail = coffeeTrailIds.has(restaurant.id);
+  const [imageError, setImageError] = useState(false);
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
       <View style={styles.imageContainer}>
-        {restaurant.cover_image_url ? (
-          <Image source={{ uri: restaurant.cover_image_url, cache: 'force-cache' }} style={styles.image} />
+        {restaurant.cover_image_url && !imageError ? (
+          <Image
+            source={{ uri: restaurant.cover_image_url, cache: 'force-cache' }}
+            style={styles.image}
+            onError={() => setImageError(true)}
+          />
         ) : (
           <View style={styles.imagePlaceholder}>
             <Ionicons name="restaurant-outline" size={32} color={colors.textSecondary} />

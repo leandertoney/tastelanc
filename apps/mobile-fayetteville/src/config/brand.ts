@@ -39,7 +39,7 @@ export const BRAND: AppBrand = {
 
   // Market features — NC bans happy hour drink specials, but we show food deals instead
   features: {
-    happyHours: true,
+    happyHours: false,
     dailySpecialsCarousel: true,
   },
 
