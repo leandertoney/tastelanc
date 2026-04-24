@@ -19,6 +19,11 @@ interface BasicTierAlternativesSectionProps {
   excludeId: string;
   featureName: string;
   onRestaurantPress: (restaurantId: string) => void;
+  /**
+   * 'tier-locked' (default): "They may not have X, but check out these:" — used when host restaurant can't show content due to basic tier.
+   * 'content-empty': "Other X nearby" — used when host tier is paid but the section has no content yet.
+   */
+  variant?: 'tier-locked' | 'content-empty';
 }
 
 function MiniAlternativeCard({
@@ -83,6 +88,7 @@ export default function BasicTierAlternativesSection({
   excludeId,
   featureName,
   onRestaurantPress,
+  variant = 'tier-locked',
 }: BasicTierAlternativesSectionProps) {
   const styles = useStyles();
   const { data = [] } = useBasicTierAlternatives(categories, cuisine, marketId, excludeId);
@@ -96,11 +102,14 @@ export default function BasicTierAlternativesSection({
 
   if (data.length === 0) return null;
 
+  const heading =
+    variant === 'content-empty'
+      ? `Other ${featureName.toLowerCase()} nearby`
+      : `They may not have ${featureName.toLowerCase()}, but check out these:`;
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>
-        They may not have {featureName.toLowerCase()}, but check out these:
-      </Text>
+      <Text style={styles.title}>{heading}</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

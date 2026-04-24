@@ -70,7 +70,10 @@ export async function PUT(request: Request) {
       );
     }
 
-    const preferences = { tabs };
+    // Strip legacy `hidden` field — sections are always visible now, with peer suggestions
+    // rendered in empty slots. Only order is persisted.
+    const sanitizedTabs = tabs.map((t: { key: string }) => ({ key: t.key, hidden: false }));
+    const preferences = { tabs: sanitizedTabs };
 
     const serviceClient = createServiceRoleClient();
     const { error } = await serviceClient

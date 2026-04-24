@@ -30,6 +30,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
     features: [
       'live_piano', 'live_band', 'live_dj', 'trivia_nights', 'karaoke',
       'comedy_shows', 'live_sports_viewing', 'arcade_games', 'board_games', 'pool_tables',
+      'touchtunes', 'skill_machines',
     ],
   },
   {

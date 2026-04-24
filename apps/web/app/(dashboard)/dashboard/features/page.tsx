@@ -33,6 +33,8 @@ const FEATURE_GROUPS: FeatureGroup[] = [
       { value: 'arcade_games', label: 'Arcade/Games' },
       { value: 'board_games', label: 'Board Games' },
       { value: 'pool_tables', label: 'Pool Tables' },
+      { value: 'touchtunes', label: 'TouchTunes' },
+      { value: 'skill_machines', label: 'PA Skill Machines' },
     ],
   },
   {

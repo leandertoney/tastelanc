@@ -7,7 +7,6 @@ import type { BottomTabParamList, RootStackParamList } from './types';
 import { getColors } from '../config/theme';
 import { useThemeKey } from '../context/ThemeContext';
 import HeaderLogo from '../components/HeaderLogo';
-import HeaderGreeting from '../components/HeaderGreeting';
 import { withScreenErrorBoundary } from '../components/ErrorBoundary';
 import { useSalesRole } from '../hooks/useSalesRole';
 import TheMoveTabLabel, { TheMoveHeaderTitle } from '../components/TheMoveTabLabel';
@@ -90,7 +89,7 @@ export default function BottomTabNavigator() {
         component={SafeHomeScreen}
         options={{
           headerTitle: () => <HeaderLogo />,
-          headerLeft: () => <HeaderGreeting />,
+          headerLeft: () => null,
           headerTitleAlign: 'center',
         }}
       />

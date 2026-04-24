@@ -544,50 +544,6 @@ export async function getRecommendations(
 }
 
 /**
- * Get a personalized greeting based on time and preferences.
- * Uses actual onboarding ENTERTAINMENT_OPTIONS labels.
- */
-export function getPersonalizedGreeting(preferences: OnboardingData | null): string {
-  const hour = new Date().getHours();
-
-  let timeGreeting: string;
-  if (hour < 12) {
-    timeGreeting = 'Good morning';
-  } else if (hour < 17) {
-    timeGreeting = 'Good afternoon';
-  } else {
-    timeGreeting = 'Good evening';
-  }
-
-  if (!preferences) {
-    return `${timeGreeting}! Here are some spots we think you'll love.`;
-  }
-
-  // Time-aware personalization using actual onboarding option labels
-  if (preferences.entertainmentPreferences.includes('Weekend brunch') && hour < 14) {
-    return `${timeGreeting}! Ready for brunch? Check out these spots.`;
-  }
-
-  if (preferences.entertainmentPreferences.includes('Late night eats') && hour >= 20) {
-    return `${timeGreeting}! Looking for late-night eats? We've got you.`;
-  }
-
-  if (preferences.entertainmentPreferences.includes('After work drinks') && hour >= 16 && hour < 20) {
-    return `${timeGreeting}! Time for after-work drinks? Here are our picks.`;
-  }
-
-  if (preferences.entertainmentPreferences.includes('Date night') && hour >= 17) {
-    return `${timeGreeting}! Planning a date night? These spots are perfect.`;
-  }
-
-  if (preferences.name) {
-    return `${timeGreeting}, ${preferences.name}! Here are your picks.`;
-  }
-
-  return `${timeGreeting}! Based on your taste, you'll love these.`;
-}
-
-/**
  * Track that user viewed a restaurant (for future freshness scoring)
  */
 export async function trackRestaurantView(restaurantId: string): Promise<void> {

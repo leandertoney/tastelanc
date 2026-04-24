@@ -58,6 +58,7 @@ import RestaurantWeekBadge from '../components/RestaurantWeekBadge';
 import CoffeeChocolateTrailBadge from '../components/CoffeeChocolateTrailBadge';
 import HoursAccordion from '../components/HoursAccordion';
 import TierLockedEmptyState from '../components/TierLockedEmptyState';
+import BasicTierAlternativesSection from '../components/BasicTierAlternativesSection';
 import EventFlyerCard from '../components/EventFlyerCard';
 import VideoRecommendationFeed from '../components/VideoRecommendationFeed';
 import type { Tab } from '../components';
@@ -464,15 +465,10 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   const tabs: Tab[] = useMemo(() => {
     let baseTabs = getBaseTabs();
 
-    // Apply owner display preferences (tab order + visibility)
+    // Apply owner display preferences — ORDER ONLY.
+    // Sections are always visible; when empty, peer suggestions render in their place.
     const prefs = restaurant?.display_preferences;
     if (prefs?.tabs && prefs.tabs.length > 0) {
-      const prefMap = new Map(prefs.tabs.map((p: { key: string; hidden: boolean }) => [p.key, p]));
-
-      // Filter hidden tabs — owner preference wins even if content exists
-      baseTabs = baseTabs.filter(t => !prefMap.get(t.key)?.hidden);
-
-      // Reorder per owner's saved order
       baseTabs = baseTabs.sort((a, b) => {
         const aIdx = prefs.tabs!.findIndex((p: { key: string }) => p.key === a.key);
         const bIdx = prefs.tabs!.findIndex((p: { key: string }) => p.key === b.key);
@@ -796,11 +792,22 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                   </View>
                 ))
               ) : (
-                <View style={styles.emptyState}>
-                  <Ionicons name="beer-outline" size={48} color={colors.textSecondary} />
-                  <Text style={styles.emptyText}>No Happy Hours</Text>
-                  <Text style={styles.emptySubtext}>This restaurant hasn't added happy hour deals yet</Text>
-                </View>
+                <>
+                  <View style={styles.emptyState}>
+                    <Ionicons name="beer-outline" size={48} color={colors.textSecondary} />
+                    <Text style={styles.emptyText}>No Happy Hours</Text>
+                    <Text style={styles.emptySubtext}>This restaurant hasn't added happy hour deals yet</Text>
+                  </View>
+                  <BasicTierAlternativesSection
+                    categories={restaurant.categories}
+                    cuisine={restaurant.cuisine}
+                    marketId={marketId}
+                    excludeId={restaurant.id}
+                    featureName="Happy Hours"
+                    variant="content-empty"
+                    onRestaurantPress={(altId) => navigation.navigate('RestaurantDetail', { id: altId })}
+                  />
+                </>
               )}
             </View>
           )}
@@ -861,11 +868,22 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                   </View>
                 ))
               ) : (
-                <View style={styles.emptyState}>
-                  <Ionicons name="pricetag-outline" size={48} color={colors.textSecondary} />
-                  <Text style={styles.emptyText}>No Specials</Text>
-                  <Text style={styles.emptySubtext}>This restaurant hasn't added specials yet</Text>
-                </View>
+                <>
+                  <View style={styles.emptyState}>
+                    <Ionicons name="pricetag-outline" size={48} color={colors.textSecondary} />
+                    <Text style={styles.emptyText}>No Specials</Text>
+                    <Text style={styles.emptySubtext}>This restaurant hasn't added specials yet</Text>
+                  </View>
+                  <BasicTierAlternativesSection
+                    categories={restaurant.categories}
+                    cuisine={restaurant.cuisine}
+                    marketId={marketId}
+                    excludeId={restaurant.id}
+                    featureName="Specials"
+                    variant="content-empty"
+                    onRestaurantPress={(altId) => navigation.navigate('RestaurantDetail', { id: altId })}
+                  />
+                </>
               )}
             </View>
           )}
@@ -1019,11 +1037,22 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                   )}
                 />
               ) : partnerEvents.length === 0 ? (
-                <View style={styles.emptyState}>
-                  <Ionicons name="calendar-outline" size={48} color={colors.textSecondary} />
-                  <Text style={styles.emptyText}>No Events</Text>
-                  <Text style={styles.emptySubtext}>This restaurant hasn't added events yet</Text>
-                </View>
+                <>
+                  <View style={styles.emptyState}>
+                    <Ionicons name="calendar-outline" size={48} color={colors.textSecondary} />
+                    <Text style={styles.emptyText}>No Events</Text>
+                    <Text style={styles.emptySubtext}>This restaurant hasn't added events yet</Text>
+                  </View>
+                  <BasicTierAlternativesSection
+                    categories={restaurant.categories}
+                    cuisine={restaurant.cuisine}
+                    marketId={marketId}
+                    excludeId={restaurant.id}
+                    featureName="Events"
+                    variant="content-empty"
+                    onRestaurantPress={(altId) => navigation.navigate('RestaurantDetail', { id: altId })}
+                  />
+                </>
               ) : null}
             </View>
           )}
@@ -1047,12 +1076,25 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                   onAlternativePress={(altId) => navigation.navigate('RestaurantDetail', { id: altId })}
                 />
               ) : (
-                <MenuViewer
-                  menuUrl={restaurant.menu_link}
-                  restaurantName={restaurant.name}
-                  menus={menus}
-                  loading={menusLoading}
-                />
+                <>
+                  <MenuViewer
+                    menuUrl={restaurant.menu_link}
+                    restaurantName={restaurant.name}
+                    menus={menus}
+                    loading={menusLoading}
+                  />
+                  {!menusLoading && menus.length === 0 && !restaurant.menu_link && (
+                    <BasicTierAlternativesSection
+                      categories={restaurant.categories}
+                      cuisine={restaurant.cuisine}
+                      marketId={marketId}
+                      excludeId={restaurant.id}
+                      featureName="Menus"
+                      variant="content-empty"
+                      onRestaurantPress={(altId) => navigation.navigate('RestaurantDetail', { id: altId })}
+                    />
+                  )}
+                </>
               )}
             </View>
           )}
