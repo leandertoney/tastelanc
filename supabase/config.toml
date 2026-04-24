@@ -15,7 +15,9 @@ schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 # The maximum number of rows returns from a view, table, or stored procedure. Limits payload size
 # for accidental or malicious requests.
-max_rows = 1000
+# Raised from default 1000 to avoid silent truncation in bulk operations (email audiences, analytics,
+# bulk exports). Must be kept in sync with the hosted project setting in Supabase dashboard.
+max_rows = 100000
 
 [api.tls]
 # Enable HTTPS endpoints locally using a self-signed certificate.
