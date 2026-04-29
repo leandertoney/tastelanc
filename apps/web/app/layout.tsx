@@ -121,6 +121,13 @@ export default function RootLayout({
             }),
           }}
         />
+        {/* DataFast analytics */}
+        <script
+          defer
+          data-website-id="dfid_Wc6RFnqcYgJHpAFdgJu57"
+          data-domain="tastelanc.com"
+          src="https://datafa.st/js/script.js"
+        />
       </head>
       <body className="min-h-screen font-sans">
         <Providers>{children}</Providers>
