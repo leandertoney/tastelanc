@@ -46,6 +46,9 @@ export interface MarketBrand {
   // Apple App Store ID (for Smart App Banner in Safari)
   iosAppId: string;
 
+  // DataFast analytics website ID (omit to disable on this market)
+  dataFastWebsiteId?: string;
+
   // Web theme colors (mode-aware)
   colors: {
     // Accent colors — same in light & dark
@@ -131,6 +134,8 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
 
     iosAppId: '6755852717',
 
+    dataFastWebsiteId: 'dfid_Wc6RFnqcYgJHpAFdgJu57',
+
     colors: {
       accent: '#A41E22',
       accentHover: '#8B1A1D',
@@ -207,6 +212,8 @@ export const MARKET_CONFIG: Record<string, MarketBrand> = {
     },
 
     iosAppId: '6759233248',
+
+    dataFastWebsiteId: 'dfid_1C3DbgyJZDwM1WN3XiNQ5',
 
     colors: {
       accent: '#3B7A57',
