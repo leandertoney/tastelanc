@@ -203,12 +203,21 @@ export async function POST(request: Request) {
     });
 
     // Create Stripe Checkout session in PAYMENT mode (simpler, no subscription restrictions)
+    // setup_future_usage: 'off_session' saves the card so the recurring subs created in the
+    // webhook can auto-charge the customer when the paid period ends. Without this, the PM
+    // is single-use and renewal invoices fail with "PaymentMethod may not be used again."
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_update: { address: 'auto' },
       mode: 'payment',
       payment_method_types: ['card'],
       line_items: lineItems,
+      payment_intent_data: {
+        setup_future_usage: 'off_session',
+      },
+      saved_payment_method_options: {
+        payment_method_save: 'enabled',
+      },
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/admin/sales?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/admin/sales?canceled=true`,
       automatic_tax: { enabled: true },

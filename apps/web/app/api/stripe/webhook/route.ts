@@ -471,6 +471,37 @@ async function handleMultiRestaurantCheckout(
     discountPercent,
   });
 
+  // Retrieve the PaymentMethod from the upfront PaymentIntent, attach to the customer,
+  // and set as the customer's default invoice payment method. The Checkout session was
+  // created with setup_future_usage: 'off_session', so the PM is reusable.
+  // This is REQUIRED for the deferred-billing subs we're about to create — without a
+  // saved card, renewals fail with "PaymentMethod may not be used again."
+  let savedPaymentMethodId: string | null = null;
+  try {
+    const paymentIntentId = session.payment_intent as string;
+    if (paymentIntentId) {
+      const pi = await getStripe().paymentIntents.retrieve(paymentIntentId);
+      if (pi.payment_method) {
+        const pmId = typeof pi.payment_method === 'string' ? pi.payment_method : pi.payment_method.id;
+        const pmObj = typeof pi.payment_method === 'string'
+          ? await getStripe().paymentMethods.retrieve(pmId)
+          : pi.payment_method;
+        if (pmObj.customer !== customerId) {
+          await getStripe().paymentMethods.attach(pmId, { customer: customerId });
+        }
+        await getStripe().customers.update(customerId, {
+          invoice_settings: { default_payment_method: pmId },
+        });
+        savedPaymentMethodId = pmId;
+        console.log(`Saved PM ${pmId} as default for customer ${customerId}`);
+      } else {
+        console.warn(`PaymentIntent ${paymentIntentId} has no payment_method — recurring renewals will fail`);
+      }
+    }
+  } catch (pmErr) {
+    console.error('Failed to attach payment method to customer:', pmErr);
+  }
+
   // Fetch primary restaurant branding for welcome email
   let primaryRestaurant: RestaurantBrandingInfo | undefined;
   const firstItemWithRestaurant = orderItems.find((item: { restaurant_id?: string }) => item.restaurant_id);
@@ -587,6 +618,7 @@ async function handleMultiRestaurantCheckout(
         items: [{ price: priceId }],
         billing_cycle_anchor: Math.floor(anchorDate.getTime() / 1000),
         proration_behavior: 'none',
+        ...(savedPaymentMethodId ? { default_payment_method: savedPaymentMethodId } : {}),
         metadata: {
           sales_order_id: salesOrderId,
           sales_order_item_id: item.id,
@@ -1770,6 +1802,51 @@ export async function POST(request: Request) {
           ? subscriptionData
           : subscriptionData?.id;
         const invoiceCustomerId = invoice.customer as string;
+
+        // Consolidated renewal handler: when a customer pays a multi-restaurant
+        // consolidated invoice (created during recovery), attach the saved card to
+        // all of their admin-sale subs as default, and reset billing_cycle_anchor on
+        // past_due quarterly subs so they exit past_due cleanly.
+        if (invoice.metadata?.consolidated_renewal === 'true' && invoiceCustomerId) {
+          try {
+            const stripe = getStripe();
+            // Get the PM used to pay this invoice via the linked PaymentIntent
+            const piId = invoice.payments?.data?.[0]?.payment?.payment_intent;
+            const pi = piId
+              ? await stripe.paymentIntents.retrieve(typeof piId === 'string' ? piId : piId.id)
+              : null;
+            const pmId = pi?.payment_method as string | undefined;
+            if (pmId) {
+              await stripe.customers.update(invoiceCustomerId, {
+                invoice_settings: { default_payment_method: pmId },
+              });
+
+              const customerSubs = await stripe.subscriptions.list({
+                customer: invoiceCustomerId,
+                status: 'all',
+                limit: 100,
+              });
+              const adminSubs = customerSubs.data.filter(
+                (s) => s.metadata?.admin_sale === 'true' && s.status !== 'canceled'
+              );
+
+              for (const sub of adminSubs) {
+                await stripe.subscriptions.update(sub.id, { default_payment_method: pmId });
+                if (sub.status === 'past_due') {
+                  // Reset billing cycle to "now" — Stripe will compute the next renewal
+                  // based on the subscription's interval, clearing past_due.
+                  await stripe.subscriptions.update(sub.id, {
+                    billing_cycle_anchor: 'now',
+                    proration_behavior: 'none',
+                  });
+                }
+              }
+              console.log(`Consolidated renewal processed for ${invoiceCustomerId}: PM ${pmId} attached to ${adminSubs.length} subs`);
+            }
+          } catch (err) {
+            console.error('Consolidated renewal post-processing failed:', err);
+          }
+        }
 
         // 1. Consumer subscription: update status to active
         if (subscriptionId) {
