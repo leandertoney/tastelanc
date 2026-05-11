@@ -332,8 +332,8 @@ const useStyles = createLazyStyles((colors) => ({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingBottom: 30,
-    justifyContent: 'flex-end' as const,
+    paddingTop: Platform.OS === 'android' ? 40 : 20,
+    paddingBottom: Platform.OS === 'android' ? 60 : 30,
   },
   headerSection: { alignItems: 'center' as const, marginBottom: 24 },
   avatar: { width: 64, height: 64, borderRadius: 32, marginBottom: 12 },

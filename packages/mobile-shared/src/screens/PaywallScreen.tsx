@@ -7,6 +7,7 @@ import {
   Alert,
   Linking,
   Image,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -402,7 +403,7 @@ const useStyles = createLazyStyles((colors) => ({
   },
   footer: {
     paddingHorizontal: 24,
-    paddingBottom: 12,
+    paddingBottom: Platform.OS === 'android' ? 32 : 12,
   },
   ctaButton: {
     backgroundColor: colors.accent,
