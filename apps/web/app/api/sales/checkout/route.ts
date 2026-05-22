@@ -79,9 +79,10 @@ export async function POST(request: Request) {
     });
 
     const subtotalCents = itemsWithPrices.reduce((sum, item) => sum + item.priceCents, 0);
-    const discountPercent = getDiscountPercent(items.length);
-    const discountAmountCents = Math.round(subtotalCents * discountPercent / 100);
-    const totalCents = subtotalCents - discountAmountCents;
+    // UNIFIED PRICING: No multi-restaurant discounts
+    const discountPercent = 0;
+    const discountAmountCents = 0;
+    const totalCents = subtotalCents;
 
     const supabaseAdmin = getSupabaseAdmin();
 
@@ -163,7 +164,7 @@ export async function POST(request: Request) {
       plan: item.plan,
       duration: item.duration,
       price_cents: item.priceCents,
-      discounted_price_cents: item.priceCents - Math.round(item.priceCents * discountPercent / 100),
+      discounted_price_cents: item.priceCents, // No discounts with unified pricing
       processing_status: 'pending',
     }));
 
@@ -178,19 +179,17 @@ export async function POST(request: Request) {
     }
 
     const lineItems = itemsWithPrices.map(item => {
-      const discountedCents = item.priceCents - Math.round(item.priceCents * discountPercent / 100);
-      const planName = item.plan.charAt(0).toUpperCase() + item.plan.slice(1);
+      // UNIFIED PRICING: Display friendly name "Premium" instead of "Unified"
+      const planName = item.plan === 'unified' ? 'Premium' : item.plan.charAt(0).toUpperCase() + item.plan.slice(1);
       const durationLabel = DURATION_LABELS[item.duration] || item.duration;
 
       return {
         price_data: {
           currency: 'usd',
-          unit_amount: discountedCents,
+          unit_amount: item.priceCents, // No discounts with unified pricing
           product_data: {
             name: `${item.restaurantName} - ${planName} (${durationLabel})`,
-            description: discountPercent > 0
-              ? `${marketSlug === 'cumberland-pa' ? 'TasteCumberland' : marketSlug === 'fayetteville-nc' ? 'TasteFayetteville' : 'TasteLanc'} ${planName} subscription (${discountPercent}% multi-location discount applied)`
-              : `${marketSlug === 'cumberland-pa' ? 'TasteCumberland' : marketSlug === 'fayetteville-nc' ? 'TasteFayetteville' : 'TasteLanc'} ${planName} subscription`,
+            description: `${marketSlug === 'cumberland-pa' ? 'TasteCumberland' : marketSlug === 'fayetteville-nc' ? 'TasteFayetteville' : 'TasteLanc'} ${planName} subscription`,
           },
         },
         quantity: 1,
