@@ -4,10 +4,15 @@ import { verifyAdminAccess } from '@/lib/auth/admin-access';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import {
   getStripeForMarket,
-  RESTAURANT_PRICES,
-  getDiscountPercent,
   DURATION_LABELS,
 } from '@/lib/stripe';
+import {
+  getPriceCents,
+  isValidPlan,
+  isValidInterval,
+  type PlanId,
+  type BillingInterval,
+} from '@/lib/pricing-config';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -16,8 +21,8 @@ interface CheckoutItem {
   restaurantId: string | null;
   restaurantName: string;
   isNewRestaurant: boolean;
-  plan: 'premium' | 'elite' | 'coffee_shop';
-  duration: 'monthly' | '3mo' | '6mo' | 'yearly';
+  plan: PlanId;
+  duration: BillingInterval;
 }
 
 function getSupabaseAdmin() {
@@ -61,25 +66,24 @@ export async function POST(request: Request) {
       if (!item.restaurantName) {
         throw new Error(`Item ${index + 1}: Restaurant name is required`);
       }
-      if (!['premium', 'elite', 'coffee_shop'].includes(item.plan)) {
+      if (!isValidPlan(item.plan)) {
         throw new Error(`Item ${index + 1}: Invalid plan "${item.plan}"`);
       }
-      if (!['monthly', '3mo', '6mo', 'yearly'].includes(item.duration)) {
-        throw new Error(`Item ${index + 1}: Invalid duration "${item.duration}"`);
+      if (!isValidInterval(item.plan, item.duration)) {
+        throw new Error(`Item ${index + 1}: Invalid duration "${item.duration}" for plan "${item.plan}"`);
       }
 
-      const prices = RESTAURANT_PRICES[item.plan as keyof typeof RESTAURANT_PRICES];
-      const priceDollars = prices[item.duration as keyof typeof prices];
-      const priceCents = priceDollars * 100;
+      const priceCents = getPriceCents(item.plan, item.duration);
+      const priceDollars = priceCents / 100;
 
       return { ...item, priceCents, priceDollars };
     });
 
-    // Calculate totals
+    // Calculate totals - UNIFIED PRICING: No multi-restaurant discounts
     const subtotalCents = itemsWithPrices.reduce((sum, item) => sum + item.priceCents, 0);
-    const discountPercent = getDiscountPercent(items.length);
-    const discountAmountCents = Math.round(subtotalCents * discountPercent / 100);
-    const totalCents = subtotalCents - discountAmountCents;
+    const discountPercent = 0;
+    const discountAmountCents = 0;
+    const totalCents = subtotalCents;
 
     const supabaseAdmin = getSupabaseAdmin();
 
@@ -165,7 +169,7 @@ export async function POST(request: Request) {
       plan: item.plan,
       duration: item.duration,
       price_cents: item.priceCents,
-      discounted_price_cents: item.priceCents - Math.round(item.priceCents * discountPercent / 100),
+      discounted_price_cents: item.priceCents, // No discounts with unified pricing
       processing_status: 'pending',
     }));
 
@@ -181,21 +185,18 @@ export async function POST(request: Request) {
     }
 
     // Create line items using price_data (avoids all price ID issues)
-    // Each restaurant gets its own line item with discounted price baked in
+    // UNIFIED PRICING: No discounts, show "Premium" instead of "Unified"
     const lineItems = itemsWithPrices.map(item => {
-      const discountedCents = item.priceCents - Math.round(item.priceCents * discountPercent / 100);
-      const planName = item.plan.charAt(0).toUpperCase() + item.plan.slice(1);
+      const planName = item.plan === 'unified' ? 'Premium' : item.plan.charAt(0).toUpperCase() + item.plan.slice(1);
       const durationLabel = DURATION_LABELS[item.duration] || item.duration;
 
       return {
         price_data: {
           currency: 'usd',
-          unit_amount: discountedCents,
+          unit_amount: item.priceCents, // No discounts with unified pricing
           product_data: {
             name: `${item.restaurantName} - ${planName} (${durationLabel})`,
-            description: discountPercent > 0
-              ? `${marketSlug === 'cumberland-pa' ? 'TasteCumberland' : marketSlug === 'fayetteville-nc' ? 'TasteFayetteville' : 'TasteLanc'} ${planName} subscription (${discountPercent}% multi-location discount applied)`
-              : `${marketSlug === 'cumberland-pa' ? 'TasteCumberland' : marketSlug === 'fayetteville-nc' ? 'TasteFayetteville' : 'TasteLanc'} ${planName} subscription`,
+            description: `${marketSlug === 'cumberland-pa' ? 'TasteCumberland' : marketSlug === 'fayetteville-nc' ? 'TasteFayetteville' : 'TasteLanc'} ${planName} subscription`,
           },
         },
         quantity: 1,
