@@ -207,7 +207,7 @@ export default function HappyHourSection() {
   // PREMIUM PLACEMENT: Marion Court and Stationhouse Tavern always included (if they have happy hours today)
   const PREMIUM_RESTAURANT_IDS = [
     '6304c5cf-bdf3-413c-9fff-592562a1ddde', // Marion Court Room
-    // Stationhouse Tavern ID will be added here when they're in the database
+    '9134761b-5eb3-4801-ba17-e5fa37de7c08', // Station House Tavern & Sports Bar
   ];
 
   // Separate premium restaurants from others
