@@ -12,6 +12,7 @@ import {
   type BillingInterval,
 } from '@/lib/pricing-config';
 
+export const runtime = 'nodejs'; // Required for Supabase SSR
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
     let accessType: 'sales' | 'admin' = 'sales';
 
     const salesAccess = await verifySalesAccess(supabase);
-    if (salesAccess.canAccess) {
+    if (salesAccess.canAccess && salesAccess.userId) {
       userId = salesAccess.userId;
       accessType = 'sales';
     } else {
