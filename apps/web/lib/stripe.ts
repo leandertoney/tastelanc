@@ -15,10 +15,11 @@ export function getStripe() {
 }
 
 // Unified Restaurant Plan - Single tier with all Elite features
-// NEW: $99/month or $899/year - replaces all previous tiers
+// NEW: $99/month, $899/year, or $1,798/2-years - replaces all previous tiers
 export const UNIFIED_PRICE_IDS = {
   monthly: process.env.STRIPE_PRICE_UNIFIED_MONTHLY || 'price_unified_monthly',
   yearly: process.env.STRIPE_PRICE_UNIFIED_YEARLY || 'price_unified_yearly',
+  '2year': process.env.STRIPE_PRICE_UNIFIED_2YEAR || 'price_unified_2year',
 } as const;
 
 // Legacy Restaurant Plans - KEPT FOR BACKWARD COMPATIBILITY ONLY
@@ -77,6 +78,7 @@ export const ALL_CONSUMER_PRICE_IDS = [
 export const UNIFIED_RESTAURANT_PRICE_IDS = [
   UNIFIED_PRICE_IDS.monthly,
   UNIFIED_PRICE_IDS.yearly,
+  UNIFIED_PRICE_IDS['2year'],
 ] as const;
 
 // All elite restaurant price IDs (for tier detection in webhooks)
@@ -98,6 +100,7 @@ export const ELITE_LEVEL_PRICE_IDS = [
 export const UNIFIED_PRICES = {
   monthly: 99,
   yearly: 899,
+  '2year': 1798,
 } as const;
 
 // Legacy price info for display - KEPT FOR BACKWARD COMPATIBILITY ONLY
@@ -116,6 +119,7 @@ export const PLAN_NAMES: Record<string, string> = {
   // Unified Restaurant Plan (NEW)
   price_unified_monthly: 'TasteLanc Premium (Monthly)',
   price_unified_yearly: 'TasteLanc Premium (Annual)',
+  price_unified_2year: 'TasteLanc Premium (2 Years)',
   // Legacy Restaurant plans (BACKWARD COMPATIBILITY ONLY)
   price_premium_monthly: 'Premium (Month-to-Month)',
   price_premium_3mo: 'Premium (3 Months)',
@@ -153,6 +157,7 @@ export const DURATION_TO_INTERVAL: Record<string, { interval: 'month' | 'year'; 
   '3mo': { interval: 'month', interval_count: 3 },
   '6mo': { interval: 'month', interval_count: 6 },
   'yearly': { interval: 'year', interval_count: 1 },
+  '2year': { interval: 'year', interval_count: 2 },
 };
 
 // Duration display labels
@@ -161,6 +166,7 @@ export const DURATION_LABELS: Record<string, string> = {
   '3mo': '3 Months',
   '6mo': '6 Months',
   'yearly': '1 Year',
+  '2year': '2 Years',
 };
 
 // Per-market Stripe clients for admin dashboard (queries all accounts)

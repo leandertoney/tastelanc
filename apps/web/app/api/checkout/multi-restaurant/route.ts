@@ -229,6 +229,8 @@ export async function POST(request: Request) {
       // Get the Stripe Price ID for this plan and duration
       const priceId = item.duration === 'monthly'
         ? UNIFIED_PRICE_IDS.monthly
+        : item.duration === '2year'
+        ? UNIFIED_PRICE_IDS['2year']
         : UNIFIED_PRICE_IDS.yearly;
 
       if (!priceId) {

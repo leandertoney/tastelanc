@@ -204,12 +204,29 @@ export default function HappyHourSection() {
           isElite: hh.restaurant.tiers?.name === 'elite',
         }));
 
-  // Elite first, then remaining — cap at 5 banners for the home screen rotation
-  const prioritized = [...mappedHappyHours]
-    .sort((a, b) => (a.isElite === b.isElite ? 0 : a.isElite ? -1 : 1))
-    .slice(0, 5);
+  // PREMIUM PLACEMENT: Marion Court and Stationhouse Tavern always included (if they have happy hours today)
+  const PREMIUM_RESTAURANT_IDS = [
+    '6304c5cf-bdf3-413c-9fff-592562a1ddde', // Marion Court Room
+    // Stationhouse Tavern ID will be added here when they're in the database
+  ];
 
-  const displayData: DisplayHappyHour[] = prioritized;
+  // Separate premium restaurants from others
+  const premiumHappyHours = mappedHappyHours.filter(hh =>
+    PREMIUM_RESTAURANT_IDS.includes(hh.restaurantId || '')
+  );
+  const otherHappyHours = mappedHappyHours.filter(hh =>
+    !PREMIUM_RESTAURANT_IDS.includes(hh.restaurantId || '')
+  );
+
+  // Elite first for non-premium restaurants
+  const sortedOthers = [...otherHappyHours]
+    .sort((a, b) => (a.isElite === b.isElite ? 0 : a.isElite ? -1 : 1));
+
+  // Premium restaurants always first, then fill remaining slots with others (cap at 3 total)
+  const displayData: DisplayHappyHour[] = [
+    ...premiumHappyHours,
+    ...sortedOthers,
+  ].slice(0, 3);
 
   // Ensure currentIndex is valid when displayData changes
   const safeIndex = displayData.length > 0 ? currentIndex % displayData.length : 0;

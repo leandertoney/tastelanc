@@ -60,6 +60,17 @@ export const UNIFIED_PLAN = {
       intervalCount: 1,
       savings: 289, // vs monthly * 12
     },
+    '2year': {
+      id: '2year' as const,
+      label: '2 Years',
+      displayLabel: '2 Years - $1,798 (Save $578!)',
+      price: 1798, // dollars
+      priceCents: 179800,
+      stripeKey: 'unified_2year' as const,
+      interval: 'year' as const,
+      intervalCount: 2,
+      savings: 578, // vs monthly * 24
+    },
   },
 
   features: {
@@ -140,7 +151,7 @@ export const LEGACY_PLANS = {
 // ============================================================================
 
 export type PlanId = 'unified' | 'premium' | 'elite' | 'coffee_shop';
-export type UnifiedBillingInterval = 'monthly' | 'yearly';
+export type UnifiedBillingInterval = 'monthly' | 'yearly' | '2year';
 export type LegacyBillingInterval = 'monthly' | '3mo' | '6mo' | 'yearly';
 export type BillingInterval = UnifiedBillingInterval | LegacyBillingInterval;
 
