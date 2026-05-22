@@ -8,12 +8,16 @@ config({ path: resolve(__dirname, '../.env.local') });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-// Use the same working key Cumberland uses. The AIzaSyA2... key has billing disabled.
-const GOOGLE_API_KEY = 'AIzaSyCs5oTNGnEoBbyvsnOhv86MDwkokILqM2g';
+const GOOGLE_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 const FAYETTEVILLE_MARKET_ID = 'c7b79d18-0bb6-434d-926a-0f8cdf420acb';
 
 if (!supabaseUrl || !supabaseServiceKey) {
   console.error('Missing Supabase credentials');
+  process.exit(1);
+}
+
+if (!GOOGLE_API_KEY) {
+  console.error('Missing GOOGLE_MAPS_API_KEY environment variable');
   process.exit(1);
 }
 
