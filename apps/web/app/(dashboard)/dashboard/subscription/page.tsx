@@ -6,13 +6,14 @@ import { Button, Card, Badge } from '@/components/ui';
 import { useRestaurant } from '@/contexts/RestaurantContext';
 import { useModal } from '@/components/dashboard/ModalProvider';
 
+// UNIFIED PRICING: Single premium tier with all features
 const PLANS = [
   {
     id: 'basic',
     name: 'Basic',
-    prices: { monthly: 0, '3mo': 0, '6mo': 0, yearly: 0 },
+    prices: { monthly: 0, yearly: 0 },
     period: 'Free forever',
-    description: 'Get started with essential features',
+    description: 'Limited basic features only',
     features: [
       'Hours display',
       'Location on map',
@@ -20,34 +21,20 @@ const PLANS = [
     ],
     cta: 'Current Plan',
     popular: false,
+    hidden: true, // Hidden from UI but exists for admin assignment
   },
   {
-    id: 'premium',
-    name: 'Premium',
-    prices: { monthly: 99, '3mo': 250, '6mo': 450, yearly: 800 },
+    id: 'unified',
+    name: 'TasteLanc Premium',
+    prices: { monthly: 99, yearly: 899 },
     period: '',
-    description: 'Best for active restaurants',
+    description: 'Complete platform access with all features',
     features: [
-      'Everything in Basic',
-      'Menu display',
+      'Menu display & updates',
       'Consumer Analytics',
       'Weekly Specials',
-      'Happy Hour',
-      'Entertainment/Events',
-      'Push Notifications (4/month)',
-      'Logo/Details',
-    ],
-    cta: 'Upgrade',
-    popular: true,
-  },
-  {
-    id: 'elite',
-    name: 'Elite',
-    prices: { monthly: 149, '3mo': 350, '6mo': 600, yearly: 1100 },
-    period: '',
-    description: 'Maximum visibility & features',
-    features: [
-      'Everything in Premium',
+      'Happy Hour management',
+      'Entertainment & Events',
       'Logo on Map',
       'Daily Special List',
       'Social Media Content',
@@ -55,34 +42,38 @@ const PLANS = [
       'Live Entertainment Spotlight',
       'Advanced Analytics',
       'Weekly Updates',
+      'Push Notifications',
     ],
-    cta: 'Upgrade',
-    popular: false,
+    cta: 'Get Started',
+    popular: true,
   },
 ];
 
-type BillingPeriod = 'monthly' | '3mo' | '6mo' | 'yearly';
+type BillingPeriod = 'monthly' | 'yearly';
 
 // Map plan + billing period to Stripe price ID env var keys
 const PRICE_KEY_MAP: Record<string, Record<BillingPeriod, string>> = {
-  premium: {
-    monthly: 'premium_monthly',
-    '3mo': 'premium_3mo',
-    '6mo': 'premium_6mo',
-    yearly: 'premium_yearly',
-  },
-  elite: {
-    monthly: 'elite_monthly',
-    '3mo': 'elite_3mo',
-    '6mo': 'elite_6mo',
-    yearly: 'elite_yearly',
+  unified: {
+    monthly: 'unified_monthly',
+    yearly: 'unified_yearly',
   },
 };
 
 export default function SubscriptionPage() {
   const { tierName, restaurant, buildApiUrl } = useRestaurant();
   const modal = useModal();
-  const currentPlan = tierName || 'basic';
+
+  // Map legacy tier names to new unified tier
+  // premium, elite, coffee_shop -> all map to 'unified' now
+  const mapLegacyTier = (tier: string | null | undefined): string => {
+    if (!tier) return 'basic';
+    if (tier === 'premium' || tier === 'elite' || tier === 'coffee_shop') {
+      return 'unified';
+    }
+    return tier;
+  };
+
+  const currentPlan = mapLegacyTier(tierName);
   const hasActiveSubscription = !!restaurant?.stripe_subscription_id;
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('yearly');
   const [portalLoading, setPortalLoading] = useState(false);
@@ -181,56 +172,36 @@ export default function SubscriptionPage() {
         </div>
       </Card>
 
-      {/* Billing Toggle */}
-      <div className="flex items-center justify-center gap-2 flex-wrap">
+      {/* Billing Toggle - Monthly or Yearly only */}
+      <div className="flex items-center justify-center gap-3">
         <button
           onClick={() => setBillingPeriod('monthly')}
-          className={`px-4 py-2 rounded-lg transition-colors ${
+          className={`px-6 py-3 rounded-lg transition-colors font-medium ${
             billingPeriod === 'monthly'
               ? 'bg-tastelanc-accent text-white'
               : 'bg-tastelanc-surface text-tastelanc-text-muted hover:text-tastelanc-text-primary'
           }`}
         >
-          Monthly
-        </button>
-        <button
-          onClick={() => setBillingPeriod('3mo')}
-          className={`px-4 py-2 rounded-lg transition-colors ${
-            billingPeriod === '3mo'
-              ? 'bg-tastelanc-accent text-white'
-              : 'bg-tastelanc-surface text-tastelanc-text-muted hover:text-tastelanc-text-primary'
-          }`}
-        >
-          3 Months
-        </button>
-        <button
-          onClick={() => setBillingPeriod('6mo')}
-          className={`px-4 py-2 rounded-lg transition-colors ${
-            billingPeriod === '6mo'
-              ? 'bg-tastelanc-accent text-white'
-              : 'bg-tastelanc-surface text-tastelanc-text-muted hover:text-tastelanc-text-primary'
-          }`}
-        >
-          6 Months
+          Pay Monthly
         </button>
         <button
           onClick={() => setBillingPeriod('yearly')}
-          className={`px-4 py-2 rounded-lg transition-colors ${
+          className={`px-6 py-3 rounded-lg transition-colors font-medium flex items-center gap-2 ${
             billingPeriod === 'yearly'
               ? 'bg-tastelanc-accent text-white'
               : 'bg-tastelanc-surface text-tastelanc-text-muted hover:text-tastelanc-text-primary'
           }`}
         >
-          1 Year
-          <Badge variant="gold" className="ml-2">Best Value</Badge>
+          Pay Yearly
+          <Badge variant="gold" className="ml-1">Save $289</Badge>
         </button>
       </div>
 
-      {/* Plans Grid */}
-      <div className="grid md:grid-cols-3 gap-4 md:gap-6">
-        {PLANS.map((plan) => {
+      {/* Plans Grid - Show only visible plans */}
+      <div className="max-w-md mx-auto">
+        {PLANS.filter(plan => !plan.hidden).map((plan) => {
           const isCurrentPlan = plan.id === currentPlan;
-          const tierOrder = { basic: 0, premium: 1, elite: 2 };
+          const tierOrder = { basic: 0, unified: 1 };
           const isDowngrade = tierOrder[plan.id as keyof typeof tierOrder] < tierOrder[currentPlan as keyof typeof tierOrder];
           const isUpgrade = tierOrder[plan.id as keyof typeof tierOrder] > tierOrder[currentPlan as keyof typeof tierOrder];
           const displayPrice = plan.prices[billingPeriod];
@@ -239,18 +210,12 @@ export default function SubscriptionPage() {
           let buttonLabel = plan.cta;
           let buttonDisabled = false;
 
-          if (plan.id === 'basic') {
-            buttonLabel = currentPlan === 'basic' ? 'Current Plan' : 'Free Plan';
-            buttonDisabled = true;
-          } else if (isDowngrade) {
-            buttonLabel = 'Downgrade via Manage Billing';
-            buttonDisabled = true;
-          } else if (isCurrentPlan && hasActiveSubscription) {
-            buttonLabel = 'Current Plan';
-            buttonDisabled = true;
+          if (isCurrentPlan && hasActiveSubscription) {
+            buttonLabel = 'Current Plan - Manage Billing';
+            buttonDisabled = false; // Allow them to manage billing
           } else if (isCurrentPlan && !hasActiveSubscription) {
-            buttonLabel = 'Current Plan';
-            buttonDisabled = true;
+            buttonLabel = 'Activate Subscription';
+            buttonDisabled = false;
           } else if (isUpgrade) {
             buttonLabel = `Upgrade to ${plan.name}`;
             buttonDisabled = false;
@@ -275,15 +240,20 @@ export default function SubscriptionPage() {
               <div className="text-center mb-6">
                 <h3 className="text-xl font-bold text-tastelanc-text-primary mb-2">{plan.name}</h3>
                 <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-3xl font-bold text-tastelanc-text-primary">
+                  <span className="text-4xl font-bold text-tastelanc-text-primary">
                     ${displayPrice}
                   </span>
                   {displayPrice > 0 && (
-                    <span className="text-tastelanc-text-muted">
-                      /{billingPeriod === 'yearly' ? 'year' : billingPeriod === 'monthly' ? 'mo' : billingPeriod}
+                    <span className="text-tastelanc-text-muted text-lg">
+                      /{billingPeriod === 'yearly' ? 'year' : 'month'}
                     </span>
                   )}
                 </div>
+                {billingPeriod === 'yearly' && displayPrice > 0 && (
+                  <p className="text-green-500 text-sm mt-1 font-medium">
+                    Save $289/year vs monthly billing
+                  </p>
+                )}
                 {displayPrice === 0 && (
                   <span className="text-tastelanc-text-muted text-sm">{plan.period}</span>
                 )}
@@ -301,14 +271,25 @@ export default function SubscriptionPage() {
 
               <Button
                 className="w-full"
-                variant={isUpgrade ? 'primary' : plan.popular && !isCurrentPlan ? 'primary' : 'secondary'}
+                variant={isCurrentPlan ? 'secondary' : 'primary'}
                 disabled={buttonDisabled || upgradeLoading === plan.id}
-                onClick={() => handleUpgrade(plan.id)}
+                onClick={() => {
+                  if (isCurrentPlan && hasActiveSubscription) {
+                    handleManageBilling();
+                  } else {
+                    handleUpgrade(plan.id);
+                  }
+                }}
               >
                 {upgradeLoading === plan.id ? (
                   <span className="flex items-center justify-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Processing...
+                  </span>
+                ) : portalLoading && isCurrentPlan ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Loading...
                   </span>
                 ) : buttonLabel}
               </Button>
@@ -364,13 +345,13 @@ export default function SubscriptionPage() {
           <div>
             <h4 className="font-medium text-tastelanc-text-primary mb-1">How does billing work?</h4>
             <p className="text-tastelanc-text-muted text-sm">
-              You&apos;ll be charged at the beginning of each billing cycle. Choose month-to-month, 3-month, 6-month, or annual billing.
+              You&apos;ll be charged automatically at the beginning of each billing cycle. Choose monthly ($99/month) or annual billing ($899/year - save $289!). Your subscription renews automatically.
             </p>
           </div>
           <div>
-            <h4 className="font-medium text-tastelanc-text-primary mb-1">Can I switch plans?</h4>
+            <h4 className="font-medium text-tastelanc-text-primary mb-1">What features do I get?</h4>
             <p className="text-tastelanc-text-muted text-sm">
-              Yes, you can upgrade your plan at any time. To downgrade, use &quot;Manage Billing&quot; to adjust your subscription through Stripe.
+              All subscribers get complete access to every feature on the platform - menu management, analytics, specials, events, happy hours, and more. No tiers, no limitations.
             </p>
           </div>
           <div>

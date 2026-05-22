@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import { useMarket } from '../context/MarketContext';
 import { useOtherCities } from '../hooks/useOtherCities';
 
@@ -64,7 +65,7 @@ export default function OtherCitiesSection() {
           return (
             <ImageBackground
               key={city.id}
-              source={city.logo_url ? { uri: city.logo_url } : undefined}
+              source={storageImageSource(city.logo_url, { width: 155, height: 220 })}
               style={styles.card}
               imageStyle={styles.cardImage}
             >

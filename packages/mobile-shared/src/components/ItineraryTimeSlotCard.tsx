@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing, typography } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import { TIME_SLOT_CONFIG } from '../types/itinerary';
 import type { TimeSlot, ItineraryItemWithReason } from '../types/itinerary';
 
@@ -64,7 +65,7 @@ export default function ItineraryTimeSlotCard({
         <View style={styles.venueRow}>
           {item.display_image_url ? (
             <Image
-              source={{ uri: item.display_image_url }}
+              source={storageImageSource(item.display_image_url, { width: 48, height: 48 })}
               style={styles.venueImage}
             />
           ) : (

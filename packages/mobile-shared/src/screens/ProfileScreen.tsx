@@ -18,6 +18,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { getColors, getBrand, getSupabase } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import { useAuth } from '../hooks/useAuth';
 import { useSignUpModal } from '../context/SignUpModalContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -323,7 +324,7 @@ export default function ProfileScreen() {
                 <ActivityIndicator color={colors.textOnAccent} size="small" />
               ) : avatarUrl ? (
                 <Image
-                  source={{ uri: avatarUrl }}
+                  source={storageImageSource(avatarUrl, { width: 80, height: 80 })}
                   style={styles.avatarImage}
                   resizeMode="cover"
                 />
@@ -455,7 +456,7 @@ export default function ProfileScreen() {
                 onPress={() => navigation.navigate('RestaurantDetail', { id: rec.restaurant_id })}
               >
                 {rec.thumbnail_url ? (
-                  <Image source={{ uri: rec.thumbnail_url }} style={styles.recThumb} resizeMode="cover" />
+                  <Image source={storageImageSource(rec.thumbnail_url, { width: 120, height: 170 })} style={styles.recThumb} resizeMode="cover" />
                 ) : (
                   <View style={[styles.recThumb, styles.recThumbPlaceholder]}>
                     <Ionicons name="videocam" size={28} color={colors.textMuted} />

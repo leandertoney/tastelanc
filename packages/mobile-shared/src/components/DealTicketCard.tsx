@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export const TICKET_CARD_WIDTH = SCREEN_WIDTH * 0.82;
@@ -109,7 +110,7 @@ export default function DealTicketCard({
         {/* Left stub — image + discount */}
         <View style={[styles.stub, { width: cardWidth * 0.33 }]}>
           {imageUrl ? (
-            <Image source={{ uri: imageUrl }} style={styles.stubImage} />
+            <Image source={storageImageSource(imageUrl, { width: Math.round(cardWidth * 0.33), height: CARD_HEIGHT })} style={styles.stubImage} />
           ) : (
             <View style={[styles.stubFallback, { backgroundColor: colors.accent + '15' }]}>
               <Ionicons name="pricetag" size={26} color={colors.accent} />

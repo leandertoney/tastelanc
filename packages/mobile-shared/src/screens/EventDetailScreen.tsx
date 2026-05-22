@@ -9,6 +9,7 @@ import { getColors } from '../config/theme';
 import { getBrand } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import { trackScreenView } from '../lib/analytics';
 import { formatRecurrenceLabel } from '../lib/eventRecurrence';
 import { isSelfPromoterEvent, getEventVenueName } from '../lib/events';
@@ -142,7 +143,7 @@ export default function EventDetailScreen({ route, navigation }: Props) {
             <View style={styles.tfkHeroCenter} pointerEvents="none">
               <View style={styles.tfkLogoBadge}>
                 <Image
-                  source={{ uri: 'https://kufcxxynjvyharhtfptd.supabase.co/storage/v1/object/public/images/ads/tfk_logo.png' }}
+                  source={storageImageSource('https://kufcxxynjvyharhtfptd.supabase.co/storage/v1/object/public/images/ads/tfk_logo.png', { width: 140, height: 140, resize: 'contain' })}
                   style={styles.tfkLogoImage}
                   resizeMode="contain"
                 />
@@ -156,7 +157,7 @@ export default function EventDetailScreen({ route, navigation }: Props) {
           </View>
         ) : (
           <View style={styles.heroContainer}>
-            <Image source={{ uri: event.image_url }} style={styles.heroImage} resizeMode="cover" />
+            <Image source={storageImageSource(event.image_url, { width: Math.round(SCREEN_WIDTH), height: HERO_HEIGHT, quality: 75 })} style={styles.heroImage} resizeMode="cover" />
             <LinearGradient
               colors={['transparent', 'rgba(0,0,0,0.8)', colors.background]}
               style={styles.heroGradient}

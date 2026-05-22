@@ -13,6 +13,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { getBrand } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { spacing, radius } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -52,7 +53,7 @@ export default function ThirstyKnowledgeCard() {
         {/* Logo */}
         <View style={styles.logoCircle}>
           <Image
-            source={{ uri: 'https://kufcxxynjvyharhtfptd.supabase.co/storage/v1/object/public/images/ads/tfk_logo.png' }}
+            source={storageImageSource('https://kufcxxynjvyharhtfptd.supabase.co/storage/v1/object/public/images/ads/tfk_logo.png', { width: 33, height: 33, resize: 'contain' })}
             style={styles.logoImage}
             resizeMode="contain"
           />

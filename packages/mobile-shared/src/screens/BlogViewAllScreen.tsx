@@ -18,6 +18,7 @@ import { useBlogPosts } from '../hooks';
 import { getColors, getBrand } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import SearchBar from '../components/SearchBar';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -34,7 +35,7 @@ function BlogListItem({ post, onPress, aiName }: { post: BlogPost; onPress: () =
   return (
     <TouchableOpacity style={styles.listItem} onPress={onPress} activeOpacity={0.8}>
       {post.cover_image_url ? (
-        <Image source={{ uri: post.cover_image_url }} style={styles.itemImage} />
+        <Image source={storageImageSource(post.cover_image_url, { width: 110, height: 130 })} style={styles.itemImage} />
       ) : (
         <View style={styles.itemImagePlaceholder}>
           <Ionicons name="newspaper-outline" size={24} color={colors.textSecondary} />

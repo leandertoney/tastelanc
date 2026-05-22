@@ -7,6 +7,7 @@ import type { EventType } from '../types/database';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 
 interface EventFlyerCardProps {
   event: ApiEvent;
@@ -56,7 +57,7 @@ export default function EventFlyerCard({ event, width, height, onPress, onRestau
   return (
     <TouchableOpacity activeOpacity={0.95} onPress={onPress} style={[styles.cardContainer, { width, height }]}>
       <ImageBackground
-        source={{ uri: event.image_url }}
+        source={storageImageSource(event.image_url, { width: Math.round(width), height: Math.round(height), quality: 75 })}
         style={[styles.imageBackground, { width, height }]}
         resizeMode="cover"
         imageStyle={styles.imageStyle}

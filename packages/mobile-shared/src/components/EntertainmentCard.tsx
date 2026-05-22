@@ -7,6 +7,7 @@ import type { EventType } from '../types/database';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 
 const CARD_SIZE = 140;
 
@@ -88,7 +89,7 @@ export default function EntertainmentCard({
         disabled={!onPress}
       >
         <ImageBackground
-          source={{ uri: imageUrl, cache: 'force-cache' }}
+          source={storageImageSource(imageUrl, { width: CARD_SIZE, height: CARD_SIZE })}
           style={styles.imageBackground}
           imageStyle={styles.imageStyle}
           resizeMode="cover"

@@ -14,7 +14,16 @@ export function getStripe() {
   return stripeClient;
 }
 
-// Restaurant Plans - Starter tier removed
+// Unified Restaurant Plan - Single tier with all Elite features
+// NEW: $99/month or $899/year - replaces all previous tiers
+export const UNIFIED_PRICE_IDS = {
+  monthly: process.env.STRIPE_PRICE_UNIFIED_MONTHLY || 'price_unified_monthly',
+  yearly: process.env.STRIPE_PRICE_UNIFIED_YEARLY || 'price_unified_yearly',
+} as const;
+
+// Legacy Restaurant Plans - KEPT FOR BACKWARD COMPATIBILITY ONLY
+// Existing subscriptions will continue on these plans until renewal
+// New subscriptions should use UNIFIED_PRICE_IDS above
 export const RESTAURANT_PRICE_IDS = {
   // Premium: $99/mo, $250/3mo, $450/6mo, $800/year
   premium_monthly: process.env.STRIPE_PRICE_PREMIUM_MONTHLY || 'price_premium_monthly',
@@ -63,7 +72,15 @@ export const ALL_CONSUMER_PRICE_IDS = [
   EARLY_ACCESS_PRICE_IDS.yearly,
 ] as const;
 
+// All unified restaurant price IDs (for tier detection in webhooks)
+// Unified tier has all Elite features
+export const UNIFIED_RESTAURANT_PRICE_IDS = [
+  UNIFIED_PRICE_IDS.monthly,
+  UNIFIED_PRICE_IDS.yearly,
+] as const;
+
 // All elite restaurant price IDs (for tier detection in webhooks)
+// LEGACY - kept for existing subscriptions
 export const ELITE_PRICE_IDS = [
   RESTAURANT_PRICE_IDS.elite_monthly,
   RESTAURANT_PRICE_IDS.elite_3mo,
@@ -71,7 +88,19 @@ export const ELITE_PRICE_IDS = [
   RESTAURANT_PRICE_IDS.elite_yearly,
 ] as const;
 
-// Price info for display - Starter tier removed
+// All price IDs that should grant Elite-level features (includes both unified and legacy elite)
+export const ELITE_LEVEL_PRICE_IDS = [
+  ...UNIFIED_RESTAURANT_PRICE_IDS,
+  ...ELITE_PRICE_IDS,
+] as const;
+
+// Unified pricing - Single tier with all Elite features
+export const UNIFIED_PRICES = {
+  monthly: 99,
+  yearly: 899,
+} as const;
+
+// Legacy price info for display - KEPT FOR BACKWARD COMPATIBILITY ONLY
 export const RESTAURANT_PRICES = {
   premium: { monthly: 99, '3mo': 250, '6mo': 450, yearly: 800 },
   elite: { monthly: 149, '3mo': 350, '6mo': 600, yearly: 1100 },
@@ -82,9 +111,12 @@ export const CONSUMER_PRICES = {
   premium: { monthly: 4.99, yearly: 29 },
 } as const;
 
-// Plan display names - Starter tier removed
+// Plan display names
 export const PLAN_NAMES: Record<string, string> = {
-  // Restaurant plans
+  // Unified Restaurant Plan (NEW)
+  price_unified_monthly: 'TasteLanc Premium (Monthly)',
+  price_unified_yearly: 'TasteLanc Premium (Annual)',
+  // Legacy Restaurant plans (BACKWARD COMPATIBILITY ONLY)
   price_premium_monthly: 'Premium (Month-to-Month)',
   price_premium_3mo: 'Premium (3 Months)',
   price_premium_6mo: 'Premium (6 Months)',
@@ -101,12 +133,18 @@ export const PLAN_NAMES: Record<string, string> = {
   price_self_promoter_monthly: 'Self-Promoter (Monthly)',
 };
 
-// Get discount percentage based on restaurant count
+// DEPRECATED: Multi-restaurant discounts no longer apply to unified pricing
+// Kept for backward compatibility with existing subscriptions only
+// @deprecated Use 0 for all new subscriptions
 export function getDiscountPercent(restaurantCount: number): number {
-  if (restaurantCount <= 1) return 0;
-  if (restaurantCount === 2) return 10;
-  if (restaurantCount === 3) return 15;
-  return 20; // 4+
+  // For unified pricing, no discounts apply
+  return 0;
+
+  // Legacy discount logic (kept for reference but not used):
+  // if (restaurantCount <= 1) return 0;
+  // if (restaurantCount === 2) return 10;
+  // if (restaurantCount === 3) return 15;
+  // return 20; // 4+
 }
 
 // Duration to Stripe billing interval mapping (for programmatic subscription creation)

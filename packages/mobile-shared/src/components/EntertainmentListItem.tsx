@@ -4,6 +4,7 @@ import type { Event, Restaurant, EventType } from '../types/database';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing, typography } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 
 const THUMBNAIL_SIZE = 60;
 
@@ -57,7 +58,7 @@ export default function EntertainmentListItem({ event, onPress }: EntertainmentL
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
       {/* Square thumbnail */}
       {imageUrl ? (
-        <Image source={{ uri: imageUrl, cache: 'force-cache' }} style={styles.thumbnail} />
+        <Image source={storageImageSource(imageUrl, { width: THUMBNAIL_SIZE, height: THUMBNAIL_SIZE })} style={styles.thumbnail} />
       ) : (
         <View style={[styles.thumbnail, styles.thumbnailPlaceholder]}>
           <Ionicons name={icon} size={24} color={colors.textMuted} />

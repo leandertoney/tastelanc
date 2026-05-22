@@ -6,6 +6,7 @@ import { trackClick } from '../lib/analytics';
 import { getColors, getBrand } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { spacing, radius } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import { formatCategoryName } from '../lib/formatters';
 import type { RestaurantCategory, CuisineType } from '../types/database';
 
@@ -47,7 +48,7 @@ function MiniAlternativeCard({
     >
       {/* Cover image */}
       {restaurant.cover_image_url ? (
-        <Image source={{ uri: restaurant.cover_image_url }} style={styles.cardImage} />
+        <Image source={storageImageSource(restaurant.cover_image_url, { width: CARD_WIDTH, height: CARD_HEIGHT })} style={styles.cardImage} />
       ) : (
         <View style={styles.cardImagePlaceholder}>
           <Ionicons name="restaurant-outline" size={28} color={colors.textSecondary} />

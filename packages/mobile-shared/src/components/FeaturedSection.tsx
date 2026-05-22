@@ -26,6 +26,7 @@ import type { Restaurant, FeaturedAd } from '../types/database';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 
 import { trackImpression } from '../lib/impressions';
 import { trackAdImpression, trackAdClick } from '../lib/ads';
@@ -331,7 +332,7 @@ export default function FeaturedSection({ onRestaurantPress }: FeaturedSectionPr
                 onPress={handleOverlayAdPress}
                 activeOpacity={0.95}
               >
-                <Image source={{ uri: overlayAd.image_url }} style={overlayStylesStatic.image} />
+                <Image source={storageImageSource(overlayAd.image_url, { width: Math.round(OVERLAY_WIDTH), height: Math.round(OVERLAY_HEIGHT) })} style={overlayStylesStatic.image} />
                 <GlowBorder />
                 <ShimmerSweep width={OVERLAY_WIDTH} height={OVERLAY_HEIGHT} />
                 {OVERLAY_PARTICLES.map((p) => (

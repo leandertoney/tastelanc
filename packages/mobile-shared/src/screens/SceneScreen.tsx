@@ -23,6 +23,7 @@ import { getColors, getBrand, getSupabase, hasFeature } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { withAlpha } from '../utils/colorUtils';
 import { radius, spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import { useMarket } from '../context/MarketContext';
 import { usePersonalizedFeed } from '../hooks';
 import type { PersonalizedFeedSignals } from '../hooks';
@@ -880,7 +881,7 @@ function PostHeader({
       {/* Avatar */}
       {avatarUri ? (
         <View style={styles.avatarCircle}>
-          <Image source={{ uri: avatarUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+          <Image source={storageImageSource(avatarUri, { width: 38, height: 38 })} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
         </View>
       ) : avatarIcon ? (
         <View style={[styles.avatarCircle, styles.avatarEmojiCircle, { backgroundColor: avatarBg || colors.cardBgElevated }]}>
@@ -957,7 +958,7 @@ function VideoCard({ item, onPress }: { item: VideoItem; onPress: () => void }) 
         <View style={{ width: '100%', height: VIDEO_HEIGHT, backgroundColor: '#111' }}>
           {(item.thumbnailUrl || item.coverImageUrl) ? (
             <Image
-              source={{ uri: item.thumbnailUrl || item.coverImageUrl! }}
+              source={storageImageSource(item.thumbnailUrl || item.coverImageUrl!, { width: Math.round(SCREEN_WIDTH), height: VIDEO_HEIGHT })}
               style={{ width: '100%', height: '100%' }}
               resizeMode="cover"
             />
@@ -992,7 +993,7 @@ function PhotoCard({ item, onPress }: { item: PhotoItem; onPress: () => void }) 
       />
       <TouchableOpacity onPress={onPress} activeOpacity={0.95}>
         <Image
-          source={{ uri: item.photoUrl }}
+          source={storageImageSource(item.photoUrl, { width: Math.round(SCREEN_WIDTH), height: PHOTO_HEIGHT, quality: 75 })}
           style={{ width: '100%', height: PHOTO_HEIGHT }}
           resizeMode="cover"
         />
@@ -1027,7 +1028,7 @@ function ItineraryCard({ item, onCopy }: { item: ItineraryItem; onCopy: () => vo
             <View key={i} style={styles.itinStop}>
               <View style={styles.itinStopImg}>
                 {stop.imageUrl ? (
-                  <Image source={{ uri: stop.imageUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                  <Image source={storageImageSource(stop.imageUrl, { width: 90, height: 70 })} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                 ) : (
                   <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <Ionicons name="restaurant" size={16} color={colors.textMuted} />
@@ -1091,7 +1092,7 @@ function AdCard({ item, onPress }: { item: AdItem; onPress: () => void }) {
       <TouchableOpacity onPress={onPress} activeOpacity={0.95}>
         {item.imageUrl && (
           <Image
-            source={{ uri: item.imageUrl }}
+            source={storageImageSource(item.imageUrl, { width: Math.round(SCREEN_WIDTH), height: AD_HEIGHT, quality: 75 })}
             style={{ width: '100%', height: AD_HEIGHT }}
             resizeMode="cover"
           />
@@ -1131,7 +1132,7 @@ function ReelsShelf({ item, onPress }: { item: ReelsShelfItem; onPress: (restaur
             <View style={styles.reelThumbImg}>
               {(v.thumbnailUrl || v.coverImageUrl) ? (
                 <Image
-                  source={{ uri: v.thumbnailUrl || v.coverImageUrl! }}
+                  source={storageImageSource(v.thumbnailUrl || v.coverImageUrl!, { width: 110, height: 168 })}
                   style={{ width: '100%', height: '100%' }}
                   resizeMode="cover"
                 />
@@ -1180,7 +1181,7 @@ function SpecialCard({ item, onPress }: { item: SpecialItem; onPress: () => void
       {item.imageUrl && (
         <TouchableOpacity onPress={onPress} activeOpacity={0.95}>
           <Image
-            source={{ uri: item.imageUrl }}
+            source={storageImageSource(item.imageUrl, { width: Math.round(SCREEN_WIDTH), height: VIDEO_HEIGHT })}
             style={{ width: '100%', height: VIDEO_HEIGHT }}
             resizeMode="cover"
           />
@@ -1264,7 +1265,7 @@ function EventCard({ item, onPress }: { item: EventItem; onPress: () => void }) 
       {item.imageUrl && (
         <TouchableOpacity onPress={onPress} activeOpacity={0.95}>
           <Image
-            source={{ uri: item.imageUrl }}
+            source={storageImageSource(item.imageUrl, { width: Math.round(SCREEN_WIDTH), height: EVENT_IMAGE_HEIGHT })}
             style={{ width: '100%', height: EVENT_IMAGE_HEIGHT }}
             resizeMode="cover"
           />
@@ -1318,7 +1319,7 @@ function BlogCard({ item, onPress }: { item: BlogItem; onPress: () => void }) {
         <TouchableOpacity onPress={onPress} activeOpacity={0.95}>
           <View style={{ width: '100%', height: BLOG_IMAGE_HEIGHT }}>
             <Image
-              source={{ uri: item.coverImageUrl }}
+              source={storageImageSource(item.coverImageUrl, { width: Math.round(SCREEN_WIDTH), height: BLOG_IMAGE_HEIGHT })}
               style={{ width: '100%', height: '100%' }}
               resizeMode="cover"
             />
@@ -1553,7 +1554,7 @@ function DealHeroCard({
       {/* Hero image */}
       {item.imageUrl ? (
         <View style={{ height: 160, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, overflow: 'hidden' }}>
-          <Image source={{ uri: item.imageUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+          <Image source={storageImageSource(item.imageUrl, { width: Math.round(SCREEN_WIDTH), height: 160 })} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
           {/* Gradient overlay for text readability */}
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.7)']}
@@ -1897,7 +1898,7 @@ function CrossMarketPromoCard({ cities }: { cities: OtherCity[] }) {
           return (
             <ImageBackground
               key={city.id}
-              source={city.logo_url ? { uri: city.logo_url } : undefined}
+              source={storageImageSource(city.logo_url, { width: 155, height: 220 })}
               style={styles.crossPromoCity}
               imageStyle={styles.crossPromoCityImage}
             >

@@ -25,6 +25,7 @@ import { formatCategoryName } from '../lib/formatters';
 import { getColors, getBrand } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import { useMarket } from '../context/MarketContext';
 import { trackImpression } from '../lib/impressions';
 
@@ -128,7 +129,7 @@ export default function FeaturedViewAllScreen() {
           <View style={styles.gridImageContainer}>
             {restaurant.cover_image_url ? (
               <Image
-                source={{ uri: restaurant.cover_image_url, cache: 'force-cache' }}
+                source={storageImageSource(restaurant.cover_image_url, { width: 220, height: 120 })}
                 style={styles.gridImage}
               />
             ) : (

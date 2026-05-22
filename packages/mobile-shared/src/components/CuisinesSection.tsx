@@ -6,6 +6,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import { CUISINE_IMAGES, CUISINE_COLORS, CUISINE_EMOJIS } from '../constants/cuisines';
 import SectionHeader from './SectionHeader';
 import Spacer from './Spacer';
@@ -31,7 +32,7 @@ function CuisineItem({ cuisine, onPress }: CuisineItemProps) {
       <View style={[styles.imageContainer, !imageUrl && { backgroundColor: color }]}>
         {imageUrl ? (
           <Image
-            source={{ uri: imageUrl }}
+            source={storageImageSource(imageUrl, { width: ITEM_SIZE, height: ITEM_SIZE })}
             style={styles.cuisineImage}
             resizeMode="cover"
           />

@@ -9,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
+import { storageImageSource } from '../utils/storageImage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 32;
@@ -38,7 +39,7 @@ export default function SpotlightCard({
   const colors = getColors();
 
   const imageSource = imageUrl
-    ? { uri: imageUrl }
+    ? storageImageSource(imageUrl, { width: Math.round(CARD_WIDTH), height: CARD_HEIGHT, quality: 75 })
     : fallbackImage
       ? fallbackImage
       : undefined;

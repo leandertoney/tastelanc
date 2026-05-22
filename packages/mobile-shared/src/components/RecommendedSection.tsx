@@ -23,6 +23,7 @@ import { trackVisibleItems } from '../lib/impressions';
 import { getColors, getBrand } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import OpenStatusBadge from './OpenStatusBadge';
 
 interface RecommendedSectionProps {
@@ -130,7 +131,7 @@ export default function RecommendedSection({
               <View style={styles.imageContainer}>
                 {restaurant.cover_image_url ? (
                   <Image
-                    source={{ uri: restaurant.cover_image_url, cache: 'force-cache' }}
+                    source={storageImageSource(restaurant.cover_image_url, { width: 200, height: 100 })}
                     style={styles.image}
                   />
                 ) : (

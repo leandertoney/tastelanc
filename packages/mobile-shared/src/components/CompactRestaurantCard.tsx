@@ -8,6 +8,7 @@ import { formatCategoryName } from '../lib/formatters';
 import { getColors, getBrand } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import TrendingBadge, { type BadgeType } from './TrendingBadge';
 import OpenStatusBadge from './OpenStatusBadge';
 import { useRestaurantWeekIds } from '../hooks/useRestaurantWeekIds';
@@ -47,7 +48,7 @@ export default function CompactRestaurantCard({
       {/* Thumbnail image */}
       <View style={styles.imageContainer}>
         {restaurant.cover_image_url ? (
-          <Image source={{ uri: restaurant.cover_image_url, cache: 'force-cache' }} style={styles.image} />
+          <Image source={storageImageSource(restaurant.cover_image_url, { width: 56, height: 56 })} style={styles.image} />
         ) : (
           <View style={styles.imagePlaceholder}>
             <Ionicons name="restaurant-outline" size={24} color={colors.textSecondary} />

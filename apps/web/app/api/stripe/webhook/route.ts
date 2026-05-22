@@ -10,6 +10,8 @@ import {
   ALL_CONSUMER_PRICE_IDS,
   RESTAURANT_PRICE_IDS,
   ELITE_PRICE_IDS,
+  UNIFIED_RESTAURANT_PRICE_IDS,
+  ELITE_LEVEL_PRICE_IDS,
   SELF_PROMOTER_PRICE_IDS,
   DURATION_TO_INTERVAL,
 } from '@/lib/stripe';
@@ -92,11 +94,26 @@ function isSelfPromoterSubscription(priceId: string): boolean {
   return priceId === SELF_PROMOTER_PRICE_IDS.monthly;
 }
 
-// Helper to determine restaurant tier from price ID (Starter tier removed)
+// Helper to determine restaurant tier from price ID
 function getRestaurantTier(priceId: string): string {
-  if ((ELITE_PRICE_IDS as readonly string[]).includes(priceId)) return 'elite';
-  if (priceId === RESTAURANT_PRICE_IDS.coffee_shop_monthly) return 'coffee_shop';
-  // Default to premium for any paid subscription (starter tier removed)
+  // UNIFIED PRICING: All unified subscriptions get Elite-level features
+  if ((UNIFIED_RESTAURANT_PRICE_IDS as readonly string[]).includes(priceId)) {
+    console.log(`🆕 UNIFIED pricing detected: ${priceId} → elite tier`);
+    return 'elite';
+  }
+
+  // LEGACY PRICING: Maintain existing tier assignments for grandfathered subscriptions
+  if ((ELITE_PRICE_IDS as readonly string[]).includes(priceId)) {
+    console.log(`📜 LEGACY Elite pricing: ${priceId} → elite tier`);
+    return 'elite';
+  }
+  if (priceId === RESTAURANT_PRICE_IDS.coffee_shop_monthly) {
+    console.log(`📜 LEGACY Coffee Shop pricing: ${priceId} → coffee_shop tier`);
+    return 'coffee_shop';
+  }
+
+  // Default to premium for any other paid subscription
+  console.log(`📜 LEGACY Premium pricing: ${priceId} → premium tier`);
   return 'premium';
 }
 

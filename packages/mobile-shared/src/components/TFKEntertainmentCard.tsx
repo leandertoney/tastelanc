@@ -13,6 +13,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { getBrand } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import { ENTERTAINMENT_CARD_SIZE } from './EntertainmentCard';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -49,7 +50,7 @@ export default function TFKEntertainmentCard() {
           style={styles.gradient}
         >
           <Image
-            source={{ uri: TFK_LOGO_URL }}
+            source={storageImageSource(TFK_LOGO_URL, { width: ENTERTAINMENT_CARD_SIZE - 12, height: ENTERTAINMENT_CARD_SIZE - 12, resize: 'contain' })}
             style={styles.logo}
             resizeMode="contain"
           />

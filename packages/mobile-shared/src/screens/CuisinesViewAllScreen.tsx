@@ -14,6 +14,7 @@ import { ALL_CUISINES, CUISINE_LABELS, CuisineType } from '../types/database';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import { CUISINE_IMAGES, CUISINE_COLORS, CUISINE_EMOJIS } from '../constants/cuisines';
 import SearchBar from '../components/SearchBar';
 
@@ -36,7 +37,7 @@ function CuisineCard({ cuisine, onPress }: CuisineCardProps) {
       <View style={[styles.imageContainer, !imageUrl && { backgroundColor: color }]}>
         {imageUrl ? (
           <Image
-            source={{ uri: imageUrl }}
+            source={storageImageSource(imageUrl, { width: 100, height: 100 })}
             style={styles.cuisineImage}
             resizeMode="cover"
           />

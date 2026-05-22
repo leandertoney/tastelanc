@@ -12,6 +12,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getColors, getSupabase } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { spacing, radius, typography } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import { useAuth } from '../hooks/useAuth';
 import { useMarket } from '../context/MarketContext';
 import type { RootStackParamList } from '../navigation/types';
@@ -118,7 +119,7 @@ function VisitRow({ item, onPress }: { item: VisitRecord; onPress: () => void })
       {/* Logo */}
       <View style={styles.logoContainer}>
         {item.logoUrl ? (
-          <Image source={{ uri: item.logoUrl }} style={styles.logo} />
+          <Image source={storageImageSource(item.logoUrl, { width: 52, height: 52 })} style={styles.logo} />
         ) : (
           <View style={[styles.logo, styles.logoPlaceholder]}>
             <Ionicons name="restaurant" size={20} color={colors.textSecondary} />

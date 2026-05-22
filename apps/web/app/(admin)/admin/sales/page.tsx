@@ -19,6 +19,13 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { Card } from '@/components/ui';
+import {
+  UNIFIED_PLAN,
+  getSalesAvailablePlans,
+  getPrice,
+  type PlanId,
+  type UnifiedBillingInterval,
+} from '@/lib/pricing-config';
 
 interface Restaurant {
   id: string;
@@ -31,29 +38,23 @@ interface CartItem {
   id: string;
   restaurantId: string;
   restaurantName: string;
-  plan: 'premium' | 'elite' | 'coffee_shop';
-  duration: 'monthly' | '3mo' | '6mo' | 'yearly';
+  plan: PlanId;
+  duration: UnifiedBillingInterval;
   price: number;
 }
 
-const DURATIONS = [
-  { id: 'monthly', label: 'Month-to-Month' },
-  { id: '3mo', label: '3 Months' },
-  { id: '6mo', label: '6 Months' },
-  { id: 'yearly', label: '1 Year' },
-];
+// Generate durations from unified plan config
+const DURATIONS = Object.values(UNIFIED_PLAN.billing).map(billing => ({
+  id: billing.id,
+  label: billing.displayLabel,
+}));
 
-const PRICES: Record<string, Record<string, number>> = {
-  premium: { monthly: 99, '3mo': 250, '6mo': 450, yearly: 800 },
-  elite: { monthly: 149, '3mo': 350, '6mo': 600, yearly: 1100 },
-  coffee_shop: { monthly: 49 },
-};
+const AVAILABLE_PLANS = getSalesAvailablePlans();
 
+// DEPRECATED: Multi-restaurant discounts removed with unified pricing
+// Always returns 0 - kept for backward compatibility with existing code
 function getDiscountPercent(count: number): number {
-  if (count <= 1) return 0;
-  if (count === 2) return 10;
-  if (count === 3) return 15;
-  return 20;
+  return 0; // No discounts with unified pricing structure
 }
 
 export default function AdminSalesPage() {
@@ -82,7 +83,7 @@ function AdminSalesPageContent() {
 
   // "Add restaurant" form state
   const [currentRestaurantId, setCurrentRestaurantId] = useState<string>('');
-  const [currentPlan, setCurrentPlan] = useState<string>('premium');
+  const [currentPlan, setCurrentPlan] = useState<string>('unified');
   const [currentDuration, setCurrentDuration] = useState<string>('yearly');
 
   // Add-form visibility (collapse after adding, show "Add Another" button)
@@ -184,14 +185,14 @@ function AdminSalesPageContent() {
     }
 
     const restaurantName = restaurants.find(r => r.id === currentRestaurantId)?.name || '';
-    const price = PRICES[currentPlan]?.[currentDuration] || 0;
+    const price = getPrice(currentPlan as PlanId, currentDuration as UnifiedBillingInterval);
 
     const newItem: CartItem = {
       id: crypto.randomUUID(),
       restaurantId: currentRestaurantId,
       restaurantName,
-      plan: currentPlan as 'premium' | 'elite',
-      duration: currentDuration as '3mo' | '6mo' | 'yearly',
+      plan: currentPlan as PlanId,
+      duration: currentDuration as UnifiedBillingInterval,
       price,
     };
 
@@ -266,7 +267,7 @@ function AdminSalesPageContent() {
     setStep(1);
   };
 
-  const currentPrice = PRICES[currentPlan]?.[currentDuration] || 0;
+  const currentPrice = getPrice(currentPlan as PlanId, currentDuration as UnifiedBillingInterval);
   const durationLabel = DURATIONS.find(d => d.id === currentDuration)?.label || '';
 
   return (
@@ -422,11 +423,10 @@ function AdminSalesPageContent() {
                       <div key={item.id} className="flex items-center justify-between bg-tastelanc-surface-light rounded-lg px-3 py-2.5">
                         <div className="min-w-0 flex-1">
                           <p className="text-tastelanc-text-primary text-sm font-medium truncate">{item.restaurantName}</p>
-                          <p className="text-tastelanc-text-muted text-xs capitalize">
-                            {item.plan} &middot; {DURATIONS.find(d => d.id === item.duration)?.label}
+                          <p className="text-tastelanc-text-muted text-xs">
+                            {item.duration === 'yearly' ? 'Annual' : 'Monthly'} — ${item.price}/{item.duration === 'yearly' ? 'year' : 'month'}
                           </p>
                         </div>
-                        <span className="text-tastelanc-text-primary text-sm font-semibold ml-3">${item.price}</span>
                         <button
                           onClick={() => handleRemoveFromCart(item.id)}
                           className="text-tastelanc-text-faint hover:text-red-400 transition-colors ml-2"
@@ -535,44 +535,36 @@ function AdminSalesPageContent() {
 
                     <hr className="border-tastelanc-surface-light" />
 
-                    {/* Plan */}
-                    <div>
-                      <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">Plan</label>
-                      <div className="grid grid-cols-3 gap-3">
-                        {(['premium', 'elite', 'coffee_shop'] as const).map((plan) => (
-                          <button
-                            key={plan}
-                            onClick={() => { setCurrentPlan(plan); if (plan === 'coffee_shop') setCurrentDuration('monthly'); }}
-                            className={`p-3 rounded-lg border-2 text-center transition-all ${
-                              currentPlan === plan
-                                ? 'border-tastelanc-accent bg-tastelanc-accent/10 text-tastelanc-text-primary'
-                                : 'border-tastelanc-surface-light text-tastelanc-text-secondary hover:border-tastelanc-border'
-                            }`}
-                          >
-                            <span className="font-semibold text-sm capitalize">{plan === 'coffee_shop' ? 'Coffee Shop' : plan}</span>
-                          </button>
-                        ))}
-                      </div>
+                    {/* Plan info */}
+                    <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-lg p-4">
+                      <h3 className="text-tastelanc-text-primary font-semibold mb-1">TasteLanc Premium</h3>
+                      <p className="text-tastelanc-text-muted text-xs">Complete platform access with all premium features</p>
                     </div>
 
                     {/* Duration */}
                     <div>
-                      <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">Duration</label>
-                      <div className={`grid gap-2 ${currentPlan === 'coffee_shop' ? 'grid-cols-1' : 'grid-cols-4'}`}>
-                        {DURATIONS.filter((d) => currentPlan !== 'coffee_shop' || d.id === 'monthly').map((d) => {
-                          const price = PRICES[currentPlan]?.[d.id] || 0;
+                      <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">Billing Period</label>
+                      <div className="grid gap-3 grid-cols-2">
+                        {DURATIONS.map((d) => {
+                          const price = getPrice('unified', d.id as UnifiedBillingInterval);
+                          const isYearly = d.id === 'yearly';
                           return (
                             <button
                               key={d.id}
                               onClick={() => setCurrentDuration(d.id)}
-                              className={`p-2.5 rounded-lg border-2 text-center transition-all ${
+                              className={`p-4 rounded-lg border-2 text-left transition-all ${
                                 currentDuration === d.id
                                   ? 'border-tastelanc-accent bg-tastelanc-accent/10'
                                   : 'border-tastelanc-surface-light hover:border-tastelanc-border'
                               }`}
                             >
-                              <p className="text-xs text-tastelanc-text-secondary">{d.label}</p>
-                              <p className="text-sm font-bold text-tastelanc-text-primary">${price}</p>
+                              <p className="text-sm font-semibold text-tastelanc-text-primary mb-1">${price}/{isYearly ? 'year' : 'month'}</p>
+                              <p className="text-xs text-tastelanc-text-secondary">
+                                {isYearly ? '1 Year' : 'Monthly'}
+                              </p>
+                              {isYearly && (
+                                <p className="text-xs text-green-400 mt-1">Save $289!</p>
+                              )}
                             </button>
                           );
                         })}
@@ -586,7 +578,7 @@ function AdminSalesPageContent() {
                       className="w-full bg-tastelanc-accent hover:bg-tastelanc-accent-hover text-white font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
                     >
                       <Plus className="w-4 h-4" />
-                      Add — {currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)} {durationLabel} (${currentPrice})
+                      Add to Cart — ${currentPrice}/{currentDuration === 'yearly' ? 'year' : 'month'}
                     </button>
                   </div>
                 </Card>
@@ -636,8 +628,8 @@ function AdminSalesPageContent() {
                     <div key={item.id} className="flex items-center justify-between py-2">
                       <div>
                         <p className="text-tastelanc-text-primary text-sm">{item.restaurantName}</p>
-                        <p className="text-tastelanc-text-faint text-xs capitalize">
-                          {item.plan} &middot; {DURATIONS.find(d => d.id === item.duration)?.label}
+                        <p className="text-tastelanc-text-faint text-xs">
+                          Premium — {item.duration === 'yearly' ? 'Annual' : 'Monthly'}
                         </p>
                       </div>
                       <span className="text-tastelanc-text-primary text-sm">${item.price}</span>

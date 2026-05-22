@@ -10,6 +10,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getColors, getSupabase } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { spacing, radius, typography } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import { useAuth } from '../hooks/useAuth';
 import { useToggleWishlist } from '../hooks/useWishlist';
 import { useMarket } from '../context/MarketContext';
@@ -69,7 +70,7 @@ function WishlistCard({ restaurant }: { restaurant: Restaurant }) {
       {/* Image */}
       <View style={styles.imageContainer}>
         {restaurant.logo_url ? (
-          <Image source={{ uri: restaurant.logo_url }} style={styles.image} />
+          <Image source={storageImageSource(restaurant.logo_url, { width: 56, height: 56 })} style={styles.image} />
         ) : (
           <View style={[styles.image, styles.imagePlaceholder]}>
             <Ionicons name="restaurant" size={28} color={colors.textSecondary} />

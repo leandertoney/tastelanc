@@ -21,6 +21,13 @@ import {
 } from 'lucide-react';
 import { Card, Tooltip } from '@/components/ui';
 import { toast } from 'sonner';
+import {
+  UNIFIED_PLAN,
+  getSalesAvailablePlans,
+  getPrice,
+  type PlanId,
+  type UnifiedBillingInterval,
+} from '@/lib/pricing-config';
 
 interface Restaurant {
   id: string;
@@ -33,29 +40,24 @@ interface CartItem {
   id: string;
   restaurantId: string;
   restaurantName: string;
-  plan: 'premium' | 'elite' | 'coffee_shop';
-  duration: 'monthly' | '3mo' | '6mo' | 'yearly';
+  plan: PlanId; // Using centralized type from pricing-config
+  duration: UnifiedBillingInterval;
   price: number;
 }
 
-const DURATIONS = [
-  { id: 'monthly', label: 'Month-to-Month' },
-  { id: '3mo', label: '3 Months' },
-  { id: '6mo', label: '6 Months' },
-  { id: 'yearly', label: '1 Year' },
-];
+// Get available plans from centralized config
+const AVAILABLE_PLANS = getSalesAvailablePlans();
 
-const PRICES: Record<string, Record<string, number>> = {
-  premium: { monthly: 99, '3mo': 250, '6mo': 450, yearly: 800 },
-  elite: { monthly: 149, '3mo': 350, '6mo': 600, yearly: 1100 },
-  coffee_shop: { monthly: 49 },
-};
+// Get billing options from unified plan
+const DURATIONS = Object.values(UNIFIED_PLAN.billing).map(billing => ({
+  id: billing.id,
+  label: billing.displayLabel,
+}));
 
+// DEPRECATED: Multi-restaurant discounts removed with unified pricing
+// Always returns 0 - kept for backward compatibility with existing code
 function getDiscountPercent(count: number): number {
-  if (count <= 1) return 0;
-  if (count === 2) return 10;
-  if (count === 3) return 15;
-  return 20;
+  return 0; // No discounts with unified pricing structure
 }
 
 export default function SalesCheckoutPage() {
@@ -78,7 +80,7 @@ function SalesCheckoutContent() {
   const [cart, setCart] = useState<CartItem[]>([]);
 
   const [currentRestaurantId, setCurrentRestaurantId] = useState<string>('');
-  const [currentPlan, setCurrentPlan] = useState<string>('premium');
+  const [currentPlan, setCurrentPlan] = useState<string>('unified'); // Default to unified plan
   const [currentDuration, setCurrentDuration] = useState<string>('yearly');
   const [showAddForm, setShowAddForm] = useState(true);
 
@@ -95,6 +97,7 @@ function SalesCheckoutContent() {
   const initializedRef = useRef(false);
 
   const STORAGE_KEY = 'salesCheckoutWizard';
+  const STORAGE_VERSION = 2; // Increment to invalidate old localStorage
 
   // Restore state from localStorage on mount (URL params take priority)
   useEffect(() => {
@@ -109,6 +112,11 @@ function SalesCheckoutContent() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const data = JSON.parse(saved);
+        // Check version - if old version, clear it
+        if (!data.version || data.version < STORAGE_VERSION) {
+          localStorage.removeItem(STORAGE_KEY);
+          throw new Error('Old version - cleared');
+        }
         // Restore if saved within last 24 hours
         if (data.savedAt && Date.now() - data.savedAt < 24 * 60 * 60 * 1000) {
           setStep(data.step || 1);
@@ -116,7 +124,12 @@ function SalesCheckoutContent() {
           setContactName(paramName || data.contactName || '');
           setPhone(paramPhone || data.phone || '');
           setCart(data.cart || []);
-          setCurrentPlan(data.currentPlan || 'premium');
+
+          // Map legacy plans (premium, elite, coffee_shop) to unified
+          const restoredPlan = data.currentPlan || 'unified';
+          const normalizedPlan = ['premium', 'elite', 'coffee_shop'].includes(restoredPlan) ? 'unified' : restoredPlan;
+          setCurrentPlan(normalizedPlan);
+
           setCurrentDuration(data.currentDuration || 'yearly');
           if (data.cart?.length > 0) setShowAddForm(false);
           return;
@@ -138,6 +151,7 @@ function SalesCheckoutContent() {
 
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        version: STORAGE_VERSION,
         step,
         email,
         contactName,
@@ -223,14 +237,14 @@ function SalesCheckoutContent() {
     if (!currentRestaurantId) { setAddError('Select a restaurant'); return; }
 
     const restaurantName = restaurants.find(r => r.id === currentRestaurantId)?.name || '';
-    const price = PRICES[currentPlan]?.[currentDuration] || 0;
+    const price = getPrice(currentPlan as PlanId, currentDuration as UnifiedBillingInterval);
 
     setCart(prev => [...prev, {
       id: crypto.randomUUID(),
       restaurantId: currentRestaurantId,
       restaurantName,
-      plan: currentPlan as 'premium' | 'elite',
-      duration: currentDuration as '3mo' | '6mo' | 'yearly',
+      plan: currentPlan as PlanId,
+      duration: currentDuration as UnifiedBillingInterval,
       price,
     }]);
     setCurrentRestaurantId('');
@@ -297,7 +311,7 @@ function SalesCheckoutContent() {
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
   };
 
-  const currentPrice = PRICES[currentPlan]?.[currentDuration] || 0;
+  const currentPrice = getPrice(currentPlan as PlanId, currentDuration as UnifiedBillingInterval);
   const durationLabel = DURATIONS.find(d => d.id === currentDuration)?.label || '';
 
   return (
@@ -486,30 +500,37 @@ function SalesCheckoutContent() {
 
                     <div>
                       <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">Plan</label>
-                      <div className="grid grid-cols-3 gap-3">
-                        {(['premium', 'elite', 'coffee_shop'] as const).map((plan) => (
-                          <button key={plan} onClick={() => { setCurrentPlan(plan); if (plan === 'coffee_shop') setCurrentDuration('monthly'); }}
-                            className={`p-3 rounded-lg border-2 text-center transition-all ${
-                              currentPlan === plan ? 'border-tastelanc-accent bg-tastelanc-accent/10 text-tastelanc-text-primary' : 'border-tastelanc-surface-light text-tastelanc-text-secondary hover:border-tastelanc-border'
-                            }`}>
-                            <span className="font-semibold text-sm capitalize">{plan === 'coffee_shop' ? 'Coffee Shop' : plan}</span>
+                      <div className="grid grid-cols-1 gap-3">
+                        {AVAILABLE_PLANS.map((plan) => (
+                          <button
+                            key={plan.id}
+                            onClick={() => setCurrentPlan(plan.id)}
+                            className={`p-4 rounded-lg border-2 text-center transition-all ${
+                              currentPlan === plan.id
+                                ? 'border-tastelanc-accent bg-tastelanc-accent/10 text-tastelanc-text-primary'
+                                : 'border-tastelanc-surface-light text-tastelanc-text-secondary hover:border-tastelanc-border'
+                            }`}
+                          >
+                            <div className="font-semibold text-lg">{plan.name}</div>
+                            <div className="text-xs text-tastelanc-text-muted mt-1">{plan.description}</div>
                           </button>
                         ))}
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">Duration</label>
-                      <div className={`grid gap-2 ${currentPlan === 'coffee_shop' ? 'grid-cols-1' : 'grid-cols-4'}`}>
-                        {DURATIONS.filter((d) => currentPlan !== 'coffee_shop' || d.id === 'monthly').map((d) => {
-                          const price = PRICES[currentPlan]?.[d.id] || 0;
+                      <label className="block text-sm font-medium text-tastelanc-text-secondary mb-2">Billing Cycle</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {DURATIONS.map((d) => {
+                          const price = getPrice(currentPlan as PlanId, d.id as UnifiedBillingInterval);
                           return (
                             <button key={d.id} onClick={() => setCurrentDuration(d.id)}
-                              className={`p-2.5 rounded-lg border-2 text-center transition-all ${
+                              className={`p-3 rounded-lg border-2 text-center transition-all ${
                                 currentDuration === d.id ? 'border-tastelanc-accent bg-tastelanc-accent/10' : 'border-tastelanc-surface-light hover:border-tastelanc-border'
                               }`}>
-                              <p className="text-xs text-tastelanc-text-secondary">{d.label}</p>
-                              <p className="text-sm font-bold text-tastelanc-text-primary">${price}</p>
+                              <p className="text-sm text-tastelanc-text-secondary font-medium">{d.label.split(' - ')[0]}</p>
+                              <p className="text-xl font-bold text-tastelanc-text-primary mt-1">${price}</p>
+                              {d.id === 'yearly' && <p className="text-xs text-green-500 mt-1">Save $289/yr</p>}
                             </button>
                           );
                         })}

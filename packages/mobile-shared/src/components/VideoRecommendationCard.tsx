@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getColors, getBrand, getAssets } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import { CAPTION_TAG_LABELS } from '../types/database';
 import { parseVideoUrls } from '../lib/videoRecommendations';
 import type { VideoRecommendationWithUser, CaptionTag, CaptionWord, TextOverlay, TextOverlayColor, TextOverlaySize } from '../types/database';
@@ -169,7 +170,7 @@ export default function VideoRecommendationCard({
           <View style={styles.thumbContainer}>
             {recommendation.thumbnail_url ? (
               <Image
-                source={{ uri: recommendation.thumbnail_url }}
+                source={storageImageSource(recommendation.thumbnail_url, { width: 180, height: 320 })}
                 style={styles.thumbnailImage}
                 resizeMode="cover"
               />
@@ -236,7 +237,7 @@ function RestaurantIconImage({ restaurant }: { restaurant: RestaurantInfo }) {
     if (fallbackUrl && !failed) {
       return (
         <Image
-          source={{ uri: fallbackUrl }}
+          source={storageImageSource(fallbackUrl, { width: 28, height: 28 })}
           style={fs.restaurantIcon}
           onError={() => setFailed(true)}
         />
@@ -251,7 +252,7 @@ function RestaurantIconImage({ restaurant }: { restaurant: RestaurantInfo }) {
 
   return (
     <Image
-      source={{ uri: primaryUrl }}
+      source={storageImageSource(primaryUrl, { width: 28, height: 28 })}
       style={fs.restaurantIcon}
       onError={() => setFailed(true)}
     />
@@ -419,7 +420,7 @@ function FullscreenVideoModal({
           </View>
           <View style={fs.userRow}>
             {avatarUrl ? (
-              <Image source={{ uri: avatarUrl }} style={fs.avatar} />
+              <Image source={storageImageSource(avatarUrl, { width: 24, height: 24 })} style={fs.avatar} />
             ) : (
               <View style={[fs.avatar, fs.avatarPlaceholder]}>
                 <Ionicons name="person" size={12} color="#ccc" />

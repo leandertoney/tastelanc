@@ -18,6 +18,7 @@ import { formatRecurrenceLabel } from '../lib/eventRecurrence';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import SpotifyStyleListItem from '../components/SpotifyStyleListItem';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ArtistDetail'>;
@@ -160,7 +161,7 @@ export default function ArtistDetailScreen({ route }: Props) {
             <View style={styles.profileSection}>
               {artistInfo?.profile_image_url ? (
                 <Image
-                  source={{ uri: artistInfo.profile_image_url }}
+                  source={storageImageSource(artistInfo.profile_image_url, { width: 120, height: 120 })}
                   style={styles.profileImage}
                 />
               ) : (

@@ -31,6 +31,7 @@ import type {
 import { getColors, getBrand, getSupabase, hasFeature } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import { fetchEvents, type ApiEvent } from '../lib/events';
 import { trackScreenView, trackClick } from '../lib/analytics';
 import { onRestaurantDetailView } from '../lib/interstitialAds';
@@ -608,7 +609,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
         <View style={[styles.heroContainer, { height: heroHeight }]}>
           {restaurant.cover_image_url ? (
             <Image
-              source={{ uri: restaurant.cover_image_url, cache: 'force-cache' }}
+              source={storageImageSource(restaurant.cover_image_url, { width: Math.round(SCREEN_WIDTH), height: heroHeight, quality: 75 })}
               style={styles.heroImage}
               resizeMode="cover"
             />
@@ -758,7 +759,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                   <View key={hh.id} style={styles.compactCard}>
                     {hh.image_url ? (
                       <View style={styles.compactThumb}>
-                        <Image source={{ uri: hh.image_url }} style={styles.compactThumbImg} resizeMode="cover" />
+                        <Image source={storageImageSource(hh.image_url, { width: 84, height: 84 })} style={styles.compactThumbImg} resizeMode="cover" />
                       </View>
                     ) : (
                       <View style={styles.compactThumbFallback}>
@@ -835,7 +836,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                   <View key={special.id} style={styles.compactCard}>
                     {special.image_url ? (
                       <View style={styles.compactThumb}>
-                        <Image source={{ uri: special.image_url }} style={styles.compactThumbImg} resizeMode="cover" />
+                        <Image source={storageImageSource(special.image_url, { width: 84, height: 84 })} style={styles.compactThumbImg} resizeMode="cover" />
                       </View>
                     ) : (
                       <View style={styles.compactThumbFallback}>
@@ -896,7 +897,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                   <View key={coupon.id} style={[styles.contentCard, { borderWidth: 1, borderColor: colors.accent + '30', borderStyle: 'dashed' }]}>
                     {coupon.image_url && (
                       <Image
-                        source={{ uri: coupon.image_url }}
+                        source={storageImageSource(coupon.image_url, { width: Math.round(SCREEN_WIDTH), height: 160 })}
                         style={styles.contentImage}
                         resizeMode="cover"
                       />

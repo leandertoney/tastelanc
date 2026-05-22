@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 
 interface SpotifyStyleListItemProps {
   imageUrl: string | null;
@@ -33,7 +34,7 @@ export default function SpotifyStyleListItem({
       {/* Image or Fallback Icon */}
       <View style={styles.imageContainer}>
         {imageUrl ? (
-          <Image source={{ uri: imageUrl, cache: 'force-cache' }} style={styles.image} />
+          <Image source={storageImageSource(imageUrl, { width: 60, height: 60 })} style={styles.image} />
         ) : (
           <View style={styles.fallbackContainer}>
             <Ionicons name={fallbackIcon} size={24} color={colors.textMuted} />

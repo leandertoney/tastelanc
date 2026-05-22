@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
+import { storageImageSource } from '../utils/storageImage';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const THUMBNAIL_WIDTH = 120;
@@ -80,7 +81,7 @@ export default function PhotosCarousel({ photos, restaurantName }: PhotosCarouse
       onPress={() => openLightbox(index)}
       activeOpacity={0.8}
     >
-      <Image source={{ uri: item, cache: 'force-cache' }} style={styles.thumbnail} resizeMode="cover" />
+      <Image source={storageImageSource(item, { width: THUMBNAIL_WIDTH, height: THUMBNAIL_HEIGHT })} style={styles.thumbnail} resizeMode="cover" />
       {index === 0 && photos.length > 1 && (
         <View style={styles.countBadge}>
           <Ionicons name="images" size={12} color="#FFF" />
@@ -93,7 +94,7 @@ export default function PhotosCarousel({ photos, restaurantName }: PhotosCarouse
   const renderLightboxImage = ({ item }: { item: string }) => (
     <View style={styles.lightboxImageContainer}>
       <Image
-        source={{ uri: item, cache: 'force-cache' }}
+        source={storageImageSource(item, { width: Math.round(SCREEN_WIDTH), height: Math.round(SCREEN_HEIGHT), quality: 80, resize: 'contain' })}
         style={styles.lightboxImage}
         resizeMode="contain"
       />

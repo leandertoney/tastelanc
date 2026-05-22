@@ -3,7 +3,7 @@ export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
-import { getStripe, RESTAURANT_PRICE_IDS } from '@/lib/stripe';
+import { getStripe, RESTAURANT_PRICE_IDS, UNIFIED_PRICE_IDS } from '@/lib/stripe';
 import { isUserAdmin } from '@/lib/auth/admin-access';
 import { BRAND } from '@/config/market';
 import type Stripe from 'stripe';
@@ -19,8 +19,19 @@ export async function POST(request: Request) {
 
     const { priceId: priceKey, restaurantId } = await request.json();
 
-    // Resolve price key (e.g., "premium_yearly") to actual Stripe price ID
-    const resolvedPriceId = RESTAURANT_PRICE_IDS[priceKey as keyof typeof RESTAURANT_PRICE_IDS];
+    // Resolve price key to actual Stripe price ID
+    // Check unified prices first (new pricing structure), then fall back to legacy prices
+    let resolvedPriceId: string | undefined;
+
+    // Try unified prices first (e.g., "unified_monthly", "unified_yearly")
+    if (priceKey in UNIFIED_PRICE_IDS) {
+      resolvedPriceId = UNIFIED_PRICE_IDS[priceKey as keyof typeof UNIFIED_PRICE_IDS];
+    }
+    // Fall back to legacy restaurant prices for existing subscriptions
+    else if (priceKey in RESTAURANT_PRICE_IDS) {
+      resolvedPriceId = RESTAURANT_PRICE_IDS[priceKey as keyof typeof RESTAURANT_PRICE_IDS];
+    }
+
     if (!resolvedPriceId) {
       return NextResponse.json({ error: 'Invalid price selection' }, { status: 400 });
     }
@@ -138,11 +149,17 @@ export async function POST(request: Request) {
       }
     }
 
+    // Log which pricing structure is being used
+    const isUnifiedPricing = priceKey in UNIFIED_PRICE_IDS;
+    console.log(`Creating checkout session for ${restaurant.name}: ${priceKey} (${isUnifiedPricing ? 'UNIFIED' : 'LEGACY'} pricing)`);
+
     // Create checkout session
+    // IMPORTANT: mode: 'subscription' creates a RECURRING subscription with automatic renewals
+    // Payment methods are automatically saved and charged on each billing cycle
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
       customer_update: { address: 'auto' },
-      mode: 'subscription',
+      mode: 'subscription', // CRITICAL: Creates recurring subscription with auto-renewal
       payment_method_types: ['card'],
       line_items: [
         {
@@ -157,6 +174,7 @@ export async function POST(request: Request) {
         metadata: {
           restaurant_id: restaurantId,
           user_id: user.id,
+          pricing_structure: isUnifiedPricing ? 'unified' : 'legacy', // Track which pricing was used
         },
       },
       metadata: {

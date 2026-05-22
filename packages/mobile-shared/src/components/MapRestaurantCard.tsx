@@ -27,6 +27,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import { formatCuisineName } from '../lib/formatters';
 import { formatDistance } from '../hooks/useUserLocation';
 import RatingStars from './RatingStars';
@@ -118,7 +119,7 @@ export default function MapRestaurantCard({
               })}
               renderItem={({ item }) => (
                 <Image
-                  source={{ uri: item, cache: 'force-cache' }}
+                  source={storageImageSource(item, { width: Math.round(CARD_WIDTH), height: 180, quality: 75 })}
                   style={styles.photo}
                   resizeMode="cover"
                 />

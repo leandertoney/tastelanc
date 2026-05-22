@@ -15,6 +15,7 @@ import type { FeaturedAd } from '../types/database';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import { trackAdClick } from '../lib/ads';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -169,7 +170,7 @@ export default function FeaturedAdCard({ ad, positionIndex }: FeaturedAdCardProp
   return (
     <TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.9}>
       <View style={styles.imageContainer}>
-        <Image source={{ uri: ad.image_url }} style={styles.image} />
+        <Image source={storageImageSource(ad.image_url, { width: Math.round(CARD_WIDTH), height: Math.round(CARD_HEIGHT), quality: 75 })} style={styles.image} />
         <GlowBorder />
         <ShimmerSweep />
         {particles.map((p) => (

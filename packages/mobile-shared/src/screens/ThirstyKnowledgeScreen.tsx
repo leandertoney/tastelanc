@@ -35,6 +35,7 @@ import { fetchEvents } from '../lib/events';
 import { getBrand, getSupabase } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { spacing, radius, typography } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import { useMarket } from '../context/MarketContext';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -500,7 +501,7 @@ export default function ThirstyKnowledgeScreen() {
 
           <View style={styles.logoCircle}>
             <Image
-              source={{ uri: 'https://kufcxxynjvyharhtfptd.supabase.co/storage/v1/object/public/images/ads/tfk_logo.png' }}
+              source={storageImageSource('https://kufcxxynjvyharhtfptd.supabase.co/storage/v1/object/public/images/ads/tfk_logo.png', { width: 40, height: 40, resize: 'contain' })}
               style={styles.logoImage}
               resizeMode="contain"
             />

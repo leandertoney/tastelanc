@@ -9,6 +9,7 @@ import { formatCategoryName } from '../lib/formatters';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import OpenStatusBadge from './OpenStatusBadge';
 import { useRestaurantWeekIds } from '../hooks/useRestaurantWeekIds';
 import { useCoffeeChocolateTrailIds } from '../hooks/useCoffeeChocolateTrailIds';
@@ -45,7 +46,7 @@ export default function RestaurantCard({
       <View style={styles.imageContainer}>
         {restaurant.cover_image_url && !imageError ? (
           <Image
-            source={{ uri: restaurant.cover_image_url, cache: 'force-cache' }}
+            source={storageImageSource(restaurant.cover_image_url, { width: 400, height: 280 })}
             style={styles.image}
             onError={() => setImageError(true)}
           />

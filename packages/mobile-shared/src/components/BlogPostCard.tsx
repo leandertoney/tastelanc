@@ -5,6 +5,7 @@ import { getColors } from '../config/theme';
 import { getBrand } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export const BLOG_CARD_WIDTH = SCREEN_WIDTH * 0.7;
@@ -30,7 +31,7 @@ export default function BlogPostCard({ post, onPress }: BlogPostCardProps) {
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
       <View style={styles.imageContainer}>
         {post.cover_image_url ? (
-          <Image source={{ uri: post.cover_image_url }} style={styles.image} />
+          <Image source={storageImageSource(post.cover_image_url, { width: Math.round(BLOG_CARD_WIDTH), height: Math.round(CARD_HEIGHT) })} style={styles.image} />
         ) : (
           <View style={styles.imagePlaceholder}>
             <Ionicons name="newspaper-outline" size={40} color={colors.textSecondary} />

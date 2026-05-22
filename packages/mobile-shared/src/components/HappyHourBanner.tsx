@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getColors, getBrand } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 
 interface HappyHourBannerProps {
   deal: string; // Primary deal line
@@ -99,7 +100,7 @@ export default function HappyHourBanner({
         disabled={!onPress}
       >
         <ImageBackground
-          source={{ uri: imageUrl, cache: 'force-cache' }}
+          source={storageImageSource(imageUrl, { width: 320, height: 72 })}
           style={styles.imageBackground}
           imageStyle={styles.imageStyle}
         >

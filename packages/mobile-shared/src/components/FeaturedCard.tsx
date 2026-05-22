@@ -8,6 +8,7 @@ import { formatCategoryName } from '../lib/formatters';
 import { getColors, getBrand } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 import OpenStatusBadge from './OpenStatusBadge';
 import { useRestaurantWeekIds } from '../hooks/useRestaurantWeekIds';
 import { useCoffeeChocolateTrailIds } from '../hooks/useCoffeeChocolateTrailIds';
@@ -56,7 +57,7 @@ export default function FeaturedCard({
       {/* Full-height image background */}
       <View style={styles.imageContainer}>
         {restaurant.cover_image_url ? (
-          <Image source={{ uri: restaurant.cover_image_url, cache: 'force-cache' }} style={styles.image} />
+          <Image source={storageImageSource(restaurant.cover_image_url, { width: Math.round(CARD_WIDTH), height: Math.round(CARD_HEIGHT) })} style={styles.image} />
         ) : (
           <View style={styles.imagePlaceholder}>
             <Ionicons name="restaurant-outline" size={48} color={colors.textSecondary} />

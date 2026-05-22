@@ -2,12 +2,14 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
+import { getStripeForMarket, DURATION_LABELS } from '@/lib/stripe';
 import {
-  getStripeForMarket,
-  RESTAURANT_PRICES,
-  getDiscountPercent,
-  DURATION_LABELS,
-} from '@/lib/stripe';
+  getPriceCents,
+  isValidPlan,
+  isValidInterval,
+  type PlanId,
+  type BillingInterval,
+} from '@/lib/pricing-config';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -16,8 +18,8 @@ interface CheckoutItem {
   restaurantId: string | null;
   restaurantName: string;
   isNewRestaurant: boolean;
-  plan: 'premium' | 'elite' | 'coffee_shop';
-  duration: 'monthly' | '3mo' | '6mo' | 'yearly';
+  plan: PlanId; // Using centralized type
+  duration: BillingInterval; // Using centralized type
 }
 
 function getSupabaseAdmin() {
@@ -63,16 +65,15 @@ export async function POST(request: Request) {
       if (!item.restaurantName) {
         throw new Error(`Item ${index + 1}: Restaurant name is required`);
       }
-      if (!['premium', 'elite', 'coffee_shop'].includes(item.plan)) {
+      if (!isValidPlan(item.plan)) {
         throw new Error(`Item ${index + 1}: Invalid plan "${item.plan}"`);
       }
-      if (!['monthly', '3mo', '6mo', 'yearly'].includes(item.duration)) {
-        throw new Error(`Item ${index + 1}: Invalid duration "${item.duration}"`);
+      if (!isValidInterval(item.plan, item.duration)) {
+        throw new Error(`Item ${index + 1}: Invalid duration "${item.duration}" for plan "${item.plan}"`);
       }
 
-      const prices = RESTAURANT_PRICES[item.plan as keyof typeof RESTAURANT_PRICES];
-      const priceDollars = prices[item.duration as keyof typeof prices];
-      const priceCents = priceDollars * 100;
+      const priceCents = getPriceCents(item.plan, item.duration);
+      const priceDollars = priceCents / 100;
 
       return { ...item, priceCents, priceDollars };
     });

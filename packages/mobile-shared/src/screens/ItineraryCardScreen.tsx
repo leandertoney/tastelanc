@@ -33,6 +33,7 @@ import { getColors, getBrand, getAssets, getSupabase } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { withAlpha } from '../utils/colorUtils';
 import { radius, spacing, typography } from '../constants/spacing';
+import { storageImageSource } from '../utils/storageImage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ItineraryCard'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -264,7 +265,7 @@ export default function ItineraryCardScreen() {
                     <View style={styles.stopImageContainer}>
                       {item.display_image_url ? (
                         <Image
-                          source={{ uri: item.display_image_url }}
+                          source={storageImageSource(item.display_image_url, { width: 54, height: 54 })}
                           style={styles.stopImage}
                         />
                       ) : (
