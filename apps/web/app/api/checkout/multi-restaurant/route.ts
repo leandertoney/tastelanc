@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
 import { verifyAdminAccess } from '@/lib/auth/admin-access';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { getStripeForMarket, DURATION_LABELS } from '@/lib/stripe';
+import { getStripeForMarket, DURATION_LABELS, UNIFIED_PRICE_IDS } from '@/lib/stripe';
 import {
   getPriceCents,
   isValidPlan,
@@ -209,25 +209,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to create sales order items' }, { status: 500 });
     }
 
-    // Create Stripe Checkout line items
-    // UNIFIED PRICING: Show "Premium" instead of "Unified" in checkout
-    const lineItems = itemsWithPrices.map(item => {
-      const planName = item.plan === 'unified' ? 'Premium' : item.plan.charAt(0).toUpperCase() + item.plan.slice(1);
-      const durationLabel = DURATION_LABELS[item.duration] || item.duration;
-
-      return {
-        price_data: {
-          currency: 'usd',
-          unit_amount: item.priceCents,
-          product_data: {
-            name: `${item.restaurantName} - ${planName} (${durationLabel})`,
-            description: `${marketSlug === 'cumberland-pa' ? 'TasteCumberland' : marketSlug === 'fayetteville-nc' ? 'TasteFayetteville' : 'TasteLanc'} ${planName} subscription`,
-          },
-        },
-        quantity: 1,
-      };
-    });
-
     // Determine success/cancel URLs based on access type
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3002';
     const successUrl = accessType === 'admin'
@@ -237,50 +218,137 @@ export async function POST(request: Request) {
       ? `${baseUrl}/admin/sales?canceled=true`
       : `${baseUrl}/sales/checkout?canceled=true`;
 
-    // Create Stripe Checkout session in PAYMENT mode
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      customer_update: { address: 'auto' },
-      mode: 'payment',
-      payment_method_types: ['card'],
-      line_items: lineItems,
-      payment_intent_data: {
-        setup_future_usage: 'off_session', // Save card for future recurring payments
-      },
-      saved_payment_method_options: {
-        payment_method_save: 'enabled',
-      },
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      automatic_tax: { enabled: true },
-      invoice_creation: { enabled: true },
-      allow_promotion_codes: true,
-      metadata: {
-        multi_restaurant: 'true',
-        admin_sale: accessType === 'admin' ? 'true' : 'false',
-        sales_rep_sale: accessType === 'sales' ? 'true' : 'false',
-        sales_order_id: salesOrder.id,
-        contact_name: contactName || '',
-        email,
-        phone: phone || '',
-        created_by: userId!,
-        created_by_role: accessType,
-        restaurant_count: String(items.length),
-        discount_percent: String(discountPercent),
-        market_slug: marketSlug,
-      },
-    });
+    // RECURRING SUBSCRIPTION MODE
+    // For single restaurant: Create automatic recurring subscription
+    // For multiple restaurants: Create individual subscriptions per restaurant
+    if (items.length === 1) {
+      // SINGLE RESTAURANT - Use subscription mode for automatic recurring billing
+      const item = itemsWithPrices[0];
 
-    return NextResponse.json({
-      checkoutUrl: session.url,
-      sessionId: session.id,
-      salesOrderId: salesOrder.id,
-      subtotal: subtotalCents / 100,
-      discountPercent,
-      discountAmount: discountAmountCents / 100,
-      total: totalCents / 100,
-      restaurantCount: items.length,
-    });
+      // Get the Stripe Price ID for this plan and duration
+      const priceId = item.duration === 'monthly'
+        ? UNIFIED_PRICE_IDS.monthly
+        : UNIFIED_PRICE_IDS.yearly;
+
+      if (!priceId) {
+        throw new Error(`No Stripe Price ID found for ${item.plan} ${item.duration}`);
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        customer_update: { address: 'auto' },
+        mode: 'subscription', // ✅ AUTOMATIC RECURRING SUBSCRIPTION
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: priceId, // Use actual Stripe Price ID
+            quantity: 1,
+          },
+        ],
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        automatic_tax: { enabled: true },
+        allow_promotion_codes: true,
+        subscription_data: {
+          metadata: {
+            restaurant_id: item.restaurantId || '',
+            restaurant_name: item.restaurantName,
+            sales_order_id: salesOrder.id,
+            sales_order_item_id: orderItems[0] ? String(orderItems[0].sales_order_id) : '',
+            admin_sale: accessType === 'admin' ? 'true' : 'false',
+            sales_rep_sale: accessType === 'sales' ? 'true' : 'false',
+            created_by: userId!,
+            created_by_role: accessType,
+            market_slug: marketSlug,
+          },
+        },
+        metadata: {
+          restaurant_id: item.restaurantId || '',
+          restaurant_name: item.restaurantName,
+          sales_order_id: salesOrder.id,
+          contact_name: contactName || '',
+          email,
+          phone: phone || '',
+          created_by: userId!,
+          created_by_role: accessType,
+          market_slug: marketSlug,
+        },
+      });
+
+      return NextResponse.json({
+        checkoutUrl: session.url,
+        sessionId: session.id,
+        salesOrderId: salesOrder.id,
+        subtotal: subtotalCents / 100,
+        discountPercent,
+        discountAmount: discountAmountCents / 100,
+        total: totalCents / 100,
+        restaurantCount: items.length,
+      });
+    } else {
+      // MULTIPLE RESTAURANTS - Create payment mode, webhook will create individual subscriptions
+      // TODO: Enhance webhook to create separate recurring subscriptions per restaurant
+      const lineItems = itemsWithPrices.map(item => {
+        const planName = item.plan === 'unified' ? 'Premium' : item.plan.charAt(0).toUpperCase() + item.plan.slice(1);
+        const durationLabel = DURATION_LABELS[item.duration] || item.duration;
+
+        return {
+          price_data: {
+            currency: 'usd',
+            unit_amount: item.priceCents,
+            product_data: {
+              name: `${item.restaurantName} - ${planName} (${durationLabel})`,
+              description: `${marketSlug === 'cumberland-pa' ? 'TasteCumberland' : marketSlug === 'fayetteville-nc' ? 'TasteFayetteville' : 'TasteLanc'} ${planName} subscription`,
+            },
+          },
+          quantity: 1,
+        };
+      });
+
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        customer_update: { address: 'auto' },
+        mode: 'payment', // One-time payment, webhook creates subscriptions
+        payment_method_types: ['card'],
+        line_items: lineItems,
+        payment_intent_data: {
+          setup_future_usage: 'off_session',
+        },
+        saved_payment_method_options: {
+          payment_method_save: 'enabled',
+        },
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        automatic_tax: { enabled: true },
+        invoice_creation: { enabled: true },
+        allow_promotion_codes: true,
+        metadata: {
+          multi_restaurant: 'true',
+          admin_sale: accessType === 'admin' ? 'true' : 'false',
+          sales_rep_sale: accessType === 'sales' ? 'true' : 'false',
+          sales_order_id: salesOrder.id,
+          contact_name: contactName || '',
+          email,
+          phone: phone || '',
+          created_by: userId!,
+          created_by_role: accessType,
+          restaurant_count: String(items.length),
+          discount_percent: String(discountPercent),
+          market_slug: marketSlug,
+        },
+      });
+
+      return NextResponse.json({
+        checkoutUrl: session.url,
+        sessionId: session.id,
+        salesOrderId: salesOrder.id,
+        subtotal: subtotalCents / 100,
+        discountPercent,
+        discountAmount: discountAmountCents / 100,
+        total: totalCents / 100,
+        restaurantCount: items.length,
+      });
+    }
   } catch (error) {
     console.error('Error creating checkout session:', error);
     const message = error instanceof Error ? error.message : 'Failed to create checkout';
