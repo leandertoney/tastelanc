@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
+import { verifyAdminAccess } from '@/lib/auth/admin-access';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { getStripeForMarket, DURATION_LABELS } from '@/lib/stripe';
 import {
   getPriceCents,
@@ -18,8 +19,8 @@ interface CheckoutItem {
   restaurantId: string | null;
   restaurantName: string;
   isNewRestaurant: boolean;
-  plan: PlanId; // Using centralized type
-  duration: BillingInterval; // Using centralized type
+  plan: PlanId;
+  duration: BillingInterval;
 }
 
 function getSupabaseAdmin() {
@@ -29,16 +30,41 @@ function getSupabaseAdmin() {
   );
 }
 
+/**
+ * UNIFIED MULTI-RESTAURANT CHECKOUT API
+ *
+ * Handles checkout creation for both Sales CRM and Admin Panel.
+ * - Verifies sales rep OR admin access
+ * - Uses centralized unified pricing from pricing-config.ts
+ * - No multi-restaurant discounts (unified pricing structure)
+ * - Creates sales_order and sales_order_items in database
+ * - Returns Stripe Checkout URL for payment
+ */
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
-    const access = await verifySalesAccess(supabase);
 
-    if (!access.canAccess) {
-      return NextResponse.json(
-        { error: access.error },
-        { status: access.userId ? 403 : 401 }
-      );
+    // Try sales access first, then admin access
+    let userId: string | undefined;
+    let accessType: 'sales' | 'admin' = 'sales';
+
+    const salesAccess = await verifySalesAccess(supabase);
+    if (salesAccess.canAccess) {
+      userId = salesAccess.userId;
+      accessType = 'sales';
+    } else {
+      // Try admin access
+      try {
+        const admin = await verifyAdminAccess(supabase);
+        userId = admin.userId;
+        accessType = 'admin';
+      } catch {
+        // Neither sales nor admin access
+        return NextResponse.json(
+          { error: 'Access denied. Sales rep or admin access required.' },
+          { status: 403 }
+        );
+      }
     }
 
     const body = await request.json();
@@ -49,6 +75,7 @@ export async function POST(request: Request) {
       items: CheckoutItem[];
     };
 
+    // Validation
     if (!email) {
       return NextResponse.json({ error: 'Customer email is required' }, { status: 400 });
     }
@@ -61,6 +88,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Maximum 10 restaurants per order' }, { status: 400 });
     }
 
+    // Validate items and get pricing from centralized config
     const itemsWithPrices = items.map((item, index) => {
       if (!item.restaurantName) {
         throw new Error(`Item ${index + 1}: Restaurant name is required`);
@@ -78,17 +106,17 @@ export async function POST(request: Request) {
       return { ...item, priceCents, priceDollars };
     });
 
+    // Calculate totals - UNIFIED PRICING: No multi-restaurant discounts
     const subtotalCents = itemsWithPrices.reduce((sum, item) => sum + item.priceCents, 0);
-    // UNIFIED PRICING: No multi-restaurant discounts
-    const discountPercent = 0;
+    const discountPercent = 0; // No discounts with unified pricing
     const discountAmountCents = 0;
     const totalCents = subtotalCents;
 
     const supabaseAdmin = getSupabaseAdmin();
 
-    // Determine the correct Stripe account by looking up the market of the restaurants
+    // Determine market by looking up restaurant markets
     const existingRestaurantIds = items.map(i => i.restaurantId).filter(Boolean) as string[];
-    let marketSlug = 'lancaster-pa';
+    let marketSlug = 'lancaster-pa'; // default
     if (existingRestaurantIds.length > 0) {
       const { data: restaurantMarkets } = await supabaseAdmin
         .from('restaurants')
@@ -116,7 +144,8 @@ export async function POST(request: Request) {
         metadata: {
           ...existingCustomers.data[0].metadata,
           contact_name: contactName || existingCustomers.data[0].metadata?.contact_name || '',
-          updated_by: access.userId!,
+          updated_by: userId!,
+          updated_by_role: accessType,
         },
       });
     } else {
@@ -126,13 +155,14 @@ export async function POST(request: Request) {
         phone: phone || undefined,
         metadata: {
           contact_name: contactName || '',
-          created_by: access.userId!,
+          created_by: userId!,
+          created_by_role: accessType,
         },
       });
       customerId = customer.id;
     }
 
-    // Create sales_order
+    // Create sales_order in database
     const { data: salesOrder, error: orderError } = await supabaseAdmin
       .from('sales_orders')
       .insert({
@@ -145,7 +175,7 @@ export async function POST(request: Request) {
         subtotal_cents: subtotalCents,
         discount_amount_cents: discountAmountCents,
         total_cents: totalCents,
-        created_by_admin: access.userId,
+        created_by_admin: userId,
         status: 'pending',
       })
       .select('id')
@@ -156,6 +186,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to create sales order' }, { status: 500 });
     }
 
+    // Create sales_order_items for each restaurant
     const orderItems = itemsWithPrices.map(item => ({
       sales_order_id: salesOrder.id,
       restaurant_id: item.restaurantId || null,
@@ -164,7 +195,7 @@ export async function POST(request: Request) {
       plan: item.plan,
       duration: item.duration,
       price_cents: item.priceCents,
-      discounted_price_cents: item.priceCents, // No discounts with unified pricing
+      discounted_price_cents: item.priceCents, // No discounts
       processing_status: 'pending',
     }));
 
@@ -178,15 +209,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to create sales order items' }, { status: 500 });
     }
 
+    // Create Stripe Checkout line items
+    // UNIFIED PRICING: Show "Premium" instead of "Unified" in checkout
     const lineItems = itemsWithPrices.map(item => {
-      // UNIFIED PRICING: Display friendly name "Premium" instead of "Unified"
       const planName = item.plan === 'unified' ? 'Premium' : item.plan.charAt(0).toUpperCase() + item.plan.slice(1);
       const durationLabel = DURATION_LABELS[item.duration] || item.duration;
 
       return {
         price_data: {
           currency: 'usd',
-          unit_amount: item.priceCents, // No discounts with unified pricing
+          unit_amount: item.priceCents,
           product_data: {
             name: `${item.restaurantName} - ${planName} (${durationLabel})`,
             description: `${marketSlug === 'cumberland-pa' ? 'TasteCumberland' : marketSlug === 'fayetteville-nc' ? 'TasteFayetteville' : 'TasteLanc'} ${planName} subscription`,
@@ -196,26 +228,43 @@ export async function POST(request: Request) {
       };
     });
 
-    // Redirect back to sales dashboard on success/cancel
+    // Determine success/cancel URLs based on access type
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3002';
+    const successUrl = accessType === 'admin'
+      ? `${baseUrl}/admin/sales?success=true&session_id={CHECKOUT_SESSION_ID}`
+      : `${baseUrl}/sales/checkout?success=true&session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = accessType === 'admin'
+      ? `${baseUrl}/admin/sales?canceled=true`
+      : `${baseUrl}/sales/checkout?canceled=true`;
+
+    // Create Stripe Checkout session in PAYMENT mode
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_update: { address: 'auto' },
       mode: 'payment',
       payment_method_types: ['card'],
       line_items: lineItems,
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/sales/checkout?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/sales/checkout?canceled=true`,
+      payment_intent_data: {
+        setup_future_usage: 'off_session', // Save card for future recurring payments
+      },
+      saved_payment_method_options: {
+        payment_method_save: 'enabled',
+      },
+      success_url: successUrl,
+      cancel_url: cancelUrl,
       automatic_tax: { enabled: true },
       invoice_creation: { enabled: true },
       allow_promotion_codes: true,
       metadata: {
         multi_restaurant: 'true',
-        admin_sale: 'true',
+        admin_sale: accessType === 'admin' ? 'true' : 'false',
+        sales_rep_sale: accessType === 'sales' ? 'true' : 'false',
         sales_order_id: salesOrder.id,
         contact_name: contactName || '',
         email,
         phone: phone || '',
-        created_by: access.userId!,
+        created_by: userId!,
+        created_by_role: accessType,
         restaurant_count: String(items.length),
         discount_percent: String(discountPercent),
         market_slug: marketSlug,
