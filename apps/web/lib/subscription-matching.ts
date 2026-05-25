@@ -351,11 +351,12 @@ export async function findMatchingRestaurant(
   if (customer.email) {
     const emailLower = customer.email.toLowerCase();
 
-    // 2a. Exact email match on restaurant
+    // 2a. Exact email match on restaurant (contact_email or business_email)
     const { data: byEmail } = await supabase
       .from('restaurants')
       .select('id, name')
-      .ilike('email', emailLower)
+      .or(`contact_email.ilike.${emailLower},business_email.ilike.${emailLower}`)
+      .limit(1)
       .single();
 
     if (byEmail) {
@@ -479,12 +480,13 @@ export async function findMatchingRestaurant(
     if (normalizedPhone) {
       const { data: restaurants } = await supabase
         .from('restaurants')
-        .select('id, name, phone')
-        .not('phone', 'is', null);
+        .select('id, name, phone, contact_phone')
+        .not('contact_phone', 'is', null);
 
       if (restaurants) {
         for (const r of restaurants) {
-          if (phonesMatch(customer.phone, r.phone)) {
+          // Check both phone and contact_phone fields
+          if (phonesMatch(customer.phone, r.contact_phone) || phonesMatch(customer.phone, r.phone)) {
             recordAttempt('phone_match', normalizedPhone, true, r.id, r.name, 80);
             return {
               matched: true,
