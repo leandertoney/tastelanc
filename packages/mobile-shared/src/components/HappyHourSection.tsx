@@ -30,7 +30,7 @@ const DEAL_PAIR_DURATION = 2000; // 2 seconds per deal pair
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface HappyHourWithRestaurant extends HappyHour {
-  restaurant: Pick<Restaurant, 'id' | 'name' | 'cover_image_url'> & {
+  restaurant: Pick<Restaurant, 'id' | 'name' | 'cover_image_url' | 'has_pick_badge'> & {
     tiers: Pick<Tier, 'name'> | null;
   };
   items?: HappyHourItem[];

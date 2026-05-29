@@ -88,6 +88,7 @@ export function getAnonKey(): string {
 const FEATURE_DEFAULTS: Record<keyof MarketFeatures, boolean> = {
   happyHours: true,
   dailySpecialsCarousel: false,
+  showRestaurantWeekBadge: true,
 };
 
 /** Check if a market feature is enabled. Uses defaults when not explicitly set. */

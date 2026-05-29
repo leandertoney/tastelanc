@@ -3,7 +3,7 @@ import { paidFairRotate, getTierName, eliteFirstStableSort } from './fairRotatio
 import type { Special, Restaurant, Tier } from '../types/database';
 
 export interface SpecialWithRestaurant extends Special {
-  restaurant: Pick<Restaurant, 'id' | 'name' | 'cover_image_url' | 'tier_id'> & {
+  restaurant: Pick<Restaurant, 'id' | 'name' | 'cover_image_url' | 'tier_id' | 'has_pick_badge'> & {
     tiers: Pick<Tier, 'name'> | null;
   };
 }
@@ -16,7 +16,7 @@ export async function getActiveDailySpecials(marketId: string | null = null): Pr
     .from('specials')
     .select(`
       *,
-      restaurant:restaurants!inner(id, name, cover_image_url, tier_id, market_id, tiers(name))
+      restaurant:restaurants!inner(id, name, cover_image_url, tier_id, market_id, has_pick_badge, tiers(name))
     `)
     .eq('is_active', true)
     .contains('days_of_week', [dayOfWeek]);
