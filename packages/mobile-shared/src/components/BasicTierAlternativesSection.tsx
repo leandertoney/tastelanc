@@ -37,7 +37,7 @@ function MiniAlternativeCard({
   const styles = useStyles();
   const colors = getColors();
   const brand = getBrand();
-  const isElite = restaurant.tierName === 'elite';
+  const isElite = restaurant.has_pick_badge === true;
   const firstCategory = restaurant.categories?.[0];
 
   return (

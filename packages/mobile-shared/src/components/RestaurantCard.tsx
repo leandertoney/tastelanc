@@ -6,7 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Restaurant } from '../types/database';
 import type { RootStackParamList } from '../navigation/types';
 import { formatCategoryName } from '../lib/formatters';
-import { getColors } from '../config/theme';
+import { getColors, getBrand } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius } from '../constants/spacing';
 import { storageImageSource } from '../utils/storageImage';
@@ -33,12 +33,14 @@ export default function RestaurantCard({
 }: RestaurantCardProps) {
   const styles = useStyles();
   const colors = getColors();
+  const brand = getBrand();
   const navigation = useNavigation<NavProp>();
   const displayCategories = restaurant.categories?.slice(0, 2) || [];
   const restaurantWeekIds = useRestaurantWeekIds();
   const isRestaurantWeek = restaurantWeekIds.has(restaurant.id);
   const coffeeTrailIds = useCoffeeChocolateTrailIds();
   const isCoffeeTrail = coffeeTrailIds.has(restaurant.id);
+  const hasPick = (restaurant as any).has_pick_badge === true;
   const [imageError, setImageError] = useState(false);
 
   return (
@@ -88,7 +90,14 @@ export default function RestaurantCard({
           ))}
         </View>
 
-        {isRestaurantWeek && (
+        {hasPick && (
+          <View style={styles.pickBadge}>
+            <Ionicons name="star" size={10} color="#FFF" />
+            <Text style={styles.pickBadgeText}>{brand.pickBadgeLabel}</Text>
+          </View>
+        )}
+
+        {brand.features?.showRestaurantWeekBadge && isRestaurantWeek && (
           <RestaurantWeekBadge size={60} onPress={() => navigation.navigate('RestaurantWeek')} />
         )}
         {isCoffeeTrail && !isRestaurantWeek && (
@@ -186,6 +195,29 @@ const useStyles = createLazyStyles((colors) => ({
     fontSize: 12,
     color: colors.textMuted,
     fontWeight: '500',
+  },
+  pickBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.xs,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+    shadowColor: '#FFD700',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  pickBadgeText: {
+    fontSize: 11,
+    color: '#000',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   infoRow: {
     flexDirection: 'row',

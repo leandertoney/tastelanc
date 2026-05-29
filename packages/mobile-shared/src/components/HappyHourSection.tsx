@@ -62,7 +62,7 @@ async function getActiveHappyHours(marketId: string | null = null): Promise<Happ
     .from('happy_hours')
     .select(`
       *,
-      restaurant:restaurants!inner(id, name, cover_image_url, tier_id, market_id, tiers(name)),
+      restaurant:restaurants!inner(id, name, cover_image_url, tier_id, market_id, has_pick_badge, tiers(name)),
       items:happy_hour_items(*)
     `)
     .eq('is_active', true)
@@ -185,7 +185,7 @@ export default function HappyHourSection() {
           restaurantId: s.restaurant.id,
           timeWindow: s.start_time && s.end_time ? formatTimeWindow(s.start_time, s.end_time) : 'All Day',
           imageUrl: s.image_url || s.restaurant.cover_image_url || undefined,
-          isElite: s.restaurant.tiers?.name === 'elite',
+          isElite: s.restaurant.has_pick_badge === true,
         }))
     : [];
 
@@ -201,30 +201,21 @@ export default function HappyHourSection() {
           restaurantId: hh.restaurant.id,
           timeWindow: formatTimeWindow(hh.start_time, hh.end_time),
           imageUrl: hh.image_url || hh.restaurant.cover_image_url || undefined,
-          isElite: hh.restaurant.tiers?.name === 'elite',
+          isElite: hh.restaurant.has_pick_badge === true,
         }));
 
-  // PREMIUM PLACEMENT: Marion Court and Stationhouse Tavern always included (if they have happy hours today)
-  const PREMIUM_RESTAURANT_IDS = [
-    '6304c5cf-bdf3-413c-9fff-592562a1ddde', // Marion Court Room
-    '9134761b-5eb3-4801-ba17-e5fa37de7c08', // Station House Tavern & Sports Bar
-  ];
+  // PREMIUM PLACEMENT: Restaurants with TasteLanc Pick badge always prioritized
+  // Separate Pick badge restaurants from others
+  const pickBadgeHappyHours = mappedHappyHours.filter(hh => hh.isElite);
+  const otherHappyHours = mappedHappyHours.filter(hh => !hh.isElite);
 
-  // Separate premium restaurants from others
-  const premiumHappyHours = mappedHappyHours.filter(hh =>
-    PREMIUM_RESTAURANT_IDS.includes(hh.restaurantId || '')
-  );
-  const otherHappyHours = mappedHappyHours.filter(hh =>
-    !PREMIUM_RESTAURANT_IDS.includes(hh.restaurantId || '')
-  );
-
-  // Elite first for non-premium restaurants
+  // Sort others by restaurant name for consistency
   const sortedOthers = [...otherHappyHours]
-    .sort((a, b) => (a.isElite === b.isElite ? 0 : a.isElite ? -1 : 1));
+    .sort((a, b) => a.restaurantName.localeCompare(b.restaurantName));
 
-  // Premium restaurants always first, then fill remaining slots with others (cap at 3 total)
+  // Pick badge restaurants always first, then fill remaining slots with others (cap at 3 total)
   const displayData: DisplayHappyHour[] = [
-    ...premiumHappyHours,
+    ...pickBadgeHappyHours,
     ...sortedOthers,
   ].slice(0, 3);
 

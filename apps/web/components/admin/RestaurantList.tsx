@@ -15,7 +15,9 @@ import {
   ChevronRight,
   LayoutDashboard,
   Filter,
+  Settings,
 } from 'lucide-react';
+import ManageRestaurantModal from './ManageRestaurantModal';
 
 interface Restaurant {
   id: string;
@@ -31,6 +33,8 @@ interface Restaurant {
   stripe_subscription_id?: string;
   created_at: string;
   categories?: string[];
+  tier_id?: string;
+  has_pick_badge?: boolean;
   tiers?: {
     name: string;
     display_name?: string;
@@ -63,6 +67,8 @@ export default function RestaurantList({ restaurants }: RestaurantListProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [tierFilter, setTierFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [manageRestaurant, setManageRestaurant] = useState<Restaurant | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Filter restaurants based on search + filters
   const filteredRestaurants = useMemo(() => {
@@ -302,6 +308,13 @@ export default function RestaurantList({ restaurants }: RestaurantListProps) {
                     Joined {new Date(restaurant.created_at).toLocaleDateString()}
                   </p>
                   <div className="flex gap-2 mt-2 justify-end">
+                    <button
+                      onClick={() => setManageRestaurant(restaurant)}
+                      className="text-xs text-tastelanc-text-muted hover:text-tastelanc-accent flex items-center gap-1"
+                    >
+                      <Settings className="w-3 h-3" />
+                      Manage
+                    </button>
                     <Link
                       href={`/admin/restaurants/${restaurant.id}`}
                       className="text-xs text-tastelanc-text-muted hover:text-tastelanc-text-primary"
@@ -351,6 +364,19 @@ export default function RestaurantList({ restaurants }: RestaurantListProps) {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Manage Restaurant Modal */}
+      {manageRestaurant && (
+        <ManageRestaurantModal
+          restaurant={manageRestaurant}
+          onClose={() => setManageRestaurant(null)}
+          onSuccess={() => {
+            setRefreshKey(prev => prev + 1);
+            // Force page refresh to get updated data
+            window.location.reload();
+          }}
+        />
       )}
     </div>
   );

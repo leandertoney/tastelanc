@@ -27,7 +27,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     const body = await request.json();
 
     // Whitelist allowed fields
-    const ALLOWED_FIELDS = ['is_active', 'is_verified', 'tier_id', 'admin_notes'];
+    const ALLOWED_FIELDS = ['is_active', 'is_verified', 'tier_id', 'admin_notes', 'has_pick_badge'];
     const updates: Record<string, any> = {};
     for (const key of ALLOWED_FIELDS) {
       if (key in body) {
@@ -81,7 +81,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       .from('restaurants')
       .update(updates)
       .eq('id', id)
-      .select('id, name, is_active, is_verified, tier_id, admin_notes, tiers(name, display_name)')
+      .select('id, name, is_active, is_verified, tier_id, admin_notes, has_pick_badge, tiers(name, display_name)')
       .single();
 
     if (error) {

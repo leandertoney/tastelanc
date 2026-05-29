@@ -12,6 +12,11 @@ export const BRAND: AppBrand = {
   pickBadgeLabel: 'TasteLanc Pick',
   verifiedLabel: 'TasteLanc verified',
 
+  // Feature flags
+  features: {
+    showRestaurantWeekBadge: false,
+  },
+
   // Profile
   userTitle: 'TasteLanc Explorer',
   userSubtitle: "Discovering Lancaster's best spots",

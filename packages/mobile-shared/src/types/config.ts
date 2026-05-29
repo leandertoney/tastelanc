@@ -58,6 +58,8 @@ export interface MarketFeatures {
   happyHours?: boolean;
   /** Show daily specials carousel on HomeScreen (replaces happy hours slot). Defaults to false. */
   dailySpecialsCarousel?: boolean;
+  /** Show Restaurant Week badge on restaurant cards. Defaults to true. */
+  showRestaurantWeekBadge?: boolean;
 }
 
 /** Which theme variant the user has chosen (or 'system' to follow OS). */

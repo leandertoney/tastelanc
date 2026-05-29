@@ -234,7 +234,7 @@ export default function FeaturedSection({ onRestaurantPress }: FeaturedSectionPr
       }
 
       const restaurant = item.data as Restaurant;
-      const isElite = (restaurant as any).tiers?.name === 'elite';
+      const isElite = (restaurant as any).has_pick_badge === true;
       return (
         <FeaturedCard
           restaurant={restaurant}

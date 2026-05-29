@@ -12,6 +12,11 @@ export const BRAND: AppBrand = {
   pickBadgeLabel: 'TasteFayetteville Pick',
   verifiedLabel: 'TasteFayetteville verified',
 
+  // Feature flags
+  features: {
+    showRestaurantWeekBadge: false,
+  },
+
   // Profile
   userTitle: 'TasteFayetteville Explorer',
   userSubtitle: "Discovering Fayetteville's best spots",

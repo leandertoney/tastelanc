@@ -102,12 +102,12 @@ export default function DailySpecialsSection() {
       restaurantId: s.restaurant.id,
       timeWindow: formatTimeWindow(s.start_time, s.end_time),
       imageUrl: s.image_url || s.restaurant.cover_image_url || undefined,
-      isElite: s.restaurant.tiers?.name === 'elite',
+      isElite: s.restaurant.has_pick_badge === true,
     }));
 
   const prioritized = [...mappedSpecials]
     .sort((a, b) => (a.isElite === b.isElite ? 0 : a.isElite ? -1 : 1))
-    .slice(0, 5);
+    .slice(0, 3);
 
   const displayData = prioritized;
 

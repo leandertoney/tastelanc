@@ -12,6 +12,11 @@ export const BRAND: AppBrand = {
   pickBadgeLabel: 'TasteOceanCity Pick',
   verifiedLabel: 'TasteOceanCity verified',
 
+  // Feature flags
+  features: {
+    showRestaurantWeekBadge: false,
+  },
+
   // Profile
   userTitle: 'TasteOceanCity Explorer',
   userSubtitle: "Discovering Ocean City's best spots",

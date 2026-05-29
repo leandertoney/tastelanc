@@ -12,6 +12,11 @@ export const BRAND: AppBrand = {
   pickBadgeLabel: 'TasteCumberland Pick',
   verifiedLabel: 'TasteCumberland verified',
 
+  // Feature flags
+  features: {
+    showRestaurantWeekBadge: false,
+  },
+
   // Profile
   userTitle: 'TasteCumberland Explorer',
   userSubtitle: "Discovering Cumberland County's best spots",

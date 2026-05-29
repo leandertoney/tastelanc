@@ -78,9 +78,9 @@ export default function CouponsSection() {
       restaurantId: c.restaurant.id,
       timeWindow: formatTimeWindow(c.start_time, c.end_time),
       imageUrl: c.image_url || c.restaurant.cover_image_url || undefined,
-      isElite: c.restaurant.tiers?.name === 'elite',
+      isElite: c.restaurant.has_pick_badge === true,
     }))
-    .slice(0, 5);
+    .slice(0, 3);
 
   const displayData = mappedCoupons;
 
