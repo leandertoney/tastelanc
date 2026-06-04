@@ -95,7 +95,7 @@ async function getActiveHappyHours(marketId: string | null = null): Promise<Happ
     (hh) => getTierName({ restaurant: hh.restaurant }),
   );
 
-  return tierSorted.slice(0, 15);
+  return tierSorted.slice(0, 3);
 }
 
 function formatDealTexts(happyHour: HappyHourWithRestaurant): string[] {
