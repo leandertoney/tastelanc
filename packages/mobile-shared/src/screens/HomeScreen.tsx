@@ -28,7 +28,6 @@ import {
   FeaturedSection,
   CompactRestaurantCard,
   HappyHourSection,
-  DailySpecialsSection,
   EventsSection,
   EntertainmentSection,
   PromoCard,
@@ -184,19 +183,10 @@ queryClient.invalidateQueries({ queryKey: hasFeature('happyHours') ? ['activeHap
 
       <Spacer size="lg" />
 
-      {/* Section 1: Happy Hours */}
+      {/* Section 1: Happy Hours or Daily Specials (market-dependent) */}
       <ErrorBoundary level="section">
         <HappyHourSection />
       </ErrorBoundary>
-
-      <Spacer size="md" />
-
-      {/* Section 1b: Daily Food Specials */}
-      {/* TEMPORARILY DISABLED - debugging crash
-      <ErrorBoundary level="section">
-        <DailySpecialsSection />
-      </ErrorBoundary>
-      */}
 
       <Spacer size="md" />
 
