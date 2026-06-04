@@ -192,9 +192,11 @@ queryClient.invalidateQueries({ queryKey: hasFeature('happyHours') ? ['activeHap
       <Spacer size="md" />
 
       {/* Section 1b: Daily Food Specials */}
+      {/* TEMPORARILY DISABLED - debugging crash
       <ErrorBoundary level="section">
         <DailySpecialsSection />
       </ErrorBoundary>
+      */}
 
       <Spacer size="md" />
 
