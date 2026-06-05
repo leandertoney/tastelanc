@@ -5,9 +5,17 @@
 
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { getSupabase, getColors, getBrand } from '../config/theme';
+
+// Lazy import Constants to avoid Expo Go initialization issues
+let Constants: any;
+try {
+  Constants = require('expo-constants').default;
+} catch (e) {
+  console.warn('[Notifications] expo-constants not available:', e);
+  Constants = { expoConfig: null };
+}
 
 // Map market slug to app_slug for push token storage
 const MARKET_TO_APP_SLUG: Record<string, string> = {
