@@ -8,13 +8,14 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { getSupabase, getColors, getBrand } from '../config/theme';
 
-// Lazy import Constants to avoid Expo Go initialization issues
-let Constants: any;
-try {
-  Constants = require('expo-constants').default;
-} catch (e) {
-  console.warn('[Notifications] expo-constants not available:', e);
-  Constants = { expoConfig: null };
+// Lazy getter for Constants to avoid Expo Go initialization issues
+function getConstants(): any {
+  try {
+    return require('expo-constants').default;
+  } catch (e) {
+    console.warn('[Notifications] expo-constants not available:', e);
+    return { expoConfig: null };
+  }
 }
 
 // Map market slug to app_slug for push token storage
@@ -74,6 +75,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
     }
 
     // Get the Expo push token
+    const Constants = getConstants();
     const projectId = Constants.expoConfig?.extra?.eas?.projectId;
     if (!projectId) {
       console.warn('[Notifications] No projectId in app config — cannot get push token');

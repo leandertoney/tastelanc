@@ -1,10 +1,11 @@
-// Lazy import Constants to avoid Expo Go initialization issues
-let Constants: any;
-try {
-  Constants = require('expo-constants').default;
-} catch (e) {
-  console.warn('[Market] expo-constants not available:', e);
-  Constants = { expoConfig: null };
+// Lazy getter for Constants to avoid Expo Go initialization issues
+function getConstants(): any {
+  try {
+    return require('expo-constants').default;
+  } catch (e) {
+    console.warn('[Market] expo-constants not available:', e);
+    return { expoConfig: null };
+  }
 }
 
 /**
@@ -21,6 +22,7 @@ try {
  * is running.
  */
 function resolveMarketSlug(): string {
+  const Constants = getConstants();
   const explicit = Constants.expoConfig?.extra?.marketSlug;
   if (explicit && typeof explicit === 'string') {
     return explicit;
@@ -31,7 +33,15 @@ function resolveMarketSlug(): string {
   return 'lancaster-pa';
 }
 
-export const MARKET_SLUG = resolveMarketSlug();
+// Safely resolve market slug, fallback to Lancaster if initialization fails
+let _marketSlug: string;
+try {
+  _marketSlug = resolveMarketSlug();
+} catch (e) {
+  console.warn('[Market] Failed to resolve market slug, defaulting to Lancaster:', e);
+  _marketSlug = 'lancaster-pa';
+}
+export const MARKET_SLUG = _marketSlug;
 
 const MARKET_APP_NAMES: Record<string, string> = {
   'lancaster-pa': 'TasteLanc',
