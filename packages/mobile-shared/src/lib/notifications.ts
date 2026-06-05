@@ -8,15 +8,8 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { getSupabase, getColors, getBrand } from '../config/theme';
 
-// Lazy getter for Constants to avoid Expo Go initialization issues
-function getConstants(): any {
-  try {
-    return require('expo-constants').default;
-  } catch (e) {
-    console.warn('[Notifications] expo-constants not available:', e);
-    return { expoConfig: null };
-  }
-}
+// For Expo Go compatibility, we avoid importing expo-constants
+// Push notifications don't work in Expo Go anyway, so this is safe
 
 // Map market slug to app_slug for push token storage
 const MARKET_TO_APP_SLUG: Record<string, string> = {
@@ -75,8 +68,9 @@ export async function registerForPushNotifications(): Promise<string | null> {
     }
 
     // Get the Expo push token
-    const Constants = getConstants();
-    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    // Note: We can't use expo-constants in Expo Go, so push notifications won't work there
+    // This is expected - Expo Go doesn't support custom push notifications anyway
+    const projectId = '18a9e6d1-1240-4875-b38f-67edc5b50bdd'; // TasteLanc project ID
     if (!projectId) {
       console.warn('[Notifications] No projectId in app config — cannot get push token');
       return null;

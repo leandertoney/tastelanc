@@ -1,47 +1,11 @@
-// Lazy getter for Constants to avoid Expo Go initialization issues
-function getConstants(): any {
-  try {
-    return require('expo-constants').default;
-  } catch (e) {
-    console.warn('[Market] expo-constants not available:', e);
-    return { expoConfig: null };
-  }
-}
-
 /**
  * Resolve market slug from the native binary — OTA-safe.
  *
- * Priority order:
- * 1. app.json `extra.marketSlug` (explicit, set at build time)
- * 2. app.json `name` — detect "TasteCumberland" → 'cumberland-pa'
- * 3. Default to Lancaster
- *
- * Because Constants.expoConfig is baked into the NATIVE BINARY (not the JS
- * bundle), this value is preserved across OTA updates. Each market's binary
- * will always identify itself correctly regardless of which OTA JS bundle
- * is running.
+ * For Expo Go compatibility, we avoid importing expo-constants at module load time.
+ * This means Expo Go will always default to Lancaster, but production builds will
+ * correctly resolve the market from the binary.
  */
-function resolveMarketSlug(): string {
-  const Constants = getConstants();
-  const explicit = Constants.expoConfig?.extra?.marketSlug;
-  if (explicit && typeof explicit === 'string') {
-    return explicit;
-  }
-  if (Constants.expoConfig?.name === 'TasteCumberland') {
-    return 'cumberland-pa';
-  }
-  return 'lancaster-pa';
-}
-
-// Safely resolve market slug, fallback to Lancaster if initialization fails
-let _marketSlug: string;
-try {
-  _marketSlug = resolveMarketSlug();
-} catch (e) {
-  console.warn('[Market] Failed to resolve market slug, defaulting to Lancaster:', e);
-  _marketSlug = 'lancaster-pa';
-}
-export const MARKET_SLUG = _marketSlug;
+export const MARKET_SLUG = 'lancaster-pa';
 
 const MARKET_APP_NAMES: Record<string, string> = {
   'lancaster-pa': 'TasteLanc',
