@@ -1,4 +1,11 @@
-import Constants from 'expo-constants';
+// Lazy import Constants to avoid Expo Go initialization issues
+let Constants: any;
+try {
+  Constants = require('expo-constants').default;
+} catch (e) {
+  console.warn('[Market] expo-constants not available:', e);
+  Constants = { expoConfig: null };
+}
 
 /**
  * Resolve market slug from the native binary — OTA-safe.
