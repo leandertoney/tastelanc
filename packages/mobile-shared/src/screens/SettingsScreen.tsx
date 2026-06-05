@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
-import * as Updates from 'expo-updates';
+// import * as Updates from 'expo-updates'; // Disabled for Expo Go compatibility
 import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -632,7 +632,7 @@ export default function SettingsScreen() {
         )}
 
         <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>{`${brand.appName} v${Updates.runtimeVersion || '?'}`}</Text>
+          <Text style={styles.versionText}>{`${brand.appName} v1.0.9`}</Text>
           <Text style={styles.versionSubtext}>{brand.tagline}</Text>
         </View>
       </ScrollView>
