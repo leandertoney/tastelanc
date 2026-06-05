@@ -5,7 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Updates from 'expo-updates';
+// import * as Updates from 'expo-updates'; // Disabled for Expo Go compatibility
 import { initTheme } from '@tastelanc/mobile-shared/src/config/theme';
 import { ThemeProvider } from '@tastelanc/mobile-shared/src/context/ThemeContext';
 import Navigation from './src/navigation';
@@ -61,24 +61,25 @@ function App() {
     });
   }, []);
 
-  useEffect(() => {
-    if (__DEV__) return;
-    (async () => {
-      try {
-        console.log('[Updates] Checking for update...');
-        const { isAvailable } = await Updates.checkForUpdateAsync();
-        console.log('[Updates] Check result:', isAvailable ? 'Update available' : 'Up to date');
-        if (isAvailable) {
-          console.log('[Updates] Downloading update...');
-          await Updates.fetchUpdateAsync();
-          console.log('[Updates] Update downloaded, reloading...');
-          await Updates.reloadAsync();
-        }
-      } catch (e) {
-        console.error('[Updates] Failed to check/download update:', e);
-      }
-    })();
-  }, []);
+  // OTA update check disabled for Expo Go compatibility
+  // useEffect(() => {
+  //   if (__DEV__) return;
+  //   (async () => {
+  //     try {
+  //       console.log('[Updates] Checking for update...');
+  //       const { isAvailable} = await Updates.checkForUpdateAsync();
+  //       console.log('[Updates] Check result:', isAvailable ? 'Update available' : 'Up to date');
+  //       if (isAvailable) {
+  //         console.log('[Updates] Downloading update...');
+  //         await Updates.fetchUpdateAsync();
+  //         console.log('[Updates] Update downloaded, reloading...');
+  //         await Updates.reloadAsync();
+  //       }
+  //     } catch (e) {
+  //       console.error('[Updates] Failed to check/download update:', e);
+  //     }
+  //   })();
+  // }, []);
 
   return (
     <ThemeProvider colorSchemes={colorSchemes}>
@@ -105,14 +106,9 @@ function RootErrorFallback() {
 
   const handleRestart = async () => {
     setRestarting(true);
-    try {
-      if (!__DEV__) {
-        await Updates.reloadAsync();
-      }
-    } catch {
-      // If reload fails, user can still tap the button again
-      setRestarting(false);
-    }
+    // Updates.reloadAsync() disabled for Expo Go compatibility
+    // Just show restarting state for now
+    setTimeout(() => setRestarting(false), 2000);
   };
 
   // Auto-attempt restart after 5 seconds
