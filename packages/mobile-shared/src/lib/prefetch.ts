@@ -39,7 +39,7 @@ async function getActiveHappyHours(marketId: string | null): Promise<HappyHourWi
     .from('happy_hours')
     .select(`
       *,
-      restaurant:restaurants!inner(id, name, cover_image_url, tier_id, market_id),
+      restaurant:restaurants!inner(id, name, cover_image_url, tier_id, market_id, has_pick_badge, tiers(name)),
       items:happy_hour_items(*)
     `)
     .eq('is_active', true)

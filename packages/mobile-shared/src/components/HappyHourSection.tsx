@@ -190,7 +190,7 @@ export default function HappyHourSection() {
     : [];
 
   // Map real happy hours to display format (filter out entries with missing restaurant data)
-  const mappedHappyHours: DisplayHappyHour[] = useSpecials
+  const allMappedHappyHours: DisplayHappyHour[] = useSpecials
     ? mappedSpecials
     : happyHours
         .filter((hh) => hh.restaurant?.name)
@@ -201,22 +201,35 @@ export default function HappyHourSection() {
           restaurantId: hh.restaurant.id,
           timeWindow: formatTimeWindow(hh.start_time, hh.end_time),
           imageUrl: hh.image_url || hh.restaurant.cover_image_url || undefined,
-          isElite: hh.restaurant.has_pick_badge === true,
+          isElite: hh.restaurant.has_pick_badge === true || hh.restaurant.tiers?.name === 'elite',
         }));
 
-  // PREMIUM PLACEMENT: Restaurants with TasteLanc Pick badge always prioritized
-  // Separate Pick badge restaurants from others
+  // DEDUPLICATE: Keep only one happy hour per restaurant (first occurrence)
+  const seenRestaurants = new Set<string>();
+  const mappedHappyHours = allMappedHappyHours.filter(hh => {
+    if (seenRestaurants.has(hh.restaurantId)) {
+      return false;
+    }
+    seenRestaurants.add(hh.restaurantId);
+    return true;
+  });
+
+  // PREMIUM PLACEMENT: Restaurants with Elite tier or TasteLanc Pick badge always prioritized
+  // Separate premium restaurants from others
   const pickBadgeHappyHours = mappedHappyHours.filter(hh => hh.isElite);
   const otherHappyHours = mappedHappyHours.filter(hh => !hh.isElite);
 
-  // Sort others by restaurant name for consistency
-  const sortedOthers = [...otherHappyHours]
-    .sort((a, b) => a.restaurantName.localeCompare(b.restaurantName));
+  // Randomize others (Fisher-Yates shuffle)
+  const shuffledOthers = [...otherHappyHours];
+  for (let i = shuffledOthers.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffledOthers[i], shuffledOthers[j]] = [shuffledOthers[j], shuffledOthers[i]];
+  }
 
-  // Pick badge restaurants always first, then fill remaining slots with others (cap at 3 total)
+  // Pick badge restaurants always first, then fill remaining slots with randomized others (cap at 3 total)
   const displayData: DisplayHappyHour[] = [
     ...pickBadgeHappyHours,
-    ...sortedOthers,
+    ...shuffledOthers,
   ].slice(0, 3);
 
   // Ensure currentIndex is valid when displayData changes

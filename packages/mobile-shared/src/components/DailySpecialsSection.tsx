@@ -33,10 +33,6 @@ interface DisplaySpecial {
   isElite?: boolean;
 }
 
-function getDayOfWeek(): string {
-  return new Date().toLocaleDateString('en-US', { weekday: 'long' });
-}
-
 function formatSpecialDeal(special: SpecialWithRestaurant): string {
   if (special.original_price && special.special_price) {
     const savings = Math.round((1 - Number(special.special_price) / Number(special.original_price)) * 100);
@@ -66,7 +62,6 @@ function formatTimeWindow(startTime: string | null, endTime: string | null): str
 export default function DailySpecialsSection() {
   const navigation = useNavigation<NavigationProp>();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [dayOfWeek] = useState(getDayOfWeek());
   const [contactModalVisible, setContactModalVisible] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const bannerTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -93,7 +88,7 @@ export default function DailySpecialsSection() {
     setContactModalVisible(true);
   };
 
-  const mappedSpecials: DisplaySpecial[] = specials
+  const allMappedSpecials: DisplaySpecial[] = specials
     .filter((s) => s.restaurant?.name)
     .map((s) => ({
       id: s.id,
@@ -102,14 +97,35 @@ export default function DailySpecialsSection() {
       restaurantId: s.restaurant.id,
       timeWindow: formatTimeWindow(s.start_time, s.end_time),
       imageUrl: s.image_url || s.restaurant.cover_image_url || undefined,
-      isElite: s.restaurant.has_pick_badge === true,
+      isElite: s.restaurant.has_pick_badge === true || s.restaurant.tiers?.name === 'elite',
     }));
 
-  const prioritized = [...mappedSpecials]
-    .sort((a, b) => (a.isElite === b.isElite ? 0 : a.isElite ? -1 : 1))
-    .slice(0, 3);
+  // DEDUPLICATE: Keep only one special per restaurant (first occurrence)
+  const seenRestaurants = new Set<string>();
+  const mappedSpecials = allMappedSpecials.filter(s => {
+    if (seenRestaurants.has(s.restaurantId)) {
+      return false;
+    }
+    seenRestaurants.add(s.restaurantId);
+    return true;
+  });
 
-  const displayData = prioritized;
+  // PREMIUM PLACEMENT: Restaurants with Elite tier or TasteLanc Pick badge always prioritized
+  const pickBadgeSpecials = mappedSpecials.filter(s => s.isElite);
+  const otherSpecials = mappedSpecials.filter(s => !s.isElite);
+
+  // Randomize others (Fisher-Yates shuffle)
+  const shuffledOthers = [...otherSpecials];
+  for (let i = shuffledOthers.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffledOthers[i], shuffledOthers[j]] = [shuffledOthers[j], shuffledOthers[i]];
+  }
+
+  // Pick badge restaurants always first, then fill remaining slots with randomized others (cap at 3 total)
+  const displayData: DisplaySpecial[] = [
+    ...pickBadgeSpecials,
+    ...shuffledOthers,
+  ].slice(0, 3);
 
   const safeIndex = displayData.length > 0 ? currentIndex % displayData.length : 0;
   const currentBanner = displayData[safeIndex];
@@ -163,12 +179,7 @@ export default function DailySpecialsSection() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>Daily Specials</Text>
-          <View style={styles.dayBadge}>
-            <Text style={styles.dayText}>{dayOfWeek}</Text>
-          </View>
-        </View>
+        <Text style={styles.title}>Daily Specials</Text>
         <Text style={styles.subtitle}>
           {socialProof?.checkinsToday && socialProof.checkinsToday >= 3
             ? `${socialProof.checkinsToday} people checking deals today`
@@ -234,11 +245,6 @@ const useStyles = createLazyStyles((colors) => ({
   header: {
     paddingHorizontal: spacing.md,
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   title: {
     fontSize: 20,
     fontWeight: '700',
@@ -279,19 +285,6 @@ const useStyles = createLazyStyles((colors) => ({
   ctaText: {
     fontSize: 13,
     color: colors.textMuted,
-  },
-  dayBadge: {
-    backgroundColor: colors.accent,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: radius.full,
-  },
-  dayText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textOnAccent,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   bannerContainer: {
     paddingHorizontal: spacing.md,
