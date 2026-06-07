@@ -126,6 +126,98 @@ When discussing deployment or making deployment-related changes:
 - Mobile changes must target the CORRECT app directory — always confirm which app before deploying
 - Never assume or mention Vercel - it has never been used for this project
 
+### Mobile OTA Deployment Best Practices
+
+**CRITICAL: Production builds ONLY receive updates from the `production` branch.**
+
+#### The Branch/Channel Mismatch Problem
+
+Each app is configured to fetch updates from a specific channel (defined in `app.json`):
+```json
+"updates": {
+  "url": "https://u.expo.dev/[project-id]",
+  "requestHeaders": {
+    "expo-channel-name": "production"
+  }
+}
+```
+
+**Common mistake:** Running `eas update --auto` without `--branch` flag deploys to `main` branch. Apps configured for `production` channel will NEVER receive these updates.
+
+#### Correct Deployment Workflow
+
+**Always use the deployment script:**
+```bash
+# From project root
+./scripts/deploy-ota.sh
+```
+
+This script:
+- Deploys to ALL 3 apps (TasteLanc, TasteCumberland, TasteFayetteville)
+- Uses correct `--branch production` flag for all deployments
+- Runs Android and iOS in parallel for each app
+- Provides clear confirmation prompts
+
+**Manual deployment (if needed):**
+```bash
+# Example for TasteLanc
+cd apps/mobile
+eas update --auto --branch production --platform android
+eas update --auto --branch production --platform ios
+```
+
+#### Verification Checklist
+
+After deploying OTA updates:
+1. **Wait 2 minutes** for CDN propagation
+2. **Force close** the app (swipe up from multitasking, don't just background it)
+3. **Reopen** the app
+4. Updates should load within 5-10 seconds (check dev console or app behavior)
+
+**TestFlight builds:** Updates work immediately (no App Store review needed)
+**App Store builds:** Updates work immediately (no App Store review needed)
+
+#### Common Mistakes to Avoid
+
+1. **Deploying to wrong branch** — Apps won't receive updates
+   - ❌ `eas update --auto` (defaults to `main`)
+   - ✅ `eas update --auto --branch production`
+
+2. **Deploying to only one platform** — Users on other platform won't get updates
+   - ❌ Only deploying Android OR iOS
+   - ✅ Deploy both platforms
+
+3. **Deploying to wrong app** — OTA updates tied to specific EAS project
+   - ❌ Running `eas update` in `apps/mobile/` when working on TasteCumberland
+   - ✅ Always verify you're in the correct app directory
+
+4. **Not waiting for users to fully restart app** — Background refresh doesn't trigger updates
+   - ❌ Just backgrounding the app
+   - ✅ Force close + reopen
+
+#### Debugging "Update Not Appearing"
+
+If TestFlight/production users report updates aren't appearing:
+
+1. **Check the branch deployed to:**
+   ```bash
+   eas update:list --branch production
+   eas update:list --branch main
+   ```
+
+2. **Verify app.json channel configuration:**
+   ```bash
+   grep -A 3 '"updates"' apps/mobile/app.json
+   ```
+
+3. **Check runtime version match:**
+   - OTA updates only work when update's runtime matches app's runtime
+   - If runtime changed, users need a new build (TestFlight or App Store)
+
+4. **Verify update ID in Expo dev tools:**
+   - Shake device → "Expo Dev Menu" → shows current update ID
+   - Compare to expected update ID from `eas update:list`
+
 ## Common Scripts
 
 ### Restaurant Categorization
