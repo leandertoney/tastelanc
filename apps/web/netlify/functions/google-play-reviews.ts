@@ -131,7 +131,7 @@ export default async function handler(_req: Request, _context: Context) {
 
   const androidpublisher = await buildAndroidPublisher();
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const alertEmail = process.env.REVIEW_ALERT_EMAIL || 'leandertoney@gmail.com';
+  const alertEmail = process.env.REVIEW_ALERT_EMAIL || 'jmtoney1987@gmail.com';
 
   let totalAutoReplied = 0;
   let totalEmailed = 0;

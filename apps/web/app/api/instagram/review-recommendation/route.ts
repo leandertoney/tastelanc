@@ -65,7 +65,7 @@ export async function POST(request: Request) {
   const statusLabel = result.approved ? '✅ AI Approved — needs your sign-off' : '❌ AI Rejected — review if needed';
 
   await sendEmail({
-    to: 'leandertoney@gmail.com',
+    to: 'jmtoney1987@gmail.com',
     subject: `New rec needs review: ${restaurantName} by ${posterName}`,
     html: `
       <div style="font-family:sans-serif;max-width:560px;margin:0 auto;background:#111;color:#eee;border-radius:12px;overflow:hidden;">

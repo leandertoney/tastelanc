@@ -34,7 +34,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_DOMAIN = 'tastelanc.com';
 const REPLY_TO = 'info@tastelanc.com';
-const SUMMARY_RECIPIENTS = ['leandertoney@gmail.com', 'jmtoney1987@gmail.com'];
+const SUMMARY_RECIPIENTS = ['jmtoney1987@gmail.com'];
 
 // Leander's auth user ID — used as sent_by / user_id in CRM records
 const LEANDER_USER_ID = 'd1b931ce-66ca-40c1-8144-cabf146e006b';

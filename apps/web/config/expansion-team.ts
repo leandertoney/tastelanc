@@ -10,12 +10,6 @@ export interface TeamMember {
 
 export const EXPANSION_TEAM: TeamMember[] = [
   {
-    name: 'Leander',
-    email: 'leandertoney@gmail.com',
-    senderIdentity: 'lt@tastelanc.com',
-    role: 'Founder',
-  },
-  {
     name: 'Jordan',
     email: 'jmtoney1987@gmail.com',
     senderIdentity: 'jordan@tastelanc.com',
