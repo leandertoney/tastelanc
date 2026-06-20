@@ -1,7 +1,8 @@
 /**
  * WishlistScreen — Bucket list of restaurants the user wants to visit
  */
-import { View, Text, FlatList, Image, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';

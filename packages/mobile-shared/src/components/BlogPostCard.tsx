@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import type { BlogPost } from '../types/database';
 import { getColors } from '../config/theme';

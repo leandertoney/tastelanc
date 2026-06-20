@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, Dimensions, Share, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Dimensions, Share, Platform } from 'react-native';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';

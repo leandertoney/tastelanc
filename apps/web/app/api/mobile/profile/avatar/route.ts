@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     // 4. Upload to Supabase Storage
     const { error: uploadError } = await serviceClient.storage
       .from(BUCKET)
-      .upload(storagePath, buffer, { contentType: resolvedMime, upsert: false });
+      .upload(storagePath, buffer, { contentType: resolvedMime, upsert: false, cacheControl: '2592000, public' });
 
     if (uploadError) {
       console.error('Avatar storage upload error:', uploadError);

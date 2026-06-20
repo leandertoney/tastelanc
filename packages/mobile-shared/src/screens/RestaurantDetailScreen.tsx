@@ -4,7 +4,6 @@ import {
   View,
   Text,
   ScrollView,
-  Image,
   FlatList,
   ActivityIndicator,
   Dimensions,
@@ -15,6 +14,7 @@ import {
   Platform,
   Share,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';

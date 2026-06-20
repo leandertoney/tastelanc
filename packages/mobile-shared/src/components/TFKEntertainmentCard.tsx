@@ -5,7 +5,8 @@
  */
 
 import { useRef, useEffect } from 'react';
-import { TouchableOpacity, Image, Animated } from 'react-native';
+import { TouchableOpacity, Animated } from 'react-native';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
