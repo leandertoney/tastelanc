@@ -10,7 +10,11 @@ async function resolveMarketId(supabase: SupabaseClient): Promise<string> {
   const { data, error } = await supabase
     .from('markets').select('id')
     .eq('slug', MARKET_SLUG).eq('is_active', true).single();
-  if (error || !data) throw new Error(`[resolveMarketId] Market "${MARKET_SLUG}" not found`);
+  if (error || !data) {
+    // Don't cache failures - log detailed error for debugging
+    const errorDetails = error ? `${error.message} (${error.code || 'no code'})` : 'no data returned';
+    throw new Error(`[resolveMarketId] Market "${MARKET_SLUG}" not found or inactive: ${errorDetails}`);
+  }
   _cachedMarketId = data.id;
   return data.id;
 }

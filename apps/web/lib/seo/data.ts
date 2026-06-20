@@ -9,13 +9,17 @@ import type {
   BlogPost,
 } from './types';
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const service = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const supabase = () =>
-  createClient(url, service, {
+const supabase = () => {
+  if (!url || !service) {
+    throw new Error('[Supabase] Missing environment variables: NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+  }
+  return createClient(url, service, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+};
 
 // ── Market Resolution (cached per process) ──────────────
 let _cachedMarketId: string | null = null;
@@ -29,7 +33,9 @@ async function resolveMarketId(): Promise<string> {
     .eq('is_active', true)
     .single();
   if (error || !data) {
-    throw new Error(`[resolveMarketId] Market "${MARKET_SLUG}" not found or inactive`);
+    // Don't cache failures - log detailed error for debugging
+    const errorDetails = error ? `${error.message} (${error.code || 'no code'})` : 'no data returned';
+    throw new Error(`[resolveMarketId] Market "${MARKET_SLUG}" not found or inactive: ${errorDetails}`);
   }
   _cachedMarketId = data.id;
   return data.id;

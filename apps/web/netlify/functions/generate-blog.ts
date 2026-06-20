@@ -113,7 +113,11 @@ async function resolveMarketId(): Promise<string> {
   const slug = process.env.NEXT_PUBLIC_MARKET_SLUG || 'lancaster-pa';
   const { data, error } = await supabase
     .from('markets').select('id').eq('slug', slug).eq('is_active', true).single();
-  if (error || !data) throw new Error(`Market "${slug}" not found or inactive`);
+  if (error || !data) {
+    // Log detailed error for debugging
+    const errorDetails = error ? `${error.message} (${error.code || 'no code'})` : 'no data returned';
+    throw new Error(`Market "${slug}" not found or inactive: ${errorDetails}`);
+  }
   return data.id;
 }
 
