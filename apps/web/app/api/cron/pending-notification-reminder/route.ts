@@ -21,7 +21,7 @@ import { resend } from '@/lib/resend';
 const CRON_SECRET = process.env.CRON_SECRET;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const ADMIN_EMAIL = 'support@universoleappstudios.com';
+const ADMIN_EMAIL = 'info@tastelanc.com'; // Business owner for content/notification approvals
 const DASHBOARD_URL = 'https://tastelanc.com/admin/notifications';
 const INSTAGRAM_URL = 'https://tastelanc.com/admin/instagram-posts';
 
