@@ -1,16 +1,16 @@
 /**
  * Voice Agent Notification System
  *
- * Sends email notifications to Leander and Jordan (founders only)
+ * Sends email notifications to the business owner
  * when the voice agent books a meeting or flags a hot lead.
- * Sales reps are NOT notified — founders handle all AI-generated leads.
+ * Sales reps are NOT notified — the owner handles all AI-generated leads.
  */
 
 import { sendEmail } from '@/lib/resend';
 
-// Founders only — no sales reps
+// Business owner only — no sales reps
 const NOTIFICATION_RECIPIENTS = [
-  'leandertoney@gmail.com',
+  'info@tastelanc.com',
 ];
 
 interface MeetingBookedNotification {

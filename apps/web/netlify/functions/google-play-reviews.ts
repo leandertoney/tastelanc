@@ -9,7 +9,7 @@ import { sendEmail } from '../../lib/resend';
  *
  * Runs daily at 8 AM ET. For each of the 3 apps:
  *  - 4–5 star reviews with no reply → Claude generates a warm reply, posts it automatically
- *  - 1–3 star reviews with no reply → Claude drafts a reply, emails leandertoney@gmail.com
+ *  - 1–3 star reviews with no reply → Claude drafts a reply, emails REVIEW_ALERT_EMAIL (info@tastelanc.com)
  *    with a one-click approve link (valid 72 h)
  */
 

@@ -36,7 +36,7 @@ import { EXPANSION_TEAM } from '@/config/expansion-team';
 const CRON_SECRET = process.env.CRON_SECRET;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const ADMIN_EMAIL = 'support@universoleappstudios.com';
+const ADMIN_EMAIL = 'info@tastelanc.com';
 
 // Batch sizes — keep small to stay within function timeout
 const MAX_SUGGEST = 10; // cities to suggest per run
