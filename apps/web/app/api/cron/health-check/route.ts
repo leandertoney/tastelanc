@@ -271,8 +271,9 @@ async function checkSupabaseUsage(supabase: any): Promise<CheckResult> {
       },
     });
 
-    // Cleanup old snapshots periodically
-    await supabase.rpc('cleanup_old_usage_snapshots').catch(() => {});
+    // Cleanup old snapshots periodically (builder is a thenable without .catch —
+    // calling .catch() on it threw and demoted this whole check to a silent warning)
+    try { await supabase.rpc('cleanup_old_usage_snapshots'); } catch (_) {}
 
     // Determine status
     const maxPct = Math.max(dbPct, storagePct);
