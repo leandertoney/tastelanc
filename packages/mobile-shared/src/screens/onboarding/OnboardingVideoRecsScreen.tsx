@@ -28,7 +28,9 @@ const VIDEO = {
   user: '@local_foodie',
   caption: "Best German soda I\u2019ve ever had!",
   tag: 'Amazing Service',
-  video: 'https://kufcxxynjvyharhtfptd.supabase.co/storage/v1/object/public/recommendation-videos/d1b931ce-66ca-40c1-8144-cabf146e006b/7eb1ab76be3a.mp4',
+  // Bundled locally: streaming this demo from Supabase Storage on a loop
+  // burned ~2 GB/day of egress. 540p, audio stripped (it plays muted).
+  video: require('../../../assets/videos/onboarding-demo.mp4'),
   likes: 12,
   comments: 3,
 };

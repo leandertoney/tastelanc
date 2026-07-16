@@ -95,7 +95,11 @@ export default function VideoRecommendationCard({
 
   // Parse video_url — handles both plain URL and JSON array (multi-segment)
   const videoUrls = parseVideoUrls(recommendation.video_url);
-  const player = useVideoPlayer(videoUrls[0], (p) => {
+  // Player starts with no source: buffering on mount downloaded the full MP4
+  // from Supabase Storage on every Home/feed render, even when the video was
+  // never played. The source loads on first fullscreen open instead.
+  const hasLoadedSourceRef = useRef(false);
+  const player = useVideoPlayer(null, (p) => {
     p.loop = true;
     p.muted = false;
   });
@@ -110,13 +114,17 @@ export default function VideoRecommendationCard({
   const handleOpenFullscreen = useCallback(() => {
     setIsFullscreen(true);
     try {
+      if (!hasLoadedSourceRef.current && videoUrls[0]) {
+        player.replace(videoUrls[0]);
+        hasLoadedSourceRef.current = true;
+      }
       player.play();
       if (!hasCountedView && onViewCounted) {
         setHasCountedView(true);
         onViewCounted(recommendation.id);
       }
     } catch (_) {}
-  }, [hasCountedView, onViewCounted, recommendation.id, player]);
+  }, [hasCountedView, onViewCounted, recommendation.id, player, videoUrls]);
 
   const handleCloseFullscreen = useCallback(() => {
     try { player.pause(); } catch (_) {}
