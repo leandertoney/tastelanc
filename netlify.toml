@@ -24,7 +24,7 @@
   timeout = 60
 
 [build.environment]
-  NODE_VERSION = "20"
+  NODE_VERSION = "22"
   NEXT_TELEMETRY_DISABLED = "1"
   # Increase heap for Next.js build — inline NODE_OPTIONS doesn't propagate to child processes
   NODE_OPTIONS = "--max-old-space-size=4096"
