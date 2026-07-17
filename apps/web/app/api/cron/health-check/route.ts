@@ -18,7 +18,10 @@ import { renderHealthAlertEmail, renderHealthAlertPlainText } from '@/lib/email-
 const CRON_SECRET = process.env.CRON_SECRET;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const ALERT_EMAIL = process.env.HEALTH_ALERT_EMAIL || 'info@tastelanc.com';
+// Backend/infra health alerts (Supabase down, quota, cron failures) go to the
+// developer, not the business owner — the client can't action a code/infra fault.
+// Content-approval reminders (see pending-notification-reminder) go to info@ instead.
+const ALERT_EMAIL = process.env.HEALTH_ALERT_EMAIL || 'support@universoleappstudios.com';
 const DASHBOARD_URL = process.env.NEXT_PUBLIC_APP_URL
   ? `${process.env.NEXT_PUBLIC_APP_URL}/admin/system-health`
   : 'https://tastelanc.com/admin/system-health';
