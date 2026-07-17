@@ -228,12 +228,15 @@ async function checkCronExpansionAgent(supabase: any): Promise<CheckResult> {
 
 // ─── Supabase Usage Monitor ─────────────────────────────────────────
 
-// Free plan limits
+// Pro plan limits (org upgraded to Pro 2026-07-16). These are the included
+// quotas before overage billing — used only to compute a usage % for alerting,
+// not a hard cap. If the plan changes again, update these or the monitor will
+// mis-report (it fired a false "160% CRITICAL" against the old 1 GB free limit).
 const FREE_PLAN_LIMITS = {
-  db_size_bytes: 500 * 1024 * 1024,        // 500 MB
-  storage_size_bytes: 1 * 1024 * 1024 * 1024, // 1 GB
-  mau: 50_000,
-  edge_function_invocations: 500_000,
+  db_size_bytes: 8 * 1024 * 1024 * 1024,       // 8 GB (Pro)
+  storage_size_bytes: 100 * 1024 * 1024 * 1024, // 100 GB (Pro)
+  mau: 100_000,
+  edge_function_invocations: 2_000_000,
 };
 
 // Thresholds (percentage of limit)
