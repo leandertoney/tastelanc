@@ -9,6 +9,8 @@ import {
   Loader2,
   Save,
   StickyNote,
+  Star,
+  Utensils,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -24,6 +26,8 @@ interface AdminRestaurantActionsProps {
   initialIsVerified: boolean;
   initialTierId: string;
   initialAdminNotes: string | null;
+  initialHasPickBadge: boolean;
+  initialIsLrw: boolean;
   tiers: Tier[];
 }
 
@@ -33,12 +37,16 @@ export default function AdminRestaurantActions({
   initialIsVerified,
   initialTierId,
   initialAdminNotes,
+  initialHasPickBadge,
+  initialIsLrw,
   tiers,
 }: AdminRestaurantActionsProps) {
   const [isActive, setIsActive] = useState(initialIsActive);
   const [isVerified, setIsVerified] = useState(initialIsVerified);
   const [tierId, setTierId] = useState(initialTierId);
   const [adminNotes, setAdminNotes] = useState(initialAdminNotes || '');
+  const [hasPickBadge, setHasPickBadge] = useState(initialHasPickBadge);
+  const [isLrw, setIsLrw] = useState(initialIsLrw);
   const [saving, setSaving] = useState<string | null>(null);
 
   const updateField = async (field: string, value: any) => {
@@ -81,6 +89,18 @@ export default function AdminRestaurantActions({
   const handleTierChange = async (newTierId: string) => {
     const success = await updateField('tier_id', newTierId);
     if (success) setTierId(newTierId);
+  };
+
+  const handleTogglePickBadge = async () => {
+    const newValue = !hasPickBadge;
+    const success = await updateField('has_pick_badge', newValue);
+    if (success) setHasPickBadge(newValue);
+  };
+
+  const handleToggleLrw = async () => {
+    const newValue = !isLrw;
+    const success = await updateField('is_lrw', newValue);
+    if (success) setIsLrw(newValue);
   };
 
   const handleSaveNotes = async () => {
@@ -172,6 +192,53 @@ export default function AdminRestaurantActions({
             {currentTier?.display_name || currentTier?.name || 'Basic'}
           </p>
         </div>
+      </div>
+
+      {/* Badges */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* TasteLanc Pick Badge Toggle */}
+        <button
+          onClick={handleTogglePickBadge}
+          disabled={saving === 'has_pick_badge'}
+          className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-4 text-left hover:border-tastelanc-accent/50 transition-colors disabled:opacity-50"
+        >
+          <p className="text-sm text-tastelanc-text-muted mb-1">TasteLanc Pick</p>
+          <div className="flex items-center gap-2">
+            {saving === 'has_pick_badge' ? (
+              <Loader2 className="w-5 h-5 text-tastelanc-text-muted animate-spin" />
+            ) : (
+              <Star
+                className={`w-5 h-5 ${hasPickBadge ? 'text-lancaster-gold fill-lancaster-gold' : 'text-tastelanc-text-muted'}`}
+              />
+            )}
+            <span className="text-tastelanc-text-primary font-medium">
+              {hasPickBadge ? 'Pick Badge On' : 'Off'}
+            </span>
+          </div>
+          <p className="text-xs text-tastelanc-text-faint mt-1">Click to toggle</p>
+        </button>
+
+        {/* Restaurant Week (LRW) Badge Toggle */}
+        <button
+          onClick={handleToggleLrw}
+          disabled={saving === 'is_lrw'}
+          className="bg-tastelanc-surface border border-tastelanc-surface-light rounded-lg p-4 text-left hover:border-tastelanc-accent/50 transition-colors disabled:opacity-50"
+        >
+          <p className="text-sm text-tastelanc-text-muted mb-1">Restaurant Week</p>
+          <div className="flex items-center gap-2">
+            {saving === 'is_lrw' ? (
+              <Loader2 className="w-5 h-5 text-tastelanc-text-muted animate-spin" />
+            ) : (
+              <Utensils
+                className={`w-5 h-5 ${isLrw ? 'text-lancaster-gold' : 'text-tastelanc-text-muted'}`}
+              />
+            )}
+            <span className="text-tastelanc-text-primary font-medium">
+              {isLrw ? 'RW Badge On' : 'Off'}
+            </span>
+          </div>
+          <p className="text-xs text-tastelanc-text-faint mt-1">Click to toggle</p>
+        </button>
       </div>
 
       {/* Admin Notes */}

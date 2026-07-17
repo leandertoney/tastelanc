@@ -153,6 +153,8 @@ export default async function AdminRestaurantDetailPage({ params }: PageProps) {
         initialIsVerified={restaurant.is_verified}
         initialTierId={restaurant.tier_id}
         initialAdminNotes={restaurant.admin_notes || null}
+        initialHasPickBadge={restaurant.has_pick_badge ?? false}
+        initialIsLrw={restaurant.is_lrw ?? false}
         tiers={(tiers || []).map((t: any) => ({
           id: t.id,
           name: t.name,

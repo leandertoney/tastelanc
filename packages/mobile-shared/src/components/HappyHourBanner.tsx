@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { View, Text, TouchableOpacity, ImageBackground, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getColors, getBrand } from '../config/theme';
@@ -32,14 +33,23 @@ export default function HappyHourBanner({
   const brand = getBrand();
   const styles = useStyles();
 
-  // On image banners, text sits on a dark overlay — always use white for legibility
-  const hasImage = !!imageUrl;
+  // If the remote image fails to load, fall back to the solid banner. On Android,
+  // RN's ImageBackground paints a failed/empty remote image as an opaque black
+  // rectangle (iOS renders it transparent), which produced the "blacked-out card".
+  const [imageFailed, setImageFailed] = useState(false);
+
+  // On image banners, text sits on a dark overlay — always use white for legibility.
+  // Treat empty/whitespace URLs as no image so borderline rows take the safe solid path.
+  const hasImage = !!imageUrl && imageUrl.trim().length > 0 && !imageFailed;
   const dealColor = hasImage ? '#FFFFFF' : colors.text;
   const nameColor = hasImage ? 'rgba(255,255,255,0.8)' : colors.textMuted;
 
+  // Home banner is a fixed-height teaser: allow the primary deal up to 2 lines so
+  // short deals show in full; longer text ellipsizes and the full detail is one tap
+  // away on the restaurant's Happy Hours tab.
   const DealText = dealOpacity ? (
     <Animated.View style={{ opacity: dealOpacity }}>
-      <Text style={[styles.deal, fullWidth && styles.dealLarge, { color: dealColor }]} numberOfLines={1}>
+      <Text style={[styles.deal, fullWidth && styles.dealLarge, { color: dealColor }]} numberOfLines={2}>
         {deal}
       </Text>
       {deal2 && (
@@ -50,7 +60,7 @@ export default function HappyHourBanner({
     </Animated.View>
   ) : (
     <View>
-      <Text style={[styles.deal, fullWidth && styles.dealLarge, { color: dealColor }]} numberOfLines={1}>
+      <Text style={[styles.deal, fullWidth && styles.dealLarge, { color: dealColor }]} numberOfLines={2}>
         {deal}
       </Text>
       {deal2 && (
@@ -91,7 +101,7 @@ export default function HappyHourBanner({
     isElite && styles.bannerElite,
   ];
 
-  if (imageUrl) {
+  if (hasImage) {
     return (
       <TouchableOpacity
         style={bannerStyle}
@@ -101,8 +111,9 @@ export default function HappyHourBanner({
       >
         <ImageBackground
           source={storageImageSource(imageUrl, { width: 320, height: 72 })}
-          style={styles.imageBackground}
+          style={[styles.imageBackground, { backgroundColor: colors.cardBg }]}
           imageStyle={styles.imageStyle}
+          onError={() => setImageFailed(true)}
         >
           <View style={styles.imageOverlay}>{content}</View>
         </ImageBackground>

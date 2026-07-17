@@ -206,16 +206,16 @@ queryClient.invalidateQueries({ queryKey: hasFeature('happyHours') ? ['activeHap
         <EntertainmentSection />
       </ErrorBoundary>
 
-      {/* Section 3: Featured for You (PAID) */}
+      {/* Section 3: Upcoming Events */}
       <ErrorBoundary level="section">
-        <FeaturedSection onRestaurantPress={handleRestaurantPress} />
+        <EventsSection />
       </ErrorBoundary>
 
       <Spacer size="md" />
 
-      {/* Section 4: Upcoming Events */}
+      {/* Section 4: Featured for You (PAID) — placed below Events per client */}
       <ErrorBoundary level="section">
-        <EventsSection />
+        <FeaturedSection onRestaurantPress={handleRestaurantPress} />
       </ErrorBoundary>
 
       {/* Section 5: Deals (PAID — ticket cards) */}
@@ -278,7 +278,9 @@ queryClient.invalidateQueries({ queryKey: hasFeature('happyHours') ? ['activeHap
     }
 
     const restaurant = item.data!;
-    const isElite = (restaurant as any).tiers?.name === 'elite';
+    // Pick badge is admin-controlled via has_pick_badge — the single source of truth
+    // across all surfaces (Explore, Featured, and the detail hero all use this flag).
+    const hasPickBadge = (restaurant as any).has_pick_badge === true;
     return (
       <CompactRestaurantCard
         restaurant={restaurant}
@@ -286,7 +288,7 @@ queryClient.invalidateQueries({ queryKey: hasFeature('happyHours') ? ['activeHap
         isFavorite={favorites.includes(restaurant.id)}
         onFavoritePress={() => handleFavoritePress(restaurant.id)}
         trendingBadge={getTrendingBadge(restaurant.id)}
-        isElite={isElite}
+        isElite={hasPickBadge}
       />
     );
   };

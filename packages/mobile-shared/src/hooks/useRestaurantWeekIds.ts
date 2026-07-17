@@ -2,7 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import { getSupabase, getBrand } from '../config/theme';
 
 /**
- * Returns a Set of restaurant IDs that are participating in Restaurant Week 2026.
+ * Returns a Set of restaurant IDs currently in Restaurant Week.
+ *
+ * Membership is driven by the admin-controlled restaurants.is_lrw column (not
+ * holiday_specials as before). RW ended April 2026, so is_lrw defaults to false
+ * for every restaurant — the badge is off everywhere until an admin re-enables it
+ * per restaurant for a future Restaurant Week.
+ *
  * Uses React Query so the fetch is deduplicated across all card instances.
  */
 export function useRestaurantWeekIds(): Set<string> {
@@ -22,14 +28,14 @@ export function useRestaurantWeekIds(): Set<string> {
           .single();
         marketId = m?.id || null;
       }
+      // Market isolation (per CLAUDE.md): restaurants has market_id directly.
       let query = supabase
-        .from('holiday_specials')
-        .select('restaurant:restaurants!inner(id, market_id)')
-        .eq('holiday_tag', 'restaurant-week-2026')
-        .eq('is_active', true);
-      if (marketId) query = (query as any).eq('restaurant.market_id', marketId);
+        .from('restaurants')
+        .select('id')
+        .eq('is_lrw', true);
+      if (marketId) query = (query as any).eq('market_id', marketId);
       const { data: rows } = await query;
-      return ((rows || []) as any[]).map((row) => row.restaurant.id as string);
+      return ((rows || []) as any[]).map((row) => row.id as string);
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,

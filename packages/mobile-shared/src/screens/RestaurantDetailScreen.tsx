@@ -547,6 +547,9 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   }`;
 
   const isElite = tierName === 'elite';
+  // Pick badge is admin-controlled via has_pick_badge (single source of truth across
+  // all surfaces), separate from the tier-based hero styling below.
+  const hasPickBadge = (restaurant as any)?.has_pick_badge === true;
   const heroHeight = isElite ? ELITE_HERO_HEIGHT : HERO_HEIGHT;
   const isRestaurantWeek = restaurantWeekIds.has(restaurant?.id ?? '');
   const isCoffeeTrail = coffeeTrailIds.has(restaurant?.id ?? '');
@@ -623,7 +626,7 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
             style={[styles.heroGradient, { height: heroHeight * 0.7 }]}
           >
             <View style={[styles.heroContent, isRestaurantWeek && { paddingRight: 84 }]}>
-              {isElite && (
+              {hasPickBadge && (
                 <View style={styles.pickBadge}>
                   <Ionicons name="star" size={10} color="#FFF" />
                   <Text style={styles.pickBadgeText}>{brand.pickBadgeLabel}</Text>
@@ -775,16 +778,29 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                         {hh.days_of_week.length === 7 ? 'Every Day' : hh.days_of_week.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
                       </Text>
                       {hh.description && (
-                        <Text style={styles.contentDescription} numberOfLines={2}>{hh.description}</Text>
+                        <Text style={styles.contentDescription}>{hh.description}</Text>
                       )}
                       {hh.items && hh.items.length > 0 && (
                         <View style={styles.itemsList}>
                           {hh.items.map((item) => (
                             <View key={item.id} style={styles.itemRow}>
-                              <Text style={styles.itemName}>{item.name}</Text>
-                              {item.discounted_price && (
-                                <Text style={styles.itemPrice}>${item.discounted_price.toFixed(2)}</Text>
-                              )}
+                              <View style={styles.itemInfo}>
+                                <Text style={styles.itemName}>{item.name}</Text>
+                                {item.description && (
+                                  <Text style={styles.itemDescription}>{item.description}</Text>
+                                )}
+                                {item.discount_description && (
+                                  <Text style={styles.itemDiscountDesc}>{item.discount_description}</Text>
+                                )}
+                              </View>
+                              <View style={styles.itemPrices}>
+                                {item.original_price && item.discounted_price && (
+                                  <Text style={styles.itemOriginalPrice}>${item.original_price.toFixed(2)}</Text>
+                                )}
+                                {item.discounted_price && (
+                                  <Text style={styles.itemPrice}>${item.discounted_price.toFixed(2)}</Text>
+                                )}
+                              </View>
                             </View>
                           ))}
                         </View>
@@ -864,6 +880,9 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                       )}
                       {!special.original_price && special.special_price && (
                         <Text style={styles.contentPrice}>${special.special_price.toFixed(2)}</Text>
+                      )}
+                      {special.discount_description && (
+                        <Text style={styles.contentDescription}>{special.discount_description}</Text>
                       )}
                     </View>
                   </View>
@@ -1376,8 +1395,13 @@ const useStyles = createLazyStyles((colors) => ({
   originalPrice: { fontSize: 14, color: colors.textSecondary, textDecorationLine: 'line-through' as const },
   contentPerformer: { fontSize: 14, color: colors.textMuted, fontStyle: 'italic' as const, marginBottom: 4 },
   itemsList: { marginTop: 12, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12 },
-  itemRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, paddingVertical: 4 },
+  itemRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'flex-start' as const, paddingVertical: 4 },
+  itemInfo: { flex: 1, marginRight: 8 },
   itemName: { fontSize: 14, color: colors.text },
+  itemDescription: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
+  itemDiscountDesc: { fontSize: 12, color: colors.accent, marginTop: 1 },
+  itemPrices: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6 },
+  itemOriginalPrice: { fontSize: 13, color: colors.textMuted, textDecorationLine: 'line-through' as const },
   itemPrice: { fontSize: 14, fontWeight: '600' as const, color: colors.accent },
   emptyState: { padding: 40, alignItems: 'center' as const, justifyContent: 'center' as const },
   emptyText: { fontSize: 18, fontWeight: '600' as const, color: colors.textMuted, marginTop: 16 },

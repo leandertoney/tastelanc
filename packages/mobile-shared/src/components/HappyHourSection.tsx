@@ -163,7 +163,12 @@ export default function HappyHourSection() {
 
   const handleBannerPress = (restaurantId: string) => {
     trackClick(useSpecials ? 'daily_special' : 'happy_hour', restaurantId);
-    navigation.navigate('RestaurantDetail', { id: restaurantId });
+    // In happy-hour mode, open straight to the Happy Hours tab. In specials mode
+    // there is no happy_hours tab, so the param self-noops (guarded in the screen).
+    navigation.navigate('RestaurantDetail', {
+      id: restaurantId,
+      ...(useSpecials ? {} : { initialTab: 'happy_hours' }),
+    });
   };
 
   const handleViewAll = () => {
