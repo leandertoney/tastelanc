@@ -55,11 +55,11 @@ export default function SpotifyStyleListItem({
           )}
         </View>
         {accentText && (
-          <Text style={styles.accentText} numberOfLines={1}>
+          <Text style={styles.accentText}>
             {accentText}
           </Text>
         )}
-        <Text style={styles.subtitle} numberOfLines={1}>
+        <Text style={styles.subtitle}>
           {subtitle}
         </Text>
         {detail && (
