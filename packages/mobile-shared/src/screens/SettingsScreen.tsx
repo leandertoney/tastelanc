@@ -13,8 +13,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
-// import * as Updates from 'expo-updates'; // Disabled for Expo Go compatibility
 import * as Location from 'expo-location';
+
+// Optional require keeps Expo Go compatibility (no native updates module there).
+// This footer diagnostic is what lets us identify exactly which OTA bundle and
+// binary runtime a device is on — do not remove it again.
+let Updates: typeof import('expo-updates') | null = null;
+try {
+  Updates = require('expo-updates');
+} catch {
+  Updates = null;
+}
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getColors, getBrand, getSupabase } from '../config/theme';
@@ -632,8 +641,15 @@ export default function SettingsScreen() {
         )}
 
         <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>{`${brand.appName} v1.0.9`}</Text>
+          <Text style={styles.versionText}>{`${brand.appName} v1.0.10`}</Text>
           <Text style={styles.versionSubtext}>{brand.tagline}</Text>
+          {Updates && (
+            <Text style={styles.versionSubtext}>
+              {`OTA: ${Updates.updateId ? Updates.updateId.slice(0, 8) : 'embedded'} · rt ${(
+                Updates.runtimeVersion ?? '?'
+              ).slice(0, 12)} · ${Updates.channel ?? 'no channel'}`}
+            </Text>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
