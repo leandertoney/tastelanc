@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
-import { Image } from 'expo-image';
+import { Image } from './CompatImage';
 import { Ionicons } from '@expo/vector-icons';
 import { getColors } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';

@@ -1,4 +1,4 @@
-import { ImageSource } from 'expo-image';
+import type { ImageSource } from 'expo-image';
 
 const STORAGE_HOST = 'kufcxxynjvyharhtfptd.supabase.co';
 const PUBLIC_PREFIX = `https://${STORAGE_HOST}/storage/v1/object/public/`;
