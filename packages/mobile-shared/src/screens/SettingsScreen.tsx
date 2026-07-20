@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
+import Constants from 'expo-constants';
 
 // Optional require keeps Expo Go compatibility (no native updates module there).
 // This footer diagnostic is what lets us identify exactly which OTA bundle and
@@ -641,7 +642,7 @@ export default function SettingsScreen() {
         )}
 
         <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>{`${brand.appName} v1.0.10`}</Text>
+          <Text style={styles.versionText}>{`${brand.appName} v${Constants.expoConfig?.version ?? '?'}`}</Text>
           <Text style={styles.versionSubtext}>{brand.tagline}</Text>
           {Updates && (
             <Text style={styles.versionSubtext}>
