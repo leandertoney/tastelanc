@@ -2,7 +2,7 @@
   "expo": {
     "name": "TasteLanc",
     "slug": "tastelanc",
-    "version": "1.0.9",
+    "version": "1.0.10",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -20,14 +20,16 @@
         "expo-channel-name": "production"
       }
     },
-    "runtimeVersion": "1.0.9",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tastelanc.app",
-      "buildNumber": "19",
+      "buildNumber": "22",
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": []
       },
@@ -56,7 +58,7 @@
       },
       "package": "com.tastelanc.app",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 33,
+      "versionCode": 36,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
