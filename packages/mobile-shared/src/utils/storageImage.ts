@@ -1,5 +1,3 @@
-import type { ImageSource } from 'expo-image';
-
 const STORAGE_HOST = 'kufcxxynjvyharhtfptd.supabase.co';
 const PUBLIC_PREFIX = `https://${STORAGE_HOST}/storage/v1/object/public/`;
 
@@ -10,10 +8,13 @@ export type StorageImageOptions = {
   resize?: 'cover' | 'contain' | 'fill';
 };
 
+export type StorageImageSource = {
+  uri: string;
+  contentFit: 'cover' | 'contain' | 'fill';
+};
+
 /**
- * Simplified image source for expo-image with disk caching.
  * No longer uses Supabase transformation API to avoid generating unique URLs per size.
- * expo-image handles resizing locally, reducing egress bandwidth by 95%.
  */
 export function getStorageImageUrl(
   url: string | null | undefined,
@@ -27,11 +28,10 @@ export function getStorageImageUrl(
 export function storageImageSource(
   url: string | null | undefined,
   options?: StorageImageOptions,
-): ImageSource | undefined {
+): StorageImageSource | undefined {
   if (!url) return undefined;
   return {
     uri: url,
-    cachePolicy: 'disk',  // expo-image persistent disk cache
     contentFit: options?.resize || 'cover',
   };
 }

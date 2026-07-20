@@ -2,27 +2,15 @@ import React from 'react';
 import { Image as RNImage, ImageResizeMode } from 'react-native';
 
 /**
- * Binary-compatible Image.
- *
- * expo-image's native module (ExpoImage) only exists in binaries built after
- * 2026-06-20, but every store binary in the wild predates that. On those
- * binaries `require('expo-image')` throws at bundle load, which crashed every
- * OTA update published since June and made expo-updates roll devices back to
- * the last pre-expo-image bundle (the "updates keep reverting" bug).
- *
- * This wrapper uses expo-image (disk caching, less Supabase egress) when the
- * native module is present and falls back to the core <Image> when it isn't,
- * so a single OTA bundle runs on every binary. Once all store binaries include
- * expo-image, imports can move back to 'expo-image' directly.
+ * expo-image was pinned at ^56.0.11 against Expo SDK 54 (expects ~3.0.11) —
+ * a major-version mismatch that crashes ExpoImageModule at native init on
+ * launch (NoClassDefFoundError: AnyTypeCache), caught by Google Play's
+ * pre-launch report on the v1.0.10 Android release. The disk-caching/egress
+ * benefit expo-image was added for never reached a shipped binary anyway
+ * (see git history: "Fix Supabase Storage egress..."), so this drops the
+ * dependency entirely rather than chasing a compatible version — same public
+ * API surface, backed by the stock RN Image.
  */
-
-let ExpoImage: React.ComponentType<any> | null = null;
-try {
-  // Throws on binaries missing the ExpoImage native module
-  ExpoImage = require('expo-image').Image;
-} catch {
-  ExpoImage = null;
-}
 
 const CONTENT_FIT_TO_RESIZE_MODE: Record<string, ImageResizeMode> = {
   cover: 'cover',
@@ -32,7 +20,7 @@ const CONTENT_FIT_TO_RESIZE_MODE: Record<string, ImageResizeMode> = {
   none: 'center',
 };
 
-const FallbackImage = ({ contentFit, cachePolicy, transition, placeholder, source, ...rest }: any) => {
+export const Image = ({ contentFit, cachePolicy, transition, placeholder, source, ...rest }: any) => {
   // Strip expo-image-only keys (e.g. cachePolicy added by storageImageSource)
   let rnSource = source;
   if (source && typeof source === 'object' && !Array.isArray(source) && 'uri' in source) {
@@ -47,5 +35,3 @@ const FallbackImage = ({ contentFit, cachePolicy, transition, placeholder, sourc
     />
   );
 };
-
-export const Image: React.ComponentType<any> = ExpoImage ?? FallbackImage;
