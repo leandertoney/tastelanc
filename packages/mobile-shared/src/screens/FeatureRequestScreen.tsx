@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { getColors, getBrand } from '../config/theme';
+import { getColors, getBrand, getSupabase } from '../config/theme';
 import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
 import { useAuth } from '../hooks/useAuth';
@@ -43,10 +43,16 @@ export default function FeatureRequestScreen() {
     setIsSubmitting(true);
 
     try {
+      // The API authenticates via the user's Supabase JWT — without this
+      // header every submission 401s (the form shipped without it).
+      const { data: { session } } = await getSupabase().auth.getSession();
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(session?.access_token
+            ? { Authorization: `Bearer ${session.access_token}` }
+            : {}),
         },
         body: JSON.stringify({
           title: title.trim(),
