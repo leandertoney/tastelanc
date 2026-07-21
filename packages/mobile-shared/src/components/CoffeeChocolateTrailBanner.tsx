@@ -55,6 +55,12 @@ export default function CoffeeChocolateTrailBanner() {
     ).start();
   }, [shimmer]);
 
+  // Hard end date: the 2026 trail ran Jan 28 – May 11. Data-driven visibility
+  // alone let the banner outlive the event when nobody deactivated the rows,
+  // so a one-off dated event also gets a date gate in code.
+  const TRAIL_ENDS = new Date('2026-05-12T00:00:00-04:00');
+  if (new Date() >= TRAIL_ENDS) return null;
+
   // Only show for Cumberland (TasteCumberland) when trail data is active
   if (brand.marketSlug !== 'cumberland-pa' || trailCount === 0) return null;
 
