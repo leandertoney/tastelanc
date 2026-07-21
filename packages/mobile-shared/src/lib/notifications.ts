@@ -258,7 +258,7 @@ export async function getBadgeCount(): Promise<number> {
 
 // Type for notification data we send
 export interface AppNotificationData {
-  screen?: 'RestaurantDetail' | 'HappyHoursViewAll' | 'EventsViewAll' | 'AreaRestaurants' | 'BlogDetail' | 'EmailThread' | 'SalesDashboard' | 'LeadDetail';
+  screen?: 'RestaurantDetail' | 'HappyHoursViewAll' | 'EventsViewAll' | 'AreaRestaurants' | 'BlogDetail' | 'EmailThread' | 'SalesDashboard' | 'LeadDetail' | 'FeatureRequest';
   restaurantId?: string;
   areaId?: string;
   areaName?: string;

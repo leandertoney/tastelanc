@@ -90,6 +90,10 @@ export function useNotifications() {
           case 'SalesDashboard':
             (navigation as any).navigate('SalesDashboard');
             break;
+          case 'FeatureRequest':
+            // Feedback-outreach pushes deep-link here ("what should we build next?")
+            (navigation as any).navigate('FeatureRequest');
+            break;
           case 'LeadDetail':
             if (data.leadId) {
               (navigation as any).navigate('LeadDetail', { leadId: data.leadId });
