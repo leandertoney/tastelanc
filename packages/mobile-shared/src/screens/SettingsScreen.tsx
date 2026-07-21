@@ -15,6 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
 import Constants from 'expo-constants';
+import { ensureLocationDisclosure } from '../lib/locationDisclosure';
 
 // Optional require keeps Expo Go compatibility (no native updates module there).
 // This footer diagnostic is what lets us identify exactly which OTA bundle and
@@ -170,6 +171,8 @@ export default function SettingsScreen() {
 
   const handleLocationToggle = async (value: boolean) => {
     if (value) {
+      // Play policy: prominent disclosure must precede the permission request
+      if (!(await ensureLocationDisclosure())) return;
       const { status } = await Location.requestForegroundPermissionsAsync();
       setLocationEnabled(status === 'granted');
       try { await AsyncStorage.setItem(LOCATION_KEY, (status === 'granted').toString()); } catch {}

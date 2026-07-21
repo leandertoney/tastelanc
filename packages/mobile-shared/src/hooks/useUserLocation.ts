@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as Location from 'expo-location';
 import { getMarketCenter } from '../config/theme';
+import { ensureLocationDisclosure } from '../lib/locationDisclosure';
 
 interface LocationCoords {
   latitude: number;
@@ -39,6 +40,8 @@ export function useUserLocation(): UseUserLocationResult {
    */
   const requestPermission = useCallback(async (): Promise<boolean> => {
     try {
+      // Play policy: prominent disclosure must precede the permission request
+      if (!(await ensureLocationDisclosure())) return false;
       const { status } = await Location.requestForegroundPermissionsAsync();
       setPermissionStatus(status);
       return status === 'granted';
