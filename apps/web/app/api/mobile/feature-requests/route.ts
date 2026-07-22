@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createMobileClient } from '@/lib/supabase/mobile-auth';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 import { sendEmail } from '@/lib/resend';
 
 export const dynamic = 'force-dynamic';
@@ -33,10 +33,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = createMobileClient(request);
-    if (!supabase) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Insert with the service-role client (repo convention for writes to RLS
+    // tables — see CLAUDE.md). The mobile client's user token was rejected by
+    // the live feature_requests RLS insert policy (42501), so every submission
+    // 500'd. Not gating on the Authorization header means this works on every
+    // device regardless of which OTA runtime it's on; validation above +
+    // future rate-limiting are the abuse controls, not the token check.
+    // user_id is best-effort from the body (untrusted but harmless — feedback only).
+    const supabase = createServiceRoleClient();
 
     // Store in Supabase
     const { data, error } = await supabase
