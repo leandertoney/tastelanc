@@ -155,10 +155,20 @@ export default function OnboardingPaywallScreen({ navigation }: Props) {
     transform: [{ translateY: (1 - ctaAnim.value) * 20 }],
   }));
 
-  const monthlyPrice = monthly?.product.priceString ?? '$4.99';
-  const annualPrice = annual?.product.priceString ?? '$24.99';
-  const annualRaw = annual?.product.price ?? 24.99;
-  const perMonth = `$${(annualRaw / 12).toFixed(2)}`;
+  // No purchasable packages (e.g. Android before Play billing is configured):
+  // an onboarding paywall with nothing to sell would render dead, fake-priced
+  // buttons (Google Play "broken functionality"). Auto-advance past it instead.
+  const purchasesAvailable = !!(monthly || annual);
+  useEffect(() => {
+    if (!loading && !purchasesAvailable) {
+      handleSkip();
+    }
+  }, [loading, purchasesAvailable]);
+
+  const monthlyPrice = monthly?.product.priceString ?? '';
+  const annualPrice = annual?.product.priceString ?? '';
+  const annualRaw = annual?.product.price ?? 0;
+  const perMonth = annualRaw ? `$${(annualRaw / 12).toFixed(2)}` : '';
 
   // Dynamic billing text based on selected plan
   const billingText = selectedPlan === 'annual'

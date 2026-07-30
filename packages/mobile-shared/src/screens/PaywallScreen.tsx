@@ -144,9 +144,15 @@ export default function PaywallScreen({ navigation, route }: Props) {
   const footerAnimatedStyle = useAnimatedStyle(() => ({ opacity: footerOpacity.value }));
 
   const selectedPkg = selectedPlan === 'annual' ? annual : monthly;
+  // Purchases are only offered when RevenueCat actually returns products for
+  // this store. On a store with no configured products (e.g. Android before
+  // Play billing is set up) both packages are null — showing a priced button
+  // there is a dead control (Google Play "broken functionality"). Gate on real
+  // packages so no fake-priced, tappable-looking button is ever rendered.
+  const purchasesAvailable = !!(monthly || annual);
   const ctaText = selectedPlan === 'annual'
-    ? `Start Free Trial — ${annual?.product.priceString ?? '$24.99'}/year`
-    : `Subscribe — ${monthly?.product.priceString ?? '$4.99'}/month`;
+    ? `Start Free Trial — ${annual?.product.priceString ?? ''}/year`
+    : `Subscribe — ${monthly?.product.priceString ?? ''}/month`;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -180,6 +186,13 @@ export default function PaywallScreen({ navigation, route }: Props) {
         {/* Plan selector */}
         {loading ? (
           <ActivityIndicator color={colors.accent} style={{ marginVertical: 24 }} />
+        ) : !purchasesAvailable ? (
+          <View style={{ marginVertical: 24, paddingHorizontal: 8 }}>
+            <Text style={[styles.subheadline, { textAlign: 'center' }]}>
+              {brand.appName}+ subscriptions aren't available on this device yet.
+              Check back soon — we're rolling them out.
+            </Text>
+          </View>
         ) : (
           <Animated.View style={[styles.plansSection, plansAnimatedStyle]}>
             {/* Monthly */}
@@ -225,21 +238,32 @@ export default function PaywallScreen({ navigation, route }: Props) {
 
       {/* Footer */}
       <Animated.View style={[styles.footer, footerAnimatedStyle]}>
-        {/* CTA */}
-        <TouchableOpacity
-          style={[styles.ctaButton, (purchasing || !selectedPkg) && styles.ctaButtonDisabled]}
-          onPress={handlePurchase}
-          disabled={purchasing || !selectedPkg}
-          activeOpacity={0.8}
-        >
-          {purchasing ? (
-            <ActivityIndicator color={colors.textOnAccent} />
-          ) : (
-            <Text style={styles.ctaText}>{ctaText}</Text>
-          )}
-        </TouchableOpacity>
+        {/* CTA — only a real purchase button when packages exist; otherwise a
+            working dismiss so no dead control is ever shown. */}
+        {purchasesAvailable ? (
+          <TouchableOpacity
+            style={[styles.ctaButton, (purchasing || !selectedPkg) && styles.ctaButtonDisabled]}
+            onPress={handlePurchase}
+            disabled={purchasing || !selectedPkg}
+            activeOpacity={0.8}
+          >
+            {purchasing ? (
+              <ActivityIndicator color={colors.textOnAccent} />
+            ) : (
+              <Text style={styles.ctaText}>{ctaText}</Text>
+            )}
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={styles.ctaButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.ctaText}>Maybe later</Text>
+          </TouchableOpacity>
+        )}
 
-        {/* Restore */}
+        {/* Restore — always available (a returning subscriber can restore) */}
         <TouchableOpacity
           style={styles.restoreButton}
           onPress={handleRestore}

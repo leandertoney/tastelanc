@@ -225,7 +225,16 @@ export default function OnboardingLifetimeOfferScreen({ navigation }: Props) {
     transform: [{ translateY: ctaTranslate.value }],
   }));
 
-  const priceString = lifetime?.product.priceString ?? '$14.99';
+  // No purchasable package (e.g. Android before Play billing is configured):
+  // auto-advance past this offer rather than show a dead, fake-priced button.
+  const purchasesAvailable = !!lifetime;
+  useEffect(() => {
+    if (!loading && !purchasesAvailable) {
+      handleSkip();
+    }
+  }, [loading, purchasesAvailable]);
+
+  const priceString = lifetime?.product.priceString ?? '';
 
   return (
     <View style={styles.container}>
