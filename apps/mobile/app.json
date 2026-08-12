@@ -29,7 +29,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tastelanc.app",
-      "buildNumber": "22",
+      "buildNumber": "23",
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": []
       },
@@ -58,7 +58,7 @@
       },
       "package": "com.tastelanc.app",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 36,
+      "versionCode": 37,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
@@ -115,13 +115,13 @@
             "deploymentTarget": "15.1"
           },
           "android": {
-            "compileSdkVersion": 35,
-            "targetSdkVersion": 35,
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
             "minSdkVersion": 24
           }
         }
       ],
-      "./plugins/withAndroidSdk35.js",
+      "./plugins/withAndroidSdk36.js",
       "expo-video",
       "expo-camera",
       "react-native-radar",

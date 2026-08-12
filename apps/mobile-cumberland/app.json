@@ -2,7 +2,7 @@
   "expo": {
     "name": "TasteCumberland",
     "slug": "taste-cumberland",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -57,7 +57,7 @@
         "backgroundColor": "#F4EBDD"
       },
       "package": "com.tastelanc.cumberland",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
@@ -97,13 +97,13 @@
             "deploymentTarget": "15.1"
           },
           "android": {
-            "compileSdkVersion": 35,
-            "targetSdkVersion": 35,
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
             "minSdkVersion": 24
           }
         }
       ],
-      "./plugins/withAndroidSdk35.js",
+      "./plugins/withAndroidSdk36.js",
       "expo-video",
       "expo-camera",
       "react-native-radar"

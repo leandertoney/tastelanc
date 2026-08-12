@@ -125,6 +125,13 @@ export async function requestBackgroundPermission(): Promise<boolean> {
   if (!isRadarAvailable) return false;
 
   try {
+    // Play User Data policy: the prominent disclosure must be accepted before
+    // ANY background-location request. Gating here (not just in the calling UI)
+    // guarantees future callers can't bypass it — the omission TasteCumberland
+    // 1.0.5 was rejected for.
+    const { ensureLocationDisclosure } = await import('./locationDisclosure');
+    if (!(await ensureLocationDisclosure())) return false;
+
     await Radar.requestPermissions(true); // true = request always/background
     const status = await getLocationPermissionStatus();
     return status === 'always';
