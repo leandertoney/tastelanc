@@ -53,7 +53,10 @@ BEGIN
   UPDATE public.menus SET is_active = false, is_hidden_from_tab = true
    WHERE restaurant_id = brazen_bull_id;
 
-  -- Old cover photo was Gloomy Rooster branding.
-  UPDATE public.restaurant_photos SET is_cover = false
-   WHERE restaurant_id = brazen_bull_id AND is_cover = true;
+  -- All 7 photos were the previous concept: the cartoon rooster logo plus
+  -- fried chicken sandwiches / tenders (one carrying a Restaurant Week overlay).
+  -- None are usable for a pizza shop, so the rows are removed. The new operator
+  -- uploads their own; storage objects are left in place.
+  DELETE FROM public.restaurant_photos
+   WHERE restaurant_id = brazen_bull_id;
 END $$;
