@@ -65,7 +65,7 @@ const lancasterData: MockupMarketData = {
     { name: 'Lucky Dog Cafe', hh: 'Patio Hour', deal: '$5 House Brews', time: '4-6pm', imageUrl: IMG('92724a5a-5e9f-4015-a6bb-8e6eb8018445') },
   ],
   chatRecs: [
-    { name: 'The Gloomy Rooster', detail: 'American &middot; Downtown', imageUrl: `${SUPABASE_IMG}/gloomy-rooster-cover.png` },
+    { name: 'Rocky\'s BBQ', detail: 'BBQ &middot; Downtown', imageUrl: IMG('da2a4343-0725-40dc-bb2a-3d6859491452') },
     { name: 'Cabbage Hill', detail: 'German &middot; Schnitzel Haus', imageUrl: IMG('f2fbcb96-0ea3-4c7b-a9a6-4e4231753071') },
     { name: 'Conestoga Restaurant', detail: 'Contemporary &middot; Fine Dining', imageUrl: IMG('559c9628-e0d7-4c25-868b-5c1401bac770') },
   ],
