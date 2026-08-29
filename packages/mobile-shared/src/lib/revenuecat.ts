@@ -57,7 +57,9 @@ export function getProductIds(): ProductIds {
 }
 
 // Entitlement identifier - configured in RevenueCat dashboard
-export const ENTITLEMENT_ID = 'premium';
+// Must match the RevenueCat entitlement identifier EXACTLY (case-sensitive). The project's
+// entitlement is "Premium" (display name "TasteLanc+"), not "premium"; the lowercase id never matched.
+export const ENTITLEMENT_ID = 'Premium';
 
 let isInitialized = false;
 
