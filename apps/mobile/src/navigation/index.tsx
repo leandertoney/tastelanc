@@ -120,7 +120,7 @@ export default function Navigation() {
     }
 
     try {
-      initRevenueCat(env.REVENUECAT_API_KEY, 'lancaster-pa').catch((e) => {
+      initRevenueCat(Platform.OS === 'android' ? env.REVENUECAT_API_KEY_ANDROID : env.REVENUECAT_API_KEY, 'lancaster-pa').catch((e) => {
         console.warn('[Navigation] RevenueCat initialization failed:', e);
       });
     } catch (e) {

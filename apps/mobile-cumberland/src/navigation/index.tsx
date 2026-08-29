@@ -1,5 +1,5 @@
 import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { useNavigationTheme } from '@tastelanc/mobile-shared/src/hooks/useNavigationTheme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -88,7 +88,7 @@ export default function Navigation() {
     }
 
     try {
-      initRevenueCat(env.REVENUECAT_API_KEY, 'cumberland-pa').catch((e) => {
+      initRevenueCat(Platform.OS === 'android' ? env.REVENUECAT_API_KEY_ANDROID : env.REVENUECAT_API_KEY, 'cumberland-pa').catch((e) => {
         console.warn('[Navigation] RevenueCat initialization failed:', e);
       });
     } catch (e) {
