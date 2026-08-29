@@ -27,7 +27,7 @@ def base_plan(plan_id, period, usd):
         "basePlanId": plan_id,
         "regionalConfigs": [{"regionCode": "US", "newSubscriberAvailability": True, "price": money(usd)}],
         "otherRegionsConfig": {"usdPrice": money(usd), "eurPrice": money(usd, "EUR"), "newSubscriberAvailability": True},
-        "autoRenewingBasePlan": {
+        "autoRenewingBasePlanType": {
             "billingPeriodDuration": period, "gracePeriodDuration": "P7D",
             "resubscribeState": "RESUBSCRIBE_STATE_ACTIVE",
             "prorationMode": "SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE",
@@ -59,7 +59,7 @@ for product_id, plan_id, period, usd, title in PRODUCTS[pkg]:
                       "benefits": ["Premium deals and happy hours", "Early access to events", "Support local dining"],
                       "description": f"{brand}+ unlocks every premium feature."}],
     }
-    r = call(f"applications/{pkg}/subscriptions?regionsVersion.version=2022/02", body)
+    r = call(f"applications/{pkg}/subscriptions?regionsVersion.version=2022/02&productId={product_id}", body)
     if "error" in r:
         print(f"{product_id}: ERROR {r['error']} {r['body']}")
     else:
