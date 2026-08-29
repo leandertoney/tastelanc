@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { verifyAdminAccess } from '@/lib/auth/admin-access';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
-import { getStripe, ALL_CONSUMER_PRICE_IDS, SELF_PROMOTER_PRICE_IDS, ELITE_PRICE_IDS } from '@/lib/stripe';
+import { getStripe, ALL_CONSUMER_PRICE_IDS, SELF_PROMOTER_PRICE_IDS, ELITE_LEVEL_PRICE_IDS } from '@/lib/stripe';
 import { Resend } from 'resend';
 import {
   findMatchingRestaurant,
@@ -38,7 +38,8 @@ function isSelfPromoterPriceId(priceId: string): boolean {
 }
 
 function getRestaurantTier(priceId: string): string {
-  if ((ELITE_PRICE_IDS as readonly string[]).includes(priceId)) return 'elite';
+  // Unified pricing (any market's account) and legacy Elite both grant Elite-level features
+  if ((ELITE_LEVEL_PRICE_IDS as readonly string[]).includes(priceId)) return 'elite';
   return 'premium';
 }
 

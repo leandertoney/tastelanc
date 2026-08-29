@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { MARKET_SLUG } from '@/config/market';
 
 let stripeClient: Stripe | null = null;
 export function getStripe() {
@@ -16,11 +17,37 @@ export function getStripe() {
 
 // Unified Restaurant Plan - Single tier with all Elite features
 // NEW: $99/month, $899/year, or $1,798/2-years - replaces all previous tiers
-export const UNIFIED_PRICE_IDS = {
+// Unified price IDs are PER STRIPE ACCOUNT. Lancaster and Fayetteville bill through the
+// TasteLanc account; Cumberland has its own account with its own price IDs.
+// Env: STRIPE_PRICE_UNIFIED_{MONTHLY,YEARLY,2YEAR} (TasteLanc account) and
+//      STRIPE_PRICE_UNIFIED_{MONTHLY,YEARLY,2YEAR}_CUMBERLAND (TasteCumberland account).
+export type UnifiedPriceIds = { monthly: string; yearly: string; '2year': string };
+
+const UNIFIED_PRICE_IDS_LANCASTER: UnifiedPriceIds = {
   monthly: process.env.STRIPE_PRICE_UNIFIED_MONTHLY || 'price_unified_monthly',
   yearly: process.env.STRIPE_PRICE_UNIFIED_YEARLY || 'price_unified_yearly',
   '2year': process.env.STRIPE_PRICE_UNIFIED_2YEAR || 'price_unified_2year',
-} as const;
+};
+
+const UNIFIED_PRICE_IDS_CUMBERLAND: UnifiedPriceIds = {
+  monthly: process.env.STRIPE_PRICE_UNIFIED_MONTHLY_CUMBERLAND || 'price_unified_monthly_cumberland',
+  yearly: process.env.STRIPE_PRICE_UNIFIED_YEARLY_CUMBERLAND || 'price_unified_yearly_cumberland',
+  '2year': process.env.STRIPE_PRICE_UNIFIED_2YEAR_CUMBERLAND || 'price_unified_2year_cumberland',
+};
+
+const UNIFIED_PRICE_IDS_BY_MARKET: Record<string, UnifiedPriceIds> = {
+  'lancaster-pa': UNIFIED_PRICE_IDS_LANCASTER,
+  'cumberland-pa': UNIFIED_PRICE_IDS_CUMBERLAND,
+  // fayetteville-nc has no Stripe account of its own; it bills through TasteLanc (see MARKET_STRIPE_ENV_KEYS)
+};
+
+/** Unified price IDs for the Stripe account that serves a market. Must match getStripeForMarket(). */
+export function getUnifiedPriceIds(marketSlug: string): UnifiedPriceIds {
+  return UNIFIED_PRICE_IDS_BY_MARKET[marketSlug] || UNIFIED_PRICE_IDS_LANCASTER;
+}
+
+/** Unified price IDs for THIS deployed site's market (getStripe() uses this site's STRIPE_SECRET_KEY). */
+export const UNIFIED_PRICE_IDS = getUnifiedPriceIds(MARKET_SLUG);
 
 // Legacy Restaurant Plans - KEPT FOR BACKWARD COMPATIBILITY ONLY
 // Existing subscriptions will continue on these plans until renewal
@@ -76,9 +103,8 @@ export const ALL_CONSUMER_PRICE_IDS = [
 // All unified restaurant price IDs (for tier detection in webhooks)
 // Unified tier has all Elite features
 export const UNIFIED_RESTAURANT_PRICE_IDS = [
-  UNIFIED_PRICE_IDS.monthly,
-  UNIFIED_PRICE_IDS.yearly,
-  UNIFIED_PRICE_IDS['2year'],
+  ...Object.values(UNIFIED_PRICE_IDS_LANCASTER),
+  ...Object.values(UNIFIED_PRICE_IDS_CUMBERLAND),
 ] as const;
 
 // All elite restaurant price IDs (for tier detection in webhooks)

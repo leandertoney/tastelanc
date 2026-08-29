@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { verifySalesAccess } from '@/lib/auth/sales-access';
 import { verifyAdminAccess } from '@/lib/auth/admin-access';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { getStripeForMarket, DURATION_LABELS, UNIFIED_PRICE_IDS } from '@/lib/stripe';
+import { getStripeForMarket, getUnifiedPriceIds, DURATION_LABELS } from '@/lib/stripe';
 import {
   getPriceCents,
   isValidPlan,
@@ -227,11 +227,13 @@ export async function POST(request: Request) {
       const item = itemsWithPrices[0];
 
       // Get the Stripe Price ID for this plan and duration
+      // Price IDs must belong to the same Stripe account as `stripe` (resolved by market above)
+      const marketPriceIds = getUnifiedPriceIds(marketSlug);
       const priceId = item.duration === 'monthly'
-        ? UNIFIED_PRICE_IDS.monthly
+        ? marketPriceIds.monthly
         : item.duration === '2year'
-        ? UNIFIED_PRICE_IDS['2year']
-        : UNIFIED_PRICE_IDS.yearly;
+        ? marketPriceIds['2year']
+        : marketPriceIds.yearly;
 
       if (!priceId) {
         throw new Error(`No Stripe Price ID found for ${item.plan} ${item.duration}`);
