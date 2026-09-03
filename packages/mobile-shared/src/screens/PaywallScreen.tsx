@@ -40,6 +40,7 @@ const PREMIUM_BENEFITS = [
   { icon: 'pricetag' as const, text: 'Exclusive deals & early event access' },
   { icon: 'remove-circle' as const, text: 'Ad-free experience' },
   { icon: 'star' as const, text: '2.5x rewards on every check-in' },
+  { icon: 'alarm' as const, text: 'Happy hour reminders' },
 ];
 
 export default function PaywallScreen({ navigation, route }: Props) {

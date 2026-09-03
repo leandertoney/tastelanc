@@ -59,6 +59,7 @@ import RestaurantWeekBadge from '../components/RestaurantWeekBadge';
 import CoffeeChocolateTrailBadge from '../components/CoffeeChocolateTrailBadge';
 import HoursAccordion from '../components/HoursAccordion';
 import TierLockedEmptyState from '../components/TierLockedEmptyState';
+import HappyHourReminderCard from '../components/HappyHourReminderCard';
 import BasicTierAlternativesSection from '../components/BasicTierAlternativesSection';
 import EventFlyerCard from '../components/EventFlyerCard';
 import VideoRecommendationFeed from '../components/VideoRecommendationFeed';
@@ -758,8 +759,9 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                   onAlternativePress={(altId) => navigation.navigate('RestaurantDetail', { id: altId })}
                 />
               ) : happyHours.length > 0 ? (
-                sortByDayProximity(happyHours).map((hh) => (
-                  <View key={hh.id} style={styles.compactCard}>
+                sortByDayProximity(happyHours).map((hh, hhIndex) => (
+                  <View key={hh.id}>
+                  <View style={styles.compactCard}>
                     {hh.image_url ? (
                       <View style={styles.compactThumb}>
                         <Image source={storageImageSource(hh.image_url, { width: 84, height: 84 })} style={styles.compactThumbImg} resizeMode="cover" />
@@ -806,6 +808,17 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
                         </View>
                       )}
                     </View>
+                  </View>
+                  {hhIndex === 0 && (
+                    <HappyHourReminderCard
+                      happyHour={hh}
+                      restaurantId={restaurant.id}
+                      restaurantName={restaurant.name}
+                      userId={userId}
+                      isPremium={isPremium}
+                      onUpsell={() => navigation.navigate('Paywall', { source: 'happy_hour_reminder' })}
+                    />
+                  )}
                   </View>
                 ))
               ) : (

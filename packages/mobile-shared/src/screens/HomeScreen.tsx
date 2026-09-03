@@ -377,6 +377,10 @@ queryClient.invalidateQueries({ queryKey: hasFeature('happyHours') ? ['activeHap
           onNavigateToRestaurant={(restaurantId) => {
             navigation.navigate('RestaurantDetail', { id: restaurantId });
           }}
+          onShowPaywall={() => {
+            setRosieChatVisible(false);
+            setTimeout(() => navigation.navigate('Paywall', { source: 'rosie_limit' }), 300);
+          }}
         />
       </SafeAreaView>
     </GestureHandlerRootView>

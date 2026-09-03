@@ -21,6 +21,7 @@ import { requestReviewIfEligible } from '../lib/reviewPrompts';
 import { ONBOARDING_DATA_KEY } from '../types/onboarding';
 import type { OnboardingData } from '../types/onboarding';
 import { usePremiumStatus } from '../hooks/usePremiumStatus';
+import { trackClick } from '../lib/analytics';
 
 const FREE_DAILY_MESSAGE_LIMIT = 3;
 const CHAT_COUNT_KEY_PREFIX = '@premium_chat_count_';
@@ -50,6 +51,8 @@ interface Message {
   text: string;
   isUser: boolean;
   timestamp: Date;
+  /** 'upsell' renders the TasteLanc+ card shown when the free daily limit is reached */
+  kind?: 'upsell';
 }
 
 interface RosieChatProps {
@@ -210,6 +213,21 @@ export default function RosieChat({ visible, onClose, onNavigateToRestaurant, on
     <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
   ), []);
 
+  // Free users hit the daily limit: add one TasteLanc+ card to the thread (never twice)
+  const showLimitUpsell = useCallback(() => {
+    setInputText('');
+    setMessages((prev) => {
+      if (prev.some((m) => m.kind === 'upsell')) return prev;
+      trackClick('rosie_limit_upsell_shown');
+      return [...prev, { id: `upsell-${Date.now()}`, text: '', isUser: false, timestamp: new Date(), kind: 'upsell' }];
+    });
+  }, []);
+
+  const handleUpsellPress = useCallback(() => {
+    trackClick('paywall_open_rosie_limit');
+    if (onShowPaywall) onShowPaywall();
+  }, [onShowPaywall]);
+
   const callAI = useCallback(async (messageText: string) => {
     const supabase = getSupabase();
     const anonKey = getAnonKey();
@@ -229,10 +247,7 @@ export default function RosieChat({ visible, onClose, onNavigateToRestaurant, on
     if (!isPremium) {
       const count = await getDailyMessageCount();
       if (count >= FREE_DAILY_MESSAGE_LIMIT) {
-        if (onShowPaywall) {
-          onClose();
-          setTimeout(() => onShowPaywall(), 300);
-        }
+        showLimitUpsell();
         return;
       }
       await incrementDailyMessageCount();
@@ -288,7 +303,26 @@ export default function RosieChat({ visible, onClose, onNavigateToRestaurant, on
     );
   };
 
-  const renderMessage = ({ item }: { item: Message }) => (
+  const renderMessage = ({ item }: { item: Message }) => item.kind === 'upsell' ? (
+    <View style={[styles.messageContainer, styles.aiMessageContainer]}>
+      <View style={styles.avatarContainer}>
+        <Image source={assets.aiAvatar} style={styles.aiAvatar} />
+      </View>
+      <View style={styles.upsellBubble}>
+        <View style={styles.upsellPill}>
+          <Text style={styles.upsellPillText}>{brand.appName.toUpperCase()}+</Text>
+        </View>
+        <Text style={styles.upsellTitle}>That's {FREE_DAILY_MESSAGE_LIMIT} for today</Text>
+        <Text style={styles.upsellText}>
+          Unlimited {brand.aiName}, plus happy hour reminders, early event access and no ads.
+        </Text>
+        <TouchableOpacity style={styles.upsellCta} onPress={handleUpsellPress} activeOpacity={0.85}>
+          <Text style={styles.upsellCtaText}>Start free trial</Text>
+        </TouchableOpacity>
+        <Text style={styles.upsellLater}>Or ask again tomorrow</Text>
+      </View>
+    </View>
+  ) : (
     <View style={[styles.messageContainer, item.isUser ? styles.userMessageContainer : styles.aiMessageContainer]}>
       {!item.isUser && (
         <View style={styles.avatarContainer}>
@@ -308,10 +342,7 @@ export default function RosieChat({ visible, onClose, onNavigateToRestaurant, on
     if (!isPremium) {
       const count = await getDailyMessageCount();
       if (count >= FREE_DAILY_MESSAGE_LIMIT) {
-        if (onShowPaywall) {
-          onClose();
-          setTimeout(() => onShowPaywall(), 300);
-        }
+        showLimitUpsell();
         return;
       }
       await incrementDailyMessageCount();
@@ -524,6 +555,60 @@ const useStyles = createLazyStyles((colors) => ({
   aiBubble: {
     backgroundColor: colors.cardBg,
     borderBottomLeftRadius: 4,
+  },
+  upsellBubble: {
+    maxWidth: '82%' as any,
+    backgroundColor: colors.cardBg,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.goldBorder,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: 18,
+  },
+  upsellPill: {
+    position: 'absolute' as const,
+    top: -9,
+    left: 12,
+    backgroundColor: colors.gold,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  upsellPillText: {
+    fontSize: 10,
+    fontWeight: '700' as const,
+    letterSpacing: 0.6,
+    color: '#1A1A1A',
+  },
+  upsellTitle: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: colors.text,
+    marginBottom: 4,
+  },
+  upsellText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textSecondary,
+  },
+  upsellCta: {
+    marginTop: 12,
+    backgroundColor: colors.accent,
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center' as const,
+  },
+  upsellCtaText: {
+    color: colors.textOnAccent,
+    fontWeight: '600' as const,
+    fontSize: 14,
+  },
+  upsellLater: {
+    marginTop: 8,
+    fontSize: 12,
+    color: colors.textMuted,
+    textAlign: 'center' as const,
   },
   messageText: {
     fontSize: 15,
