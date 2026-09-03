@@ -23,6 +23,7 @@ import { spacing } from '../constants/spacing';
 import { useMarket } from '../context/MarketContext';
 import EventFlyerCard from '../components/EventFlyerCard';
 import SearchBar from '../components/SearchBar';
+import { useScreenView } from '../hooks/useScreenView';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -200,6 +201,7 @@ function DateEventCarousel({ events, onEventPress, onRestaurantPress, onArtistPr
 }
 
 export default function EventsViewAllScreen() {
+  useScreenView('EventsViewAll');
   const styles = useStyles();
   const colors = getColors();
   const navigation = useNavigation<NavigationProp>();

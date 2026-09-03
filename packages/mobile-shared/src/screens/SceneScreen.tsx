@@ -37,6 +37,7 @@ import { flushUserEvents, trackDetailView, trackDwell, trackQuickSkip, type Beha
 import { formatCategoryName } from '../lib/formatters';
 import { useOtherCities, type OtherCity } from '../hooks/useOtherCities';
 import { usePremiumStatus } from '../hooks/usePremiumStatus';
+import { useScreenView } from '../hooks/useScreenView';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type FilterType = 'all' | 'photos' | 'itineraries' | 'trending' | 'deals' | 'events';
@@ -1944,6 +1945,7 @@ function CrossMarketPromoCard({ cities }: { cities: OtherCity[] }) {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function SceneScreen() {
+  useScreenView('Move');
   const styles = useStyles();
   const colors = getColors();
   const brand = getBrand();

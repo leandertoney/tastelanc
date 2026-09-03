@@ -1,7 +1,8 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, type ReactNode } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { getSupabase, getBrand, getColors } from '../config/theme';
+import { setAnalyticsMarket } from '../lib/analytics';
 
 export interface Market {
   id: string;
@@ -61,6 +62,10 @@ export function MarketProvider({ children }: MarketProviderProps) {
   });
 
   const marketId = market?.id ?? null;
+
+  useEffect(() => {
+    setAnalyticsMarket(marketId);
+  }, [marketId]);
 
   if (isError && !isLoading) {
     const colors = getColors();

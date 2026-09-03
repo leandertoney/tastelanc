@@ -43,6 +43,7 @@ import { trackImpression } from '../lib/impressions';
 import { pointInPolygon } from '../utils/pointInPolygon';
 import { useAreas } from '../hooks/useAreas';
 import type { Area } from '../lib/areaVisits';
+import { useScreenView } from '../hooks/useScreenView';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -79,6 +80,7 @@ const darkMapStyle = [
 ];
 
 export default function SearchScreen() {
+  useScreenView('Search');
   const styles = useStyles();
   const colors = getColors();
   const supabase = getSupabase();

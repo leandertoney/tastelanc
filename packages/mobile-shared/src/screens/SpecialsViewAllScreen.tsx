@@ -23,6 +23,7 @@ import SpotifyStyleListItem from '../components/SpotifyStyleListItem';
 import SearchBar from '../components/SearchBar';
 import { trackImpression } from '../lib/impressions';
 import { useMarket } from '../context/MarketContext';
+import { useScreenView } from '../hooks/useScreenView';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -109,6 +110,7 @@ function formatPrice(original: number | null, special: number | null): string {
 }
 
 export default function SpecialsViewAllScreen() {
+  useScreenView('SpecialsViewAll');
   const styles = useStyles();
   const colors = getColors();
   const navigation = useNavigation<NavigationProp>();

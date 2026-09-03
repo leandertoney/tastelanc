@@ -1,12 +1,26 @@
 import { Platform } from 'react-native';
 import { getSupabase, getBrand } from '../config/theme';
 
+// One id per app launch so sessions in analytics_page_views are real
+// sessions, not a stand-in for distinct visitors (they used to be equal).
+const SESSION_ID = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+
+// Set by MarketProvider once the market row loads. All three market apps write
+// to the same table; without this, Cumberland and Fayetteville rows were
+// indistinguishable from Lancaster.
+let analyticsMarketId: string | null = null;
+export function setAnalyticsMarket(marketId: string | null) {
+  analyticsMarketId = marketId;
+}
+
 const PAGE_TYPE_MAP: Record<string, string> = {
   RestaurantDetail: 'restaurant',
   EventDetail: 'events',
   Home: 'home',
   Search: 'other',
+  Move: 'other',
   Favorites: 'other',
+  SpecialsViewAll: 'specials',
   HappyHoursViewAll: 'happy_hour',
   EventsViewAll: 'events',
   EntertainmentViewAll: 'events',
@@ -49,6 +63,8 @@ export function trackScreenView(screenName: string, restaurantId?: string) {
         page_path: pagePath,
         restaurant_id: restaurantId || null,
         visitor_id: visitorId,
+        session_id: SESSION_ID,
+        market_id: analyticsMarketId,
         user_agent: `${brand.userAgent}/${Platform.OS}`,
       });
     } catch {

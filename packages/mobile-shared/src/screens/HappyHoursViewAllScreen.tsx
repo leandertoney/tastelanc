@@ -23,6 +23,7 @@ import SpotifyStyleListItem from '../components/SpotifyStyleListItem';
 import SearchBar from '../components/SearchBar';
 import { trackImpression } from '../lib/impressions';
 import { useMarket } from '../context/MarketContext';
+import { useScreenView } from '../hooks/useScreenView';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -99,6 +100,7 @@ function formatDays(days: string[]): string {
 }
 
 export default function HappyHoursViewAllScreen() {
+  useScreenView('HappyHoursViewAll');
   const styles = useStyles();
   const colors = getColors();
   const navigation = useNavigation<NavigationProp>();

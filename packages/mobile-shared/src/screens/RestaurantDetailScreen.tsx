@@ -305,7 +305,6 @@ export default function RestaurantDetailScreen({ route, navigation }: Props) {
   useEffect(() => {
     if (restaurant) {
       trackScreenView('RestaurantDetail', id);
-      trackScreenView('RestaurantHappyHours', id);
       onRestaurantDetailView(isPremium);
     }
   }, [restaurant, id]);

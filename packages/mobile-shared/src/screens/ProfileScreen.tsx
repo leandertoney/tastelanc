@@ -33,6 +33,7 @@ import OtherCitiesSection from '../components/OtherCitiesSection';
 import BadgesSection from '../components/BadgesSection';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { CAPTION_TAG_LABELS } from '../types/database';
+import { useScreenView } from '../hooks/useScreenView';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -182,6 +183,7 @@ function formatActivityDate(dateStr: string): string {
 }
 
 export default function ProfileScreen() {
+  useScreenView('Profile');
   const styles = useStyles();
   const colors = getColors();
   const brand = getBrand();

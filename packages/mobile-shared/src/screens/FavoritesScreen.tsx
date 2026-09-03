@@ -22,6 +22,7 @@ import CompactRestaurantCard from '../components/CompactRestaurantCard';
 import { PromoCard } from '../components';
 import type { Restaurant } from '../types/database';
 import type { RootStackParamList } from '../navigation/types';
+import { useScreenView } from '../hooks/useScreenView';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -84,6 +85,7 @@ function LoadingState() {
 }
 
 export default function FavoritesScreen() {
+  useScreenView('Favorites');
   const styles = useStyles();
   const colors = getColors();
   const navigation = useNavigation<NavigationProp>();

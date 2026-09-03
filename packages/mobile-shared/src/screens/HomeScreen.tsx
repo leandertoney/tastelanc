@@ -49,6 +49,7 @@ import { createLazyStyles } from '../utils/lazyStyles';
 import { radius, spacing } from '../constants/spacing';
 import type { BadgeType } from '../components/TrendingBadge';
 import { trackImpression } from '../lib/impressions';
+import { useScreenView } from '../hooks/useScreenView';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -57,6 +58,7 @@ const EMPTY_RESTAURANTS: Restaurant[] = [];
 const EMPTY_FAVORITES: string[] = [];
 
 export default function HomeScreen() {
+  useScreenView('Home');
   const styles = useStyles();
   const colors = getColors();
   const brand = getBrand();
