@@ -1,0 +1,11 @@
+{
+  "name": "TasteCumberland",
+  "ascAppId": "6759233248",
+  "playPackage": "com.tastelanc.cumberland",
+  "backgroundModes": {
+    "location": "Geofence check-ins, visit insights and neighborhood discovery via Radar SDK; accepted by App Review Apr 14 2026"
+  },
+  "codeDirs": [
+    "../../packages/mobile-shared/src"
+  ]
+}

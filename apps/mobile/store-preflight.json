@@ -1,0 +1,11 @@
+{
+  "name": "TasteLanc",
+  "ascAppId": "6755852717",
+  "playPackage": "com.tastelanc.app",
+  "backgroundModes": {
+    "location": "Geofence check-ins (I am Here), buzz alerts and neighborhood feed via Radar SDK region monitoring; accepted by App Review Mar 23 2026"
+  },
+  "codeDirs": [
+    "../../packages/mobile-shared/src"
+  ]
+}

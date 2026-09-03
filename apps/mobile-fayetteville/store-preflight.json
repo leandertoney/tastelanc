@@ -1,0 +1,10 @@
+{
+  "name": "TasteFayetteville",
+  "ascAppId": "6760276128",
+  "backgroundModes": {
+    "location": "Geofence check-ins, buzz alerts and neighborhood feed via Radar SDK; accepted by App Review Mar 25 2026"
+  },
+  "codeDirs": [
+    "../../packages/mobile-shared/src"
+  ]
+}
