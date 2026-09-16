@@ -13,9 +13,15 @@
 export const PORTAL_LOCK_MESSAGE =
   'Payment overdue. Please complete payment in order to regain access to your account.';
 
-/** Accounts that keep access while the portal is locked. */
+/**
+ * Accounts that keep access while the portal is locked.
+ * Staff market_admins are exempt on purpose: the billing dispute is not theirs
+ * to resolve, so the lock targets the co_founder account only.
+ */
 export const PORTAL_LOCK_EXEMPT_USER_IDS = [
   'd1b931ce-66ca-40c1-8144-cabf146e006b', // leandertoney@gmail.com (super_admin)
+  'a4a66911-3546-40aa-98a8-9a83117a38b7', // lenealtoney@gmail.com (market_admin)
+  'b1034e28-7a24-4fba-ada9-9bda179d2f5a', // emily.c.allen1219@gmail.com (market_admin)
 ];
 
 type LockState = { isLocked: boolean; message: string };

@@ -1,6 +1,5 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import { getPortalLockState, isPortalLockExempt } from '@/lib/portal-lock';
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -71,28 +70,10 @@ export async function middleware(request: NextRequest) {
   // Check sales_rep from both user_metadata AND profiles table (profiles is authoritative)
   const isSalesRep = userRole === 'sales_rep' || profileRole === 'sales_rep';
 
-  // Portal lock (billing) - gates the admin backend for every account except
-  // the exempt owner. Applies to the admin UI and the admin API. Flip the
-  // portal_access.is_locked flag in SQL to lock or unlock, no redeploy needed.
-  const isAdminSurface =
-    request.nextUrl.pathname.startsWith('/admin') ||
-    request.nextUrl.pathname.startsWith('/api/admin');
-
-  if (isAdminSurface && !isPortalLockExempt(user?.id)) {
-    const { isLocked, message } = await getPortalLockState();
-    if (isLocked) {
-      if (request.nextUrl.pathname.startsWith('/api/admin')) {
-        return NextResponse.json(
-          { error: message, code: 'payment_required' },
-          { status: 402 }
-        );
-      }
-      const url = request.nextUrl.clone();
-      url.pathname = '/portal-locked';
-      url.search = '';
-      return NextResponse.rewrite(url);
-    }
-  }
+  // NOTE: the portal billing lock is NOT enforced here. Middleware runs on the
+  // Edge runtime, where SUPABASE_SERVICE_ROLE_KEY is not available, so the flag
+  // cannot be read from this file. Enforcement lives in app/(admin)/layout.tsx,
+  // which runs on Node.
 
   // Admin routes - redirect to login if not admin
   if (request.nextUrl.pathname.startsWith('/admin')) {
@@ -285,7 +266,5 @@ export const config = {
      * - api routes
      */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-    // Admin API is matched explicitly so the portal lock covers it too.
-    '/api/admin/:path*',
   ],
 };
