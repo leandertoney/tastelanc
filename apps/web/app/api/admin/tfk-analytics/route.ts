@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { MARKET_SLUG } from '@/config/market';
+import { requireAdmin } from '@/lib/require-admin';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const supabase = createServiceRoleClient();
 
   // Resolve market

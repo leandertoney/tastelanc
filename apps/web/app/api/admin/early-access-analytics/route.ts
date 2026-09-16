@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { requireAdmin } from '@/lib/require-admin';
 
 // Always fetch fresh analytics data (avoid build-time caching)
 export const dynamic = 'force-dynamic';
@@ -12,6 +13,9 @@ function getSupabaseAdmin() {
 }
 
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const supabaseAdmin = getSupabaseAdmin();
 
