@@ -70,6 +70,11 @@ export async function middleware(request: NextRequest) {
   // Check sales_rep from both user_metadata AND profiles table (profiles is authoritative)
   const isSalesRep = userRole === 'sales_rep' || profileRole === 'sales_rep';
 
+  // NOTE: the portal billing lock is NOT enforced here. Middleware runs on the
+  // Edge runtime, where SUPABASE_SERVICE_ROLE_KEY is not available, so the flag
+  // cannot be read from this file. Enforcement lives in app/(admin)/layout.tsx,
+  // which runs on Node.
+
   // Admin routes - redirect to login if not admin
   if (request.nextUrl.pathname.startsWith('/admin')) {
     if (!user) {
